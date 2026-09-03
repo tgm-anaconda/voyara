@@ -1,0 +1,1206 @@
+[
+  {
+    "file": "hotels/h01-casa-lumara/1.png",
+    "kategorie": "lobby",
+    "motiv": "green inner courtyard with potted lemon trees, stone floor, breakfast tables in dappled shade",
+    "ort": "Palma de Mallorca",
+    "stil": "warm"
+  },
+  {
+    "file": "hotels/h01-casa-lumara/3.png",
+    "kategorie": "zimmer",
+    "motiv": "simple bright guest room with white linen, wooden floor, tall shuttered window",
+    "ort": "Palma de Mallorca",
+    "stil": "warm"
+  },
+  {
+    "file": "hotels/h01-casa-lumara/5.png",
+    "kategorie": "lobby",
+    "motiv": "breakfast table close-up with coffee, pastries and fresh oranges in morning light",
+    "ort": "Palma de Mallorca",
+    "stil": "warm"
+  },
+  {
+    "file": "hotels/h02-hotel-arenal-blau/2.png",
+    "kategorie": "pool",
+    "motiv": "large outdoor pool with sun loungers and palm trees at midday",
+    "ort": "Playa de Palma",
+    "stil": "bright blue white"
+  },
+  {
+    "file": "hotels/h02-hotel-arenal-blau/3.png",
+    "kategorie": "zimmer",
+    "motiv": "double room with balcony and open sea view, light blue tones",
+    "ort": "Playa de Palma",
+    "stil": "bright blue white"
+  },
+  {
+    "file": "hotels/h02-hotel-arenal-blau/5.png",
+    "kategorie": "lobby",
+    "motiv": "poolside bar terrace in the late afternoon with warm light",
+    "ort": "Playa de Palma",
+    "stil": "bright blue white"
+  },
+  {
+    "file": "hotels/h03-finca-es-pinaret/3.png",
+    "kategorie": "zimmer",
+    "motiv": "rustic bedroom with exposed stone wall, linen bedding, wooden beams",
+    "ort": "Landesinneres bei Sineu",
+    "stil": "natural stone"
+  },
+  {
+    "file": "hotels/h03-finca-es-pinaret/4.png",
+    "kategorie": "aussen",
+    "motiv": "pergola dinner table set under vines in warm evening light",
+    "ort": "Landesinneres bei Sineu",
+    "stil": "natural stone"
+  },
+  {
+    "file": "hotels/h03-finca-es-pinaret/5.png",
+    "kategorie": "aussen",
+    "motiv": "herb and vegetable garden with terracotta pots in soft morning sun",
+    "ort": "Landesinneres bei Sineu",
+    "stil": "natural stone"
+  },
+  {
+    "file": "hotels/h04-hostal-vent-de-mar/1.png",
+    "kategorie": "aussen",
+    "motiv": "harbour promenade of Sóller with fishing boats and mountains behind",
+    "ort": "Port de Sóller",
+    "stil": ""
+  },
+  {
+    "file": "hotels/h04-hostal-vent-de-mar/3.png",
+    "kategorie": "zimmer",
+    "motiv": "plain clean double room with a small balcony and harbour view",
+    "ort": "Port de Sóller",
+    "stil": ""
+  },
+  {
+    "file": "hotels/h04-hostal-vent-de-mar/4.png",
+    "kategorie": "aussen",
+    "motiv": "vintage wooden tram passing along the seafront promenade",
+    "ort": "Port de Sóller",
+    "stil": ""
+  },
+  {
+    "file": "hotels/h05-grand-hotel-miralbo/3.png",
+    "kategorie": "zimmer",
+    "motiv": "elegant deluxe room with marble bathroom visible, warm neutral tones",
+    "ort": "Palma de Mallorca, Altstadt",
+    "stil": "marble"
+  },
+  {
+    "file": "hotels/h05-grand-hotel-miralbo/4.png",
+    "kategorie": "aussen",
+    "motiv": "inner courtyard with orange trees, marble columns and lounge seating",
+    "ort": "Palma de Mallorca, Altstadt",
+    "stil": "marble"
+  },
+  {
+    "file": "hotels/h05-grand-hotel-miralbo/5.png",
+    "kategorie": "bad",
+    "motiv": "spa area with a quiet stone hammam pool and soft indirect lighting",
+    "ort": "Palma de Mallorca, Altstadt",
+    "stil": "marble"
+  },
+  {
+    "file": "hotels/h06-es-trenc-lodge/1.png",
+    "kategorie": "aussen",
+    "motiv": "wide untouched natural beach with dunes and pine trees, no buildings",
+    "ort": "Es Trenc",
+    "stil": "sustainable natural"
+  },
+  {
+    "file": "hotels/h06-es-trenc-lodge/3.png",
+    "kategorie": "bad",
+    "motiv": "simple natural-material bedroom with linen curtains and outdoor shower visible",
+    "ort": "Es Trenc",
+    "stil": "sustainable natural"
+  },
+  {
+    "file": "hotels/h06-es-trenc-lodge/5.png",
+    "kategorie": "lobby",
+    "motiv": "breakfast with regional produce on a wooden terrace table in morning light",
+    "ort": "Es Trenc",
+    "stil": "sustainable natural"
+  },
+  {
+    "file": "hotels/h07-hotel-ciutat-antiga/2.png",
+    "kategorie": "zimmer",
+    "motiv": "compact modern room in neutral tones facing a quiet courtyard",
+    "ort": "Palma de Mallorca, Altstadt",
+    "stil": "functional"
+  },
+  {
+    "file": "hotels/h07-hotel-ciutat-antiga/3.png",
+    "kategorie": "lobby",
+    "motiv": "small lobby with reception desk, warm wood and green plants",
+    "ort": "Palma de Mallorca, Altstadt",
+    "stil": "functional"
+  },
+  {
+    "file": "hotels/h07-hotel-ciutat-antiga/5.png",
+    "kategorie": "aussen",
+    "motiv": "cathedral of Palma seen from a nearby square in afternoon light",
+    "ort": "Palma de Mallorca, Altstadt",
+    "stil": "functional"
+  },
+  {
+    "file": "hotels/h08-cala-serena-resort/3.png",
+    "kategorie": "zimmer",
+    "motiv": "spacious family room with two sleeping areas and a large balcony",
+    "ort": "Cala d'Or",
+    "stil": ""
+  },
+  {
+    "file": "hotels/h08-cala-serena-resort/4.png",
+    "kategorie": "pool",
+    "motiv": "swim-up suite terrace with direct pool access and loungers",
+    "ort": "Cala d'Or",
+    "stil": ""
+  },
+  {
+    "file": "hotels/h08-cala-serena-resort/5.png",
+    "kategorie": "lobby",
+    "motiv": "resort buffet restaurant terrace in the evening with warm lighting",
+    "ort": "Cala d'Or",
+    "stil": ""
+  },
+  {
+    "file": "hotels/h09-villa-tramuntana/1.png",
+    "kategorie": "aussen",
+    "motiv": "panoramic view over terraced mountain slopes down to the Mediterranean at sunset",
+    "ort": "Deià",
+    "stil": "refined"
+  },
+  {
+    "file": "hotels/h09-villa-tramuntana/3.png",
+    "kategorie": "zimmer",
+    "motiv": "refined room with a private terrace and open sea view, natural materials",
+    "ort": "Deià",
+    "stil": "refined"
+  },
+  {
+    "file": "hotels/h09-villa-tramuntana/5.png",
+    "kategorie": "lobby",
+    "motiv": "fine dining table set outdoors with mountain backdrop at blue hour",
+    "ort": "Deià",
+    "stil": "refined"
+  },
+  {
+    "file": "hotels/h10-aparthotel-sol-nova/2.png",
+    "kategorie": "zimmer",
+    "motiv": "apartment living area with kitchenette, dining table and balcony door",
+    "ort": "Alcúdia",
+    "stil": "bright functional"
+  },
+  {
+    "file": "hotels/h10-aparthotel-sol-nova/4.png",
+    "kategorie": "pool",
+    "motiv": "communal pool with sun loungers surrounded by low hedges",
+    "ort": "Alcúdia",
+    "stil": "bright functional"
+  },
+  {
+    "file": "hotels/h10-aparthotel-sol-nova/5.png",
+    "kategorie": "lobby",
+    "motiv": "balcony breakfast with a view over pine trees toward the sea",
+    "ort": "Alcúdia",
+    "stil": "bright functional"
+  },
+  {
+    "file": "hotels/h11-hotel-bahia-azul/1.png",
+    "kategorie": "aussen",
+    "motiv": "long sandy bay of Alcúdia with a beach promenade and palm trees",
+    "ort": "Can Picafort",
+    "stil": ""
+  },
+  {
+    "file": "hotels/h11-hotel-bahia-azul/3.png",
+    "kategorie": "zimmer",
+    "motiv": "simple double room with balcony and side sea view",
+    "ort": "Can Picafort",
+    "stil": ""
+  },
+  {
+    "file": "hotels/h11-hotel-bahia-azul/5.png",
+    "kategorie": "lobby",
+    "motiv": "hotel terrace restaurant with buffet setup in the evening",
+    "ort": "Can Picafort",
+    "stil": ""
+  },
+  {
+    "file": "hotels/h12-refugi-de-muntanya/2.png",
+    "kategorie": "aussen",
+    "motiv": "hiking trail with dry stone walls leading into the Tramuntana mountains",
+    "ort": "Sóller, Serra de Tramuntana",
+    "stil": "rugged stone"
+  },
+  {
+    "file": "hotels/h12-refugi-de-muntanya/3.png",
+    "kategorie": "zimmer",
+    "motiv": "cosy room with wooden furniture and a large window facing the mountains",
+    "ort": "Sóller, Serra de Tramuntana",
+    "stil": "rugged stone"
+  },
+  {
+    "file": "hotels/h12-refugi-de-muntanya/5.png",
+    "kategorie": "aussen",
+    "motiv": "rustic dinner table with hearty regional food and wine after a hike",
+    "ort": "Sóller, Serra de Tramuntana",
+    "stil": "rugged stone"
+  },
+  {
+    "file": "hotels/h13-hotel-cala-blanca-mar/1.png",
+    "kategorie": "aussen",
+    "motiv": "wide sandy bay with a long palm-lined promenade and turquoise shallow water at midday",
+    "ort": "Cala Millor",
+    "stil": "white"
+  },
+  {
+    "file": "hotels/h13-hotel-cala-blanca-mar/3.png",
+    "kategorie": "pool",
+    "motiv": "big outdoor pool with a separate shallow children's area, sun loungers and parasols",
+    "ort": "Cala Millor",
+    "stil": "white"
+  },
+  {
+    "file": "hotels/h13-hotel-cala-blanca-mar/4.png",
+    "kategorie": "zimmer",
+    "motiv": "family room with a separate sleeping alcove, light wood, balcony door open to the sun",
+    "ort": "Cala Millor",
+    "stil": "white"
+  },
+  {
+    "file": "hotels/h13-hotel-cala-blanca-mar/5.png",
+    "kategorie": "lobby",
+    "motiv": "hotel terrace restaurant in the late afternoon with sea in the background",
+    "ort": "Cala Millor",
+    "stil": "white"
+  },
+  {
+    "file": "hotels/h14-fonda-sa-pla-a/1.png",
+    "kategorie": "aussen",
+    "motiv": "sunlit Mediterranean village square in Spain with honey-coloured sandstone houses, palm trees and a church tower",
+    "ort": "Santanyí",
+    "stil": "warm stone"
+  },
+  {
+    "file": "hotels/h14-fonda-sa-pla-a/3.png",
+    "kategorie": "lobby",
+    "motiv": "narrow inner courtyard with a fig tree, stone floor and two small breakfast tables",
+    "ort": "Santanyí",
+    "stil": "warm stone"
+  },
+  {
+    "file": "hotels/h14-fonda-sa-pla-a/4.png",
+    "kategorie": "zimmer",
+    "motiv": "simple bright guest room with wooden beams, white linen and a window to the square",
+    "ort": "Santanyí",
+    "stil": "warm stone"
+  },
+  {
+    "file": "hotels/h14-fonda-sa-pla-a/5.png",
+    "kategorie": "aussen",
+    "motiv": "rooftop terrace with terracotta tiles overlooking village roofs at golden hour",
+    "ort": "Santanyí",
+    "stil": "warm stone"
+  },
+  {
+    "file": "hotels/h15-nauta-port-d-andratx/1.png",
+    "kategorie": "aussen",
+    "motiv": "natural harbour bay with sailing yachts seen from a hillside at golden hour",
+    "ort": "Port d'Andratx",
+    "stil": "natural white refined"
+  },
+  {
+    "file": "hotels/h15-nauta-port-d-andratx/3.png",
+    "kategorie": "pool",
+    "motiv": "infinity pool on a terrace appearing to merge with the harbour water below",
+    "ort": "Port d'Andratx",
+    "stil": "natural white refined"
+  },
+  {
+    "file": "hotels/h15-nauta-port-d-andratx/4.png",
+    "kategorie": "zimmer",
+    "motiv": "deluxe room in warm neutral tones with a private terrace overlooking the sea",
+    "ort": "Port d'Andratx",
+    "stil": "natural white refined"
+  },
+  {
+    "file": "hotels/h15-nauta-port-d-andratx/5.png",
+    "kategorie": "bad",
+    "motiv": "spa area with an indoor seawater pool, stone walls and soft indirect light",
+    "ort": "Port d'Andratx",
+    "stil": "natural white refined"
+  },
+  {
+    "file": "hotels/h16-hotel-mar-i-pins/1.png",
+    "kategorie": "aussen",
+    "motiv": "calm turquoise Mediterranean bay with umbrella pine trees growing right at the sandy shore, Spain",
+    "ort": "Port de Pollença",
+    "stil": ""
+  },
+  {
+    "file": "hotels/h16-hotel-mar-i-pins/3.png",
+    "kategorie": "pool",
+    "motiv": "resort pool with two water slides and children playing area, palm trees around",
+    "ort": "Port de Pollença",
+    "stil": ""
+  },
+  {
+    "file": "hotels/h16-hotel-mar-i-pins/4.png",
+    "kategorie": "zimmer",
+    "motiv": "family suite with two separate bedrooms, bunk bed and a balcony to the garden",
+    "ort": "Port de Pollença",
+    "stil": ""
+  },
+  {
+    "file": "hotels/h16-hotel-mar-i-pins/5.png",
+    "kategorie": "lobby",
+    "motiv": "buffet restaurant interior with bright daylight and long serving counters",
+    "ort": "Port de Pollença",
+    "stil": ""
+  },
+  {
+    "file": "hotels/h17-agroturisme-son-bardi/1.png",
+    "kategorie": "aussen",
+    "motiv": "rows of vines in warm afternoon light with almond trees and a stone wall",
+    "ort": "bei Petra",
+    "stil": "stone"
+  },
+  {
+    "file": "hotels/h17-agroturisme-son-bardi/3.png",
+    "kategorie": "pool",
+    "motiv": "swimming pool converted from an old stone irrigation basin, surrounded by vines",
+    "ort": "bei Petra",
+    "stil": "stone"
+  },
+  {
+    "file": "hotels/h17-agroturisme-son-bardi/4.png",
+    "kategorie": "zimmer",
+    "motiv": "rustic guest room with rough stone walls, iron bed frame and linen bedding",
+    "ort": "bei Petra",
+    "stil": "stone"
+  },
+  {
+    "file": "hotels/h17-agroturisme-son-bardi/5.png",
+    "kategorie": "aussen",
+    "motiv": "wine cellar with oak barrels and a tasting table, warm low light",
+    "ort": "bei Petra",
+    "stil": "stone"
+  },
+  {
+    "file": "hotels/h18-hostal-bella-vista/1.png",
+    "kategorie": "aussen",
+    "motiv": "narrow sunny street in a Spanish seaside resort with white apartment blocks, palm trees and blue sky",
+    "ort": "Playa de Palma",
+    "stil": "functional"
+  },
+  {
+    "file": "hotels/h18-hostal-bella-vista/3.png",
+    "kategorie": "zimmer",
+    "motiv": "small functional double room with white walls, a bed and an air conditioning unit",
+    "ort": "Playa de Palma",
+    "stil": "functional"
+  },
+  {
+    "file": "hotels/h18-hostal-bella-vista/4.png",
+    "kategorie": "zimmer",
+    "motiv": "simple breakfast room with plain tables and bright morning light",
+    "ort": "Playa de Palma",
+    "stil": "functional"
+  },
+  {
+    "file": "hotels/h18-hostal-bella-vista/5.png",
+    "kategorie": "aussen",
+    "motiv": "small rooftop terrace with plastic chairs and a view over neighbouring roofs",
+    "ort": "Playa de Palma",
+    "stil": "functional"
+  },
+  {
+    "file": "hotels/h19-hotel-migjorn-beach/1.png",
+    "kategorie": "aussen",
+    "motiv": "small quiet sandy beach with pine trees and very clear shallow water in the south",
+    "ort": "Colònia de Sant Jordi",
+    "stil": "blue"
+  },
+  {
+    "file": "hotels/h19-hotel-migjorn-beach/3.png",
+    "kategorie": "pool",
+    "motiv": "long narrow swimming pool between tall palm trees and sun loungers",
+    "ort": "Colònia de Sant Jordi",
+    "stil": "blue"
+  },
+  {
+    "file": "hotels/h19-hotel-migjorn-beach/4.png",
+    "kategorie": "zimmer",
+    "motiv": "double room with a balcony facing the sea, pale blue and white tones",
+    "ort": "Colònia de Sant Jordi",
+    "stil": "blue"
+  },
+  {
+    "file": "hotels/h19-hotel-migjorn-beach/5.png",
+    "kategorie": "aussen",
+    "motiv": "fishing harbour with small boats and a boat departing towards an island",
+    "ort": "Colònia de Sant Jordi",
+    "stil": "blue"
+  },
+  {
+    "file": "hotels/h20-aparthotel-illa-verda/1.png",
+    "kategorie": "pool",
+    "motiv": "garden courtyard with a swimming pool surrounded by low apartment buildings",
+    "ort": "Alcúdia",
+    "stil": ""
+  },
+  {
+    "file": "hotels/h20-aparthotel-illa-verda/3.png",
+    "kategorie": "zimmer",
+    "motiv": "studio apartment with a kitchenette, dining corner and balcony door",
+    "ort": "Alcúdia",
+    "stil": ""
+  },
+  {
+    "file": "hotels/h20-aparthotel-illa-verda/4.png",
+    "kategorie": "zimmer",
+    "motiv": "two-bedroom holiday apartment living area with sofa and dining table",
+    "ort": "Alcúdia",
+    "stil": ""
+  },
+  {
+    "file": "hotels/h20-aparthotel-illa-verda/5.png",
+    "kategorie": "aussen",
+    "motiv": "wide sandy beach with shallow water a few minutes from the complex",
+    "ort": "Alcúdia",
+    "stil": ""
+  },
+  {
+    "file": "hotels/h21-palau-de-sant-miquel/1.png",
+    "kategorie": "aussen",
+    "motiv": "arcaded inner courtyard of an old city palace with stone columns and a wide staircase",
+    "ort": "Palma de Mallorca, Altstadt",
+    "stil": ""
+  },
+  {
+    "file": "hotels/h21-palau-de-sant-miquel/3.png",
+    "kategorie": "pool",
+    "motiv": "small rooftop pool with a bar and a view over old-town roofs at dusk",
+    "ort": "Palma de Mallorca, Altstadt",
+    "stil": ""
+  },
+  {
+    "file": "hotels/h21-palau-de-sant-miquel/4.png",
+    "kategorie": "zimmer",
+    "motiv": "elegant hotel room with high ceilings, tall windows and a marble bathroom",
+    "ort": "Palma de Mallorca, Altstadt",
+    "stil": ""
+  },
+  {
+    "file": "hotels/h21-palau-de-sant-miquel/5.png",
+    "kategorie": "aussen",
+    "motiv": "old-town lane with sandstone houses and warm evening light",
+    "ort": "Palma de Mallorca, Altstadt",
+    "stil": ""
+  },
+  {
+    "file": "hotels/h22-hotel-sa-talaia/1.png",
+    "kategorie": "aussen",
+    "motiv": "mountain village with terraced fields and stone houses seen from above in warm light",
+    "ort": "Valldemossa",
+    "stil": "natural stone"
+  },
+  {
+    "file": "hotels/h22-hotel-sa-talaia/3.png",
+    "kategorie": "aussen",
+    "motiv": "hotel terrace with a wide view down a green valley towards distant sea",
+    "ort": "Valldemossa",
+    "stil": "natural stone"
+  },
+  {
+    "file": "hotels/h22-hotel-sa-talaia/4.png",
+    "kategorie": "zimmer",
+    "motiv": "quiet guest room with a natural stone wall, linen bedding and a wooden floor",
+    "ort": "Valldemossa",
+    "stil": "natural stone"
+  },
+  {
+    "file": "hotels/h22-hotel-sa-talaia/5.png",
+    "kategorie": "aussen",
+    "motiv": "hiking path starting at the edge of a mountain village between dry stone walls",
+    "ort": "Valldemossa",
+    "stil": "natural stone"
+  },
+  {
+    "file": "hotels/h23-club-familiar-es-foguero/1.png",
+    "kategorie": "pool",
+    "motiv": "large resort pool landscape with several pools and many sun loungers",
+    "ort": "Can Picafort",
+    "stil": "bright"
+  },
+  {
+    "file": "hotels/h23-club-familiar-es-foguero/3.png",
+    "kategorie": "aussen",
+    "motiv": "water park with four slides and a splash area for children",
+    "ort": "Can Picafort",
+    "stil": "bright"
+  },
+  {
+    "file": "hotels/h23-club-familiar-es-foguero/4.png",
+    "kategorie": "pool",
+    "motiv": "family suite with two bedrooms and a balcony overlooking the pool",
+    "ort": "Can Picafort",
+    "stil": "bright"
+  },
+  {
+    "file": "hotels/h23-club-familiar-es-foguero/5.png",
+    "kategorie": "aussen",
+    "motiv": "resort garden with tall palm trees, loungers and warm lighting in the early evening",
+    "ort": "Can Picafort",
+    "stil": "bright"
+  },
+  {
+    "file": "hotels/h24-petit-hotel-cala-figuera/1.png",
+    "kategorie": "aussen",
+    "motiv": "narrow rocky inlet with a small fishing harbour and blue wooden boats",
+    "ort": "Cala Figuera",
+    "stil": "white blue"
+  },
+  {
+    "file": "hotels/h24-petit-hotel-cala-figuera/3.png",
+    "kategorie": "zimmer",
+    "motiv": "simple guest room with a balcony overlooking moored fishing boats",
+    "ort": "Cala Figuera",
+    "stil": "white blue"
+  },
+  {
+    "file": "hotels/h24-petit-hotel-cala-figuera/4.png",
+    "kategorie": "aussen",
+    "motiv": "rock bathing platforms with steps into clear deep water",
+    "ort": "Cala Figuera",
+    "stil": "white blue"
+  },
+  {
+    "file": "hotels/h24-petit-hotel-cala-figuera/5.png",
+    "kategorie": "lobby",
+    "motiv": "small harbour restaurant terrace at golden hour with boats below",
+    "ort": "Cala Figuera",
+    "stil": "white blue"
+  },
+  {
+    "file": "hotels/h25-hotel-torrent-d-art/1.png",
+    "kategorie": "aussen",
+    "motiv": "olive groves on gentle hills with a hill village and church tower in the distance",
+    "ort": "Artà",
+    "stil": "warm"
+  },
+  {
+    "file": "hotels/h25-hotel-torrent-d-art/3.png",
+    "kategorie": "pool",
+    "motiv": "swimming pool in a former kitchen garden with stone walls and fruit trees",
+    "ort": "Artà",
+    "stil": "warm"
+  },
+  {
+    "file": "hotels/h25-hotel-torrent-d-art/4.png",
+    "kategorie": "zimmer",
+    "motiv": "guest room with thick whitewashed walls, a wooden bed and a small window",
+    "ort": "Artà",
+    "stil": "warm"
+  },
+  {
+    "file": "hotels/h25-hotel-torrent-d-art/5.png",
+    "kategorie": "lobby",
+    "motiv": "cobbled courtyard with a long wooden table set for breakfast in morning shade",
+    "ort": "Artà",
+    "stil": "warm"
+  },
+  {
+    "file": "hotels/h26-sunrise-beach-resort/1.png",
+    "kategorie": "aussen",
+    "motiv": "small turquoise cove framed by rocks and pine trees seen from above",
+    "ort": "Cala d'Or",
+    "stil": "white"
+  },
+  {
+    "file": "hotels/h26-sunrise-beach-resort/3.png",
+    "kategorie": "aussen",
+    "motiv": "two swimming pools on stepped terraces with sun loungers and pines",
+    "ort": "Cala d'Or",
+    "stil": "white"
+  },
+  {
+    "file": "hotels/h26-sunrise-beach-resort/4.png",
+    "kategorie": "zimmer",
+    "motiv": "double room with a balcony facing a cove between pine trees",
+    "ort": "Cala d'Or",
+    "stil": "white"
+  },
+  {
+    "file": "hotels/h26-sunrise-beach-resort/5.png",
+    "kategorie": "lobby",
+    "motiv": "terrace bar on the top level with a wide view over the bay in the evening",
+    "ort": "Cala d'Or",
+    "stil": "white"
+  },
+  {
+    "file": "wohnungen/a01-ca-n-vent-altstadtwohnung/1.png",
+    "kategorie": "zimmer",
+    "motiv": "open living and dining area with tall windows and wooden floor",
+    "ort": "Palma de Mallorca",
+    "stil": "bright"
+  },
+  {
+    "file": "wohnungen/a01-ca-n-vent-altstadtwohnung/3.png",
+    "kategorie": "lobby",
+    "motiv": "fully equipped kitchen with dining table and morning light",
+    "ort": "Palma de Mallorca",
+    "stil": "bright"
+  },
+  {
+    "file": "wohnungen/a01-ca-n-vent-altstadtwohnung/4.png",
+    "kategorie": "zimmer",
+    "motiv": "bedroom with white linen and shuttered window",
+    "ort": "Palma de Mallorca",
+    "stil": "bright"
+  },
+  {
+    "file": "wohnungen/a02-playa-suites-meerblick/2.png",
+    "kategorie": "zimmer",
+    "motiv": "living room opening onto the terrace, bright and airy",
+    "ort": "Playa de Palma",
+    "stil": ""
+  },
+  {
+    "file": "wohnungen/a02-playa-suites-meerblick/3.png",
+    "kategorie": "pool",
+    "motiv": "communal pool area of the apartment complex with palms",
+    "ort": "Playa de Palma",
+    "stil": ""
+  },
+  {
+    "file": "wohnungen/a02-playa-suites-meerblick/4.png",
+    "kategorie": "zimmer",
+    "motiv": "bedroom with balcony access and soft morning light",
+    "ort": "Playa de Palma",
+    "stil": ""
+  },
+  {
+    "file": "wohnungen/a03-finca-studio-es-camp/2.png",
+    "kategorie": "aussen",
+    "motiv": "compact interior with kitchenette and rustic stone wall",
+    "ort": "Landesinneres bei Sineu",
+    "stil": ""
+  },
+  {
+    "file": "wohnungen/a03-finca-studio-es-camp/3.png",
+    "kategorie": "pool",
+    "motiv": "shared finca pool surrounded by dry stone walls and lavender",
+    "ort": "Landesinneres bei Sineu",
+    "stil": ""
+  },
+  {
+    "file": "wohnungen/a03-finca-studio-es-camp/4.png",
+    "kategorie": "aussen",
+    "motiv": "view over almond and olive fields at golden hour",
+    "ort": "Landesinneres bei Sineu",
+    "stil": ""
+  },
+  {
+    "file": "wohnungen/a04-port-view-loft/1.png",
+    "kategorie": "zimmer",
+    "motiv": "open loft living space with a large window front over the bay",
+    "ort": "Port de Sóller",
+    "stil": ""
+  },
+  {
+    "file": "wohnungen/a04-port-view-loft/3.png",
+    "kategorie": "lobby",
+    "motiv": "modern open kitchen with island and warm wood",
+    "ort": "Port de Sóller",
+    "stil": ""
+  },
+  {
+    "file": "wohnungen/a04-port-view-loft/4.png",
+    "kategorie": "zimmer",
+    "motiv": "bedroom with mountain and sea view through wide windows",
+    "ort": "Port de Sóller",
+    "stil": ""
+  },
+  {
+    "file": "wohnungen/a05-casa-alcudia-mit-garten/2.png",
+    "kategorie": "zimmer",
+    "motiv": "open living and dining room with access to the garden",
+    "ort": "Alcúdia",
+    "stil": ""
+  },
+  {
+    "file": "wohnungen/a05-casa-alcudia-mit-garten/3.png",
+    "kategorie": "lobby",
+    "motiv": "kitchen with dining area, bright and practical",
+    "ort": "Alcúdia",
+    "stil": ""
+  },
+  {
+    "file": "wohnungen/a05-casa-alcudia-mit-garten/4.png",
+    "kategorie": "aussen",
+    "motiv": "quiet residential street with the house entrance and greenery",
+    "ort": "Alcúdia",
+    "stil": ""
+  },
+  {
+    "file": "wohnungen/a06-cala-studio-am-fels/2.png",
+    "kategorie": "zimmer",
+    "motiv": "compact studio interior with kitchenette and bright textiles",
+    "ort": "Cala d'Or",
+    "stil": ""
+  },
+  {
+    "file": "wohnungen/a06-cala-studio-am-fels/3.png",
+    "kategorie": "aussen",
+    "motiv": "small swimming cove with clear turquoise water and rocks",
+    "ort": "Cala d'Or",
+    "stil": ""
+  },
+  {
+    "file": "wohnungen/a06-cala-studio-am-fels/4.png",
+    "kategorie": "aussen",
+    "motiv": "evening view from the terrace over the water at sunset",
+    "ort": "Cala d'Or",
+    "stil": ""
+  },
+  {
+    "file": "wohnungen/a07-casa-migjorn-mit-pool/1.png",
+    "kategorie": "pool",
+    "motiv": "private swimming pool in a walled garden with a fig tree and sun loungers",
+    "ort": "Santanyí",
+    "stil": ""
+  },
+  {
+    "file": "wohnungen/a07-casa-migjorn-mit-pool/2.png",
+    "kategorie": "zimmer",
+    "motiv": "large open plan living and dining room with a long wooden table",
+    "ort": "Santanyí",
+    "stil": ""
+  },
+  {
+    "file": "wohnungen/a07-casa-migjorn-mit-pool/3.png",
+    "kategorie": "zimmer",
+    "motiv": "bright double bedroom with white linen and shutters half closed",
+    "ort": "Santanyí",
+    "stil": ""
+  },
+  {
+    "file": "wohnungen/a07-casa-migjorn-mit-pool/4.png",
+    "kategorie": "pool",
+    "motiv": "covered outdoor dining terrace next to the pool in evening light",
+    "ort": "Santanyí",
+    "stil": ""
+  },
+  {
+    "file": "wohnungen/a08-apartament-es-moll/1.png",
+    "kategorie": "aussen",
+    "motiv": "balcony with two chairs looking over a calm bay and a sandy beach",
+    "ort": "Port de Pollença",
+    "stil": "bright"
+  },
+  {
+    "file": "wohnungen/a08-apartament-es-moll/2.png",
+    "kategorie": "zimmer",
+    "motiv": "living room with dining table and a large window facing the sea",
+    "ort": "Port de Pollença",
+    "stil": "bright"
+  },
+  {
+    "file": "wohnungen/a08-apartament-es-moll/3.png",
+    "kategorie": "lobby",
+    "motiv": "small practical kitchen with a window and morning light",
+    "ort": "Port de Pollença",
+    "stil": "bright"
+  },
+  {
+    "file": "wohnungen/a08-apartament-es-moll/4.png",
+    "kategorie": "zimmer",
+    "motiv": "bedroom with two single beds, white walls and a light wooden floor",
+    "ort": "Port de Pollença",
+    "stil": "bright"
+  },
+  {
+    "file": "wohnungen/a09-villa-serena-cala-millor/1.png",
+    "kategorie": "pool",
+    "motiv": "villa garden with a swimming pool, sun loungers and a built-in barbecue",
+    "ort": "Cala Millor",
+    "stil": "modern"
+  },
+  {
+    "file": "wohnungen/a09-villa-serena-cala-millor/2.png",
+    "kategorie": "zimmer",
+    "motiv": "spacious living and dining area with a long table for eight people",
+    "ort": "Cala Millor",
+    "stil": "modern"
+  },
+  {
+    "file": "wohnungen/a09-villa-serena-cala-millor/3.png",
+    "kategorie": "aussen",
+    "motiv": "roof terrace with lounge seating and a view over a bay at sunset",
+    "ort": "Cala Millor",
+    "stil": "modern"
+  },
+  {
+    "file": "wohnungen/a09-villa-serena-cala-millor/4.png",
+    "kategorie": "zimmer",
+    "motiv": "large bedroom with a double bed and a door to a private balcony",
+    "ort": "Cala Millor",
+    "stil": "modern"
+  },
+  {
+    "file": "wohnungen/a10-stadtstudio-sant-jaume/1.png",
+    "kategorie": "zimmer",
+    "motiv": "small studio apartment with a bed, kitchenette and a desk by the window",
+    "ort": "Palma de Mallorca",
+    "stil": ""
+  },
+  {
+    "file": "wohnungen/a10-stadtstudio-sant-jaume/2.png",
+    "kategorie": "aussen",
+    "motiv": "kitchenette with a small worktop, kettle and open shelves",
+    "ort": "Palma de Mallorca",
+    "stil": ""
+  },
+  {
+    "file": "wohnungen/a10-stadtstudio-sant-jaume/3.png",
+    "kategorie": "aussen",
+    "motiv": "quiet green inner courtyard of an old town building seen from a window",
+    "ort": "Palma de Mallorca",
+    "stil": ""
+  },
+  {
+    "file": "wohnungen/a10-stadtstudio-sant-jaume/4.png",
+    "kategorie": "bad",
+    "motiv": "compact modern bathroom with a walk-in shower and white tiles",
+    "ort": "Palma de Mallorca",
+    "stil": ""
+  },
+  {
+    "file": "wohnungen/a11-sonnenhaus-col-nia/1.png",
+    "kategorie": "aussen",
+    "motiv": "ground-floor terrace with garden furniture opening onto a shared green garden",
+    "ort": "Colònia de Sant Jordi",
+    "stil": ""
+  },
+  {
+    "file": "wohnungen/a11-sonnenhaus-col-nia/2.png",
+    "kategorie": "zimmer",
+    "motiv": "open living and kitchen area with a dining table and terrace door",
+    "ort": "Colònia de Sant Jordi",
+    "stil": ""
+  },
+  {
+    "file": "wohnungen/a11-sonnenhaus-col-nia/3.png",
+    "kategorie": "zimmer",
+    "motiv": "bedroom with a double bed, light curtains and warm afternoon light",
+    "ort": "Colònia de Sant Jordi",
+    "stil": ""
+  },
+  {
+    "file": "wohnungen/a11-sonnenhaus-col-nia/4.png",
+    "kategorie": "aussen",
+    "motiv": "cycle path running along salt flats with reeds and water at golden hour",
+    "ort": "Colònia de Sant Jordi",
+    "stil": ""
+  },
+  {
+    "file": "wohnungen/a12-bergwohnung-sa-font/1.png",
+    "kategorie": "zimmer",
+    "motiv": "kitchen and dining room with a window looking over orange groves",
+    "ort": "Sóller",
+    "stil": "stone warm"
+  },
+  {
+    "file": "wohnungen/a12-bergwohnung-sa-font/2.png",
+    "kategorie": "zimmer",
+    "motiv": "living room with old wooden beams, a sofa and bookshelves",
+    "ort": "Sóller",
+    "stil": "stone warm"
+  },
+  {
+    "file": "wohnungen/a12-bergwohnung-sa-font/3.png",
+    "kategorie": "zimmer",
+    "motiv": "bedroom with a wrought iron bed and a stone wall",
+    "ort": "Sóller",
+    "stil": "stone warm"
+  },
+  {
+    "file": "wohnungen/a12-bergwohnung-sa-font/4.png",
+    "kategorie": "aussen",
+    "motiv": "narrow lane in a Spanish mountain village with rubble-stone houses, green shutters and potted plants, empty street",
+    "ort": "Sóller",
+    "stil": "stone warm"
+  },
+  {
+    "file": "wohnungen/a13-casa-andratx-am-hafen/1.png",
+    "kategorie": "zimmer",
+    "motiv": "bright bedroom with light walls, framed artwork and a wide doorway",
+    "ort": "Port d'Andratx",
+    "stil": "warm"
+  },
+  {
+    "file": "wohnungen/a13-casa-andratx-am-hafen/2.png",
+    "kategorie": "aussen",
+    "motiv": "covered veranda with a wooden armchair, tiled floor and wrought iron railing",
+    "ort": "Port d'Andratx",
+    "stil": "warm"
+  },
+  {
+    "file": "wohnungen/a13-casa-andratx-am-hafen/3.png",
+    "kategorie": "lobby",
+    "motiv": "large open kitchen with a white island, bar stools and hanging lamps",
+    "ort": "Port d'Andratx",
+    "stil": "warm"
+  },
+  {
+    "file": "wohnungen/a13-casa-andratx-am-hafen/4.png",
+    "kategorie": "zimmer",
+    "motiv": "spacious bedroom with an ornate iron bed, wooden floor and large windows to a garden",
+    "ort": "Port d'Andratx",
+    "stil": "warm"
+  },
+  {
+    "file": "wohnungen/a14-familienhaus-playa-de-muro/1.png",
+    "kategorie": "aussen",
+    "motiv": "small private garden with a table, chairs and a parasol next to a terraced house",
+    "ort": "Playa de Muro",
+    "stil": ""
+  },
+  {
+    "file": "wohnungen/a14-familienhaus-playa-de-muro/2.png",
+    "kategorie": "lobby",
+    "motiv": "empty open plan kitchen and dining area of a holiday house with a large wooden table and bright daylight",
+    "ort": "Playa de Muro",
+    "stil": ""
+  },
+  {
+    "file": "wohnungen/a14-familienhaus-playa-de-muro/3.png",
+    "kategorie": "zimmer",
+    "motiv": "children's bedroom with two single beds and simple wooden furniture",
+    "ort": "Playa de Muro",
+    "stil": ""
+  },
+  {
+    "file": "wohnungen/a14-familienhaus-playa-de-muro/4.png",
+    "kategorie": "pool",
+    "motiv": "empty swimming pool of a small Spanish holiday complex with sun loungers and palm trees, no swimmers",
+    "ort": "Playa de Muro",
+    "stil": ""
+  },
+  {
+    "file": "mietwagen/c01-fiat-seicento/1.png",
+    "kategorie": "aussen",
+    "motiv": "Fiat Seicento, Kleinwagen, rental car exterior",
+    "ort": "Mallorca",
+    "stil": ""
+  },
+  {
+    "file": "mietwagen/c02-fiat-500/1.png",
+    "kategorie": "aussen",
+    "motiv": "Fiat 500, Kleinwagen, rental car exterior",
+    "ort": "Mallorca",
+    "stil": ""
+  },
+  {
+    "file": "mietwagen/c03-opel-corsa/1.png",
+    "kategorie": "aussen",
+    "motiv": "Opel Corsa, Kompaktklasse, rental car exterior",
+    "ort": "Mallorca",
+    "stil": ""
+  },
+  {
+    "file": "mietwagen/c04-renault-captur/1.png",
+    "kategorie": "aussen",
+    "motiv": "Renault Captur, SUV, rental car exterior",
+    "ort": "Mallorca",
+    "stil": ""
+  },
+  {
+    "file": "mietwagen/c05-mercedes-benz-slk-cabrio/1.png",
+    "kategorie": "aussen",
+    "motiv": "Mercedes-Benz SLK Cabrio, Cabrio, rental car exterior",
+    "ort": "Mallorca",
+    "stil": ""
+  },
+  {
+    "file": "mietwagen/c06-hyundai-staria/1.png",
+    "kategorie": "aussen",
+    "motiv": "Hyundai Staria, Van (7 Sitze), rental car exterior",
+    "ort": "Mallorca",
+    "stil": ""
+  },
+  {
+    "file": "mietwagen/c07-tesla-model-3/1.png",
+    "kategorie": "aussen",
+    "motiv": "Tesla Model 3, Elektro, rental car exterior",
+    "ort": "Mallorca",
+    "stil": ""
+  },
+  {
+    "file": "mietwagen/c08-dacia-sandero/1.png",
+    "kategorie": "aussen",
+    "motiv": "Dacia Sandero, Kleinwagen, rental car exterior",
+    "ort": "Mallorca",
+    "stil": ""
+  },
+  {
+    "file": "mietwagen/c09-ford-fiesta/1.png",
+    "kategorie": "aussen",
+    "motiv": "Ford Fiesta, Kleinwagen, rental car exterior",
+    "ort": "Mallorca",
+    "stil": ""
+  },
+  {
+    "file": "mietwagen/c10-vw-t-roc/1.png",
+    "kategorie": "aussen",
+    "motiv": "VW T-Roc, SUV, rental car exterior",
+    "ort": "Mallorca",
+    "stil": ""
+  },
+  {
+    "file": "mietwagen/c11-mini-cooper/1.png",
+    "kategorie": "aussen",
+    "motiv": "MINI Cooper, Kleinwagen, rental car exterior",
+    "ort": "Mallorca",
+    "stil": ""
+  },
+  {
+    "file": "mietwagen/c12-smart-forfour/1.png",
+    "kategorie": "aussen",
+    "motiv": "Smart Forfour, Kleinwagen, rental car exterior",
+    "ort": "Mallorca",
+    "stil": ""
+  },
+  {
+    "file": "mietwagen/c13-ford-focus/1.png",
+    "kategorie": "aussen",
+    "motiv": "Ford Focus, Kompaktklasse, rental car exterior",
+    "ort": "Mallorca",
+    "stil": ""
+  },
+  {
+    "file": "regionen/palma-de-mallorca.png",
+    "kategorie": "aussen",
+    "motiv": "aerial view of Palma old town with the gothic cathedral and the bay in warm afternoon light",
+    "ort": "Palma de Mallorca",
+    "stil": ""
+  },
+  {
+    "file": "regionen/playa-de-palma.png",
+    "kategorie": "aussen",
+    "motiv": "long wide sandy beach with a palm-lined promenade and turquoise water",
+    "ort": "Playa de Palma",
+    "stil": ""
+  },
+  {
+    "file": "regionen/landesinneres.png",
+    "kategorie": "aussen",
+    "motiv": "rolling inland countryside with almond groves, stone walls and a distant village church tower",
+    "ort": "Landesinneres",
+    "stil": ""
+  },
+  {
+    "file": "regionen/port-de-soller.png",
+    "kategorie": "aussen",
+    "motiv": "horseshoe-shaped harbour bay framed by mountains, fishing boats and a lighthouse",
+    "ort": "Port de Sóller",
+    "stil": ""
+  },
+  {
+    "file": "regionen/es-trenc.png",
+    "kategorie": "aussen",
+    "motiv": "untouched dune beach with fine white sand, pine trees and clear shallow water",
+    "ort": "Es Trenc",
+    "stil": ""
+  },
+  {
+    "file": "regionen/cala-d-or.png",
+    "kategorie": "aussen",
+    "motiv": "small sheltered cove with white boats, rocky edges and calm turquoise water",
+    "ort": "Cala d'Or",
+    "stil": ""
+  },
+  {
+    "file": "regionen/serra-de-tramuntana.png",
+    "kategorie": "aussen",
+    "motiv": "dramatic mountain range with terraced slopes and a winding road at sunset",
+    "ort": "Serra de Tramuntana",
+    "stil": ""
+  },
+  {
+    "file": "regionen/alcudia.png",
+    "kategorie": "aussen",
+    "motiv": "long shallow bay with calm water, pine trees and mountains on the horizon",
+    "ort": "Alcúdia",
+    "stil": ""
+  },
+  {
+    "file": "regionen/can-picafort.png",
+    "kategorie": "aussen",
+    "motiv": "sandy family beach with a promenade, low dunes and gentle waves",
+    "ort": "Can Picafort",
+    "stil": ""
+  },
+  {
+    "file": "regionen/cala-millor.png",
+    "kategorie": "aussen",
+    "motiv": "wide gently curving sandy bay with a long promenade and shallow turquoise water",
+    "ort": "Cala Millor",
+    "stil": ""
+  },
+  {
+    "file": "regionen/santanyi.png",
+    "kategorie": "aussen",
+    "motiv": "sandstone village square with market stalls, plane trees and honey-coloured houses",
+    "ort": "Santanyí",
+    "stil": ""
+  },
+  {
+    "file": "regionen/port-d-andratx.png",
+    "kategorie": "aussen",
+    "motiv": "natural harbour surrounded by hills with sailing yachts and white houses",
+    "ort": "Port d'Andratx",
+    "stil": ""
+  },
+  {
+    "file": "regionen/port-de-pollen-a.png",
+    "kategorie": "aussen",
+    "motiv": "calm shallow bay with old pine trees at the shore and mountains behind",
+    "ort": "Port de Pollença",
+    "stil": ""
+  },
+  {
+    "file": "regionen/col-nia-de-sant-jordi.png",
+    "kategorie": "aussen",
+    "motiv": "quiet southern coastline with salt flats, dunes and very clear shallow water",
+    "ort": "Colònia de Sant Jordi",
+    "stil": ""
+  },
+  {
+    "file": "regionen/art.png",
+    "kategorie": "aussen",
+    "motiv": "hill village with a stone stairway leading up to a fortified church, olive groves around",
+    "ort": "Artà",
+    "stil": ""
+  },
+  {
+    "file": "hero/hero-1.png",
+    "kategorie": "aussen",
+    "motiv": "wide cinematic view of a Mediterranean coastline on Mallorca at golden hour, turquoise sea, cliffs and pine trees, calm and inviting",
+    "ort": "Mallorca",
+    "stil": ""
+  },
+  {
+    "file": "hero/hero-2.png",
+    "kategorie": "aussen",
+    "motiv": "aerial view of a curved bay with boats and clear water, warm late afternoon light",
+    "ort": "Mallorca",
+    "stil": ""
+  }
+]

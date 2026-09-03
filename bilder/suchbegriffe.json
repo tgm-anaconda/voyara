@@ -1,0 +1,274 @@
+{
+  "_hinweis": "Suchbegriffe und Filter fuer stock-holen.py. Kategorien kommen aus stock-bedarf.json.",
+  "kategorien": {
+    "zimmer": {
+      "queries": [
+        "mediterranean hotel bedroom",
+        "white hotel room wooden shutters",
+        "spanish hotel room interior",
+        "minimal white bedroom linen"
+      ],
+      "muss": [
+        "bed",
+        "bedroom"
+      ],
+      "min_breite": 1400
+    },
+    "bad": {
+      "queries": [
+        "modern white hotel bathroom",
+        "bathroom stone sink mediterranean"
+      ],
+      "muss": [
+        "bathroom",
+        "bath",
+        "sink",
+        "shower"
+      ],
+      "min_breite": 1200
+    },
+    "pool": {
+      "queries": [
+        "mediterranean hotel pool terrace",
+        "spanish villa swimming pool",
+        "hotel pool sun loungers"
+      ],
+      "muss": [
+        "pool",
+        "swimming"
+      ],
+      "min_breite": 1400
+    },
+    "lobby": {
+      "queries": [
+        "mediterranean hotel courtyard",
+        "hotel breakfast terrace mediterranean",
+        "spanish patio restaurant",
+        "small hotel lobby interior"
+      ],
+      "muss": [
+        "lobby",
+        "reception",
+        "restaurant",
+        "table",
+        "bar",
+        "dining",
+        "kitchen",
+        "interior"
+      ],
+      "min_breite": 1200
+    },
+    "aussen": {
+      "queries": [
+        "mediterranean coast landscape",
+        "spain coastal village",
+        "mediterranean garden terrace"
+      ],
+      "muss": [],
+      "min_breite": 1400
+    }
+  },
+  "orte": {
+    "Palma de Mallorca": [
+      "Palma de Mallorca cathedral",
+      "Palma Mallorca old town street",
+      "Mallorca city rooftops"
+    ],
+    "Playa de Palma": [
+      "Mallorca beach palm trees",
+      "balearic beach promenade",
+      "mediterranean sandy beach"
+    ],
+    "Landesinneres": [
+      "Mallorca countryside almond trees",
+      "mallorca rural stone house",
+      "mediterranean olive grove"
+    ],
+    "Port de Sóller": [
+      "Port de Soller Mallorca",
+      "Soller harbour boats",
+      "mallorca bay mountains"
+    ],
+    "Es Trenc": [
+      "Es Trenc Mallorca beach",
+      "dune beach pine trees",
+      "untouched mediterranean beach"
+    ],
+    "Cala d'Or": [
+      "Mallorca cove turquoise water",
+      "balearic rocky cove",
+      "mediterranean small bay boats"
+    ],
+    "Serra de Tramuntana": [
+      "Serra de Tramuntana Mallorca",
+      "mallorca mountains terraces",
+      "tramuntana mountain road"
+    ],
+    "Alcúdia": [
+      "Alcudia Mallorca bay",
+      "mallorca shallow bay pine",
+      "balearic long beach"
+    ],
+    "Can Picafort": [
+      "Mallorca beach promenade",
+      "balearic family beach",
+      "mediterranean bay sand"
+    ],
+    "Mallorca": [
+      "Mallorca coastline aerial",
+      "mallorca turquoise sea cliffs",
+      "balearic islands landscape"
+    ],
+    "Landesinneres bei Sineu": [
+      "Mallorca countryside almond trees",
+      "mallorca rural landscape",
+      "mediterranean farmland"
+    ],
+    "Sóller, Serra de Tramuntana": [
+      "Serra de Tramuntana Mallorca",
+      "mallorca mountain village",
+      "tramuntana hiking"
+    ],
+    "Deià": [
+      "Deia Mallorca village",
+      "mallorca mountain coast",
+      "tramuntana sea view"
+    ],
+    "Palma de Mallorca, Altstadt": [
+      "Palma Mallorca old town street",
+      "Palma de Mallorca cathedral",
+      "mediterranean old town alley"
+    ]
+  },
+  "mietwagen": {
+    "Kleinwagen": [
+      "small compact car parked",
+      "hatchback car exterior"
+    ],
+    "Kompaktklasse": [
+      "compact estate car",
+      "station wagon car exterior"
+    ],
+    "SUV": [
+      "compact suv car exterior",
+      "suv parked road"
+    ],
+    "Cabrio": [
+      "convertible car roof down",
+      "small convertible parked"
+    ],
+    "Van (7 Sitze)": [
+      "family van vehicle",
+      "minivan exterior parked"
+    ],
+    "Elektro": [
+      "electric car charging",
+      "modern electric sedan"
+    ]
+  },
+  "negativ": [
+    "3d",
+    "adult",
+    "aerial",
+    "baby",
+    "backpack",
+    "bali",
+    "bamboo",
+    "big ben",
+    "black and white",
+    "boy",
+    "brand",
+    "burj",
+    "caribbean",
+    "chef",
+    "child",
+    "clothes",
+    "colosseum",
+    "couple",
+    "crowd",
+    "drone",
+    "dubai",
+    "eiffel",
+    "empress",
+    "family",
+    "female",
+    "four seasons",
+    "from above",
+    "girl",
+    "grayscale",
+    "guest",
+    "guy",
+    "hawaii",
+    "hilton",
+    "housekeeper",
+    "human",
+    "hyatt",
+    "ibis",
+    "illustration",
+    "infant",
+    "intercontinental",
+    "jungle",
+    "kempinski",
+    "lady",
+    "laptop",
+    "las vegas",
+    "logo",
+    "london",
+    "luggage",
+    "maldives",
+    "male",
+    "man ",
+    "marriott",
+    "men ",
+    "model",
+    "model ",
+    "monochrome",
+    "mosquito",
+    "mykonos",
+    "new york",
+    "nightstand",
+    "novotel",
+    "overhead",
+    "painting",
+    "palm hut",
+    "paris",
+    "people",
+    "person",
+    "portrait",
+    "posing",
+    "radisson",
+    "render",
+    "rice",
+    "ritz",
+    "santorini",
+    "selfie",
+    "sheraton",
+    "sign",
+    "signage",
+    "sketch",
+    "smiles",
+    "smiling",
+    "suitcase",
+    "taj mahal",
+    "text",
+    "thailand",
+    "times square",
+    "toddler",
+    "tokyo",
+    "top view",
+    "tourist",
+    "tropical",
+    "venice",
+    "waiter",
+    "waldorf",
+    "woman",
+    "worker"
+  ],
+  "_negativ_erklaerung": {
+    "personen": "Buchungsportale zeigen leere Raeume; Menschen waeren in der Studie ein Stoerfaktor",
+    "luftaufnahmen": "sehen nicht nach Hotelfoto aus",
+    "stimmungsbilder": "Pexels ist eine Kunstbibliothek, viele Detailaufnahmen ohne erkennbaren Raum",
+    "marken_und_ketten": "erkennbare Hotels bringen genau den Markeneffekt zurueck, der ausgeschlossen werden soll",
+    "wahrzeichen_und_ferne_orte": "widersprechen dem Mallorca-Kontext des Katalogs"
+  }
+}

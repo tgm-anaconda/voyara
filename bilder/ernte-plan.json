@@ -1,0 +1,1139 @@
+{
+  "stand": "2026-08-31",
+  "eintraege": [
+    {
+      "ziel": "mallorca",
+      "thema": "ort",
+      "queries": [
+        "Mallorca Spain hotel exterior building",
+        "mediterranean hotel facade architecture",
+        "beachfront hotel building Mallorca Spain"
+      ]
+    },
+    {
+      "ziel": "mallorca",
+      "thema": "zimmer",
+      "queries": [
+        "mediterranean hotel room interior bed",
+        "bright hotel bedroom interior window",
+        "hotel suite interior design bed"
+      ]
+    },
+    {
+      "ziel": "mallorca",
+      "thema": "pool",
+      "queries": [
+        "Mallorca Spain hotel swimming pool",
+        "outdoor hotel pool sun loungers palm",
+        "infinity pool terrace sea view"
+      ]
+    },
+    {
+      "ziel": "mallorca",
+      "thema": "umgebung",
+      "queries": [
+        "Mallorca Spain landscape",
+        "Mallorca Spain beach coast",
+        "Mallorca Spain scenic view"
+      ]
+    },
+    {
+      "ziel": "mallorca",
+      "thema": "essen",
+      "queries": [
+        "Mallorca Spain food restaurant table",
+        "hotel breakfast buffet table",
+        "restaurant interior dining table candle"
+      ]
+    },
+    {
+      "ziel": "mallorca",
+      "thema": "wohnen",
+      "queries": [
+        "bright holiday apartment living room sofa interior",
+        "open plan living dining room apartment interior",
+        "living room with sofa and coffee table daylight"
+      ]
+    },
+    {
+      "ziel": "mallorca",
+      "thema": "kueche",
+      "queries": [
+        "modern apartment kitchen interior",
+        "holiday home kitchen dining table interior",
+        "kitchen counter interior daylight"
+      ]
+    },
+    {
+      "ziel": "kreta",
+      "thema": "ort",
+      "queries": [
+        "Crete Greece hotel exterior building",
+        "greek island whitewashed hotel facade architecture",
+        "beachfront hotel building Crete Greece"
+      ]
+    },
+    {
+      "ziel": "kreta",
+      "thema": "zimmer",
+      "queries": [
+        "greek island whitewashed hotel room interior bed",
+        "bright hotel bedroom interior window",
+        "hotel suite interior design bed"
+      ]
+    },
+    {
+      "ziel": "kreta",
+      "thema": "pool",
+      "queries": [
+        "Crete Greece hotel swimming pool",
+        "outdoor hotel pool sun loungers palm",
+        "infinity pool terrace sea view"
+      ]
+    },
+    {
+      "ziel": "kreta",
+      "thema": "umgebung",
+      "queries": [
+        "Crete Greece landscape",
+        "Crete Greece beach coast",
+        "Crete Greece scenic view"
+      ]
+    },
+    {
+      "ziel": "kreta",
+      "thema": "essen",
+      "queries": [
+        "Crete Greece food restaurant table",
+        "hotel breakfast buffet table",
+        "restaurant interior dining table candle"
+      ]
+    },
+    {
+      "ziel": "kreta",
+      "thema": "wohnen",
+      "queries": [
+        "bright holiday apartment living room sofa interior",
+        "open plan living dining room apartment interior",
+        "living room with sofa and coffee table daylight"
+      ]
+    },
+    {
+      "ziel": "kreta",
+      "thema": "kueche",
+      "queries": [
+        "modern apartment kitchen interior",
+        "holiday home kitchen dining table interior",
+        "kitchen counter interior daylight"
+      ]
+    },
+    {
+      "ziel": "algarve",
+      "thema": "ort",
+      "queries": [
+        "Algarve Portugal hotel exterior building",
+        "portuguese coastal hotel facade architecture",
+        "beachfront hotel building Algarve Portugal"
+      ]
+    },
+    {
+      "ziel": "algarve",
+      "thema": "zimmer",
+      "queries": [
+        "portuguese coastal hotel room interior bed",
+        "bright hotel bedroom interior window",
+        "hotel suite interior design bed"
+      ]
+    },
+    {
+      "ziel": "algarve",
+      "thema": "pool",
+      "queries": [
+        "Algarve Portugal hotel swimming pool",
+        "outdoor hotel pool sun loungers palm",
+        "infinity pool terrace sea view"
+      ]
+    },
+    {
+      "ziel": "algarve",
+      "thema": "umgebung",
+      "queries": [
+        "Algarve Portugal landscape",
+        "Algarve Portugal beach coast",
+        "Algarve Portugal scenic view"
+      ]
+    },
+    {
+      "ziel": "algarve",
+      "thema": "essen",
+      "queries": [
+        "Algarve Portugal food restaurant table",
+        "hotel breakfast buffet table",
+        "restaurant interior dining table candle"
+      ]
+    },
+    {
+      "ziel": "algarve",
+      "thema": "wohnen",
+      "queries": [
+        "bright holiday apartment living room sofa interior",
+        "open plan living dining room apartment interior",
+        "living room with sofa and coffee table daylight"
+      ]
+    },
+    {
+      "ziel": "algarve",
+      "thema": "kueche",
+      "queries": [
+        "modern apartment kitchen interior",
+        "holiday home kitchen dining table interior",
+        "kitchen counter interior daylight"
+      ]
+    },
+    {
+      "ziel": "sardinien",
+      "thema": "ort",
+      "queries": [
+        "Sardinia Italy hotel exterior building",
+        "italian coastal hotel facade architecture",
+        "beachfront hotel building Sardinia Italy"
+      ]
+    },
+    {
+      "ziel": "sardinien",
+      "thema": "zimmer",
+      "queries": [
+        "italian coastal hotel room interior bed",
+        "bright hotel bedroom interior window",
+        "hotel suite interior design bed"
+      ]
+    },
+    {
+      "ziel": "sardinien",
+      "thema": "pool",
+      "queries": [
+        "Sardinia Italy hotel swimming pool",
+        "outdoor hotel pool sun loungers palm",
+        "infinity pool terrace sea view"
+      ]
+    },
+    {
+      "ziel": "sardinien",
+      "thema": "umgebung",
+      "queries": [
+        "Sardinia Italy landscape",
+        "Sardinia Italy beach coast",
+        "Sardinia Italy scenic view"
+      ]
+    },
+    {
+      "ziel": "sardinien",
+      "thema": "essen",
+      "queries": [
+        "Sardinia Italy food restaurant table",
+        "hotel breakfast buffet table",
+        "restaurant interior dining table candle"
+      ]
+    },
+    {
+      "ziel": "sardinien",
+      "thema": "wohnen",
+      "queries": [
+        "bright holiday apartment living room sofa interior",
+        "open plan living dining room apartment interior",
+        "living room with sofa and coffee table daylight"
+      ]
+    },
+    {
+      "ziel": "sardinien",
+      "thema": "kueche",
+      "queries": [
+        "modern apartment kitchen interior",
+        "holiday home kitchen dining table interior",
+        "kitchen counter interior daylight"
+      ]
+    },
+    {
+      "ziel": "teneriffa",
+      "thema": "ort",
+      "queries": [
+        "Tenerife Canary Islands hotel exterior building",
+        "canary volcanic hotel facade architecture",
+        "beachfront hotel building Tenerife Canary Islands"
+      ]
+    },
+    {
+      "ziel": "teneriffa",
+      "thema": "zimmer",
+      "queries": [
+        "canary volcanic hotel room interior bed",
+        "bright hotel bedroom interior window",
+        "hotel suite interior design bed"
+      ]
+    },
+    {
+      "ziel": "teneriffa",
+      "thema": "pool",
+      "queries": [
+        "Tenerife Canary Islands hotel swimming pool",
+        "outdoor hotel pool sun loungers palm",
+        "infinity pool terrace sea view"
+      ]
+    },
+    {
+      "ziel": "teneriffa",
+      "thema": "umgebung",
+      "queries": [
+        "Tenerife Canary Islands landscape",
+        "Tenerife Canary Islands beach coast",
+        "Tenerife Canary Islands scenic view"
+      ]
+    },
+    {
+      "ziel": "teneriffa",
+      "thema": "essen",
+      "queries": [
+        "Tenerife Canary Islands food restaurant table",
+        "hotel breakfast buffet table",
+        "restaurant interior dining table candle"
+      ]
+    },
+    {
+      "ziel": "teneriffa",
+      "thema": "wohnen",
+      "queries": [
+        "bright holiday apartment living room sofa interior",
+        "open plan living dining room apartment interior",
+        "living room with sofa and coffee table daylight"
+      ]
+    },
+    {
+      "ziel": "teneriffa",
+      "thema": "kueche",
+      "queries": [
+        "modern apartment kitchen interior",
+        "holiday home kitchen dining table interior",
+        "kitchen counter interior daylight"
+      ]
+    },
+    {
+      "ziel": "barcelona",
+      "thema": "ort",
+      "queries": [
+        "Barcelona Spain hotel exterior building",
+        "catalan city hotel facade architecture",
+        "historic townhouse facade Barcelona Spain"
+      ]
+    },
+    {
+      "ziel": "barcelona",
+      "thema": "zimmer",
+      "queries": [
+        "catalan city hotel room interior bed",
+        "bright hotel bedroom interior window",
+        "hotel suite interior design bed"
+      ]
+    },
+    {
+      "ziel": "barcelona",
+      "thema": "lobby",
+      "queries": [
+        "catalan city hotel lobby interior",
+        "boutique hotel lounge interior armchair",
+        "hotel reception interior design"
+      ]
+    },
+    {
+      "ziel": "barcelona",
+      "thema": "umgebung",
+      "queries": [
+        "Barcelona Spain landscape",
+        "Barcelona Spain old town street architecture",
+        "Barcelona Spain scenic view"
+      ]
+    },
+    {
+      "ziel": "barcelona",
+      "thema": "essen",
+      "queries": [
+        "Barcelona Spain food restaurant table",
+        "hotel breakfast buffet table",
+        "restaurant interior dining table candle"
+      ]
+    },
+    {
+      "ziel": "barcelona",
+      "thema": "wohnen",
+      "queries": [
+        "bright holiday apartment living room sofa interior",
+        "open plan living dining room apartment interior",
+        "living room with sofa and coffee table daylight"
+      ]
+    },
+    {
+      "ziel": "barcelona",
+      "thema": "kueche",
+      "queries": [
+        "modern apartment kitchen interior",
+        "holiday home kitchen dining table interior",
+        "kitchen counter interior daylight"
+      ]
+    },
+    {
+      "ziel": "wien",
+      "thema": "ort",
+      "queries": [
+        "Vienna Austria hotel exterior building",
+        "viennese classic hotel facade architecture",
+        "historic townhouse facade Vienna Austria"
+      ]
+    },
+    {
+      "ziel": "wien",
+      "thema": "zimmer",
+      "queries": [
+        "viennese classic hotel room interior bed",
+        "bright hotel bedroom interior window",
+        "hotel suite interior design bed"
+      ]
+    },
+    {
+      "ziel": "wien",
+      "thema": "lobby",
+      "queries": [
+        "viennese classic hotel lobby interior",
+        "boutique hotel lounge interior armchair",
+        "hotel reception interior design"
+      ]
+    },
+    {
+      "ziel": "wien",
+      "thema": "umgebung",
+      "queries": [
+        "Vienna Austria landscape",
+        "Vienna Austria old town street architecture",
+        "Vienna Austria scenic view"
+      ]
+    },
+    {
+      "ziel": "wien",
+      "thema": "essen",
+      "queries": [
+        "Vienna Austria food restaurant table",
+        "hotel breakfast buffet table",
+        "restaurant interior dining table candle"
+      ]
+    },
+    {
+      "ziel": "wien",
+      "thema": "wohnen",
+      "queries": [
+        "bright holiday apartment living room sofa interior",
+        "open plan living dining room apartment interior",
+        "living room with sofa and coffee table daylight"
+      ]
+    },
+    {
+      "ziel": "wien",
+      "thema": "kueche",
+      "queries": [
+        "modern apartment kitchen interior",
+        "holiday home kitchen dining table interior",
+        "kitchen counter interior daylight"
+      ]
+    },
+    {
+      "ziel": "lissabon",
+      "thema": "ort",
+      "queries": [
+        "Lisbon Portugal hotel exterior building",
+        "portuguese azulejo hotel facade architecture",
+        "historic townhouse facade Lisbon Portugal"
+      ]
+    },
+    {
+      "ziel": "lissabon",
+      "thema": "zimmer",
+      "queries": [
+        "portuguese azulejo hotel room interior bed",
+        "bright hotel bedroom interior window",
+        "hotel suite interior design bed"
+      ]
+    },
+    {
+      "ziel": "lissabon",
+      "thema": "lobby",
+      "queries": [
+        "portuguese azulejo hotel lobby interior",
+        "boutique hotel lounge interior armchair",
+        "hotel reception interior design"
+      ]
+    },
+    {
+      "ziel": "lissabon",
+      "thema": "umgebung",
+      "queries": [
+        "Lisbon Portugal landscape",
+        "Lisbon Portugal old town street architecture",
+        "Lisbon Portugal scenic view"
+      ]
+    },
+    {
+      "ziel": "lissabon",
+      "thema": "essen",
+      "queries": [
+        "Lisbon Portugal food restaurant table",
+        "hotel breakfast buffet table",
+        "restaurant interior dining table candle"
+      ]
+    },
+    {
+      "ziel": "lissabon",
+      "thema": "wohnen",
+      "queries": [
+        "bright holiday apartment living room sofa interior",
+        "open plan living dining room apartment interior",
+        "living room with sofa and coffee table daylight"
+      ]
+    },
+    {
+      "ziel": "lissabon",
+      "thema": "kueche",
+      "queries": [
+        "modern apartment kitchen interior",
+        "holiday home kitchen dining table interior",
+        "kitchen counter interior daylight"
+      ]
+    },
+    {
+      "ziel": "tirol",
+      "thema": "ort",
+      "queries": [
+        "Tyrol Austria alps hotel exterior building",
+        "alpine chalet wood hotel facade architecture",
+        "alpine hotel chalet exterior Tyrol Austria alps"
+      ]
+    },
+    {
+      "ziel": "tirol",
+      "thema": "zimmer",
+      "queries": [
+        "alpine chalet wood hotel room interior bed",
+        "cosy wooden alpine hotel bedroom interior",
+        "hotel suite interior design bed"
+      ]
+    },
+    {
+      "ziel": "tirol",
+      "thema": "wellness",
+      "queries": [
+        "hotel spa sauna wooden interior",
+        "wellness area indoor pool hotel",
+        "spa relaxation room loungers"
+      ]
+    },
+    {
+      "ziel": "tirol",
+      "thema": "umgebung",
+      "queries": [
+        "Tyrol Austria alps landscape",
+        "Tyrol Austria alps mountains snow winter",
+        "Tyrol Austria alps scenic view"
+      ]
+    },
+    {
+      "ziel": "tirol",
+      "thema": "essen",
+      "queries": [
+        "Tyrol Austria alps food restaurant table",
+        "hotel breakfast buffet table",
+        "restaurant interior dining table candle"
+      ]
+    },
+    {
+      "ziel": "tirol",
+      "thema": "wohnen",
+      "queries": [
+        "cosy wooden living room fireplace cabin interior",
+        "open plan living dining room apartment interior",
+        "living room with sofa and coffee table daylight"
+      ]
+    },
+    {
+      "ziel": "tirol",
+      "thema": "kueche",
+      "queries": [
+        "modern apartment kitchen interior",
+        "holiday home kitchen dining table interior",
+        "kitchen counter interior daylight"
+      ]
+    },
+    {
+      "ziel": "suedtirol",
+      "thema": "ort",
+      "queries": [
+        "South Tyrol Dolomites Italy hotel exterior building",
+        "alpine wood stone hotel facade architecture",
+        "alpine hotel chalet exterior South Tyrol Dolomites Italy"
+      ]
+    },
+    {
+      "ziel": "suedtirol",
+      "thema": "zimmer",
+      "queries": [
+        "alpine wood stone hotel room interior bed",
+        "cosy wooden alpine hotel bedroom interior",
+        "hotel suite interior design bed"
+      ]
+    },
+    {
+      "ziel": "suedtirol",
+      "thema": "wellness",
+      "queries": [
+        "hotel spa sauna wooden interior",
+        "wellness area indoor pool hotel",
+        "spa relaxation room loungers"
+      ]
+    },
+    {
+      "ziel": "suedtirol",
+      "thema": "umgebung",
+      "queries": [
+        "South Tyrol Dolomites Italy landscape",
+        "South Tyrol Dolomites Italy mountains snow winter",
+        "South Tyrol Dolomites Italy scenic view"
+      ]
+    },
+    {
+      "ziel": "suedtirol",
+      "thema": "essen",
+      "queries": [
+        "South Tyrol Dolomites Italy food restaurant table",
+        "hotel breakfast buffet table",
+        "restaurant interior dining table candle"
+      ]
+    },
+    {
+      "ziel": "suedtirol",
+      "thema": "wohnen",
+      "queries": [
+        "cosy wooden living room fireplace cabin interior",
+        "open plan living dining room apartment interior",
+        "living room with sofa and coffee table daylight"
+      ]
+    },
+    {
+      "ziel": "suedtirol",
+      "thema": "kueche",
+      "queries": [
+        "modern apartment kitchen interior",
+        "holiday home kitchen dining table interior",
+        "kitchen counter interior daylight"
+      ]
+    },
+    {
+      "ziel": "lappland",
+      "thema": "ort",
+      "queries": [
+        "Lapland Finland arctic hotel exterior building",
+        "nordic cabin snow hotel facade architecture",
+        "wooden cabin exterior Lapland Finland arctic"
+      ]
+    },
+    {
+      "ziel": "lappland",
+      "thema": "zimmer",
+      "queries": [
+        "nordic cabin snow hotel room interior bed",
+        "cosy wooden alpine hotel bedroom interior",
+        "hotel suite interior design bed"
+      ]
+    },
+    {
+      "ziel": "lappland",
+      "thema": "wellness",
+      "queries": [
+        "hotel spa sauna wooden interior",
+        "wellness area indoor pool hotel",
+        "spa relaxation room loungers"
+      ]
+    },
+    {
+      "ziel": "lappland",
+      "thema": "umgebung",
+      "queries": [
+        "Lapland Finland arctic landscape",
+        "Lapland Finland arctic northern lights forest",
+        "Lapland Finland arctic scenic view"
+      ]
+    },
+    {
+      "ziel": "lappland",
+      "thema": "essen",
+      "queries": [
+        "Lapland Finland arctic food restaurant table",
+        "hotel breakfast buffet table",
+        "restaurant interior dining table candle"
+      ]
+    },
+    {
+      "ziel": "lappland",
+      "thema": "wohnen",
+      "queries": [
+        "cosy wooden living room fireplace cabin interior",
+        "open plan living dining room apartment interior",
+        "living room with sofa and coffee table daylight"
+      ]
+    },
+    {
+      "ziel": "lappland",
+      "thema": "kueche",
+      "queries": [
+        "modern apartment kitchen interior",
+        "holiday home kitchen dining table interior",
+        "kitchen counter interior daylight"
+      ]
+    },
+    {
+      "ziel": "ostsee",
+      "thema": "ort",
+      "queries": [
+        "Baltic Sea Germany Ruegen hotel exterior building",
+        "north german seaside hotel facade architecture",
+        "beachfront hotel building Baltic Sea Germany Ruegen"
+      ]
+    },
+    {
+      "ziel": "ostsee",
+      "thema": "zimmer",
+      "queries": [
+        "north german seaside hotel room interior bed",
+        "bright hotel bedroom interior window",
+        "hotel suite interior design bed"
+      ]
+    },
+    {
+      "ziel": "ostsee",
+      "thema": "pool",
+      "queries": [
+        "Baltic Sea Germany Ruegen hotel swimming pool",
+        "outdoor hotel pool sun loungers palm",
+        "infinity pool terrace sea view"
+      ]
+    },
+    {
+      "ziel": "ostsee",
+      "thema": "umgebung",
+      "queries": [
+        "Baltic Sea Germany Ruegen landscape",
+        "Baltic Sea Germany Ruegen beach coast",
+        "Baltic Sea Germany Ruegen scenic view"
+      ]
+    },
+    {
+      "ziel": "ostsee",
+      "thema": "essen",
+      "queries": [
+        "Baltic Sea Germany Ruegen food restaurant table",
+        "hotel breakfast buffet table",
+        "restaurant interior dining table candle"
+      ]
+    },
+    {
+      "ziel": "ostsee",
+      "thema": "wohnen",
+      "queries": [
+        "bright holiday apartment living room sofa interior",
+        "open plan living dining room apartment interior",
+        "living room with sofa and coffee table daylight"
+      ]
+    },
+    {
+      "ziel": "ostsee",
+      "thema": "kueche",
+      "queries": [
+        "modern apartment kitchen interior",
+        "holiday home kitchen dining table interior",
+        "kitchen counter interior daylight"
+      ]
+    },
+    {
+      "ziel": "marrakesch",
+      "thema": "ort",
+      "queries": [
+        "Marrakesh Morocco hotel exterior building",
+        "moroccan riad ochre hotel facade architecture",
+        "historic townhouse facade Marrakesh Morocco"
+      ]
+    },
+    {
+      "ziel": "marrakesch",
+      "thema": "zimmer",
+      "queries": [
+        "moroccan riad ochre hotel room interior bed",
+        "bright hotel bedroom interior window",
+        "hotel suite interior design bed"
+      ]
+    },
+    {
+      "ziel": "marrakesch",
+      "thema": "lobby",
+      "queries": [
+        "moroccan riad ochre hotel lobby interior",
+        "boutique hotel lounge interior armchair",
+        "hotel reception interior design"
+      ]
+    },
+    {
+      "ziel": "marrakesch",
+      "thema": "umgebung",
+      "queries": [
+        "Marrakesh Morocco landscape",
+        "Marrakesh Morocco old town street architecture",
+        "Marrakesh Morocco scenic view"
+      ]
+    },
+    {
+      "ziel": "marrakesch",
+      "thema": "essen",
+      "queries": [
+        "Marrakesh Morocco food restaurant table",
+        "hotel breakfast buffet table",
+        "restaurant interior dining table candle"
+      ]
+    },
+    {
+      "ziel": "marrakesch",
+      "thema": "wohnen",
+      "queries": [
+        "bright holiday apartment living room sofa interior",
+        "open plan living dining room apartment interior",
+        "living room with sofa and coffee table daylight"
+      ]
+    },
+    {
+      "ziel": "marrakesch",
+      "thema": "kueche",
+      "queries": [
+        "modern apartment kitchen interior",
+        "holiday home kitchen dining table interior",
+        "kitchen counter interior daylight"
+      ]
+    },
+    {
+      "ziel": "kapstadt",
+      "thema": "ort",
+      "queries": [
+        "Cape Town South Africa hotel exterior building",
+        "cape dutch white gable hotel facade architecture",
+        "historic townhouse facade Cape Town South Africa"
+      ]
+    },
+    {
+      "ziel": "kapstadt",
+      "thema": "zimmer",
+      "queries": [
+        "cape dutch white gable hotel room interior bed",
+        "bright hotel bedroom interior window",
+        "hotel suite interior design bed"
+      ]
+    },
+    {
+      "ziel": "kapstadt",
+      "thema": "lobby",
+      "queries": [
+        "cape dutch white gable hotel lobby interior",
+        "boutique hotel lounge interior armchair",
+        "hotel reception interior design"
+      ]
+    },
+    {
+      "ziel": "kapstadt",
+      "thema": "umgebung",
+      "queries": [
+        "Cape Town South Africa landscape",
+        "Cape Town South Africa old town street architecture",
+        "Cape Town South Africa scenic view"
+      ]
+    },
+    {
+      "ziel": "kapstadt",
+      "thema": "essen",
+      "queries": [
+        "Cape Town South Africa food restaurant table",
+        "hotel breakfast buffet table",
+        "restaurant interior dining table candle"
+      ]
+    },
+    {
+      "ziel": "kapstadt",
+      "thema": "wohnen",
+      "queries": [
+        "bright holiday apartment living room sofa interior",
+        "open plan living dining room apartment interior",
+        "living room with sofa and coffee table daylight"
+      ]
+    },
+    {
+      "ziel": "kapstadt",
+      "thema": "kueche",
+      "queries": [
+        "modern apartment kitchen interior",
+        "holiday home kitchen dining table interior",
+        "kitchen counter interior daylight"
+      ]
+    },
+    {
+      "ziel": "krabi",
+      "thema": "ort",
+      "queries": [
+        "Krabi Thailand hotel exterior building",
+        "thai teak tropical hotel facade architecture",
+        "beachfront hotel building Krabi Thailand"
+      ]
+    },
+    {
+      "ziel": "krabi",
+      "thema": "zimmer",
+      "queries": [
+        "thai teak tropical hotel room interior bed",
+        "bright hotel bedroom interior window",
+        "hotel suite interior design bed"
+      ]
+    },
+    {
+      "ziel": "krabi",
+      "thema": "pool",
+      "queries": [
+        "Krabi Thailand hotel swimming pool",
+        "outdoor hotel pool sun loungers palm",
+        "infinity pool terrace sea view"
+      ]
+    },
+    {
+      "ziel": "krabi",
+      "thema": "umgebung",
+      "queries": [
+        "Krabi Thailand landscape",
+        "Krabi Thailand beach coast",
+        "Krabi Thailand scenic view"
+      ]
+    },
+    {
+      "ziel": "krabi",
+      "thema": "essen",
+      "queries": [
+        "Krabi Thailand food restaurant table",
+        "hotel breakfast buffet table",
+        "restaurant interior dining table candle"
+      ]
+    },
+    {
+      "ziel": "krabi",
+      "thema": "wohnen",
+      "queries": [
+        "bright holiday apartment living room sofa interior",
+        "open plan living dining room apartment interior",
+        "living room with sofa and coffee table daylight"
+      ]
+    },
+    {
+      "ziel": "krabi",
+      "thema": "kueche",
+      "queries": [
+        "modern apartment kitchen interior",
+        "holiday home kitchen dining table interior",
+        "kitchen counter interior daylight"
+      ]
+    },
+    {
+      "ziel": "island",
+      "thema": "ort",
+      "queries": [
+        "Iceland hotel exterior building",
+        "icelandic black timber turf hotel facade architecture",
+        "wooden cabin exterior Iceland"
+      ]
+    },
+    {
+      "ziel": "island",
+      "thema": "zimmer",
+      "queries": [
+        "icelandic black timber turf hotel room interior bed",
+        "cosy wooden alpine hotel bedroom interior",
+        "hotel suite interior design bed"
+      ]
+    },
+    {
+      "ziel": "island",
+      "thema": "wellness",
+      "queries": [
+        "hotel spa sauna wooden interior",
+        "wellness area indoor pool hotel",
+        "spa relaxation room loungers"
+      ]
+    },
+    {
+      "ziel": "island",
+      "thema": "umgebung",
+      "queries": [
+        "Iceland landscape",
+        "Iceland northern lights forest",
+        "Iceland scenic view"
+      ]
+    },
+    {
+      "ziel": "island",
+      "thema": "essen",
+      "queries": [
+        "Iceland food restaurant table",
+        "hotel breakfast buffet table",
+        "restaurant interior dining table candle"
+      ]
+    },
+    {
+      "ziel": "island",
+      "thema": "wohnen",
+      "queries": [
+        "cosy wooden living room fireplace cabin interior",
+        "open plan living dining room apartment interior",
+        "living room with sofa and coffee table daylight"
+      ]
+    },
+    {
+      "ziel": "island",
+      "thema": "kueche",
+      "queries": [
+        "modern apartment kitchen interior",
+        "holiday home kitchen dining table interior",
+        "kitchen counter interior daylight"
+      ]
+    },
+    {
+      "ziel": "newyork",
+      "thema": "ort",
+      "queries": [
+        "New York City hotel exterior building",
+        "new york brownstone brick hotel facade architecture",
+        "historic townhouse facade New York City"
+      ]
+    },
+    {
+      "ziel": "newyork",
+      "thema": "zimmer",
+      "queries": [
+        "new york brownstone brick hotel room interior bed",
+        "bright hotel bedroom interior window",
+        "hotel suite interior design bed"
+      ]
+    },
+    {
+      "ziel": "newyork",
+      "thema": "lobby",
+      "queries": [
+        "new york brownstone brick hotel lobby interior",
+        "boutique hotel lounge interior armchair",
+        "hotel reception interior design"
+      ]
+    },
+    {
+      "ziel": "newyork",
+      "thema": "umgebung",
+      "queries": [
+        "New York City landscape",
+        "New York City old town street architecture",
+        "New York City scenic view"
+      ]
+    },
+    {
+      "ziel": "newyork",
+      "thema": "essen",
+      "queries": [
+        "New York City food restaurant table",
+        "hotel breakfast buffet table",
+        "restaurant interior dining table candle"
+      ]
+    },
+    {
+      "ziel": "newyork",
+      "thema": "wohnen",
+      "queries": [
+        "bright holiday apartment living room sofa interior",
+        "open plan living dining room apartment interior",
+        "living room with sofa and coffee table daylight"
+      ]
+    },
+    {
+      "ziel": "newyork",
+      "thema": "kueche",
+      "queries": [
+        "modern apartment kitchen interior",
+        "holiday home kitchen dining table interior",
+        "kitchen counter interior daylight"
+      ]
+    },
+    {
+      "ziel": "kyoto",
+      "thema": "ort",
+      "queries": [
+        "Kyoto Japan hotel exterior building",
+        "japanese machiya timber hotel facade architecture",
+        "historic townhouse facade Kyoto Japan"
+      ]
+    },
+    {
+      "ziel": "kyoto",
+      "thema": "zimmer",
+      "queries": [
+        "japanese machiya timber hotel room interior bed",
+        "bright hotel bedroom interior window",
+        "hotel suite interior design bed"
+      ]
+    },
+    {
+      "ziel": "kyoto",
+      "thema": "lobby",
+      "queries": [
+        "japanese machiya timber hotel lobby interior",
+        "boutique hotel lounge interior armchair",
+        "hotel reception interior design"
+      ]
+    },
+    {
+      "ziel": "kyoto",
+      "thema": "umgebung",
+      "queries": [
+        "Kyoto Japan landscape",
+        "Kyoto Japan old town street architecture",
+        "Kyoto Japan scenic view"
+      ]
+    },
+    {
+      "ziel": "kyoto",
+      "thema": "essen",
+      "queries": [
+        "Kyoto Japan food restaurant table",
+        "hotel breakfast buffet table",
+        "restaurant interior dining table candle"
+      ]
+    },
+    {
+      "ziel": "kyoto",
+      "thema": "wohnen",
+      "queries": [
+        "bright holiday apartment living room sofa interior",
+        "open plan living dining room apartment interior",
+        "living room with sofa and coffee table daylight"
+      ]
+    },
+    {
+      "ziel": "kyoto",
+      "thema": "kueche",
+      "queries": [
+        "modern apartment kitchen interior",
+        "holiday home kitchen dining table interior",
+        "kitchen counter interior daylight"
+      ]
+    }
+  ]
+}

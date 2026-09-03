@@ -1,0 +1,11 @@
+.env
+bilder/.env
+bilder/generiert/
+bilder/eingang/
+bilder/pruefung.html
+node_modules/
+_backup/
+
+# Bildvorrat - Arbeitsmaterial, mehrere hundert MB
+bilder/pool/
+_pruefung/

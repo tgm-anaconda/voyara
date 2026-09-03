@@ -1,0 +1,121 @@
+// SVG-Szenen als Platzhalter-Bilder fuer Hotels.
+// Bewusst als Vektor-Illustrationen statt Farbverlaeufe: sieht gewollt aus und
+// vermeidet Urheberrechtsprobleme echter Hotelfotos. Werden spaeter durch
+// KI-generierte Bilder ersetzt (siehe Obsidian: Technische Umsetzung).
+
+const SCENE_PALETTES = {
+  azur:   { sky1: "#bfe3f5", sky2: "#e8f6fb", sun: "#ffd98a", sea1: "#4aa6c9", sea2: "#2c7fa3", sand: "#f0dfc0", dark: "#2f6b7d" },
+  sunset: { sky1: "#ffd3a8", sky2: "#ffeede", sun: "#ff9d6b", sea1: "#e08a72", sea2: "#b8635a", sand: "#f5e3c8", dark: "#8a4b45" },
+  mint:   { sky1: "#cfeee4", sky2: "#eefaf6", sun: "#ffe6a3", sea1: "#5cb6a0", sea2: "#2f8a75", sand: "#eee6cf", dark: "#2c6b5c" },
+  stone:  { sky1: "#dfe6ea", sky2: "#f4f7f8", sun: "#f6e2b8", sea1: "#8fa6b2", sea2: "#5d7784", sand: "#e6dccb", dark: "#4a5c66" },
+  olive:  { sky1: "#e3ead0", sky2: "#f6f9ee", sun: "#f2d98f", sea1: "#93a86b", sea2: "#6b8049", sand: "#e5d9bb", dark: "#4f5f38" },
+  dusk:   { sky1: "#c9c6e8", sky2: "#eceafa", sun: "#ffc7d0", sea1: "#7d78b5", sea2: "#565196", sand: "#ded7e6", dark: "#403c6b" },
+};
+
+function sceneBeach(p) {
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 260" preserveAspectRatio="xMidYMid slice">
+<defs><linearGradient id="a" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${p.sky1}"/><stop offset="1" stop-color="${p.sky2}"/></linearGradient>
+<linearGradient id="b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${p.sea1}"/><stop offset="1" stop-color="${p.sea2}"/></linearGradient></defs>
+<rect width="400" height="260" fill="url(#a)"/>
+<circle cx="318" cy="58" r="26" fill="${p.sun}"/>
+<path d="M0 148 Q100 138 200 150 T400 144 L400 206 L0 206Z" fill="url(#b)"/>
+<path d="M0 172 q40 6 80 0 t80 0" stroke="#ffffff" stroke-opacity=".45" stroke-width="3" fill="none"/>
+<path d="M180 188 q40 6 80 0" stroke="#ffffff" stroke-opacity=".35" stroke-width="3" fill="none"/>
+<path d="M0 200 Q120 190 240 202 T400 196 L400 260 L0 260Z" fill="${p.sand}"/>
+<g fill="${p.dark}" opacity=".8"><rect x="58" y="176" width="7" height="62" rx="3"/>
+<path d="M62 180q-34-20-52-6 24-6 52 10zM62 180q34-20 52-6-24-6-52 10zM62 178q-8-30-32-34 18 12 26 38z"/></g>
+<g fill="${p.dark}" opacity=".55"><rect x="330" y="196" width="5" height="42" rx="2"/>
+<path d="M333 199q-24-14-37-4 17-4 37 7zM333 199q24-14 37-4-17-4-37 7z"/></g>
+</svg>`;
+}
+
+function scenePool(p) {
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 260" preserveAspectRatio="xMidYMid slice">
+<defs><linearGradient id="a" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${p.sky1}"/><stop offset="1" stop-color="${p.sky2}"/></linearGradient>
+<linearGradient id="b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${p.sea1}"/><stop offset="1" stop-color="${p.sea2}"/></linearGradient></defs>
+<rect width="400" height="260" fill="url(#a)"/>
+<circle cx="60" cy="52" r="22" fill="${p.sun}"/>
+<rect x="230" y="60" width="150" height="120" rx="6" fill="#ffffff" opacity=".85"/>
+<g fill="${p.dark}" opacity=".25"><rect x="246" y="78" width="26" height="30" rx="3"/><rect x="286" y="78" width="26" height="30" rx="3"/><rect x="326" y="78" width="26" height="30" rx="3"/>
+<rect x="246" y="124" width="26" height="30" rx="3"/><rect x="286" y="124" width="26" height="30" rx="3"/><rect x="326" y="124" width="26" height="30" rx="3"/></g>
+<rect y="180" width="400" height="80" fill="${p.sand}"/>
+<rect x="40" y="196" width="250" height="56" rx="12" fill="url(#b)"/>
+<path d="M60 214q28 8 56 0t56 0" stroke="#ffffff" stroke-opacity=".5" stroke-width="3" fill="none"/>
+<path d="M60 232q28 8 56 0t56 0" stroke="#ffffff" stroke-opacity=".35" stroke-width="3" fill="none"/>
+<g fill="${p.dark}" opacity=".7"><rect x="316" y="200" width="44" height="7" rx="3"/><rect x="320" y="207" width="5" height="16" rx="2"/><rect x="350" y="207" width="5" height="16" rx="2"/></g>
+</svg>`;
+}
+
+function sceneCity(p) {
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 260" preserveAspectRatio="xMidYMid slice">
+<defs><linearGradient id="a" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${p.sky1}"/><stop offset="1" stop-color="${p.sky2}"/></linearGradient></defs>
+<rect width="400" height="260" fill="url(#a)"/>
+<circle cx="330" cy="54" r="20" fill="${p.sun}"/>
+<g fill="${p.dark}" opacity=".22"><rect x="20" y="120" width="60" height="140" rx="4"/><rect x="92" y="92" width="52" height="168" rx="4"/>
+<path d="M156 100h64v160h-64z"/><path d="M188 62l34 38h-68z"/><rect x="232" y="128" width="58" height="132" rx="4"/><rect x="302" y="106" width="72" height="154" rx="4"/></g>
+<g fill="#ffffff" opacity=".55"><rect x="32" y="136" width="14" height="18" rx="2"/><rect x="54" y="136" width="14" height="18" rx="2"/><rect x="32" y="166" width="14" height="18" rx="2"/><rect x="54" y="166" width="14" height="18" rx="2"/>
+<rect x="104" y="110" width="12" height="16" rx="2"/><rect x="122" y="110" width="12" height="16" rx="2"/><rect x="104" y="140" width="12" height="16" rx="2"/><rect x="122" y="140" width="12" height="16" rx="2"/>
+<rect x="316" y="124" width="16" height="20" rx="2"/><rect x="344" y="124" width="16" height="20" rx="2"/><rect x="316" y="158" width="16" height="20" rx="2"/><rect x="344" y="158" width="16" height="20" rx="2"/></g>
+<rect y="236" width="400" height="24" fill="${p.sand}"/>
+</svg>`;
+}
+
+function sceneCountry(p) {
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 260" preserveAspectRatio="xMidYMid slice">
+<defs><linearGradient id="a" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${p.sky1}"/><stop offset="1" stop-color="${p.sky2}"/></linearGradient></defs>
+<rect width="400" height="260" fill="url(#a)"/>
+<circle cx="72" cy="50" r="22" fill="${p.sun}"/>
+<path d="M0 150q80-34 170-6t230-10v126H0z" fill="${p.sea1}" opacity=".5"/>
+<path d="M0 186q110-28 210 2t190-14v86H0z" fill="${p.sea2}" opacity=".55"/>
+<g fill="#ffffff" opacity=".9"><path d="M214 148h96v70h-96z"/><path d="M262 116l58 34h-116z"/></g>
+<g fill="${p.dark}" opacity=".35"><rect x="232" y="168" width="20" height="24" rx="2"/><rect x="272" y="168" width="20" height="24" rx="2"/><rect x="252" y="196" width="22" height="22" rx="2"/></g>
+<g fill="${p.dark}" opacity=".6"><ellipse cx="72" cy="196" rx="30" ry="24"/><rect x="68" y="200" width="7" height="36" rx="3"/>
+<ellipse cx="140" cy="212" rx="22" ry="17"/><rect x="137" y="214" width="6" height="28" rx="3"/></g>
+</svg>`;
+}
+
+function sceneMountain(p) {
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 260" preserveAspectRatio="xMidYMid slice">
+<defs><linearGradient id="a" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${p.sky1}"/><stop offset="1" stop-color="${p.sky2}"/></linearGradient></defs>
+<rect width="400" height="260" fill="url(#a)"/>
+<circle cx="308" cy="56" r="24" fill="${p.sun}"/>
+<path d="M0 200l110-118 78 90 46-46 166 138v-4H0z" fill="${p.sea2}" opacity=".55"/>
+<path d="M0 230l96-92 84 68 60-44 160 108H0z" fill="${p.dark}" opacity=".4"/>
+<path d="M96 138l30 24H68z" fill="#ffffff" opacity=".8"/>
+<path d="M110 82l26 28H86z" fill="#ffffff" opacity=".7"/>
+<path d="M0 172q60 14 120 0t140 6" stroke="#ffffff" stroke-opacity=".4" stroke-width="6" fill="none"/>
+<rect y="244" width="400" height="16" fill="${p.sand}" opacity=".8"/>
+</svg>`;
+}
+
+function sceneHarbor(p) {
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 260" preserveAspectRatio="xMidYMid slice">
+<defs><linearGradient id="a" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${p.sky1}"/><stop offset="1" stop-color="${p.sky2}"/></linearGradient>
+<linearGradient id="b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${p.sea1}"/><stop offset="1" stop-color="${p.sea2}"/></linearGradient></defs>
+<rect width="400" height="260" fill="url(#a)"/>
+<circle cx="66" cy="54" r="20" fill="${p.sun}"/>
+<path d="M0 132q70-40 150-14t250-16v58H0z" fill="${p.dark}" opacity=".35"/>
+<rect y="156" width="400" height="104" fill="url(#b)"/>
+<g fill="#ffffff" opacity=".9"><path d="M120 178h74l-12 22h-50z"/><rect x="154" y="132" width="4" height="46" rx="2"/><path d="M158 138l34 34h-34z"/></g>
+<g fill="#ffffff" opacity=".7"><path d="M256 190h56l-9 17h-38z"/><rect x="281" y="158" width="3" height="32" rx="2"/><path d="M284 162l24 26h-24z"/></g>
+<path d="M0 224q50 10 100 0t100 0 100 0 100 0" stroke="#ffffff" stroke-opacity=".35" stroke-width="4" fill="none"/>
+</svg>`;
+}
+
+const SCENE_BUILDERS = {
+  beach: sceneBeach,
+  pool: scenePool,
+  city: sceneCity,
+  country: sceneCountry,
+  mountain: sceneMountain,
+  harbor: sceneHarbor,
+};
+
+// Gibt eine CSS-taugliche background-image URL zurueck.
+// Einfache Anfuehrungszeichen, damit der Wert in ein style="..."-Attribut passt;
+// encodeURIComponent kodiert ' als %27, es kann also nicht kollidieren.
+function sceneUrl(type, paletteName) {
+  const builder = SCENE_BUILDERS[type] || sceneBeach;
+  const palette = SCENE_PALETTES[paletteName] || SCENE_PALETTES.azur;
+  return `url('data:image/svg+xml,${encodeURIComponent(builder(palette))}')`;
+}

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Voyara — Hotels, Ferienwohnungen, Mietwagen und Flüge</title>
+<link rel="stylesheet" href="style.css?v=31" />
+</head>
+<body>
+<div class="app-shell">
+  <aside class="agent-rail" id="agentRail"></aside>
+
+  <div class="app-main">
+    <div id="siteHeader"></div>
+
+    <section class="hero">
+      <div class="wrap">
+        <div class="hero-copy">
+          <span class="hero-eyebrow" id="heroEyebrow"></span>
+          <h1>Deine Reise — selbst zusammenstellen oder vom Agenten erledigen lassen</h1>
+          <p>Hotels, Ferienwohnungen, Mietwagen und Flüge an einem Ort. Der Agent links sucht auf Wunsch für dich mit.</p>
+          <div class="hero-trust" id="heroTrust"></div>
+        </div>
+        <div class="searchbox" id="searchBox"></div>
+      </div>
+    </section>
+
+    <section class="section" style="padding-top:70px">
+      <div class="wrap">
+        <div class="section-head">
+          <div><h2>Wonach suchst du?</h2><p>Beliebte Unterkunftsarten auf einen Blick</p></div>
+          <a class="section-link" href="results.html?type=hotel">Alle Hotels ansehen →</a>
+        </div>
+        <div class="category-row" id="categoryRow"></div>
+      </div>
+    </section>
+
+    <section class="section" style="padding-top:0">
+      <div class="wrap">
+        <div class="section-head">
+          <div><h2>Besonders gut bewertet</h2><p>Diese Häuser haben unsere Gäste am meisten überzeugt</p></div>
+          <a class="section-link" href="results.html?type=hotel&sort=rating">Alle ansehen →</a>
+        </div>
+        <div class="hotel-grid" id="topHotels"></div>
+      </div>
+    </section>
+
+    <section class="section" style="padding-top:0">
+      <div class="wrap">
+        <div class="section-head">
+          <div><h2>Ferienwohnungen mit Küche</h2><p>Mehr Platz und Selbstversorgung</p></div>
+          <a class="section-link" href="results.html?type=apartment">Alle Wohnungen →</a>
+        </div>
+        <div class="hotel-grid" id="topApartments"></div>
+      </div>
+    </section>
+
+    <section class="section" style="padding-top:0">
+      <div class="wrap">
+        <div class="section-head">
+          <div><h2>Aktuelle Angebote</h2><p>Reduzierte Häuser für die kommenden Wochen</p></div>
+          <a class="section-link" href="results.html?type=hotel&deals=1">Alle Angebote →</a>
+        </div>
+        <div class="hotel-grid" id="dealHotels"></div>
+      </div>
+    </section>
+
+    <section class="section" style="padding-top:0">
+      <div class="wrap">
+        <div class="section-head">
+          <div><h2>Mietwagen &amp; Flüge dazubuchen</h2><p>Damit die Reise komplett ist</p></div>
+        </div>
+        <div class="split-two" id="extrasRow"></div>
+      </div>
+    </section>
+
+    <section class="section" style="padding-top:0">
+      <div class="wrap">
+        <div class="section-head"><div><h2>Regionen entdecken</h2><p>Von der Altstadt bis in die Berge der Tramuntana</p></div></div>
+        <div class="category-row" id="regionRow"></div>
+      </div>
+    </section>
+
+    <section class="section" id="vorteile" style="padding-top:0">
+      <div class="wrap">
+        <div class="section-head"><div><h2>Deine Vorteile bei Voyara</h2></div></div>
+        <div class="usp-grid" id="uspGrid"></div>
+      </div>
+    </section>
+
+    <section class="section" style="padding-top:0">
+      <div class="wrap">
+        <div class="partner-strip">
+          <p style="text-align:center;font-size:.82rem;color:var(--ink-500);margin:0 0 16px;text-transform:uppercase;letter-spacing:.05em;font-weight:600">Preise von Reiseanbietern im Vergleich</p>
+          <div class="partner-list" id="partnerList"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="bewertungen" style="padding-top:0">
+      <div class="wrap">
+        <div class="section-head">
+          <div><h2>Das sagen unsere Gäste</h2><p>Bewertungen sind nur nach einem abgeschlossenen Aufenthalt möglich</p></div>
+        </div>
+        <div class="review-teaser">
+          <div class="score-card" id="scoreCard"></div>
+          <div class="quote-grid" id="quoteGrid"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="faq" style="padding-top:0">
+      <div class="wrap">
+        <div class="section-head"><div><h2>Häufige Fragen</h2></div></div>
+        <div class="faq-list" id="faqList"></div>
+      </div>
+    </section>
+
+    <div id="siteFooter"></div>
+  </div>
+</div>
+
+<script src="data/bildpfade.js?v=31"></script>
+<script src="data/ziele.js?v=31"></script>
+<script src="data/hotels.js?v=31"></script>
+<script src="data/inventory.js?v=31"></script>
+<script src="data/bewertungen.js?v=31"></script>
+<script src="agent/zeiger.js?v=31"></script>
+<script src="agent/werkzeuge.js?v=31"></script>
+<script src="agent/politik.js?v=31"></script>
+<script src="agent/kern.js?v=31"></script>
+<script src="components.js?v=31"></script>
+<script src="searchbox.js?v=31"></script>
+<script src="home.js?v=31"></script>
+</body>
+</html>

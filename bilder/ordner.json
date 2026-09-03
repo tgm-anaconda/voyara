@@ -1,0 +1,373 @@
+[
+  {
+    "id": "h01",
+    "name": "Casa Lumara",
+    "typ": "hotel",
+    "ordner": "hotels/h01-casa-lumara",
+    "bilder": 5
+  },
+  {
+    "id": "h02",
+    "name": "Hotel Arenal Blau",
+    "typ": "hotel",
+    "ordner": "hotels/h02-hotel-arenal-blau",
+    "bilder": 5
+  },
+  {
+    "id": "h03",
+    "name": "Finca Es Pinaret",
+    "typ": "hotel",
+    "ordner": "hotels/h03-finca-es-pinaret",
+    "bilder": 5
+  },
+  {
+    "id": "h04",
+    "name": "Hostal Vent de Mar",
+    "typ": "hotel",
+    "ordner": "hotels/h04-hostal-vent-de-mar",
+    "bilder": 5
+  },
+  {
+    "id": "h05",
+    "name": "Grand Hotel Miralbo",
+    "typ": "hotel",
+    "ordner": "hotels/h05-grand-hotel-miralbo",
+    "bilder": 5
+  },
+  {
+    "id": "h06",
+    "name": "Es Trenc Lodge",
+    "typ": "hotel",
+    "ordner": "hotels/h06-es-trenc-lodge",
+    "bilder": 5
+  },
+  {
+    "id": "h07",
+    "name": "Hotel Ciutat Antiga",
+    "typ": "hotel",
+    "ordner": "hotels/h07-hotel-ciutat-antiga",
+    "bilder": 5
+  },
+  {
+    "id": "h08",
+    "name": "Cala Serena Resort",
+    "typ": "hotel",
+    "ordner": "hotels/h08-cala-serena-resort",
+    "bilder": 5
+  },
+  {
+    "id": "h09",
+    "name": "Villa Tramuntana",
+    "typ": "hotel",
+    "ordner": "hotels/h09-villa-tramuntana",
+    "bilder": 5
+  },
+  {
+    "id": "h10",
+    "name": "Aparthotel Sol Nova",
+    "typ": "hotel",
+    "ordner": "hotels/h10-aparthotel-sol-nova",
+    "bilder": 5
+  },
+  {
+    "id": "h11",
+    "name": "Hotel Bahía Azul",
+    "typ": "hotel",
+    "ordner": "hotels/h11-hotel-bahia-azul",
+    "bilder": 5
+  },
+  {
+    "id": "h12",
+    "name": "Refugi de Muntanya",
+    "typ": "hotel",
+    "ordner": "hotels/h12-refugi-de-muntanya",
+    "bilder": 5
+  },
+  {
+    "id": "h13",
+    "name": "Hotel Cala Blanca Mar",
+    "typ": "hotel",
+    "ordner": "hotels/h13-hotel-cala-blanca-mar",
+    "bilder": 5
+  },
+  {
+    "id": "h14",
+    "name": "Fonda Sa Plaça",
+    "typ": "hotel",
+    "ordner": "hotels/h14-fonda-sa-pla-a",
+    "bilder": 5
+  },
+  {
+    "id": "h15",
+    "name": "Nauta Port d'Andratx",
+    "typ": "hotel",
+    "ordner": "hotels/h15-nauta-port-d-andratx",
+    "bilder": 5
+  },
+  {
+    "id": "h16",
+    "name": "Hotel Mar i Pins",
+    "typ": "hotel",
+    "ordner": "hotels/h16-hotel-mar-i-pins",
+    "bilder": 5
+  },
+  {
+    "id": "h17",
+    "name": "Agroturisme Son Bardí",
+    "typ": "hotel",
+    "ordner": "hotels/h17-agroturisme-son-bardi",
+    "bilder": 5
+  },
+  {
+    "id": "h18",
+    "name": "Hostal Bella Vista",
+    "typ": "hotel",
+    "ordner": "hotels/h18-hostal-bella-vista",
+    "bilder": 5
+  },
+  {
+    "id": "h19",
+    "name": "Hotel Migjorn Beach",
+    "typ": "hotel",
+    "ordner": "hotels/h19-hotel-migjorn-beach",
+    "bilder": 5
+  },
+  {
+    "id": "h20",
+    "name": "Aparthotel Illa Verda",
+    "typ": "hotel",
+    "ordner": "hotels/h20-aparthotel-illa-verda",
+    "bilder": 5
+  },
+  {
+    "id": "h21",
+    "name": "Palau de Sant Miquel",
+    "typ": "hotel",
+    "ordner": "hotels/h21-palau-de-sant-miquel",
+    "bilder": 5
+  },
+  {
+    "id": "h22",
+    "name": "Hotel Sa Talaia",
+    "typ": "hotel",
+    "ordner": "hotels/h22-hotel-sa-talaia",
+    "bilder": 5
+  },
+  {
+    "id": "h23",
+    "name": "Club Familiar Es Fogueró",
+    "typ": "hotel",
+    "ordner": "hotels/h23-club-familiar-es-foguero",
+    "bilder": 5
+  },
+  {
+    "id": "h24",
+    "name": "Petit Hotel Cala Figuera",
+    "typ": "hotel",
+    "ordner": "hotels/h24-petit-hotel-cala-figuera",
+    "bilder": 5
+  },
+  {
+    "id": "h25",
+    "name": "Hotel Torrent d'Artà",
+    "typ": "hotel",
+    "ordner": "hotels/h25-hotel-torrent-d-art",
+    "bilder": 5
+  },
+  {
+    "id": "h26",
+    "name": "Sunrise Beach Resort",
+    "typ": "hotel",
+    "ordner": "hotels/h26-sunrise-beach-resort",
+    "bilder": 5
+  },
+  {
+    "id": "a01",
+    "name": "Ca'n Vent — Altstadtwohnung",
+    "typ": "apartment",
+    "ordner": "wohnungen/a01-ca-n-vent-altstadtwohnung",
+    "bilder": 4
+  },
+  {
+    "id": "a02",
+    "name": "Playa Suites — Meerblick",
+    "typ": "apartment",
+    "ordner": "wohnungen/a02-playa-suites-meerblick",
+    "bilder": 4
+  },
+  {
+    "id": "a03",
+    "name": "Finca-Studio Es Camp",
+    "typ": "apartment",
+    "ordner": "wohnungen/a03-finca-studio-es-camp",
+    "bilder": 4
+  },
+  {
+    "id": "a04",
+    "name": "Port View Loft",
+    "typ": "apartment",
+    "ordner": "wohnungen/a04-port-view-loft",
+    "bilder": 4
+  },
+  {
+    "id": "a05",
+    "name": "Casa Alcúdia mit Garten",
+    "typ": "apartment",
+    "ordner": "wohnungen/a05-casa-alcudia-mit-garten",
+    "bilder": 4
+  },
+  {
+    "id": "a06",
+    "name": "Cala Studio am Fels",
+    "typ": "apartment",
+    "ordner": "wohnungen/a06-cala-studio-am-fels",
+    "bilder": 4
+  },
+  {
+    "id": "a07",
+    "name": "Casa Migjorn mit Pool",
+    "typ": "apartment",
+    "ordner": "wohnungen/a07-casa-migjorn-mit-pool",
+    "bilder": 4
+  },
+  {
+    "id": "a08",
+    "name": "Apartament Es Moll",
+    "typ": "apartment",
+    "ordner": "wohnungen/a08-apartament-es-moll",
+    "bilder": 4
+  },
+  {
+    "id": "a09",
+    "name": "Villa Serena Cala Millor",
+    "typ": "apartment",
+    "ordner": "wohnungen/a09-villa-serena-cala-millor",
+    "bilder": 4
+  },
+  {
+    "id": "a10",
+    "name": "Stadtstudio Sant Jaume",
+    "typ": "apartment",
+    "ordner": "wohnungen/a10-stadtstudio-sant-jaume",
+    "bilder": 4
+  },
+  {
+    "id": "a11",
+    "name": "Sonnenhaus Colònia",
+    "typ": "apartment",
+    "ordner": "wohnungen/a11-sonnenhaus-col-nia",
+    "bilder": 4
+  },
+  {
+    "id": "a12",
+    "name": "Bergwohnung Sa Font",
+    "typ": "apartment",
+    "ordner": "wohnungen/a12-bergwohnung-sa-font",
+    "bilder": 4
+  },
+  {
+    "id": "a13",
+    "name": "Casa Andratx am Hafen",
+    "typ": "apartment",
+    "ordner": "wohnungen/a13-casa-andratx-am-hafen",
+    "bilder": 4
+  },
+  {
+    "id": "a14",
+    "name": "Familienhaus Playa de Muro",
+    "typ": "apartment",
+    "ordner": "wohnungen/a14-familienhaus-playa-de-muro",
+    "bilder": 4
+  },
+  {
+    "id": "c01",
+    "name": "Fiat Seicento",
+    "typ": "car",
+    "ordner": "mietwagen/c01-fiat-seicento",
+    "bilder": 1
+  },
+  {
+    "id": "c02",
+    "name": "Fiat 500",
+    "typ": "car",
+    "ordner": "mietwagen/c02-fiat-500",
+    "bilder": 1
+  },
+  {
+    "id": "c03",
+    "name": "Opel Corsa",
+    "typ": "car",
+    "ordner": "mietwagen/c03-opel-corsa",
+    "bilder": 1
+  },
+  {
+    "id": "c04",
+    "name": "Renault Captur",
+    "typ": "car",
+    "ordner": "mietwagen/c04-renault-captur",
+    "bilder": 1
+  },
+  {
+    "id": "c05",
+    "name": "Mercedes-Benz SLK Cabrio",
+    "typ": "car",
+    "ordner": "mietwagen/c05-mercedes-benz-slk-cabrio",
+    "bilder": 1
+  },
+  {
+    "id": "c06",
+    "name": "Hyundai Staria",
+    "typ": "car",
+    "ordner": "mietwagen/c06-hyundai-staria",
+    "bilder": 1
+  },
+  {
+    "id": "c07",
+    "name": "Tesla Model 3",
+    "typ": "car",
+    "ordner": "mietwagen/c07-tesla-model-3",
+    "bilder": 1
+  },
+  {
+    "id": "c08",
+    "name": "Dacia Sandero",
+    "typ": "car",
+    "ordner": "mietwagen/c08-dacia-sandero",
+    "bilder": 1
+  },
+  {
+    "id": "c09",
+    "name": "Ford Fiesta",
+    "typ": "car",
+    "ordner": "mietwagen/c09-ford-fiesta",
+    "bilder": 1
+  },
+  {
+    "id": "c10",
+    "name": "VW T-Roc",
+    "typ": "car",
+    "ordner": "mietwagen/c10-vw-t-roc",
+    "bilder": 1
+  },
+  {
+    "id": "c11",
+    "name": "MINI Cooper",
+    "typ": "car",
+    "ordner": "mietwagen/c11-mini-cooper",
+    "bilder": 1
+  },
+  {
+    "id": "c12",
+    "name": "Smart Forfour",
+    "typ": "car",
+    "ordner": "mietwagen/c12-smart-forfour",
+    "bilder": 1
+  },
+  {
+    "id": "c13",
+    "name": "Ford Focus",
+    "typ": "car",
+    "ordner": "mietwagen/c13-ford-focus",
+    "bilder": 1
+  }
+]
