@@ -93,6 +93,26 @@ function regionSlug(region) {
     .replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
 }
 
+// Eigene Regionsbilder gibt es nur fuer die fuenfzehn Mallorca-Regionen aus
+// der ersten Fassung. Fuer Wien, Lappland oder Kyoto existiert keins, und eine
+// leere Kachel sieht nach einem Fehler aus. Ersatz kommt deshalb aus der Region
+// selbst: Position 1 ist bei Hotels wie Ferienwohnungen das Ortsbild, also die
+// Landschafts- oder Stadtaufnahme - genau das, was eine Regionskachel zeigt.
+function regionsbildOderErsatz(region) {
+  const eigenes = regionsbild(regionSlug(region));
+  if (eigenes) return eigenes;
+
+  const ausDerRegion = [...HOTELS, ...APARTMENTS]
+    .filter((h) => h.region === region)
+    .sort((a, b) => b.rating - a.rating);
+
+  for (const item of ausDerRegion) {
+    const ortsbild = (BILDER[item.id] || []).find((f) => f.endsWith("/1.jpg"));
+    if (ortsbild) return ortsbild;
+  }
+  return "";
+}
+
 function renderRegions() {
   const counts = {};
   [...HOTELS, ...APARTMENTS].forEach((h) => (counts[h.region] = (counts[h.region] || 0) + 1));
@@ -102,7 +122,7 @@ function renderRegions() {
     .map(
       ([region, count]) => `
     <a class="category-tile region-tile" href="results.html?type=hotel&q=${encodeURIComponent(region)}">
-      <div class="region-bild" data-bild="${regionsbild(regionSlug(region))}"></div>
+      <div class="region-bild" data-bild="${regionsbildOderErsatz(region)}"></div>
       <strong>${region}</strong>
       <span>${count} ${count === 1 ? "Unterkunft" : "Unterkünfte"}</span>
     </a>`
