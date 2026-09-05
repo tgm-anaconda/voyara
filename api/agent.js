@@ -173,12 +173,26 @@ export default async function handler(req, res) {
       { role: "user", content: `Situation: ${fakten.lage || "Du antwortest der Person."}\n\nFakten:\n${alsText}` },
     ],
     MAX_TOKEN_ANTWORT.formulieren,
-    0.65                     // Spielraum in der Formulierung. Niedriger klang das
+    0.5                      // Spielraum in der Formulierung. Niedriger klang das
                              // Modell in jeder Antwort gleich - es griff dieselbe
                              // Wendung immer wieder auf. Die Entscheidungen haengen
                              // nicht daran, nur die Wortwahl.
   );
   if (!e.ok) return fehler(res, e.status || 502, "Modell nicht erreichbar.");
 
-  return res.status(200).json({ ok: true, text: e.text });
+  return res.status(200).json({ ok: true, text: entschaerfen(e.text) });
+}
+
+// Ausrufezeichen sind in der Rolle verboten, das Modell setzt sie bei
+// hoeherer Temperatur trotzdem. Anders als bei schmueckenden Adjektiven
+// laesst sich das gefahrlos nachbessern: Der Satz bleibt derselbe, nur
+// der Tonfall geht eine Stufe zurueck. Doppelte Leerzeilen fallen mit
+// weg - der Chat zeigt Absaetze ohnehin nicht an.
+function entschaerfen(text) {
+  return String(text)
+    .replace(/!+/g, ".")
+    .replace(/\s*\n\s*\n\s*/g, " ")
+    .replace(/\s*\n\s*/g, " ")
+    .replace(/ {2,}/g, " ")
+    .trim();
 }
