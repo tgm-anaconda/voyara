@@ -97,7 +97,10 @@ function matches(item) {
   const q = state.q.trim().toLowerCase();
 
   if (state.type === "car") {
-    if (q && !`${item.model} ${item.category} ${item.supplier} ${item.pickup}`.toLowerCase().includes(q)) return false;
+    // Nach Ziel filtern, nicht nur nach Freitext: sonst bekommt jemand in
+    // Lappland Wagen ab Flughafen Palma angeboten.
+    if (state.ziel && item.ziel !== state.ziel) return false;
+    if (q && !`${item.model} ${item.category} ${item.supplier} ${item.pickup} ${(typeof ZIEL_NACH_ID !== 'undefined' && ZIEL_NACH_ID[item.ziel]?.name) || ''}`.toLowerCase().includes(q)) return false;
     if (item.pricePerDay > state.priceMax) return false;
     if (state.carCategories.size && !state.carCategories.has(item.category)) return false;
     if (state.transmissions.size && !state.transmissions.has(item.transmission)) return false;
@@ -335,7 +338,7 @@ function carResultCard(car) {
   <div class="result-media" data-bild="${titelbildVon(car.id)}" aria-label="${car.model}"></div>
   <div class="result-body">
     <div class="result-main">
-      <div class="hotel-name" style="font-size:1.08rem">${car.model}</div>
+      <div class="hotel-name" style="font-size:1.08rem">${car.model}${typeof bildIstStellvertreter === "function" && bildIstStellvertreter(car.id) ? ` <span class="hint" style="font-weight:400">oder ähnlich</span>` : ""}</div>
       <div class="hotel-loc">${ICONS.pin}${car.pickup} · ${car.supplier}</div>
       <div class="spec-row">
         <span>${ICONS.users}${car.seats} Sitze</span>
@@ -364,7 +367,19 @@ function carResultCard(car) {
 </div>`;
 }
 
+// Wie viele Tage spaeter kommt der Flug an? Auf der Langstrecke stand sonst
+// eine Ankunft um 04:47 unter einem Abflug um 11:26 - das liest sich, als
+// landete das Flugzeug vor dem Start.
+function tagesversatz(f) {
+  const min = (s) => { const [h, m] = String(s).split(":").map(Number); return h * 60 + m; };
+  const d = String(f.duration).match(/(\d+)h\s*(\d+)?/);
+  if (!d) return 0;
+  const dauer = +d[1] * 60 + (+d[2] || 0);
+  return Math.floor((min(f.depart) + dauer) / 1440);
+}
+
 function flightResultCard(f) {
+  const plus = tagesversatz(f);
   return `
 <div class="result-card compact">
   <div class="result-body flight-body">
@@ -372,8 +387,8 @@ function flightResultCard(f) {
       <div class="flight-airline">${ICONS.plane}${f.airline}</div>
       <div class="flight-times">
         <div><strong>${f.depart}</strong><span>${f.fromCode}</span></div>
-        <div class="flight-line"><span>${f.duration}</span><i></i><small>${f.stops === 0 ? "Direktflug" : `${f.stops} Stopp`}</small></div>
-        <div><strong>${f.arrive}</strong><span>${f.toCode}</span></div>
+        <div class="flight-line"><span>${f.duration}</span><i></i><small>${f.stops === 0 ? "Direktflug" : `${f.stops} ${f.stops === 1 ? "Stopp" : "Stopps"}`}</small></div>
+        <div><strong>${f.arrive}${plus ? `<sup style="font-size:.62em;margin-left:1px">+${plus}</sup>` : ""}</strong><span>${f.toCode}</span></div>
       </div>
       <div class="flight-meta">${f.from} → ${f.to} · ${f.aircraft} · ${f.baggage}</div>
     </div>

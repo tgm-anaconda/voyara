@@ -229,7 +229,10 @@ function renderAgentRail() {
   return `
 <div class="agent-rail-inner">
   <div class="agent-head">
-    <div class="agent-avatar"${typeof agentbild === "function" && agentbild() ? ` style="background-image:url('${agentbild()}');background-size:cover"` : ""}>${typeof agentbild === "function" && agentbild() ? "" : ICONS.sparkle}</div>
+    <!-- Neutrales Sprechblasen-Zeichen statt des Markenbilds: das trug ein
+         eigenes Logo und machte den Chat zum beworbenen Merkmal - genau das,
+         was hier nicht gemessen werden soll. -->
+    <div class="agent-avatar">${ICONS.chat}</div>
     <div>
       <div class="agent-name">Chat</div>
       <div class="agent-status" id="agentStatus">online</div>
@@ -280,12 +283,32 @@ const AgentPanel = {
   },
   // `still` unterdrueckt das Einblenden - wird beim Wiederherstellen des
   // Gespraechs nach einem Seitenwechsel gebraucht.
-  say(text, role = "bot", { still = false } = {}) {
+  //
+  // `links` haengt anklickbare Verweise unter die Nachricht. Der Text selbst
+  // wird immer als Text gesetzt, nie als HTML: er enthaelt Namen aus dem
+  // Katalog, und generierter Text gehoert grundsaetzlich nicht ungeprueft ins
+  // Markup. Die Verweise werden stattdessen als echte Knoten gebaut.
+  say(text, role = "bot", { still = false, links = null } = {}) {
     const box = document.getElementById("agentMessages");
     if (!box) return;
     const el = document.createElement("div");
     el.className = `msg ${role}${still ? "" : " neu"}`;
     el.textContent = text;
+
+    if (links && links.length) {
+      const reihe = document.createElement("div");
+      reihe.className = "msg-links";
+      for (const l of links) {
+        if (!l || !l.href) continue;
+        const a = document.createElement("a");
+        a.className = "msg-link";
+        a.href = l.href;
+        a.textContent = l.text || "Ansehen";
+        reihe.appendChild(a);
+      }
+      if (reihe.childNodes.length) el.appendChild(reihe);
+    }
+
     box.appendChild(el);
     box.scrollTop = box.scrollHeight;
   },

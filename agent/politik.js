@@ -285,6 +285,16 @@ const Politik = {
   // Erkennt, ob sich eine Antwort auf einen Vorschlag der Shortlist bezieht
   auswahlAusText(text, kandidaten) {
     const t = text.toLowerCase().trim();
+
+    // "Das nehme ich" auf einer geoeffneten Detailseite meint das Haus, das
+    // gerade zu sehen ist. Wer einem Verweis aus dem Chat gefolgt ist, steht
+    // genau dort - und muesste sonst den Namen abtippen.
+    if (/\b(das|dies|die[sr]?e[sn]?|hier)\b/.test(t) && typeof Werkzeuge !== "undefined"
+        && Werkzeuge.seite() === "stay") {
+      const offen = new URLSearchParams(location.search).get("id");
+      if (offen && kandidaten.some((k) => k.id === offen)) return offen;
+    }
+
     const zahl = t.match(/^(?:die |der |das |nummer |nr\.? ?)?(1|2|3|eins|zwei|drei|erste|zweite|dritte)\b/);
     if (zahl) {
       const karte = { "1": 0, eins: 0, erste: 0, "2": 1, zwei: 1, zweite: 1, "3": 2, drei: 2, dritte: 2 };

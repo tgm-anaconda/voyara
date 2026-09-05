@@ -374,13 +374,40 @@ const BILDER_EINZELN = {
   "agent/marke": "img/agent/marke.jpg"
 };
 
+// Mietwagen-Kennung: "c" plus Ziffern. Bewusst ohne regulaeren Ausdruck -
+// diese Datei wird aus einem Template-Literal erzeugt, in dem Backslashes
+// verschwinden (aus d wurde d).
+function istMietwagenId(id) {
+  return typeof id === "string" && id[0] === "c" && id.length > 1 && !Number.isNaN(Number(id.slice(1)));
+}
+
 // Bildpfade eines Objekts. Erstes Bild ist das Titelbild.
 function bilderVon(id) {
   return BILDER[id] || [];
 }
 
 function titelbildVon(id) {
-  return (BILDER[id] || [])[0] || "";
+  const eigenes = (BILDER[id] || [])[0];
+  if (eigenes) return eigenes;
+  // Mietwagen: Fuer die Fahrzeuge der zweiten Welle gibt es keine eigenen
+  // Fotos. Statt einer grauen Flaeche neben bebilderten Karten zeigt die
+  // Seite ein Fahrzeug derselben Klasse - so halten es Vermieter auch, dort
+  // steht dann "oder aehnlich" daneben.
+  if (typeof CARS !== "undefined" && istMietwagenId(id)) {
+    const wagen = CARS.find((c) => c.id === id);
+    if (wagen) {
+      const gleicheKlasse = CARS.find((c) => c.category === wagen.category && (BILDER[c.id] || []).length);
+      if (gleicheKlasse) return BILDER[gleicheKlasse.id][0];
+    }
+  }
+  return "";
+}
+
+// Wird das Titelbild eines Mietwagens nur geliehen? Dann muss das an der
+// Karte stehen - ein Foto, das ein anderes Modell zeigt, ohne Hinweis waere
+// eine falsche Angabe.
+function bildIstStellvertreter(id) {
+  return istMietwagenId(id) && !(BILDER[id] || []).length && !!titelbildVon(id);
 }
 
 function regionsbild(slug) {

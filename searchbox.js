@@ -63,14 +63,18 @@ const SearchBox = (() => {
       </div>`;
 
     if (type === "car") {
+      // Abholstationen aus dem Bestand statt einer festen Mallorca-Liste:
+      // die Maske schlug "Flughafen Palma" auch dann vor, wenn daneben
+      // Wagen fuer Lappland standen.
+      const stationen = typeof CARS !== "undefined"
+        ? [...new Set(CARS.map((c) => c.pickup))].sort()
+        : ["Flughafen Palma (PMI)"];
       return `
       <div class="field">
-        <label for="sbDest">Abholstation</label>
-        <input class="input" type="text" id="sbDest" list="sbDestList" placeholder="z. B. Flughafen Palma" value="${initial.q || "Flughafen Palma (PMI)"}" />
+        <label for="sbDest">Abholstation oder Reiseziel</label>
+        <input class="input" type="text" id="sbDest" list="sbDestList" placeholder="z. B. Flughafen Palma" value="${initial.q || ""}" />
         <datalist id="sbDestList">
-          <option value="Flughafen Palma (PMI)"></option>
-          <option value="Palma Hafen"></option>
-          <option value="Shuttle vom Flughafen"></option>
+          ${stationen.map((s) => `<option value="${s}"></option>`).join("")}
         </datalist>
       </div>
       <div class="field"><label for="sbFrom">Abholung</label><input class="input" type="date" id="sbFrom" value="${initial.from}" /></div>

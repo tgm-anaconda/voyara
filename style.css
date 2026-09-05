@@ -150,6 +150,21 @@ img, svg { max-width: 100%; }
 /* Die eine Stelle, an der die Marke im Chat durchkommt */
 .agent-messages .msg.user { align-self: flex-end; background: var(--brand-500); color: #fff; border-bottom-right-radius: 4px; }
 
+/* Verweise unter einer Chatnachricht.
+   Der Chat soll nicht alles allein machen: Wer lieber selbst schaut, klickt
+   hier direkt in den Vorschlag statt den Chat darum zu bitten. */
+.msg-links { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.msg-link {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: rgba(255,255,255,.10); border: 1px solid rgba(255,255,255,.20);
+  color: #fff; text-decoration: none; border-radius: 999px;
+  padding: 5px 11px; font-size: .77rem; font-weight: 500;
+  transition: background .12s, border-color .12s;
+}
+.msg-link::before { content: "↗"; font-size: .8em; opacity: .7; }
+.msg-link:hover { background: rgba(255,255,255,.19); border-color: rgba(255,255,255,.34); }
+.msg-link:focus-visible { outline: 2px solid var(--brand-500); outline-offset: 2px; }
+
 .agent-suggestions { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 16px 10px; }
 .chip {
   background: rgba(255,255,255,.09); border: 1px solid rgba(255,255,255,.18); color: rgba(255,255,255,.88);

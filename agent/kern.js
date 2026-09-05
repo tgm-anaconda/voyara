@@ -165,7 +165,7 @@ const Kern = {
     // hat, egal was vorher darin stand.
     const kasten = document.getElementById("agentMessages");
     if (kasten) kasten.innerHTML = "";
-    for (const n of this.lauf.verlauf) AgentPanel.say(n.text, n.rolle, { still: true });
+    for (const n of this.lauf.verlauf) AgentPanel.say(n.text, n.rolle, { still: true, links: n.links });
 
     // Erste Seite der Sitzung: begruessen. Das muss hier passieren und nicht
     // im Panel - der Kasten wird eine Zeile darueber geleert, und eine vorher
@@ -207,9 +207,14 @@ const Kern = {
      Sprechen
      ================================================================== */
 
-  sagen(text, rolle = "bot") {
-    this.lauf.verlauf.push({ rolle, text, zeit: Date.now() });
-    AgentPanel.say(text, rolle);
+  // `links` sind anklickbare Verweise unter der Nachricht. Sie wandern mit
+  // in den Verlauf, damit sie nach einem Seitenwechsel noch da sind - sonst
+  // waere nach dem ersten Klick die halbe Shortlist tot.
+  sagen(text, rolle = "bot", links = null) {
+    const n = { rolle, text, zeit: Date.now() };
+    if (links && links.length) n.links = links;
+    this.lauf.verlauf.push(n);
+    AgentPanel.say(text, rolle, { links });
     this.sichern();
   },
 
@@ -221,6 +226,16 @@ const Kern = {
       if (i) await Zeiger.warte(pause);
       this.sagen(s);
     }
+  },
+
+  // Verweis auf eine Unterkunft - mit Zeitraum und Belegung daran, damit die
+  // Detailseite dieselben Daten zeigt wie die Trefferliste. Genau so baut die
+  // Ergebnisseite ihre Kartenverweise auch.
+  linkZu(id, text) {
+    let href = `stay.html?id=${encodeURIComponent(id)}`;
+    if (typeof Belegung !== "undefined") href = Belegung.anLink(href);
+    if (typeof Reisedaten !== "undefined") href = Reisedaten.anLink(href);
+    return { text, href };
   },
 
   async denkpause(ms = 1100, text = "denkt nach…") {
@@ -421,7 +436,7 @@ const Kern = {
 
       // Was der Schritt erfahren hat, wird unter seinem Merknamen abgelegt.
       if (schritt.merken && ergebnis.daten) this.lauf.merker[schritt.merken] = ergebnis.daten;
-      if (ergebnis.text && schritt.melden !== false) this.sagen(ergebnis.text);
+      if (ergebnis.text && schritt.melden !== false) this.sagen(ergebnis.text, "bot", ergebnis.links);
 
       // Ein Schritt, der die Seite wechselt, beendet diesen Durchlauf. Der
       // Rest wird nach dem Laden fortgesetzt.
@@ -559,7 +574,10 @@ const Kern = {
 
     for (const [i, k] of this.lauf.kandidaten.entries()) {
       await Zeiger.warte(950);
-      this.sagen(`${i + 1}. ${Politik.vorschlagssatz(k, this.lauf.profil)}`);
+      // Der Verweis macht aus dem Vorschlag ein Angebot statt einer Ansage:
+      // wer lieber selbst schaut, klickt hier direkt hinein.
+      this.sagen(`${i + 1}. ${Politik.vorschlagssatz(k, this.lauf.profil)}`,
+        "bot", [this.linkZu(k.id, k.item.name)]);
     }
     await Zeiger.warte(900);
 
@@ -641,9 +659,17 @@ const Kern = {
     this.lauf.phase = "arbeitet";
     this.lauf.gewaehlt = id;
 
+    // Steht das Haus schon offen - etwa weil jemand einem Verweis aus dem
+    // Chat gefolgt ist -, darf der Agent es nicht noch einmal oeffnen wollen.
+    // Auf der Detailseite gibt es keine Trefferkarte zum Anklicken, und der
+    // Versuch endete mit "ist in der Liste gerade nicht sichtbar".
+    const schonOffen = Werkzeuge.seite() === "stay"
+      && new URLSearchParams(location.search).get("id") === id;
+    if (schonOffen && !still) this.sagen(`Gute Wahl, ich sehe mir ${name} genauer an.`);
+
     this.lauf.offeneSchritte = [
-      { werkzeug: "unterkunftOeffnen", status: "öffnet…", args: { id },
-        ansage: still ? `Ich öffne ${name}.` : `Gute Wahl, ich sehe mir ${name} genauer an.` },
+      ...(schonOffen ? [] : [{ werkzeug: "unterkunftOeffnen", status: "öffnet…", args: { id },
+        ansage: still ? `Ich öffne ${name}.` : `Gute Wahl, ich sehe mir ${name} genauer an.` }]),
       // melden: false - die Zusammenfassung im naechsten Schritt sagt dasselbe,
       // nur entlang der genannten Kriterien. Beides waere doppelt.
       { werkzeug: "bewertungenLesen", status: "liest Bewertungen…", merken: "bewertungen", melden: false, args: { id } },
@@ -678,7 +704,10 @@ const Kern = {
     // Was sonst noch gelobt wird - ohne zu wiederholen, was gerade dastand
     const uebrig = (b.gelobt || []).filter((g) => !genannt.has(g)).slice(0, 2);
     if (uebrig.length) {
-      teile.push(`Gelobt ${uebrig.length > 1 ? "werden" : "wird"} außerdem ${Politik.aufzaehlen(uebrig)}.`);
+      // "ausserdem" nur, wenn davor schon ein Kriterium stand - sonst
+      // verweist das Wort auf nichts.
+      const dazu = genannt.size ? "außerdem " : "vor allem ";
+      teile.push(`Gelobt ${uebrig.length > 1 ? "werden" : "wird"} ${dazu}${Politik.aufzaehlen(uebrig)}.`);
     }
     if (b.kritisiert?.length) teile.push(`Kritik gibt es bei ${Politik.aufzaehlen(b.kritisiert)}.`);
     teile.push("Soll ich es vormerken, zur Buchung gehen — oder möchtest du zurück zur Auswahl?");
@@ -689,7 +718,12 @@ const Kern = {
     this.sperreAus();
     this.sichern();
 
-    return { ok: true, daten: { uebernimmt: true }, text: teile.join(" ") };
+    return {
+      ok: true,
+      daten: { uebernimmt: true },
+      text: teile.join(" "),
+      links: [{ text: "Merkzettel", href: "merkzettel.html" }],
+    };
   },
 
   async antwortVertieft(text) {
@@ -881,9 +915,48 @@ const Kern = {
      ein neuer Auftrag.
      ================================================================== */
 
+  // Kurze Absichten, die kein Suchauftrag sind. Ohne sie landeten Begruessung
+  // und die Frage nach den Faehigkeiten in derselben Verlegenheitsantwort
+  // ("Sag mir, wohin es gehen soll") - der Chat wirkte begriffsstutzig,
+  // bevor er ueberhaupt etwas tun konnte.
+  kleineAntwort(t) {
+    if (/^(hallo|hi|hey|guten (tag|morgen|abend)|moin|servus|na)\b[\s!?.]*$/i.test(t)) {
+      return "Hallo! Sag mir einfach, wohin es gehen soll — Ziel, Zeitraum und wie viele Personen reichen mir zum Anfangen.";
+    }
+    if (/(was kannst du|wie funktionier|was machst du|kannst du mir helfen|hilfe|wobei hilfst)/i.test(t)) {
+      return "Ich kann für dich suchen, filtern und sortieren, die Bewertungen auswerten und dir eine Auswahl mit Begründung vorlegen. Bis zur Buchung frage ich vorher nach. Du kannst jederzeit selbst weiterklicken — beschreib einfach, was du suchst.";
+    }
+    if (/^(danke|dankeschön|merci|passt|alles klar|ok(ay)?)\b[\s!.]*$/i.test(t)) {
+      return "Gern. Sag Bescheid, wenn ich weitersuchen soll.";
+    }
+    return null;
+  },
+
   async eingabe(text) {
     const t = text.trim();
-    if (/^(stopp?|halt|anhalten|warte)$/i.test(t)) return this.uebernahme();
+    if (/^(stopp?|halt|anhalten|warte)$/i.test(t)) {
+      // Nichts angehalten, wenn nichts lief - sonst behauptet der Chat eine
+      // Uebernahme, die es nie gab, und das Protokoll zaehlt sie mit.
+      if (this.lauf.phase !== "arbeitet" && !this.laeuft) {
+        this.sagen(t, "user");
+        this.sagen("Ich arbeite gerade nicht. Sag mir einfach, was ich tun soll.");
+        return;
+      }
+      return this.uebernahme();
+    }
+
+    // Nur ausserhalb eines laufenden Gespraechs - mitten in einer Rueckfrage
+    // waere "ok" eine Antwort und keine Floskel.
+    if (["leer", "fertig", "angehalten"].includes(this.lauf.phase)) {
+      const kurz = this.kleineAntwort(t);
+      if (kurz) {
+        this.sagen(t, "user");
+        this.sagen(kurz);
+        AgentPanel.setSuggestions(Politik.vorschlaege());
+        return;
+      }
+    }
+
     if (/^(mach weiter|weiter)$/i.test(t)) return this.fortsetzen();
     if (/^(neue suche|von vorn|neu anfangen)$/i.test(t)) {
       const verlauf = this.lauf.verlauf;
