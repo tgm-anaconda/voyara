@@ -671,7 +671,15 @@ const Kern = {
      ================================================================== */
 
   async shortlistStellen() {
-    const treffer = this.lauf.merker.treffer?.treffer || Werkzeuge.zustand().treffer || [];
+    // Beide Durchgaenge zusammenfuehren: der erste bringt die
+    // bestbewerteten, der zweite die guenstigen. Doppelte fallen weg.
+    const roh = [
+      ...(this.lauf.merker.treffer?.treffer || []),
+      ...(this.lauf.merker.treffer2?.treffer || []),
+    ];
+    const gesehen = new Set();
+    const treffer = roh.filter((x) => (gesehen.has(x.id) ? false : gesehen.add(x.id)));
+    if (!treffer.length) treffer.push(...(Werkzeuge.zustand().treffer || []));
     if (!treffer.length) {
       this.lauf.phase = "shortlist";
       this.lauf.kandidaten = [];
@@ -688,8 +696,17 @@ const Kern = {
     await this.denkpause(1200, "wägt ab…");
 
     const bewertet = Politik.bewerten(treffer, this.lauf.profil);
-    this.lauf.kandidaten = bewertet.slice(0, 3);
-    this.notieren("shortlist", { runde: this.lauf.runde, ids: this.lauf.kandidaten.map((k) => k.id) });
+    const auswahl = Politik.auswaehlen(bewertet, this.lauf.profil);
+    this.lauf.kandidaten = auswahl.kandidaten;
+    this.lauf.strategie = auswahl.strategie;
+    this.notieren("shortlist", {
+      runde: this.lauf.runde,
+      ids: this.lauf.kandidaten.map((k) => k.id),
+      // Fuer die Auswertung: nach welchem Verfahren wurde ausgewaehlt und
+      // wie viel hatte die Person bis dahin preisgegeben?
+      strategie: auswahl.strategie,
+      informationswert: auswahl.informationswert,
+    });
 
     // Die Zahl muss zur Liste passen - "Drei kommen in die engere Wahl"
     // ueber zwei Vorschlaegen faellt sofort auf.
@@ -713,9 +730,9 @@ const Kern = {
     // Offenlegung: worauf beruht diese Reihenfolge? Waehrend der Arbeit
     // meldet der Agent nur knapp, was er tut - beim Ergebnis soll
     // nachvollziehbar sein, warum es dieses Haus ist.
-    const grundlage = Politik.grundlage(this.lauf.kandidaten, this.lauf.profil, this.lauf.merker);
+    const grundlage = Politik.grundlage(this.lauf.kandidaten, this.lauf.profil, this.lauf.merker, auswahl);
     if (grundlage) {
-      const fakten = Politik.faktenGrundlage(this.lauf.kandidaten, this.lauf.profil, this.lauf.merker);
+      const fakten = Politik.faktenGrundlage(this.lauf.kandidaten, this.lauf.profil, this.lauf.merker, auswahl);
       this.sagen(await this.formulieren(fakten, grundlage));
       await Zeiger.warte(800);
     }

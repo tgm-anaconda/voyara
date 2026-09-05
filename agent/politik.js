@@ -252,6 +252,113 @@ const Politik = {
     return bewertet.sort((a, b) => b.punkte - a.punkte);
   },
 
+  /* ==================================================================
+     Wie die Auswahl zustande kommt
+     ------------------------------------------------------------------
+     Zwei Verfahren, eine feste Schwelle dazwischen. Beide sind
+     deterministisch: dieselbe Eingabe fuehrt bei jeder teilnehmenden
+     Person zu derselben Auswahl. Das ist die Voraussetzung dafuer, dass
+     sich die Laeufe ueberhaupt vergleichen lassen.
+
+     PASSUNG - wenn die Person etwas ueber ihre Vorlieben gesagt hat.
+     Dann wird streng danach ausgewaehlt: die drei bestbewerteten
+     Treffer, wobei die genannten Kriterien schwerer wiegen als alles
+     andere. Die Auswahl spiegelt genau das wider, was gesagt wurde.
+
+     SPREIZUNG - wenn nur ein Ziel genannt wurde und sonst nichts.
+     Dann waeren die drei bestbewerteten Haeuser einander sehr aehnlich
+     (dreimal mittlere Preisklasse, dreimal dieselbe Art) - die Person
+     erfuehre nichts ueber die Bandbreite und haette nichts, woran sie
+     sich reiben kann. Stattdessen drei Haeuser, die sich moeglichst
+     unterscheiden: in der Preisklasse, in der Art des Hauses und in der
+     Lage. Aus der Reaktion darauf ergibt sich die Richtung, und der
+     Agent sucht in der naechsten Runde gezielter.
+
+     Der Agent sagt in beiden Faellen, welches Verfahren er benutzt hat.
+     ================================================================== */
+
+  // Wie viel hat die Person preisgegeben? Ab zwei Punkten wird nach
+  // Passung ausgewaehlt, darunter gespreizt.
+  SCHWELLE_PASSUNG: 2,
+
+  informationswert(profil) {
+    let punkte = 0;
+    for (const k of profil.kriterien || []) punkte += Math.min(2, k.gewicht || 1);
+    if (profil.maxPreis || profil.budget) punkte += 1;
+    if (profil.kinder != null && profil.kinder > 0) punkte += 1;
+    if (profil.maxStrand) punkte += 1;
+    return punkte;
+  },
+
+  // Preisklasse innerhalb der aktuellen Trefferliste, nicht absolut:
+  // "guenstig" heisst in Kyoto etwas anderes als an der Ostsee.
+  preisklassen(bewertet) {
+    const preise = bewertet.map((k) => k.preis).filter((p) => p != null).sort((a, b) => a - b);
+    if (preise.length < 3) return () => "mittel";
+    const unten = preise[Math.floor(preise.length / 3)];
+    const oben = preise[Math.floor((preise.length * 2) / 3)];
+    return (p) => (p <= unten ? "günstig" : p >= oben ? "gehoben" : "mittel");
+  },
+
+  // Wie verschieden sind zwei Haeuser? Preisklasse zaehlt am meisten -
+  // sie ist der Unterschied, den man zuerst bemerkt.
+  abstand(a, b, klasse) {
+    let d = 0;
+    if (klasse(a.preis) !== klasse(b.preis)) d += 2;
+    if ((a.item.category || a.item.type) !== (b.item.category || b.item.type)) d += 1;
+    if (a.item.region !== b.item.region) d += 1;
+    return d;
+  },
+
+  auswaehlen(bewertet, profil, anzahl = 3) {
+    const wert = this.informationswert(profil);
+    if (wert >= this.SCHWELLE_PASSUNG || bewertet.length <= anzahl) {
+      return { kandidaten: bewertet.slice(0, anzahl), strategie: "passung", informationswert: wert };
+    }
+
+    /* Spreizung in zwei Stufen.
+
+       Zuerst die Preisklasse, und zwar als feste Vorgabe: aus jeder der
+       drei Klassen das bestbewertete Haus. Der Preis ist der Unterschied,
+       den man zuerst bemerkt, und eine Auswahl mit dreimal derselben
+       Preisklasse hilft niemandem weiter.
+
+       Bleibt ein Platz frei, weil eine Klasse leer ist, kommt das Haus
+       hinein, das sich von den bereits gewaehlten am staerksten abhebt -
+       nach Art und Gegend. Bei Gleichstand entscheidet die Bewertung, so
+       bleibt das Ergebnis eindeutig und wiederholbar. */
+    const klasse = this.preisklassen(bewertet);
+    const gewaehlt = [];
+
+    for (const stufe of ["günstig", "mittel", "gehoben"]) {
+      if (gewaehlt.length >= anzahl) break;
+      const treffer = bewertet.find((k) => klasse(k.preis) === stufe && !gewaehlt.includes(k));
+      if (treffer) gewaehlt.push(treffer);
+    }
+
+    while (gewaehlt.length < anzahl) {
+      const rest = bewertet.filter((k) => !gewaehlt.includes(k));
+      if (!rest.length) break;
+      let bester = rest[0], besterAbstand = -1;
+      for (const k of rest) {
+        const d = Math.min(...gewaehlt.map((g) => this.abstand(k, g, klasse)));
+        if (d > besterAbstand) { besterAbstand = d; bester = k; }
+      }
+      gewaehlt.push(bester);
+    }
+
+    // Innerhalb der Auswahl nach Bewertung ordnen - die Reihenfolge im
+    // Chat soll nicht vom Zufall der Preisklassen abhaengen.
+    gewaehlt.sort((a, b) => b.punkte - a.punkte);
+
+    return {
+      kandidaten: gewaehlt,
+      strategie: "spreizung",
+      informationswert: wert,
+      klassen: gewaehlt.map((k) => klasse(k.preis)),
+    };
+  },
+
   /* Ein Satz je Vorschlag: was spricht dafuer, wo hakt es.
      Die Zahlen kommen aus den Daten, nicht aus dem Modell - erfundene
      Prozentwerte waeren in einer Studie fatal. */
@@ -481,6 +588,17 @@ const Politik = {
     });
 
     schritte.push({ werkzeug: "ergebnisseLesen", status: "sieht die Liste durch…", merken: "treffer", args: { anzahl: 8 } });
+
+    // Hat die Person noch nichts ueber ihre Vorlieben gesagt, wird die
+    // Auswahl gespreizt (siehe auswaehlen). Dafuer reichen die acht
+    // bestbewerteten Haeuser nicht: die aehneln einander und liegen alle
+    // im oberen Preisbereich. Also einmal umsortieren und das andere Ende
+    // der Liste ansehen - so wuerde ein Mensch es auch machen.
+    if (this.informationswert(profil) < this.SCHWELLE_PASSUNG) {
+      schritte.push({ werkzeug: "sortieren", status: "sortiert anders…", args: { nach: "preis-asc" } });
+      schritte.push({ werkzeug: "ergebnisseLesen", status: "sieht auch die günstigeren durch…", merken: "treffer2", args: { anzahl: 8 } });
+    }
+
     schritte.push({ werkzeug: "bewertungenSichten", status: "liest Bewertungen…", merken: "sichtung", args: { anzahl: 5 } });
     schritte.push({ werkzeug: "shortlist", status: "stellt eine Auswahl zusammen…" });
 
@@ -570,7 +688,7 @@ const Politik = {
      eigenes Handeln preisgibt. Alle Zahlen darin stammen aus den Daten,
      nicht aus dem Modell.
      ================================================================== */
-  grundlage(kandidaten, profil, merker) {
+  grundlage(kandidaten, profil, merker, auswahl) {
     const stufe = typeof STELLSCHRAUBEN !== "undefined" ? STELLSCHRAUBEN.begruendung : "ausfuehrlich";
     if (stufe === "knapp") return null;
 
@@ -594,11 +712,15 @@ const Politik = {
         : `Grundlage: ${gesamt} Häuser standen zur Auswahl, ${gesichtet || gesehen} habe ich im Detail durchgesehen.`);
     }
 
-    // 2. Wonach habe ich sortiert?
+    // 2. Nach welchem Verfahren habe ich ausgewaehlt?
     const genannte = (profil.kriterien || []).map((x) => this.kriterium(x.id)?.label).filter(Boolean);
+    if (auswahl?.strategie === "spreizung") {
+      teile.push("Du hast mir noch keine Vorlieben genannt. Deshalb habe ich nicht drei ähnliche Häuser herausgesucht, sondern drei, die sich unterscheiden — in der Preisklasse, in der Art des Hauses und in der Lage. Sag mir, welche Richtung dir zusagt, dann suche ich gezielter.");
+      return teile.join(" ");
+    }
     teile.push(genannte.length
       ? `Für die Reihenfolge zählt bei mir zuerst, was du genannt hast — ${this.aufzaehlen(genannte)} —, danach Gesamtnote und Preis.`
-      : "Für die Reihenfolge zählen Gesamtnote und Preis, weil du kein eigenes Kriterium genannt hast.");
+      : "Für die Reihenfolge zählen Gesamtnote und Preis.");
 
     // 3. Was gab den Ausschlag?
     const erster = kandidaten[0];
@@ -722,7 +844,7 @@ const Politik = {
     };
   },
 
-  faktenGrundlage(kandidaten, profil, merker) {
+  faktenGrundlage(kandidaten, profil, merker, auswahl) {
     const zustand = typeof Werkzeuge !== "undefined" ? Werkzeuge.zustand() : {};
     const erster = kandidaten[0];
     const beleg = (erster?.belege || []).slice().sort((a, b) => b.anteil - a.anteil)[0];
@@ -733,6 +855,23 @@ const Politik = {
     for (const { id } of profil.kriterien || []) {
       const k = this.kriterium(id);
       if (k?.filter) vorgaben.push(k.label);
+    }
+
+    if (auswahl?.strategie === "spreizung") {
+      return {
+        lage: "Erklaer, warum du bewusst unterschiedliche Haeuser vorgelegt hast statt der drei bestbewerteten, und bitte um eine Richtung.",
+        grund: "Die Person hat ein Ziel genannt, aber keine Vorlieben - also gibt es nichts, wonach sich sinnvoll sortieren liesse.",
+        wasDuGetanHast: "Drei Haeuser ausgesucht, die sich in Preisklasse, Art und Lage unterscheiden.",
+        haeuserZurAuswahl: zustand.trefferGesamt ?? null,
+        preisklassen: auswahl.klassen || [],
+        haeuser: kandidaten.map((k) => ({
+          name: k.item.name,
+          preisProNacht: k.preis,
+          art: k.item.category || k.item.type,
+          gegend: k.item.region,
+        })),
+        nichtGeprueft: ["Verfügbarkeit", "Stornobedingungen"],
+      };
     }
 
     return {

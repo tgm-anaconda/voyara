@@ -541,3 +541,77 @@ einer anderen Stelle greift.
 *während* der Arbeit ausspielt statt nur am Ende. Auf dem Handy spricht der
 Platz dagegen, am Rechner wäre es möglich. Das wäre dann eher eine Frage des
 Zeitpunkts als des Umfangs - und damit eine eigene Variable.
+
+---
+
+## 17. Wie die Auswahl zustande kommt
+
+Für die Vergleichbarkeit zwischen Teilnehmenden braucht die Auswahl ein
+festes Verfahren. Es gibt zwei, und eine feste Schwelle dazwischen. Beide
+sind deterministisch: dieselbe Eingabe führt bei jeder Person zur selben
+Auswahl.
+
+### Die Schwelle
+
+`Politik.informationswert(profil)` zählt, wie viel die Person preisgegeben hat:
+
+| Angabe | Punkte |
+|---|---|
+| jedes genannte Kriterium | 1 (betont: 2) |
+| Preisobergrenze oder Budgethinweis | 1 |
+| Kinder in der Reisegruppe | 1 |
+| Entfernungswunsch zum Strand | 1 |
+
+Ab **2 Punkten** wird nach Passung ausgewählt, darunter gespreizt.
+
+### Passung
+
+Die drei bestbewerteten Treffer, wobei die genannten Kriterien schwerer
+wiegen als Gesamtnote und Preis. Die Auswahl spiegelt genau das wider, was
+gesagt wurde - der Rückbezug steht danach namentlich in der Begründung
+("Sauberkeit hattest du genannt: 86 Prozent der 240 Erwähnungen positiv").
+
+### Spreizung
+
+Wer nur ein Ziel nennt, bekäme sonst dreimal dasselbe: die drei
+bestbewerteten Häuser einer Liste ähneln einander in Preis, Art und Lage.
+Die Person erführe nichts über die Bandbreite und hätte nichts, woran sie
+sich reiben kann.
+
+Stattdessen zwei Stufen:
+
+1. **Preisklasse als feste Vorgabe.** Aus jeder der drei Klassen (günstig,
+   mittel, gehoben) das bestbewertete Haus. Die Klassen werden aus der
+   aktuellen Trefferliste gebildet, nicht absolut - "günstig" heißt in
+   Kyoto etwas anderes als an der Ostsee.
+2. **Rest nach Abstand.** Bleibt ein Platz frei, weil eine Klasse leer ist,
+   kommt das Haus hinein, das sich von den bereits gewählten am stärksten
+   unterscheidet (Art des Hauses, Gegend). Bei Gleichstand entscheidet die
+   Bewertung.
+
+Damit die Spreizung überhaupt möglich ist, sieht der Agent bei dünnem
+Profil **zweimal** in die Liste: einmal nach Bewertung sortiert, einmal
+nach Preis aufsteigend. Ohne den zweiten Durchgang kennt er nur das obere
+Ende und kann nicht spreizen. Das ist sichtbares Verhalten auf der Seite -
+er sortiert um und liest erneut, so wie ein Mensch weiterscrollen würde.
+
+### Der Agent sagt, welches Verfahren er benutzt
+
+Bei Spreizung:
+
+> Du hast mir noch keine Vorlieben genannt. Deshalb habe ich nicht drei
+> ähnliche Häuser herausgesucht, sondern drei, die sich unterscheiden - in
+> der Preisklasse, in der Art des Hauses und in der Lage. Sag mir, welche
+> Richtung dir zusagt, dann suche ich gezielter.
+
+Das ist zugleich die Einladung zur nächsten Runde: Die Reaktion darauf
+erhöht den Informationswert, und der zweite Durchgang läuft dann nach
+Passung. Für die Auswertung ist beides interessant - ob jemand die
+Einladung annimmt, und wie viele Runden bis zur Entscheidung nötig sind.
+
+### Im Protokoll
+
+Jeder Shortlist-Eintrag hält `strategie` und `informationswert` fest. Damit
+lässt sich später trennen: Wer hat dem Agenten von Anfang an etwas gegeben,
+wer hat ihn erst suchen lassen und dann nachgeschärft - und macht das einen
+Unterschied für Vertrauen und Zufriedenheit.
