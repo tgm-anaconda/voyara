@@ -419,6 +419,28 @@ const Kern = {
       }
     }
 
+    // Ein Ort genannt, den es hier nicht gibt. Das ist kein
+    // Verstaendnisproblem, sondern eine Luecke im Angebot - und die
+    // gehoert benannt, nicht mit "das habe ich nicht ganz verstanden"
+    // verdeckt.
+    if (!this.lauf.profil.zielId && a.zielRoh) {
+      const ersatz = Politik.ersatzziele(a.zielRoh);
+      this.lauf.zielAuswahl = ersatz.map((z) => {
+        const treffer = ZIELE.find((x) => x.name === z.name);
+        return treffer ? treffer.id : null;
+      }).filter(Boolean);
+      this.lauf.phase = "zielwahl";
+      this.notieren("ziel_unbekannt", { genannt: a.zielRoh, angeboten: this.lauf.zielAuswahl });
+      const namen = Politik.zielnamen(this.lauf.zielAuswahl);
+      const rueckfall = `${a.zielRoh} habe ich nicht im Angebot. Was ich habe: ${Politik.aufzaehlen(namen)}. Passt eines davon?`;
+      this.sagen(await this.formulieren(Politik.faktenUnbekanntesZiel(a.zielRoh), rueckfall));
+      AgentPanel.setSuggestions(namen);
+      AgentPanel.status("wartet auf deine Antwort");
+      AgentPanel.oeffnen();
+      this.sichern();
+      return;
+    }
+
     // Ohne Ziel und ohne erkennbaren Wunsch lohnt keine Rueckfrage nach dem
     // Vorgehen - dann fehlt die Grundlage, und der Agent fragt danach.
     if (!a.zielId && !a.kriterien.length && a.erwachsene == null && !a.budget) {
@@ -1256,19 +1278,40 @@ const Kern = {
      ein neuer Auftrag.
      ================================================================== */
 
-  // Kurze Absichten, die kein Suchauftrag sind. Ohne sie landeten Begruessung
-  // und die Frage nach den Faehigkeiten in derselben Verlegenheitsantwort
-  // ("Sag mir, wohin es gehen soll") - der Chat wirkte begriffsstutzig,
-  // bevor er ueberhaupt etwas tun konnte.
+  /* Kurze Absichten, die kein Suchauftrag sind.
+     ------------------------------------------------------------------
+     Begruessung, die Frage nach den Faehigkeiten, ein Dankeschoen. Hier
+     standen bis eben feste Saetze - und weil das die ersten Worte im
+     Gespraech sind, war der erste Eindruck der eines Textbausteins.
+     Jetzt liefert die Funktion nur die Lage und die Fakten, formuliert
+     wird vom Modell. Die Saetze unten sind der Rueckfall. */
   kleineAntwort(t) {
     if (/^(hallo|hi|hey|guten (tag|morgen|abend)|moin|servus|na)\b[\s!?.]*$/i.test(t)) {
-      return "Hallo! Sag mir einfach, wohin es gehen soll — Ziel, Zeitraum und wie viele Personen reichen mir zum Anfangen.";
+      return {
+        fakten: {
+          lage: "Die Person hat dich nur gegruesst und noch nichts gesagt, was sie sucht. Gruess zurueck und frag, wohin es gehen soll.",
+          wasDuBrauchst: ["Reiseziel", "ungefaehrer Zeitraum", "wie viele Personen"],
+          anzahlZiele: typeof ZIELE !== "undefined" ? ZIELE.length : null,
+        },
+        ersatz: "Hallo. Sag mir, wohin es gehen soll, dann suche ich für dich. Zeitraum und Personenzahl helfen mir zusätzlich.",
+      };
     }
     if (/(was kannst du|wie funktionier|was machst du|kannst du mir helfen|hilfe|wobei hilfst)/i.test(t)) {
-      return "Ich kann für dich suchen, filtern und sortieren, die Bewertungen auswerten und dir eine Auswahl mit Begründung vorlegen. Bis zur Buchung frage ich vorher nach. Du kannst jederzeit selbst weiterklicken — beschreib einfach, was du suchst.";
+      return {
+        fakten: {
+          lage: "Die Person fragt, was du kannst. Sag es ihr knapp und nenne auch, wo du aufhoerst.",
+          wasDuKannst: ["suchen", "filtern", "sortieren", "Bewertungen auswerten", "eine Auswahl mit Begruendung vorlegen"],
+          wasDuNichtTust: "ohne Freigabe buchen",
+          hinweis: "Die Person kann jederzeit selbst weiterklicken und die Freigabestufe im Chat aendern.",
+        },
+        ersatz: "Ich kann für dich suchen, filtern und sortieren, die Bewertungen auswerten und dir eine Auswahl mit Begründung vorlegen. Wie weit ich dabei gehen darf, stellst du oben ein. Beschreib einfach, was du suchst.",
+      };
     }
     if (/^(danke|dankeschön|merci|passt|alles klar|ok(ay)?)\b[\s!.]*$/i.test(t)) {
-      return "Gern. Sag Bescheid, wenn ich weitersuchen soll.";
+      return {
+        fakten: { lage: "Die Person hat sich bedankt oder bestaetigt. Antworte kurz und biete an weiterzumachen." },
+        ersatz: "Gern. Sag Bescheid, wenn ich weitersuchen soll.",
+      };
     }
     return null;
   },
@@ -1307,7 +1350,7 @@ const Kern = {
       const kurz = this.kleineAntwort(t);
       if (kurz) {
         this.sagen(t, "user");
-        this.sagen(kurz);
+        this.sagen(await this.formulieren(kurz.fakten, kurz.ersatz));
         AgentPanel.setSuggestions(Politik.vorschlaege());
         return;
       }

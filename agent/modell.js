@@ -98,6 +98,10 @@ const Modell = {
       const treffer = nachLaenge.find((z) => gesucht.includes(z.name.toLowerCase()) || z.name.toLowerCase().includes(gesucht))
         || nachLaenge.find((z) => gesucht.includes(z.land.toLowerCase()));
       if (treffer) geprueft.zielId = treffer.id;
+      // Kein Treffer: Der genannte Ort bleibt trotzdem erhalten. Der
+      // Agent soll sagen koennen "Madrid habe ich nicht", statt so zu
+      // tun, als haette er die Frage nicht verstanden.
+      else geprueft.zielRoh = a.ziel.trim();
     }
 
     // Kriterien nur, wenn Politik sie kennt

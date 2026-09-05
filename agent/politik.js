@@ -68,6 +68,22 @@ const Politik = {
     const summe = t.match(/(?:max(?:imal)?|bis(?: zu)?|unter|höchstens|hoechstens)\s*(\d{2,4})\s*(?:€|euro)?/);
     if (summe) a.maxPreis = +summe[1];
 
+    // Ein Ortsname, den wir nicht haben. Ohne Modell erkennt das niemand,
+    // und der Agent antwortete dann "das habe ich nicht ganz verstanden" -
+    // obwohl er sehr wohl verstanden hat, dass jemand nach Madrid will.
+    // Deshalb hier eine einfache Regel: nach "nach", "in" oder "auf" steht
+    // im Deutschen meist der Ort.
+    if (!a.zielId) {
+      const roh = text.match(/\b(?:nach|in|auf|richtung)\s+([A-ZÄÖÜ][\wäöüßáéíóúàèìòù-]{2,})/);
+      if (roh) {
+        const wort = roh[1];
+        // Keine Reiseart und kein Monatsname
+        const istThema = this.THEMEN.some((th) => th.woerter.some((w) => wort.toLowerCase().includes(w)));
+        const istMonat = Object.keys(this.MONATE).includes(wort.toLowerCase());
+        if (!istThema && !istMonat) a.zielRoh = wort;
+      }
+    }
+
     return a;
   },
 
@@ -176,6 +192,57 @@ const Politik = {
     const ziele = bestes.thema.ziele.filter((id) =>
       typeof ZIEL_NACH_ID === "undefined" || ZIEL_NACH_ID[id]);
     return ziele.length ? { ...bestes.thema, ziele } : null;
+  },
+
+  /* Ein genannter Ort, den es im Katalog nicht gibt.
+     ------------------------------------------------------------------
+     "Nach Madrid" ist ein vollstaendig verstandener Wunsch - nur haben
+     wir Madrid nicht. Vorher endete das in "Das habe ich noch nicht
+     ganz", also in einer Antwort, die so klingt, als haette der Agent
+     die Frage nicht gelesen. Er soll stattdessen sagen, was er hat.
+
+     Zuerst Ziele im selben Land, dann die mit den meisten Unterkuenften. */
+  ersatzziele(rohText, anzahl = 3) {
+    if (typeof ZIELE === "undefined") return [];
+    const alle = [
+      ...(typeof HOTELS !== "undefined" ? HOTELS : []),
+      ...(typeof APARTMENTS !== "undefined" ? APARTMENTS : []),
+    ];
+    const zahl = (id) => alle.filter((o) => o.ziel === id).length;
+
+    // Land des genannten Ortes erraten, soweit eines unserer Ziele dort liegt
+    const t = String(rohText).toLowerCase();
+    const LAENDER = {
+      spanien: ["madrid", "sevilla", "valencia", "granada", "bilbao", "malaga", "málaga", "ibiza"],
+      italien: ["rom", "mailand", "florenz", "venedig", "neapel", "toskana", "sizilien", "gardasee"],
+      portugal: ["porto", "madeira", "azoren", "sintra"],
+      "österreich": ["salzburg", "graz", "innsbruck", "kärnten", "steiermark"],
+      griechenland: ["athen", "rhodos", "korfu", "santorin", "kos"],
+      frankreich: ["paris", "nizza", "korsika", "provence", "bretagne"],
+    };
+    let land = null;
+    for (const [l, orte] of Object.entries(LAENDER)) {
+      if (orte.some((o) => t.includes(o))) { land = l; break; }
+    }
+
+    const imLand = land
+      ? ZIELE.filter((z) => z.land.toLowerCase() === land).sort((a, b) => zahl(b.id) - zahl(a.id))
+      : [];
+    const rest = ZIELE.filter((z) => !imLand.includes(z)).sort((a, b) => zahl(b.id) - zahl(a.id));
+    return [...imLand, ...rest].slice(0, anzahl).map((z) => ({
+      name: z.name, land: z.land, beschreibung: z.kurz, unterkuenfte: zahl(z.id),
+    }));
+  },
+
+  faktenUnbekanntesZiel(rohText) {
+    const ersatz = this.ersatzziele(rohText);
+    return {
+      lage: "Die Person hat einen Ort genannt, den es hier nicht gibt. Sag das offen, ohne Umschweife, und schlag vor, was du stattdessen hast.",
+      genannterOrt: rohText,
+      nichtImAngebot: true,
+      stattdessen: ersatz,
+      anzahlZieleInsgesamt: typeof ZIELE !== "undefined" ? ZIELE.length : null,
+    };
   },
 
   zielnamen(ids) {
