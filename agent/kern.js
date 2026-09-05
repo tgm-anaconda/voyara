@@ -28,8 +28,40 @@
    hier an einer Stelle und nicht im Code verstreut. Diese Tabelle ist
    zugleich die Gespraechsgrundlage mit dem Betreuer.
    ================================================================== */
+/* ==================================================================
+   Freigabestufen
+   ------------------------------------------------------------------
+   Wie viel der Agent tun darf, entscheidet die teilnehmende Person
+   selbst - ueber einen sichtbaren Regler im Chat, jederzeit aenderbar.
+
+   Damit ist der Autonomiegrad keine Manipulation mehr, sondern eine
+   abhaengige Variable: Statt Gruppen zuzuweisen und zu schauen, was
+   passiert, wird gemessen, wie viel Kontrolle Menschen von sich aus
+   abgeben - und wie sich das im Verlauf aendert, etwa nachdem der
+   Agent einen Fehler gemacht hat.
+
+   Die Stufen bauen aufeinander auf. Jede schliesst die darunter ein.
+   ================================================================== */
+const FREIGABE = [
+  { id: "vorschlagen", rang: 0, kurz: "Nur vorschlagen",
+    lang: "Nur vorschlagen, klicken mache ich selbst" },
+  { id: "suchen", rang: 1, kurz: "Suchen und filtern",
+    lang: "Suchen und filtern darf er, entscheiden ich" },
+  { id: "vorbereiten", rang: 2, kurz: "Buchung vorbereiten",
+    lang: "Er darf die Buchung vorbereiten" },
+  { id: "buchen", rang: 3, kurz: "Auch buchen",
+    lang: "Er darf die Buchung auch abschließen" },
+];
+const FREIGABE_RANG = Object.fromEntries(FREIGABE.map((f) => [f.id, f.rang]));
+
 const STELLSCHRAUBEN = {
-  autonomie: "nachfrage",       // assistiert | nachfrage | autonom
+  // Vorbelegung des Reglers. "zufall" teilt die Teilnehmenden in zwei
+  // Haelften: die eine startet auf der niedrigsten Stufe, die andere auf
+  // der hoechsten. Damit laesst sich messen, wie viele die Voreinstellung
+  // einfach stehen lassen - eine Frage mit Gewicht, wenn Anbieter spaeter
+  // "darf kaufen" vorbelegen.
+  freigabeStart: "zufall",      // niedrig | hoch | zufall
+  freigabeRegler: true,         // false = Regler unsichtbar, Stufe fest
   tempo: 1.0,                   // Geschwindigkeit des Zeigers
   fehler: "keine",              // keine | filter | kriterium | behauptung
   // knapp      = nur der Vorschlag, keine Herleitung
@@ -55,7 +87,7 @@ const STELLSCHRAUBEN = {
    zwischen Liste und Detailseite wechselt. */
 (function stellschraubenAusAdresse() {
   const ERLAUBT = {
-    autonomie: ["assistiert", "nachfrage", "autonom"],
+    freigabeStart: ["niedrig", "hoch", "zufall"],
     fehler: ["keine", "filter", "kriterium", "behauptung"],
     begruendung: ["knapp", "ausfuehrlich"],
     initiative: ["abwartend", "vorschlagend"],
@@ -76,7 +108,7 @@ const STELLSCHRAUBEN = {
     const v = parseFloat(p.get(feld));
     if (!Number.isNaN(v) && v >= 0.25 && v <= 4) { gruppe[feld] = v; neu = true; }
   }
-  for (const feld of ["eingangsfrage"]) {
+  for (const feld of ["eingangsfrage", "freigabeRegler"]) {
     const v = p.get(feld);
     if (v === "0" || v === "1") { gruppe[feld] = v === "1"; neu = true; }
   }
@@ -109,6 +141,7 @@ const Kern = {
       kandidaten: [],          // die Shortlist
       gewaehlt: null,
       zielAuswahl: [],         // Ziele, die zu einer genannten Reiseart passen
+      freigabe: null,          // was der Agent tun darf - von der Person gewaehlt
       runde: 0,                // wie oft wurde nachgeschaerft
       protokoll: [],           // Messpunkte fuer die Auswertung
       zeiger: null,
@@ -142,6 +175,47 @@ const Kern = {
     sessionStorage.removeItem(this.SCHLUESSEL);
   },
 
+  /* ==================================================================
+     Freigabe
+     ================================================================== */
+
+  // Startstufe. Bei "zufall" entscheidet ein Muenzwurf zwischen der
+  // niedrigsten und der hoechsten Stufe - und der Wurf wird festgehalten,
+  // damit sich spaeter auswerten laesst, wer von wo aus gestartet ist.
+  startFreigabe() {
+    const s = STELLSCHRAUBEN.freigabeStart;
+    if (s === "niedrig") return { stufe: "vorschlagen", gewuerfelt: false };
+    if (s === "hoch") return { stufe: "buchen", gewuerfelt: false };
+    return { stufe: Math.random() < 0.5 ? "vorschlagen" : "buchen", gewuerfelt: true };
+  },
+
+  freigabe() {
+    return this.lauf?.freigabe || "suchen";
+  },
+
+  // Darf der Agent das? Die Stufen bauen aufeinander auf.
+  darf(stufe) {
+    return FREIGABE_RANG[this.freigabe()] >= FREIGABE_RANG[stufe];
+  },
+
+  // Aenderung durch die teilnehmende Person. `ausloeser` haelt fest, in
+  // welcher Lage sie umgestellt hat - vor dem ersten Lauf, nach einem
+  // Vorschlag, nach einem entdeckten Fehler. Das ist der Verlauf, um den
+  // es geht.
+  freigabeSetzen(stufe, ausloeser = "regler") {
+    if (!FREIGABE_RANG.hasOwnProperty(stufe)) return;
+    const vorher = this.lauf.freigabe;
+    if (vorher === stufe) return;
+    this.lauf.freigabe = stufe;
+    this.notieren("freigabe", {
+      von: vorher, nach: stufe,
+      richtung: FREIGABE_RANG[stufe] > FREIGABE_RANG[vorher] ? "hoch" : "runter",
+      ausloeser, phase: this.lauf.phase, runde: this.lauf.runde,
+    });
+    this.sichern();
+    AgentPanel.freigabeZeigen(stufe);
+  },
+
   // Messpunkte. Die Studie will wissen, wer abstimmt, wer nachschaerft und
   // wer uebernimmt - deshalb wird jeder Uebergang festgehalten.
   notieren(ereignis, daten = {}) {
@@ -168,7 +242,7 @@ const Kern = {
     // hat, egal was vorher darin stand.
     const kasten = document.getElementById("agentMessages");
     if (kasten) kasten.innerHTML = "";
-    for (const n of this.lauf.verlauf) AgentPanel.say(n.text, n.rolle, { still: true, links: n.links });
+    for (const n of this.lauf.verlauf) AgentPanel.say(n.text, n.rolle, { still: true, links: n.links, aktionen: n.aktionen });
 
     // Erste Seite der Sitzung: begruessen. Das muss hier passieren und nicht
     // im Panel - der Kasten wird eine Zeile darueber geleert, und eine vorher
@@ -177,6 +251,16 @@ const Kern = {
       this.sagen("Hallo! Wonach suchst du? Beschreib es einfach — ich suche, filtere und vergleiche für dich.");
       AgentPanel.setSuggestions(Politik.vorschlaege());
     }
+
+    // Freigabestufe: einmal je Sitzung gewuerfelt, danach ueberdauert sie
+    // den Seitenwechsel wie der Rest des Laufs.
+    if (!this.lauf.freigabe) {
+      const start = this.startFreigabe();
+      this.lauf.freigabe = start.stufe;
+      this.notieren("freigabe_start", { stufe: start.stufe, gewuerfelt: start.gewuerfelt });
+      this.sichern();
+    }
+    AgentPanel.freigabeAufbauen(FREIGABE, this.lauf.freigabe, (stufe) => this.freigabeSetzen(stufe));
 
     this.kandidatenAuffrischen();
     AgentPanel.ansEnde?.();
@@ -275,6 +359,10 @@ const Kern = {
     this.lauf = this.leererLauf();
     this.lauf.verlauf = alt.verlauf;        // das Gespraech bleibt stehen
     this.lauf.protokoll = alt.protokoll || [];
+    // Die Freigabestufe gilt fuer die Sitzung, nicht fuer den einzelnen
+    // Auftrag. Wer sie einmal gesenkt hat, will sie nicht bei der
+    // naechsten Frage wieder auf dem Ausgangswert vorfinden.
+    this.lauf.freigabe = alt.freigabe || null;
 
     this.lauf.auftrag = text;
     this.sagen(text, "user");
@@ -488,6 +576,25 @@ const Kern = {
      ================================================================== */
 
   async suchen() {
+    // Stufe "nur vorschlagen": Der Agent fasst nicht auf die Seite. Er
+    // sagt, was er tun wuerde, und ueberlaesst das Klicken der Person.
+    // Ohne diese Sperre waere der Regler eine Attrappe.
+    if (!this.darf("suchen")) {
+      this.lauf.phase = "fertig";
+      const ziel = this.lauf.profil.zielId && typeof ZIEL_NACH_ID !== "undefined"
+        ? ZIEL_NACH_ID[this.lauf.profil.zielId]?.name : null;
+      const ersatz = ziel
+        ? `Du hast mir nur das Vorschlagen erlaubt, ich fasse die Seite also nicht an. Ich würde nach ${ziel} suchen${this.lauf.profil.maxPreis ? ` und den Preis auf ${this.lauf.profil.maxPreis} € begrenzen` : ""}. Mach das gern selbst — oder gib mir das Suchen frei, dann übernehme ich.`
+        : "Du hast mir nur das Vorschlagen erlaubt. Sag mir, wonach ich schauen soll, dann beschreibe ich dir die Schritte — oder gib mir das Suchen frei.";
+      this.notieren("gesperrt", { wollte: "suchen", freigabe: this.freigabe() });
+      this.sagen(ersatz);
+      AgentPanel.setSuggestions(["Such du", "Ich mache es selbst"]);
+      AgentPanel.status("wartet auf deine Antwort");
+      AgentPanel.oeffnen();
+      this.sichern();
+      return;
+    }
+
     this.lauf.phase = "arbeitet";
     const schritte = Politik.suchschritte(this.lauf.profil);
 
@@ -750,7 +857,16 @@ const Kern = {
       // wer lieber selbst schaut, klickt hier direkt hinein.
       const eigener = Politik.vorschlagssatz(k, this.lauf.profil);
       const satz = await this.formulieren(Politik.faktenVorschlag(k, this.lauf.profil), eigener);
-      this.sagen(`${i + 1}. ${satz}`, "bot", [this.linkZu(k.id, k.item.name)]);
+      // Der Verweis fuehrt zum Haus, der Knopf fragt nach der Begruendung.
+      // Beide sind freiwillig - und genau deshalb zaehlbar.
+      this.lauf.verlauf.push({ rolle: "bot", text: `${i + 1}. ${satz}`, zeit: Date.now(),
+        links: [this.linkZu(k.id, k.item.name)],
+        aktionen: [{ text: "Warum dieses?", wert: `Warum ${k.item.name}?` }] });
+      AgentPanel.say(`${i + 1}. ${satz}`, "bot", {
+        links: [this.linkZu(k.id, k.item.name)],
+        aktionen: [{ text: "Warum dieses?", wert: `Warum ${k.item.name}?` }],
+      });
+      this.sichern();
     }
     await Zeiger.warte(900);
 
@@ -791,7 +907,34 @@ const Kern = {
     return [...namen, "Etwas günstiger", "Lieber ruhiger"];
   },
 
+  // "Warum dieses Haus?" - die freiwillige Nachfrage nach der Begruendung.
+  // Sie wird eigens protokolliert: Wie viele Menschen wollen ueberhaupt
+  // wissen, warum eine Maschine so entschieden hat?
+  async antwortWarum(text) {
+    this.kandidatenAuffrischen();
+    const kandidaten = this.lauf.kandidaten || [];
+    const gesucht = text.toLowerCase();
+    const k = kandidaten.find((x) => gesucht.includes((x.item?.name || "").toLowerCase()))
+      || (Werkzeuge.seite() === "stay"
+        ? kandidaten.find((x) => x.id === new URLSearchParams(location.search).get("id"))
+        : null);
+    if (!k) return false;
+
+    this.sagen(text, "user");
+    this.notieren("warum_gefragt", { id: k.id, runde: this.lauf.runde, phase: this.lauf.phase });
+    await this.denkpause(700);
+    const ersatz = Politik.warumSatz(k, kandidaten, this.lauf.profil);
+    this.sagen(await this.formulieren(Politik.faktenWarum(k, kandidaten, this.lauf.profil), ersatz));
+    AgentPanel.setSuggestions(this.shortlistChips());
+    this.sichern();
+    return true;
+  },
+
   async antwortShortlist(text) {
+    // Erst die Begruendungsfrage abfangen - sonst laese sie sich als
+    // Auswahl ("Warum Baan Suan Retreat?" enthaelt den Namen).
+    if (/^warum\b/i.test(text.trim()) && await this.antwortWarum(text)) return;
+
     this.sagen(text, "user");
     this.kandidatenAuffrischen();
 
@@ -912,6 +1055,7 @@ const Kern = {
   },
 
   async antwortVertieft(text) {
+    if (/^warum\b/i.test(text.trim()) && await this.antwortWarum(text)) return;
     const t = text.toLowerCase();
     const id = this.lauf.gewaehlt;
 
@@ -925,6 +1069,13 @@ const Kern = {
     }
     if (/buch|reservier|zur buchung|nehmen/.test(t)) {
       this.sagen(text, "user");
+      if (!this.darf("vorbereiten")) {
+        this.notieren("gesperrt", { wollte: "vorbereiten", freigabe: this.freigabe() });
+        this.sagen("Zur Buchung darf ich nicht — du hast mir das nicht freigegeben. Der Knopf ist auf der Seite, oder du hebst die Freigabe an.");
+        AgentPanel.setSuggestions(["Freigabe anheben", "Ich mache es selbst"]);
+        this.sichern();
+        return;
+      }
       this.notieren("zur_buchung", { id });
       this.lauf.phase = "arbeitet";
       this.lauf.offeneSchritte = [{ werkzeug: "zurBuchung", status: "öffnet Buchung…", args: { id } }];
@@ -975,9 +1126,13 @@ const Kern = {
   async abschluss() {
     this.sperreAus();
 
+    // Die Freigabestufe entscheidet, was hier passiert. Sie ersetzt die
+    // frueher fest zugewiesene Autonomiestufe: Nicht die Studienleitung
+    // bestimmt, wie weit der Agent gehen darf, sondern die teilnehmende
+    // Person - und genau diese Entscheidung ist die Messgroesse.
     const aufBuchungsseite = Werkzeuge.seite() === "checkout";
-    if (aufBuchungsseite && STELLSCHRAUBEN.autonomie !== "assistiert") {
-      if (STELLSCHRAUBEN.autonomie === "nachfrage") {
+    if (aufBuchungsseite) {
+      if (!this.darf("buchen")) {
         this.lauf.phase = "nachfrage";
         this.sagen("Ich bin bei der Buchung angekommen. Soll ich sie abschließen oder möchtest du das selbst machen?");
         AgentPanel.setSuggestions(["Ja, schließ ab", "Ich mache das selbst"]);
@@ -986,7 +1141,7 @@ const Kern = {
         this.sichern();
         return;
       }
-      if (STELLSCHRAUBEN.autonomie === "autonom") {
+      {
         this.sagen("Ich schließe die Buchung jetzt ab. Sag Stopp, wenn du das nicht willst.");
         await Zeiger.warte(2600);
         if (!Zeiger.abbruch) {
@@ -1120,6 +1275,21 @@ const Kern = {
 
   async eingabe(text) {
     const t = text.trim();
+    // Die Freigabe laesst sich auch im Gespraech aendern, nicht nur ueber
+    // den Regler - wer gerade abgewiesen wurde, hat den Knopf vor Augen.
+    if (/freigabe anheben|such du|du darfst suchen/i.test(t)) {
+      this.sagen(t, "user");
+      this.freigabeSetzen("suchen", "gespraech");
+      this.sagen("Gut, ich darf jetzt suchen und filtern. Ich lege los.");
+      return this.suchen();
+    }
+    if (/darfst buchen|freigabe.*buchen|buchung freigeben/i.test(t)) {
+      this.sagen(t, "user");
+      this.freigabeSetzen("buchen", "gespraech");
+      this.sagen("Verstanden, ich darf die Buchung abschließen.");
+      return;
+    }
+
     if (/^(stopp?|halt|anhalten|warte)$/i.test(t)) {
       // Nichts angehalten, wenn nichts lief - sonst behauptet der Chat eine
       // Uebernahme, die es nie gab, und das Protokoll zaehlt sie mit.
@@ -1146,8 +1316,12 @@ const Kern = {
     if (/^(mach weiter|weiter)$/i.test(t)) return this.fortsetzen();
     if (/^(neue suche|von vorn|neu anfangen)$/i.test(t)) {
       const verlauf = this.lauf.verlauf;
+      const freigabe = this.lauf.freigabe;
+      const protokoll = this.lauf.protokoll;
       this.zuruecksetzen();
       this.lauf.verlauf = verlauf;
+      this.lauf.freigabe = freigabe;
+      this.lauf.protokoll = protokoll || [];
       this.sagen(t, "user");
       this.sagen("Gut, fangen wir neu an. Wohin soll es gehen?");
       AgentPanel.setSuggestions(Politik.vorschlaege());

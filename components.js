@@ -246,6 +246,17 @@ function renderAgentRail() {
     <button type="button" class="icon-btn" id="agentCollapse" title="Chat auf- oder zuklappen">${ICONS.close}</button>
   </div>
 
+  <!-- Freigabe: wie viel der Chat tun darf. Von der Person gewaehlt,
+       jederzeit aenderbar - und damit die zentrale Messgroesse dieser
+       Studie, nicht bloss eine Einstellung. -->
+  <div class="agent-freigabe" id="agentFreigabe" hidden>
+    <button type="button" class="freigabe-knopf" id="freigabeKnopf" aria-expanded="false">
+      <span class="freigabe-marke">Freigabe</span>
+      <span class="freigabe-stufe" id="freigabeStufe">Suchen und filtern</span>
+    </button>
+    <div class="freigabe-liste" id="freigabeListe" hidden role="group" aria-label="Was darf der Chat für dich tun?"></div>
+  </div>
+
   <div class="agent-messages" id="agentMessages"></div>
 
   <div class="agent-suggestions" id="agentSuggestions"></div>
@@ -366,12 +377,30 @@ const AgentPanel = {
   // wird immer als Text gesetzt, nie als HTML: er enthaelt Namen aus dem
   // Katalog, und generierter Text gehoert grundsaetzlich nicht ungeprueft ins
   // Markup. Die Verweise werden stattdessen als echte Knoten gebaut.
-  say(text, role = "bot", { still = false, links = null } = {}) {
+  // `aktionen` sind Schaltflaechen unter der Nachricht, die eine Eingabe
+  // ausloesen statt zu einer Seite zu fuehren. Gebraucht fuer "Warum
+  // dieses Haus?" - eine Nachfrage, die zaehlbar sein soll.
+  say(text, role = "bot", { still = false, links = null, aktionen = null } = {}) {
     const box = document.getElementById("agentMessages");
     if (!box) return;
     const el = document.createElement("div");
     el.className = `msg ${role}${still ? "" : " neu"}`;
     el.textContent = text;
+
+    if (aktionen && aktionen.length) {
+      const reihe = document.createElement("div");
+      reihe.className = "msg-links";
+      for (const a of aktionen) {
+        if (!a || !a.wert) continue;
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "msg-aktion";
+        b.textContent = a.text || "Warum?";
+        b.addEventListener("click", (e) => { e.stopPropagation(); this.handleUserInput(a.wert); });
+        reihe.appendChild(b);
+      }
+      if (reihe.childNodes.length) el.appendChild(reihe);
+    }
 
     if (links && links.length) {
       const reihe = document.createElement("div");
@@ -425,6 +454,62 @@ const AgentPanel = {
   ungelesenLeeren() {
     this.ungelesen = 0;
     document.querySelector(".agent-rail")?.classList.remove("hat-neues");
+  },
+
+  /* Freigaberegler
+     ------------------------------------------------------------------
+     Wird vom Agentenkern aufgebaut, weil dort die Stufen und der
+     gewuerfelte Startwert liegen. Das Panel zeigt sie nur an. */
+  freigabeAufbauen(stufen, aktuell, beiWahl) {
+    const kasten = document.getElementById("agentFreigabe");
+    const liste = document.getElementById("freigabeListe");
+    const knopf = document.getElementById("freigabeKnopf");
+    if (!kasten || !liste || !knopf) return;
+    if (typeof STELLSCHRAUBEN !== "undefined" && STELLSCHRAUBEN.freigabeRegler === false) {
+      kasten.hidden = true;
+      return;
+    }
+    kasten.hidden = false;
+
+    liste.innerHTML = "";
+    for (const s of stufen) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "freigabe-option";
+      b.dataset.stufe = s.id;
+      b.textContent = s.lang;
+      b.addEventListener("click", (e) => {
+        e.stopPropagation();
+        beiWahl(s.id);
+        liste.hidden = true;
+        knopf.setAttribute("aria-expanded", "false");
+      });
+      liste.appendChild(b);
+    }
+
+    if (!knopf.dataset.verdrahtet) {
+      knopf.dataset.verdrahtet = "1";
+      knopf.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const auf = liste.hidden;
+        liste.hidden = !auf;
+        knopf.setAttribute("aria-expanded", String(auf));
+      });
+    }
+    this.freigabeZeigen(aktuell);
+  },
+
+  freigabeZeigen(stufe) {
+    const feld = document.getElementById("freigabeStufe");
+    const liste = document.getElementById("freigabeListe");
+    if (!feld || typeof FREIGABE === "undefined") return;
+    const s = FREIGABE.find((x) => x.id === stufe);
+    if (s) feld.textContent = s.kurz;
+    liste?.querySelectorAll(".freigabe-option").forEach((b) =>
+      b.classList.toggle("gewaehlt", b.dataset.stufe === stufe));
+    // Die oberste Stufe wird hervorgehoben: Wer dem Agenten das Buchen
+    // erlaubt, soll das nicht uebersehen koennen.
+    document.getElementById("agentFreigabe")?.classList.toggle("voll", stufe === "buchen");
   },
 
   // Auf dem Handy aufklappen, wenn der Chat etwas von der Person will.

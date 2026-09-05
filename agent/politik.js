@@ -878,6 +878,68 @@ const Politik = {
     };
   },
 
+  /* Nachfrage zu einem einzelnen Vorschlag.
+     ------------------------------------------------------------------
+     Ausfuehrlicher als der Vorschlagssatz: alle Aspekte mit Zahlen, der
+     Platz in der Auswahl, und was gegen das Haus spricht. Wer nachfragt,
+     soll etwas bekommen, das die Muehe wert war - sonst misst die
+     Nachfragequote nur, wie neugierig jemand ist, und nicht, ob die
+     Begruendung trägt. */
+  faktenWarum(kandidat, kandidaten, profil) {
+    const k = kandidat;
+    const platz = kandidaten.findIndex((x) => x.id === k.id) + 1;
+    const bilanz = typeof aspektbilanz === "function" ? (aspektbilanz(k.item, 400) || []) : [];
+
+    return {
+      lage: "Die Person hat nachgefragt, warum du gerade dieses Haus vorschlaegst. Antworte ausfuehrlicher als vorher, nenne auch, was dagegen spricht, und wo es im Vergleich zu den anderen steht.",
+      name: k.item.name,
+      ort: k.item.location,
+      preisProNacht: k.preis,
+      note: k.item.rating,
+      anzahlBewertungen: k.item.reviewCount,
+      platzInDerAuswahl: platz,
+      vonWievielen: kandidaten.length,
+      genannteWuensche: (profil.kriterien || []).map((x) => this.kriterium(x.id)?.label).filter(Boolean),
+      // Die vier meistdiskutierten Aspekte mit echten Zahlen
+      wasGaesteSchreiben: bilanz.slice(0, 4).map((a) => ({
+        thema: a.label,
+        erwaehnungen: a.erwaehnungen,
+        prozentPositiv: Math.round(a.anteilPositiv * 100),
+      })),
+      dagegen: bilanz.filter((a) => a.anteilPositiv < 0.72).slice(0, 2).map((a) => ({
+        thema: a.label,
+        prozentPositiv: Math.round(a.anteilPositiv * 100),
+      })),
+      andereZumVergleich: kandidaten.filter((x) => x.id !== k.id).map((x) => ({
+        name: x.item.name, preisProNacht: x.preis, note: x.item.rating,
+      })),
+    };
+  },
+
+  // Rueckfall, wenn das Modell nicht antwortet
+  warumSatz(kandidat, kandidaten, profil) {
+    const k = kandidat;
+    const platz = kandidaten.findIndex((x) => x.id === k.id) + 1;
+    const bilanz = typeof aspektbilanz === "function" ? (aspektbilanz(k.item, 400) || []) : [];
+    const teile = [`${k.item.name} steht bei mir auf Platz ${platz} von ${kandidaten.length}.`];
+
+    const oben = bilanz.slice(0, 2);
+    if (oben.length) {
+      teile.push(`Am häufigsten geht es in den Bewertungen um ${this.aufzaehlen(oben.map((a) =>
+        `${a.label} (${a.erwaehnungen} Erwähnungen, ${Math.round(a.anteilPositiv * 100)} Prozent positiv)`))}.`);
+    }
+    // Der Schwachpunkt darf nicht derselbe Aspekt sein, der eben schon mit
+    // seiner Zahl dastand - sonst liest sich der Satz wie eine Wiederholung.
+    const genannt = new Set(oben.map((a) => a.label));
+    const schwach = bilanz.filter((a) => a.anteilPositiv < 0.72 && !genannt.has(a.label))[0];
+    if (schwach) {
+      teile.push(`Dagegen spricht ${schwach.label}: nur ${Math.round(schwach.anteilPositiv * 100)} Prozent der Erwähnungen sind positiv.`);
+    }
+    teile.push(`Zum Vergleich: ${this.aufzaehlen(kandidaten.filter((x) => x.id !== k.id)
+      .map((x) => `${x.item.name} kostet ${x.preis} €`))}.`);
+    return teile.join(" ");
+  },
+
   faktenGrundlage(kandidaten, profil, merker, auswahl) {
     const zustand = typeof Werkzeuge !== "undefined" ? Werkzeuge.zustand() : {};
     const erster = kandidaten[0];

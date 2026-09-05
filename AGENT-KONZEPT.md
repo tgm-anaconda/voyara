@@ -711,3 +711,103 @@ Kernkennzahl:
 > Vorgaben verletzt?
 
 Binär, mit bekannter Wahrheit, aus Verhalten statt aus Selbstauskunft.
+
+---
+
+## 19. Der Freigaberegler: Autonomie als abhängige Variable
+
+Gebaut. Die wichtigste Änderung am Untersuchungsdesign.
+
+### Warum
+
+Bisher war der Autonomiegrad eine Manipulation: Die Studienleitung weist
+zu, wie weit der Agent gehen darf, und misst, was das mit dem Vertrauen
+macht. Das ist eine legitime, aber gut abgegraste Frage, und die
+Messgrößen dahinter sind weich.
+
+Der Regler dreht das um. Die teilnehmende Person entscheidet selbst, wie
+viel sie abgibt, und **diese Entscheidung ist die Messgröße**. Damit wird
+aus einer Einstellungsfrage eine Verhaltensfrage.
+
+Der zweite Vorteil: Autonomie als Manipulation wäre für eine
+Delegationsmessung tautologisch gewesen. Ein autonomerer Agent handelt per
+Konstruktion mehr, die Delegationsrate stiege mechanisch. Als abhängige
+Variable entfällt das Problem.
+
+### Die vier Stufen
+
+| Stufe | Was der Agent darf |
+|---|---|
+| `vorschlagen` | nur reden. Er sagt, was er täte, fasst die Seite aber nicht an |
+| `suchen` | suchen, filtern, sortieren, lesen, Detailseiten öffnen |
+| `vorbereiten` | zusätzlich die Buchungsstrecke öffnen |
+| `buchen` | zusätzlich die Buchung abschließen |
+
+Die Stufen bauen aufeinander auf. Sie sind durchgesetzt, nicht dekorativ:
+Auf `vorschlagen` weigert sich der Agent zu suchen und sagt stattdessen,
+was er tun würde. Jede Ablehnung wird als `gesperrt` protokolliert.
+
+Die Stufe lässt sich auch im Gespräch ändern ("such du", "du darfst
+buchen"), nicht nur über den Regler. Beides wird als `freigabe`
+festgehalten, mit `ausloeser` unterschieden.
+
+### Die gewürfelte Voreinstellung
+
+`STELLSCHRAUBEN.freigabeStart` steht auf `zufall`: Die Hälfte der
+Teilnehmenden startet auf der niedrigsten Stufe, die andere Hälfte auf der
+höchsten. Der Wurf wird als `freigabe_start` mit `gewuerfelt: true`
+festgehalten.
+
+Damit steckt ein Default-Experiment in der Studie. Kennzahl:
+
+> Bewegung weg von der Voreinstellung, ja oder nein.
+
+Keine Interpretation nötig. Und der Befund ist verbraucherschutzrelevant:
+Wenn Anbieter "darf kaufen" vorbelegen und kaum jemand das ändert, ist das
+eine Aussage mit Gewicht.
+
+Über die Adresse steuerbar: `?freigabeStart=niedrig|hoch|zufall` und
+`?freigabeRegler=0` für eine Fassung ganz ohne Regler.
+
+### Was sich daraus auswerten lässt
+
+- **Gewählte Stufe** je Aufgabe, Verteilung über vier Stufen
+- **Buchungsvollmacht**: Anteil, der bis `buchen` geht. Die Hauptkennzahl
+- **Verlauf**: jede Änderung mit Richtung, Auslöser, Phase und Runde. Also
+  auch: Senkung nach einem entdeckten Fehler
+- **Default-Treue**: Bewegung weg von der gewürfelten Voreinstellung
+- **Gesperrte Versuche**: wie oft der Agent an die selbst gesetzte Grenze
+  stößt. Ein Maß dafür, ob die Person die Stufe bewusst gewählt hat oder
+  sich später daran stört
+
+---
+
+## 20. "Warum dieses Haus?"
+
+Gebaut. Unter jedem Vorschlag steht neben dem Verweis eine zweite
+Schaltfläche: **Warum dieses?**
+
+### Warum das anders ist als Transparenz zu manipulieren
+
+Die übliche Anlage drängt allen eine Erklärung auf und schaut, was
+passiert. Der Knopf misst stattdessen die **Nachfrage** nach Begründung.
+Wer will überhaupt wissen, warum eine Maschine so entschieden hat?
+
+> Anteil, der mindestens einmal nachfragt.
+
+Sauber zwischen Gruppen vergleichbar, weil der Knopf immer gleich aussieht
+und immer da ist.
+
+### Was die Antwort enthält
+
+Ausführlicher als der Vorschlagssatz, damit die Nachfrage sich lohnt:
+Platz in der Auswahl, die vier meistdiskutierten Aspekte mit Erwähnungszahl
+und Positivanteil, der Schwachpunkt, und die anderen Vorschläge zum
+Vergleich. Alle Zahlen aus den Bewertungsdaten. Das Modell formuliert, die
+Zahlenprüfung aus `agent/modell.js` greift auch hier.
+
+### Protokoll
+
+`warum_gefragt` mit Objekt-ID, Runde und Phase. Damit auch: Wird eher zum
+erstgenannten Vorschlag nachgefragt oder zu den anderen? Vor oder nach dem
+Öffnen der Detailseite?
