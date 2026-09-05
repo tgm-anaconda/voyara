@@ -441,15 +441,13 @@ const Kern = {
       return;
     }
 
-    // Ohne Ziel und ohne erkennbaren Wunsch lohnt keine Rueckfrage nach dem
-    // Vorgehen - dann fehlt die Grundlage, und der Agent fragt danach.
-    if (!a.zielId && !a.kriterien.length && a.erwachsene == null && !a.budget) {
-      this.lauf.phase = "fertig";
-      this.sagen("Das habe ich noch nicht ganz. Sag mir am besten, wohin es gehen soll - und wenn du magst, für wie viele Personen.");
-      AgentPanel.status("online");
-      AgentPanel.setSuggestions(Politik.vorschlaege());
-      this.sichern();
-      return;
+    // Kein Reisewunsch erkennbar. Das heisst nicht, dass nichts gesagt
+    // wurde: "wie gehts dir", "was ist das hier", "kannst du auch Flüge"
+    // sind Aeusserungen, auf die man antwortet. Frueher stand hier ein
+    // fester Satz, und damit war jede Eingabe ausserhalb des Idealpfads
+    // eine Sackgasse - der Chat wirkte wie ein Formular mit Fehlermeldung.
+    if (!a.zielId && !a.zielRoh && !a.kriterien.length && a.erwachsene == null && !a.budget) {
+      return this.plaudern(text);
     }
 
     const verstanden = Politik.ansage(this.lauf.profil);
@@ -465,6 +463,36 @@ const Kern = {
     // erlaubt, die Wahl wird protokolliert.
     this.lauf.phase = "eingangsfrage";
     await this.eingangsfrageStellen(text);
+  },
+
+  /* Alles, was kein Suchauftrag ist.
+     ------------------------------------------------------------------
+     Begruessung, Rueckfrage, Smalltalk, eine Frage zur Seite. Das Modell
+     bekommt die letzten Wendungen des Gespraechs mit, damit es sich nicht
+     wiederholt, und antwortet in seiner Rolle. Ohne Modell bleibt ein
+     Hinweis - besser als nichts, aber sichtbar duenner.
+
+     Das ist bewusst die letzte Station: Alles, was der Agent konkret
+     versteht, wird vorher abgefangen. Hier landet nur, was uebrig
+     bleibt. */
+  async plaudern(text) {
+    this.lauf.phase = "fertig";
+    const letzte = this.lauf.verlauf.slice(-6).map((n) => `${n.rolle === "user" ? "Person" : "Du"}: ${n.text}`);
+    const fakten = {
+      lage: "Die Person hat etwas geschrieben, das kein Suchauftrag ist. Antworte darauf, wie es an dieser Stelle passt, und fuehre danach zurueck zur Sache - ohne zu draengen.",
+      wasDiePersonSchrieb: text,
+      bisherigesGespraech: letzte,
+      wasDuKannst: ["Unterkuenfte suchen", "filtern und sortieren", "Bewertungen auswerten", "eine Auswahl mit Begruendung vorlegen"],
+      wasDuBrauchst: ["Reiseziel", "ungefaehrer Zeitraum", "wie viele Personen"],
+      anzahlZiele: typeof ZIELE !== "undefined" ? ZIELE.length : null,
+      freigabestufe: this.freigabe(),
+    };
+    const ersatz = "Sag mir, wohin es gehen soll, dann suche ich für dich. Zeitraum und Personenzahl helfen mir zusätzlich.";
+    this.notieren("geplaudert", { text });
+    this.sagen(await this.formulieren(fakten, ersatz));
+    AgentPanel.status("online");
+    AgentPanel.setSuggestions(Politik.vorschlaege());
+    this.sichern();
   },
 
   async antwortZielwahl(text) {
@@ -1278,44 +1306,6 @@ const Kern = {
      ein neuer Auftrag.
      ================================================================== */
 
-  /* Kurze Absichten, die kein Suchauftrag sind.
-     ------------------------------------------------------------------
-     Begruessung, die Frage nach den Faehigkeiten, ein Dankeschoen. Hier
-     standen bis eben feste Saetze - und weil das die ersten Worte im
-     Gespraech sind, war der erste Eindruck der eines Textbausteins.
-     Jetzt liefert die Funktion nur die Lage und die Fakten, formuliert
-     wird vom Modell. Die Saetze unten sind der Rueckfall. */
-  kleineAntwort(t) {
-    if (/^(hallo|hi|hey|guten (tag|morgen|abend)|moin|servus|na)\b[\s!?.]*$/i.test(t)) {
-      return {
-        fakten: {
-          lage: "Die Person hat dich nur gegruesst und noch nichts gesagt, was sie sucht. Gruess zurueck und frag, wohin es gehen soll.",
-          wasDuBrauchst: ["Reiseziel", "ungefaehrer Zeitraum", "wie viele Personen"],
-          anzahlZiele: typeof ZIELE !== "undefined" ? ZIELE.length : null,
-        },
-        ersatz: "Hallo. Sag mir, wohin es gehen soll, dann suche ich für dich. Zeitraum und Personenzahl helfen mir zusätzlich.",
-      };
-    }
-    if (/(was kannst du|wie funktionier|was machst du|kannst du mir helfen|hilfe|wobei hilfst)/i.test(t)) {
-      return {
-        fakten: {
-          lage: "Die Person fragt, was du kannst. Sag es ihr knapp und nenne auch, wo du aufhoerst.",
-          wasDuKannst: ["suchen", "filtern", "sortieren", "Bewertungen auswerten", "eine Auswahl mit Begruendung vorlegen"],
-          wasDuNichtTust: "ohne Freigabe buchen",
-          hinweis: "Die Person kann jederzeit selbst weiterklicken und die Freigabestufe im Chat aendern.",
-        },
-        ersatz: "Ich kann für dich suchen, filtern und sortieren, die Bewertungen auswerten und dir eine Auswahl mit Begründung vorlegen. Wie weit ich dabei gehen darf, stellst du oben ein. Beschreib einfach, was du suchst.",
-      };
-    }
-    if (/^(danke|dankeschön|merci|passt|alles klar|ok(ay)?)\b[\s!.]*$/i.test(t)) {
-      return {
-        fakten: { lage: "Die Person hat sich bedankt oder bestaetigt. Antworte kurz und biete an weiterzumachen." },
-        ersatz: "Gern. Sag Bescheid, wenn ich weitersuchen soll.",
-      };
-    }
-    return null;
-  },
-
   async eingabe(text) {
     const t = text.trim();
     // Die Freigabe laesst sich auch im Gespraech aendern, nicht nur ueber
@@ -1347,13 +1337,7 @@ const Kern = {
     // Nur ausserhalb eines laufenden Gespraechs - mitten in einer Rueckfrage
     // waere "ok" eine Antwort und keine Floskel.
     if (["leer", "fertig", "angehalten"].includes(this.lauf.phase)) {
-      const kurz = this.kleineAntwort(t);
-      if (kurz) {
-        this.sagen(t, "user");
-        this.sagen(await this.formulieren(kurz.fakten, kurz.ersatz));
-        AgentPanel.setSuggestions(Politik.vorschlaege());
-        return;
-      }
+
     }
 
     if (/^(mach weiter|weiter)$/i.test(t)) return this.fortsetzen();
