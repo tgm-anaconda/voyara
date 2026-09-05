@@ -39,7 +39,7 @@ const Zeiger = {
         <path d="M4 2 L4 19 L8.5 14.5 L11.5 21 L14 20 L11 13.5 L18 13.5 Z"
               fill="#0f6e5c" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/>
       </svg>
-      <span class="agent-zeiger-marke">Agent</span>`;
+      <span class="agent-zeiger-marke">Chat</span>`;
     document.body.appendChild(huelle);
     this.el = huelle;
 
@@ -384,7 +384,7 @@ const Zeiger = {
   // Macht jede Aktion nachvollziehbar, auch wenn man das Panel nicht liest.
   beschrifte(text) {
     const marke = this.el?.querySelector(".agent-zeiger-marke");
-    if (marke) marke.textContent = text || "Agent";
+    if (marke) marke.textContent = text || "Chat";
   },
 
   // Ein vollkommen stillstehender Zeiger wirkt eingefroren. Waehrend auf das

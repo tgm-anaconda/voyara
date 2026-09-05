@@ -3,11 +3,11 @@
 
 const FAQ_ITEMS = [
   {
-    q: "Wie funktioniert der KI-Reiseagent von Voyara?",
-    a: "Du beschreibst im Chat, was du suchst. Der Agent durchsucht den Katalog, vergleicht passende Häuser und schlägt dir eine Auswahl vor. Je nach Einstellung fragt er vorher nach oder legt direkt los.",
+    q: "Wie finde ich schnell die passende Unterkunft?",
+    a: "Grenze zuerst über Reiseziel, Zeitraum und Personenzahl ein und nutze dann die Filter für Preis, Ausstattung und Entfernung zum Strand. Wer mag, kann seine Wünsche auch im Chat beschreiben.",
   },
   {
-    q: "Kann ich die Auswahl des Agenten verändern?",
+    q: "Kann ich meine Auswahl später noch ändern?",
     a: "Ja, jederzeit. Der komplette Hotelkatalog bleibt frei durchklickbar — du kannst parallel selbst suchen, filtern und eine andere Unterkunft wählen.",
   },
   {
@@ -20,7 +20,7 @@ const FAQ_ITEMS = [
   },
   {
     q: "Was kostet die Nutzung von Voyara?",
-    a: "Der Vergleich und der Reiseagent sind für dich kostenlos. Es entstehen keine Vermittlungsgebühren.",
+    a: "Der Vergleich ist für dich kostenlos. Es entstehen keine Vermittlungsgebühren.",
   },
   {
     q: "Sind die Hotels und Preise echt?",
@@ -29,8 +29,8 @@ const FAQ_ITEMS = [
 ];
 
 const USPS = [
-  { icon: ICONS.sparkle, title: "KI-Agent auf Wunsch", text: "Lass dir die Suche abnehmen — oder such selbst. Du entscheidest, wie viel der Agent übernimmt." },
-  { icon: ICONS.eye, title: "Alles bleibt einsehbar", text: "Der komplette Katalog ist jederzeit frei durchklickbar, auch während der Agent für dich arbeitet." },
+  { icon: ICONS.sparkle, title: "Bewertungen im Klartext", text: "Zu jedem Haus siehst du, worüber Gäste wirklich schreiben — nach Lage, Sauberkeit, Service und Essen getrennt." },
+  { icon: ICONS.eye, title: "Keine versteckten Kosten", text: "Der ausgewiesene Preis ist der Preis. Keine Servicegebühr, keine Aufschläge im letzten Schritt." },
   { icon: ICONS.tag, title: "Transparente Preise", text: "Der angezeigte Preis enthält alle Pflichtkosten. Keine Gebühren, die erst im Checkout auftauchen." },
   { icon: ICONS.shield, title: "Geprüfte Bewertungen", text: "Nur Gäste mit abgeschlossenem Aufenthalt können bewerten — inklusive Teilnoten je Kategorie." },
 ];
@@ -61,7 +61,7 @@ function heroExtras() {
   const avg = (stays.reduce((s, h) => s + h.rating, 0) / stays.length).toFixed(1);
   const totalReviews = stays.reduce((s, h) => s + h.reviewCount, 0);
 
-  document.getElementById("heroEyebrow").innerHTML = `${ICONS.sparkle} Dein Reiseagent ist links immer dabei`;
+  document.getElementById("heroEyebrow").innerHTML = `${ICONS.sparkle} Kostenlos stornierbar bis 24 Stunden vor Anreise`;
   document.getElementById("heroTrust").innerHTML = `
     <span>${ICONS.check} ${stays.length} Unterkünfte, ${CARS.length} Mietwagen, ${FLIGHTS.length} Flüge</span>
     <span>${ICONS.check} ⌀ ${avg.replace(".", ",")} von 5 Sternen</span>

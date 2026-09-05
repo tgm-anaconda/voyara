@@ -167,6 +167,14 @@ const Kern = {
     if (kasten) kasten.innerHTML = "";
     for (const n of this.lauf.verlauf) AgentPanel.say(n.text, n.rolle, { still: true });
 
+    // Erste Seite der Sitzung: begruessen. Das muss hier passieren und nicht
+    // im Panel - der Kasten wird eine Zeile darueber geleert, und eine vorher
+    // gesetzte Nachricht waere damit weg gewesen.
+    if (!this.lauf.verlauf.length) {
+      this.sagen("Hallo! Wonach suchst du? Beschreib es einfach — ich suche, filtere und vergleiche für dich.");
+      AgentPanel.setSuggestions(Politik.vorschlaege());
+    }
+
     this.kandidatenAuffrischen();
 
     if (this.lauf.phase === "arbeitet" && this.lauf.offeneSchritte.length) {
@@ -259,7 +267,7 @@ const Kern = {
     if (!a.zielId && !a.kriterien.length && a.erwachsene == null && !a.budget) {
       this.lauf.phase = "fertig";
       this.sagen("Das habe ich noch nicht ganz. Sag mir am besten, wohin es gehen soll - und wenn du magst, für wie viele Personen.");
-      AgentPanel.status("bereit · beobachtet die Seite");
+      AgentPanel.status("online");
       AgentPanel.setSuggestions(Politik.vorschlaege());
       this.sichern();
       return;
@@ -349,7 +357,17 @@ const Kern = {
 
   async suchen() {
     this.lauf.phase = "arbeitet";
-    this.lauf.offeneSchritte = Politik.suchschritte(this.lauf.profil).slice(0, this.MAX_SCHRITTE);
+    const schritte = Politik.suchschritte(this.lauf.profil);
+
+    // Detail-, Buchungs- und Merkzettelseite haben keine Suchmaske. Ohne
+    // diesen Umweg lief der Agent dort die ganze Schrittfolge ins Leere und
+    // meldete am Ende "finde nichts" - obwohl es an der Seite lag, nicht an
+    // den Vorgaben.
+    if (!Werkzeuge.hatSuchmaske()) {
+      schritte.unshift({ werkzeug: "zurStartseite", status: "wechselt zur Suche…" });
+    }
+
+    this.lauf.offeneSchritte = schritte.slice(0, this.MAX_SCHRITTE);
     this.notieren("suche_start", { runde: this.lauf.runde });
     this.sichern();
     await this.abarbeiten();
@@ -443,6 +461,9 @@ const Kern = {
       }
       case "bewertungenLesen":   return w.bewertungenLesen(this.aufloesen(schritt.args?.id));
       case "merken":             return w.merken(this.aufloesen(schritt.args?.id));
+      case "zurStartseite":
+        this.vorher("Von hier aus kann ich nicht suchen — ich gehe kurz zurück zur Startseite.");
+        return w.zurStartseite();
       case "zurueckZurListe":
         this.vorher("Ich gehe zurück in die Liste.");
         return w.zurueckZurListe();
@@ -759,7 +780,7 @@ const Kern = {
 
     this.lauf.phase = "fertig";
     this.lauf.offeneSchritte = [];
-    AgentPanel.status("bereit · beobachtet die Seite");
+    AgentPanel.status("online");
     AgentPanel.setSuggestions(this.lauf.kandidaten?.length
       ? ["Zurück zur Auswahl", "Etwas günstiger", "Neue Suche"]
       : Politik.vorschlaege());
@@ -796,7 +817,7 @@ const Kern = {
       this.sagen("Alles klar, dann überlasse ich dir den letzten Schritt. Ich bleibe hier, falls du noch etwas brauchst.");
     }
     this.lauf.phase = "fertig";
-    AgentPanel.status("bereit · beobachtet die Seite");
+    AgentPanel.status("online");
     AgentPanel.setSuggestions(Politik.vorschlaege());
     this.sichern();
   },
@@ -813,7 +834,7 @@ const Kern = {
     if (document.getElementById("agentSperre")) return;
     const sperre = document.createElement("div");
     sperre.id = "agentSperre";
-    sperre.dataset.hinweis = "Agent arbeitet — klicken, um selbst zu übernehmen";
+    sperre.dataset.hinweis = "Der Chat arbeitet — klicken, um selbst zu übernehmen";
     sperre.addEventListener("click", () => this.uebernahme());
     document.body.appendChild(sperre);
   },

@@ -231,10 +231,10 @@ function renderAgentRail() {
   <div class="agent-head">
     <div class="agent-avatar"${typeof agentbild === "function" && agentbild() ? ` style="background-image:url('${agentbild()}');background-size:cover"` : ""}>${typeof agentbild === "function" && agentbild() ? "" : ICONS.sparkle}</div>
     <div>
-      <div class="agent-name">Voyara Agent</div>
-      <div class="agent-status" id="agentStatus">bereit · beobachtet die Seite</div>
+      <div class="agent-name">Chat</div>
+      <div class="agent-status" id="agentStatus">online</div>
     </div>
-    <button type="button" class="icon-btn" id="agentCollapse" title="Panel einklappen">${ICONS.close}</button>
+    <button type="button" class="icon-btn" id="agentCollapse" title="Chat einklappen">${ICONS.close}</button>
   </div>
 
   <div class="agent-messages" id="agentMessages"></div>
@@ -242,10 +242,10 @@ function renderAgentRail() {
   <div class="agent-suggestions" id="agentSuggestions"></div>
 
   <form class="agent-input" id="agentForm">
-    <input class="input" type="text" id="agentInput" placeholder="Was soll ich für dich suchen?" autocomplete="off" />
+    <input class="input" type="text" id="agentInput" placeholder="Nachricht schreiben…" autocomplete="off" />
     <button type="submit" class="btn btn-primary" aria-label="Senden">${ICONS.send}</button>
   </form>
-  <p class="agent-foot">Der Agent kann für dich suchen, filtern und vormerken. Du kannst jederzeit selbst weiterklicken.</p>
+  <p class="agent-foot">Suchen, filtern und vormerken. Du kannst jederzeit selbst weiterklicken.</p>
 </div>`;
 }
 
@@ -256,14 +256,13 @@ const AgentPanel = {
     if (!rail) return;
     rail.innerHTML = renderAgentRail();
 
-    // Der Agentenkern stellt ein laufendes Gespraech wieder her. Nur wenn es
-    // keines gibt, wird begruesst - sonst stuende die Begruessung mitten im
-    // Verlauf.
-    const fortsetzung = typeof Kern !== "undefined" && Kern.laden().verlauf.length > 0;
-    if (!fortsetzung) {
-      this.say("Hi! Ich bin dein Reiseagent. Sag mir, wonach du suchst — ich schaue mich für dich auf der Seite um.", "bot");
-      this.setSuggestions(typeof Politik !== "undefined" ? Politik.vorschlaege()
-        : ["Hotel am Strand für 2 Personen", "Günstige Ferienwohnung"]);
+    // Die Begruessung uebernimmt der Kern (siehe Kern.start): Er leert den
+    // Kasten und schreibt das gespeicherte Gespraech zurueck - eine hier
+    // gesetzte Nachricht wuerde dabei geloescht. Ohne Agentencode bleibt das
+    // Panel eine Anzeige und begruesst selbst.
+    if (typeof Kern === "undefined") {
+      this.say("Hallo! Wonach suchst du? Beschreib es einfach — ich suche, filtere und vergleiche für dich.", "bot");
+      this.setSuggestions(["Hotel am Strand für 2 Personen", "Günstige Ferienwohnung"]);
     }
 
     document.getElementById("agentForm").addEventListener("submit", (e) => {
@@ -310,7 +309,7 @@ const AgentPanel = {
       Kern.eingabe(text);
     } else {
       this.say(text, "user");
-      this.say("Der Agent ist auf dieser Seite nicht aktiv.");
+      this.say("Der Chat ist auf dieser Seite nicht aktiv.");
     }
   },
 };
@@ -357,7 +356,7 @@ function renderFooter() {
           <span class="brand-mark">V</span>
           <span class="brand-name">Voyara</span>
         </a>
-        <p>Reisevergleich mit KI-Agent. Prototyp im Rahmen einer wissenschaftlichen Studie.</p>
+        <p>Hotels, Ferienwohnungen, Mietwagen und Flüge vergleichen und buchen.</p>
       </div>
       <div class="footer-col">
         <h4>Buchen</h4>
@@ -499,7 +498,7 @@ function mountChrome(activeNav) {
       openModal(
         "Hilfe & Kontakt",
         `<p>Voyara ist ein Prototyp für eine wissenschaftliche Studie. Es sind keine echten Buchungen möglich.</p>
-         <p><strong>Fragen zur Bedienung?</strong> Der Reiseagent links im Panel hilft dir bei der Suche.</p>
+         <p><strong>Fragen zur Bedienung?</strong> Der Chat links hilft dir bei der Suche.</p>
          <p><strong>Fragen zur Studie?</strong> Schreib an <a href="mailto:studie@voyara.example">studie@voyara.example</a>.</p>`,
         `<a class="btn btn-ghost" href="info.html?p=faq">Zu den häufigen Fragen</a>
          <button type="button" class="btn btn-primary" data-close>Verstanden</button>`

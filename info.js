@@ -5,9 +5,9 @@ const INFO_PAGES = {
   studie: {
     title: "Hintergrund der Studie",
     body: `
-      <p>Voyara ist keine echte Buchungsplattform, sondern ein Prototyp für eine wissenschaftliche Abschlussarbeit. Untersucht wird, wie Menschen mit KI-Agenten umgehen, die im Onlinehandel eigenständig Aufgaben übernehmen — von der Recherche bis zur Auswahl.</p>
+      <p>Voyara ist keine echte Buchungsplattform, sondern ein Prototyp für eine wissenschaftliche Abschlussarbeit. Untersucht wird, wie Menschen im Onlinehandel mit digitalen Assistenzsystemen umgehen, die eigenständig Aufgaben übernehmen — von der Recherche bis zur Auswahl.</p>
       <h3>Worum geht es genau?</h3>
-      <p>Der Reiseagent im linken Panel kann für dich suchen, filtern und Vorschläge machen. Uns interessiert unter anderem, wie viel Kontrolle Nutzerinnen und Nutzer abgeben möchten, wie sie die Vorschläge des Agenten prüfen und wovon ihr Vertrauen abhängt.</p>
+      <p>Der Chat auf dieser Seite kann für dich suchen, filtern und Vorschläge machen. Uns interessiert unter anderem, wie viel Kontrolle Nutzerinnen und Nutzer abgeben möchten, wie sie die Vorschläge prüfen und wovon ihr Vertrauen abhängt.</p>
       <h3>Sind die Angebote echt?</h3>
       <p>Nein. Alle Hotels, Ferienwohnungen, Mietwagen, Flüge, Preise und Bewertungen sind erfunden. Es können keine echten Buchungen ausgelöst werden und es fließt kein Geld.</p>`,
   },
@@ -27,19 +27,19 @@ const INFO_PAGES = {
       <h3>1. Kurze Einführung</h3>
       <p>Du erhältst eine Aufgabe, zum Beispiel: eine passende Unterkunft für einen bestimmten Zeitraum finden.</p>
       <h3>2. Nutzung der Plattform</h3>
-      <p>Du bewegst dich frei auf Voyara. Der Reiseagent steht dir zur Verfügung, du kannst aber jederzeit auch selbst suchen, filtern und vergleichen.</p>
+      <p>Du bewegst dich frei auf Voyara. Der Chat steht dir zur Verfügung, du kannst aber jederzeit auch selbst suchen, filtern und vergleichen.</p>
       <h3>3. Fragebogen</h3>
       <p>Zum Schluss beantwortest du einige Fragen zu deinem Erleben. Danach klären wir dich vollständig über Zweck und Aufbau der Studie auf.</p>`,
   },
   faq: {
     title: "Häufige Fragen",
     body: `
-      <h3>Wie funktioniert der Reiseagent?</h3>
-      <p>Du beschreibst im Panel links, was du suchst. Der Agent durchsucht den Katalog und schlägt dir passende Angebote vor. Je nach Einstellung fragt er vorher nach oder handelt direkt.</p>
-      <h3>Kann ich die Vorschläge des Agenten ändern?</h3>
-      <p>Ja, jederzeit. Die gesamte Seite bleibt frei bedienbar, unabhängig davon, was der Agent gerade tut.</p>
+      <h3>Wie funktioniert der Chat?</h3>
+      <p>Du beschreibst links, was du suchst. Der Chat durchsucht den Katalog und schlägt dir passende Angebote vor.</p>
+      <h3>Kann ich die Vorschläge ändern?</h3>
+      <p>Ja, jederzeit. Die gesamte Seite bleibt frei bedienbar, unabhängig davon, was im Chat gerade passiert.</p>
       <h3>Kostet die Nutzung etwas?</h3>
-      <p>Nein. Der Vergleich und der Agent sind kostenlos, es entstehen keine Gebühren.</p>
+      <p>Nein. Die Nutzung ist kostenlos, es entstehen keine Gebühren.</p>
       <h3>Woher kommen die Bewertungen?</h3>
       <p>Die Bewertungen sind für diesen Prototyp erfunden. In der Darstellung orientieren sie sich an gängigen Buchungsportalen, inklusive Teilnoten für Lage, Sauberkeit, Service und weitere Kategorien.</p>
       <h3>Was passiert mit meinen Eingaben?</h3>
@@ -50,7 +50,7 @@ const INFO_PAGES = {
     body: `
       <p>Die Teilnahme an der Studie ist freiwillig. Du kannst sie jederzeit ohne Angabe von Gründen abbrechen.</p>
       <h3>Welche Daten werden erhoben?</h3>
-      <p>Erfasst werden ausschließlich anonymisierte Nutzungsdaten: welche Seiten aufgerufen werden, welche Filter gesetzt werden, wie mit dem Agenten interagiert wird und die Antworten im abschließenden Fragebogen.</p>
+      <p>Erfasst werden ausschließlich anonymisierte Nutzungsdaten: welche Seiten aufgerufen werden, welche Filter gesetzt werden, wie der Chat genutzt wird und die Antworten im abschließenden Fragebogen.</p>
       <h3>Was wird nicht erhoben?</h3>
       <p>Keine Klarnamen, keine IP-Adressen, keine Zahlungsdaten. Eine Anmeldung auf dieser Seite ist eine reine Demo-Funktion — die Eingaben bleiben lokal in deinem Browser und werden nicht übertragen.</p>
       <h3>Speicherung</h3>
@@ -93,7 +93,7 @@ const INFO_PAGES = {
       <h3>E-Mail</h3>
       <p><a href="mailto:studie@voyara.example">studie@voyara.example</a></p>
       <h3>Während der Nutzung</h3>
-      <p>Der Reiseagent im linken Panel hilft dir bei Fragen zur Suche. Für technische Probleme nutze bitte die E-Mail-Adresse oben.</p>`,
+      <p>Der Chat links hilft dir bei Fragen zur Suche. Für technische Probleme nutze bitte die E-Mail-Adresse oben.</p>`,
   },
 };
 

@@ -369,14 +369,9 @@ function renderWidget() {
     </div>
     <div class="bw-total"><span>Gesamtpreis</span><strong>${formatPrice(total)}</strong></div>
     <a class="btn btn-accent btn-block" href="${Belegung.anLink(`checkout.html?id=${item.id}&nights=${nights}&room=${selectedRoom}&board=${selectedBoard}`)}">Jetzt buchen</a>
-    <button type="button" class="btn btn-ghost btn-block" style="margin-top:8px" id="bwAgent">${ICONS.sparkle} Agent soll das übernehmen</button>
     <p class="bw-hint">${ICONS.check} Kostenlos stornierbar bis 24 h vor Anreise</p>`;
 
   document.getElementById("bwNights").addEventListener("change", (e) => { nights = +e.target.value; renderWidget(); });
-  document.getElementById("bwAgent").addEventListener("click", () => {
-    document.body.classList.add("agent-open");
-    AgentPanel.handleUserInput(`Buche für mich: ${item.name}, ${nights} Nächte`);
-  });
 }
 
 document.addEventListener("DOMContentLoaded", () => {

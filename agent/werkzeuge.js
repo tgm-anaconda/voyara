@@ -410,6 +410,25 @@ const Werkzeuge = {
     };
   },
 
+  // Hat diese Seite ueberhaupt eine Suchmaske? Auf der Detail-, Buchungs-
+  // und Merkzettelseite gibt es keine.
+  hatSuchmaske() {
+    return !!this.finde("#sbForm");
+  },
+
+  // Auf die Startseite wechseln, weil die Suche hier nicht moeglich ist.
+  // Sichtbar ueber das Logo geklickt, nicht per location.href - der Weg soll
+  // nachvollziehbar bleiben.
+  async zurStartseite() {
+    const marke = this.finde('a.brand[href*="index"]') || this.finde('a[href="index.html"]');
+    if (marke) {
+      await Zeiger.klicke(marke, { hinweis: "zur Startseite" });
+      return { ok: true, daten: { navigiert: true } };
+    }
+    location.href = "index.html";
+    return { ok: true, daten: { navigiert: true } };
+  },
+
   // Zurueck aus einer Detailseite in die Trefferliste. Wird gebraucht, wenn
   // jemand nach dem Ansehen eines Vorschlags doch einen anderen will.
   async zurueckZurListe() {
