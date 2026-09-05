@@ -347,7 +347,13 @@ function aspekteFuer(item) {
 function teilnote(item, aspekt) {
   const b = item.ratingBreakdown || {};
   if (aspekt.note && b[aspekt.note] != null) return b[aspekt.note];
-  return item.rating - 0.15;
+  // Aspekte ohne eigene Teilnote (Kueche, Ruhe, Pool) bekommen den Schnitt
+  // der ausgewiesenen Teilnoten. Ein pauschaler Abzug haette sie systematisch
+  // ans Ende gestellt - bei Ferienwohnungen stand dann bei jedem Objekt
+  // "Kritik gibt es bei Kueche", was kein Datenbefund war, sondern ein
+  // Artefakt der Ersatzrechnung.
+  const werte = Object.values(b).filter((x) => typeof x === "number");
+  return werte.length ? werte.reduce((a, c) => a + c, 0) / werte.length : item.rating;
 }
 
 // Wie wahrscheinlich wird dieser Aspekt kritisiert? Direkt aus der Teilnote.

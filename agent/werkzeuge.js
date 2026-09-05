@@ -115,11 +115,26 @@ const Werkzeuge = {
      Suchen
      ================================================================== */
 
-  async suchen({ ziel = "", von = "", bis = "", erwachsene = null, kinder = null } = {}) {
-    const form = this.finde("#sbForm");
-    if (!form) return this.fehlt("Die Suchmaske");
+  async suchen({ typ = null, ziel = "", von = "", bis = "", erwachsene = null, kinder = null } = {}) {
+    if (!this.finde("#sbForm")) return this.fehlt("Die Suchmaske");
 
     const getan = [];
+
+    // Zuerst die Art. Der Reiter baut die Maske neu auf, deshalb muss er vor
+    // allen Feldern geklickt werden - sonst tippt der Agent in Felder, die
+    // gleich darauf ersetzt werden.
+    if (typ) {
+      const reiter = this.finde(`.searchbox-tab[data-type="${typ}"]`);
+      if (reiter && !reiter.classList.contains("active")) {
+        await Zeiger.klicke(reiter, { hinweis: typ === "apartment" ? "Ferienwohnungen" : "Hotels" });
+        await Zeiger.warte(260);
+        getan.push(typ === "apartment" ? "Ferienwohnungen" : "Hotels");
+      }
+    }
+
+    // Nach dem Reiterwechsel ist die alte Formularreferenz veraltet
+    const form = this.finde("#sbForm");
+    if (!form) return this.fehlt("Die Suchmaske");
 
     const feldZiel = this.finde("#sbDest");
     if (feldZiel && ziel) {
@@ -149,9 +164,10 @@ const Werkzeuge = {
     // Stand vorher zu sichern.
     const wechselt = this.seite() !== "results";
 
-    const knopf = form.querySelector('button[type="submit"], .btn-accent');
+    const aktuellesForm = this.finde("#sbForm") || form;
+    const knopf = aktuellesForm.querySelector('button[type="submit"], .btn-accent');
     if (knopf) await Zeiger.klicke(knopf, { hinweis: "suchen" });
-    else form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    else aktuellesForm.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
 
     await Zeiger.warte(400);
     return {
@@ -303,7 +319,9 @@ const Werkzeuge = {
     const name = item?.name || id;
     await Zeiger.klicke(knopf, { hinweis: `öffne ${name}` });
     // Danach folgt ein Seitenwechsel. Der Kern speichert vorher seinen Stand.
-    return { ok: true, text: `Öffne ${name}`, daten: { navigiert: true, id } };
+    // Kein Text: der Kern hat den Schritt bereits angesagt, sonst stuende
+    // "Ich oeffne X" und "Oeffne X" direkt untereinander.
+    return { ok: true, daten: { navigiert: true, id } };
   },
 
   /* ==================================================================
@@ -336,8 +354,11 @@ const Werkzeuge = {
       ? (liste[0] || "")
       : `${liste.slice(0, -1).join(", ")} und ${liste[liste.length - 1]}`;
 
+    // "Gelobt wird Sauberkeit und Lage" waere falsch - bei mehreren Gliedern
+    // steht das Verb im Plural.
+    const verb = k.staerken.length > 1 ? "werden" : "wird";
     const satz = k.staerken.length
-      ? `Gelobt wird vor allem ${aufzaehlen(k.staerken)}${k.schwaechen.length ? `, kritisiert ${aufzaehlen(k.schwaechen)}` : ""}.`
+      ? `Gelobt ${verb} vor allem ${aufzaehlen(k.staerken)}${k.schwaechen.length ? `, kritisiert ${aufzaehlen(k.schwaechen)}` : ""}.`
       : "Die Bewertungen fallen über alle Punkte hinweg gleichmäßig aus.";
 
     return {
@@ -348,6 +369,57 @@ const Werkzeuge = {
         gelobt: k.staerken, kritisiert: k.schwaechen, bilanz,
       },
     };
+  },
+
+  /* Bewertungen mehrerer Treffer sichten, ohne die Liste zu verlassen.
+     ------------------------------------------------------------------
+     Das ist der Schritt, den ein Mensch nicht macht: fuenf Haeuser
+     durchsehen, bevor man eines oeffnet. Der Agent faehrt die Karten
+     sichtbar an, damit nachvollziehbar bleibt, worueber er gerade
+     nachdenkt - und zieht die Bilanz aus den Daten, nicht aus dem DOM.
+     Ohne die sichtbare Bewegung waere der Schritt fuer die teilnehmende
+     Person eine Blackbox, und genau das soll er nicht sein. */
+  async bewertungenSichten(anzahl = 5) {
+    if (typeof aspektbilanz !== "function") return this.fehlt("Die Bewertungsauswertung");
+    const karten = [...document.querySelectorAll(".result-card")].slice(0, anzahl);
+    if (!karten.length) return { ok: true, text: "Nichts zu sichten.", daten: { gesichtet: [] } };
+
+    const gesichtet = [];
+    for (const karte of karten) {
+      if (Zeiger.abbruch) break;
+      const daten = this.kartenDaten(karte);
+      if (!daten) continue;
+      const item = typeof getItemById === "function" ? getItemById(daten.id) : null;
+      if (!item) continue;
+      await Zeiger.lies(karte, { dauer: 620, hinweis: `${item.name}: Bewertungen` });
+      gesichtet.push(daten.id);
+    }
+    // "Haeuser" passt nicht auf Ferienwohnungen
+    const wohnungen = gesichtet.some((id) =>
+      (typeof getItemById === "function" ? getItemById(id)?.type : null) === "apartment");
+    const wort = wohnungen
+      ? (gesichtet.length === 1 ? "Wohnung" : "Wohnungen")
+      : (gesichtet.length === 1 ? "Haus" : "Häuser");
+    return {
+      ok: true,
+      text: `${gesichtet.length} ${wort} im Detail durchgesehen, insgesamt ${gesichtet
+        .map((id) => (typeof getItemById === "function" ? getItemById(id)?.reviewCount : 0) || 0)
+        .reduce((a, b) => a + b, 0)
+        .toLocaleString("de-DE")} Bewertungen.`,
+      daten: { gesichtet },
+    };
+  },
+
+  // Zurueck aus einer Detailseite in die Trefferliste. Wird gebraucht, wenn
+  // jemand nach dem Ansehen eines Vorschlags doch einen anderen will.
+  async zurueckZurListe() {
+    const knopf = this.finde(".breadcrumb a[href*='results']") || this.finde("a[href*='results.html']");
+    if (knopf) {
+      await Zeiger.klicke(knopf, { hinweis: "zurück zur Liste" });
+      return { ok: true, text: "Zurück zur Trefferliste.", daten: { navigiert: true } };
+    }
+    history.back();
+    return { ok: true, text: "Zurück zur Trefferliste.", daten: { navigiert: true } };
   },
 
   /* ==================================================================
@@ -375,11 +447,47 @@ const Werkzeuge = {
     return { ok: true, text: "Buchungsstrecke geöffnet.", daten: { navigiert: true, id } };
   },
 
+  // Die Buchungsstrecke hat zwei Schritte: erst die Gastdaten, dann die
+  // Bestaetigung. Der Agent fuellt die Gastdaten NICHT aus - er wuerde sonst
+  // Namen und Mailadresse erfinden. In einer Studie waere das gleich doppelt
+  // falsch: es sind fremde Personendaten, und im Protokoll stuende eine
+  // Eingabe, die die teilnehmende Person nie gemacht hat.
   async buchungAbschliessen() {
-    const knopf = this.finde("#confirmBtn");
-    if (!knopf) return this.fehlt("Der Bestätigungsknopf");
+    // Schritt 2: Bestaetigungsknopf liegt vor
+    let knopf = this.finde("#confirmBtn");
+
+    if (!knopf) {
+      // Schritt 1: Gastdaten. Nur weiter, wenn die Person sie ausgefuellt hat.
+      const form = this.finde("#guestForm");
+      if (!form) return this.fehlt("Die Buchungsstrecke");
+
+      const name = this.finde("#gName")?.value.trim();
+      const mail = this.finde("#gMail")?.value.trim();
+      const zugestimmt = this.finde("#gTerms")?.checked;
+      const fehlt = [];
+      if (!name) fehlt.push("Name");
+      if (!mail) fehlt.push("E-Mail");
+      if (!zugestimmt) fehlt.push("die Bestätigung der Studienhinweise");
+      if (fehlt.length) {
+        const liste = fehlt.length < 2 ? fehlt[0]
+          : `${fehlt.slice(0, -1).join(", ")} und ${fehlt[fehlt.length - 1]}`;
+        return {
+          ok: false,
+          daten: { wartetAufDaten: true },
+          text: `Für den letzten Schritt fehlen noch ${liste}. Die trage bitte selbst ein — deine Daten fülle ich nicht aus. Sag danach Bescheid, dann schließe ich ab.`,
+        };
+      }
+
+      const weiter = form.querySelector('button[type="submit"]');
+      if (!weiter) return this.fehlt("Der Weiter-Knopf");
+      await Zeiger.klicke(weiter, { hinweis: "weiter zur Prüfung" });
+      await Zeiger.warte(500);
+      knopf = this.finde("#confirmBtn");
+      if (!knopf) return this.fehlt("Der Bestätigungsknopf");
+    }
+
     await Zeiger.klicke(knopf, { hinweis: "Buchung abschließen" });
-    return { ok: true, text: "Buchung abgeschlossen (simuliert)." };
+    return { ok: true, text: "Buchung abgeschlossen — simuliert, es wurde nichts gebucht.", daten: { gebucht: true } };
   },
 };
 

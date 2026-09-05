@@ -2,7 +2,9 @@
 // wechseln je nach Typ (Hotel, Ferienwohnung, Mietwagen, Flug).
 
 const FILTER_AMENITIES = ["pool", "beachfront", "spa", "familyFriendly", "kidsClub", "parking", "restaurant", "petsAllowed", "adultsOnly", "gym", "bikeRental", "seaView"];
-const APT_AMENITIES = ["kitchen", "washer", "balcony", "pool", "parking", "aircon", "seaView", "petsAllowed", "familyFriendly", "wifi"];
+// "spa" und "terrace" fehlten hier, obwohl 15 bzw. 65 Wohnungen sie fuehren.
+// Wer nach einer Sauna suchte, konnte danach schlicht nicht filtern.
+const APT_AMENITIES = ["kitchen", "washer", "balcony", "terrace", "pool", "spa", "parking", "aircon", "seaView", "petsAllowed", "familyFriendly", "wifi"];
 
 const SORT_OPTIONS = {
   hotel: [

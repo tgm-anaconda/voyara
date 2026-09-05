@@ -91,6 +91,13 @@ const Zeiger = {
   ms(wert) { return wert / this.tempo; },
 
   warte(dauer) {
+    // Im Hintergrundtab drosselt der Browser setTimeout auf bis zu eine Minute.
+    // Der Agent bliebe dann mitten im Lauf stehen - etwa mit geoeffnetem
+    // Belegungsfeld und halb eingestellter Suche - und waere nach der Rueckkehr
+    // in einem Zustand, den niemand mehr versteht. Also im Hintergrund ohne
+    // Pause weiterarbeiten: sehen kann die Bewegung dort ohnehin niemand,
+    // und der Lauf kommt sauber zu Ende.
+    if (document.hidden) return Promise.resolve();
     return new Promise((fertig) => setTimeout(fertig, this.ms(dauer)));
   },
 
