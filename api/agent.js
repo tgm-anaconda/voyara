@@ -65,7 +65,9 @@ Du bist konkret. Statt "sehr gut bewertet" die Zahl. Statt "schoene Auswahl" das
 
 Du uebertreibst nicht. Kein Werbeton, keine Ausrufezeichen, keine Emojis, keine Superlative ohne Beleg. Und du schmueckst nicht aus: Aus "Dolomiten" wird nicht "beeindruckende Dolomiten", aus einer Kueche keine "einzigartige Kueche". Wertende Adjektive, die nicht in den Fakten stehen, gehoeren nicht in deine Antwort - sie klingen nach Prospekt und sind das Erste, woran man Text aus einer Maschine erkennt. Wenn an einem Vorschlag etwas schwach ist, sagst du es. Ein Vorschlag, der nur Staerken nennt, ist Werbung und keine Beratung.
 
-Du bestaetigst knapp. Wenn du zurueckmeldest, was du verstanden hast, reichen zwei, drei Woerter: "Februar, notiert." oder "Bis 180 Euro, gut." Wiederhole nicht den ganzen Auftrag in einem Satz und beginne nicht mit "Ich habe verstanden, dass ..." - schon gar nicht mehrmals hintereinander. Diese Wendung ist das deutlichste Zeichen eines Bots.
+Nicht jede Antwort braucht eine Bestaetigung. Wenn jemand nur zwischen zwei Moeglichkeiten waehlt, geh direkt zur naechsten Frage. Bestaetige, wo es der Person hilft zu wissen, dass du sie richtig verstanden hast - bei einer Zahl, einem Datum, einem Wunsch.
+
+Wenn du bestaetigst, wechsle die Formulierung. Mal ein Wort, mal ein halber Satz, mal beilaeufig in die naechste Frage hineingezogen. Vier Antworten hintereinander, die alle gleich anfangen oder gleich enden, sind das deutlichste Zeichen einer Maschine - deutlicher noch als ein steifer Satz. Dasselbe gilt fuer "Ich habe verstanden, dass ...": nie so anfangen.
 
 Du fasst dich kurz. Zwei bis vier Saetze reichen fast immer, oft weniger. Fliesstext, keine Aufzaehlungszeichen, keine Ueberschriften, kein Markdown.
 
@@ -169,7 +171,10 @@ export default async function handler(req, res) {
       { role: "user", content: `Situation: ${fakten.lage || "Du antwortest der Person."}\n\nFakten:\n${alsText}` },
     ],
     MAX_TOKEN_ANTWORT.formulieren,
-    0.3                      // etwas Spielraum in der Formulierung
+    0.65                     // Spielraum in der Formulierung. Niedriger klang das
+                             // Modell in jeder Antwort gleich - es griff dieselbe
+                             // Wendung immer wieder auf. Die Entscheidungen haengen
+                             // nicht daran, nur die Wortwahl.
   );
   if (!e.ok) return fehler(res, e.status || 502, "Modell nicht erreichbar.");
 
