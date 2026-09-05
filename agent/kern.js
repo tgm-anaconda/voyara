@@ -428,9 +428,11 @@ const Kern = {
       return this.suchen();
     }
 
-    this.sagen("Gerne. Ein paar kurze Fragen, dann suche ich.");
-    await Zeiger.warte(600);
-    return this.naechsteVorfrage();
+    // Kein eigener Satz mehr davor - die Zusage wandert in dieselbe
+    // Aeusserung wie die erste Frage. Zwei Nachrichten hintereinander,
+    // von denen die erste nichts sagt, wirken wie ein Formular.
+    await Zeiger.warte(400);
+    return this.naechsteVorfrage("Die Person moechte die Eckdaten durchgehen.");
   },
 
   /* ==================================================================
