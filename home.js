@@ -52,8 +52,10 @@ function heroExtras() {
   const hero = document.querySelector(".hero");
   const bild = herobild(HERO_BILD) || herobild("hero-1");
   if (hero && bild) {
-    hero.style.backgroundImage =
-      `linear-gradient(100deg, rgba(6,53,44,.88) 0%, rgba(8,66,55,.62) 52%, rgba(8,66,55,.20) 100%), url("${bild}")`;
+    // Nur das Foto. Der Verlauf darueber kommt aus dem Stylesheet und
+    // faellt dort auf dem Handy deutlich leichter aus - vorher deckte er
+    // das Bild mit 88 Prozent zu, und auf dem Telefon sah man nur Gruen.
+    hero.style.backgroundImage = `url("${bild}")`;
     hero.classList.add("hero-foto");
   }
 

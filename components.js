@@ -233,9 +233,14 @@ function renderAgentRail() {
          eigenes Logo und machte den Chat zum beworbenen Merkmal - genau das,
          was hier nicht gemessen werden soll. -->
     <div class="agent-avatar">${ICONS.chat}</div>
-    <div>
+    <div class="agent-kopftext">
       <div class="agent-name">Chat</div>
       <div class="agent-status" id="agentStatus">online</div>
+      <!-- Nur auf dem Handy und nur im zugeklappten Zustand: die letzte
+           Antwort in einer Zeile. So sieht man, dass der Chat etwas gesagt
+           hat, ohne ihn aufzuklappen - und es ist zugleich der Hinweis,
+           dass sich hier etwas oeffnen laesst. -->
+      <div class="agent-vorschau" id="agentVorschau">Tippen zum Öffnen</div>
     </div>
     <span class="agent-ungelesen" id="agentUngelesen">1</span>
     <button type="button" class="icon-btn" id="agentCollapse" title="Chat auf- oder zuklappen">${ICONS.close}</button>
@@ -250,6 +255,10 @@ function renderAgentRail() {
     <button type="submit" class="btn btn-primary" aria-label="Senden">${ICONS.send}</button>
   </form>
   <p class="agent-foot">Suchen, filtern und vormerken. Du kannst jederzeit selbst weiterklicken.</p>
+  <!-- Griff am unteren Rand: zieht das Panel auf volle Hoehe und wieder
+       zurueck. Damit muss man sich nicht zwischen "sieht den Chat" und
+       "sieht die Seite" entscheiden. -->
+  <button type="button" class="agent-griff" id="agentGriff" aria-label="Chat vergrößern"><span></span></button>
 </div>`;
 }
 
@@ -285,12 +294,30 @@ const AgentPanel = {
 
     const umschalten = () => {
       if (schmal()) {
-        document.body.classList.toggle("agent-open");
-        if (document.body.classList.contains("agent-open")) this.ungelesenLeeren();
+        const offen = document.body.classList.toggle("agent-open");
+        if (offen) this.ungelesenLeeren(); else document.body.classList.remove("agent-gross");
+        // Die Entscheidung gilt fuer die Sitzung. Wer den Chat zuklappt,
+        // will ihn nicht auf jeder Seite wieder aufgeklappt vorfinden.
+        try { sessionStorage.setItem("voyara_chat_offen", offen ? "1" : "0"); } catch { /* egal */ }
       } else {
         document.body.classList.toggle("agent-collapsed");
       }
     };
+
+    // Griff am unteren Rand: zwischen halber und voller Hoehe wechseln
+    document.getElementById("agentGriff")?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      document.body.classList.toggle("agent-gross");
+    });
+
+    // Beim ersten Aufruf der Sitzung steht der Chat offen - er ist der Teil,
+    // um den es hier geht, und ein zugeklappter Streifen wird uebersehen.
+    // Danach gilt, was die Person zuletzt wollte.
+    if (schmal()) {
+      let gemerkt = null;
+      try { gemerkt = sessionStorage.getItem("voyara_chat_offen"); } catch { /* egal */ }
+      if (gemerkt !== "0") { document.body.classList.add("agent-open"); this.ungelesenLeeren(); }
+    }
 
     document.getElementById("agentCollapse").addEventListener("click", (e) => {
       e.stopPropagation();
@@ -341,7 +368,14 @@ const AgentPanel = {
 
     box.appendChild(el);
     box.scrollTop = box.scrollHeight;
+    if (role === "bot") this.vorschauSetzen(text);
     if (role === "bot" && !still) this.ungelesenZaehlen();
+  },
+
+  // Letzte Antwort in einer Zeile im Kopf
+  vorschauSetzen(text) {
+    const el = document.getElementById("agentVorschau");
+    if (el) el.textContent = text;
   },
   status(text) {
     const el = document.getElementById("agentStatus");
@@ -374,6 +408,7 @@ const AgentPanel = {
   oeffnen() {
     if (!window.matchMedia("(max-width: 1040px)").matches) return;
     document.body.classList.add("agent-open");
+    try { sessionStorage.setItem("voyara_chat_offen", "1"); } catch { /* egal */ }
     this.ungelesenLeeren();
   },
   setSuggestions(list) {
