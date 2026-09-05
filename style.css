@@ -140,6 +140,9 @@ img, svg { max-width: 100%; }
   display: grid; place-items: center;
 }
 .agent-name { font-family: var(--font-display); font-weight: 700; font-size: .92rem; color: #fff; }
+/* Die Zaehlblase gibt es nur auf dem Handy, wo der Chat zugeklappt sein
+   kann. Am Rechner steht er ohnehin offen daneben. */
+.agent-ungelesen { display: none; }
 .agent-status { font-size: .73rem; color: var(--chat-muted); }
 .agent-head .icon-btn { margin-left: auto; color: var(--chat-muted); }
 .agent-head .icon-btn:hover { color: #fff; background: rgba(255,255,255,.1); }
@@ -494,6 +497,7 @@ body.agent-collapsed .agent-head .icon-btn { margin-left: 0; transform: rotate(4
 .results-layout { display: grid; grid-template-columns: 262px 1fr; gap: 26px; align-items: start; padding: 26px 0 40px; }
 
 .filter-panel { background: #fff; border: 1px solid var(--line); border-radius: var(--r-lg); padding: 4px 18px 18px; position: sticky; top: 132px; }
+.filter-schalter { display: none; }
 .filter-group { padding: 16px 0; border-bottom: 1px solid var(--line); }
 .filter-group:last-child { border-bottom: none; }
 .filter-group h4 { font-size: .85rem; margin-bottom: 11px; color: var(--brand-900); }
@@ -794,16 +798,61 @@ body.agent-collapsed .agent-head .icon-btn { margin-left: 0; transform: rotate(4
   .results-layout, .detail-layout { grid-template-columns: 1fr; }
   .filter-panel, .booking-widget { position: static; }
   .footer-top { grid-template-columns: 1fr 1fr; }
-  /* Agent-Panel wird auf schmalen Schirmen zum Overlay */
+
+  /* ---------------------------------------------------------------
+     Chat auf schmalen Schirmen: oben, nicht unten.
+     Unten lag er im Weg der Browserleiste - auf dem iPhone verdeckte
+     die Adresszeile genau den Streifen, ueber den man ihn haette
+     oeffnen sollen. Oben ist er beim Laden sofort zu sehen, und die
+     Daumenzone bleibt fuer die Seite frei.
+
+     Statt einer Verschiebung waechst die Hoehe: so bleibt der Kopf
+     sichtbar und nicht das untere Ende des Panels.
+     --------------------------------------------------------------- */
   .app-shell { grid-template-columns: minmax(0, 1fr); }
   .agent-rail {
-    position: fixed; left: 0; bottom: 0; top: auto; width: 100%; height: 62vh;
-    border-radius: var(--r-lg) var(--r-lg) 0 0; transform: translateY(calc(100% - 52px));
-    transition: transform .25s ease;
+    position: fixed; top: 0; left: 0; right: 0; width: 100%;
+    height: 54px; min-height: 0;
+    border-right: none;
+    border-radius: 0 0 var(--r-lg) var(--r-lg);
+    box-shadow: 0 4px 16px rgba(16,33,30,.18);
+    overflow: hidden;
+    transition: height .26s ease;
+    z-index: 120;
   }
-  body.agent-open .agent-rail { transform: translateY(0); }
-  body.agent-collapsed .agent-rail { transform: translateY(calc(100% - 52px)); }
-  .app-main { padding-bottom: 56px; }
+  .agent-rail-inner { height: 100%; }
+  body.agent-open .agent-rail { height: min(82vh, 680px); }
+
+  /* Der Kopf ist auf dem Handy die Schaltflaeche zum Aufklappen */
+  .agent-head { cursor: pointer; padding: 10px 14px; background: var(--chat-bg); }
+  .agent-head .agent-avatar { width: 30px; height: 30px; border-radius: 9px; }
+  body.agent-open .agent-head { background: var(--chat-head); }
+
+  /* Der Einklappknopf wird zum Auf- und Zuklappen, deshalb gedreht */
+  .agent-head .icon-btn svg { transition: transform .2s ease; }
+  body:not(.agent-open) .agent-head .icon-btn svg { transform: rotate(45deg); }
+
+  /* Ungelesenes: waehrend der Chat zu ist, soll man merken, dass er
+     geantwortet hat - sonst laeuft der Agent unbemerkt weiter. */
+  .agent-ungelesen {
+    margin-left: auto; margin-right: 8px;
+    min-width: 19px; height: 19px; padding: 0 5px;
+    display: none; place-items: center;
+    background: var(--accent-500); color: #fff;
+    border-radius: 999px; font-size: .68rem; font-weight: 700;
+  }
+  body:not(.agent-open) .agent-rail.hat-neues .agent-ungelesen { display: grid; }
+
+  /* Die Seite beginnt unter dem Chatstreifen */
+  .app-main { padding-top: 54px; padding-bottom: 0; }
+  .site-header { top: 54px; }
+
+  /* Auf dem Handy gibt es kein Einklappen im Desktop-Sinn */
+  body.agent-collapsed .app-shell { grid-template-columns: minmax(0, 1fr); }
+  body.agent-collapsed .agent-rail-inner > *:not(.agent-head) { display: block; }
+  body.agent-collapsed .agent-head { flex-direction: row; padding: 10px 14px; gap: 11px; }
+  body.agent-collapsed .agent-head > div:not(.agent-avatar) { display: block; }
+  body.agent-collapsed .agent-head .icon-btn { margin-left: auto; }
 }
 @media (max-width: 860px) {
   .searchbox-grid { grid-template-columns: 1fr 1fr; }
@@ -839,6 +888,119 @@ body.agent-collapsed .agent-head .icon-btn { margin-left: 0; transform: rotate(4
   .footer-top { grid-template-columns: 1fr; }
   .detail-head { flex-direction: column; }
   .flight-times { gap: 10px; }
+}
+
+/* =================================================================
+   13b. Handy: eigener Durchgang
+   -----------------------------------------------------------------
+   Die Seite war fuer den Rechner entworfen und auf dem Handy nur
+   zusammengeschoben. Das reichte nicht: Der Aufmacher fuellte mehr als
+   einen ganzen Bildschirm, das Foto verschwand hinter dem Farbverlauf,
+   und die Kopfnavigation liess sich seitlich wegziehen, sodass die
+   Seite verrutscht wirkte.
+   ================================================================= */
+@media (max-width: 720px) {
+  /* Nichts darf breiter sein als der Schirm. Ohne diese Klammer laesst
+     sich die ganze Seite seitlich verschieben, sobald ein einziges
+     Element ueberhaengt - und der Nutzer sieht ein kaputtes Layout. */
+  /* Nur der Koerper, nicht das html-Element: auf html macht overflow-x
+     das Dokument zum eigenen Scrollcontainer, und position:sticky im
+     Kopf hoert auf zu funktionieren. */
+  body { max-width: 100%; overflow-x: hidden; overscroll-behavior-x: none; }
+  .wrap { padding-left: 16px; padding-right: 16px; }
+
+  /* --- Aufmacher ------------------------------------------------- */
+  .hero { padding-top: 22px; }
+  .hero h1 { font-size: 1.62rem; line-height: 1.2; }
+  .hero p { font-size: .95rem; margin-bottom: 16px; }
+  .hero-eyebrow { font-size: .72rem; padding: 4px 10px; margin-bottom: 11px; }
+  /* Untereinander statt nebeneinander, und nur die ersten beiden Zeilen:
+     drei Belege fuellten auf dem Handy den halben Bildschirm. */
+  .hero-trust { flex-direction: column; gap: 7px; margin-bottom: 20px; font-size: .8rem; }
+  .hero-trust span:nth-child(n+3) { display: none; }
+  /* Das Foto war unter dem Verlauf kaum zu erkennen. Auf dem Handy
+     traegt es die Stimmung, also darf es durchkommen. */
+  .hero-foto::before {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(6,53,44,.72) 0%, rgba(6,53,44,.55) 45%, rgba(6,53,44,.86) 100%);
+  }
+  .hero-foto { background-position: 60% center; }
+
+  /* --- Suchmaske ------------------------------------------------- */
+  .searchbox { padding: 4px 14px 14px; margin-bottom: -28px; border-radius: var(--r-lg); }
+  .searchbox-tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .searchbox-tabs::-webkit-scrollbar { display: none; }
+  .searchbox-tab { flex-shrink: 0; }
+
+  /* --- Kopfzeile ------------------------------------------------- */
+  .header-main { gap: 12px; padding: 9px 0; }
+  .brand-name { font-size: 1.05rem; }
+  .header-actions { gap: 4px; }
+  .header-action span:not(.action-icon) { font-size: .64rem; }
+  /* Vier Reiter auf 375 Pixel: gleichmaessig verteilt statt seitlich
+     wegscrollbar. Vorher war "Flüge" abgeschnitten und die Leiste liess
+     sich wegziehen. */
+  .header-nav { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; overflow: visible; }
+  .header-nav a { justify-content: center; padding: 10px 2px; font-size: .78rem; gap: 5px; }
+  .header-nav svg { width: 15px; height: 15px; }
+
+  /* --- Inhalte --------------------------------------------------- */
+  .section { padding: 30px 0; }
+  .section-head h2 { font-size: 1.28rem; }
+  .gallery { grid-template-rows: 150px 110px; }
+  .region-bild { height: 84px; }
+  .result-card .result-media { min-height: 170px; }
+  .detail-title h1 { font-size: 1.42rem; }
+  /* Filter zugeklappt hinter einem Knopf */
+  .filter-schalter {
+    display: flex; align-items: center; justify-content: space-between;
+    width: 100%; margin-bottom: 14px; font-weight: 600;
+  }
+  .filter-schalter::after { content: "▾"; font-size: .9em; transition: transform .18s ease; }
+  .filter-schalter[aria-expanded="true"]::after { transform: rotate(180deg); }
+  .filter-panel { margin-bottom: 18px; display: none; }
+  .filter-panel.offen { display: block; }
+  .footer-top { gap: 22px; }
+  .toast { left: 12px; right: 12px; bottom: 14px; transform: translateY(14px); width: auto; justify-content: center; }
+  .toast.show { transform: translateY(0); }
+
+  /* --- Reihen statt endloser Stapel --------------------------------
+     Die Kachelgitter der Startseite klappen auf dem Handy in eine
+     Spalte. Aus 67 Regionen wurden dadurch neun Bildschirme Scrollen,
+     aus elf Angeboten sechs - die Startseite war 21.000 Pixel hoch.
+     Als seitlich wischbare Reihe bleibt jeder Abschnitt eine
+     Bildschirmhoehe. Das Wischen bleibt im Kasten und verschiebt die
+     Seite nicht. */
+  .category-row, .hotel-grid, .quote-grid {
+    display: flex; gap: 12px;
+    overflow-x: auto; overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    /* Bis an den Rand wischen, ohne dass die Kacheln am Rand kleben */
+    padding: 2px 16px 6px; margin: 0 -16px;
+  }
+  .category-row::-webkit-scrollbar,
+  .hotel-grid::-webkit-scrollbar,
+  .quote-grid::-webkit-scrollbar { display: none; }
+
+  .category-row > *, .hotel-grid > *, .quote-grid > * {
+    flex: 0 0 auto; scroll-snap-align: start;
+  }
+  .category-row > * { width: 46%; }
+  .hotel-grid > * { width: 80%; max-width: 300px; }
+  .quote-grid > * { width: 76%; }
+
+  /* Die Vorteile bleiben gestapelt - vier kurze Kaesten sind kein
+     Scrollproblem und lesen sich untereinander besser. */
+  .usp-grid { grid-template-columns: 1fr; gap: 12px; }
+
+  /* Kein Mauszeiger auf dem Telefon. Ein wandernder Pfeil auf einem
+     Geraet ohne Maus wirkt wie ein Fehler, und seine Beschriftung ragte
+     ueber den rechten Rand. Was der Chat tut, bleibt trotzdem sichtbar:
+     die Felder fuellen sich, die Seite wechselt, und jeder Schritt steht
+     im Gespraech. */
+  #agentZeiger, #agentKlickring { display: none !important; }
 }
 
 @media (prefers-reduced-motion: reduce) {

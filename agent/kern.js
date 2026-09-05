@@ -187,11 +187,14 @@ const Kern = {
     } else if (this.lauf.phase === "shortlist") {
       AgentPanel.status("wartet auf deine Wahl");
       AgentPanel.setSuggestions(this.shortlistChips());
+      AgentPanel.oeffnen();
     } else if (this.lauf.phase === "vertieft") {
       AgentPanel.status("wartet auf deine Antwort");
       AgentPanel.setSuggestions(["Auf den Merkzettel", "Zur Buchung", "Zurück zur Auswahl"]);
+      AgentPanel.oeffnen();
     } else if (["vorfrage", "eingangsfrage", "nachfrage"].includes(this.lauf.phase)) {
       AgentPanel.status("wartet auf deine Antwort");
+      AgentPanel.oeffnen();
     }
   },
 
@@ -306,6 +309,7 @@ const Kern = {
     ], 800);
     AgentPanel.setSuggestions(["Eckdaten durchgehen", "Zieh direkt los"]);
     AgentPanel.status("wartet auf deine Antwort");
+    AgentPanel.oeffnen();
     this.sichern();
   },
 
@@ -348,6 +352,7 @@ const Kern = {
     this.sagen(frage.frage);
     AgentPanel.setSuggestions(frage.chips);
     AgentPanel.status("wartet auf deine Antwort");
+    AgentPanel.oeffnen();
     this.sichern();
   },
 
@@ -594,6 +599,7 @@ const Kern = {
     this.sagen("Welches soll ich mir genauer ansehen? Oder sag mir, was dir noch fehlt — ich suche dann anders.");
     AgentPanel.setSuggestions(this.shortlistChips());
     AgentPanel.status("wartet auf deine Wahl");
+    AgentPanel.oeffnen();
     this.sperreAus();
     this.sichern();
     return { ok: true, daten: { uebernimmt: true } };
@@ -715,6 +721,7 @@ const Kern = {
     this.lauf.phase = "vertieft";
     AgentPanel.setSuggestions(["Auf den Merkzettel", "Zur Buchung", "Zurück zur Auswahl"]);
     AgentPanel.status("wartet auf deine Antwort");
+    AgentPanel.oeffnen();
     this.sperreAus();
     this.sichern();
 
@@ -797,6 +804,7 @@ const Kern = {
         this.sagen("Ich bin bei der Buchung angekommen. Soll ich sie abschließen oder möchtest du das selbst machen?");
         AgentPanel.setSuggestions(["Ja, schließ ab", "Ich mache das selbst"]);
         AgentPanel.status("wartet auf deine Antwort");
+        AgentPanel.oeffnen();
         this.sichern();
         return;
       }

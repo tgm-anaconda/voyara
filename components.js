@@ -237,7 +237,8 @@ function renderAgentRail() {
       <div class="agent-name">Chat</div>
       <div class="agent-status" id="agentStatus">online</div>
     </div>
-    <button type="button" class="icon-btn" id="agentCollapse" title="Chat einklappen">${ICONS.close}</button>
+    <span class="agent-ungelesen" id="agentUngelesen">1</span>
+    <button type="button" class="icon-btn" id="agentCollapse" title="Chat auf- oder zuklappen">${ICONS.close}</button>
   </div>
 
   <div class="agent-messages" id="agentMessages"></div>
@@ -277,8 +278,37 @@ const AgentPanel = {
       input.value = "";
     });
 
-    document.getElementById("agentCollapse").addEventListener("click", () => {
-      document.body.classList.toggle("agent-collapsed");
+    // Am Rechner klappt der Knopf die Spalte schmal, auf dem Handy oeffnet
+    // und schliesst er das Panel. Zwei Gesten, ein Knopf - deshalb hier die
+    // Weiche statt zweier Bedienelemente.
+    const schmal = () => window.matchMedia("(max-width: 1040px)").matches;
+
+    const umschalten = () => {
+      if (schmal()) {
+        document.body.classList.toggle("agent-open");
+        if (document.body.classList.contains("agent-open")) this.ungelesenLeeren();
+      } else {
+        document.body.classList.toggle("agent-collapsed");
+      }
+    };
+
+    document.getElementById("agentCollapse").addEventListener("click", (e) => {
+      e.stopPropagation();
+      umschalten();
+    });
+
+    // Auf dem Handy ist der ganze Kopf die Schaltflaeche - ein 30-Pixel-Ziel
+    // waere auf einem Telefon zu klein.
+    document.querySelector(".agent-head")?.addEventListener("click", () => {
+      if (schmal()) umschalten();
+    });
+
+    // Das Eingabefeld darf den Chat nicht wieder zuklappen
+    document.getElementById("agentForm").addEventListener("click", (e) => e.stopPropagation());
+
+    // Wer auf dem Handy tippt, will den Chat sehen
+    document.getElementById("agentInput").addEventListener("focus", () => {
+      if (schmal()) { document.body.classList.add("agent-open"); this.ungelesenLeeren(); }
     });
   },
   // `still` unterdrueckt das Einblenden - wird beim Wiederherstellen des
@@ -311,10 +341,40 @@ const AgentPanel = {
 
     box.appendChild(el);
     box.scrollTop = box.scrollHeight;
+    if (role === "bot" && !still) this.ungelesenZaehlen();
   },
   status(text) {
     const el = document.getElementById("agentStatus");
     if (el) el.textContent = text;
+  },
+
+  /* Ungelesene Antworten
+     ------------------------------------------------------------------
+     Auf dem Handy ist der Chat meist zugeklappt. Ohne Anzeige liefe der
+     Agent unbemerkt durch - man saehe die Seite sich bewegen, aber nicht,
+     was er dazu sagt. */
+  ungelesen: 0,
+  ungelesenZaehlen() {
+    if (!window.matchMedia("(max-width: 1040px)").matches) return;
+    if (document.body.classList.contains("agent-open")) return;
+    this.ungelesen += 1;
+    const el = document.getElementById("agentUngelesen");
+    const rail = document.getElementById("agentRail")?.querySelector(".agent-rail") || document.querySelector(".agent-rail");
+    if (el) el.textContent = this.ungelesen > 9 ? "9+" : String(this.ungelesen);
+    rail?.classList.add("hat-neues");
+  },
+  ungelesenLeeren() {
+    this.ungelesen = 0;
+    document.querySelector(".agent-rail")?.classList.remove("hat-neues");
+  },
+
+  // Auf dem Handy aufklappen, wenn der Chat etwas von der Person will.
+  // Waehrend er nur arbeitet, bleibt er zu - dann soll man die Seite sehen,
+  // und die Zaehlblase zeigt, dass es etwas Neues gibt.
+  oeffnen() {
+    if (!window.matchMedia("(max-width: 1040px)").matches) return;
+    document.body.classList.add("agent-open");
+    this.ungelesenLeeren();
   },
   setSuggestions(list) {
     const box = document.getElementById("agentSuggestions");

@@ -186,6 +186,7 @@ function renderFilters() {
   const b = priceBounds();
   const unit = state.type === "car" ? "pro Tag" : state.type === "flight" ? "pro Person" : "pro Nacht";
   const panel = document.getElementById("filterPanel");
+  verdrahteFilterschalter(panel);
   let html = group(`Preis ${unit}`,
     `<div class="range-row"><input type="range" id="fPrice" min="${b.min}" max="${b.max}" step="1" value="${state.priceMax}" /></div>
      <div style="font-size:.84rem;color:var(--ink-500);margin-top:6px">bis <strong id="fPriceOut">${formatPrice(state.priceMax)}</strong></div>`);
@@ -521,3 +522,26 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.addEventListener("wishlist:change", () => Wishlist.updateBadge());
 });
+
+/* Filter auf dem Handy auf- und zuklappen. Die Zahl der gesetzten Filter
+   steht am Knopf - sonst weiss man nach dem Zuklappen nicht mehr, ob und
+   was gerade filtert. */
+function verdrahteFilterschalter(panel) {
+  const knopf = document.getElementById("filterSchalter");
+  if (!knopf || !panel) return;
+
+  const beschriften = () => {
+    const n = [...panel.querySelectorAll("input[type=checkbox]")].filter((i) => i.checked).length
+      + [...panel.querySelectorAll("input[type=radio]")].filter((i) => i.checked && i.value !== "" && i.value !== "0").length;
+    knopf.textContent = n ? `Filter (${n})` : "Filter";
+  };
+  beschriften();
+  panel.addEventListener("change", beschriften);
+
+  if (knopf.dataset.verdrahtet) return;
+  knopf.dataset.verdrahtet = "1";
+  knopf.addEventListener("click", () => {
+    const offen = panel.classList.toggle("offen");
+    knopf.setAttribute("aria-expanded", String(offen));
+  });
+}
