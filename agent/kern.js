@@ -32,6 +32,8 @@ const STELLSCHRAUBEN = {
   autonomie: "nachfrage",       // assistiert | nachfrage | autonom
   tempo: 1.0,                   // Geschwindigkeit des Zeigers
   fehler: "keine",              // keine | filter | kriterium | behauptung
+  // knapp      = nur der Vorschlag, keine Herleitung
+  // ausfuehrlich = Vorschlag mit Zahlen und offengelegter Grundlage
   begruendung: "ausfuehrlich",  // knapp | ausfuehrlich
   initiative: "abwartend",      // abwartend | vorschlagend
   eingangsfrage: true,          // false = springt ohne Rueckfrage in die Suche
@@ -591,6 +593,12 @@ const Kern = {
         "bot", [this.linkZu(k.id, k.item.name)]);
     }
     await Zeiger.warte(900);
+
+    // Offenlegung: worauf beruht diese Reihenfolge? Waehrend der Arbeit
+    // meldet der Agent nur knapp, was er tut - beim Ergebnis soll
+    // nachvollziehbar sein, warum es dieses Haus ist.
+    const grundlage = Politik.grundlage(this.lauf.kandidaten, this.lauf.profil, this.lauf.merker);
+    if (grundlage) { this.sagen(grundlage); await Zeiger.warte(800); }
 
     // Autonomiestufe: Wer den Agenten autonom laufen laesst, bekommt keine
     // Wahl vorgelegt, sondern eine Entscheidung mitgeteilt. Die Shortlist

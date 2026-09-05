@@ -850,10 +850,12 @@ body.agent-collapsed .agent-head .icon-btn { margin-left: 0; transform: rotate(4
   }
   .agent-rail-inner { height: 100%; position: relative; }
 
-  /* Genau zwei Zustaende: zu und offen. Offen 54 Prozent der Hoehe -
-     gross genug zum Lesen und Tippen, und darunter bleibt die Seite
-     sichtbar. Lange Listen scrollen innerhalb des Chats. */
-  body.agent-open .agent-rail { height: 54vh; }
+  /* Genau zwei Zustaende: zu und offen.
+     dvh statt vh: auf dem iPhone bezieht sich vh auf die Hoehe OHNE
+     Adresszeile. Das Panel wurde dadurch groesser als gedacht und
+     schob den Rest der Seite aus dem Bild. dvh rechnet mit dem, was
+     tatsaechlich zu sehen ist. */
+  body.agent-open .agent-rail { height: 50vh; height: 50dvh; }
 
   /* Der Kopf ist auf dem Handy die Schaltflaeche zum Aufklappen */
   .agent-head { cursor: pointer; padding: 9px 14px; background: var(--chat-bg); align-items: flex-start; }
@@ -1035,7 +1037,11 @@ body.agent-collapsed .agent-head .icon-btn { margin-left: 0; transform: rotate(4
      darauf trotzdem steht. Kleiner als am Rechner, aber vorhanden -
      ohne Bild sieht die Seite nach Rohbau aus. */
   .hero { padding-top: 0; }
-  .hero .wrap { padding-top: 168px; }        /* freier Bildstreifen darueber */
+  /* Der freie Bildstreifen ueber der Ueberschrift. Er ist das Erste,
+     was unter dem Chat auftaucht - deshalb hoch genug, dass davon auch
+     bei geoeffnetem Chat noch etwas zu sehen ist, und nicht nur ein
+     gruener Rand. */
+  .hero .wrap { padding-top: 190px; }
   .hero-foto {
     background-position: 55% 32%;
     background-size: cover;
@@ -1150,6 +1156,31 @@ body.agent-collapsed .agent-head .icon-btn { margin-left: 0; transform: rotate(4
      die Felder fuellen sich, die Seite wechselt, und jeder Schritt steht
      im Gespraech. */
   #agentZeiger, #agentKlickring { display: none !important; }
+}
+
+/* =================================================================
+   13c. Beruehrungsgeraete: kein Hineinzoomen beim Tippen
+   -----------------------------------------------------------------
+   iOS zoomt beim Antippen eines Eingabefeldes automatisch hinein,
+   sobald dessen Schrift kleiner als 16 Pixel ist - und zoomt danach
+   nicht wieder heraus. Genau das passierte im Chat: nach dem ersten
+   Tippen stand die Seite vergroessert und verschoben da.
+
+   Die Loesung ist nicht, das Zoomen per viewport-Angabe zu verbieten -
+   das nimmt Menschen mit schlechten Augen eine Grundfunktion. Es
+   reicht, den Feldern 16 Pixel zu geben. pointer: coarse trifft
+   Beruehrungsgeraete unabhaengig von der Fensterbreite.
+   ================================================================= */
+@media (pointer: coarse) {
+  input, select, textarea,
+  .input, .select,
+  .sort-wrap select,
+  #agentInput {
+    font-size: 16px;
+  }
+  /* Damit die Felder dadurch nicht klobig werden */
+  .input, .select { padding: 11px 12px; }
+  #agentInput { padding: 10px 12px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

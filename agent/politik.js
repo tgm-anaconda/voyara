@@ -503,6 +503,69 @@ const Politik = {
     return this.vorschlagssatz(kandidat, profil);
   },
 
+  /* ==================================================================
+     Offenlegung der Entscheidungsgrundlage
+     ------------------------------------------------------------------
+     Waehrend der Agent arbeitet, meldet er nur knapp, was er gerade tut
+     ("vergleicht Hotels"). Beim Ergebnis dagegen soll nachvollziehbar
+     sein, WORAUF die Reihenfolge beruht: wie viele Haeuser verglichen
+     wurden, was davon uebrig blieb, was schwerer gewogen hat und welche
+     Zahl den Ausschlag gab.
+
+     Fuer die Studie ist das zugleich eine mogliche Manipulationsgroesse:
+     STELLSCHRAUBEN.begruendung steuert, wie viel der Agent ueber sein
+     eigenes Handeln preisgibt. Alle Zahlen darin stammen aus den Daten,
+     nicht aus dem Modell.
+     ================================================================== */
+  grundlage(kandidaten, profil, merker) {
+    const stufe = typeof STELLSCHRAUBEN !== "undefined" ? STELLSCHRAUBEN.begruendung : "ausfuehrlich";
+    if (stufe === "knapp") return null;
+
+    const teile = [];
+    const gesehen = (merker?.treffer?.treffer || []).length;
+    const gesichtet = (merker?.sichtung?.gesichtet || []).length;
+    const zustand = typeof Werkzeuge !== "undefined" ? Werkzeuge.zustand() : {};
+    const gesamt = zustand.trefferGesamt;
+
+    // 1. Womit habe ich gearbeitet?
+    const vorgaben = [];
+    if (profil.maxPreis) vorgaben.push(`bis ${profil.maxPreis} €`);
+    if (profil.maxStrand) vorgaben.push(`höchstens ${profil.maxStrand} km zum Strand`);
+    for (const { id } of profil.kriterien || []) {
+      const k = this.kriterium(id);
+      if (k?.filter) vorgaben.push(k.label);
+    }
+    if (gesamt != null) {
+      teile.push(vorgaben.length
+        ? `Grundlage: Nach deinen Vorgaben (${this.aufzaehlen([...new Set(vorgaben)])}) bleiben ${gesamt} Häuser. Davon habe ich ${gesichtet || gesehen} im Detail durchgesehen.`
+        : `Grundlage: ${gesamt} Häuser standen zur Auswahl, ${gesichtet || gesehen} habe ich im Detail durchgesehen.`);
+    }
+
+    // 2. Wonach habe ich sortiert?
+    const genannte = (profil.kriterien || []).map((x) => this.kriterium(x.id)?.label).filter(Boolean);
+    teile.push(genannte.length
+      ? `Für die Reihenfolge zählt bei mir zuerst, was du genannt hast — ${this.aufzaehlen(genannte)} —, danach Gesamtnote und Preis.`
+      : "Für die Reihenfolge zählen Gesamtnote und Preis, weil du kein eigenes Kriterium genannt hast.");
+
+    // 3. Was gab den Ausschlag?
+    const erster = kandidaten[0];
+    const beleg = (erster?.belege || []).slice().sort((a, b) => b.anteil - a.anteil)[0];
+    if (erster && beleg) {
+      const andere = kandidaten.slice(1)
+        .map((k) => (k.belege || []).find((b) => b.kriterium === beleg.kriterium))
+        .filter(Boolean);
+      const bester = andere.every((b) => b.anteil <= beleg.anteil);
+      teile.push(`${erster.item.name} steht vorn, weil ${Math.round(beleg.anteil * 100)} Prozent der ${beleg.erwaehnungen} Erwähnungen zu ${beleg.kriterium} positiv sind${bester && andere.length ? " — der höchste Wert der Auswahl" : ""}.`);
+    } else if (erster) {
+      teile.push(`${erster.item.name} steht vorn wegen der Gesamtnote von ${erster.item.rating.toFixed(1).replace(".", ",")} bei ${erster.item.reviewCount} Bewertungen.`);
+    }
+
+    // 4. Was ich NICHT geprueft habe - Ehrlichkeit ueber die Grenzen
+    teile.push("Nicht geprüft habe ich Verfügbarkeit und Stornobedingungen — die stehen auf der Detailseite.");
+
+    return teile.join(" ");
+  },
+
   vorschlaege() {
     return ["Günstiges Hotel am Strand für 2 Personen", "Ferienwohnung in Tirol im Januar", "Gut bewertetes Hotel in Kyoto"];
   },

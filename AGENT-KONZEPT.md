@@ -498,3 +498,46 @@ Seitenwechsel, die er ohne Gedächtnisverlust übersteht.
 - Tempo des Zeigers: im Pilot festlegen und danach einfrieren.
 - Stichprobengröße und daraus folgend, ob eine oder zwei Variablen variiert
   werden können.
+
+---
+
+## 16. Transparenz als mögliche Manipulationsgröße
+
+Nachtrag aus der Erprobung. Der Agent legt seit v=80 beim Ergebnis offen,
+worauf seine Reihenfolge beruht - und zwar getrennt von dem, was er während
+der Arbeit meldet.
+
+**Zwei Ebenen, bewusst verschieden ausführlich:**
+
+| wann | was der Agent sagt |
+|---|---|
+| während der Arbeit | knapp und allgemein: "sucht…", "setzt Filter…", "vergleicht…" |
+| beim Ergebnis | die Herleitung: wie viele Häuser blieben, was schwerer wog, welche Zahl den Ausschlag gab, und was er *nicht* geprüft hat |
+
+Beispiel für die zweite Ebene, alle Zahlen aus den Daten:
+
+> Grundlage: Nach deinen Vorgaben (bis 180 €) bleiben 8 Häuser. Davon habe ich
+> 5 im Detail durchgesehen. Für die Reihenfolge zählt bei mir zuerst, was du
+> genannt hast - Sauberkeit -, danach Gesamtnote und Preis. Baan Suan Retreat
+> steht vorn, weil 94 Prozent der 93 Erwähnungen zu Sauberkeit positiv sind -
+> der höchste Wert der Auswahl. Nicht geprüft habe ich Verfügbarkeit und
+> Stornobedingungen - die stehen auf der Detailseite.
+
+Der letzte Satz ist Absicht: Ein Agent, der nur seine Stärken nennt, ist nicht
+transparent, sondern wirbt. Die Grenze mitzunennen gehört dazu.
+
+**Als Variable:** `STELLSCHRAUBEN.begruendung` steuert, wie viel der Agent über
+sein eigenes Handeln preisgibt.
+
+- `knapp` - nur der Vorschlag, keine Herleitung
+- `ausfuehrlich` - Vorschlag mit Zahlen und offengelegter Grundlage
+
+Zuweisbar über die Adresse (`?begruendung=knapp`), haltbar über die Sitzung.
+Damit lässt sich prüfen, ob Nachvollziehbarkeit das Vertrauen und die
+Übernahmebereitschaft verändert - unabhängig von der Autonomiestufe, die an
+einer anderen Stelle greift.
+
+**Noch offen:** ob eine dritte Stufe sinnvoll ist, die die Herleitung auch
+*während* der Arbeit ausspielt statt nur am Ende. Auf dem Handy spricht der
+Platz dagegen, am Rechner wäre es möglich. Das wäre dann eher eine Frage des
+Zeitpunkts als des Umfangs - und damit eine eigene Variable.
