@@ -479,10 +479,15 @@ const Kern = {
     this.lauf.phase = "fertig";
     const letzte = this.lauf.verlauf.slice(-6).map((n) => `${n.rolle === "user" ? "Person" : "Du"}: ${n.text}`);
     const fakten = {
-      lage: "Die Person hat etwas geschrieben, das kein Suchauftrag ist. Antworte darauf, wie es an dieser Stelle passt, und fuehre danach zurueck zur Sache - ohne zu draengen.",
+      lage: "Die Person hat etwas geschrieben, das kein Suchauftrag ist. Antworte darauf. Wenn du im bisherigen Gespraech schon nach dem Reiseziel gefragt hast, frag nicht noch einmal danach - dann reicht deine Antwort allein.",
       wasDiePersonSchrieb: text,
       bisherigesGespraech: letzte,
       wasDuKannst: ["Unterkuenfte suchen", "filtern und sortieren", "Bewertungen auswerten", "eine Auswahl mit Begruendung vorlegen"],
+      // Was es auf der Seite gibt, ist mehr als das, was der Agent selbst
+      // tut. Ohne diese Unterscheidung behauptete er, es gebe hier keine
+      // Fluege - dabei stehen 77 im Katalog, er bucht sie nur nicht.
+      wasEsAufDerSeiteGibt: ["Hotels", "Ferienwohnungen", "Mietwagen", "Fluege"],
+      wobeiDuNichtHilfst: "Mietwagen und Fluege - die gibt es auf der Seite, aber suchen und buchen muss die Person sie selbst",
       wasDuBrauchst: ["Reiseziel", "ungefaehrer Zeitraum", "wie viele Personen"],
       anzahlZiele: typeof ZIELE !== "undefined" ? ZIELE.length : null,
       freigabestufe: this.freigabe(),
