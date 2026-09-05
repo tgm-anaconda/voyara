@@ -38,7 +38,7 @@ const MAX_TOKEN_ANTWORT = { verstehen: 300, formulieren: 400 };
 const ANWEISUNG_VERSTEHEN = `Du wandelst deutsche Reisewuensche in JSON um. Antworte AUSSCHLIESSLICH mit einem JSON-Objekt, ohne Fliesstext und ohne Markdown.
 
 Felder:
-- typ: "hotel" oder "apartment" (Ferienwohnung, Hütte, Chalet, Ferienhaus -> apartment)
+- typ: "hotel" oder "apartment". Nur "apartment", wenn ausdruecklich Ferienwohnung, Hütte, Chalet, Ferienhaus, Appartement oder Selbstversorgung genannt wird. Im Zweifel "hotel".
 - ziel: der genannte Ort als Wort, exakt wie im Text, sonst null
 - monat: Zahl 1-12 oder null
 - erwachsene: Zahl oder null

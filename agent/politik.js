@@ -130,6 +130,59 @@ const Politik = {
     return this.KRITERIEN.find((k) => k.id === id) || null;
   },
 
+  /* ==================================================================
+     Reisearten
+     ------------------------------------------------------------------
+     "Wir wollen mit den Kindern in die Berge" ist ein voellig normaler
+     Reisewunsch - nur steht "Berge" in keinem Katalog. Vorher endete
+     das in "Das habe ich noch nicht ganz", was den Agenten dumm
+     aussehen laesst, obwohl die Seite genau dafuer Angebote hat.
+
+     Deshalb eine Ebene zwischen Wunsch und Ziel: Wer eine Reiseart
+     nennt, bekommt die passenden Ziele zur Wahl gestellt, statt einer
+     Rueckfrage nach dem Ortsnamen.
+     ================================================================== */
+
+  THEMEN: [
+    { id: "berge", label: "in die Berge", ziele: ["tirol", "suedtirol"],
+      woerter: ["berge", "gebirge", "alpen", "bergurlaub", "wandern", "wanderurlaub", "gipfel", "almen"] },
+    { id: "ski", label: "zum Skifahren", ziele: ["tirol", "suedtirol"],
+      woerter: ["ski", "skifahren", "snowboard", "piste", "skiurlaub", "wintersport"] },
+    { id: "norden", label: "in den hohen Norden", ziele: ["lappland", "island"],
+      woerter: ["norden", "nordlicht", "polarlicht", "aurora", "skandinavien", "arktis", "schnee und eis"] },
+    { id: "strand", label: "ans Meer", ziele: ["mallorca", "kreta", "algarve", "sardinien", "teneriffa", "krabi", "ostsee"],
+      woerter: ["ans meer", "strandurlaub", "an den strand", "badeurlaub", "meer", "küste", "kueste", "insel"] },
+    { id: "stadt", label: "in eine Stadt", ziele: ["barcelona", "wien", "lissabon", "newyork", "kyoto"],
+      woerter: ["städtetrip", "staedtetrip", "städtereise", "staedtereise", "stadt", "city"] },
+    { id: "wintersonne", label: "in die Wintersonne", ziele: ["teneriffa", "krabi", "marrakesch", "kapstadt"],
+      woerter: ["wintersonne", "sonne im winter", "warm im winter", "der kälte entfliehen", "der kaelte entfliehen"] },
+    { id: "fern", label: "in die Ferne", ziele: ["krabi", "kapstadt", "newyork", "kyoto"],
+      woerter: ["fernreise", "weit weg", "fernost", "asien", "übersee", "uebersee"] },
+  ],
+
+  // Reiseart aus dem Text. Laengste Wortliste zuerst, damit "Wintersonne"
+  // nicht vom allgemeineren "Sonne" geschlagen wird.
+  themaAusText(text) {
+    const t = " " + String(text).toLowerCase() + " ";
+    let bestes = null;
+    for (const th of this.THEMEN) {
+      for (const w of th.woerter) {
+        if (!t.includes(w)) continue;
+        if (!bestes || w.length > bestes.laenge) bestes = { thema: th, laenge: w.length };
+      }
+    }
+    if (!bestes) return null;
+    // Nur Ziele, die es auch wirklich gibt
+    const ziele = bestes.thema.ziele.filter((id) =>
+      typeof ZIEL_NACH_ID === "undefined" || ZIEL_NACH_ID[id]);
+    return ziele.length ? { ...bestes.thema, ziele } : null;
+  },
+
+  zielnamen(ids) {
+    if (typeof ZIEL_NACH_ID === "undefined") return ids;
+    return ids.map((id) => ZIEL_NACH_ID[id]?.name).filter(Boolean);
+  },
+
   // Kriterien in Filter uebersetzen, soweit die Seite sie kennt
   filterAusKriterien(kriterien) {
     const filter = { ausstattung: [] };

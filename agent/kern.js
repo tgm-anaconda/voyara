@@ -108,6 +108,7 @@ const Kern = {
       merker: {},              // was der Agent unterwegs erfahren hat
       kandidaten: [],          // die Shortlist
       gewaehlt: null,
+      zielAuswahl: [],         // Ziele, die zu einer genannten Reiseart passen
       runde: 0,                // wie oft wurde nachgeschaerft
       protokoll: [],           // Messpunkte fuer die Auswertung
       zeiger: null,
@@ -195,6 +196,10 @@ const Kern = {
     } else if (this.lauf.phase === "vertieft") {
       AgentPanel.status("wartet auf deine Antwort");
       AgentPanel.setSuggestions(["Auf den Merkzettel", "Zur Buchung", "Zurück zur Auswahl"]);
+      AgentPanel.oeffnen();
+    } else if (this.lauf.phase === "zielwahl") {
+      AgentPanel.status("wartet auf deine Antwort");
+      AgentPanel.setSuggestions(Politik.zielnamen(this.lauf.zielAuswahl || []));
       AgentPanel.oeffnen();
     } else if (["vorfrage", "eingangsfrage", "nachfrage"].includes(this.lauf.phase)) {
       AgentPanel.status("wartet auf deine Antwort");
@@ -302,6 +307,30 @@ const Kern = {
     // Fuer die Auswertung: hat das Modell verstanden oder die Ersatzlogik?
     this.notieren("verstanden", { quelle: ausModell ? "modell" : "schluesselwoerter", profil: this.lauf.profil });
 
+    // Kein Ort genannt, aber eine Reiseart? Dann nicht nach dem Ortsnamen
+    // fragen, sondern die passenden Ziele zur Wahl stellen. "In die Berge"
+    // ist ein vollstaendiger Wunsch - die Seite hat Angebote dafuer, sie
+    // heissen nur anders.
+    if (!this.lauf.profil.zielId) {
+      const thema = Politik.themaAusText(text);
+      if (thema) {
+        this.lauf.profil.thema = thema.id;
+        this.lauf.zielAuswahl = thema.ziele;
+        this.lauf.phase = "zielwahl";
+        const namen = Politik.zielnamen(thema.ziele);
+        this.notieren("zielwahl_gestellt", { thema: thema.id, ziele: thema.ziele });
+        await this.sagenNacheinander([
+          `${thema.label.charAt(0).toUpperCase() + thema.label.slice(1)} — gerne.`,
+          `Dafür habe ich ${Politik.aufzaehlen(namen)}. Wohin soll ich schauen?`,
+        ], 700);
+        AgentPanel.setSuggestions(namen);
+        AgentPanel.status("wartet auf deine Antwort");
+        AgentPanel.oeffnen();
+        this.sichern();
+        return;
+      }
+    }
+
     // Ohne Ziel und ohne erkennbaren Wunsch lohnt keine Rueckfrage nach dem
     // Vorgehen - dann fehlt die Grundlage, und der Agent fragt danach.
     if (!a.zielId && !a.kriterien.length && a.erwachsene == null && !a.budget) {
@@ -329,6 +358,58 @@ const Kern = {
       verstanden ? `Verstanden: ${verstanden}.` : "Verstanden.",
       "Wie möchtest du vorgehen? Ich kann vorher ein paar Eckdaten mit dir durchgehen — oder ich ziehe direkt los und zeige dir, was ich finde.",
     ], 800);
+    AgentPanel.setSuggestions(["Eckdaten durchgehen", "Zieh direkt los"]);
+    AgentPanel.status("wartet auf deine Antwort");
+    AgentPanel.oeffnen();
+    this.sichern();
+  },
+
+  async antwortZielwahl(text) {
+    this.sagen(text, "user");
+    const gesucht = text.toLowerCase();
+    const auswahl = this.lauf.zielAuswahl || [];
+    // Laengster Name zuerst: "Suedtirol" enthaelt "Tirol", und in der
+    // Listenreihenfolge gewaenne sonst das kuerzere Ziel. Genau daran ist
+    // die Zielerkennung schon einmal gescheitert.
+    const nachLaenge = [...auswahl].sort((a, b) => {
+      const n = (id) => (typeof ZIEL_NACH_ID !== "undefined" ? ZIEL_NACH_ID[id]?.name.length : 0) || 0;
+      return n(b) - n(a);
+    });
+    let treffer = nachLaenge.find((id) => {
+      const name = typeof ZIEL_NACH_ID !== "undefined" ? ZIEL_NACH_ID[id]?.name : null;
+      return name && gesucht.includes(name.toLowerCase());
+    });
+
+    // "Egal" oder "such du aus": der Agent nimmt das erste - und sagt das,
+    // statt es stillschweigend zu tun.
+    const egal = /egal|such du|entscheide|aussuchen|beliebig|weiß nicht|weiss nicht/.test(gesucht);
+    if (!treffer && egal) treffer = auswahl[0];
+
+    if (!treffer) {
+      const namen = Politik.zielnamen(auswahl);
+      this.sagen(`Das konnte ich nicht zuordnen. Zur Wahl stehen ${Politik.aufzaehlen(namen)} — oder sag "egal", dann suche ich mir eins aus.`);
+      AgentPanel.setSuggestions([...namen, "Ist mir egal"]);
+      this.sichern();
+      return;
+    }
+
+    this.lauf.profil.zielId = treffer;
+    this.notieren("zielwahl", { gewaehlt: treffer, ausMehreren: auswahl.length, egal });
+    const name = typeof ZIEL_NACH_ID !== "undefined" ? ZIEL_NACH_ID[treffer]?.name : treffer;
+    await Zeiger.warte(400);
+    if (egal) this.sagen(`Dann nehme ich ${name}.`);
+
+    // Ab hier der normale Weg: erst die Frage nach dem Vorgehen
+    const verstanden = Politik.ansage(this.lauf.profil);
+    if (!STELLSCHRAUBEN.eingangsfrage) {
+      if (verstanden) this.sagen(`Verstanden: ${verstanden}.`);
+      return this.suchen();
+    }
+    this.lauf.phase = "eingangsfrage";
+    await this.sagenNacheinander([
+      verstanden ? `Verstanden: ${verstanden}.` : "Verstanden.",
+      "Wie möchtest du vorgehen? Ich kann vorher ein paar Eckdaten mit dir durchgehen — oder ich ziehe direkt los und zeige dir, was ich finde.",
+    ], 700);
     AgentPanel.setSuggestions(["Eckdaten durchgehen", "Zieh direkt los"]);
     AgentPanel.status("wartet auf deine Antwort");
     AgentPanel.oeffnen();
@@ -1014,6 +1095,7 @@ const Kern = {
     }
 
     switch (this.lauf.phase) {
+      case "zielwahl":      return this.antwortZielwahl(t);
       case "eingangsfrage": return this.antwortEingangsfrage(t);
       case "vorfrage":      return this.antwortVorfrage(t);
       case "shortlist":     return this.antwortShortlist(t);
