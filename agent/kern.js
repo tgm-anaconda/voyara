@@ -651,8 +651,15 @@ const Kern = {
     // Fuer spaetere Nachschaerfungen: "guenstiger" braucht einen Bezugswert
     this.lauf.profil.letzterPreisschnitt = preise.length
       ? Math.round(preise.reduce((a, b) => a + b, 0) / preise.length) : null;
-    const spanne = preise.length ? `${Math.min(...preise)} bis ${Math.max(...preise)} € pro Nacht` : null;
-    return { ...ergebnis, text: spanne ? `${t.length} Angebote angesehen, ${spanne}.` : ergebnis.text };
+    // Bei einem einzigen Treffer stand da "1 Angebote angesehen, 168 bis
+    // 168 € pro Nacht" - zweimal falsch in einem Satz.
+    const min = preise.length ? Math.min(...preise) : null;
+    const max = preise.length ? Math.max(...preise) : null;
+    const spanne = preise.length
+      ? (min === max ? `${min} € pro Nacht` : `${min} bis ${max} € pro Nacht`)
+      : null;
+    const wort = t.length === 1 ? "Angebot" : "Angebote";
+    return { ...ergebnis, text: spanne ? `${t.length} ${wort} angesehen, ${spanne}.` : ergebnis.text };
   },
 
   /* ==================================================================
