@@ -452,7 +452,7 @@ const Kern = {
       const ersatz = [quittung, zusammen ? `Alles notiert: ${zusammen}. Ich suche jetzt.` : "Alles notiert. Ich suche jetzt."]
         .filter(Boolean).join(" ");
       this.sagen(await this.formulieren({
-        lage: "Du hast alle Eckdaten beisammen und faengst jetzt an zu suchen. Sag das kurz.",
+        lage: "Sag kurz, dass du jetzt suchst.",
         wasDuVerstandenHast: quittung || null,
         auftrag: zusammen || null,
       }, ersatz));
