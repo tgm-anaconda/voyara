@@ -634,7 +634,7 @@ const Politik = {
     const kurz = typeof aspektKurzfassung === "function" ? aspektKurzfassung(k.item) : null;
 
     return {
-      lage: "Das ist einer von mehreren Vorschlaegen, die du gerade nacheinander vorstellst. Stell dieses Haus vor.",
+      lage: "Stell dieses Haus vor. Es ist einer von mehreren Vorschlaegen, die du nacheinander nennst - halte dich also kurz.",
       name: k.item.name,
       ort: k.item.location,
       preisProNacht: k.preis,
@@ -678,7 +678,7 @@ const Politik = {
 
   faktenZielwahl(text, thema) {
     return {
-      lage: "Die Person hat eine Reiseart genannt, aber keinen Ort. Diese Ziele passen dazu. Frag sie, wohin du schauen sollst.",
+      lage: "Stell die passenden Ziele kurz gegenueber und frag, wohin es gehen soll.",
       wasDiePersonSchrieb: text,
       reiseart: thema.label,
       ziele: thema.ziele.map((id) => this.zielFakten(id)).filter(Boolean),
@@ -688,7 +688,7 @@ const Politik = {
   faktenAnsage(profil, text) {
     const ziel = profil.zielId ? this.zielFakten(profil.zielId) : null;
     return {
-      lage: "Du hast den Wunsch verstanden und willst gleich suchen. Sag der Person, was du verstanden hast, und frag, ob du vorher noch ein paar Eckdaten mit ihr durchgehen sollst oder direkt losziehen darfst.",
+      lage: "Bestaetige kurz den Wunsch und frag, ob du vorher ein paar Eckdaten durchgehen sollst oder direkt losziehen darfst.",
       wasDiePersonSchrieb: text,
       ziel: ziel ? { name: ziel.name, land: ziel.land } : null,
       unterkunftsart: profil.typ === "apartment" ? "Ferienwohnung" : "Hotel",
@@ -706,7 +706,7 @@ const Politik = {
   faktenVorfrage(frage, quittung, profil) {
     const ziel = profil.zielId ? this.zielFakten(profil.zielId) : null;
     return {
-      lage: "Du gehst mit der Person kurz die Eckdaten durch. Bestaetige knapp, was du gerade verstanden hast, und stell dann die naechste Frage.",
+      lage: "Bestaetige knapp das Verstandene und stell die naechste Frage - beides in einem Zug.",
       wasDuVerstandenHast: quittung || null,
       naechsteFrage: frage.frage,
       worumEsGeht: frage.id,
@@ -736,7 +736,7 @@ const Politik = {
     }
 
     return {
-      lage: "Du hast der Person gerade deine Vorschlaege gezeigt. Jetzt legst du offen, worauf deine Reihenfolge beruht und wo deine Pruefung aufhoert.",
+      lage: "Leg offen, worauf deine Reihenfolge beruht und wo deine Pruefung aufhoert.",
       haeuserNachVorgaben: zustand.trefferGesamt ?? null,
       imDetailGeprueft: (merker?.sichtung?.gesichtet || []).length || (merker?.treffer?.treffer || []).length,
       vorgaben: [...new Set(vorgaben)],
