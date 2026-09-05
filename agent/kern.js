@@ -319,10 +319,10 @@ const Kern = {
         this.lauf.phase = "zielwahl";
         const namen = Politik.zielnamen(thema.ziele);
         this.notieren("zielwahl_gestellt", { thema: thema.id, ziele: thema.ziele });
-        await this.sagenNacheinander([
-          `${thema.label.charAt(0).toUpperCase() + thema.label.slice(1)} — gerne.`,
-          `Dafür habe ich ${Politik.aufzaehlen(namen)}. Wohin soll ich schauen?`,
-        ], 700);
+        // Formuliert das Modell. Der Satz unten ist nur der Rueckfall, wenn
+        // die Schnittstelle nicht antwortet - nicht die Regelantwort.
+        const ersatz = `${thema.label.charAt(0).toUpperCase() + thema.label.slice(1)} — gerne. Dafür habe ich ${Politik.aufzaehlen(namen)}. Wohin soll ich schauen?`;
+        this.sagen(await this.formulieren(Politik.faktenZielwahl(text, thema), ersatz));
         AgentPanel.setSuggestions(namen);
         AgentPanel.status("wartet auf deine Antwort");
         AgentPanel.oeffnen();
@@ -354,14 +354,7 @@ const Kern = {
     // andere Interaktion als wer ihn einfach laufen laesst. Beides ist
     // erlaubt, die Wahl wird protokolliert.
     this.lauf.phase = "eingangsfrage";
-    await this.sagenNacheinander([
-      verstanden ? `Verstanden: ${verstanden}.` : "Verstanden.",
-      "Wie möchtest du vorgehen? Ich kann vorher ein paar Eckdaten mit dir durchgehen — oder ich ziehe direkt los und zeige dir, was ich finde.",
-    ], 800);
-    AgentPanel.setSuggestions(["Eckdaten durchgehen", "Zieh direkt los"]);
-    AgentPanel.status("wartet auf deine Antwort");
-    AgentPanel.oeffnen();
-    this.sichern();
+    await this.eingangsfrageStellen(text);
   },
 
   async antwortZielwahl(text) {
@@ -406,10 +399,15 @@ const Kern = {
       return this.suchen();
     }
     this.lauf.phase = "eingangsfrage";
-    await this.sagenNacheinander([
-      verstanden ? `Verstanden: ${verstanden}.` : "Verstanden.",
-      "Wie möchtest du vorgehen? Ich kann vorher ein paar Eckdaten mit dir durchgehen — oder ich ziehe direkt los und zeige dir, was ich finde.",
-    ], 700);
+    await this.eingangsfrageStellen(text);
+  },
+
+  // Der Uebergang von "verstanden" zu "wie gehen wir vor". An zwei Stellen
+  // gebraucht: direkt nach dem Auftrag und nach der Zielwahl.
+  async eingangsfrageStellen(text) {
+    const verstanden = Politik.ansage(this.lauf.profil);
+    const ersatz = `${verstanden ? `Verstanden: ${verstanden}.` : "Verstanden."} Wie möchtest du vorgehen? Ich kann vorher ein paar Eckdaten mit dir durchgehen — oder ich ziehe direkt los und zeige dir, was ich finde.`;
+    this.sagen(await this.formulieren(Politik.faktenAnsage(this.lauf.profil, text), ersatz));
     AgentPanel.setSuggestions(["Eckdaten durchgehen", "Zieh direkt los"]);
     AgentPanel.status("wartet auf deine Antwort");
     AgentPanel.oeffnen();
@@ -442,17 +440,28 @@ const Kern = {
      die Antwort schon im Auftrag stand.
      ================================================================== */
 
-  async naechsteVorfrage() {
+  // `quittung` ist das, was aus der letzten Antwort verstanden wurde. Sie
+  // wandert in dieselbe Aeusserung wie die naechste Frage - ein Mensch
+  // sagt "September, notiert. Und wie viele seid ihr?" in einem Zug und
+  // nicht in zwei Nachrichten.
+  async naechsteVorfrage(quittung) {
     const frage = Politik.naechsteVorfrage(this.lauf.profil, this.lauf.vorfragenErledigt);
     if (!frage) {
       const zusammen = Politik.ansage(this.lauf.profil);
       await this.denkpause(800);
-      this.sagen(zusammen ? `Alles notiert: ${zusammen}. Ich suche jetzt.` : "Alles notiert. Ich suche jetzt.");
+      const ersatz = [quittung, zusammen ? `Alles notiert: ${zusammen}. Ich suche jetzt.` : "Alles notiert. Ich suche jetzt."]
+        .filter(Boolean).join(" ");
+      this.sagen(await this.formulieren({
+        lage: "Du hast alle Eckdaten beisammen und faengst jetzt an zu suchen. Sag das kurz.",
+        wasDuVerstandenHast: quittung || null,
+        auftrag: zusammen || null,
+      }, ersatz));
       return this.suchen();
     }
     this.lauf.phase = "vorfrage";
     this.lauf.offeneVorfrage = frage.id;
-    this.sagen(frage.frage);
+    const ersatz = [quittung, frage.frage].filter(Boolean).join(" ");
+    this.sagen(await this.formulieren(Politik.faktenVorfrage(frage, quittung, this.lauf.profil), ersatz));
     AgentPanel.setSuggestions(frage.chips);
     AgentPanel.status("wartet auf deine Antwort");
     AgentPanel.oeffnen();
@@ -469,9 +478,7 @@ const Kern = {
     this.notieren("vorfrage", { frage: frage.id, antwort: text });
 
     await Zeiger.warte(450);
-    if (quittung) this.sagen(quittung);
-    await Zeiger.warte(500);
-    return this.naechsteVorfrage();
+    return this.naechsteVorfrage(quittung);
   },
 
   /* ==================================================================

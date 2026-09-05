@@ -634,7 +634,7 @@ const Politik = {
     const kurz = typeof aspektKurzfassung === "function" ? aspektKurzfassung(k.item) : null;
 
     return {
-      aufgabe: "Formuliere daraus einen Vorschlag in ein bis drei Saetzen. Nenne Name, Ort, Preis und Note. Wenn ein genanntes Kriterium dabei ist, stelle es heraus und sage, dass die Person es genannt hat. Nenne auch die Schwaeche.",
+      lage: "Das ist einer von mehreren Vorschlaegen, die du gerade nacheinander vorstellst. Stell dieses Haus vor.",
       name: k.item.name,
       ort: k.item.location,
       preisProNacht: k.preis,
@@ -654,6 +654,74 @@ const Politik = {
     };
   },
 
+  /* Was gibt es an einem Ziel? Zahlen aus dem Katalog, damit der Agent
+     etwas Konkretes sagen kann statt einer Floskel. */
+  zielFakten(id) {
+    const ziel = typeof ZIEL_NACH_ID !== "undefined" ? ZIEL_NACH_ID[id] : null;
+    if (!ziel) return null;
+    const alle = [
+      ...(typeof HOTELS !== "undefined" ? HOTELS : []),
+      ...(typeof APARTMENTS !== "undefined" ? APARTMENTS : []),
+    ].filter((o) => o.ziel === id);
+    const preise = alle.map((o) => o.pricePerNight).filter(Boolean);
+    const regionen = [...new Set(alle.map((o) => o.region).filter(Boolean))];
+    return {
+      name: ziel.name,
+      land: ziel.land,
+      beschreibung: ziel.kurz,
+      unterkuenfte: alle.length,
+      preisAb: preise.length ? Math.min(...preise) : null,
+      preisBis: preise.length ? Math.max(...preise) : null,
+      regionen: regionen.slice(0, 4),
+    };
+  },
+
+  faktenZielwahl(text, thema) {
+    return {
+      lage: "Die Person hat eine Reiseart genannt, aber keinen Ort. Diese Ziele passen dazu. Frag sie, wohin du schauen sollst.",
+      wasDiePersonSchrieb: text,
+      reiseart: thema.label,
+      ziele: thema.ziele.map((id) => this.zielFakten(id)).filter(Boolean),
+    };
+  },
+
+  faktenAnsage(profil, text) {
+    const ziel = profil.zielId ? this.zielFakten(profil.zielId) : null;
+    return {
+      lage: "Du hast den Wunsch verstanden und willst gleich suchen. Sag der Person, was du verstanden hast, und frag, ob du vorher noch ein paar Eckdaten mit ihr durchgehen sollst oder direkt losziehen darfst.",
+      wasDiePersonSchrieb: text,
+      ziel: ziel ? { name: ziel.name, land: ziel.land } : null,
+      unterkunftsart: profil.typ === "apartment" ? "Ferienwohnung" : "Hotel",
+      reisemonat: profil.monat,
+      erwachsene: profil.erwachsene,
+      kinder: profil.kinder,
+      hoechstpreisProNacht: profil.maxPreis || null,
+      genannteWuensche: (profil.kriterien || []).map((x) => this.kriterium(x.id)?.label).filter(Boolean),
+    };
+  },
+
+  // Bestaetigung der letzten Antwort und naechste Frage in einem Zug -
+  // so wuerde es ein Mensch auch sagen, statt zwei Saetze nacheinander
+  // abzusetzen.
+  faktenVorfrage(frage, quittung, profil) {
+    const ziel = profil.zielId ? this.zielFakten(profil.zielId) : null;
+    return {
+      lage: "Du gehst mit der Person kurz die Eckdaten durch. Bestaetige knapp, was du gerade verstanden hast, und stell dann die naechste Frage.",
+      wasDuVerstandenHast: quittung || null,
+      naechsteFrage: frage.frage,
+      worumEsGeht: frage.id,
+      ziel: ziel ? { name: ziel.name, land: ziel.land, beschreibung: ziel.beschreibung } : null,
+      bereitsBekannt: {
+        unterkunftsart: profil.typ === "apartment" ? "Ferienwohnung" : "Hotel",
+        reisemonat: profil.monat,
+        erwachsene: profil.erwachsene,
+        kinder: profil.kinder,
+        hoechstpreisProNacht: profil.maxPreis || null,
+        wuensche: (profil.kriterien || []).map((x) => this.kriterium(x.id)?.label).filter(Boolean),
+      },
+    };
+  },
+
   faktenGrundlage(kandidaten, profil, merker) {
     const zustand = typeof Werkzeuge !== "undefined" ? Werkzeuge.zustand() : {};
     const erster = kandidaten[0];
@@ -668,7 +736,7 @@ const Politik = {
     }
 
     return {
-      aufgabe: "Erklaere in drei bis vier Saetzen, worauf die Reihenfolge beruht: wie viele Haeuser blieben, wie viele im Detail geprueft wurden, was fuer die Reihenfolge zaehlte, und warum das erste vorn steht. Nenne zum Schluss, was nicht geprueft wurde.",
+      lage: "Du hast der Person gerade deine Vorschlaege gezeigt. Jetzt legst du offen, worauf deine Reihenfolge beruht und wo deine Pruefung aufhoert.",
       haeuserNachVorgaben: zustand.trefferGesamt ?? null,
       imDetailGeprueft: (merker?.sichtung?.gesichtet || []).length || (merker?.treffer?.treffer || []).length,
       vorgaben: [...new Set(vorgaben)],
