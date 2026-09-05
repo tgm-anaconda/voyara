@@ -644,3 +644,70 @@ Jeder Shortlist-Eintrag hält `strategie` und `informationswert` fest. Damit
 lässt sich später trennen: Wer hat dem Agenten von Anfang an etwas gegeben,
 wer hat ihn erst suchen lassen und dann nachgeschärft - und macht das einen
 Unterschied für Vertrauen und Zufriedenheit.
+
+---
+
+## 18. Aufgabenstellung mit privatem Wissen und Zielkonflikt
+
+Vorgemerkt aus der Gestaltungsdiskussion, noch nicht gebaut.
+
+### Das Problem, das es löst
+
+Solange die Aufgabe lautet "Finde eine Unterkunft in den Bergen im Februar",
+kann der Agent sie allein lösen. Die teilnehmende Person tippt einen Satz,
+klickt drei Vorschläge an und ist fertig. Wer durchskippt, erzeugt fast
+dieselben Daten wie wer sich Mühe gibt, weil der Agent ja trotzdem arbeitet.
+Es gibt nichts, was die Person beitragen muss.
+
+### Die Änderung
+
+Die Aufgabe enthält Wissen, das nur die Person hat, und einen Konflikt, den
+der Katalog nicht auflösen kann. Beispiel:
+
+> Ihr fahrt Ende Februar zu viert nach Südtirol: du, dein Partner, euer Sohn
+> (7) und deine Mutter (72). Deine Mutter ist nach einer Hüft-OP schlecht zu
+> Fuß und braucht kurze Wege. Dein Partner will unbedingt eine Sauna. Euer
+> Sohn fragt jeden Tag nach einem Pool. Mehr als 160 Euro pro Nacht wollt ihr
+> nicht ausgeben.
+
+Fünf Vorgaben, die im Katalog nicht alle zusammen erfüllbar sind. Der Agent
+kann davon nichts wissen, es muss durch den Chat. Und es muss abgewogen
+werden, weil es keine perfekte Lösung gibt.
+
+### Was dadurch messbar wird
+
+Die Zahl der Vorgaben ist bekannt, also ist alles objektiv kodierbar:
+
+- wie viele der fünf Vorgaben genannt werden (Engagement und
+  Aufmerksamkeitsprüfung in einem, ohne künstliche Kontrollfrage)
+- in welcher Reihenfolge (offengelegte Priorisierung)
+- ob der Zielkonflikt angesprochen wird
+- ob nachgeschärft wird, wenn ein Vorschlag eine Vorgabe verletzt
+- Länge und Zahl der eigenen Nachrichten
+
+### Das Kopier-Problem
+
+Wer die Aufgabenstellung als Ganzes in den Chat kopiert, hat formal alle
+fünf Vorgaben genannt, ohne sich mit einer einzigen beschäftigt zu haben.
+Die Kennzahl wäre wertlos. Drei Gegenmaßnahmen, in dieser Reihenfolge:
+
+1. **Die Aufgabe steht auf einem eigenen Bildschirm davor und ist während
+   der Aufgabe nicht mehr sichtbar.** Dann wird aus dem Nennen ein Erinnern,
+   und was erinnert wird, ist genau die Priorisierung, die uns interessiert.
+2. **Als Bild ausgeliefert, nicht als markierbarer Text.**
+3. **Einfügen wird protokolliert.** Ein `paste`-Ereignis im Eingabefeld ist
+   messbar. Wer trotzdem kopiert, fällt nicht unter den Tisch, sondern wird
+   zu einer eigenen Gruppe: Delegationsstil "alles abgeben" gegen
+   "im Gespräch entwickeln". Das ist kein Datenmüll, sondern ein Befund.
+
+### Die Gegenzeichnung
+
+Vor der Buchung ein eigener Schritt: Der Vorschlag steht noch einmal da,
+und die Person bestätigt ihn oder sagt, was fehlt. In einer der beiden
+Aufgaben verletzt dieser Vorschlag genau eine der Vorgaben. Daraus wird die
+Kernkennzahl:
+
+> Wie viele Menschen bestätigen eine Empfehlung, die eine ihrer eigenen
+> Vorgaben verletzt?
+
+Binär, mit bekannter Wahrheit, aus Verhalten statt aus Selbstauskunft.
