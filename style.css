@@ -840,7 +840,7 @@ body.agent-collapsed .agent-head .icon-btn { margin-left: 0; transform: rotate(4
   .app-shell { grid-template-columns: minmax(0, 1fr); }
   .agent-rail {
     position: fixed; top: 0; left: 0; right: 0; width: 100%;
-    height: 74px; min-height: 0;
+    height: 102px; min-height: 0;   /* Kopf plus Griff */
     border-right: none;
     border-radius: 0 0 var(--r-lg) var(--r-lg);
     box-shadow: 0 4px 16px rgba(16,33,30,.18);
@@ -850,13 +850,10 @@ body.agent-collapsed .agent-head .icon-btn { margin-left: 0; transform: rotate(4
   }
   .agent-rail-inner { height: 100%; position: relative; }
 
-  /* Zwei Groessen im offenen Zustand.
-     Halbe Hoehe ist der Regelfall: der Chat ist gross genug zum Lesen und
-     Tippen, und darunter bleibt die Seite sichtbar. Wer eine lange Liste
-     durchgehen will, zieht am Griff auf volle Hoehe. So muss sich niemand
-     zwischen "sieht den Chat" und "sieht die Seite" entscheiden. */
+  /* Genau zwei Zustaende: zu und offen. Offen 54 Prozent der Hoehe -
+     gross genug zum Lesen und Tippen, und darunter bleibt die Seite
+     sichtbar. Lange Listen scrollen innerhalb des Chats. */
   body.agent-open .agent-rail { height: 54vh; }
-  body.agent-open.agent-gross .agent-rail { height: 88vh; }
 
   /* Der Kopf ist auf dem Handy die Schaltflaeche zum Aufklappen */
   .agent-head { cursor: pointer; padding: 9px 14px; background: var(--chat-bg); align-items: flex-start; }
@@ -879,17 +876,60 @@ body.agent-collapsed .agent-head .icon-btn { margin-left: 0; transform: rotate(4
   .agent-head .icon-btn svg { transition: transform .2s ease; }
   body:not(.agent-open) .agent-head .icon-btn svg { transform: rotate(45deg); }
 
-  /* Griff am unteren Rand des offenen Panels */
-  body.agent-open .agent-griff {
-    display: block; width: 100%; padding: 7px 0 9px;
+  /* Der Griff sitzt in beiden Zustaenden am unteren Rand und zeigt
+     immer die Richtung, in die er sich bewegt. Zugeklappt nach unten
+     (oeffnen), offen nach oben (schliessen). Vorher war es umgekehrt
+     verwirrend: zugeklappt gab es keinen Hinweis, offen sah der Griff
+     aus wie "aufziehen". */
+  /* Normales Flex-Kind am Ende der Spalte, nicht absolut positioniert:
+     absolut lag der Griff ueber dem Eingabefeld. */
+  .agent-griff {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    flex: 0 0 auto; width: 100%; padding: 6px 0 8px;
     background: var(--chat-head); border: none; cursor: pointer;
     border-top: 1px solid var(--chat-line);
+    color: rgba(255,255,255,.62); font-family: var(--font-body); font-size: .7rem;
+    /* Die Wischgeste soll hier ankommen und nicht die Seite scrollen */
+    touch-action: none;
   }
-  .agent-griff span {
-    display: block; width: 42px; height: 4px; margin: 0 auto;
-    background: rgba(255,255,255,.34); border-radius: 999px;
+  .agent-griff-balken {
+    display: block; width: 36px; height: 4px;
+    background: rgba(255,255,255,.38); border-radius: 999px;
   }
-  .agent-griff:active span { background: rgba(255,255,255,.6); }
+  .agent-griff-text::after { content: "Chat öffnen ▾"; }
+  body.agent-open .agent-griff-text::after { content: "Schließen ▴"; }
+  .agent-griff:active { background: rgba(255,255,255,.06); }
+  .agent-griff:active .agent-griff-balken { background: rgba(255,255,255,.65); }
+
+  .agent-input { padding-bottom: 10px; }
+  .agent-foot { display: none; }
+  /* Der Nachrichtenbereich verschwindet im zugeklappten Zustand, damit
+     der Streifen wirklich nur den Kopf und den Griff zeigt. */
+  body:not(.agent-open) .agent-messages,
+  body:not(.agent-open) .agent-suggestions,
+  body:not(.agent-open) .agent-input { display: none; }
+
+  /* Arbeitszustand: eigene Farbe, laufender Schritt, pulsender Punkt.
+     So ist auf einen Blick klar, dass der Agent gerade etwas tut - und
+     der Chat ist dabei zugeklappt, damit man die Seite sieht. */
+  body.agent-arbeitet .agent-rail { background: #14303a; }
+  body.agent-arbeitet .agent-head { background: #14303a; }
+  body.agent-arbeitet .agent-avatar { background: rgba(240,139,58,.22); color: var(--accent-500); }
+  body.agent-arbeitet .agent-vorschau { color: var(--accent-500); }
+  body.agent-arbeitet .agent-name::after {
+    content: "arbeitet"; margin-left: 7px; font-size: .68rem; font-weight: 600;
+    color: var(--accent-500); text-transform: uppercase; letter-spacing: .04em;
+  }
+  body.agent-arbeitet .agent-avatar::after {
+    content: ""; position: absolute; width: 7px; height: 7px; border-radius: 50%;
+    background: var(--accent-500); margin: 22px 0 0 22px;
+    animation: agentPuls 1.1s ease-in-out infinite;
+  }
+  body.agent-arbeitet .agent-head .icon-btn,
+  body.agent-arbeitet .agent-griff { display: none; }
+  /* Ohne Griff braucht der Streifen nur die Kopfhoehe. Er soll waehrend
+     der Arbeit so wenig Platz wie moeglich nehmen. */
+  body.agent-arbeitet .agent-rail { height: 62px; }
 
   /* Ungelesenes: waehrend der Chat zu ist, soll man merken, dass er
      geantwortet hat - sonst laeuft der Agent unbemerkt weiter. */
@@ -903,8 +943,10 @@ body.agent-collapsed .agent-head .icon-btn { margin-left: 0; transform: rotate(4
   body:not(.agent-open) .agent-rail.hat-neues .agent-ungelesen { display: grid; }
 
   /* Die Seite beginnt unter dem Chatstreifen */
-  .app-main { padding-top: 74px; padding-bottom: 0; }
-  #siteHeader { top: 74px; }
+  .app-main { padding-top: 102px; padding-bottom: 0; }
+  #siteHeader { top: 102px; }
+  body.agent-arbeitet .app-main { padding-top: 62px; }
+  body.agent-arbeitet #siteHeader { top: 62px; }
 
   /* Auf dem Handy gibt es kein Einklappen im Desktop-Sinn */
   body.agent-collapsed .app-shell { grid-template-columns: minmax(0, 1fr); }
@@ -959,10 +1001,22 @@ body.agent-collapsed .agent-head .icon-btn { margin-left: 0; transform: rotate(4
    Seite verrutscht wirkte.
    ================================================================= */
 @media (max-width: 720px) {
-  /* Nichts darf breiter sein als der Schirm. Ohne diese Klammer laesst
-     sich die ganze Seite seitlich verschieben, sobald ein einziges
-     Element ueberhaengt - und der Nutzer sieht ein kaputtes Layout. */
+  /* Nichts darf breiter sein als der Schirm.
+     ------------------------------------------------------------------
+     .app-main ist ein Flex-Container in Spaltenrichtung. Ein Flex-Kind
+     ist im Zweifel so breit wie sein min-content - und wenn irgendwo
+     tief drin ein Gitter oder eine Karte nicht schrumpfen kann, waechst
+     der ganze Inhaltsrahmen mit. Auf der Detailseite war .wrap dadurch
+     712 Pixel breit in einem 375 Pixel breiten Fenster: die Seite wurde
+     auf Desktopbreite gesetzt und rechts abgeschnitten.
+
+     min-width: 0 nimmt den Mindestbreiten-Boden weg, max-width: 100%
+     deckelt nach oben. Damit bricht der Inhalt um, statt ueberzuhaengen. */
   body { max-width: 100%; }
+  .app-main, .app-main > *, .wrap { min-width: 0; max-width: 100%; }
+  .wrap { width: 100%; }
+  .detail-layout, .detail-main, .detail-main > *, .results-layout,
+  .panel, .panel > * { min-width: 0; max-width: 100%; }
 
   /* Der Finger darf die Seite nur nach oben und unten ziehen. Ohne diese
      Regel schiebt eine schraege Wischbewegung auf einem Telefon die
@@ -1019,10 +1073,22 @@ body.agent-collapsed .agent-head .icon-btn { margin-left: 0; transform: rotate(4
   .header-action span:not(.action-icon) { font-size: .64rem; }
   /* Vier Reiter auf 375 Pixel: gleichmaessig verteilt statt seitlich
      wegscrollbar. Vorher war "Flüge" abgeschnitten und die Leiste liess
-     sich wegziehen. */
+     sich wegziehen.
+
+     Die Symbole fallen weg. Mit Symbol blieben fuer "Ferienwohnungen"
+     rund 70 Pixel Text - das Wort lief ins naechste Symbol hinein. Ohne
+     Symbol steht die volle Spaltenbreite zur Verfuegung, und die
+     Beschriftung allein ist auf einem Telefon ohnehin eindeutiger. */
   .header-nav { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; overflow: visible; }
-  .header-nav a { justify-content: center; padding: 10px 2px; font-size: .78rem; gap: 5px; }
-  .header-nav svg { width: 15px; height: 15px; }
+  .header-nav a {
+    justify-content: center; align-items: center; padding: 9px 3px;
+    font-size: .74rem; gap: 0; text-align: center; line-height: 1.18;
+    /* "Ferienwohnungen" braucht 97 Pixel, die Spalte hat 86. Statt es
+       abzuschneiden darf es mit Trennstrich umbrechen: "Ferien-" /
+       "wohnungen". Dafuer steht lang="de" im html-Element. */
+    white-space: normal; hyphens: auto; overflow-wrap: break-word;
+  }
+  .header-nav svg { display: none; }
 
   /* --- Inhalte --------------------------------------------------- */
   .section { padding: 30px 0; }

@@ -255,10 +255,13 @@ function renderAgentRail() {
     <button type="submit" class="btn btn-primary" aria-label="Senden">${ICONS.send}</button>
   </form>
   <p class="agent-foot">Suchen, filtern und vormerken. Du kannst jederzeit selbst weiterklicken.</p>
-  <!-- Griff am unteren Rand: zieht das Panel auf volle Hoehe und wieder
-       zurueck. Damit muss man sich nicht zwischen "sieht den Chat" und
-       "sieht die Seite" entscheiden. -->
-  <button type="button" class="agent-griff" id="agentGriff" aria-label="Chat vergrößern"><span></span></button>
+  <!-- Ein Griff am unteren Rand, in beiden Zustaenden sichtbar. Er zeigt
+       immer die Richtung, in die er sich bewegt: zugeklappt nach unten
+       (oeffnen), offen nach oben (schliessen). Antippen oder wischen. -->
+  <button type="button" class="agent-griff" id="agentGriff">
+    <span class="agent-griff-balken"></span>
+    <span class="agent-griff-text"></span>
+  </button>
 </div>`;
 }
 
@@ -292,23 +295,41 @@ const AgentPanel = {
     // Weiche statt zweier Bedienelemente.
     const schmal = () => window.matchMedia("(max-width: 1040px)").matches;
 
-    const umschalten = () => {
-      if (schmal()) {
-        const offen = document.body.classList.toggle("agent-open");
-        if (offen) this.ungelesenLeeren(); else document.body.classList.remove("agent-gross");
-        // Die Entscheidung gilt fuer die Sitzung. Wer den Chat zuklappt,
-        // will ihn nicht auf jeder Seite wieder aufgeklappt vorfinden.
-        try { sessionStorage.setItem("voyara_chat_offen", offen ? "1" : "0"); } catch { /* egal */ }
-      } else {
-        document.body.classList.toggle("agent-collapsed");
-      }
+    const umschalten = (soll) => {
+      if (!schmal()) { document.body.classList.toggle("agent-collapsed"); return; }
+      const offen = soll === undefined
+        ? document.body.classList.toggle("agent-open")
+        : (document.body.classList.toggle("agent-open", soll), soll);
+      if (offen) { this.ungelesenLeeren(); this.ansEnde(); }
+      // Die Entscheidung gilt fuer die Sitzung. Wer den Chat zuklappt,
+      // will ihn nicht auf jeder Seite wieder aufgeklappt vorfinden.
+      try { sessionStorage.setItem("voyara_chat_offen", offen ? "1" : "0"); } catch { /* egal */ }
     };
+    this.umschalten = umschalten;
 
-    // Griff am unteren Rand: zwischen halber und voller Hoehe wechseln
-    document.getElementById("agentGriff")?.addEventListener("click", (e) => {
-      e.stopPropagation();
-      document.body.classList.toggle("agent-gross");
-    });
+    /* Griff: antippen oder wischen
+       ------------------------------------------------------------------
+       Er zeigt immer die Richtung an, in die er sich bewegt, und nimmt
+       dieselbe Bewegung auch als Wisch entgegen: offen nach oben wischen
+       schliesst, zugeklappt nach unten wischen oeffnet. Ein Griff, der
+       aussieht wie "aufziehen", sich aber nur antippen laesst, ist genau
+       die Unstimmigkeit, die vorher stoerte. */
+    const griff = document.getElementById("agentGriff");
+    if (griff) {
+      griff.addEventListener("click", (e) => { e.stopPropagation(); umschalten(); });
+
+      let startY = null;
+      griff.addEventListener("touchstart", (e) => { startY = e.touches[0].clientY; }, { passive: true });
+      griff.addEventListener("touchmove", (e) => {
+        if (startY === null) return;
+        const weg = e.touches[0].clientY - startY;
+        const offen = document.body.classList.contains("agent-open");
+        // 26 Pixel Schwelle: darunter ist es ein Antippen, kein Wisch
+        if (offen && weg < -26) { umschalten(false); startY = null; }
+        if (!offen && weg > 26) { umschalten(true); startY = null; }
+      }, { passive: true });
+      griff.addEventListener("touchend", () => { startY = null; }, { passive: true });
+    }
 
     // Beim ersten Aufruf der Sitzung steht der Chat offen - er ist der Teil,
     // um den es hier geht, und ein zugeklappter Streifen wird uebersehen.
@@ -368,7 +389,7 @@ const AgentPanel = {
 
     box.appendChild(el);
     box.scrollTop = box.scrollHeight;
-    if (role === "bot") this.vorschauSetzen(text);
+    if (role === "bot" && !document.body.classList.contains("agent-arbeitet")) this.vorschauSetzen(text);
     if (role === "bot" && !still) this.ungelesenZaehlen();
   },
 
@@ -380,6 +401,10 @@ const AgentPanel = {
   status(text) {
     const el = document.getElementById("agentStatus");
     if (el) el.textContent = text;
+    // Im Arbeitszustand traegt die Kopfzeile den laufenden Schritt, nicht
+    // die letzte Antwort - sonst stuende dort etwas Veraltetes, waehrend
+    // sich die Seite sichtbar bewegt.
+    if (document.body.classList.contains("agent-arbeitet")) this.vorschauSetzen(text);
   },
 
   /* Ungelesene Antworten
@@ -403,13 +428,45 @@ const AgentPanel = {
   },
 
   // Auf dem Handy aufklappen, wenn der Chat etwas von der Person will.
-  // Waehrend er nur arbeitet, bleibt er zu - dann soll man die Seite sehen,
-  // und die Zaehlblase zeigt, dass es etwas Neues gibt.
   oeffnen() {
     if (!window.matchMedia("(max-width: 1040px)").matches) return;
+    this.arbeitetAus();
     document.body.classList.add("agent-open");
     try { sessionStorage.setItem("voyara_chat_offen", "1"); } catch { /* egal */ }
     this.ungelesenLeeren();
+    this.ansEnde();
+  },
+
+  /* Beim Aufklappen ans Ende des Gespraechs springen.
+     Waehrend der Chat zu ist, hat der Nachrichtenkasten keine Hoehe -
+     der Sprung ans Ende beim Schreiben verpufft, und nach dem Oeffnen
+     stand man mitten im alten Verlauf statt bei der neuen Antwort. */
+  ansEnde() {
+    const box = document.getElementById("agentMessages");
+    if (!box) return;
+    // Zweimal: einmal sofort, einmal nachdem die Hoehe steht
+    box.scrollTop = box.scrollHeight;
+    setTimeout(() => { box.scrollTop = box.scrollHeight; }, 320);
+  },
+
+  /* Arbeitszustand
+     ------------------------------------------------------------------
+     Solange der Agent klickt, tippt und blaettert, muss der Chat aus dem
+     Weg. Auf einem Telefon nimmt er offen zwei Drittel des Bildes ein -
+     man saehe die Seite nicht, auf der er gerade arbeitet, und damit
+     genau das nicht, worum es hier geht.
+
+     Zugeklappt zeigt der Streifen dann nicht die letzte Antwort, sondern
+     den laufenden Schritt, und faerbt sich, damit der Unterschied zum
+     Ruhezustand auf einen Blick sichtbar ist. */
+  arbeitetAn() {
+    if (!window.matchMedia("(max-width: 1040px)").matches) return;
+    document.body.classList.add("agent-arbeitet");
+    document.body.classList.remove("agent-open");
+  },
+
+  arbeitetAus() {
+    document.body.classList.remove("agent-arbeitet");
   },
   setSuggestions(list) {
     const box = document.getElementById("agentSuggestions");

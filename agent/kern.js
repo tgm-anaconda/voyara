@@ -176,8 +176,10 @@ const Kern = {
     }
 
     this.kandidatenAuffrischen();
+    AgentPanel.ansEnde?.();
 
     if (this.lauf.phase === "arbeitet" && this.lauf.offeneSchritte.length) {
+      AgentPanel.arbeitetAn();
       AgentPanel.status("macht weiter…");
       setTimeout(() => this.abarbeiten(), 500);
     } else if (this.lauf.phase === "arbeitet") {
@@ -399,11 +401,15 @@ const Kern = {
     if (this.laeuft) return;
     this.laeuft = true;
     this.sperreAn();
+    // Auf dem Handy klappt der Chat zusammen, solange gearbeitet wird -
+    // sonst verdeckt er die Seite, auf der man ihn arbeiten sehen soll.
+    AgentPanel.arbeitetAn();
 
     try {
       await this.schleife();
     } finally {
       this.laeuft = false;
+      AgentPanel.arbeitetAus();
     }
   },
 
