@@ -245,6 +245,14 @@ const Kern = {
     return { text, href };
   },
 
+  // Formulieren durch das Modell, mit dem eigenen Satz als Rueckfall.
+  // modell.js prueft vorher, ob die Antwort nur Zahlen enthaelt, die in
+  // den Fakten stehen - sonst wird der eigene Satz genommen.
+  async formulieren(fakten, ersatz) {
+    if (typeof Modell === "undefined" || !fakten) return ersatz;
+    return Modell.formulieren(fakten, ersatz);
+  },
+
   async denkpause(ms = 1100, text = "denkt nach…") {
     AgentPanel.status(text);
     Zeiger.denkt(true);
@@ -277,12 +285,22 @@ const Kern = {
 
     await this.denkpause(700);
 
-    const a = Politik.absicht(text);
+    // Verstehen uebernimmt das Modell, wenn es erreichbar ist. Was es
+    // liefert, wird in modell.js gegen den Katalog geprueft - ein
+    // erfundenes Reiseziel faellt weg. Ist die Schnittstelle nicht da,
+    // greift die Schluesselwort-Erkennung, und der Lauf geht weiter.
+    let a = null;
+    if (typeof Modell !== "undefined") a = await Modell.verstehen(text);
+    const ausModell = !!a;
+    if (!a) a = Politik.absicht(text);
+
     this.lauf.profil = {
       typ: a.typ, zielId: a.zielId, monat: a.monat, erwachsene: a.erwachsene,
       kinder: a.kinder, budget: a.budget, maxPreis: a.maxPreis,
       kriterien: a.kriterien || [],
     };
+    // Fuer die Auswertung: hat das Modell verstanden oder die Ersatzlogik?
+    this.notieren("verstanden", { quelle: ausModell ? "modell" : "schluesselwoerter", profil: this.lauf.profil });
 
     // Ohne Ziel und ohne erkennbaren Wunsch lohnt keine Rueckfrage nach dem
     // Vorgehen - dann fehlt die Grundlage, und der Agent fragt danach.
@@ -589,8 +607,9 @@ const Kern = {
       await Zeiger.warte(950);
       // Der Verweis macht aus dem Vorschlag ein Angebot statt einer Ansage:
       // wer lieber selbst schaut, klickt hier direkt hinein.
-      this.sagen(`${i + 1}. ${Politik.vorschlagssatz(k, this.lauf.profil)}`,
-        "bot", [this.linkZu(k.id, k.item.name)]);
+      const eigener = Politik.vorschlagssatz(k, this.lauf.profil);
+      const satz = await this.formulieren(Politik.faktenVorschlag(k, this.lauf.profil), eigener);
+      this.sagen(`${i + 1}. ${satz}`, "bot", [this.linkZu(k.id, k.item.name)]);
     }
     await Zeiger.warte(900);
 
@@ -598,7 +617,11 @@ const Kern = {
     // meldet der Agent nur knapp, was er tut - beim Ergebnis soll
     // nachvollziehbar sein, warum es dieses Haus ist.
     const grundlage = Politik.grundlage(this.lauf.kandidaten, this.lauf.profil, this.lauf.merker);
-    if (grundlage) { this.sagen(grundlage); await Zeiger.warte(800); }
+    if (grundlage) {
+      const fakten = Politik.faktenGrundlage(this.lauf.kandidaten, this.lauf.profil, this.lauf.merker);
+      this.sagen(await this.formulieren(fakten, grundlage));
+      await Zeiger.warte(800);
+    }
 
     // Autonomiestufe: Wer den Agenten autonom laufen laesst, bekommt keine
     // Wahl vorgelegt, sondern eine Entscheidung mitgeteilt. Die Shortlist

@@ -566,6 +566,70 @@ const Politik = {
     return teile.join(" ");
   },
 
+  /* ==================================================================
+     Fakten fuer das Modell
+     ------------------------------------------------------------------
+     Das Modell formuliert, es rechnet nicht. Deshalb bekommt es genau
+     die Zahlen vorgelegt, die im Satz vorkommen duerfen - und nichts
+     sonst. modell.js prueft die Antwort danach gegen diese Fakten:
+     steht dort eine Zahl, die hier fehlt, wird der eigene Satz genommen.
+     ================================================================== */
+
+  faktenVorschlag(k, profil) {
+    const stark = (k.belege || []).filter((b) => b.anteil >= 0.8).sort((a, b) => b.gewicht - a.gewicht)[0];
+    const schwach = (k.belege || []).filter((b) => b.anteil < 0.7).sort((a, b) => a.anteil - b.anteil)[0];
+    const kurz = typeof aspektKurzfassung === "function" ? aspektKurzfassung(k.item) : null;
+
+    return {
+      aufgabe: "Formuliere daraus einen Vorschlag in ein bis drei Saetzen. Nenne Name, Ort, Preis und Note. Wenn ein genanntes Kriterium dabei ist, stelle es heraus und sage, dass die Person es genannt hat. Nenne auch die Schwaeche.",
+      name: k.item.name,
+      ort: k.item.location,
+      preisProNacht: k.preis,
+      note: k.item.rating,
+      anzahlBewertungen: k.item.reviewCount,
+      genanntesKriterium: stark ? {
+        thema: stark.kriterium,
+        prozentPositiv: Math.round(stark.anteil * 100),
+        erwaehnungen: stark.erwaehnungen,
+      } : null,
+      schwachesKriterium: schwach ? {
+        thema: schwach.kriterium,
+        prozentPositiv: Math.round(schwach.anteil * 100),
+      } : null,
+      gelobt: kurz?.staerken?.slice(0, 2) || [],
+      kritisiert: kurz?.schwaechen?.slice(0, 1) || [],
+    };
+  },
+
+  faktenGrundlage(kandidaten, profil, merker) {
+    const zustand = typeof Werkzeuge !== "undefined" ? Werkzeuge.zustand() : {};
+    const erster = kandidaten[0];
+    const beleg = (erster?.belege || []).slice().sort((a, b) => b.anteil - a.anteil)[0];
+
+    const vorgaben = [];
+    if (profil.maxPreis) vorgaben.push(`höchstens ${profil.maxPreis} Euro pro Nacht`);
+    if (profil.maxStrand) vorgaben.push(`höchstens ${profil.maxStrand} Kilometer zum Strand`);
+    for (const { id } of profil.kriterien || []) {
+      const k = this.kriterium(id);
+      if (k?.filter) vorgaben.push(k.label);
+    }
+
+    return {
+      aufgabe: "Erklaere in drei bis vier Saetzen, worauf die Reihenfolge beruht: wie viele Haeuser blieben, wie viele im Detail geprueft wurden, was fuer die Reihenfolge zaehlte, und warum das erste vorn steht. Nenne zum Schluss, was nicht geprueft wurde.",
+      haeuserNachVorgaben: zustand.trefferGesamt ?? null,
+      imDetailGeprueft: (merker?.sichtung?.gesichtet || []).length || (merker?.treffer?.treffer || []).length,
+      vorgaben: [...new Set(vorgaben)],
+      genannteKriterien: (profil.kriterien || []).map((x) => this.kriterium(x.id)?.label).filter(Boolean),
+      erstesHaus: erster ? erster.item.name : null,
+      ausschlaggebend: beleg ? {
+        thema: beleg.kriterium,
+        prozentPositiv: Math.round(beleg.anteil * 100),
+        erwaehnungen: beleg.erwaehnungen,
+      } : null,
+      nichtGeprueft: ["Verfügbarkeit", "Stornobedingungen"],
+    };
+  },
+
   vorschlaege() {
     return ["Günstiges Hotel am Strand für 2 Personen", "Ferienwohnung in Tirol im Januar", "Gut bewertetes Hotel in Kyoto"];
   },
