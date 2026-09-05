@@ -98,6 +98,18 @@ const ASPEKTE = [
       "Die Anfahrt über die schmale Straße war jedes Mal eine Geduldsprobe.",
       "Zum nächsten Supermarkt muss man fahren, das hatten wir anders erwartet.",
     ],
+    detailPlus: [
+      "Wir haben das Auto nach dem ersten Tag stehen lassen, weil man ohnehin überall zu Fuß hinkommt.",
+      "Morgens waren wir vor dem Frühstück schon unten und wieder zurück.",
+      ["Wer früh aufsteht, hat den Strandabschnitt vor dem Haus fast für sich.", amMeer],
+      "Der Bus hält keine hundert Meter entfernt und fährt bis in den Abend.",
+    ],
+    detailMinus: [
+      "Wir haben die Strecke am zweiten Tag gestoppt: zweiundzwanzig Minuten, nicht die zehn aus der Beschreibung.",
+      "Mit Kinderwagen ist der Weg über das Kopfsteinpflaster nichts.",
+      "Wir mussten für jede Kleinigkeit ins Auto steigen, das summiert sich über eine Woche.",
+      "Die letzten dreihundert Meter gehen steil bergauf, das steht so nirgends.",
+    ],
   },
   {
     id: "ausstattung", label: "Ausstattung", note: "ausstattung", gewicht: 1.5,
@@ -117,6 +129,18 @@ const ASPEKTE = [
       "Das Bad ist eng, zu zweit wird es morgens schwierig.",
       "Für den Preis hätten wir uns eine modernere Ausstattung gewünscht.",
     ],
+    detailPlus: [
+      "Zwei Sessel, ein Tisch, genug Ablage im Bad - man merkt, dass da jemand mitgedacht hat.",
+      "Die Verdunklung war wirklich dicht, was nicht selbstverständlich ist.",
+      "Steckdosen an beiden Betten und am Schreibtisch, darüber freut man sich mehr, als man denkt.",
+      "Der Schrank hatte genug Platz für zwei Koffer, ausgepackt für eine Woche.",
+    ],
+    detailMinus: [
+      "Die Rollos ließen sich nur halb schließen, ab sechs Uhr war es hell.",
+      "Eine einzige Steckdose im ganzen Zimmer, und die hinter dem Bett.",
+      "Der Wasserdruck in der Dusche brach zusammen, sobald nebenan jemand aufdrehte.",
+      "Die Tür zum Nachbarzimmer war so undicht, dass man jedes Wort mithörte.",
+    ],
   },
   {
     id: "sauberkeit", label: "Sauberkeit", note: "sauberkeit", gewicht: 1.3,
@@ -134,6 +158,16 @@ const ASPEKTE = [
       "Beim Zimmerservice wurde eher oberflächlich durchgewischt.",
       "Die Gläser im Zimmer waren beim Einzug nicht sauber.",
       "Benutzte Handtücher blieben am Pool stundenlang liegen.",
+    ],
+    detailPlus: [
+      "Wir haben nach vier Tagen einmal genauer hingesehen, auch unter dem Bett: nichts.",
+      "Das Bad roch nach Reinigungsmittel, nicht nach Duftspray über etwas anderem.",
+      "Selbst die Fugen in der Dusche waren hell, das sieht man in dieser Preisklasse selten.",
+    ],
+    detailMinus: [
+      "Die Fernbedienung klebte, die haben wir am zweiten Tag selbst abgewischt.",
+      "Unter dem Bett lagen noch Sachen von den Vorgängern, das sagt eigentlich alles.",
+      "Wir haben zweimal um eine Reinigung gebeten, beim dritten Mal haben wir es selbst gemacht.",
     ],
   },
   {
@@ -154,6 +188,16 @@ const ASPEKTE = [
       "Eine zugesagte Rückmeldung kam nie.",
       "An der Rezeption war die Verständigung schwierig.",
     ],
+    detailPlus: [
+      "Als unser Flug Verspätung hatte, stand das Zimmer trotzdem bereit und jemand hatte etwas zu essen zurückgelegt.",
+      "Ein Mitarbeiter hat für uns angerufen und einen Tisch besorgt, den wir selbst nicht bekommen hätten.",
+      "Man wird beim zweiten Mal mit Namen begrüßt, das ist keine Schulung, das ist Haltung.",
+    ],
+    detailMinus: [
+      "Auf die Bitte um einen späteren Check-out kam ein Nein, ohne dass jemand nachgesehen hätte.",
+      "Wir haben dreimal nach der Rechnung gefragt und sie am Ende selbst zusammengerechnet.",
+      "Als wir einen Fehler in der Abrechnung ansprachen, wurde es unangenehm.",
+    ],
   },
   {
     id: "essen", label: "Essen", note: "essen", gewicht: 1.4,
@@ -173,6 +217,16 @@ const ASPEKTE = [
       "Das Essen kam mehrfach nur lauwarm auf den Tisch.",
       "Für vegetarische Gäste ist die Auswahl wirklich dünn.",
     ],
+    detailPlus: [
+      "Es gab drei Sorten Brot, die morgens frisch gebacken wurden, das riecht man schon im Flur.",
+      "Wir haben abends zweimal à la carte gegessen und es war beide Male den Aufpreis wert.",
+      "Auf eine Unverträglichkeit wurde ohne großes Aufheben eingegangen.",
+    ],
+    detailMinus: [
+      "Ab neun Uhr war das Rührei aufgebraucht und wurde nicht mehr nachgelegt.",
+      "Am dritten Abend kam derselbe Auflauf wie am ersten, nur anders benannt.",
+      "Wir sind nach zwei Tagen abends in den Ort gegangen, das war günstiger und besser.",
+    ],
   },
   {
     id: "preis", label: "Preis-Leistung", note: "preis", gewicht: 1.2,
@@ -188,6 +242,16 @@ const ASPEKTE = [
       "Die Getränkepreise an der Bar sind ambitioniert.",
       "Das Parken kostet extra, das war vorher nicht ersichtlich.",
       "Preis und Leistung stehen für uns nicht im Verhältnis.",
+    ],
+    detailPlus: [
+      "Wir haben für die Woche gerechnet: mit Frühstück und Parken lagen wir unter dem, was das Nachbarhaus ohne beides nimmt.",
+      "Der Preis in der Nebensaison ist für das Gebotene kaum zu schlagen.",
+      "Wasser, Kaffee und Leihräder waren inklusive, das rechnet sich schnell.",
+    ],
+    detailMinus: [
+      "Zum Zimmerpreis kamen Kurtaxe, Parken und ein Aufschlag für den Balkon, am Ende dreißig Prozent mehr.",
+      "Zwei Wasser und ein Kaffee auf der Terrasse waren vierzehn Euro.",
+      "Für denselben Preis bekommt man zwei Straßen weiter deutlich mehr.",
     ],
   },
   {
@@ -375,6 +439,118 @@ const ABSCHLUSS = {
   schwach: ["Nochmal würden wir hier nicht buchen.", "Das war für uns zu wenig.", "Können wir so nicht empfehlen."],
 };
 
+/* ==================================================================
+   Ausfuehrlichkeit
+   ------------------------------------------------------------------
+   Echte Portalbewertungen sind sehr unterschiedlich lang. Neben dem
+   Aufsatz ueber sieben Naechte steht das dreiwoertige "Alles bestens."
+   Erzeugt man dagegen jede Bewertung nach demselben Bauplan, faellt beim
+   Blaettern sofort auf, dass sie aus einer Maschine kommen - und genau
+   die ersten dreissig sind das, was eine teilnehmende Person auf der
+   Detailseite ueberhaupt zu sehen bekommt.
+
+   Deshalb zwei Mechanismen:
+   1. Fuenf Stufen von "Stichwort" bis "sehr ausfuehrlich", die Aspektzahl,
+      Kontextsatz, Detailsatz und Schlusssatz steuern.
+   2. Fuer die ersten dreissig eine feste Mischung, die je Objekt anders
+      gemischt wird. So ist die Varianz auf der ersten Seite garantiert
+      und nicht dem Zufall ueberlassen, der auch dreimal "normal"
+      hintereinander ziehen koennte.
+   ================================================================== */
+const STUFEN = {
+  // aspektDelta: wie viele Aspekte zusaetzlich zur Grundzahl
+  // kontext / detail / abschluss: Wahrscheinlichkeit fuer den jeweiligen Satz
+  stichwort:    { aspektDelta: 0, kontext: 0,    detail: 0,    abschluss: 0 },
+  knapp:        { aspektDelta: -1, kontext: 0.05, detail: 0,    abschluss: 0.2 },
+  normal:       { aspektDelta: 0,  kontext: 0.25, detail: 0.2,  abschluss: 0.55 },
+  ausfuehrlich: { aspektDelta: 1,  kontext: 0.8,  detail: 0.75, abschluss: 0.85 },
+  sehrLang:     { aspektDelta: 2,  kontext: 1,    detail: 1,    abschluss: 1 },
+};
+
+// Mischung fuer die ersten dreissig. Etwa ein Achtel Stichwort, ein Viertel
+// knapp, der Rest normal bis sehr lang - naeher an dem, was Portale zeigen,
+// als eine Gleichverteilung.
+const ERSTE_30 = [
+  "sehrLang", "knapp", "normal", "stichwort", "ausfuehrlich", "knapp",
+  "normal", "normal", "sehrLang", "stichwort", "knapp", "ausfuehrlich",
+  "normal", "knapp", "normal", "stichwort", "ausfuehrlich", "normal",
+  "knapp", "sehrLang", "normal", "stichwort", "knapp", "normal",
+  "ausfuehrlich", "normal", "knapp", "normal", "ausfuehrlich", "normal",
+];
+
+// Gewichte ab Bewertung einunddreissig
+const STUFEN_GEWICHT = [
+  ["stichwort", 12], ["knapp", 26], ["normal", 34], ["ausfuehrlich", 20], ["sehrLang", 8],
+];
+
+// Je Objekt eine eigene Mischung der ersten dreissig - sonst haette jedes
+// Haus dieselbe Abfolge, und wer zwei Detailseiten vergleicht, sieht es.
+const mischungCache = {};
+function mischungFuer(itemId) {
+  if (mischungCache[itemId]) return mischungCache[itemId];
+  const rnd = zufallAus(textZuZahl(itemId + ":mischung"));
+  const a = ERSTE_30.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(rnd() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return (mischungCache[itemId] = a);
+}
+
+function stufeFuer(item, index, rnd) {
+  if (index < ERSTE_30.length) return mischungFuer(item.id)[index];
+  const summe = STUFEN_GEWICHT.reduce((s, e) => s + e[1], 0);
+  let w = rnd() * summe;
+  for (const [name, g] of STUFEN_GEWICHT) { w -= g; if (w <= 0) return name; }
+  return "normal";
+}
+
+/* Kontextsatz am Anfang: wer war da, wie lange, wann.
+   Traegt keine Wertung, macht die Bewertung aber sofort persoenlicher und
+   laenger, ohne dass sich Aspektsaetze wiederholen muessen. */
+const KONTEXT = {
+  Paar: [
+    "Wir waren zu zweit eine Woche dort.",
+    "Fünf Nächte, spontan gebucht, weil kurzfristig etwas frei war.",
+    "Das war unser zweiter Aufenthalt hier, deshalb der Vergleich.",
+    "Wir hatten ein verlängertes Wochenende, mehr ging beruflich nicht.",
+    "Zehn Tage, davon die Hälfte mit Regen, was den Blick auf ein Haus verändert.",
+  ],
+  Familie: [
+    "Wir waren mit zwei Kindern da, sechs und neun Jahre alt.",
+    "Eine Woche zu viert, mit einem Kleinkind, das noch Mittagsschlaf braucht.",
+    "Wir reisen zum dritten Mal mit den Kindern in dieser Konstellation und haben Vergleichswerte.",
+    "Zwei Familien, fünf Kinder, das ist für jedes Haus eine Belastungsprobe.",
+    "Zehn Tage in den Sommerferien, also zur vollsten Zeit.",
+  ],
+  Freunde: [
+    "Wir waren zu viert unterwegs, alle Ende zwanzig.",
+    "Ein Kurztrip mit Freundinnen, drei Nächte.",
+    "Wir waren eine Gruppe von sechs Leuten und hatten drei Zimmer.",
+    "Fünf Tage mit zwei Freunden, hauptsächlich zum Wandern.",
+  ],
+  Alleinreisend: [
+    "Vier Nächte, allein gebucht.",
+    "Eine Woche, überwiegend zum Lesen und Laufen.",
+    "Drei Nächte, kurzfristig gebucht.",
+    "Zwei Nächte auf der Durchreise.",
+  ],
+  "Geschäftsreise": [
+    "Zwei Nächte, dienstlich, entsprechend wenig Zeit für die Anlage.",
+    "Drei Nächte während einer Messe, das Haus war entsprechend voll.",
+    "Vier Nächte beruflich, hauptsächlich abends im Haus.",
+  ],
+};
+
+/* Kurzurteile fuer die Stichwortstufe. Zwei bis fuenf Woerter, wie sie in
+   jedem Portal massenhaft stehen. */
+const KURZURTEIL = {
+  top: ["Alles bestens.", "Rundum gut.", "Nichts zu meckern.", "Sehr zufrieden.", "Passt alles.", "Immer wieder gern.", "Top."],
+  gut: ["Insgesamt gut.", "Hat gepasst.", "Solide.", "Ordentlich, kleine Abstriche.", "Kann man buchen."],
+  mittel: ["Ging so.", "Durchwachsen.", "Mittelmaß.", "Weder gut noch schlecht."],
+  schwach: ["Enttäuschend.", "Nicht nochmal.", "Zu wenig für den Preis.", "Leider nein."],
+};
+
 function tonlage(note) {
   if (note >= 5) return "top";
   if (note >= 4) return "gut";
@@ -453,14 +629,56 @@ function baueBewertung(item, index) {
   const note = zieheNote(rnd, item.rating);
   const ton = tonlage(note);
   const verfuegbar = aspekteFuer(item);
+  const stufeName = stufeFuer(item, index, rnd);
+  const stufe = STUFEN[stufeName];
   const anzahl = aspektAnzahl(rnd, note);
 
   const aspekte = {};
   const saetze = [];
   const gewaehlt = new Set();
 
+  // Die Stufe verschiebt die Aspektzahl. Bei "knapp" faellt einer weg,
+  // bei den langen Stufen kommen ein bis zwei dazu - deshalb steht dort
+  // am Ende auch inhaltlich mehr, nicht nur mehr Text.
+  const verschieben = (n, d) => Math.max(0, n + d);
+  let plusZahl = anzahl.plus, minusZahl = anzahl.minus;
+  if (stufe.aspektDelta < 0) {
+    // Zuerst beim haeufigeren Teil kuerzen, damit die Tonlage stimmt
+    if (plusZahl >= minusZahl) plusZahl = verschieben(plusZahl, -1);
+    else minusZahl = verschieben(minusZahl, -1);
+    if (plusZahl + minusZahl === 0) plusZahl = 1;
+  } else if (stufe.aspektDelta > 0) {
+    for (let k = 0; k < stufe.aspektDelta; k++) {
+      // Zusaetzliche Aspekte folgen der Tonlage: gute Note, mehr Lob
+      if (note >= 4 || (note === 3 && k === 0)) plusZahl++;
+      else minusZahl++;
+    }
+  }
+
+  // Stichwort: zwei bis fuenf Woerter, ein Aspekt nur im Titel
+  if (stufeName === "stichwort") {
+    const rest = verfuegbar.filter((a) => !gewaehlt.has(a.id));
+    const gewicht = note >= 4
+      ? (x) => (1 - kritikNeigung(item, x)) * x.gewicht
+      : (x) => kritikNeigung(item, x) * x.gewicht;
+    const a = rest.length ? waehleGewichtet(rnd, rest, gewicht) : null;
+    if (a) aspekte[a.id] = note >= 4 ? 1 : -1;
+    const author = `${waehle(rnd, VORNAMEN)} ${waehle(rnd, NACHNAMEN)}.`;
+    return {
+      author,
+      date: ziehDatum(rnd),
+      rating: note,
+      travelType: reiseart(rnd),
+      title: a ? (note >= 4 ? a.titelPlus : a.titelMinus) : "Aufenthalt",
+      text: waehle(rnd, KURZURTEIL[ton]),
+      aspekte,
+      laenge: "stichwort",
+      avatar: avatarNummer(author, textZuZahl(item.id + ":av:" + index)),
+    };
+  }
+
   // Kritik zuerst: schwache Teilnoten werden bevorzugt getroffen
-  for (let i = 0; i < anzahl.minus; i++) {
+  for (let i = 0; i < minusZahl; i++) {
     const rest = verfuegbar.filter((a) => !gewaehlt.has(a.id));
     if (!rest.length) break;
     const a = waehleGewichtet(rnd, rest, (x) => kritikNeigung(item, x) * x.gewicht);
@@ -473,7 +691,7 @@ function baueBewertung(item, index) {
   }
 
   // Lob: starke Teilnoten werden bevorzugt getroffen
-  for (let i = 0; i < anzahl.plus; i++) {
+  for (let i = 0; i < plusZahl; i++) {
     const rest = verfuegbar.filter((a) => !gewaehlt.has(a.id));
     if (!rest.length) break;
     const a = waehleGewichtet(rnd, rest, (x) => (1 - kritikNeigung(item, x)) * x.gewicht);
@@ -482,23 +700,46 @@ function baueBewertung(item, index) {
     saetze.push({ pos: rnd(), text: waehle(rnd, saetzeFuer(item, a.plus)), aspekt: a, wertung: 1 });
   }
 
-  // Lob vor Kritik ist die haeufigste, aber nicht die einzige Reihenfolge
-  const lobZuerst = rnd() < 0.7;
+  // Lob vor Kritik ist die haeufigste, aber nicht die einzige Reihenfolge.
+  // Bei Bestnote ist sie zwingend: der Kritikpunkt wird dort mit "Einzige
+  // Kleinigkeit:" eingeleitet, und das kann nicht der erste Satz sein.
+  const lobZuerst = note === 5 ? true : rnd() < 0.7;
   saetze.sort((x, y) => (lobZuerst ? y.wertung - x.wertung : x.wertung - y.wertung) || x.pos - y.pos);
 
-  const text = saetze.map((s) => s.text).join(" ")
-    + (rnd() < 0.55 ? " " + waehle(rnd, ABSCHLUSS[ton]) : "");
+  // Detailsatz: die zweite, konkretere Ebene zu einem der genannten Aspekte.
+  // Nur die ausfuehrlichen Stufen greifen darauf zu, und nur dort, wo der
+  // Aspekt ueberhaupt Detailsaetze mitbringt.
+  const teile = saetze.map((s) => s.text);
+  if (stufe.detail > 0 && rnd() < stufe.detail) {
+    const mitDetail = saetze.filter((s) =>
+      (s.wertung === 1 ? s.aspekt.detailPlus : s.aspekt.detailMinus)?.length);
+    if (mitDetail.length) {
+      const s = mitDetail[Math.floor(rnd() * mitDetail.length)];
+      const liste = s.wertung === 1 ? s.aspekt.detailPlus : s.aspekt.detailMinus;
+      const satz = waehle(rnd, saetzeFuer(item, liste));
+      // Direkt hinter den Satz, zu dem er gehoert
+      teile.splice(saetze.indexOf(s) + 1, 0, satz);
+    }
+  }
 
+  const reise = reiseart(rnd);
+  const kontext = stufe.kontext > 0 && rnd() < stufe.kontext
+    ? waehle(rnd, KONTEXT[reise] || KONTEXT.Paar) : "";
+  const schluss = stufe.abschluss > 0 && rnd() < stufe.abschluss
+    ? waehle(rnd, ABSCHLUSS[ton]) : "";
+
+  const text = [kontext, ...teile, schluss].filter(Boolean).join(" ");
   const author = `${waehle(rnd, VORNAMEN)} ${waehle(rnd, NACHNAMEN)}.`;
 
   return {
     author,
     date: ziehDatum(rnd),
     rating: note,
-    travelType: reiseart(rnd),
+    travelType: reise,
     title: baueTitel(saetze, note),
     text,
     aspekte,
+    laenge: stufeName,
     avatar: avatarNummer(author, textZuZahl(item.id + ":av:" + index)),
   };
 }
@@ -510,6 +751,9 @@ function baueTitel(saetze, note) {
   // Bei Bestnote nur das Lob in die Ueberschrift - "Service enttaeuschend"
   // neben 5,0 waere ein Widerspruch
   if (note === 5 && lob.length) return lob[0].aspekt.titelPlus;
+  // Umgekehrt bei ein bis zwei Sternen: dort waere "Schoenes Zimmer" als
+  // Ueberschrift irrefuehrend, auch wenn das Zimmer gelobt wurde.
+  if (note <= 2 && kritik.length) return kritik[0].aspekt.titelMinus;
   if (lob.length && kritik.length) {
     // Nicht kleinschreiben - "essen eintönig" waere falsch, Substantive
     // bleiben gross. Stattdessen mit "aber" verbinden.
@@ -554,10 +798,16 @@ function enthaeltWort(text, wort) {
   return !/[a-zäöüß]/.test(davor);
 }
 
-function aspekteAusText(review) {
+function aspekteAusText(review, item) {
   const text = `${review.title} ${review.text}`.toLowerCase();
   const treffer = {};
+  // Nur Aspekte, die es beim Objekt ueberhaupt gibt. Sonst holt das Stichwort
+  // "Kueche" in einer Ferienwohnung den Aspekt "Essen" herein, den es dort
+  // gar nicht gibt, und der Agent rechnet mit einer Restaurantkritik, die
+  // nie jemand geschrieben hat.
+  const erlaubt = item ? new Set(aspekteFuer(item).map((a) => a.id)) : null;
   for (const [id, woerter] of Object.entries(STICHWORTE)) {
+    if (erlaubt && !erlaubt.has(id)) continue;
     if (!woerter.some((w) => enthaeltWort(text, w))) continue;
     // Satz suchen, in dem das Stichwort steht, und dort auf Negativwoerter prüfen
     const satz = text.split(/[.!?]/).find((s) => woerter.some((w) => enthaeltWort(s, w))) || text;
@@ -586,7 +836,7 @@ function bewertungenFuer(item, von = 0, wie = 10) {
     if (i < echte.length) {
       // Handgeschriebene stehen vorne und bekommen ihre Aspekte nachtraeglich
       const r = echte[i];
-      liste.push({ ...r, aspekte: r.aspekte || aspekteAusText(r), avatar: avatarNummer(r.author, textZuZahl(item.id + ":av:" + i)) });
+      liste.push({ ...r, aspekte: r.aspekte || aspekteAusText(r, item), avatar: avatarNummer(r.author, textZuZahl(item.id + ":av:" + i)) });
       continue;
     }
     liste.push(baueBewertung(item, i));

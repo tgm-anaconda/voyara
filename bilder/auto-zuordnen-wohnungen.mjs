@@ -62,7 +62,10 @@ for (const w of modul.exports.APARTMENTS) {
       const liste = (f[thema] || []).filter((id) => !belegt.has(id));
       // Innerhalb eines Themas rueckt jede Wohnung einen Platz weiter, damit
       // sich die Bilder zwischen den Haeusern eines Ziels nicht wiederholen.
-      const treffer = liste[i % Math.max(liste.length, 1)];
+      // Kein Modulo: hat ein Ziel weniger Bilder als Wohnungen, bekaeme sonst
+      // jede zweite Wohnung dasselbe Bild. Stattdessen rueckt das Ersatzthema
+      // nach - lieber ein Wohnzimmer statt einer Kueche als zweimal dieselbe.
+      const treffer = liste[i];
       if (treffer === undefined) continue;
       belegt.add(treffer);
       bilder[position] = treffer;

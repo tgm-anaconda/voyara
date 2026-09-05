@@ -1,1 +1,422 @@
-[]
+[
+ {
+  "id": "h101",
+  "ziel": "algarve",
+  "name": "Herdade do Sal",
+  "ordner": "hotels/h101-herdade-do-sal",
+  "prompt": "Long low whitewashed Portuguese estate building with a terracotta roof and an arcaded front, beside the salt pans of the eastern Algarve, flat water and low dykes, pale pink light shortly after sunrise. Professional travel photography, natural daylight, realistic colours, soft shadows, shot on full-frame camera, the building fills most of the frame, no people in the foreground, no text, no lettering, no signage on the building, no logos, no watermarks, no borders, landscape orientation 3:2. Avoid: collage, split screen, multiple panels, picture frames, text overlays, brand names, hotel signs, readable writing, recognisable real hotels or landmarks, cartoon or illustration look, oversaturated HDR, fisheye distortion."
+ },
+ {
+  "id": "h102",
+  "ziel": "algarve",
+  "name": "Praia Dourada",
+  "ordner": "hotels/h102-praia-dourada",
+  "prompt": "Three-storey seaside hotel in warm sand tones with continuous glazed balconies facing the water, directly behind a wide golden beach on the Algarve, bright clear summer afternoon. Professional travel photography, natural daylight, realistic colours, soft shadows, shot on full-frame camera, the building fills most of the frame, no people in the foreground, no text, no lettering, no signage on the building, no logos, no watermarks, no borders, landscape orientation 3:2. Avoid: collage, split screen, multiple panels, picture frames, text overlays, brand names, hotel signs, readable writing, recognisable real hotels or landmarks, cartoon or illustration look, oversaturated HDR, fisheye distortion."
+ },
+ {
+  "id": "h103",
+  "ziel": "algarve",
+  "name": "Alto do Farol",
+  "ordner": "hotels/h103-alto-do-farol",
+  "prompt": "Sculptural white luxury hotel of stacked cubes cantilevered over a cliff edge, floor to ceiling glass, on a headland near a lighthouse on the Portuguese west coast, dramatic golden hour with long shadows. Professional travel photography, natural daylight, realistic colours, soft shadows, shot on full-frame camera, the building fills most of the frame, no people in the foreground, no text, no lettering, no signage on the building, no logos, no watermarks, no borders, landscape orientation 3:2. Avoid: collage, split screen, multiple panels, picture frames, text overlays, brand names, hotel signs, readable writing, recognisable real hotels or landmarks, cartoon or illustration look, oversaturated HDR, fisheye distortion."
+ },
+ {
+  "id": "h104",
+  "ziel": "algarve",
+  "name": "Residencial Ria",
+  "ordner": "hotels/h104-residencial-ria",
+  "prompt": "Simple three-storey guesthouse with a flat roof, plain render and small square windows, in a working fishing town on the Ria Formosa lagoon, flat grey overcast light. Professional travel photography, natural daylight, realistic colours, soft shadows, shot on full-frame camera, the building fills most of the frame, no people in the foreground, no text, no lettering, no signage on the building, no logos, no watermarks, no borders, landscape orientation 3:2. Avoid: collage, split screen, multiple panels, picture frames, text overlays, brand names, hotel signs, readable writing, recognisable real hotels or landmarks, cartoon or illustration look, oversaturated HDR, fisheye distortion."
+ },
+ {
+  "id": "h105",
+  "ziel": "algarve",
+  "name": "Quinta dos Figos",
+  "ordner": "hotels/h105-quinta-dos-figos",
+  "prompt": "Restored Portuguese farmhouse with thick lime-washed walls, a stone chimney and blue window frames, among fig trees in the Algarve hinterland, soft warm light in late afternoon. Professional travel photography, natural daylight, realistic colours, soft shadows, shot on full-frame camera, the building fills most of the frame, no people in the foreground, no text, no lettering, no signage on the building, no logos, no watermarks, no borders, landscape orientation 3:2. Avoid: collage, split screen, multiple panels, picture frames, text overlays, brand names, hotel signs, readable writing, recognisable real hotels or landmarks, cartoon or illustration look, oversaturated HDR, fisheye distortion."
+ },
+ {
+  "id": "h106",
+  "ziel": "algarve",
+  "name": "Vila Mar Family",
+  "ordner": "hotels/h106-vila-mar-family",
+  "prompt": "Wide family resort of two staggered wings in cream render with wide shaded balconies, on a gentle slope above an Algarve bay, palms and lawns around, bright midday sun. Professional travel photography, natural daylight, realistic colours, soft shadows, shot on full-frame camera, the building fills most of the frame, no people in the foreground, no text, no lettering, no signage on the building, no logos, no watermarks, no borders, landscape orientation 3:2. Avoid: collage, split screen, multiple panels, picture frames, text overlays, brand names, hotel signs, readable writing, recognisable real hotels or landmarks, cartoon or illustration look, oversaturated HDR, fisheye distortion."
+ },
+ {
+  "id": "h107",
+  "ziel": "kreta",
+  "name": "Kalimera Bay",
+  "ordner": "hotels/h107-kalimera-bay",
+  "prompt": "White cubic Greek seaside hotel of three storeys with deep blue shutters and a curved sea-facing front, on a sandy bay on the north coast of Crete, bright clear morning light. Professional travel photography, natural daylight, realistic colours, soft shadows, shot on full-frame camera, the building fills most of the frame, no people in the foreground, no text, no lettering, no signage on the building, no logos, no watermarks, no borders, landscape orientation 3:2. Avoid: collage, split screen, multiple panels, picture frames, text overlays, brand names, hotel signs, readable writing, recognisable real hotels or landmarks, cartoon or illustration look, oversaturated HDR, fisheye distortion."
+ },
+ {
+  "id": "h108",
+  "ziel": "kreta",
+  "name": "Petra Lofos",
+  "ordner": "hotels/h108-petra-lofos",
+  "prompt": "Small stone-built Cretan boutique hotel with rough masonry walls, timber lintels and a vine-covered terrace, in a hillside village in the Cretan mountains, olive terraces below, warm evening light. Professional travel photography, natural daylight, realistic colours, soft shadows, shot on full-frame camera, the building fills most of the frame, no people in the foreground, no text, no lettering, no signage on the building, no logos, no watermarks, no borders, landscape orientation 3:2. Avoid: collage, split screen, multiple panels, picture frames, text overlays, brand names, hotel signs, readable writing, recognisable real hotels or landmarks, cartoon or illustration look, oversaturated HDR, fisheye distortion."
+ },
+ {
+  "id": "h109",
+  "ziel": "kreta",
+  "name": "Aegeon Palace",
+  "ordner": "hotels/h109-aegeon-palace",
+  "prompt": "Grand low-rise luxury hotel in pale stone with colonnaded galleries and a wide central portal, above a turquoise bay on Crete, cypresses and bougainvillea, soft golden light before sunset. Professional travel photography, natural daylight, realistic colours, soft shadows, shot on full-frame camera, the building fills most of the frame, no people in the foreground, no text, no lettering, no signage on the building, no logos, no watermarks, no borders, landscape orientation 3:2. Avoid: collage, split screen, multiple panels, picture frames, text overlays, brand names, hotel signs, readable writing, recognisable real hotels or landmarks, cartoon or illustration look, oversaturated HDR, fisheye distortion."
+ },
+ {
+  "id": "h110",
+  "ziel": "kreta",
+  "name": "Xenonas Anogia",
+  "ordner": "hotels/h110-xenonas-anogia",
+  "prompt": "Plain two-storey Greek guesthouse of white render with a concrete balcony and an outside stair, in a plain mountain village on Crete, bare stony slopes behind, harsh midday light. Professional travel photography, natural daylight, realistic colours, soft shadows, shot on full-frame camera, the building fills most of the frame, no people in the foreground, no text, no lettering, no signage on the building, no logos, no watermarks, no borders, landscape orientation 3:2. Avoid: collage, split screen, multiple panels, picture frames, text overlays, brand names, hotel signs, readable writing, recognisable real hotels or landmarks, cartoon or illustration look, oversaturated HDR, fisheye distortion."
+ },
+ {
+  "id": "h111",
+  "ziel": "kreta",
+  "name": "Minoa Family Resort",
+  "ordner": "hotels/h111-minoa-family-resort",
+  "prompt": "Large family resort of low white blocks around a central courtyard, tiled roofs and blue awnings, behind a long sandy beach on Crete, tamarisk trees along the sand, bright summer afternoon. Professional travel photography, natural daylight, realistic colours, soft shadows, shot on full-frame camera, the building fills most of the frame, no people in the foreground, no text, no lettering, no signage on the building, no logos, no watermarks, no borders, landscape orientation 3:2. Avoid: collage, split screen, multiple panels, picture frames, text overlays, brand names, hotel signs, readable writing, recognisable real hotels or landmarks, cartoon or illustration look, oversaturated HDR, fisheye distortion."
+ },
+ {
+  "id": "h112",
+  "ziel": "kreta",
+  "name": "Elia Estate",
+  "ordner": "hotels/h112-elia-estate",
+  "prompt": "Converted Cretan olive estate of honey-coloured stone with a barrel-vaulted press house, in an olive grove in central Crete, dry stone walls around, warm light in the last hour before dusk. Professional travel photography, available light after dark, realistic colours, soft shadows, shot on full-frame camera, the building fills most of the frame, no people in the foreground, no text, no lettering, no signage on the building, no logos, no watermarks, no borders, landscape orientation 3:2. Avoid: collage, split screen, multiple panels, picture frames, text overlays, brand names, hotel signs, readable writing, recognisable real hotels or landmarks, cartoon or illustration look, oversaturated HDR, fisheye distortion."
+ },
+ {
+  "id": "h113",
+  "ziel": "sardinien",
+  "name": "Cala Verde",
+  "ordner": "hotels/h113-cala-verde",
+  "prompt": "Low seaside hotel in pale render with rounded arches and pergola-shaded terraces facing the water, above a small turquoise cove on the Sardinian coast, granite boulders around, clear bright midday. Professional travel photography, natural daylight, realistic colours, soft shadows, shot on full-frame camera, the building fills most of the frame, no people in the foreground, no text, no lettering, no signage on the building, no logos, no watermarks, no borders, landscape orientation 3:2. Avoid: collage, split screen, multiple panels, picture frames, text overlays, brand names, hotel signs, readable writing, recognisable real hotels or landmarks, cartoon or illustration look, oversaturated HDR, fisheye distortion."
+ },
+ {
+  "id": "h114",
+  "ziel": "sardinien",
+  "name": "Nuraghe Bianco",
+  "ordner": "hotels/h114-nuraghe-bianco",
+  "prompt": "Small boutique hotel of rough local stone and white lime plaster, deep window reveals, in the Sardinian interior near an ancient stone tower, macchia scrub around, warm afternoon light. Professional travel photography, natural daylight, realistic colours, soft shadows, shot on full-frame camera, the building fills most of the frame, no people in the foreground, no text, no lettering, no signage on the building, no logos, no watermarks, no borders, landscape orientation 3:2. Avoid: collage, split screen, multiple panels, picture frames, text overlays, brand names, hotel signs, readable writing, recognisable real hotels or landmarks, cartoon or illustration look, oversaturated HDR, fisheye distortion."
+ },
+ {
+  "id": "h115",
+  "ziel": "sardinien",
+  "name": "Costa Perla",
+  "ordner": "hotels/h115-costa-perla",
+  "prompt": "Elegant low luxury hotel in pink granite and glass, terraced down a slope, flat planted roofs, on the Sardinian north coast above a deep blue bay, junipers around, golden light in early evening. Professional travel photography, natural daylight, realistic colours, soft shadows, shot on full-frame camera, the building fills most of the frame, no people in the foreground, no text, no lettering, no signage on the building, no logos, no watermarks, no borders, landscape orientation 3:2. Avoid: collage, split screen, multiple panels, picture frames, text overlays, brand names, hotel signs, readable writing, recognisable real hotels or landmarks, cartoon or illustration look, oversaturated HDR, fisheye distortion."
+ },
+ {
+  "id": "h116",
+  "ziel": "sardinien",
+  "name": "Locanda Barbagia",
+  "ordner": "hotels/h116-locanda-barbagia",
+  "prompt": "Simple village inn of grey stone with green shutters and a small arched doorway, in a mountain village in inland Sardinia, steep narrow street, cool overcast light. Professional travel photography, natural daylight, realistic colours, soft shadows, shot on full-frame camera, the building fills most of the frame, no people in the foreground, no text, no lettering, no signage on the building, no logos, no watermarks, no borders, landscape orientation 3:2. Avoid: collage, split screen, multiple panels, picture frames, text overlays, brand names, hotel signs, readable writing, recognisable real hotels or landmarks, cartoon or illustration look, oversaturated HDR, fisheye distortion."
+ },
+ {
+  "id": "h117",
+  "ziel": "sardinien",
+  "name": "Villaggio Smeraldo",
+  "ordner": "hotels/h117-villaggio-smeraldo",
+  "prompt": "Family village of low pastel bungalows with tiled roofs, linked by shaded walkways, in pine woods behind a Sardinian beach, dappled bright summer light. Professional travel photography, natural daylight, realistic colours, soft shadows, shot on full-frame camera, the building fills most of the frame, no people in the foreground, no text, no lettering, no signage on the building, no logos, no watermarks, no borders, landscape orientation 3:2. Avoid: collage, split screen, multiple panels, picture frames, text overlays, brand names, hotel signs, readable writing, recognisable real hotels or landmarks, cartoon or illustration look, oversaturated HDR, fisheye distortion."
+ },
+ {
+  "id": "h118",
+  "ziel": "sardinien",
+  "name": "Tenuta Vermentino",
+  "ordner": "hotels/h118-tenuta-vermentino",
+  "prompt": "Sardinian wine estate building of ochre stucco with a loggia and a small bell tower, among vineyards on a Sardinian hillside, warm light of late September afternoon. Professional travel photography, natural daylight, realistic colours, soft shadows, shot on full-frame camera, the building fills most of the frame, no people in the foreground, no text, no lettering, no signage on the building, no logos, no watermarks, no borders, landscape orientation 3:2. Avoid: collage, split screen, multiple panels, picture frames, text overlays, brand names, hotel signs, readable writing, recognisable real hotels or landmarks, cartoon or illustration look, oversaturated HDR, fisheye distortion."
+ },
+ {
+  "id": "h119",
+  "ziel": "ostsee",
+  "name": "Dünenhof Prerow",
+  "ordner": "hotels/h119-duenenhof-prerow",
+  "prompt": "Long low German seaside hotel with a reed-thatched roof, white gables and a glazed veranda, behind the dunes on the German Baltic coast, marram grass and pines, bright but soft northern light. Professional travel photography, natural daylight, realistic colours, soft shadows, shot on full-frame camera, the building fills most of the frame, no people in the foreground, no text, no lettering, no signage on the building, no logos, no watermarks, no borders, landscape orientation 3:2. Avoid: collage, split screen, multiple panels, picture frames, text overlays, brand names, hotel signs, readable writing, recognisable real hotels or landmarks, cartoon or illustration look, oversaturated HDR, fisheye distortion."
+ },
+ {
+  "id": "h120",
+  "ziel": "ostsee",
+  "name": "Villa Seestern",
+  "ordner": "hotels/h120-villa-seestern",
+  "prompt": "White German seaside villa in Baederarchitektur with fretwork balconies, a turret and a flag mast, on a promenade on the German Baltic coast, clear cool morning light. Professional travel photography, natural daylight, realistic colours, soft shadows, shot on full-frame camera, the building fills most of the frame, no people in the foreground, no text, no lettering, no signage on the building, no logos, no watermarks, no borders, landscape orientation 3:2. Avoid: collage, split screen, multiple panels, picture frames, text overlays, brand names, hotel signs, readable writing, recognisable real hotels or landmarks, cartoon or illustration look, oversaturated HDR, fisheye distortion."
+ },
+ {
+  "id": "h121",
+  "ziel": "ostsee",
+  "name": "Gut Hohenkirchen",
+  "ordner": "hotels/h121-gut-hohenkirchen",
+  "prompt": "Red brick North German manor house with a slate roof, symmetrical windows and a small pillared porch, in an old park near the Baltic coast, mature lime trees around, soft light on an autumn afternoon. Professional travel photography, natural daylight, realistic colours, soft shadows, shot on full-frame camera, the building fills most of the frame, no people in the foreground, no text, no lettering, no signage on the building, no logos, no watermarks, no borders, landscape orientation 3:2. Avoid: collage, split screen, multiple panels, picture frames, text overlays, brand names, hotel signs, readable writing, recognisable real hotels or landmarks, cartoon or illustration look, oversaturated HDR, fisheye distortion."
+ },
+ {
+  "id": "h122",
+  "ziel": "ostsee",
+  "name": "Nordwind Familienhotel",
+  "ordner": "hotels/h122-nordwind-familienhotel",
+  "prompt": "Modern family hotel of two long white wings with dark timber cladding and large windows, between pine woods and the Baltic dunes in Germany, bright clear summer day. Professional travel photography, natural daylight, realistic colours, soft shadows, shot on full-frame camera, the building fills most of the frame, no people in the foreground, no text, no lettering, no signage on the building, no logos, no watermarks, no borders, landscape orientation 3:2. Avoid: collage, split screen, multiple panels, picture frames, text overlays, brand names, hotel signs, readable writing, recognisable real hotels or landmarks, cartoon or illustration look, oversaturated HDR, fisheye distortion."
+ },
+ {
+  "id": "h123",
+  "ziel": "ostsee",
+  "name": "Haus Möwenschrei",
+  "ordner": "hotels/h123-haus-moewenschrei",
+  "prompt": "Small plain brick guesthouse of two storeys with white window frames and a picket fence, in a quiet German Baltic seaside village street, flat grey coastal light. Professional travel photography, natural daylight, realistic colours, soft shadows, shot on full-frame camera, the building fills most of the frame, no people in the foreground, no text, no lettering, no signage on the building, no logos, no watermarks, no borders, landscape orientation 3:2. Avoid: collage, split screen, multiple panels, picture frames, text overlays, brand names, hotel signs, readable writing, recognisable real hotels or landmarks, cartoon or illustration look, oversaturated HDR, fisheye distortion."
+ },
+ {
+  "id": "h124",
+  "ziel": "ostsee",
+  "name": "Strandpalais Heiligendamm",
+  "ordner": "hotels/h124-strandpalais-heiligendamm",
+  "prompt": "Grand white classicist seaside palace hotel with a columned portico and a long symmetrical front, facing the sea on the German Baltic coast, lawns in front, clear bright light with high clouds. Professional travel photography, natural daylight, realistic colours, soft shadows, shot on full-frame camera, the building fills most of the frame, no people in the foreground, no text, no lettering, no signage on the building, no logos, no watermarks, no borders, landscape orientation 3:2. Avoid: collage, split screen, multiple panels, picture frames, text overlays, brand names, hotel signs, readable writing, recognisable real hotels or landmarks, cartoon or illustration look, oversaturated HDR, fisheye distortion."
+ },
+ {
+  "id": "h125",
+  "ziel": "tirol",
+  "name": "Alpenrose Ötztal",
+  "ordner": "hotels/h125-alpenrose-oetztal",
+  "prompt": "Traditional Tyrolean hotel with a wide gabled roof, timber balconies on every floor and painted window surrounds, in a Tyrolean valley village, snow-covered slopes behind, cold blue light of a winter morning. Professional travel photography, natural daylight, realistic colours, soft shadows, shot on full-frame camera, the building fills most of the frame, no people in the foreground, no text, no lettering, no signage on the building, no logos, no watermarks, no borders, landscape orientation 3:2. Avoid: collage, split screen, multiple panels, picture frames, text overlays, brand names, hotel signs, readable writing, recognisable real hotels or landmarks, cartoon or illustration look, oversaturated HDR, fisheye distortion."
+ },
+ {
+  "id": "h126",
+  "ziel": "tirol",
+  "name": "Hotel Talblick",
+  "ordner": "hotels/h126-hotel-talblick",
+  "prompt": "Broad four-storey alpine family hotel in white render with dark timber balconies and a steep roof, on a meadow terrace above a Tyrolean valley, bright summer light with high clouds. Professional travel photography, natural daylight, realistic colours, soft shadows, shot on full-frame camera, the building fills most of the frame, no people in the foreground, no text, no lettering, no signage on the building, no logos, no watermarks, no borders, landscape orientation 3:2. Avoid: collage, split screen, multiple panels, picture frames, text overlays, brand names, hotel signs, readable writing, recognisable real hotels or landmarks, cartoon or illustration look, oversaturated HDR, fisheye distortion."
+ },
+ {
+  "id": "h127",
+  "ziel": "tirol",
+  "name": "Chalet Silberkar",
+  "ordner": "hotels/h127-chalet-silberkar",
+  "prompt": "Modern luxury chalet hotel of aged timber, stone and glass, low and horizontal with deep eaves, on a snowy plateau in Tyrol, spruce forest behind, soft light at dusk, windows glowing. Professional travel photography, available light after dark, realistic colours, soft shadows, shot on full-frame camera, the building fills most of the frame, no people in the foreground, no text, no lettering, no signage on the building, no logos, no watermarks, no borders, landscape orientation 3:2. Avoid: collage, split screen, multiple panels, picture frames, text overlays, brand names, hotel signs, readable writing, recognisable real hotels or landmarks, cartoon or illustration look, oversaturated HDR, fisheye distortion."
+ },
+ {
+  "id": "h128",
+  "ziel": "tirol",
+  "name": "Gasthof Steinbock",
+  "ordner": "hotels/h128-gasthof-steinbock",
+  "prompt": "Simple Tyrolean village inn with a steep shingled roof, whitewashed walls and one wooden balcony, in a small Tyrolean village street, flat winter light, grey sky. Professional travel photography, natural daylight, realistic colours, soft shadows, shot on full-frame camera, the building fills most of the frame, no people in the foreground, no text, no lettering, no signage on the building, no logos, no watermarks, no borders, landscape orientation 3:2. Avoid: collage, split screen, multiple panels, picture frames, text overlays, brand names, hotel signs, readable writing, recognisable real hotels or landmarks, cartoon or illustration look, oversaturated HDR, fisheye distortion."
+ },
+ {
+  "id": "h129",
+  "ziel": "tirol",
+  "name": "Waldhof Achensee",
+  "ordner": "hotels/h129-waldhof-achensee",
+  "prompt": "Compact alpine spa hotel clad in dark larch with a glazed wellness wing projecting into the forest, at the edge of a Tyrolean forest above a lake, golden light in October, larches turning. Professional travel photography, natural daylight, realistic colours, soft shadows, shot on full-frame camera, the building fills most of the frame, no people in the foreground, no text, no lettering, no signage on the building, no logos, no watermarks, no borders, landscape orientation 3:2. Avoid: collage, split screen, multiple panels, picture frames, text overlays, brand names, hotel signs, readable writing, recognisable real hotels or landmarks, cartoon or illustration look, oversaturated HDR, fisheye distortion."
+ },
+ {
+  "id": "h130",
+  "ziel": "tirol",
+  "name": "Panorama Kitzbühel",
+  "ordner": "hotels/h130-panorama-kitzbuehel",
+  "prompt": "Small boutique alpine hotel with a stone base, timber upper floors and a fully glazed corner, on a slope above a Tyrolean market town, clear crisp light after fresh snow. Professional travel photography, natural daylight, realistic colours, soft shadows, shot on full-frame camera, the building fills most of the frame, no people in the foreground, no text, no lettering, no signage on the building, no logos, no watermarks, no borders, landscape orientation 3:2. Avoid: collage, split screen, multiple panels, picture frames, text overlays, brand names, hotel signs, readable writing, recognisable real hotels or landmarks, cartoon or illustration look, oversaturated HDR, fisheye distortion."
+ },
+ {
+  "id": "h131",
+  "ziel": "suedtirol",
+  "name": "Berghotel Sonnwend",
+  "ordner": "hotels/h131-berghotel-sonnwend",
+  "prompt": "South Tyrolean mountain hotel with a stone ground floor, larch-clad upper storeys and long balconies, on a sunny slope facing the Dolomites, bright winter light, pale rock faces opposite. Professional travel photography, natural daylight, realistic colours, soft shadows, shot on full-frame camera, the building fills most of the frame, no people in the foreground, no text, no lettering, no signage on the building, no logos, no watermarks, no borders, landscape orientation 3:2. Avoid: collage, split screen, multiple panels, picture frames, text overlays, brand names, hotel signs, readable writing, recognisable real hotels or landmarks, cartoon or illustration look, oversaturated HDR, fisheye distortion."
+ },
+ {
+  "id": "h132",
+  "ziel": "suedtirol",
+  "name": "Ansitz Weinegg",
+  "ordner": "hotels/h132-ansitz-weinegg",
+  "prompt": "South Tyrolean manor with thick plastered walls, arched windows and a small crenellated tower, among vineyards on a South Tyrolean slope above a lake, warm hazy light in early October. Professional travel photography, natural daylight, realistic colours, soft shadows, shot on full-frame camera, the building fills most of the frame, no people in the foreground, no text, no lettering, no signage on the building, no logos, no watermarks, no borders, landscape orientation 3:2. Avoid: collage, split screen, multiple panels, picture frames, text overlays, brand names, hotel signs, readable writing, recognisable real hotels or landmarks, cartoon or illustration look, oversaturated HDR, fisheye distortion."
+ },
+ {
+  "id": "h133",
+  "ziel": "suedtirol",
+  "name": "Alpin Suites Gröden",
+  "ordner": "hotels/h133-alpin-suites-groeden",
+  "prompt": "Contemporary luxury hotel of pale stone and glass with cantilevered floors facing the mountains, on a meadow terrace below the Dolomite peaks, alpenglow, rock faces turning pink. Professional travel photography, natural daylight, realistic colours, soft shadows, shot on full-frame camera, the building fills most of the frame, no people in the foreground, no text, no lettering, no signage on the building, no logos, no watermarks, no borders, landscape orientation 3:2. Avoid: collage, split screen, multiple panels, picture frames, text overlays, brand names, hotel signs, readable writing, recognisable real hotels or landmarks, cartoon or illustration look, oversaturated HDR, fisheye distortion."
+ },
+ {
+  "id": "h134",
+  "ziel": "suedtirol",
+  "name": "Gasthof Rosenegg",
+  "ordner": "hotels/h134-gasthof-rosenegg",
+  "prompt": "Modest South Tyrolean guesthouse of white render with dark wooden balconies and a steep roof, in a small South Tyrolean mountain hamlet, apple orchards below, soft overcast light. Professional travel photography, natural daylight, realistic colours, soft shadows, shot on full-frame camera, the building fills most of the frame, no people in the foreground, no text, no lettering, no signage on the building, no logos, no watermarks, no borders, landscape orientation 3:2. Avoid: collage, split screen, multiple panels, picture frames, text overlays, brand names, hotel signs, readable writing, recognisable real hotels or landmarks, cartoon or illustration look, oversaturated HDR, fisheye distortion."
+ },
+ {
+  "id": "h135",
+  "ziel": "suedtirol",
+  "name": "Familienhof Pustertal",
+  "ordner": "hotels/h135-familienhof-pustertal",
+  "prompt": "Wide family hotel in alpine style with a long balcony front, flower boxes and a shingled roof, in a broad green South Tyrolean valley, bright clear summer morning. Professional travel photography, natural daylight, realistic colours, soft shadows, shot on full-frame camera, the building fills most of the frame, no people in the foreground, no text, no lettering, no signage on the building, no logos, no watermarks, no borders, landscape orientation 3:2. Avoid: collage, split screen, multiple panels, picture frames, text overlays, brand names, hotel signs, readable writing, recognisable real hotels or landmarks, cartoon or illustration look, oversaturated HDR, fisheye distortion."
+ },
+ {
+  "id": "h136",
+  "ziel": "suedtirol",
+  "name": "Waldhaus Latemar",
+  "ordner": "hotels/h136-waldhaus-latemar",
+  "prompt": "Small spa hotel of dark timber and glass with a green roof, set low among conifers, at the edge of a South Tyrolean spruce forest, misty light early in the morning. Professional travel photography, natural daylight, realistic colours, soft shadows, shot on full-frame camera, the building fills most of the frame, no people in the foreground, no text, no lettering, no signage on the building, no logos, no watermarks, no borders, landscape orientation 3:2. Avoid: collage, split screen, multiple panels, picture frames, text overlays, brand names, hotel signs, readable writing, recognisable real hotels or landmarks, cartoon or illustration look, oversaturated HDR, fisheye distortion."
+ },
+ {
+  "id": "h137",
+  "ziel": "teneriffa",
+  "name": "Costa Adeje Bay",
+  "ordner": "hotels/h137-costa-adeje-bay",
+  "prompt": "Long horizontal hotel in white render and dark volcanic stone with wide sea-facing terraces, above a black sand beach on Tenerife, palms and volcanic rock, bright clear light, deep blue sky. Professional travel photography, natural daylight, realistic colours, soft shadows, shot on full-frame camera, the building fills most of the frame, no people in the foreground, no text, no lettering, no signage on the building, no logos, no watermarks, no borders, landscape orientation 3:2. Avoid: collage, split screen, multiple panels, picture frames, text overlays, brand names, hotel signs, readable writing, recognisable real hotels or landmarks, cartoon or illustration look, oversaturated HDR, fisheye distortion."
+ },
+ {
+  "id": "h138",
+  "ziel": "teneriffa",
+  "name": "Hacienda El Drago",
+  "ordner": "hotels/h138-hacienda-el-drago",
+  "prompt": "Restored Canarian manor house with dark carved wooden balconies and a lava stone base, on a terraced hillside in northern Tenerife, banana plantations below, soft warm light in late afternoon. Professional travel photography, natural daylight, realistic colours, soft shadows, shot on full-frame camera, the building fills most of the frame, no people in the foreground, no text, no lettering, no signage on the building, no logos, no watermarks, no borders, landscape orientation 3:2. Avoid: collage, split screen, multiple panels, picture frames, text overlays, brand names, hotel signs, readable writing, recognisable real hotels or landmarks, cartoon or illustration look, oversaturated HDR, fisheye distortion."
+ },
+ {
+  "id": "h139",
+  "ziel": "teneriffa",
+  "name": "Gran Hotel Taoro",
+  "ordner": "hotels/h139-gran-hotel-taoro",
+  "prompt": "Grand colonial-style luxury hotel with arcaded galleries, a red tiled roof and a symmetrical facade, in subtropical gardens on Tenerife, the volcano peak far behind, clear light with high clouds. Professional travel photography, natural daylight, realistic colours, soft shadows, shot on full-frame camera, the building fills most of the frame, no people in the foreground, no text, no lettering, no signage on the building, no logos, no watermarks, no borders, landscape orientation 3:2. Avoid: collage, split screen, multiple panels, picture frames, text overlays, brand names, hotel signs, readable writing, recognisable real hotels or landmarks, cartoon or illustration look, oversaturated HDR, fisheye distortion."
+ },
+ {
+  "id": "h140",
+  "ziel": "teneriffa",
+  "name": "Hostal La Laguna",
+  "ordner": "hotels/h140-hostal-la-laguna",
+  "prompt": "Simple Canarian townhouse guesthouse of two storeys, painted ochre with green shutters, in the old colonial town in northern Tenerife, flat light under a low cloud deck. Professional travel photography, natural daylight, realistic colours, soft shadows, shot on full-frame camera, the building fills most of the frame, no people in the foreground, no text, no lettering, no signage on the building, no logos, no watermarks, no borders, landscape orientation 3:2. Avoid: collage, split screen, multiple panels, picture frames, text overlays, brand names, hotel signs, readable writing, recognisable real hotels or landmarks, cartoon or illustration look, oversaturated HDR, fisheye distortion."
+ },
+ {
+  "id": "h141",
+  "ziel": "teneriffa",
+  "name": "Playa Familiar Resort",
+  "ordner": "hotels/h141-playa-familiar-resort",
+  "prompt": "Large family resort in sand and terracotta tones with a curved balcony front around a pool deck, on the sunny south coast of Tenerife, bright midday sun. Professional travel photography, natural daylight, realistic colours, soft shadows, shot on full-frame camera, the building fills most of the frame, no people in the foreground, no text, no lettering, no signage on the building, no logos, no watermarks, no borders, landscape orientation 3:2. Avoid: collage, split screen, multiple panels, picture frames, text overlays, brand names, hotel signs, readable writing, recognisable real hotels or landmarks, cartoon or illustration look, oversaturated HDR, fisheye distortion."
+ },
+ {
+  "id": "h142",
+  "ziel": "teneriffa",
+  "name": "Mirador Anaga",
+  "ordner": "hotels/h142-mirador-anaga",
+  "prompt": "Small boutique hotel of dark timber and glass perched on a ridge, cantilevered viewing terrace, high in the laurel forest of northern Tenerife, ridges falling away, clouds drifting through, diffuse light. Professional travel photography, natural daylight, realistic colours, soft shadows, shot on full-frame camera, the building fills most of the frame, no people in the foreground, no text, no lettering, no signage on the building, no logos, no watermarks, no borders, landscape orientation 3:2. Avoid: collage, split screen, multiple panels, picture frames, text overlays, brand names, hotel signs, readable writing, recognisable real hotels or landmarks, cartoon or illustration look, oversaturated HDR, fisheye distortion."
+ },
+ {
+  "id": "h143",
+  "ziel": "krabi",
+  "name": "Phra Nang Sands",
+  "ordner": "hotels/h143-phra-nang-sands",
+  "prompt": "Low Thai beach resort of timber pavilions with steep tiled roofs, linked by raised walkways, on a Thai beach beneath towering limestone cliffs, bright light with soft haze. Professional travel photography, natural daylight, realistic colours, soft shadows, shot on full-frame camera, the building fills most of the frame, no people in the foreground, no text, no lettering, no signage on the building, no logos, no watermarks, no borders, landscape orientation 3:2. Avoid: collage, split screen, multiple panels, picture frames, text overlays, brand names, hotel signs, readable writing, recognisable real hotels or landmarks, cartoon or illustration look, oversaturated HDR, fisheye distortion."
+ },
+ {
+  "id": "h144",
+  "ziel": "krabi",
+  "name": "Baan Suan Retreat",
+  "ordner": "hotels/h144-baan-suan-retreat",
+  "prompt": "Small boutique retreat of dark teak and white stone with wide overhanging roofs, set in a garden, in a tropical garden inland from the Thai coast, warm light filtering through palms. Professional travel photography, natural daylight, realistic colours, soft shadows, shot on full-frame camera, the building fills most of the frame, no people in the foreground, no text, no lettering, no signage on the building, no logos, no watermarks, no borders, landscape orientation 3:2. Avoid: collage, split screen, multiple panels, picture frames, text overlays, brand names, hotel signs, readable writing, recognisable real hotels or landmarks, cartoon or illustration look, oversaturated HDR, fisheye distortion."
+ },
+ {
+  "id": "h145",
+  "ziel": "krabi",
+  "name": "Andaman Cliff Resort",
+  "ordner": "hotels/h145-andaman-cliff-resort",
+  "prompt": "Luxury resort of stacked villas in teak and pale stone descending a cliff, infinity terraces, on a headland above the Andaman Sea in Thailand, golden light just before sunset. Professional travel photography, natural daylight, realistic colours, soft shadows, shot on full-frame camera, the building fills most of the frame, no people in the foreground, no text, no lettering, no signage on the building, no logos, no watermarks, no borders, landscape orientation 3:2. Avoid: collage, split screen, multiple panels, picture frames, text overlays, brand names, hotel signs, readable writing, recognisable real hotels or landmarks, cartoon or illustration look, oversaturated HDR, fisheye distortion."
+ },
+ {
+  "id": "h146",
+  "ziel": "krabi",
+  "name": "Krabi River Lodge",
+  "ordner": "hotels/h146-krabi-river-lodge",
+  "prompt": "Simple two-storey Thai guesthouse with a corrugated roof and an open ground floor terrace, on a riverbank in a Thai town, longtail boats moored, flat light before a rain shower. Professional travel photography, natural daylight, realistic colours, soft shadows, shot on full-frame camera, the building fills most of the frame, no people in the foreground, no text, no lettering, no signage on the building, no logos, no watermarks, no borders, landscape orientation 3:2. Avoid: collage, split screen, multiple panels, picture frames, text overlays, brand names, hotel signs, readable writing, recognisable real hotels or landmarks, cartoon or illustration look, oversaturated HDR, fisheye distortion."
+ },
+ {
+  "id": "h147",
+  "ziel": "krabi",
+  "name": "Lanta Family Bay",
+  "ordner": "hotels/h147-lanta-family-bay",
+  "prompt": "Four-storey family resort in cream render with wide balconies and a tiled hip roof, a street back from a Thai beach promenade, palms all around, bright clear afternoon. Professional travel photography, natural daylight, realistic colours, soft shadows, shot on full-frame camera, the building fills most of the frame, no people in the foreground, no text, no lettering, no signage on the building, no logos, no watermarks, no borders, landscape orientation 3:2. Avoid: collage, split screen, multiple panels, picture frames, text overlays, brand names, hotel signs, readable writing, recognisable real hotels or landmarks, cartoon or illustration look, oversaturated HDR, fisheye distortion."
+ },
+ {
+  "id": "h148",
+  "ziel": "krabi",
+  "name": "Emerald Pool Villas",
+  "ordner": "hotels/h148-emerald-pool-villas",
+  "prompt": "Single-storey villa resort of white walls and grey tiled roofs, each villa behind its own wall, behind a quiet beach on the Thai Andaman coast, soft morning light. Professional travel photography, natural daylight, realistic colours, soft shadows, shot on full-frame camera, the building fills most of the frame, no people in the foreground, no text, no lettering, no signage on the building, no logos, no watermarks, no borders, landscape orientation 3:2. Avoid: collage, split screen, multiple panels, picture frames, text overlays, brand names, hotel signs, readable writing, recognisable real hotels or landmarks, cartoon or illustration look, oversaturated HDR, fisheye distortion."
+ },
+ {
+  "id": "h149",
+  "ziel": "lappland",
+  "name": "Nordlys Lodge",
+  "ordner": "hotels/h149-nordlys-lodge",
+  "prompt": "Long timber lodge with a low pitched roof, deep snow-laden eaves and a tall stone chimney, at the edge of a frozen lake in Finnish Lapland, deep blue twilight, warm windows. Professional travel photography, available light after dark, realistic colours, soft shadows, shot on full-frame camera, the building fills most of the frame, no people in the foreground, no text, no lettering, no signage on the building, no logos, no watermarks, no borders, landscape orientation 3:2. Avoid: collage, split screen, multiple panels, picture frames, text overlays, brand names, hotel signs, readable writing, recognisable real hotels or landmarks, cartoon or illustration look, oversaturated HDR, fisheye distortion."
+ },
+ {
+  "id": "h150",
+  "ziel": "lappland",
+  "name": "Taiga Cabins",
+  "ordner": "hotels/h150-taiga-cabins",
+  "prompt": "Row of small dark timber cabins with steep roofs and one fully glazed gable end each, in a snow-covered Lapland forest clearing, faint green aurora in a dark sky. Professional travel photography, available light after dark, realistic colours, soft shadows, shot on full-frame camera, the building fills most of the frame, no people in the foreground, no text, no lettering, no signage on the building, no logos, no watermarks, no borders, landscape orientation 3:2. Avoid: collage, split screen, multiple panels, picture frames, text overlays, brand names, hotel signs, readable writing, recognisable real hotels or landmarks, cartoon or illustration look, oversaturated HDR, fisheye distortion."
+ },
+ {
+  "id": "h151",
+  "ziel": "lappland",
+  "name": "Polaris Glass Resort",
+  "ordner": "hotels/h151-polaris-glass-resort",
+  "prompt": "Modern luxury suites of black timber with fully glazed roofs and end walls, on low platforms, on a snow ridge above Lapland forest, night sky with stars, snow lit from inside. Professional travel photography, available light after dark, realistic colours, soft shadows, shot on full-frame camera, the building fills most of the frame, no people in the foreground, no text, no lettering, no signage on the building, no logos, no watermarks, no borders, landscape orientation 3:2. Avoid: collage, split screen, multiple panels, picture frames, text overlays, brand names, hotel signs, readable writing, recognisable real hotels or landmarks, cartoon or illustration look, oversaturated HDR, fisheye distortion."
+ },
+ {
+  "id": "h152",
+  "ziel": "lappland",
+  "name": "Gästehaus Kemijoki",
+  "ordner": "hotels/h152-gaestehaus-kemijoki",
+  "prompt": "Plain three-storey Finnish guesthouse in pale render with regular small windows, in a small Lapland town by a frozen river, grey overcast winter light. Professional travel photography, natural daylight, realistic colours, soft shadows, shot on full-frame camera, the building fills most of the frame, no people in the foreground, no text, no lettering, no signage on the building, no logos, no watermarks, no borders, landscape orientation 3:2. Avoid: collage, split screen, multiple panels, picture frames, text overlays, brand names, hotel signs, readable writing, recognisable real hotels or landmarks, cartoon or illustration look, oversaturated HDR, fisheye distortion."
+ },
+ {
+  "id": "h153",
+  "ziel": "lappland",
+  "name": "Familienhof Muonio",
+  "ordner": "hotels/h153-familienhof-muonio",
+  "prompt": "Cluster of red-painted Finnish farm buildings with white window frames and steep snowy roofs, in a snowy Lapland clearing, birches and reindeer fences, low pink sun near the horizon. Professional travel photography, natural daylight, realistic colours, soft shadows, shot on full-frame camera, the building fills most of the frame, no people in the foreground, no text, no lettering, no signage on the building, no logos, no watermarks, no borders, landscape orientation 3:2. Avoid: collage, split screen, multiple panels, picture frames, text overlays, brand names, hotel signs, readable writing, recognisable real hotels or landmarks, cartoon or illustration look, oversaturated HDR, fisheye distortion."
+ },
+ {
+  "id": "h154",
+  "ziel": "lappland",
+  "name": "Aurora Spa Ylläs",
+  "ordner": "hotels/h154-aurora-spa-yllaes",
+  "prompt": "Alpine-style spa hotel of dark timber with a glazed pool wing projecting towards the forest, at the foot of a rounded Lapland fell, blue hour, snow reflecting the sky. Professional travel photography, available light after dark, realistic colours, soft shadows, shot on full-frame camera, the building fills most of the frame, no people in the foreground, no text, no lettering, no signage on the building, no logos, no watermarks, no borders, landscape orientation 3:2. Avoid: collage, split screen, multiple panels, picture frames, text overlays, brand names, hotel signs, readable writing, recognisable real hotels or landmarks, cartoon or illustration look, oversaturated HDR, fisheye distortion."
+ },
+ {
+  "id": "h155",
+  "ziel": "island",
+  "name": "Blaa Lon Retreat",
+  "ordner": "hotels/h155-blaa-lon-retreat",
+  "prompt": "Low black timber hotel with a turf roof and large windows, steam drifting past, on a volcanic plain in Iceland, snow and steaming ground, cold diffuse light under a pale sky. Professional travel photography, natural daylight, realistic colours, soft shadows, shot on full-frame camera, the building fills most of the frame, no people in the foreground, no text, no lettering, no signage on the building, no logos, no watermarks, no borders, landscape orientation 3:2. Avoid: collage, split screen, multiple panels, picture frames, text overlays, brand names, hotel signs, readable writing, recognisable real hotels or landmarks, cartoon or illustration look, oversaturated HDR, fisheye distortion."
+ },
+ {
+  "id": "h156",
+  "ziel": "island",
+  "name": "Fjord View Lodge",
+  "ordner": "hotels/h156-fjord-view-lodge",
+  "prompt": "Long timber lodge clad in dark board with a low roof and a continuous window band, above an Icelandic fjord, steep green slopes behind, long low light of the northern summer evening. Professional travel photography, natural daylight, realistic colours, soft shadows, shot on full-frame camera, the building fills most of the frame, no people in the foreground, no text, no lettering, no signage on the building, no logos, no watermarks, no borders, landscape orientation 3:2. Avoid: collage, split screen, multiple panels, picture frames, text overlays, brand names, hotel signs, readable writing, recognisable real hotels or landmarks, cartoon or illustration look, oversaturated HDR, fisheye distortion."
+ },
+ {
+  "id": "h157",
+  "ziel": "island",
+  "name": "Basalt Grand",
+  "ordner": "hotels/h157-basalt-grand",
+  "prompt": "Modern luxury hotel of dark basalt and floor-to-ceiling glass, single storey, long and low, on a moss plain in southern Iceland facing a glacier, dramatic light between rain showers. Professional travel photography, natural daylight, realistic colours, soft shadows, shot on full-frame camera, the building fills most of the frame, no people in the foreground, no text, no lettering, no signage on the building, no logos, no watermarks, no borders, landscape orientation 3:2. Avoid: collage, split screen, multiple panels, picture frames, text overlays, brand names, hotel signs, readable writing, recognisable real hotels or landmarks, cartoon or illustration look, oversaturated HDR, fisheye distortion."
+ },
+ {
+  "id": "h158",
+  "ziel": "island",
+  "name": "Guesthouse Selfoss",
+  "ordner": "hotels/h158-guesthouse-selfoss",
+  "prompt": "Small white gabled Icelandic guesthouse with a red corrugated roof and a plain porch, in a small Icelandic town, flat farmland around, flat grey light, low cloud. Professional travel photography, natural daylight, realistic colours, soft shadows, shot on full-frame camera, the building fills most of the frame, no people in the foreground, no text, no lettering, no signage on the building, no logos, no watermarks, no borders, landscape orientation 3:2. Avoid: collage, split screen, multiple panels, picture frames, text overlays, brand names, hotel signs, readable writing, recognisable real hotels or landmarks, cartoon or illustration look, oversaturated HDR, fisheye distortion."
+ },
+ {
+  "id": "h159",
+  "ziel": "island",
+  "name": "Geysir Family Lodge",
+  "ordner": "hotels/h159-geysir-family-lodge",
+  "prompt": "Long single-storey lodge of pale timber with a row of gables and large family windows, on an Icelandic plain near steaming hot springs, bright cool light with fast clouds. Professional travel photography, natural daylight, realistic colours, soft shadows, shot on full-frame camera, the building fills most of the frame, no people in the foreground, no text, no lettering, no signage on the building, no logos, no watermarks, no borders, landscape orientation 3:2. Avoid: collage, split screen, multiple panels, picture frames, text overlays, brand names, hotel signs, readable writing, recognisable real hotels or landmarks, cartoon or illustration look, oversaturated HDR, fisheye distortion."
+ },
+ {
+  "id": "h160",
+  "ziel": "island",
+  "name": "Highland Spa Húsafell",
+  "ordner": "hotels/h160-highland-spa-husafell",
+  "prompt": "Low spa hotel of dark stone and timber with a glazed bathing wing and a grass roof, at the edge of an Icelandic highland birch wood, soft light at midnight in June. Professional travel photography, available light after dark, realistic colours, soft shadows, shot on full-frame camera, the building fills most of the frame, no people in the foreground, no text, no lettering, no signage on the building, no logos, no watermarks, no borders, landscape orientation 3:2. Avoid: collage, split screen, multiple panels, picture frames, text overlays, brand names, hotel signs, readable writing, recognisable real hotels or landmarks, cartoon or illustration look, oversaturated HDR, fisheye distortion."
+ }
+]
