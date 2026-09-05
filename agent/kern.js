@@ -696,6 +696,33 @@ const Kern = {
     await this.denkpause(1200, "wägt ab…");
 
     const bewertet = Politik.bewerten(treffer, this.lauf.profil);
+
+    // Es gab Treffer, aber keiner haelt die ausdruecklichen Vorgaben ein.
+    // Dann wird nichts vorgeschlagen: ein Haus fuer 320 Euro, wenn 300
+    // die Grenze war, ist kein Vorschlag, sondern ein Uebergehen.
+    if (!bewertet.length) {
+      const grenzen = [];
+      const p = this.lauf.profil;
+      if (p.maxPreis) grenzen.push(`höchstens ${p.maxPreis} € pro Nacht`);
+      if (p.maxStrand) grenzen.push(`höchstens ${p.maxStrand} km zum Strand`);
+      const personen = (p.erwachsene || 0) + (p.kinder || 0);
+      if (personen) grenzen.push(`Platz für ${personen} Personen`);
+      this.lauf.phase = "shortlist";
+      this.lauf.kandidaten = [];
+      this.notieren("keine_treffer", { grund: "vorgaben", grenzen });
+      AgentPanel.setSuggestions(["Preis lockern", "Anderes Ziel", "Doch ohne Vorgaben"]);
+      AgentPanel.status("wartet auf deine Antwort");
+      AgentPanel.oeffnen();
+      this.sperreAus();
+      return {
+        ok: true,
+        daten: { uebernimmt: true },
+        text: grenzen.length
+          ? `Hier gibt es nichts, was ${Politik.aufzaehlen(grenzen)} einhält. Ich schlage dir nichts vor, was deine Vorgaben reißt — sag mir lieber, wo ich nachgeben darf.`
+          : "Mit diesen Vorgaben finde ich nichts. Sag mir, worauf ich verzichten darf.",
+      };
+    }
+
     const auswahl = Politik.auswaehlen(bewertet, this.lauf.profil);
     this.lauf.kandidaten = auswahl.kandidaten;
     this.lauf.strategie = auswahl.strategie;

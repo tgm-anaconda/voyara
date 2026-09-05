@@ -551,6 +551,35 @@ festes Verfahren. Es gibt zwei, und eine feste Schwelle dazwischen. Beide
 sind deterministisch: dieselbe Eingabe führt bei jeder Person zur selben
 Auswahl.
 
+### Harte Vorgaben gehen vor
+
+Zuerst die Unterscheidung, die über allem steht: Was die Person
+ausdrücklich sagt, ist keine Präferenz, sondern eine **Bedingung**.
+
+| Angabe | wirkt als |
+|---|---|
+| Reiseziel ("nach Mallorca") | Ausschluss |
+| Preisobergrenze ("höchstens 300 €") | Ausschluss |
+| Personenzahl ("für zwei") | Ausschluss |
+| Entfernung zum Strand ("höchstens 1 km") | Ausschluss |
+| Sauberkeit, Ruhe, Essen, Service … | Gewicht in der Reihenfolge |
+
+Wer 300 Euro als Grenze nennt, bekommt keinen Vorschlag für 320 - auch
+nicht, wenn der besser bewertet wäre. Vorher war der Preis nur ein
+Punktabzug im Ranking; ein teureres Haus konnte also trotzdem oben landen.
+Das ist jetzt ein Ausschluss.
+
+Die Ergebnisseite filtert das bereits über Regler und Auswahlfelder.
+`Politik.erfuellt()` prüft es davor noch einmal - würde ein Bedienelement
+einmal nicht greifen, fiele es hier auf. Bleibt danach nichts übrig,
+schlägt der Agent **nichts** vor, sondern sagt, welche Grenze im Weg steht
+und bittet darum, eine davon zu lockern. Ein Haus vorzuschlagen, das eine
+genannte Grenze reißt, wäre kein Vorschlag, sondern ein Übergehen.
+
+Die Spreizung arbeitet immer **innerhalb** dieser Bedingungen. Bei
+"Mallorca, höchstens 120 €" kamen 89, 96 und 102 Euro heraus - gespreizt,
+aber sämtlich unter der Grenze.
+
 ### Die Schwelle
 
 `Politik.informationswert(profil)` zählt, wie viel die Person preisgegeben hat:

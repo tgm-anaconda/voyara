@@ -205,6 +205,36 @@ const Politik = {
      Aspektbilanz - das ist sein eigentlicher Beitrag.
      ================================================================== */
 
+  /* Harte Vorgaben
+     ------------------------------------------------------------------
+     Was die Person ausdruecklich gesagt hat, ist keine Praeferenz,
+     sondern eine Bedingung. Wer "hoechstens 300 Euro" sagt, will keinen
+     Vorschlag fuer 320 - auch nicht, wenn der besser bewertet ist. Wer
+     Mallorca sagt, will kein Angebot auf Kreta. Wer zu zweit reist,
+     braucht kein Haus fuer sechs.
+
+     Die Ergebnisseite filtert das bereits ueber Regler und Auswahl.
+     Diese Pruefung liegt trotzdem noch einmal davor: Wuerde ein
+     Bedienelement einmal nicht greifen, saehe man es hier - und der
+     Agent schlaegt lieber nichts vor als etwas Falsches. */
+  erfuellt(item, preis, profil) {
+    if (profil.maxPreis && (preis ?? item.pricePerNight) > profil.maxPreis) return false;
+    if (profil.zielId && item.ziel !== profil.zielId) return false;
+    if (profil.maxStrand != null && (item.distanceToBeach ?? 99) > profil.maxStrand) return false;
+
+    // Personenzahl: bei Wohnungen die Hoechstbelegung, bei Hotels das
+    // groesste Zimmer.
+    const personen = (profil.erwachsene || 0) + (profil.kinder || 0);
+    if (personen > 0) {
+      if (item.type === "apartment") {
+        if ((item.maxGuests || 0) < personen) return false;
+      } else if (item.rooms?.length) {
+        if (Math.max(...item.rooms.map((r) => r.maxGuests || 0)) < personen) return false;
+      }
+    }
+    return true;
+  },
+
   bewerten(treffer, profil) {
     const kriterien = profil.kriterien || [];
     const bewertet = treffer.map((t) => {
@@ -241,13 +271,17 @@ const Politik = {
       }
 
       // Preis zaehlt mit, aber nur als Ausschlag - sonst gewinnt immer das
-      // billigste Haus, und der Agent waere wieder eine Sortierung
+      // billigste Haus, und der Agent waere wieder eine Sortierung.
+      // Die Obergrenze ist kein Ausschlag, sondern eine Bedingung: sie
+      // wird weiter unten geprueft, nicht hier verrechnet.
       const preis = t.preis ?? item.pricePerNight;
-      if (profil.maxPreis) punkte += preis <= profil.maxPreis ? 0.6 : -2.5;
       if (profil.budget === "niedrig") punkte += (160 - preis) / 90;
 
       return { ...t, item, punkte, belege, preis };
-    }).filter(Boolean);
+    }).filter(Boolean)
+      // Was eine ausdrueckliche Vorgabe verletzt, faellt raus - egal wie
+      // gut es sonst waere.
+      .filter((k) => this.erfuellt(k.item, k.preis, profil));
 
     return bewertet.sort((a, b) => b.punkte - a.punkte);
   },
