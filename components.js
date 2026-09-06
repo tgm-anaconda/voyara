@@ -255,6 +255,15 @@ function renderAgentRail() {
       <span class="freigabe-stufe" id="freigabeStufe">Suchen und filtern</span>
     </button>
     <div class="freigabe-liste" id="freigabeListe" hidden role="group" aria-label="Was darf der Chat für dich tun?"></div>
+    <!-- Ohne Erklaerung uebersehen viele, dass sich hier ueberhaupt etwas
+         einstellen laesst - und chatten einfach los. Genau diese Wahl ist
+         aber die Messgroesse der Studie. -->
+    <button type="button" class="freigabe-info" id="freigabeInfo" aria-expanded="false" aria-label="Wozu ist das da?">i</button>
+    <p class="freigabe-erklaerung" id="freigabeErklaerung" hidden>
+      Hier legst du fest, wie weit der Chat für dich gehen darf: nur Vorschläge machen,
+      selbst suchen und filtern, die Buchung vorbereiten oder sie ganz abschließen.
+      Du kannst das jederzeit ändern.
+    </p>
   </div>
 
   <!-- Was der Chat verstanden hat, laufend sichtbar. Sonst weiss niemand,
@@ -523,6 +532,27 @@ const AgentPanel = {
         liste.hidden = !auf;
         knopf.setAttribute("aria-expanded", String(auf));
       });
+
+      const info = document.getElementById("freigabeInfo");
+      const text = document.getElementById("freigabeErklaerung");
+      info?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const auf = text.hidden;
+        text.hidden = !auf;
+        info.setAttribute("aria-expanded", String(auf));
+        info.classList.toggle("offen", auf);
+      });
+
+      // Beim ersten Aufruf einer Sitzung steht die Liste offen. Ein
+      // zugeklappter Regler wird uebersehen, und wer ihn uebersieht,
+      // trifft die Entscheidung nicht - die gemessen werden soll.
+      let gesehen = null;
+      try { gesehen = sessionStorage.getItem("voyara_freigabe_gesehen"); } catch { /* egal */ }
+      if (gesehen !== "1") {
+        liste.hidden = false;
+        knopf.setAttribute("aria-expanded", "true");
+        try { sessionStorage.setItem("voyara_freigabe_gesehen", "1"); } catch { /* egal */ }
+      }
     }
     this.freigabeZeigen(aktuell);
   },

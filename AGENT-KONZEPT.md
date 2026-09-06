@@ -811,3 +811,47 @@ Zahlenprüfung aus `agent/modell.js` greift auch hier.
 `warum_gefragt` mit Objekt-ID, Runde und Phase. Damit auch: Wird eher zum
 erstgenannten Vorschlag nachgefragt oder zu den anderen? Vor oder nach dem
 Öffnen der Detailseite?
+
+---
+
+## 21. Pflicht und Kür im Gesprächsanfang
+
+Der Agent fragte nach dem Vorgehen ("soll ich direkt losziehen?"), bevor er
+Ziel, Personenzahl oder Zeitraum kannte. Er hätte gar nicht losziehen
+können. Die Frage stand an der falschen Stelle.
+
+### Pflicht: ohne das geht nichts
+
+| Frage | wird übersprungen, wenn |
+|---|---|
+| Wohin soll es gehen? | Ziel steht schon fest |
+| Wer reist mit? | Personenzahl bekannt |
+| Wie viele seid ihr, wie viele Kinder? | nur bei "Familie" ohne Zahl |
+| Wann soll es losgehen? | Monat bekannt |
+| Hotel oder Ferienwohnung? | Art im Auftrag genannt |
+| Ein Zimmer oder zwei? | Ferienwohnung, oder höchstens zwei Personen |
+
+Diese Fragen sind keine Wahl. Der Agent stellt sie, bis sie beantwortet
+sind. Auf die Zielfrage greift dieselbe Klärung wie beim ersten Auftrag:
+Reiseart ("in die Berge") oder ein Ort, den es nicht gibt ("Madrid").
+
+### Kür: das Freiwillige
+
+Preisgrenze und eigene Wünsche. **Hier** steht jetzt die Frage nach dem
+Vorgehen, und damit die Selbstselektion, die gemessen werden soll:
+
+> Ich habe: Südtirol, 2 Erwachsene und 2 Kinder. Soll ich noch nach deinen
+> Vorlieben fragen - Preis, Ausstattung, was dir wichtig ist - oder suche
+> ich mit dem, was ich habe?
+
+Das ist die bessere Operationalisierung: Vorher konnte man "direkt losziehen"
+wählen, obwohl der Agent nichts hatte. Jetzt bezieht sich die Wahl auf etwas,
+das man tatsächlich weglassen kann.
+
+### Jede Antwort wird ganz gelesen
+
+Eine Antwort geht immer zuerst durch die allgemeine Erkennung und erst dann
+durch die Auswertung der gestellten Frage. Wer auf die Zeitraumfrage
+"Südtirol" sagt, korrigiert damit das Ziel - und das darf nicht verlorengehen,
+nur weil gerade nach dem Monat gefragt war. Was sich ändert, wird benannt und
+erscheint im Eckdaten-Kasten.

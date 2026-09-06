@@ -417,12 +417,50 @@ const Kern = {
     this.lauf.profil = {
       typ: a.typ, zielId: a.zielId, monat: a.monat, erwachsene: a.erwachsene,
       kinder: a.kinder, budget: a.budget, maxPreis: a.maxPreis,
+      artGenannt: a.artGenannt === true,
+      familieGenannt: a.familieGenannt === true,
       kriterien: a.kriterien || [],
     };
     // Fuer die Auswertung: hat das Modell verstanden oder die Ersatzlogik?
     this.notieren("verstanden", { quelle: ausModell ? "modell" : "schluesselwoerter", profil: this.lauf.profil });
     AgentPanel.eckdatenZeigen(Politik.eckdaten(this.lauf.profil));
 
+    // Ziel klaeren: Reiseart oder ein Ort, den es hier nicht gibt.
+    if (!this.lauf.profil.zielId && await this.zielKlaeren(text, a)) return;
+
+    // Kein Reisewunsch erkennbar. Das heisst nicht, dass nichts gesagt
+    // wurde: "wie gehts dir", "was ist das hier", "kannst du auch Flüge"
+    // sind Aeusserungen, auf die man antwortet. Frueher stand hier ein
+    // fester Satz, und damit war jede Eingabe ausserhalb des Idealpfads
+    // eine Sackgasse - der Chat wirkte wie ein Formular mit Fehlermeldung.
+    if (!a.zielId && !a.zielRoh && !a.kriterien.length && a.erwachsene == null && !a.budget) {
+      return this.plaudern(text);
+    }
+
+    const verstanden = Politik.ansage(this.lauf.profil);
+
+    if (!STELLSCHRAUBEN.eingangsfrage) {
+      if (verstanden) this.sagen(`Verstanden: ${verstanden}.`);
+      return this.suchen();
+    }
+
+    // Erst die Pflichtangaben klaeren - wohin, wer, wann, welche Art.
+    // Ohne die kann der Agent nicht suchen, also gibt es hier nichts zu
+    // waehlen. Die Frage nach dem Vorgehen kommt danach und betrifft nur
+    // das Freiwillige.
+    await this.naechstePflichtfrage();
+  },
+
+  /* Ziel klaeren, wenn keines im Katalog steht.
+     ------------------------------------------------------------------
+     Zwei Faelle: eine Reiseart ("in die Berge") oder ein Ort, den es
+     hier nicht gibt ("Madrid"). Beides fuehrt in die Zielwahl. Trifft
+     keiner zu, liefert die Funktion false und der Aufrufer macht weiter.
+
+     Steht als eigene Methode da, weil sie an zwei Stellen gebraucht
+     wird: beim ersten Auftrag und als Antwort auf die Pflichtfrage
+     "Wohin soll es gehen?". */
+  async zielKlaeren(text, a) {
     // Kein Ort genannt, aber eine Reiseart? Dann nicht nach dem Ortsnamen
     // fragen, sondern die passenden Ziele zur Wahl stellen. "In die Berge"
     // ist ein vollstaendiger Wunsch - die Seite hat Angebote dafuer, sie
@@ -443,7 +481,7 @@ const Kern = {
         AgentPanel.status("wartet auf deine Antwort");
         AgentPanel.oeffnen();
         this.sichern();
-        return;
+        return true;
       }
     }
 
@@ -466,31 +504,10 @@ const Kern = {
       AgentPanel.status("wartet auf deine Antwort");
       AgentPanel.oeffnen();
       this.sichern();
-      return;
+      return true;
     }
 
-    // Kein Reisewunsch erkennbar. Das heisst nicht, dass nichts gesagt
-    // wurde: "wie gehts dir", "was ist das hier", "kannst du auch Flüge"
-    // sind Aeusserungen, auf die man antwortet. Frueher stand hier ein
-    // fester Satz, und damit war jede Eingabe ausserhalb des Idealpfads
-    // eine Sackgasse - der Chat wirkte wie ein Formular mit Fehlermeldung.
-    if (!a.zielId && !a.zielRoh && !a.kriterien.length && a.erwachsene == null && !a.budget) {
-      return this.plaudern(text);
-    }
-
-    const verstanden = Politik.ansage(this.lauf.profil);
-
-    if (!STELLSCHRAUBEN.eingangsfrage) {
-      if (verstanden) this.sagen(`Verstanden: ${verstanden}.`);
-      return this.suchen();
-    }
-
-    // Die Eingangsfrage. Sie ist der Kern der Selbstselektion: Wer die
-    // Eckdaten abstimmt, gibt dem Agenten mehr Information und bekommt eine
-    // andere Interaktion als wer ihn einfach laufen laesst. Beides ist
-    // erlaubt, die Wahl wird protokolliert.
-    this.lauf.phase = "eingangsfrage";
-    await this.eingangsfrageStellen(text);
+    return false;
   },
 
   /* Alles, was kein Suchauftrag ist.
@@ -563,23 +580,45 @@ const Kern = {
     await Zeiger.warte(400);
     if (egal) this.sagen(`Dann nehme ich ${name}.`);
 
-    // Ab hier der normale Weg: erst die Frage nach dem Vorgehen
-    const verstanden = Politik.ansage(this.lauf.profil);
+    // Ab hier die restlichen Pflichtangaben, dann die Frage nach dem
+    // Vorgehen.
     if (!STELLSCHRAUBEN.eingangsfrage) {
+      const verstanden = Politik.ansage(this.lauf.profil);
       if (verstanden) this.sagen(`Verstanden: ${verstanden}.`);
       return this.suchen();
     }
-    this.lauf.phase = "eingangsfrage";
-    await this.eingangsfrageStellen(text);
+    await this.naechstePflichtfrage(egal ? `${name}, ausgesucht` : name);
   },
 
-  // Der Uebergang von "verstanden" zu "wie gehen wir vor". An zwei Stellen
-  // gebraucht: direkt nach dem Auftrag und nach der Zielwahl.
-  async eingangsfrageStellen(text) {
+  /* Der Pflichtteil.
+     ------------------------------------------------------------------
+     Wohin, wer, wann, welche Art. Ohne diese vier kann der Agent nicht
+     suchen, also wird gefragt, bis sie stehen - ohne Rueckfrage, ob man
+     das moechte. Erst danach kommt die Frage nach dem Vorgehen, und die
+     bezieht sich dann auf das, was wirklich freiwillig ist: Preisgrenze
+     und eigene Wuensche. */
+  async naechstePflichtfrage(quittung) {
+    const frage = Politik.naechstePflichtfrage(this.lauf.profil, this.lauf.vorfragenErledigt);
+    if (!frage) return this.eingangsfrageStellen(quittung);
+
+    this.lauf.phase = "vorfrage";
+    this.lauf.offeneVorfrage = frage.id;
+    const ersatz = [quittung ? `${quittung}.` : null, frage.frage].filter(Boolean).join(" ");
+    this.sagen(await this.formulieren(Politik.faktenVorfrage(frage, quittung, this.lauf.profil), ersatz));
+    AgentPanel.setSuggestions(frage.chips);
+    AgentPanel.status("wartet auf deine Antwort");
+    AgentPanel.oeffnen();
+    this.sichern();
+  },
+
+  // Der Uebergang von "verstanden" zu "wie gehen wir vor". Kommt erst,
+  // wenn Ziel, Personen, Zeitraum und Art feststehen.
+  async eingangsfrageStellen(quittung) {
+    this.lauf.phase = "eingangsfrage";
     const verstanden = Politik.ansage(this.lauf.profil);
-    const ersatz = `${verstanden ? `Verstanden: ${verstanden}.` : "Verstanden."} Wie möchtest du vorgehen? Ich kann vorher ein paar Eckdaten mit dir durchgehen — oder ich ziehe direkt los und zeige dir, was ich finde.`;
-    this.sagen(await this.formulieren(Politik.faktenAnsage(this.lauf.profil, text), ersatz));
-    AgentPanel.setSuggestions(["Eckdaten durchgehen", "Zieh direkt los"]);
+    const ersatz = `${quittung ? `${quittung}. ` : ""}${verstanden ? `Ich habe: ${verstanden}.` : ""} Soll ich noch nach deinen Vorlieben fragen — Preis, Ausstattung, was dir wichtig ist — oder suche ich mit dem, was ich habe?`;
+    this.sagen(await this.formulieren(Politik.faktenAnsage(this.lauf.profil, quittung), ersatz));
+    AgentPanel.setSuggestions(["Nach Vorlieben fragen", "Such mit dem, was du hast"]);
     AgentPanel.status("wartet auf deine Antwort");
     AgentPanel.oeffnen();
     this.sichern();
@@ -587,9 +626,9 @@ const Kern = {
 
   async antwortEingangsfrage(text) {
     this.sagen(text, "user");
-    const direkt = /direkt|einfach|sofort|leg los|zieh los|los ?geht|such einfach|mach du/i.test(text);
+    const direkt = /direkt|einfach|sofort|leg los|zieh los|los ?geht|such einfach|mach du|mit dem, was|was du hast|reicht so/i.test(text);
     const abstimmen = !direkt
-      && /eckdaten|durchgehen|abstimmen|frag|erst|vorher|besprechen|klären|klaeren|ja/i.test(text);
+      && /vorlieben|eckdaten|durchgehen|abstimmen|frag|erst|vorher|besprechen|klären|klaeren|ja/i.test(text);
 
     this.notieren("vorgehen", { gewaehlt: abstimmen ? "abstimmen" : "direkt" });
 
@@ -603,7 +642,7 @@ const Kern = {
     // Aeusserung wie die erste Frage. Zwei Nachrichten hintereinander,
     // von denen die erste nichts sagt, wirken wie ein Formular.
     await Zeiger.warte(400);
-    return this.naechsteVorfrage("Die Person moechte die Eckdaten durchgehen.");
+    return this.naechsteVorfrage("Die Person moechte noch ihre Vorlieben durchgehen.");
   },
 
   /* ==================================================================
@@ -644,7 +683,7 @@ const Kern = {
   async antwortVorfrage(text) {
     this.sagen(text, "user");
     const frage = Politik.VORFRAGEN.find((f) => f.id === this.lauf.offeneVorfrage);
-    if (!frage) return this.naechsteVorfrage();
+    if (!frage) return this.naechstePflichtfrage();
 
     const vorher = { ...this.lauf.profil, kriterien: [...(this.lauf.profil.kriterien || [])] };
 
@@ -666,7 +705,19 @@ const Kern = {
     AgentPanel.eckdatenZeigen(Politik.eckdaten(this.lauf.profil));
 
     await Zeiger.warte(450);
-    return this.naechsteVorfrage(geaendert.length ? geaendert.join(", ") : quittung);
+    const meldung = geaendert.length ? geaendert.join(", ") : quittung;
+    // Nach einer Pflichtfrage kommt die naechste Pflichtfrage - und wenn
+    // keine mehr offen ist, die Frage nach dem Vorgehen. Nach einer
+    // Kuerfrage geht es in der Kuer weiter.
+    // Auf die Zielfrage kam kein Ort aus dem Katalog: dann greift
+    // dieselbe Klaerung wie beim ersten Auftrag - Reiseart oder ein Ort,
+    // den es hier nicht gibt.
+    if (frage.id === "ziel" && !this.lauf.profil.zielId) {
+      if (await this.zielKlaeren(text, Politik.absicht(text))) return;
+    }
+
+    const warPflicht = Politik.PFLICHTFRAGEN.some((f) => f.id === frage.id);
+    return warPflicht ? this.naechstePflichtfrage(meldung) : this.naechsteVorfrage(meldung);
   },
 
   /* ==================================================================

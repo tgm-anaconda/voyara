@@ -206,6 +206,23 @@ img, svg { max-width: 100%; }
 .freigabe-option:hover { background: rgba(255,255,255,.1); color: #fff; }
 .freigabe-option.gewaehlt { background: var(--brand-500); color: #fff; font-weight: 600; }
 
+/* Der Hinweis, wozu der Regler da ist */
+.freigabe-info {
+  position: absolute; top: 8px; right: 16px;
+  width: 19px; height: 19px; border-radius: 50%;
+  background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.2);
+  color: rgba(255,255,255,.75); font-family: var(--font-body);
+  font-size: .7rem; font-weight: 700; font-style: italic;
+  cursor: pointer; line-height: 1; padding: 0;
+}
+.freigabe-info:hover, .freigabe-info.offen { background: rgba(255,255,255,.22); color: #fff; }
+.freigabe-erklaerung[hidden] { display: none !important; }
+.freigabe-erklaerung {
+  margin: 6px 0 0; font-size: .74rem; line-height: 1.45;
+  color: rgba(255,255,255,.62);
+  background: rgba(0,0,0,.18); border-radius: var(--r-sm); padding: 8px 10px;
+}
+
 /* Was der Chat verstanden hat */
 .agent-eckdaten[hidden] { display: none !important; }
 .agent-eckdaten {

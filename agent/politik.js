@@ -32,6 +32,11 @@ const Politik = {
     const t = text.toLowerCase();
     const a = {
       typ: /ferienwohnung|apartment|wohnung|ferienhaus|hütte|huette|chalet/.test(t) ? "apartment" : "hotel",
+      // Ob die Art ueberhaupt genannt wurde - "hotel" ist sonst nur der
+      // Vorgabewert und keine Aussage der Person.
+      artGenannt: /ferienwohnung|apartment|wohnung|ferienhaus|hütte|huette|chalet|hotel/.test(t),
+      // "mit meiner Familie" ohne Zahl: dann muss nachgefragt werden
+      familieGenannt: /famili/.test(t),
       zielId: null,
       erwachsene: null,
       kinder: null,
@@ -598,16 +603,34 @@ const Politik = {
      Dingen, die gerade gesagt wurden, und wirkt begriffsstutzig.
      ================================================================== */
 
-  VORFRAGEN: [
+  /* ==================================================================
+     Vorfragen in zwei Gruppen
+     ------------------------------------------------------------------
+     PFLICHT: Wohin, wer reist mit, wann, welche Art Unterkunft. Ohne das
+     kann der Agent nicht suchen - an diesen Fragen fuehrt kein Weg
+     vorbei, und deshalb sind sie keine Wahl. Vorher fragte der Agent
+     schon nach dem Vorgehen ("soll ich direkt losziehen?"), obwohl er
+     weder Ziel noch Zeitraum noch Personenzahl kannte. Er haette gar
+     nicht losziehen koennen.
+
+     KUER: Preisgrenze und eigene Wuensche. Die kann man nachreichen oder
+     weglassen - genau hier gehoert die Frage nach dem Vorgehen hin, und
+     genau hier liegt die Selbstselektion, die gemessen werden soll.
+     ================================================================== */
+
+  PFLICHTFRAGEN: [
     {
-      id: "zeitraum",
-      frage: "Wann soll es losgehen? Ein Monat reicht mir.",
-      chips: ["Im Juni", "Im September", "Im Januar", "Ist noch offen"],
-      ueberspringen: (p) => p.monat != null,
+      // Die wichtigste Frage ueberhaupt, und sie fehlte: Ohne Ziel gibt
+      // es nichts zu suchen. Bisher kam sie nur zufaellig zustande, weil
+      // die Person das Ziel von sich aus nannte.
+      id: "ziel",
+      frage: "Wohin soll es gehen?",
+      chips: ["Mallorca", "Kreta", "Tirol", "Ans Meer"],
+      ueberspringen: (p) => p.zielId != null,
       auswerten(text, p) {
-        const t = text.toLowerCase();
-        for (const [name, nr] of Object.entries(Politik.MONATE)) if (t.includes(name)) { p.monat = nr; return `${name.charAt(0).toUpperCase() + name.slice(1)}, notiert.`; }
-        return "Gut, dann lasse ich den Zeitraum so stehen.";
+        Politik.uebernehmen(text, p);
+        if (p.zielId && typeof ZIEL_NACH_ID !== "undefined") return ZIEL_NACH_ID[p.zielId]?.name;
+        return null;   // der Kern klaert Reiseart oder unbekannten Ort
       },
     },
     {
@@ -616,23 +639,73 @@ const Politik = {
       chips: ["Zu zweit", "Familie mit zwei Kindern", "Allein", "Zu viert"],
       ueberspringen: (p) => p.erwachsene != null,
       auswerten(text, p) {
-        const t = text.toLowerCase();
-        const erw = t.match(/(\d+)\s*(erwachsen|person|leute)/);
-        const kin = t.match(/(\d+)\s*kind/);
-        if (erw) p.erwachsene = Math.min(6, +erw[1]);
-        else if (/allein|solo|nur ich/.test(t)) p.erwachsene = 1;
-        else if (/zu zweit|paar|zwei/.test(t)) p.erwachsene = 2;
-        else if (/zu viert|vier/.test(t)) p.erwachsene = 4;
-        else if (/famili/.test(t)) p.erwachsene = 2;
-        if (kin) p.kinder = Math.min(4, +kin[1]);
-        else if (/famili|kinder/.test(t) && p.kinder == null) p.kinder = 2;
-        if (/famili|kind/.test(t) && !(p.kriterien || []).some((k) => k.id === "familie")) {
-          (p.kriterien ||= []).push({ id: "familie", gewicht: 1 });
-        }
+        Politik.uebernehmen(text, p);
+        if (p.erwachsene == null && /famili/.test(text.toLowerCase())) p.erwachsene = 2;
         const wer = [p.erwachsene ? `${p.erwachsene} Erwachsene` : null, p.kinder ? `${p.kinder} Kinder` : null].filter(Boolean);
-        return wer.length ? `${Politik.aufzaehlen(wer)}, notiert.` : "Alles klar.";
+        return wer.length ? Politik.aufzaehlen(wer) : null;
       },
     },
+    {
+      // Nur wenn "Familie" gesagt wurde, aber keine Zahl kam. Sonst
+      // stuende der Agent mit "eine Familie" da und wuesste nicht,
+      // fuer wie viele er suchen soll.
+      id: "familiengroesse",
+      frage: "Wie viele seid ihr denn — und wie viele Kinder sind dabei?",
+      chips: ["2 Erwachsene, 1 Kind", "2 Erwachsene, 2 Kinder", "2 Erwachsene, 3 Kinder"],
+      ueberspringen: (p) => p.kinder != null || !(p.erwachsene != null && p.familieGenannt),
+      auswerten(text, p) {
+        Politik.uebernehmen(text, p);
+        if (p.kinder == null) p.kinder = 0;
+        const wer = [p.erwachsene ? `${p.erwachsene} Erwachsene` : null, p.kinder ? `${p.kinder} Kinder` : null].filter(Boolean);
+        return wer.length ? Politik.aufzaehlen(wer) : null;
+      },
+    },
+    {
+      id: "zeitraum",
+      frage: "Wann soll es losgehen? Ein Monat reicht mir.",
+      chips: ["Im Juni", "Im September", "Im Januar", "Im Februar"],
+      ueberspringen: (p) => p.monat != null,
+      auswerten(text, p) {
+        const t = text.toLowerCase();
+        for (const [name, nr] of Object.entries(Politik.MONATE)) {
+          if (t.includes(name)) { p.monat = nr; return name.charAt(0).toUpperCase() + name.slice(1); }
+        }
+        return null;
+      },
+    },
+    {
+      id: "art",
+      frage: "Hotel oder lieber eine Ferienwohnung?",
+      chips: ["Hotel", "Ferienwohnung", "Ist mir egal"],
+      // Uebersprungen, wenn im Auftrag schon eine Art genannt wurde
+      ueberspringen: (p) => p.artGenannt === true,
+      auswerten(text, p) {
+        const t = text.toLowerCase();
+        if (/ferienwohnung|wohnung|apartment|ferienhaus|hütte|huette|chalet|selbst kochen/.test(t)) {
+          p.typ = "apartment"; p.artGenannt = true; return "Ferienwohnung";
+        }
+        if (/hotel/.test(t)) { p.typ = "hotel"; p.artGenannt = true; return "Hotel"; }
+        p.typ = "hotel"; p.artGenannt = true;
+        return "Hotel, das ist die groessere Auswahl";
+      },
+    },
+    {
+      // Nur im Hotel und nur, wenn mehr als zwei Menschen reisen. Ein
+      // Zimmer fuer vier gibt es, aber es ist eine andere Reise als zwei
+      // Zimmer - und der Preis unterscheidet sich deutlich.
+      id: "zimmer",
+      frage: "Ein gemeinsames Zimmer oder zwei getrennte?",
+      chips: ["Ein Zimmer", "Zwei Zimmer"],
+      ueberspringen: (p) => p.typ === "apartment" || ((p.erwachsene || 0) + (p.kinder || 0)) <= 2,
+      auswerten(text, p) {
+        const t = text.toLowerCase();
+        p.zimmer = /zwei|getrennt|zwei zimmer|2 zimmer|separat/.test(t) ? 2 : 1;
+        return p.zimmer === 2 ? "zwei Zimmer" : "ein Zimmer";
+      },
+    },
+  ],
+
+  KUERFRAGEN: [
     {
       id: "budget",
       frage: "Gibt es eine Obergrenze pro Nacht?",
@@ -641,32 +714,34 @@ const Politik = {
       auswerten(text, p) {
         const t = text.toLowerCase();
         const zahl = t.match(/(\d{2,4})/);
-        if (zahl && !/keine rolle|egal|offen/.test(t)) { p.maxPreis = +zahl[1]; return `Höchstens ${p.maxPreis} € pro Nacht.`; }
-        if (/günstig|guenstig|billig|wenig/.test(t)) { p.budget = "niedrig"; return "Ich halte den Preis im Blick."; }
-        return "Gut, dann ist der Preis nicht das erste Kriterium.";
+        if (zahl && !/keine rolle|egal|offen/.test(t)) { p.maxPreis = +zahl[1]; return `höchstens ${p.maxPreis} € pro Nacht`; }
+        if (/günstig|guenstig|billig|wenig/.test(t)) { p.budget = "niedrig"; return "günstig"; }
+        return null;
       },
     },
     {
-      id: "eigenes",
-      // Die offene Frage. Sie ist der Grund fuer die ganze Vorfragenrunde:
-      // hier bringt die teilnehmende Person etwas ein, das kein Filter der
-      // Seite abbildet.
+      // Die offene Frage. Sie ist der Grund fuer die ganze Kuerrunde:
+      // hier bringt die Person etwas ein, das kein Filter der Seite
+      // abbildet.
       frage: "Und worauf soll ich besonders achten? Schreib ruhig frei, was dir wichtig ist.",
+      id: "eigenes",
       chips: ["Sauberkeit ist mir wichtig", "Möglichst ruhig", "Gutes Essen", "Nichts Bestimmtes"],
       ueberspringen: () => false,
       auswerten(text, p) {
         const gefunden = Politik.kriterienAusText(text);
-        if (!gefunden.length) return "Verstanden, dann gehe ich nach Bewertung und Preis.";
+        if (!gefunden.length) return null;
         for (const g of gefunden) {
           const da = (p.kriterien ||= []).find((k) => k.id === g.id);
           if (da) da.gewicht = Math.min(3, da.gewicht + g.gewicht);
           else p.kriterien.push({ ...g, gewicht: g.gewicht + 1 });
         }
-        const namen = gefunden.map((g) => Politik.kriterium(g.id)?.label).filter(Boolean);
-        return `${Politik.aufzaehlen(namen)} — darauf achte ich beim Vergleich besonders.`;
+        return Politik.aufzaehlen(gefunden.map((g) => Politik.kriterium(g.id)?.label).filter(Boolean));
       },
     },
   ],
+
+  // Rueckwaertskompatibel: manche Stellen greifen noch auf VORFRAGEN zu
+  get VORFRAGEN() { return [...this.PFLICHTFRAGEN, ...this.KUERFRAGEN]; },
 
   /* Angaben aus beliebigem Text ins Profil uebernehmen.
      ------------------------------------------------------------------
@@ -678,7 +753,6 @@ const Politik = {
     const a = this.absicht(text);
     const t = text.toLowerCase();
 
-    // Personenzahl nur, wenn sie im Text wirklich vorkommt
     if (/\d|zwei|drei|vier|fünf|fuenf|sechs|zweit|dritt|viert|allein|paar|famili|kind/.test(t)) {
       if (a.erwachsene != null) profil.erwachsene = a.erwachsene;
       if (a.kinder != null) profil.kinder = a.kinder;
@@ -687,6 +761,7 @@ const Politik = {
     if (a.maxPreis != null) profil.maxPreis = a.maxPreis;
     if (a.budget) profil.budget = a.budget;
     if (a.zielId) profil.zielId = a.zielId;
+    if (a.artGenannt) { profil.typ = a.typ; profil.artGenannt = true; }
 
     for (const g of a.kriterien || []) {
       const da = (profil.kriterien ||= []).find((k) => k.id === g.id);
@@ -714,6 +789,9 @@ const Politik = {
     if (vorher.zielId !== nachher.zielId && nachher.zielId && typeof ZIEL_NACH_ID !== "undefined") {
       raus.push(ZIEL_NACH_ID[nachher.zielId]?.name);
     }
+    if (vorher.typ !== nachher.typ && nachher.artGenannt) {
+      raus.push(nachher.typ === "apartment" ? "Ferienwohnung" : "Hotel");
+    }
     const alt = new Set((vorher.kriterien || []).map((k) => k.id));
     for (const k of nachher.kriterien || []) {
       if (!alt.has(k.id)) raus.push(this.kriterium(k.id)?.label);
@@ -729,7 +807,7 @@ const Politik = {
     if (profil.zielId && typeof ZIEL_NACH_ID !== "undefined") {
       raus.push({ feld: "Ziel", wert: ZIEL_NACH_ID[profil.zielId]?.name });
     }
-    if (profil.typ === "apartment") raus.push({ feld: "Art", wert: "Ferienwohnung" });
+    if (profil.artGenannt) raus.push({ feld: "Art", wert: profil.typ === "apartment" ? "Ferienwohnung" : "Hotel" });
     if (profil.monat) {
       const name = Object.keys(this.MONATE).find((m) => this.MONATE[m] === profil.monat && m.length > 3);
       if (name) raus.push({ feld: "Zeit", wert: name.charAt(0).toUpperCase() + name.slice(1) });
@@ -738,6 +816,7 @@ const Politik = {
     if (profil.erwachsene) personen.push(`${profil.erwachsene} Erw.`);
     if (profil.kinder) personen.push(`${profil.kinder} Kinder`);
     if (personen.length) raus.push({ feld: "Wer", wert: personen.join(" + ") });
+    if (profil.zimmer > 1) raus.push({ feld: "Zimmer", wert: String(profil.zimmer) });
     if (profil.maxPreis) raus.push({ feld: "Bis", wert: `${profil.maxPreis} €` });
     else if (profil.budget === "niedrig") raus.push({ feld: "Preis", wert: "günstig" });
     for (const k of profil.kriterien || []) {
@@ -745,6 +824,14 @@ const Politik = {
       if (l) raus.push({ feld: "Wunsch", wert: l });
     }
     return raus.filter((x) => x.wert);
+  },
+
+  naechstePflichtfrage(profil, erledigt) {
+    return this.PFLICHTFRAGEN.find((f) => !erledigt.includes(f.id) && !f.ueberspringen(profil)) || null;
+  },
+
+  naechsteKuerfrage(profil, erledigt) {
+    return this.KUERFRAGEN.find((f) => !erledigt.includes(f.id) && !f.ueberspringen(profil)) || null;
   },
 
   naechsteVorfrage(profil, erledigt) {
