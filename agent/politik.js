@@ -71,12 +71,21 @@ const Politik = {
     };
     const ZAHLEN = "\\d+|ein|eine|einem|einer|eins|zwei|drei|vier|fünf|fuenf|sechs|sieben|acht";
 
-    const erw = t.match(new RegExp(`(${ZAHLEN})\\s+(?:erwachsene[nr]?|personen|leute|pers\\.?)`));
-    if (erw) a.erwachsene = Math.min(6, zahl(erw[1]) ?? 2);
-    else if (/zu zweit|für zwei|fuer zwei/.test(t)) a.erwachsene = 2;
-    else if (/zu dritt|für drei|fuer drei/.test(t)) a.erwachsene = 3;
-    else if (/zu viert|für vier|fuer vier/.test(t)) a.erwachsene = 4;
-    else if (/allein|solo|nur ich/.test(t)) a.erwachsene = 1;
+    // "drei Erwachsene" nennt Erwachsene. "zu dritt" und "drei Personen"
+    // nennen eine Gesamtzahl und sagen nichts darueber, wer davon Kind
+    // ist. Das war der Unterschied, an dem es scheiterte: Auf "wir sind
+    // zu dritt" machte der Agent zwei Erwachsene und ein Kind daraus -
+    // ebenso gut koennte es ein Elternteil mit zwei Kindern sein.
+    const erwGenau = t.match(new RegExp(`(${ZAHLEN})\\s+erwachsene[nr]?`));
+    const gesamt = t.match(new RegExp(`(${ZAHLEN})\\s+(?:personen|leute|pers\\.?)`));
+    if (erwGenau) a.erwachsene = Math.min(6, zahl(erwGenau[1]) ?? 2);
+    else if (gesamt) a.personen = Math.min(8, zahl(gesamt[1]) ?? 2);
+    else if (/zu zweit|für zwei|fuer zwei/.test(t)) a.personen = 2;
+    else if (/zu dritt|für drei|fuer drei/.test(t)) a.personen = 3;
+    else if (/zu viert|für vier|fuer vier/.test(t)) a.personen = 4;
+    else if (/zu fünft|zu fuenft/.test(t)) a.personen = 5;
+    else if (/allein|solo|nur ich/.test(t)) { a.erwachsene = 1; a.kinder = 0; }
+
     // "Familie" ohne Zahl ergibt bewusst KEINE Zahl. Wie viele Menschen
     // eine Familie hat, weiss nur die Person - das anzunehmen war der
     // Grund, warum der Agent ungefragt von zwei Erwachsenen und zwei
@@ -638,26 +647,55 @@ const Politik = {
       },
     },
     {
-      // Eine Frage, zwei Faelle: Wer "Familie" gesagt hat, wird nach der
-      // Familie gefragt, alle anderen danach, wer mitreist. Welche
-      // Fassung, entscheidet das Modell aus den Fakten - deshalb steht
-      // hier nur die knappste Form als Rueckfall.
+      // Eine Frage, drei Faelle. Wer nichts gesagt hat, wird gefragt,
+      // wer mitreist. Wer "Familie" gesagt hat, wird nach der Familie
+      // gefragt. Und wer eine Gesamtzahl genannt hat, wird nach der
+      // Aufteilung gefragt - "zu dritt" laesst offen, ob zwei Erwachsene
+      // mit einem Kind reisen oder ein Elternteil mit zweien. Den Satz
+      // formuliert das Modell, hier steht nur, was fehlt.
       id: "gruppe",
       frage: "Wer reist mit?",
-      braucht: (p) => p.familieGenannt
-        ? "Wie viele Menschen mitreisen. Die Person hat von ihrer Familie gesprochen, aber keine Zahl genannt - frag, wie gross die Familie ist, also wie viele Erwachsene und wie viele Kinder. Nimm keine Zahl an."
-        : "Wie viele Menschen mitreisen, Erwachsene und Kinder getrennt.",
-      chips: ["Zu zweit", "Allein", "2 Erwachsene, 2 Kinder", "Zu viert"],
-      ueberspringen: (p) => p.erwachsene != null && (p.kinder != null || !p.familieGenannt),
+      // Die Vorschlaege haengen am Stand: Ist die Gesamtzahl bekannt,
+      // sind es die moeglichen Aufteilungen - genau die Wahl, um die es
+      // dann noch geht.
+      chips: (p) => {
+        if (p.personen != null && p.erwachsene == null) {
+          return Politik.aufteilungen(p.personen).map((s) => s.replace(" und keine Kinder", ""));
+        }
+        if (p.familieGenannt) return ["2 Erwachsene, 2 Kinder", "2 Erwachsene, 1 Kind", "1 Erwachsener, 2 Kinder"];
+        return ["Zu zweit", "Allein", "Zu viert"];
+      },
+      braucht: (p) => {
+        if (p.personen != null && p.erwachsene == null) {
+          return `Wie sich die ${p.personen} Personen aufteilen. Nenn die moeglichen `
+            + `Aufteilungen ausdruecklich und lass die Person waehlen, statt eine `
+            + `anzunehmen: ${Politik.aufteilungen(p.personen).join(", oder ")}. `
+            + `Rate nicht.`;
+        }
+        if (p.familieGenannt) {
+          return "Wie viele Menschen mitreisen. Die Person hat von ihrer Familie "
+            + "gesprochen, aber keine Zahl genannt - frag, wie gross die Familie "
+            + "ist, also wie viele Erwachsene und wie viele Kinder. Nimm keine Zahl an.";
+        }
+        return "Wie viele Menschen mitreisen, Erwachsene und Kinder getrennt.";
+      },
+      ueberspringen: (p) => p.erwachsene != null && p.kinder != null,
       auswerten(text, p) {
         Politik.uebernehmen(text, p);
-        // Wer die Familie genannt hat und jetzt Erwachsene nennt, hat
-        // damit auch gesagt, dass keine weiteren Kinder dabei sind.
-        if (p.erwachsene != null && p.kinder == null && /\d|zwei|drei|vier|allein|zweit|viert/.test(text.toLowerCase())) {
-          p.kinder = 0;
+        // Aufteilung als blosse Zahl: "2 und 1", "einer mit zwei"
+        if (p.personen != null && p.erwachsene == null) {
+          const zahlen = (text.match(/\d+/g) || []).map(Number);
+          if (zahlen.length === 2 && zahlen[0] + zahlen[1] === p.personen) {
+            p.erwachsene = zahlen[0]; p.kinder = zahlen[1];
+          }
         }
-        const wer = [p.erwachsene ? `${p.erwachsene} Erwachsene` : null, p.kinder ? `${p.kinder} Kinder` : null].filter(Boolean);
-        return wer.length ? Politik.aufzaehlen(wer) : null;
+        if (p.erwachsene != null && p.kinder == null) {
+          p.kinder = p.personen != null ? Math.max(0, p.personen - p.erwachsene) : 0;
+        }
+        if (p.erwachsene == null) return null;
+        p.personen = p.erwachsene + (p.kinder || 0);
+        const wer = [`${p.erwachsene} Erwachsene`, p.kinder ? `${p.kinder} Kinder` : null].filter(Boolean);
+        return Politik.aufzaehlen(wer);
       },
     },
     {
@@ -757,9 +795,26 @@ const Politik = {
     const a = this.absicht(text);
     const t = text.toLowerCase();
 
+    if (a.familieGenannt) profil.familieGenannt = true;
     if (/\d|zwei|drei|vier|fünf|fuenf|sechs|zweit|dritt|viert|allein|paar|famili|kind/.test(t)) {
       if (a.erwachsene != null) profil.erwachsene = a.erwachsene;
       if (a.kinder != null) profil.kinder = a.kinder;
+      if (a.personen != null) profil.personen = a.personen;
+    }
+
+    // Eine Gesamtzahl ohne jeden Hinweis auf Kinder heisst: lauter
+    // Erwachsene. Das gilt aber nur, wenn im ganzen bisherigen Gespraech
+    // von keiner Familie und keinen Kindern die Rede war - deshalb steht
+    // die Schlussfolgerung hier und nicht in absicht(), die immer nur
+    // den letzten Satz sieht. "Ich fahre mit meiner Familie" und drei
+    // Nachrichten spaeter "wir sind zu dritt" ergibt sonst wieder drei
+    // Erwachsene, und die Frage nach den Kindern faellt aus.
+    const kindImSatz = /kind|kids|klein|jahre? alt|sohn|tochter/.test(t);
+    if (kindImSatz) profil.familieGenannt = true;
+    if (profil.personen != null && profil.erwachsene == null
+        && !profil.familieGenannt && !kindImSatz) {
+      profil.erwachsene = profil.personen;
+      profil.kinder = 0;
     }
     if (a.monat != null) profil.monat = a.monat;
     if (a.maxPreis != null) profil.maxPreis = a.maxPreis;
@@ -828,6 +883,137 @@ const Politik = {
       if (l) raus.push({ feld: "Wunsch", wert: l });
     }
     return raus.filter((x) => x.wert);
+  },
+
+  // Alle plausiblen Aufteilungen einer Gesamtzahl, als Text. Erwachsene
+  // zuerst, weil "2 Erwachsene und 1 Kind" haeufiger ist als "1
+  // Erwachsener und 2 Kinder" - genannt werden aber beide, denn genau
+  // das war der Fehler: aus "zu dritt" wurde ungefragt die haeufigere
+  // Variante.
+  /* Rueckfragen der Person
+     ------------------------------------------------------------------
+     Der Agent arbeitete bisher stur seine Fragenliste ab. Wer
+     dazwischen selbst etwas fragte - "wie sind da die preislichen
+     Unterschiede?" -, bekam keine Antwort, sondern die naechste Frage.
+     Das ist das Gegenteil von Beratung und faellt sofort auf.
+
+     Erkannt wird eine Rueckfrage am Fragezeichen oder an einem
+     Fragewort am Anfang. Lieber eine zu viel als eine zu wenig: Wird
+     ein Satz faelschlich als Frage gelesen, wird er trotzdem
+     ausgewertet, und die offene Frage kommt noch einmal. Wird eine
+     echte Frage uebersehen, steht sie unbeantwortet im Raum. */
+  istRueckfrage(text) {
+    const t = String(text).trim().toLowerCase();
+    if (!t) return false;
+    // "Hotel oder Ferienwohnung?" als Antwort zurueckgespiegelt ist
+    // keine Rueckfrage, sondern eine Wahl mit Unsicherheit.
+    if (/^(ja|nein|ok|okay|passt|gerne|klar)\b/.test(t)) return false;
+    if (t.includes("?")) return true;
+    return /^(was|wie|wieso|warum|weshalb|wann|wo|welche[rsn]?|wer|wieviel|wie viel|gibt es|hast du|habt ihr|kannst du|koennt ihr|könnt ihr|kann man|gibts)\b/.test(t);
+  },
+
+  /* Preise im Katalog, nach Lage der Person gefiltert.
+     ------------------------------------------------------------------
+     Damit kann der Agent auf "was kostet das denn so" mit Zahlen
+     antworten statt auszuweichen. Drei Baender, weil eine Spanne von 58
+     bis 480 Euro nichts sagt: Interessant ist, wo die Masse liegt. */
+  preisbild(profil) {
+    const alle = [
+      ...(typeof HOTELS !== "undefined" ? HOTELS : []),
+      ...(typeof APARTMENTS !== "undefined" ? APARTMENTS : []),
+    ].filter((o) => {
+      if (profil.zielId && o.ziel !== profil.zielId) return false;
+      if (profil.artGenannt && profil.typ) {
+        const istWohnung = typeof APARTMENTS !== "undefined" && APARTMENTS.includes(o);
+        if ((profil.typ === "apartment") !== istWohnung) return false;
+      }
+      return true;
+    });
+    const preise = alle.map((o) => o.pricePerNight).filter(Boolean).sort((a, b) => a - b);
+    if (preise.length < 3) return null;
+
+    const bei = (anteil) => preise[Math.floor((preise.length - 1) * anteil)];
+    const unten = bei(0.33), oben = bei(0.66);
+    return {
+      haeuser: preise.length,
+      billigstesProNacht: preise[0],
+      teuerstesProNacht: preise[preise.length - 1],
+      mitteProNacht: bei(0.5),
+      guenstigesDrittelBisProNacht: unten,
+      gehobenesDrittelAbProNacht: oben,
+      hinweis: "Preise pro Nacht. Nenne hoechstens zwei dieser Zahlen, sonst wird es eine Tabelle.",
+    };
+  },
+
+  /* Fakten fuer eine Rueckfrage.
+     ------------------------------------------------------------------
+     Der Agent soll die Frage beantworten, wo er es kann, und sonst
+     ehrlich sagen, dass er es bei der Suche klaert - nicht erfinden und
+     nicht ueberhoeren. Die offene Frage kommt danach noch einmal, sonst
+     bricht das Gespraech an dieser Stelle ab. */
+  faktenRueckfrage(text, profil, frage) {
+    const ziel = profil.zielId ? this.zielFakten(profil.zielId) : null;
+    const preise = /preis|kost|teuer|guenstig|günstig|budget|euro|geld/.test(text.toLowerCase())
+      ? this.preisbild(profil) : null;
+    return {
+      lage: "Die Person hat eine Frage gestellt, statt zu antworten. Beantworte "
+        + "zuerst ihre Frage. Was die Fakten nicht hergeben, weisst du noch nicht - "
+        + "dann sag, dass du es bei der Suche pruefst, und erfinde nichts. Erst "
+        + "danach, in einem Satz, die offene Frage noch einmal.",
+      wasDiePersonGefragtHat: text,
+      preise,
+      ziel: ziel ? { name: ziel.name, land: ziel.land, unterkuenfte: ziel.unterkuenfte } : null,
+      wonachDuFilternKannst: this.KRITERIEN.map((k) => k.label),
+      offeneFrage: frage ? (typeof frage.braucht === "function" ? frage.braucht(profil) : frage.frage) : null,
+    };
+  },
+
+  /* Notloesung, wenn eine Pflichtfrage zweimal unbeantwortet blieb.
+     ------------------------------------------------------------------
+     Die naheliegende Lesart wird genommen, damit das Gespraech
+     weitergeht - aber sie wird protokolliert. In der Auswertung ist
+     dann zu erkennen, dass die Zahl vom Agenten stammt und nicht von
+     der Person, und der Fall laesst sich ausschliessen. */
+  /* Der Fragesatz fuer den Fall, dass das Modell nicht erreichbar ist.
+     Normalerweise formuliert das Modell die Frage aus dem, was fehlt;
+     faellt es aus, muss hier ein brauchbarer Satz stehen. Nur die
+     Gruppenfrage braucht dafuer eine Fallunterscheidung - bei allen
+     anderen genuegt der hinterlegte Satz. */
+  // Vorschlagsknoepfe einer Frage. Sie duerfen vom Stand abhaengen,
+  // deshalb hier statt direkt am Feld.
+  chipsFuer(frage, profil) {
+    if (!frage) return null;
+    return typeof frage.chips === "function" ? frage.chips(profil) : (frage.chips || null);
+  },
+
+  ersatzfrage(frage, profil) {
+    if (frage.id === "gruppe" && profil.personen != null && profil.erwachsene == null) {
+      return `Wie teilt ihr euch auf - ${this.aufteilungen(profil.personen).join(", oder ")}?`;
+    }
+    return frage.frage;
+  },
+
+  annahme(frageId, profil) {
+    if (frageId === "gruppe" && profil.erwachsene == null) {
+      profil.erwachsene = profil.personen || 2;
+      profil.kinder = 0;
+      return { feld: "gruppe", erwachsene: profil.erwachsene, kinder: 0 };
+    }
+    if (frageId === "art" && !profil.artGenannt) {
+      profil.typ = "hotel"; profil.artGenannt = true;
+      return { feld: "art", typ: "hotel" };
+    }
+    return null;
+  },
+
+  aufteilungen(gesamt) {
+    const raus = [];
+    for (let erw = gesamt; erw >= 1; erw--) {
+      const kinder = gesamt - erw;
+      raus.push(`${erw} ${erw === 1 ? "Erwachsener" : "Erwachsene"}`
+        + (kinder ? ` und ${kinder} ${kinder === 1 ? "Kind" : "Kinder"}` : " und keine Kinder"));
+    }
+    return raus;
   },
 
   naechstePflichtfrage(profil, erledigt) {
@@ -1134,8 +1320,14 @@ const Politik = {
   faktenVorfrage(frage, quittung, profil, letzteEingabe) {
     const ziel = profil.zielId ? this.zielFakten(profil.zielId) : null;
     return {
-      lage: "Bestaetige knapp das Verstandene und stell die naechste Frage - beides in einem Zug.",
-      wasDuVerstandenHast: quittung || null,
+      // Keine Bestaetigung mehr. Was der Agent verstanden hat, steht
+      // sichtbar in der Uebersicht ueber dem Gespraech - es davor noch
+      // einmal zu sagen, war eine Doppelung, und weil sie in jeder
+      // Nachricht stand, klang sie nach Formular: "Ostsee ist notiert.
+      // Maerz ist notiert. Ein Hotel mit Pool ist notiert."
+      lage: "Stell die naechste Frage. Wiederhole nicht, was du verstanden hast - "
+        + "das steht bereits sichtbar in der Uebersicht ueber dem Gespraech.",
+      _quittungNurFuerDenNotfall: quittung || null,
       // Bewusst kein fertiger Fragesatz: Bekam das Modell einen, gab es
       // ihn unveraendert weiter, und die Frage stand dann neben der
       // Antwort der Person, statt sich auf sie zu beziehen. Es bekommt

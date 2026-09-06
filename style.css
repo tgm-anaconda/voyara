@@ -1416,3 +1416,64 @@ body.agent-collapsed .agent-head .icon-btn { margin-left: 0; transform: rotate(4
   #agentZeiger, #agentKlickring { transition: none; }
   #agentKlickring.puls { animation-duration: .2s; }
 }
+
+/* ==================================================================
+   Startbildschirm - Cookie-Hinweis und Wahl der Freigabestufe
+   ------------------------------------------------------------------
+   Bewusst zurueckhaltend: Der Bildschirm soll nach Einwilligung
+   aussehen und nicht nach einer Werbeeinblendung. Keine Stufe wird
+   farblich hervorgehoben - eine hervorgehobene Zeile waere eine
+   Empfehlung, und die Wahl ist der Messwert.
+   ================================================================== */
+.startschirm {
+  position: fixed; inset: 0; z-index: 900;
+  background: rgba(16, 22, 30, .62);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px; overflow-y: auto;
+}
+body.startschirm-offen { overflow: hidden; }
+
+.startschirm-karte {
+  background: #fff; border-radius: 16px; width: 100%; max-width: 520px;
+  padding: 26px 26px 22px; box-shadow: 0 20px 60px rgba(0, 0, 0, .3);
+  max-height: calc(100dvh - 40px); overflow-y: auto;
+}
+.startschirm-karte h2 { font-size: 1.25rem; color: var(--brand-900); margin: 0 0 12px; }
+.startschirm-karte h3 { font-size: 1rem; color: var(--brand-900); margin: 0 0 8px; }
+.startschirm-karte p { font-size: .9rem; line-height: 1.5; color: var(--ink-700); margin: 0 0 12px; }
+
+.startschirm-cookie {
+  background: var(--bg-soft, #f4f6f5); border-radius: 10px;
+  padding: 12px 14px; font-size: .84rem !important;
+}
+.startschirm-block { border-top: 1px solid var(--line); padding-top: 18px; margin-top: 4px; }
+
+.startschirm-stufen { display: flex; flex-direction: column; gap: 8px; margin: 14px 0 12px; }
+.startschirm-stufe {
+  display: flex; gap: 11px; align-items: flex-start;
+  border: 1px solid var(--line); border-radius: 10px; padding: 12px 13px;
+  cursor: pointer; transition: border-color .15s, background .15s;
+}
+.startschirm-stufe:hover { background: var(--bg-soft, #f7f9f8); }
+.startschirm-stufe:has(input:checked) { border-color: var(--brand-600, #2e7d5b); background: var(--bg-soft, #f4f8f6); }
+.startschirm-stufe input { margin-top: 2px; flex: none; width: 17px; height: 17px; accent-color: var(--brand-600, #2e7d5b); }
+.startschirm-stufe-text { display: flex; flex-direction: column; gap: 3px; }
+.startschirm-stufe-text strong { font-size: .92rem; color: var(--ink-900, #1a1f24); font-weight: 600; }
+.startschirm-stufe-text span { font-size: .84rem; line-height: 1.45; color: var(--ink-700); }
+
+.startschirm-mehr {
+  background: none; border: none; padding: 0; cursor: pointer;
+  font-size: .84rem; color: var(--brand-700, #2e7d5b); text-decoration: underline;
+}
+.startschirm-detail { margin-top: 10px; }
+.startschirm-detail[hidden] { display: none !important; }
+.startschirm-detail p { font-size: .84rem !important; margin-bottom: 8px; }
+
+.startschirm-weiter { width: 100%; margin-top: 18px; justify-content: center; }
+.startschirm-weiter:disabled { opacity: .45; cursor: not-allowed; }
+
+@media (max-width: 560px) {
+  .startschirm { padding: 12px; align-items: flex-start; }
+  .startschirm-karte { padding: 20px 18px 18px; border-radius: 14px; }
+  .startschirm-karte h2 { font-size: 1.12rem; }
+}

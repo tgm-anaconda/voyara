@@ -855,3 +855,174 @@ durch die Auswertung der gestellten Frage. Wer auf die Zeitraumfrage
 "Südtirol" sagt, korrigiert damit das Ziel - und das darf nicht verlorengehen,
 nur weil gerade nach dem Monat gefragt war. Was sich ändert, wird benannt und
 erscheint im Eckdaten-Kasten.
+
+---
+
+## 22. Der Startbildschirm: die Freigabewahl als eigener Messpunkt
+
+### Das Problem mit dem Regler allein
+
+Abschnitt 19 hat die Freigabestufe zur abhängigen Variablen gemacht: Wie viel
+Entscheidungsgewalt gibt jemand einem Agenten, den er nicht kennt? Umgesetzt
+war sie als Regler im Chatfenster, mit einer zufällig gesetzten Startstufe.
+
+Damit misst man aber zuerst etwas anderes, nämlich wer den Regler überhaupt
+findet. Wer ihn übersieht, bleibt auf dem gewürfelten Startwert stehen und
+erzeugt einen Datenpunkt, der nichts über seine Bereitschaft aussagt, sondern
+etwas über die Auffindbarkeit eines Bedienelements. Bei einer Stichprobe in der
+Größenordnung dieser Erhebung wäre der Anteil solcher Fälle groß genug, um die
+Verteilung zu bestimmen.
+
+### Die Lösung
+
+Vor der ersten Nutzung steht ein Bildschirm, wie ihn jede Seite im Netz für die
+Einwilligung zeigt. Er erklärt in vier Sätzen, was der Assistent tut, und
+stellt die Wahl der Freigabestufe ausdrücklich. Die Seite ist erst benutzbar,
+wenn gewählt wurde.
+
+Damit gibt es zwei Messungen statt einer:
+
+| Messung | Wann | Was sie zeigt |
+|---|---|---|
+| Startwahl | vor dem ersten Kontakt | Bereitschaft aus der Vorstellung heraus |
+| Bewegung am Regler | während der Nutzung | Korrektur nach Erfahrung mit dem Agenten |
+
+Die zweite ist die interessantere: Die Differenz zwischen beiden ist eine
+Vertrauensänderung, die niemand berichten muss, sondern die sich am Verhalten
+ablesen lässt. Wer hoch beginnt und nach dem ersten Vorschlag herunterregelt,
+hat etwas erlebt, das ihn zurückschrecken ließ; wer niedrig beginnt und
+hochgeht, hat Vertrauen aufgebaut. Beides ist im Protokoll mit Zeitstempel und
+Phase festgehalten und damit auf den auslösenden Moment im Gesprächsverlauf
+zurückzuführen.
+
+### Warum das die Lage nicht künstlich macht
+
+Der Einwand liegt nahe: Ein vorgeschalteter Bildschirm mit einer Frage nach der
+Autonomie lenkt die Aufmerksamkeit auf genau das, was gemessen werden soll.
+Dagegen sprechen zwei Punkte.
+
+Erstens ist die Form realistisch. Einwilligungen werden im Netz genau so
+eingeholt, und eine Buchungsseite ohne Cookie-Hinweis wirkt eher unecht als
+eine mit. Der Hinweis steht deshalb im selben Kasten, nicht als Beiwerk.
+
+Zweitens ist die Alternative nicht neutral, sondern nur unsichtbar: Ein
+gewürfelter Startwert ist ebenfalls eine Vorgabe, nur eine, die niemand
+bemerkt und die deshalb umso stärker wirkt.
+
+### Vorkehrungen gegen Verzerrung
+
+**Nichts ist vorausgewählt.** Eine gesetzte Voreinstellung wird übernommen -
+das ist einer der bestbelegten Befunde der Entscheidungsforschung und würde
+hier direkt die abhängige Variable erzeugen. Der Weiter-Knopf bleibt gesperrt,
+bis eine Stufe gewählt ist.
+
+**Die Reihenfolge wird je Sitzung gedreht.** Was oben steht, wird häufiger
+gewählt. Bei fester Reihenfolge wäre dieser Effekt in allen Daten derselbe und
+nicht mehr von der eigentlichen Bereitschaft zu trennen. Die gezogene Richtung
+steht im Protokoll (`reihenfolge`) und lässt sich als Kontrollvariable prüfen.
+
+**Die vier Beschreibungen sind gleich lang und gleich sachlich.** Jede nennt,
+was der Assistent tut, und was bei der Person bleibt. Keine wird empfohlen,
+vor keiner wird gewarnt. Ein "bequem" bei der hohen Stufe oder ein "sicher"
+bei der niedrigen wäre bereits die halbe Antwort.
+
+**Der Cookie-Text ist wahr.** Die Seite legt tatsächlich nur im sessionStorage
+ab, was für den Besuch nötig ist, und gibt nichts an Dritte. Eine erfundene
+Einwilligung wäre eine Täuschung, die nichts einbringt - die richtige Angabe
+sieht genauso echt aus.
+
+### Was protokolliert wird
+
+```
+freigabe_start {
+  stufe                 gewählte Stufe
+  quelle                "startbildschirm"
+  bedenkzeitMs          Zeit vom Erscheinen bis zur Bestätigung
+  reihenfolge           "niedrig_nach_hoch" | "hoch_nach_niedrig"
+  erklaerungGeoeffnet   ob "Was heißt das genau?" aufgeklappt wurde
+}
+```
+
+Die Bedenkzeit ist der Ernsthaftigkeitsindikator aus Abschnitt 18 an dieser
+Stelle: Wer in zwei Sekunden bestätigt, hat nicht gelesen. Zusammen mit
+`erklaerungGeoeffnet` lässt sich eine Teilstichprobe bilden, die die Wahl
+tatsächlich getroffen hat, und gegen die Gesamtstichprobe prüfen.
+
+### Die zugewiesene Variante bleibt möglich
+
+Die Stellschraube `startbildschirm=false` schaltet den Bildschirm ab; dann
+greift wieder die zufällige oder vorgegebene Startstufe aus Abschnitt 19. Damit
+bleibt ein Untersuchungsplan möglich, in dem die Autonomie zugewiesen und nicht
+gewählt wird - etwa als Vergleichsgruppe für die Frage, ob selbst gewählte
+Autonomie anders wirkt als zugeteilte.
+
+---
+
+## 23. Der Agent nimmt nichts an, was er erfragen kann
+
+### Der Befund
+
+Drei Fassungen hintereinander hat der Agent Angaben erfunden, die niemand
+gemacht hatte:
+
+- Auf "ich möchte mit meiner Familie verreisen" wurden zwei Erwachsene und
+  zwei Kinder ins Profil geschrieben.
+- Auf "wir sind zu dritt" wurden daraus zwei Erwachsene und ein Kind - obwohl
+  ebenso gut ein Elternteil mit zwei Kindern reisen könnte.
+- Auf die Frage "wie sind da die preislichen Unterschiede?" wurde
+  "Preis-Leistung" als Wunsch eingetragen und die Frage nicht beantwortet.
+
+Alle drei standen anschließend als "verstanden" in der Übersicht.
+
+### Warum das die Untersuchung angreift
+
+Der Agent soll gerade nicht alles selbst entscheiden. Die Freigabestufe misst,
+wie viel Entscheidungsgewalt jemand abgibt - wenn der Agent unabhängig davon
+Eckdaten setzt, gibt es kein Verhalten mehr zu messen, weil die niedrige
+Freigabestufe nicht mehr bedeutet, was sie behauptet.
+
+Dazu kommt der Realismus. Ein Berater, der die Familiengröße errät und die
+gestellte Frage übergeht, ist als Maschine erkannt, bevor der erste Vorschlag
+kommt. Was danach an Vertrauen gemessen wird, ist Vertrauen in eine Attrappe.
+
+### Die drei Ursachen
+
+**Die Anweisung verlangte es.** In der Systemanweisung stand wörtlich, "Familie"
+ohne Zahl bedeute zwei Erwachsene und zwei Kinder. Das Modell hat sich daran
+gehalten. Entfernt, dazu ein Riegel außerhalb des Modells: Steht im Satz weder
+Ziffer noch Zahlwort, wird eine gelieferte Personenzahl verworfen.
+
+**Gesamtzahl und Aufteilung waren dasselbe Feld.** "Drei Erwachsene" und "zu
+dritt" landeten beide in `erwachsene`. Getrennt: `personen` ist die Gesamtzahl,
+`erwachsene` und `kinder` sind die Aufteilung. Ist die Gesamtzahl bekannt und
+die Aufteilung nicht, werden die Möglichkeiten ausdrücklich genannt und zur
+Wahl gestellt. Die Schlussfolgerung "Gesamtzahl ohne Hinweis auf Kinder heißt
+lauter Erwachsene" gilt nur, wenn im ganzen Gespräch von keinen Kindern die
+Rede war - sie steht deshalb dort, wo das Profil bekannt ist, und nicht in der
+Satzanalyse, die immer nur den letzten Satz sieht.
+
+**Eine Frage wurde als Antwort verbucht.** Jede Eingabe lief in die Auswertung
+der offenen Frage, und die liefert bei "Hotel oder Ferienwohnung" auf alles
+"Hotel". Rückfragen werden jetzt erkannt (Fragezeichen oder Fragewort am
+Anfang), beantwortet, und die offene Frage bleibt offen. Für Preisfragen
+liefert `Politik.preisbild()` echte Zahlen aus dem Katalog, gefiltert nach
+Ziel und Unterkunftsart; wo die Fakten nichts hergeben, sagt der Agent, dass
+er es bei der Suche prüft.
+
+### Nachhaken statt annehmen
+
+Eine Pflichtfrage gilt erst als beantwortet, wenn die zugehörige Angabe
+tatsächlich im Profil steht. Bleibt sie offen, wird einmal nachgehakt -
+mit den konkreten Möglichkeiten, nicht mit derselben Frage. Bleibt sie auch
+dann offen, wird die naheliegende Lesart genommen **und als `annahme`
+protokolliert**. In der Auswertung ist damit zu erkennen, welche Angaben von
+der Person stammen und welche vom Agenten; Fälle mit `annahme` lassen sich
+gesondert prüfen oder ausschließen.
+
+### Keine Bestätigungen mehr
+
+"Ostsee ist notiert. März ist notiert. Ein Hotel mit Pool ist notiert." - was
+der Agent verstanden hat, steht seit Abschnitt 21 sichtbar in der Übersicht
+über dem Gespräch. Es zusätzlich in jede Nachricht zu schreiben, war eine
+Doppelung, und weil sie in jeder Nachricht stand, klang sie nach einem
+Formular, das abgehakt wird.

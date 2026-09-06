@@ -543,12 +543,17 @@ const AgentPanel = {
         info.classList.toggle("offen", auf);
       });
 
-      // Beim ersten Aufruf einer Sitzung steht die Liste offen. Ein
-      // zugeklappter Regler wird uebersehen, und wer ihn uebersieht,
-      // trifft die Entscheidung nicht - die gemessen werden soll.
+      // Beim ersten Aufruf einer Sitzung stand die Liste offen, damit der
+      // Regler nicht uebersehen wird. Seit dem Startbildschirm ist das
+      // ueberfluessig: Dort hat die Person die Stufe eben erst selbst
+      // gewaehlt und weiss, dass es sie gibt. Eine aufgeklappte Liste
+      // hinter dem Startbildschirm haette nur davon abgelenkt. Ohne
+      // Startbildschirm - etwa in einer zugewiesenen Variante - bleibt
+      // das alte Verhalten.
+      const mitStart = typeof STELLSCHRAUBEN !== "undefined" && STELLSCHRAUBEN.startbildschirm;
       let gesehen = null;
       try { gesehen = sessionStorage.getItem("voyara_freigabe_gesehen"); } catch { /* egal */ }
-      if (gesehen !== "1") {
+      if (!mitStart && gesehen !== "1") {
         liste.hidden = false;
         knopf.setAttribute("aria-expanded", "true");
         try { sessionStorage.setItem("voyara_freigabe_gesehen", "1"); } catch { /* egal */ }
@@ -643,7 +648,10 @@ const AgentPanel = {
   setSuggestions(list) {
     const box = document.getElementById("agentSuggestions");
     if (!box) return;
-    box.innerHTML = list.map((s) => `<button type="button" class="chip">${s}</button>`).join("");
+    // Ohne Vorschlaege bleibt die Leiste leer. Vorher warf das hier einen
+    // Fehler und riss die restliche Antwort mit - die Nachricht stand
+    // dann zwar da, aber Status und Oeffnen des Fensters blieben aus.
+    box.innerHTML = (list || []).map((s) => `<button type="button" class="chip">${s}</button>`).join("");
     box.querySelectorAll(".chip").forEach((chip) =>
       chip.addEventListener("click", () => this.handleUserInput(chip.textContent))
     );

@@ -72,7 +72,8 @@ const STELLSCHRAUBEN = {
   // ausfuehrlich = Vorschlag mit Zahlen und offengelegter Grundlage
   begruendung: "ausfuehrlich",  // knapp | ausfuehrlich
   initiative: "abwartend",      // abwartend | vorschlagend
-  eingangsfrage: true,          // false = springt ohne Rueckfrage in die Suche
+  eingangsfrage: true,
+  startbildschirm: true,   // Wahl der Freigabestufe vor dem ersten Kontakt          // false = springt ohne Rueckfrage in die Suche
 };
 
 /* Gruppenzuweisung ueber die Adresse
@@ -265,9 +266,37 @@ const Kern = {
     // Freigabestufe: einmal je Sitzung gewuerfelt, danach ueberdauert sie
     // den Seitenwechsel wie der Rest des Laufs.
     if (!this.lauf.freigabe) {
-      const start = this.startFreigabe();
-      this.lauf.freigabe = start.stufe;
-      this.notieren("freigabe_start", { stufe: start.stufe, gewuerfelt: start.gewuerfelt });
+      // Der Startbildschirm stellt die Wahl einmal ausdruecklich, bevor
+      // die Seite benutzbar ist. Das ist der Messpunkt: die Bereitschaft
+      // vor dem ersten Kontakt, bei allen unter denselben Bedingungen
+      // erhoben. Ohne ihn hing die Startstufe am Zufall, und wer den
+      // Regler nie fand, lieferte einen Datenpunkt ueber den Regler und
+      // nicht ueber sich.
+      const mitBildschirm = STELLSCHRAUBEN.startbildschirm
+        && typeof Startbildschirm !== "undefined" && !Startbildschirm.erledigt();
+
+      if (mitBildschirm) {
+        // Bis zur Wahl gilt die niedrigste Stufe. Sie wird nicht
+        // protokolliert und nicht angezeigt - waehrend der Bildschirm
+        // steht, ist die Seite ohnehin gesperrt. Wichtig ist nur, dass
+        // der Agent nicht schon losarbeitet, falls doch etwas dazwischen
+        // kommt: lieber zu wenig Freigabe als eine ungefragte.
+        this.lauf.freigabe = FREIGABE[0].id;
+        Startbildschirm.zeigen(FREIGABE, (stufe, messung) => {
+          this.lauf.freigabe = stufe;
+          this.notieren("freigabe_start", { stufe, quelle: "startbildschirm", ...messung });
+          this.sichern();
+          AgentPanel.freigabeZeigen(stufe);
+        });
+      } else {
+        // Ohne Startbildschirm bleibt es beim alten Weg: Stufe je nach
+        // Stellschraube gesetzt oder gewuerfelt. Nur so bleibt eine
+        // Variante moeglich, in der die Autonomie zugewiesen und nicht
+        // gewaehlt wird.
+        const start = this.startFreigabe();
+        this.lauf.freigabe = start.stufe;
+        this.notieren("freigabe_start", { stufe: start.stufe, quelle: start.gewuerfelt ? "zufall" : "vorgabe" });
+      }
       this.sichern();
     }
     AgentPanel.freigabeAufbauen(FREIGABE, this.lauf.freigabe, (stufe) => this.freigabeSetzen(stufe));
@@ -631,9 +660,9 @@ const Kern = {
 
     this.lauf.phase = "vorfrage";
     this.lauf.offeneVorfrage = frage.id;
-    const ersatz = [quittung ? `${quittung}.` : null, frage.frage].filter(Boolean).join(" ");
+    const ersatz = Politik.ersatzfrage(frage, this.lauf.profil);
     this.sagen(await this.formulieren(Politik.faktenVorfrage(frage, quittung, this.lauf.profil, this.letzteEingabe()), ersatz));
-    AgentPanel.setSuggestions(frage.chips);
+    AgentPanel.setSuggestions(Politik.chipsFuer(frage, this.lauf.profil));
     AgentPanel.status("wartet auf deine Antwort");
     AgentPanel.oeffnen();
     this.sichern();
@@ -700,9 +729,9 @@ const Kern = {
     }
     this.lauf.phase = "vorfrage";
     this.lauf.offeneVorfrage = frage.id;
-    const ersatz = [quittung, frage.frage].filter(Boolean).join(" ");
+    const ersatz = Politik.ersatzfrage(frage, this.lauf.profil);
     this.sagen(await this.formulieren(Politik.faktenVorfrage(frage, quittung, this.lauf.profil, this.letzteEingabe()), ersatz));
-    AgentPanel.setSuggestions(frage.chips);
+    AgentPanel.setSuggestions(Politik.chipsFuer(frage, this.lauf.profil));
     AgentPanel.status("wartet auf deine Antwort");
     AgentPanel.oeffnen();
     this.sichern();
@@ -715,6 +744,38 @@ const Kern = {
 
     const vorher = { ...this.lauf.profil, kriterien: [...(this.lauf.profil.kriterien || [])] };
 
+    // Eine Rueckfrage ist keine Antwort. Sie wird beantwortet, die
+    // offene Frage bleibt offen und kommt danach noch einmal. Ohne
+    // diesen Zweig lief jede Frage in frage.auswerten() - und die
+    // liefert bei "Hotel oder Ferienwohnung" auf alles "Hotel". Aus
+    // "wie sind da die preislichen Unterschiede?" wurde so eine
+    // Zimmerwahl, und die Frage blieb unbeantwortet stehen.
+    if (Politik.istRueckfrage(text)) {
+      Politik.uebernehmen(text, this.lauf.profil);
+      AgentPanel.eckdatenZeigen(Politik.eckdaten(this.lauf.profil));
+      this.notieren("rueckfrage", { frage: frage.id, text });
+      await Zeiger.warte(450);
+
+      // Vielleicht stand in der Frage nebenbei die Antwort ("kostet ein
+      // Doppelzimmer mehr?"). Dann ist die Frage erledigt und es geht
+      // nach der Antwort weiter, sonst wird sie wiederholt.
+      const nochOffen = !frage.ueberspringen(this.lauf.profil);
+      this.sagen(await this.formulieren(
+        Politik.faktenRueckfrage(text, this.lauf.profil, nochOffen ? frage : null),
+        nochOffen ? `Das schaue ich mir bei der Suche an. ${Politik.ersatzfrage(frage, this.lauf.profil)}` : "Das schaue ich mir bei der Suche an.",
+      ));
+      if (!nochOffen) this.lauf.vorfragenErledigt.push(frage.id);
+      AgentPanel.setSuggestions(nochOffen ? Politik.chipsFuer(frage, this.lauf.profil) : null);
+      AgentPanel.status("wartet auf deine Antwort");
+      AgentPanel.oeffnen();
+      this.sichern();
+      if (!nochOffen) {
+        const pflicht = Politik.PFLICHTFRAGEN.some((f) => f.id === frage.id);
+        return pflicht ? this.naechstePflichtfrage() : this.naechsteVorfrage();
+      }
+      return;
+    }
+
     // Eine Antwort kann auch etwas korrigieren, das vorher schon gesagt
     // wurde. "Nein, zwei Kinder und zwei Erwachsene" auf die Budgetfrage
     // ist keine Budgetangabe - vorher wurde es als eine verbucht und die
@@ -723,6 +784,32 @@ const Kern = {
     Politik.uebernehmen(text, this.lauf.profil);
 
     const quittung = frage.auswerten(text, this.lauf.profil);
+
+    // Eine Frage gilt erst als beantwortet, wenn sie es ist. Vorher
+    // wurde sie in jedem Fall abgehakt: Auf "wir sind zu dritt" stand
+    // die Aufteilung noch offen - zwei Erwachsene mit einem Kind oder
+    // einer mit zweien -, die Frage war aber schon durch, und der Agent
+    // ging zum Ziel ueber. Genau die Stelle, an der er unbemerkt etwas
+    // annahm.
+    //
+    // Nachgehakt wird einmal. Wer auch dann nicht antwortet, will die
+    // Frage nicht beantworten; dann wird die naheliegende Lesart
+    // genommen und als Annahme protokolliert, damit sie in der
+    // Auswertung nicht als Angabe der Person zaehlt.
+    const beantwortet = frage.ueberspringen(this.lauf.profil);
+    const zaehler = (this.lauf.nachgehakt ||= {});
+    if (!beantwortet && (zaehler[frage.id] || 0) < 1) {
+      zaehler[frage.id] = (zaehler[frage.id] || 0) + 1;
+      this.notieren("nachgehakt", { frage: frage.id, antwort: text });
+      AgentPanel.eckdatenZeigen(Politik.eckdaten(this.lauf.profil));
+      await Zeiger.warte(450);
+      const warPflicht0 = Politik.PFLICHTFRAGEN.some((f) => f.id === frage.id);
+      return warPflicht0 ? this.naechstePflichtfrage() : this.naechsteVorfrage();
+    }
+    if (!beantwortet) {
+      const angenommen = Politik.annahme(frage.id, this.lauf.profil);
+      if (angenommen) this.notieren("annahme", { frage: frage.id, ...angenommen });
+    }
     this.lauf.vorfragenErledigt.push(frage.id);
 
     // Was sich geaendert hat, wird benannt - auch das, wonach gerade gar
