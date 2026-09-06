@@ -751,7 +751,7 @@ const Kern = {
     // "wie sind da die preislichen Unterschiede?" wurde so eine
     // Zimmerwahl, und die Frage blieb unbeantwortet stehen.
     if (Politik.istRueckfrage(text)) {
-      Politik.uebernehmen(text, this.lauf.profil);
+      Politik.uebernehmen(text, this.lauf.profil, { kriterien: false });
       AgentPanel.eckdatenZeigen(Politik.eckdaten(this.lauf.profil));
       this.notieren("rueckfrage", { frage: frage.id, text });
       await Zeiger.warte(450);

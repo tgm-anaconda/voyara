@@ -1009,6 +1009,15 @@ liefert `Politik.preisbild()` echte Zahlen aus dem Katalog, gefiltert nach
 Ziel und Unterkunftsart; wo die Fakten nichts hergeben, sagt der Agent, dass
 er es bei der Suche prüft.
 
+Zur Rückfrage gehört noch eine zweite Sperre: Aus einer Frage werden keine
+Wünsche gelesen. "Wie sind da die preislichen Unterschiede?" trug bisher
+"Preis-Leistung" als Kriterium ein, "Wie ist das mit dem Pool?" den Pool. Eine
+Frage nach einem Thema ist aber kein Wunsch danach - wer fragt, hat sich noch
+nicht entschieden. Die Gewichte hätten die Rangfolge der Vorschläge still
+verschoben, ohne dass jemand etwas verlangt hätte. Harte Angaben in einer Frage
+(Ziel, Monat, Zahlen) werden weiterhin mitgenommen; nur die weichen Kriterien
+nicht.
+
 ### Nachhaken statt annehmen
 
 Eine Pflichtfrage gilt erst als beantwortet, wenn die zugehörige Angabe

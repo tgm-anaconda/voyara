@@ -791,7 +791,15 @@ const Politik = {
      der passenden. Wer auf die Budgetfrage "nein, zwei Kinder und zwei
      Erwachsene" antwortet, korrigiert etwas Frueheres - und das darf
      nicht verlorengehen, nur weil gerade nach dem Preis gefragt war. */
-  uebernehmen(text, profil) {
+  /* `optionen.kriterien = false` nimmt nur harte Angaben mit und keine
+     Wuensche. Gebraucht wird das bei Rueckfragen: "Wie sind da die
+     preislichen Unterschiede?" schrieb bisher "Preis-Leistung" als
+     Wunsch ins Profil und "Wie ist das mit dem Pool?" den Pool. Eine
+     Frage nach einem Thema ist aber kein Wunsch danach - im Gegenteil,
+     wer fragt, hat sich noch nicht entschieden. Die Gewichte haetten
+     danach still die Rangfolge verschoben, ohne dass jemand etwas
+     verlangt haette. */
+  uebernehmen(text, profil, optionen = {}) {
     const a = this.absicht(text);
     const t = text.toLowerCase();
 
@@ -822,7 +830,7 @@ const Politik = {
     if (a.zielId) profil.zielId = a.zielId;
     if (a.artGenannt) { profil.typ = a.typ; profil.artGenannt = true; }
 
-    for (const g of a.kriterien || []) {
+    for (const g of optionen.kriterien === false ? [] : (a.kriterien || [])) {
       const da = (profil.kriterien ||= []).find((k) => k.id === g.id);
       if (da) da.gewicht = Math.min(3, da.gewicht + g.gewicht);
       else profil.kriterien.push({ ...g });
