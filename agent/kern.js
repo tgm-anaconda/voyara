@@ -421,6 +421,25 @@ const Kern = {
       familieGenannt: a.familieGenannt === true,
       kriterien: a.kriterien || [],
     };
+    // Zwei Merkmale haengen am Wortlaut und nicht am Urteil des Modells:
+    // ob die Person von ihrer Familie gesprochen hat und ob sie die
+    // Unterkunftsart schon genannt hat. Der Modellpfad lieferte beides
+    // nicht - deshalb hier aus dem Text nachgetragen, egal welcher Weg
+    // gegriffen hat.
+    const ausText = Politik.absicht(text);
+    if (ausText.familieGenannt) this.lauf.profil.familieGenannt = true;
+    if (ausText.artGenannt) { this.lauf.profil.artGenannt = true; this.lauf.profil.typ = ausText.typ; }
+
+    // Riegel gegen geratene Personenzahlen. Das Modell ist angewiesen,
+    // bei "Familie" ohne Zahl null zu schreiben, folgt dem aber nicht
+    // zuverlaessig - es kennt die uebliche Familie aus seinen Daten und
+    // setzt zwei Erwachsene und zwei Kinder ein. Steht im Satz weder
+    // eine Ziffer noch ein Zahlwort, kann keine Zahl gemeint gewesen
+    // sein. Sie wird verworfen und erfragt.
+    if (this.lauf.profil.familieGenannt && !/\d|zwei|drei|vier|fünf|fuenf|sechs|zweit|dritt|viert|allein|einzeln/i.test(text)) {
+      this.lauf.profil.erwachsene = null;
+      this.lauf.profil.kinder = null;
+    }
     // Fuer die Auswertung: hat das Modell verstanden oder die Ersatzlogik?
     this.notieren("verstanden", { quelle: ausModell ? "modell" : "schluesselwoerter", profil: this.lauf.profil });
     AgentPanel.eckdatenZeigen(Politik.eckdaten(this.lauf.profil));
@@ -597,6 +616,15 @@ const Kern = {
      das moechte. Erst danach kommt die Frage nach dem Vorgehen, und die
      bezieht sich dann auf das, was wirklich freiwillig ist: Preisgrenze
      und eigene Wuensche. */
+  // Was die Person zuletzt geschrieben hat. Ohne das stellt der Agent
+  // seine Fragen neben die Antwort statt in ihre Fortsetzung.
+  letzteEingabe() {
+    for (let i = this.lauf.verlauf.length - 1; i >= 0; i--) {
+      if (this.lauf.verlauf[i].rolle === "user") return this.lauf.verlauf[i].text;
+    }
+    return null;
+  },
+
   async naechstePflichtfrage(quittung) {
     const frage = Politik.naechstePflichtfrage(this.lauf.profil, this.lauf.vorfragenErledigt);
     if (!frage) return this.eingangsfrageStellen(quittung);
@@ -604,7 +632,7 @@ const Kern = {
     this.lauf.phase = "vorfrage";
     this.lauf.offeneVorfrage = frage.id;
     const ersatz = [quittung ? `${quittung}.` : null, frage.frage].filter(Boolean).join(" ");
-    this.sagen(await this.formulieren(Politik.faktenVorfrage(frage, quittung, this.lauf.profil), ersatz));
+    this.sagen(await this.formulieren(Politik.faktenVorfrage(frage, quittung, this.lauf.profil, this.letzteEingabe()), ersatz));
     AgentPanel.setSuggestions(frage.chips);
     AgentPanel.status("wartet auf deine Antwort");
     AgentPanel.oeffnen();
@@ -673,7 +701,7 @@ const Kern = {
     this.lauf.phase = "vorfrage";
     this.lauf.offeneVorfrage = frage.id;
     const ersatz = [quittung, frage.frage].filter(Boolean).join(" ");
-    this.sagen(await this.formulieren(Politik.faktenVorfrage(frage, quittung, this.lauf.profil), ersatz));
+    this.sagen(await this.formulieren(Politik.faktenVorfrage(frage, quittung, this.lauf.profil, this.letzteEingabe()), ersatz));
     AgentPanel.setSuggestions(frage.chips);
     AgentPanel.status("wartet auf deine Antwort");
     AgentPanel.oeffnen();

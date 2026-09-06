@@ -77,7 +77,10 @@ const Politik = {
     else if (/zu dritt|für drei|fuer drei/.test(t)) a.erwachsene = 3;
     else if (/zu viert|für vier|fuer vier/.test(t)) a.erwachsene = 4;
     else if (/allein|solo|nur ich/.test(t)) a.erwachsene = 1;
-    else if (/famili/.test(t)) a.erwachsene = 2;   // Familie ohne Zahl
+    // "Familie" ohne Zahl ergibt bewusst KEINE Zahl. Wie viele Menschen
+    // eine Familie hat, weiss nur die Person - das anzunehmen war der
+    // Grund, warum der Agent ungefragt von zwei Erwachsenen und zwei
+    // Kindern ausging und danach gar nicht mehr nachfragte.
 
     const kin = t.match(new RegExp(`(${ZAHLEN})\\s+kind`));
     if (kin) a.kinder = Math.min(4, zahl(kin[1]) ?? 1);
@@ -625,6 +628,7 @@ const Politik = {
       // die Person das Ziel von sich aus nannte.
       id: "ziel",
       frage: "Wohin soll es gehen?",
+      braucht: () => "Wohin die Reise gehen soll. Ein Land, eine Region oder eine Insel reicht. Wenn die Person Kinder erwaehnt hat, darfst du auch fragen, ob die schon einen Wunsch haben.",
       chips: ["Mallorca", "Kreta", "Tirol", "Ans Meer"],
       ueberspringen: (p) => p.zielId != null,
       auswerten(text, p) {
@@ -634,28 +638,24 @@ const Politik = {
       },
     },
     {
+      // Eine Frage, zwei Faelle: Wer "Familie" gesagt hat, wird nach der
+      // Familie gefragt, alle anderen danach, wer mitreist. Welche
+      // Fassung, entscheidet das Modell aus den Fakten - deshalb steht
+      // hier nur die knappste Form als Rueckfall.
       id: "gruppe",
       frage: "Wer reist mit?",
-      chips: ["Zu zweit", "Familie mit zwei Kindern", "Allein", "Zu viert"],
-      ueberspringen: (p) => p.erwachsene != null,
+      braucht: (p) => p.familieGenannt
+        ? "Wie viele Menschen mitreisen. Die Person hat von ihrer Familie gesprochen, aber keine Zahl genannt - frag, wie gross die Familie ist, also wie viele Erwachsene und wie viele Kinder. Nimm keine Zahl an."
+        : "Wie viele Menschen mitreisen, Erwachsene und Kinder getrennt.",
+      chips: ["Zu zweit", "Allein", "2 Erwachsene, 2 Kinder", "Zu viert"],
+      ueberspringen: (p) => p.erwachsene != null && (p.kinder != null || !p.familieGenannt),
       auswerten(text, p) {
         Politik.uebernehmen(text, p);
-        if (p.erwachsene == null && /famili/.test(text.toLowerCase())) p.erwachsene = 2;
-        const wer = [p.erwachsene ? `${p.erwachsene} Erwachsene` : null, p.kinder ? `${p.kinder} Kinder` : null].filter(Boolean);
-        return wer.length ? Politik.aufzaehlen(wer) : null;
-      },
-    },
-    {
-      // Nur wenn "Familie" gesagt wurde, aber keine Zahl kam. Sonst
-      // stuende der Agent mit "eine Familie" da und wuesste nicht,
-      // fuer wie viele er suchen soll.
-      id: "familiengroesse",
-      frage: "Wie viele seid ihr denn — und wie viele Kinder sind dabei?",
-      chips: ["2 Erwachsene, 1 Kind", "2 Erwachsene, 2 Kinder", "2 Erwachsene, 3 Kinder"],
-      ueberspringen: (p) => p.kinder != null || !(p.erwachsene != null && p.familieGenannt),
-      auswerten(text, p) {
-        Politik.uebernehmen(text, p);
-        if (p.kinder == null) p.kinder = 0;
+        // Wer die Familie genannt hat und jetzt Erwachsene nennt, hat
+        // damit auch gesagt, dass keine weiteren Kinder dabei sind.
+        if (p.erwachsene != null && p.kinder == null && /\d|zwei|drei|vier|allein|zweit|viert/.test(text.toLowerCase())) {
+          p.kinder = 0;
+        }
         const wer = [p.erwachsene ? `${p.erwachsene} Erwachsene` : null, p.kinder ? `${p.kinder} Kinder` : null].filter(Boolean);
         return wer.length ? Politik.aufzaehlen(wer) : null;
       },
@@ -663,6 +663,7 @@ const Politik = {
     {
       id: "zeitraum",
       frage: "Wann soll es losgehen? Ein Monat reicht mir.",
+      braucht: () => "Wann die Reise sein soll. Ein Monat genuegt, ein genaues Datum brauchst du nicht.",
       chips: ["Im Juni", "Im September", "Im Januar", "Im Februar"],
       ueberspringen: (p) => p.monat != null,
       auswerten(text, p) {
@@ -676,6 +677,8 @@ const Politik = {
     {
       id: "art",
       frage: "Hotel oder lieber eine Ferienwohnung?",
+      braucht: (p) => "Ob es ein Hotel oder eine Ferienwohnung werden soll."
+        + ((p.kinder || 0) > 0 ? " Bei Kindern lohnt der Hinweis, dass eine Ferienwohnung eine eigene Kueche hat." : ""),
       chips: ["Hotel", "Ferienwohnung", "Ist mir egal"],
       // Uebersprungen, wenn im Auftrag schon eine Art genannt wurde
       ueberspringen: (p) => p.artGenannt === true,
@@ -695,6 +698,7 @@ const Politik = {
       // Zimmer - und der Preis unterscheidet sich deutlich.
       id: "zimmer",
       frage: "Ein gemeinsames Zimmer oder zwei getrennte?",
+      braucht: () => "Ob ein gemeinsames Zimmer reichen soll oder zwei getrennte gebucht werden. Das aendert den Preis deutlich.",
       chips: ["Ein Zimmer", "Zwei Zimmer"],
       ueberspringen: (p) => p.typ === "apartment" || ((p.erwachsene || 0) + (p.kinder || 0)) <= 2,
       auswerten(text, p) {
@@ -827,7 +831,18 @@ const Politik = {
   },
 
   naechstePflichtfrage(profil, erledigt) {
-    return this.PFLICHTFRAGEN.find((f) => !erledigt.includes(f.id) && !f.ueberspringen(profil)) || null;
+    const offen = this.PFLICHTFRAGEN.filter((f) => !erledigt.includes(f.id) && !f.ueberspringen(profil));
+    if (!offen.length) return null;
+
+    // Wer "mit meiner Familie" schreibt, hat ueber die Reisegruppe
+    // gesprochen und nicht ueber das Ziel. Dann kommt die Frage nach der
+    // Gruppe zuerst - sie schliesst an den eigenen Satz an, waehrend
+    // "Wohin soll es gehen?" danebensteht wie aus einem Formular.
+    if (profil.familieGenannt && profil.erwachsene == null) {
+      const gruppe = offen.find((f) => f.id === "gruppe");
+      if (gruppe) return gruppe;
+    }
+    return offen[0];
   },
 
   naechsteKuerfrage(profil, erledigt) {
@@ -1116,12 +1131,17 @@ const Politik = {
   // Bestaetigung der letzten Antwort und naechste Frage in einem Zug -
   // so wuerde es ein Mensch auch sagen, statt zwei Saetze nacheinander
   // abzusetzen.
-  faktenVorfrage(frage, quittung, profil) {
+  faktenVorfrage(frage, quittung, profil, letzteEingabe) {
     const ziel = profil.zielId ? this.zielFakten(profil.zielId) : null;
     return {
       lage: "Bestaetige knapp das Verstandene und stell die naechste Frage - beides in einem Zug.",
       wasDuVerstandenHast: quittung || null,
-      naechsteFrage: frage.frage,
+      // Bewusst kein fertiger Fragesatz: Bekam das Modell einen, gab es
+      // ihn unveraendert weiter, und die Frage stand dann neben der
+      // Antwort der Person, statt sich auf sie zu beziehen. Es bekommt
+      // jetzt nur, WAS fehlt - den Satz baut es selbst.
+      wasDirNochFehlt: typeof frage.braucht === "function" ? frage.braucht(profil) : frage.frage,
+      wasDiePersonZuletztSchrieb: letzteEingabe || null,
       worumEsGeht: frage.id,
       ziel: ziel ? { name: ziel.name, land: ziel.land, beschreibung: ziel.beschreibung } : null,
       bereitsBekannt: {
