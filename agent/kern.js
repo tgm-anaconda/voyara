@@ -62,7 +62,11 @@ const STELLSCHRAUBEN = {
   // "darf kaufen" vorbelegen.
   freigabeStart: "zufall",      // niedrig | hoch | zufall
   freigabeRegler: true,         // false = Regler unsichtbar, Stufe fest
-  tempo: 1.0,                   // Geschwindigkeit des Zeigers
+  // Unter 1 wird alles langsamer. 0.75 ist die Geschwindigkeit, bei der
+  // man dem Zeiger auf der Seite noch folgen kann - und damit die
+  // Voraussetzung dafuer, ueberhaupt messen zu koennen, ob jemand
+  // zusieht. Als Stellschraube variierbar (?tempo=1.5).
+  tempo: 0.75,                  // Geschwindigkeit des Zeigers
   fehler: "keine",              // keine | filter | kriterium | behauptung
   // knapp      = nur der Vorschlag, keine Herleitung
   // ausfuehrlich = Vorschlag mit Zahlen und offengelegter Grundlage
@@ -242,7 +246,13 @@ const Kern = {
     // hat, egal was vorher darin stand.
     const kasten = document.getElementById("agentMessages");
     if (kasten) kasten.innerHTML = "";
-    for (const n of this.lauf.verlauf) AgentPanel.say(n.text, n.rolle, { still: true, links: n.links, aktionen: n.aktionen });
+    for (const n of this.lauf.verlauf) {
+      // Funktionen ueberleben den sessionStorage nicht - die Ausklapp-
+      // Funktion wird beim Zurueckschreiben neu angehaengt.
+      const aktionen = (n.aktionen || []).map((a) => a.warumFuer
+        ? { text: a.text, ausklappen: () => this.warumText(a.warumFuer) } : a);
+      AgentPanel.say(n.text, n.rolle, { still: true, links: n.links, aktionen });
+    }
 
     // Erste Seite der Sitzung: begruessen. Das muss hier passieren und nicht
     // im Panel - der Kasten wird eine Zeile darueber geleert, und eine vorher
@@ -263,6 +273,7 @@ const Kern = {
     AgentPanel.freigabeAufbauen(FREIGABE, this.lauf.freigabe, (stufe) => this.freigabeSetzen(stufe));
 
     this.kandidatenAuffrischen();
+    AgentPanel.eckdatenZeigen(Politik.eckdaten(this.lauf.profil || {}));
     AgentPanel.ansEnde?.();
 
     if (this.lauf.phase === "arbeitet" && this.lauf.offeneSchritte.length) {
@@ -306,6 +317,22 @@ const Kern = {
   // `links` sind anklickbare Verweise unter der Nachricht. Sie wandern mit
   // in den Verlauf, damit sie nach einem Seitenwechsel noch da sind - sonst
   // waere nach dem ersten Klick die halbe Shortlist tot.
+  /* Lesepause nach einer Nachricht.
+     ------------------------------------------------------------------
+     Der Agent war zu schnell. Nachrichten und Schritte folgten so dicht
+     aufeinander, dass man ihm nicht folgen konnte - und wer nicht folgen
+     kann, schaltet ab und sieht weg. Fuer die Studie waere das fatal:
+     Ob jemand zusieht, waehrend der Agent arbeitet, ist eine der
+     Groessen, die gemessen werden sollen. Wenn niemand zusehen kann,
+     misst man nur, wie schnell das Skript laeuft.
+
+     Deshalb richtet sich die Pause nach der Laenge des Gesagten,
+     ungefaehr an einer ruhigen Lesegeschwindigkeit. */
+  lesezeit(text) {
+    const woerter = String(text).trim().split(/\s+/).length;
+    return Math.min(4200, 500 + woerter * 130);
+  },
+
   sagen(text, rolle = "bot", links = null) {
     const n = { rolle, text, zeit: Date.now() };
     if (links && links.length) n.links = links;
@@ -394,6 +421,7 @@ const Kern = {
     };
     // Fuer die Auswertung: hat das Modell verstanden oder die Ersatzlogik?
     this.notieren("verstanden", { quelle: ausModell ? "modell" : "schluesselwoerter", profil: this.lauf.profil });
+    AgentPanel.eckdatenZeigen(Politik.eckdaten(this.lauf.profil));
 
     // Kein Ort genannt, aber eine Reiseart? Dann nicht nach dem Ortsnamen
     // fragen, sondern die passenden Ziele zur Wahl stellen. "In die Berge"
@@ -618,12 +646,27 @@ const Kern = {
     const frage = Politik.VORFRAGEN.find((f) => f.id === this.lauf.offeneVorfrage);
     if (!frage) return this.naechsteVorfrage();
 
+    const vorher = { ...this.lauf.profil, kriterien: [...(this.lauf.profil.kriterien || [])] };
+
+    // Eine Antwort kann auch etwas korrigieren, das vorher schon gesagt
+    // wurde. "Nein, zwei Kinder und zwei Erwachsene" auf die Budgetfrage
+    // ist keine Budgetangabe - vorher wurde es als eine verbucht und die
+    // Korrektur verschwand. Deshalb erst durch die allgemeine Erkennung,
+    // dann durch die Auswertung der offenen Frage.
+    Politik.uebernehmen(text, this.lauf.profil);
+
     const quittung = frage.auswerten(text, this.lauf.profil);
     this.lauf.vorfragenErledigt.push(frage.id);
-    this.notieren("vorfrage", { frage: frage.id, antwort: text });
+
+    // Was sich geaendert hat, wird benannt - auch das, wonach gerade gar
+    // nicht gefragt war. Sonst weiss niemand, was der Agent mitgenommen
+    // hat und was er ueberhoert hat.
+    const geaendert = Politik.aenderungen(vorher, this.lauf.profil);
+    this.notieren("vorfrage", { frage: frage.id, antwort: text, geaendert });
+    AgentPanel.eckdatenZeigen(Politik.eckdaten(this.lauf.profil));
 
     await Zeiger.warte(450);
-    return this.naechsteVorfrage(quittung);
+    return this.naechsteVorfrage(geaendert.length ? geaendert.join(", ") : quittung);
   },
 
   /* ==================================================================
@@ -733,7 +776,10 @@ const Kern = {
       if (ergebnis.daten?.uebernimmt) { this.sichern(); return; }
 
       this.sichern();
-      await Zeiger.warte(340);
+      // Nach einer Meldung so lange warten, wie man zum Lesen braucht.
+      // Ohne Meldung reicht eine kurze Pause, damit die Bewegung auf der
+      // Seite nicht in einem Ruck passiert.
+      await Zeiger.warte(ergebnis.text ? this.lesezeit(ergebnis.text) : 700);
     }
 
     await this.abschluss();
@@ -907,23 +953,23 @@ const Kern = {
       : "So sieht die Auswahl jetzt aus:");
 
     for (const [i, k] of this.lauf.kandidaten.entries()) {
-      await Zeiger.warte(950);
+      await Zeiger.warte(i === 0 ? 900 : 1600);
       // Der Verweis macht aus dem Vorschlag ein Angebot statt einer Ansage:
       // wer lieber selbst schaut, klickt hier direkt hinein.
       const eigener = Politik.vorschlagssatz(k, this.lauf.profil);
       const satz = await this.formulieren(Politik.faktenVorschlag(k, this.lauf.profil), eigener);
-      // Der Verweis fuehrt zum Haus, der Knopf fragt nach der Begruendung.
+      // Der Verweis fuehrt zum Haus, der Knopf klappt die Begruendung auf.
       // Beide sind freiwillig - und genau deshalb zaehlbar.
       this.lauf.verlauf.push({ rolle: "bot", text: `${i + 1}. ${satz}`, zeit: Date.now(),
         links: [this.linkZu(k.id, k.item.name)],
-        aktionen: [{ text: "Warum dieses?", wert: `Warum ${k.item.name}?` }] });
+        aktionen: [{ text: "Warum dieses?", warumFuer: k.id }] });
       AgentPanel.say(`${i + 1}. ${satz}`, "bot", {
         links: [this.linkZu(k.id, k.item.name)],
-        aktionen: [{ text: "Warum dieses?", wert: `Warum ${k.item.name}?` }],
+        aktionen: [{ text: "Warum dieses?", ausklappen: () => this.warumText(k.id) }],
       });
       this.sichern();
     }
-    await Zeiger.warte(900);
+    await Zeiger.warte(1500);
 
     // Offenlegung: worauf beruht diese Reihenfolge? Waehrend der Arbeit
     // meldet der Agent nur knapp, was er tut - beim Ergebnis soll
@@ -983,6 +1029,19 @@ const Kern = {
     AgentPanel.setSuggestions(this.shortlistChips());
     this.sichern();
     return true;
+  },
+
+  // Begruendung zu einem Haus, als Text. Erzeugt keine Chatnachricht -
+  // sie klappt in der bestehenden auf.
+  async warumText(id) {
+    this.kandidatenAuffrischen();
+    const kandidaten = this.lauf.kandidaten || [];
+    const k = kandidaten.find((x) => x.id === id);
+    if (!k) return "Dazu habe ich gerade nichts.";
+    this.notieren("warum_gefragt", { id, runde: this.lauf.runde, phase: this.lauf.phase });
+    this.sichern();
+    const ersatz = Politik.warumSatz(k, kandidaten, this.lauf.profil);
+    return this.formulieren(Politik.faktenWarum(k, kandidaten, this.lauf.profil), ersatz);
   },
 
   async antwortShortlist(text) {

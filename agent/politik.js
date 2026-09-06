@@ -18,6 +18,11 @@ const Politik = {
      Verstehen (vorlaeufig ohne Modell)
      ================================================================== */
 
+  ZAHLWORT: {
+    ein: 1, eine: 1, einem: 1, einer: 1, eins: 1,
+    zwei: 2, drei: 3, vier: 4, "fünf": 5, fuenf: 5, sechs: 6, sieben: 7, acht: 8,
+  },
+
   MONATE: {
     januar: 1, februar: 2, "märz": 3, maerz: 3, april: 4, mai: 5, juni: 6,
     juli: 7, august: 8, september: 9, oktober: 10, november: 11, dezember: 12,
@@ -50,13 +55,29 @@ const Politik = {
       }
     }
 
-    const personen = t.match(/(\d+)\s*(personen|erwachsene|leute)/);
-    if (personen) a.erwachsene = Math.min(6, +personen[1]);
-    else if (/zu zweit|für zwei|fuer zwei/.test(t)) a.erwachsene = 2;
-    else if (/zu viert|für vier|fuer vier/.test(t)) a.erwachsene = 4;
+    // Zahlwoerter mitlesen. "zwei Kinder" hat keine Ziffer - vorher fiel
+    // eine Korrektur wie "nein, zwei Kinder und zwei Erwachsene"
+    // komplett durch, weil kein Muster griff.
+    const zahl = (wort) => {
+      if (!wort) return null;
+      const w = wort.toLowerCase();
+      if (/^\d+$/.test(w)) return +w;
+      return this.ZAHLWORT[w] ?? null;
+    };
+    const ZAHLEN = "\\d+|ein|eine|einem|einer|eins|zwei|drei|vier|fünf|fuenf|sechs|sieben|acht";
 
-    const kinder = t.match(/(\d+)\s*kind/);
-    if (kinder) a.kinder = Math.min(4, +kinder[1]);
+    const erw = t.match(new RegExp(`(${ZAHLEN})\\s+(?:erwachsene[nr]?|personen|leute|pers\\.?)`));
+    if (erw) a.erwachsene = Math.min(6, zahl(erw[1]) ?? 2);
+    else if (/zu zweit|für zwei|fuer zwei/.test(t)) a.erwachsene = 2;
+    else if (/zu dritt|für drei|fuer drei/.test(t)) a.erwachsene = 3;
+    else if (/zu viert|für vier|fuer vier/.test(t)) a.erwachsene = 4;
+    else if (/allein|solo|nur ich/.test(t)) a.erwachsene = 1;
+    else if (/famili/.test(t)) a.erwachsene = 2;   // Familie ohne Zahl
+
+    const kin = t.match(new RegExp(`(${ZAHLEN})\\s+kind`));
+    if (kin) a.kinder = Math.min(4, zahl(kin[1]) ?? 1);
+    else if (/\bein kind\b/.test(t)) a.kinder = 1;
+    else if (/ohne kinder|keine kinder/.test(t)) a.kinder = 0;
 
     for (const [name, nr] of Object.entries(this.MONATE)) {
       if (t.includes(name)) { a.monat = nr; break; }
@@ -647,6 +668,85 @@ const Politik = {
     },
   ],
 
+  /* Angaben aus beliebigem Text ins Profil uebernehmen.
+     ------------------------------------------------------------------
+     Wird bei jeder Antwort auf eine Vorfrage aufgerufen, nicht nur bei
+     der passenden. Wer auf die Budgetfrage "nein, zwei Kinder und zwei
+     Erwachsene" antwortet, korrigiert etwas Frueheres - und das darf
+     nicht verlorengehen, nur weil gerade nach dem Preis gefragt war. */
+  uebernehmen(text, profil) {
+    const a = this.absicht(text);
+    const t = text.toLowerCase();
+
+    // Personenzahl nur, wenn sie im Text wirklich vorkommt
+    if (/\d|zwei|drei|vier|fünf|fuenf|sechs|zweit|dritt|viert|allein|paar|famili|kind/.test(t)) {
+      if (a.erwachsene != null) profil.erwachsene = a.erwachsene;
+      if (a.kinder != null) profil.kinder = a.kinder;
+    }
+    if (a.monat != null) profil.monat = a.monat;
+    if (a.maxPreis != null) profil.maxPreis = a.maxPreis;
+    if (a.budget) profil.budget = a.budget;
+    if (a.zielId) profil.zielId = a.zielId;
+
+    for (const g of a.kriterien || []) {
+      const da = (profil.kriterien ||= []).find((k) => k.id === g.id);
+      if (da) da.gewicht = Math.min(3, da.gewicht + g.gewicht);
+      else profil.kriterien.push({ ...g });
+    }
+    return profil;
+  },
+
+  // Was hat sich geaendert? In Worten, zum Vorlesen.
+  aenderungen(vorher, nachher) {
+    const raus = [];
+    const person = (p) => {
+      const teile = [];
+      if (p.erwachsene) teile.push(`${p.erwachsene} Erwachsene`);
+      if (p.kinder) teile.push(`${p.kinder} Kinder`);
+      return teile.join(" und ");
+    };
+    if (person(vorher) !== person(nachher) && person(nachher)) raus.push(person(nachher));
+    if (vorher.monat !== nachher.monat && nachher.monat) {
+      const name = Object.keys(this.MONATE).find((m) => this.MONATE[m] === nachher.monat && m.length > 3);
+      if (name) raus.push(name.charAt(0).toUpperCase() + name.slice(1));
+    }
+    if (vorher.maxPreis !== nachher.maxPreis && nachher.maxPreis) raus.push(`höchstens ${nachher.maxPreis} € pro Nacht`);
+    if (vorher.zielId !== nachher.zielId && nachher.zielId && typeof ZIEL_NACH_ID !== "undefined") {
+      raus.push(ZIEL_NACH_ID[nachher.zielId]?.name);
+    }
+    const alt = new Set((vorher.kriterien || []).map((k) => k.id));
+    for (const k of nachher.kriterien || []) {
+      if (!alt.has(k.id)) raus.push(this.kriterium(k.id)?.label);
+    }
+    return raus.filter(Boolean);
+  },
+
+  /* Die Eckdaten als Liste fuer die Anzeige im Chat. Damit sieht die
+     Person jederzeit, was der Agent von ihr verstanden hat - und merkt,
+     wenn etwas fehlt oder falsch drinsteht. */
+  eckdaten(profil) {
+    const raus = [];
+    if (profil.zielId && typeof ZIEL_NACH_ID !== "undefined") {
+      raus.push({ feld: "Ziel", wert: ZIEL_NACH_ID[profil.zielId]?.name });
+    }
+    if (profil.typ === "apartment") raus.push({ feld: "Art", wert: "Ferienwohnung" });
+    if (profil.monat) {
+      const name = Object.keys(this.MONATE).find((m) => this.MONATE[m] === profil.monat && m.length > 3);
+      if (name) raus.push({ feld: "Zeit", wert: name.charAt(0).toUpperCase() + name.slice(1) });
+    }
+    const personen = [];
+    if (profil.erwachsene) personen.push(`${profil.erwachsene} Erw.`);
+    if (profil.kinder) personen.push(`${profil.kinder} Kinder`);
+    if (personen.length) raus.push({ feld: "Wer", wert: personen.join(" + ") });
+    if (profil.maxPreis) raus.push({ feld: "Bis", wert: `${profil.maxPreis} €` });
+    else if (profil.budget === "niedrig") raus.push({ feld: "Preis", wert: "günstig" });
+    for (const k of profil.kriterien || []) {
+      const l = this.kriterium(k.id)?.label;
+      if (l) raus.push({ feld: "Wunsch", wert: l });
+    }
+    return raus.filter((x) => x.wert);
+  },
+
   naechsteVorfrage(profil, erledigt) {
     return this.VORFRAGEN.find((f) => !erledigt.includes(f.id) && !f.ueberspringen(profil)) || null;
   },
@@ -857,7 +957,10 @@ const Politik = {
     const kurz = typeof aspektKurzfassung === "function" ? aspektKurzfassung(k.item) : null;
 
     return {
-      lage: "Stell dieses Haus vor. Es ist einer von mehreren Vorschlaegen, die du nacheinander nennst - halte dich also kurz.",
+      // Kurz halten: Die ausfuehrliche Begruendung steht eine Ebene
+      // tiefer hinter "Warum dieses?". War der Vorschlag selbst schon
+      // lang, war der Knopf ueberfluessig und die Liste unlesbar.
+      lage: "Stell dieses Haus in HOECHSTENS ZWEI Saetzen vor: Name, Ort, Preis, Note, und der eine Punkt, der den Ausschlag gibt. Nicht mehr. Die ausfuehrliche Begruendung kommt spaeter, wenn danach gefragt wird.",
       name: k.item.name,
       ort: k.item.location,
       preisProNacht: k.preis,

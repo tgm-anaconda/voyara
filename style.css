@@ -206,6 +206,24 @@ img, svg { max-width: 100%; }
 .freigabe-option:hover { background: rgba(255,255,255,.1); color: #fff; }
 .freigabe-option.gewaehlt { background: var(--brand-500); color: #fff; font-weight: 600; }
 
+/* Was der Chat verstanden hat */
+.agent-eckdaten[hidden] { display: none !important; }
+.agent-eckdaten {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 5px;
+  padding: 9px 16px 2px;
+}
+.eckdaten-titel {
+  font-size: .68rem; text-transform: uppercase; letter-spacing: .05em;
+  color: rgba(255,255,255,.4); width: 100%; margin-bottom: 1px;
+}
+.eckdaten-chip {
+  display: inline-flex; align-items: baseline; gap: 5px;
+  background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.13);
+  border-radius: 999px; padding: 3px 9px; font-size: .74rem;
+}
+.eckdaten-chip i { font-style: normal; color: rgba(255,255,255,.45); font-size: .68rem; }
+.eckdaten-chip b { font-weight: 600; color: rgba(255,255,255,.9); }
+
 /* Schaltflaeche unter einer Nachricht, die eine Nachfrage ausloest */
 .msg-aktion {
   background: rgba(255,255,255,.10); border: 1px solid rgba(255,255,255,.20);
@@ -213,6 +231,17 @@ img, svg { max-width: 100%; }
   font-size: .77rem; font-family: var(--font-body); cursor: pointer;
 }
 .msg-aktion:hover { background: rgba(255,255,255,.19); }
+.msg-aktion.offen { background: rgba(255,255,255,.2); border-color: rgba(255,255,255,.4); }
+.msg-aktion::after { content: " ▾"; opacity: .6; font-size: .85em; }
+.msg-aktion.offen::after { content: " ▴"; }
+
+/* Die Begruendung klappt in der Nachricht auf, statt eine neue zu sein */
+.msg-ausklapp[hidden] { display: none !important; }
+.msg-ausklapp {
+  margin-top: 9px; padding-top: 9px;
+  border-top: 1px solid rgba(255,255,255,.14);
+  font-size: .84rem; line-height: 1.5; color: rgba(255,255,255,.82);
+}
 .msg-aktion:focus-visible { outline: 2px solid var(--brand-500); outline-offset: 2px; }
 
 .msg-links { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
@@ -953,6 +982,7 @@ body.agent-collapsed .agent-head .icon-btn { margin-left: 0; transform: rotate(4
   body:not(.agent-open) .agent-messages,
   body:not(.agent-open) .agent-suggestions,
   body:not(.agent-open) .agent-freigabe,
+  body:not(.agent-open) .agent-eckdaten,
   body:not(.agent-open) .agent-input { display: none; }
   .agent-freigabe { padding: 7px 14px 0; }
 

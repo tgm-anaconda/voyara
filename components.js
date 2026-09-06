@@ -257,6 +257,10 @@ function renderAgentRail() {
     <div class="freigabe-liste" id="freigabeListe" hidden role="group" aria-label="Was darf der Chat für dich tun?"></div>
   </div>
 
+  <!-- Was der Chat verstanden hat, laufend sichtbar. Sonst weiss niemand,
+       ob eine Korrektur angekommen ist oder ueberhoert wurde. -->
+  <div class="agent-eckdaten" id="agentEckdaten" hidden></div>
+
   <div class="agent-messages" id="agentMessages"></div>
 
   <div class="agent-suggestions" id="agentSuggestions"></div>
@@ -391,12 +395,36 @@ const AgentPanel = {
       const reihe = document.createElement("div");
       reihe.className = "msg-links";
       for (const a of aktionen) {
-        if (!a || !a.wert) continue;
+        if (!a) continue;
         const b = document.createElement("button");
         b.type = "button";
         b.className = "msg-aktion";
         b.textContent = a.text || "Warum?";
-        b.addEventListener("click", (e) => { e.stopPropagation(); this.handleUserInput(a.wert); });
+
+        if (a.ausklappen) {
+          // Die Begruendung oeffnet sich innerhalb der Nachricht statt als
+          // neue Chatnachricht. Der Gespraechsfaden bleibt lesbar, und das
+          // Aufklappen ist trotzdem ein sauberer Klick zum Mitzaehlen.
+          const feld = document.createElement("div");
+          feld.className = "msg-ausklapp";
+          feld.hidden = true;
+          feld.textContent = "";
+          b.addEventListener("click", async (e) => {
+            e.stopPropagation();
+            if (!feld.hidden) { feld.hidden = true; b.classList.remove("offen"); return; }
+            b.classList.add("offen");
+            feld.hidden = false;
+            if (!feld.dataset.geladen) {
+              feld.textContent = "einen Moment…";
+              feld.textContent = await a.ausklappen();
+              feld.dataset.geladen = "1";
+              box.scrollTop = box.scrollHeight;
+            }
+          });
+          el.appendChild(feld);
+        } else if (a.wert) {
+          b.addEventListener("click", (e) => { e.stopPropagation(); this.handleUserInput(a.wert); });
+        }
         reihe.appendChild(b);
       }
       if (reihe.childNodes.length) el.appendChild(reihe);
@@ -497,6 +525,35 @@ const AgentPanel = {
       });
     }
     this.freigabeZeigen(aktuell);
+  },
+
+  /* Eckdaten-Anzeige
+     ------------------------------------------------------------------
+     Ein Kasten mit dem, was der Agent aus dem Gespraech mitgenommen hat.
+     Er ist nicht Zierde: Wer sieht, dass dort "4 Erw." steht, obwohl er
+     zwei Erwachsene und zwei Kinder gesagt hat, kann widersprechen.
+     Ohne die Anzeige merkt man den Fehler erst am Ergebnis. */
+  eckdatenZeigen(liste) {
+    const kasten = document.getElementById("agentEckdaten");
+    if (!kasten) return;
+    if (!liste || !liste.length) { kasten.hidden = true; kasten.innerHTML = ""; return; }
+    kasten.hidden = false;
+    kasten.innerHTML = "";
+    const titel = document.createElement("span");
+    titel.className = "eckdaten-titel";
+    titel.textContent = "Verstanden";
+    kasten.appendChild(titel);
+    for (const e of liste) {
+      const chip = document.createElement("span");
+      chip.className = "eckdaten-chip";
+      chip.innerHTML = "";
+      const f = document.createElement("i");
+      f.textContent = e.feld;
+      const w = document.createElement("b");
+      w.textContent = e.wert;
+      chip.append(f, w);
+      kasten.appendChild(chip);
+    }
   },
 
   freigabeZeigen(stufe) {
