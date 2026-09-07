@@ -481,7 +481,15 @@ const Kern = {
     // sind Aeusserungen, auf die man antwortet. Frueher stand hier ein
     // fester Satz, und damit war jede Eingabe ausserhalb des Idealpfads
     // eine Sackgasse - der Chat wirkte wie ein Formular mit Fehlermeldung.
-    if (!a.zielId && !a.zielRoh && !a.kriterien.length && a.erwachsene == null && !a.budget) {
+    // Geprueft wird das Profil und nicht mehr nur die Satzanalyse: Die
+    // Unterkunftsart wird eine Zeile darueber aus dem Wortlaut
+    // nachgetragen, und sie war in dieser Bedingung nicht enthalten.
+    // "Ich suche eine Ferienwohnung" landete deshalb im Smalltalk, das
+    // Profil wurde verworfen, und drei Fragen spaeter fragte der Agent,
+    // ob es ein Hotel oder eine Ferienwohnung sein soll.
+    const pr = this.lauf.profil;
+    if (!pr.zielId && !a.zielRoh && !pr.artGenannt && !(pr.kriterien || []).length
+        && pr.erwachsene == null && pr.personen == null && pr.monat == null && !pr.budget) {
       return this.plaudern(text);
     }
 
@@ -662,7 +670,7 @@ const Kern = {
     this.lauf.offeneVorfrage = frage.id;
     const ersatz = Politik.ersatzfrage(frage, this.lauf.profil);
     this.sagen(await this.formulieren(Politik.faktenVorfrage(frage, quittung, this.lauf.profil, this.letzteEingabe()), ersatz));
-    AgentPanel.setSuggestions(Politik.chipsFuer(frage, this.lauf.profil));
+    AgentPanel.setSuggestions(Politik.chipsFuer(frage, this.lauf.profil, this.lauf.verlauf));
     AgentPanel.status("wartet auf deine Antwort");
     AgentPanel.oeffnen();
     this.sichern();
@@ -710,19 +718,21 @@ const Kern = {
      ================================================================== */
 
   // `quittung` ist das, was aus der letzten Antwort verstanden wurde. Sie
-  // wandert in dieselbe Aeusserung wie die naechste Frage - ein Mensch
-  // sagt "September, notiert. Und wie viele seid ihr?" in einem Zug und
-  // nicht in zwei Nachrichten.
+  // wird nicht mehr ausgesprochen - der Eckdaten-Kasten zeigt es - und
+  // dient nur noch als Ersatztext, falls das Modell ausfaellt.
   async naechsteVorfrage(quittung) {
     const frage = Politik.naechsteVorfrage(this.lauf.profil, this.lauf.vorfragenErledigt);
     if (!frage) {
       const zusammen = Politik.ansage(this.lauf.profil);
       await this.denkpause(800);
-      const ersatz = [quittung, zusammen ? `Alles notiert: ${zusammen}. Ich suche jetzt.` : "Alles notiert. Ich suche jetzt."]
-        .filter(Boolean).join(" ");
+      // Auch hier keine Aufzaehlung des Verstandenen mehr: Der Auftrag
+      // steht im Eckdaten-Kasten, und "Alles notiert: Ferienwohnung,
+      // Suedtirol, bis 180 Euro, 2 Erwachsene, Sauberkeit" war genau die
+      // Formularsprache, die aus dem Gespraech eine Quittung machte.
+      const ersatz = "Ich suche jetzt.";
       this.sagen(await this.formulieren({
-        lage: "Sag kurz, dass du jetzt suchst.",
-        wasDuVerstandenHast: quittung || null,
+        lage: "Sag in einem Satz, dass du jetzt suchst. Zaehle nicht auf, was du "
+          + "verstanden hast - das steht sichtbar in der Uebersicht.",
         auftrag: zusammen || null,
       }, ersatz));
       return this.suchen();
@@ -731,7 +741,7 @@ const Kern = {
     this.lauf.offeneVorfrage = frage.id;
     const ersatz = Politik.ersatzfrage(frage, this.lauf.profil);
     this.sagen(await this.formulieren(Politik.faktenVorfrage(frage, quittung, this.lauf.profil, this.letzteEingabe()), ersatz));
-    AgentPanel.setSuggestions(Politik.chipsFuer(frage, this.lauf.profil));
+    AgentPanel.setSuggestions(Politik.chipsFuer(frage, this.lauf.profil, this.lauf.verlauf));
     AgentPanel.status("wartet auf deine Antwort");
     AgentPanel.oeffnen();
     this.sichern();
@@ -765,7 +775,7 @@ const Kern = {
         nochOffen ? `Das schaue ich mir bei der Suche an. ${Politik.ersatzfrage(frage, this.lauf.profil)}` : "Das schaue ich mir bei der Suche an.",
       ));
       if (!nochOffen) this.lauf.vorfragenErledigt.push(frage.id);
-      AgentPanel.setSuggestions(nochOffen ? Politik.chipsFuer(frage, this.lauf.profil) : null);
+      AgentPanel.setSuggestions(nochOffen ? Politik.chipsFuer(frage, this.lauf.profil, this.lauf.verlauf) : null);
       AgentPanel.status("wartet auf deine Antwort");
       AgentPanel.oeffnen();
       this.sichern();
@@ -796,7 +806,14 @@ const Kern = {
     // Frage nicht beantworten; dann wird die naheliegende Lesart
     // genommen und als Annahme protokolliert, damit sie in der
     // Auswertung nicht als Angabe der Person zaehlt.
-    const beantwortet = frage.ueberspringen(this.lauf.profil);
+    // Nachgehakt wird nur bei Pflichtfragen. Bei den Kuerfragen ist
+    // `ueberspringen` kein Test darauf, ob geantwortet wurde: Die offene
+    // Frage "worauf soll ich achten" liefert immer false, weil sie immer
+    // gestellt werden soll. Damit galt sie nie als beantwortet und wurde
+    // nach jeder Antwort erneut gestellt - "Sauberkeit ist mir wichtig"
+    // fuehrte zu "Worauf soll ich neben der Sauberkeit noch achten?".
+    const istPflicht = Politik.PFLICHTFRAGEN.some((f) => f.id === frage.id);
+    const beantwortet = !istPflicht || frage.ueberspringen(this.lauf.profil);
     const zaehler = (this.lauf.nachgehakt ||= {});
     if (!beantwortet && (zaehler[frage.id] || 0) < 1) {
       zaehler[frage.id] = (zaehler[frage.id] || 0) + 1;

@@ -726,8 +726,14 @@ const Politik = {
           p.typ = "apartment"; p.artGenannt = true; return "Ferienwohnung";
         }
         if (/hotel/.test(t)) { p.typ = "hotel"; p.artGenannt = true; return "Hotel"; }
-        p.typ = "hotel"; p.artGenannt = true;
-        return "Hotel, das ist die groessere Auswahl";
+        if (/egal|beides|weiß nicht|weiss nicht|such aus|entscheide du/.test(t)) {
+          p.typ = "hotel"; p.artGenannt = true; return "Hotel, da ist die Auswahl größer";
+        }
+        // Sonst nichts setzen. Vorher wurde bei allem, was nicht erkannt
+        // wurde, still "Hotel" eingetragen - auch bei einer Antwort, die
+        // gar nicht auf diese Frage gemuenzt war. Der Kern hakt jetzt
+        // einmal nach und protokolliert erst danach eine Annahme.
+        return null;
       },
     },
     {
@@ -989,9 +995,28 @@ const Politik = {
      anderen genuegt der hinterlegte Satz. */
   // Vorschlagsknoepfe einer Frage. Sie duerfen vom Stand abhaengen,
   // deshalb hier statt direkt am Feld.
-  chipsFuer(frage, profil) {
+  chipsFuer(frage, profil, verlauf = []) {
     if (!frage) return null;
-    return typeof frage.chips === "function" ? frage.chips(profil) : (frage.chips || null);
+    let liste = typeof frage.chips === "function" ? frage.chips(profil) : (frage.chips || null);
+    if (!liste) return null;
+
+    // Was die Person schon gesagt hat, wird ihr nicht noch einmal
+    // angeboten. Nach "Sauberkeit ist mir wichtig" stand genau dieser
+    // Knopf wieder da - als koennte man denselben Wunsch zweimal
+    // aeussern.
+    const gesagt = new Set(verlauf.filter((n) => n.rolle === "user")
+      .map((n) => String(n.text).trim().toLowerCase()));
+    liste = liste.filter((c) => !gesagt.has(String(c).trim().toLowerCase()));
+
+    // Und nichts, was bereits im Profil steht: Wer den Pool schon
+    // genannt hat, braucht keinen Poolknopf mehr.
+    const schonDa = new Set((profil.kriterien || []).map((k) => k.id));
+    liste = liste.filter((c) => {
+      const treffer = this.kriterienAusText(c);
+      return !treffer.length || !treffer.every((g) => schonDa.has(g.id));
+    });
+
+    return liste.length ? liste : null;
   },
 
   ersatzfrage(frage, profil) {
@@ -1463,8 +1488,20 @@ const Politik = {
     };
   },
 
+  /* Die Schnipsel der ersten Nachricht.
+     ------------------------------------------------------------------
+     Frueher standen hier fertige Auftraege: "Ferienwohnung in Tirol im
+     Januar". Das war ins Blaue geraten - wer nicht zufaellig im Januar
+     nach Tirol wollte, konnte damit nichts anfangen, und wer darauf
+     klickte, uebernahm ein Reiseziel, das er sich nicht ausgesucht
+     hatte. Fuer die Untersuchung waere das der schlechteste Fall: ein
+     Auftrag, der von der Seite stammt und nicht von der Person.
+
+     Jetzt sind es Anfaenge. Sie sagen, in welcher Richtung es losgeht,
+     und ueberlassen alles Weitere dem Gespraech - das ist ohnehin der
+     Sinn der Pflichtfragen. */
   vorschlaege() {
-    return ["Günstiges Hotel am Strand für 2 Personen", "Ferienwohnung in Tirol im Januar", "Gut bewertetes Hotel in Kyoto"];
+    return ["Ich suche ein Hotel", "Ich suche eine Ferienwohnung", "Ich will ans Meer", "In die Berge"];
   },
 };
 

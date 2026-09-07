@@ -1418,62 +1418,114 @@ body.agent-collapsed .agent-head .icon-btn { margin-left: 0; transform: rotate(4
 }
 
 /* ==================================================================
-   Startbildschirm - Cookie-Hinweis und Wahl der Freigabestufe
+   Einstiegsbildschirme - Studienhinweis und Einwilligung
    ------------------------------------------------------------------
-   Bewusst zurueckhaltend: Der Bildschirm soll nach Einwilligung
-   aussehen und nicht nach einer Werbeeinblendung. Keine Stufe wird
-   farblich hervorgehoben - eine hervorgehobene Zeile waere eine
-   Empfehlung, und die Wahl ist der Messwert.
+   Das zweite Fenster soll aussehen wie die Einwilligungsfenster, die
+   man von jeder Seite kennt: schmal, sachlich, kleine Schrift, eine
+   Zeile fuer die notwendigen Cookies, unten die Schaltflaeche und die
+   ueblichen kleinen Verweise. Vorher wirkte es wie ein Werbekasten,
+   und ein ungewohntes Fenster wird gelesen wie ein Fremdkoerper - die
+   Wahl darin waere dann eine Wahl im Versuch und nicht eine im Netz.
+
+   Keine Stufe ist farblich hervorgehoben. Eine hervorgehobene Zeile
+   waere eine Empfehlung, und die Wahl ist der Messwert.
    ================================================================== */
 .startschirm {
   position: fixed; inset: 0; z-index: 900;
-  background: rgba(16, 22, 30, .62);
+  background: rgba(16, 22, 30, .55);
   display: flex; align-items: center; justify-content: center;
   padding: 20px; overflow-y: auto;
 }
 body.startschirm-offen { overflow: hidden; }
 
 .startschirm-karte {
-  background: #fff; border-radius: 16px; width: 100%; max-width: 520px;
-  padding: 26px 26px 22px; box-shadow: 0 20px 60px rgba(0, 0, 0, .3);
-  max-height: calc(100dvh - 40px); overflow-y: auto;
+  background: #fff; border-radius: 10px; width: 100%; max-width: 480px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, .28);
+  max-height: calc(100dvh - 40px); display: flex; flex-direction: column;
+  outline: none;
 }
-.startschirm-karte h2 { font-size: 1.25rem; color: var(--brand-900); margin: 0 0 12px; }
-.startschirm-karte h3 { font-size: 1rem; color: var(--brand-900); margin: 0 0 8px; }
-.startschirm-karte p { font-size: .9rem; line-height: 1.5; color: var(--ink-700); margin: 0 0 12px; }
+.startschirm-einstieg .startschirm-karte { max-width: 540px; }
 
-.startschirm-cookie {
-  background: var(--bg-soft, #f4f6f5); border-radius: 10px;
-  padding: 12px 14px; font-size: .84rem !important;
+.startschirm-inhalt { padding: 22px 24px 18px; overflow-y: auto; }
+.startschirm-inhalt h2 { font-size: 1.08rem; color: var(--ink-900, #1a1f24); margin: 0 0 12px; line-height: 1.35; }
+.startschirm-inhalt p { font-size: .875rem; line-height: 1.55; color: var(--ink-700); margin: 0 0 12px; }
+.startschirm-inhalt a { color: var(--brand-700, #2e7d5b); }
+
+/* Die kleine Zeile ueber der Ueberschrift, wie sie Einwilligungsfenster
+   fuehren - sie sagt in zwei Worten, worum es geht. */
+.startschirm-marke {
+  font-size: .68rem !important; letter-spacing: .09em; text-transform: uppercase;
+  color: var(--ink-500, #7c858e) !important; margin: 0 0 6px !important; font-weight: 600;
 }
-.startschirm-block { border-top: 1px solid var(--line); padding-top: 18px; margin-top: 4px; }
+.startschirm-klein { font-size: .8rem !important; color: var(--ink-600, #5c656e) !important; }
 
-.startschirm-stufen { display: flex; flex-direction: column; gap: 8px; margin: 14px 0 12px; }
+/* Ablauf im Studienhinweis */
+.startschirm-ablauf { margin: 4px 0 16px; display: flex; flex-direction: column; gap: 10px; }
+.startschirm-ablauf > div { display: flex; gap: 11px; align-items: flex-start; }
+.startschirm-ablauf span {
+  flex: none; width: 21px; height: 21px; border-radius: 50%;
+  background: var(--bg-soft, #eef2f0); color: var(--brand-800, #24614a);
+  font-size: .74rem; font-weight: 700; display: grid; place-items: center; margin-top: 1px;
+}
+.startschirm-ablauf p { margin: 0 !important; font-size: .85rem !important; }
+
+/* Die Zeilen eines Einwilligungsfensters */
+.startschirm-zeile {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  border-top: 1px solid var(--line); padding: 11px 0 10px;
+}
+.startschirm-zeile-name { font-size: .875rem; font-weight: 600; color: var(--ink-900, #1a1f24); }
+.startschirm-zeile-fest { font-size: .78rem; color: var(--ink-500, #7c858e); }
+.startschirm-zeile-offen { border-bottom: none; padding-bottom: 4px; }
+
+.startschirm-stufen { display: flex; flex-direction: column; gap: 6px; margin: 4px 0 12px; }
 .startschirm-stufe {
-  display: flex; gap: 11px; align-items: flex-start;
-  border: 1px solid var(--line); border-radius: 10px; padding: 12px 13px;
+  display: flex; gap: 10px; align-items: flex-start;
+  border: 1px solid var(--line); border-radius: 7px; padding: 10px 11px;
   cursor: pointer; transition: border-color .15s, background .15s;
 }
 .startschirm-stufe:hover { background: var(--bg-soft, #f7f9f8); }
 .startschirm-stufe:has(input:checked) { border-color: var(--brand-600, #2e7d5b); background: var(--bg-soft, #f4f8f6); }
-.startschirm-stufe input { margin-top: 2px; flex: none; width: 17px; height: 17px; accent-color: var(--brand-600, #2e7d5b); }
-.startschirm-stufe-text { display: flex; flex-direction: column; gap: 3px; }
-.startschirm-stufe-text strong { font-size: .92rem; color: var(--ink-900, #1a1f24); font-weight: 600; }
-.startschirm-stufe-text span { font-size: .84rem; line-height: 1.45; color: var(--ink-700); }
+.startschirm-stufe input { margin-top: 2px; flex: none; width: 16px; height: 16px; accent-color: var(--brand-600, #2e7d5b); }
+.startschirm-stufe-text { display: flex; flex-direction: column; gap: 2px; }
+.startschirm-stufe-text strong { font-size: .875rem; color: var(--ink-900, #1a1f24); font-weight: 600; }
+.startschirm-stufe-text span { font-size: .8rem; line-height: 1.42; color: var(--ink-600, #5c656e); }
 
 .startschirm-mehr {
   background: none; border: none; padding: 0; cursor: pointer;
-  font-size: .84rem; color: var(--brand-700, #2e7d5b); text-decoration: underline;
+  font-size: .8rem; color: var(--ink-600, #5c656e); text-decoration: underline;
 }
 .startschirm-detail { margin-top: 10px; }
 .startschirm-detail[hidden] { display: none !important; }
-.startschirm-detail p { font-size: .84rem !important; margin-bottom: 8px; }
+.startschirm-detail p { margin-bottom: 8px !important; }
 
-.startschirm-weiter { width: 100%; margin-top: 18px; justify-content: center; }
-.startschirm-weiter:disabled { opacity: .45; cursor: not-allowed; }
+/* Fussleiste: Verweise links, Schaltflaeche rechts - die uebliche
+   Aufteilung solcher Fenster. */
+.startschirm-fuss {
+  display: flex; align-items: center; justify-content: space-between; gap: 14px;
+  padding: 13px 24px; border-top: 1px solid var(--line);
+  background: var(--bg-soft, #f7f9f8); border-radius: 0 0 10px 10px;
+}
+.startschirm-einstieg .startschirm-fuss { justify-content: flex-end; }
+.startschirm-fussverweise { display: flex; gap: 14px; }
+.startschirm-fussverweise a { font-size: .76rem; color: var(--ink-500, #7c858e); text-decoration: none; }
+.startschirm-fussverweise a:hover { text-decoration: underline; }
+
+.startschirm-knopf {
+  border: 1px solid var(--line); background: #fff; color: var(--ink-900, #1a1f24);
+  border-radius: 7px; padding: 9px 18px; font-size: .85rem; font-weight: 600;
+  cursor: pointer; white-space: nowrap;
+}
+.startschirm-knopf-stark {
+  background: var(--brand-600, #2e7d5b); border-color: var(--brand-600, #2e7d5b); color: #fff;
+}
+.startschirm-knopf-stark:disabled { opacity: .4; cursor: not-allowed; }
 
 @media (max-width: 560px) {
-  .startschirm { padding: 12px; align-items: flex-start; }
-  .startschirm-karte { padding: 20px 18px 18px; border-radius: 14px; }
-  .startschirm-karte h2 { font-size: 1.12rem; }
+  .startschirm { padding: 10px; align-items: flex-end; }
+  .startschirm-karte { border-radius: 12px; max-height: calc(100dvh - 20px); }
+  .startschirm-inhalt { padding: 18px 17px 14px; }
+  .startschirm-fuss { padding: 11px 17px; border-radius: 0 0 12px 12px; flex-wrap: wrap; }
+  .startschirm-knopf { flex: 1 1 100%; text-align: center; padding: 11px 18px; }
+  .startschirm-fussverweise { order: 2; width: 100%; justify-content: center; }
 }

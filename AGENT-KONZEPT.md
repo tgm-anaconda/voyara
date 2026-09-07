@@ -858,7 +858,48 @@ erscheint im Eckdaten-Kasten.
 
 ---
 
-## 22. Der Startbildschirm: die Freigabewahl als eigener Messpunkt
+## 22. Der Einstieg: Studienhinweis und Einwilligungsfenster
+
+Vor der ersten Nutzung stehen zwei Bildschirme nacheinander.
+
+### 22.1 Der Studienhinweis
+
+Er kommt zuerst, weil ohne ihn niemand einwilligen kann. Er nennt den Rahmen,
+den Ablauf in drei Schritten mit Zeitangaben, und drei Dinge, die sonst
+Unsicherheit erzeugen: dass nichts wirklich gebucht wird, dass keine
+Zahlungsdaten abgefragt werden, und dass in Formularen eingetragen werden darf,
+was man möchte.
+
+**Er nennt das Thema, aber nicht die Fragestellung.** "Wie sich das Buchen im
+Netz verändert, wenn sich Aufgaben an automatisierte Assistenten abgeben
+lassen" sagt, worum es geht, und ist wahr. "Wir messen, wie viel Sie abgeben"
+wäre die halbe Antwort und würde genau das Verhalten erzeugen, das gemessen
+werden soll. Der Assistent wird im Hinweis deshalb nicht hervorgehoben; erklärt
+wird er erst im zweiten Bildschirm, wo die Einstellung dazu getroffen wird.
+
+Die Angaben zur Erhebung stehen als `STUDIE` am Kopf von `agent/start.js`:
+Rahmen, Hochschule, Kontaktadresse, Dauer. Was leer bleibt, fällt im Text
+weg.
+
+Protokolliert wird `hinweisSekunden` - wie lange der Hinweis offen stand. Wer
+ihn in zwei Sekunden wegklickt, hat ihn nicht gelesen; das gehört zu den
+Ernsthaftigkeitsindikatoren aus Abschnitt 18.
+
+### 22.2 Das Einwilligungsfenster
+
+Es sieht aus wie die Einwilligungsfenster, die man von jeder Seite kennt: eine
+Zeile "Notwendige Cookies - Immer aktiv", darunter der Abschnitt mit der
+Einstellung, unten die Schaltfläche und die kleinen Verweise auf Datenschutz,
+Cookies und Impressum.
+
+Diese Form ist kein Beiwerk. Ein ungewohntes Fenster wird als Fremdkörper
+gelesen, und die Wahl darin wäre dann eine Wahl im Versuch statt eine im Netz.
+Die erste Fassung wirkte wie ein Werbekasten und musste deshalb neu gebaut
+werden.
+
+---
+
+## 22a. Die Freigabewahl als eigener Messpunkt
 
 ### Das Problem mit dem Regler allein
 
