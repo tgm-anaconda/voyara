@@ -49,13 +49,28 @@
    Stufe wird empfohlen, vor keiner wird gewarnt. "Bequem" bei der hohen
    oder "sicher" bei der niedrigen waere bereits die halbe Antwort.
 
-   Der Cookie-Teil
+   Der Cookie-Hinweis
    -------------------------------------------------------------------
    Er steht da, weil er zur Lage gehoert - eine Buchungsseite ohne ihn
    wirkt nicht echt. Sein Text ist trotzdem wahr: Die Seite legt
    tatsaechlich nur im sessionStorage ab, was fuer den Besuch noetig
    ist, und gibt nichts an Dritte. Eine erfundene Einwilligung waere
    eine Taeuschung, die nichts einbringt.
+
+   Gebaut ist er nach dem, was solche Hinweise ueblicherweise ausmacht:
+   eine Karte unten rechts, schmal, kurzer Text, Kategorien mit
+   Auswahlfeldern, darunter eine Schaltflaeche und die kleinen Verweise.
+   Die Ecke unten rechts ist der Quasi-Standard; auf dem Handy nimmt die
+   Karte die Breite ein.
+
+   Die Good-Practice-Leitlinien des Bundesjustizministeriums zum
+   Einwilligungsmanagement verlangen dabei genau das, was die Erhebung
+   ohnehin braucht: prominent, aber nicht bildschirmfuellend; keine
+   Vorauswahl von Kategorien; alle Handlungsoptionen optisch
+   gleichberechtigt, ohne dass eine durch Farbe oder Groesse bevorzugt
+   wird. Fuer die Freigabestufen heisst das: vier gleich gestaltete
+   Zeilen, gleich lange Beschreibungen, nichts hervorgehoben. Was
+   rechtlich gegen Nudging gedacht ist, haelt hier den Messwert sauber.
    ================================================================== */
 
 /* Angaben zur Erhebung. Hier eintragen, was auf dem Hinweis stehen
@@ -98,41 +113,73 @@ const Startbildschirm = {
     const gezeigt = Date.now();
     const zusatz = [STUDIE.rahmen, STUDIE.hochschule].filter(Boolean).join(", ");
 
-    const el = this.rahmenBauen("einstieg", `
-      <p class="startschirm-marke">Teilnahmehinweis</p>
-      <h2>Studie zur Reisebuchung im Netz</h2>
+    // Deckt die Seite vollstaendig ab. Vorher lag der Hinweis als Kasten
+    // ueber der Buchungsseite, und die war dahinter zu sehen - das
+    // erzeugte vor allem den Wunsch, ihn wegzuklicken und nachzusehen,
+    // was dahinter liegt. Ein eigener Bildschirm laesst nichts anderes
+    // zu, als ihn zu lesen.
+    const el = document.createElement("div");
+    el.className = "einstieg";
+    el.innerHTML = `
+      <div class="einstieg-blatt" role="dialog" aria-modal="true" tabindex="-1">
+        <header class="einstieg-kopf">
+          <span class="einstieg-marke">Voyara</span>
+          <span class="einstieg-etikett">Teilnahmehinweis</span>
+        </header>
 
-      <p>
-        Danke, dass du dir Zeit nimmst. Diese Erhebung entsteht im Rahmen
-        ${zusatz ? `einer ${zusatz}` : "einer Bachelorarbeit"} und untersucht, wie sich
-        das Buchen im Netz verändert, wenn sich Aufgaben an automatisierte Assistenten
-        abgeben lassen.
-      </p>
+        <h1>Schön, dass du dabei bist.</h1>
+        <p class="einstieg-vorspann">
+          Diese Erhebung entsteht im Rahmen ${zusatz ? `einer ${zusatz}` : "einer Bachelorarbeit"}
+          und fragt, wie sich das Buchen im Netz verändert, wenn sich Aufgaben an
+          automatisierte Assistenten abgeben lassen. Du brauchst dafür kein Vorwissen -
+          buch einfach so, wie du es sonst auch tun würdest.
+        </p>
 
-      <div class="startschirm-ablauf">
-        <div><span>1</span><p><strong>Eine Buchungsseite benutzen.</strong> Du bekommst gleich
-          eine Aufgabe und suchst dafür auf dieser Seite eine Unterkunft. Etwa zehn Minuten.</p></div>
-        <div><span>2</span><p><strong>Ein paar Fragen beantworten.</strong> Danach geht es um
-          deine Eindrücke: was gut lief, was nicht, und wie du das Erlebte einschätzt. Etwa fünf Minuten.</p></div>
-        <div><span>3</span><p><strong>Auflösung.</strong> Zum Schluss erfährst du, was genau
-          untersucht wurde und warum.</p></div>
-      </div>
+        <div class="einstieg-ablauf">
+          <div>
+            <span>1</span>
+            <h3>Eine Buchungsseite benutzen</h3>
+            <p>Du bekommst gleich eine Aufgabe und suchst dafür auf dieser Seite eine
+               Unterkunft. Etwa zehn Minuten.</p>
+          </div>
+          <div>
+            <span>2</span>
+            <h3>Ein paar Fragen beantworten</h3>
+            <p>Danach geht es um deine Eindrücke: was gut lief, was nicht, und wie du
+               das Erlebte einschätzt. Etwa fünf Minuten.</p>
+          </div>
+          <div>
+            <span>3</span>
+            <h3>Auflösung</h3>
+            <p>Zum Schluss erfährst du, was genau untersucht wurde und warum.</p>
+          </div>
+        </div>
 
-      <p class="startschirm-klein">
-        Die Seite ist ein Nachbau für diese Untersuchung. <strong>Es wird nichts
-        wirklich gebucht</strong>, es entstehen keine Kosten, und Zahlungsdaten werden
-        an keiner Stelle abgefragt. Wenn dich ein Formular nach Namen oder Adresse
-        fragt, kannst du eintragen, was du möchtest.
-      </p>
-      <p class="startschirm-klein">
-        Die Teilnahme ist freiwillig und anonym; du kannst jederzeit abbrechen, indem du
-        das Fenster schließt. Ausgewertet wird nur, was du auf dieser Seite tust und
-        antwortest - keine Namen, keine Mailadressen, keine IP-Adressen.
-        ${STUDIE.kontakt ? `Fragen? <a href="mailto:${STUDIE.kontakt}">${STUDIE.kontakt}</a>` : ""}
-      </p>`,
-      `<button type="button" class="startschirm-knopf startschirm-knopf-stark" data-weiter>
-         Verstanden, los geht es
-       </button>`);
+        <div class="einstieg-hinweise">
+          <p>
+            <strong>Es wird nichts wirklich gebucht.</strong> Die Seite ist ein Nachbau für
+            diese Untersuchung. Es entstehen keine Kosten, und Zahlungsdaten werden an keiner
+            Stelle abgefragt. Wenn dich ein Formular nach Namen oder Adresse fragt, trag ein,
+            was du möchtest.
+          </p>
+          <p>
+            <strong>Freiwillig und anonym.</strong> Du kannst jederzeit abbrechen, indem du das
+            Fenster schließt. Ausgewertet wird nur, was du auf dieser Seite tust und antwortest -
+            keine Namen, keine Mailadressen, keine IP-Adressen.
+            ${STUDIE.kontakt ? `Fragen? <a href="mailto:${STUDIE.kontakt}">${STUDIE.kontakt}</a>` : ""}
+          </p>
+        </div>
+
+        <button type="button" class="einstieg-knopf" data-weiter>
+          Verstanden, los geht es
+        </button>
+        <p class="einstieg-dauer">Insgesamt etwa ${STUDIE.dauerMinuten} Minuten</p>
+      </div>`;
+
+    document.body.appendChild(el);
+    document.body.classList.add("startschirm-offen");
+    el.addEventListener("keydown", (e) => { if (e.key === "Escape") e.stopPropagation(); }, true);
+    setTimeout(() => el.querySelector(".einstieg-blatt").focus({ preventScroll: true }), 50);
 
     el.querySelector("[data-weiter]").addEventListener("click", () => {
       el.remove();
@@ -156,63 +203,56 @@ const Startbildschirm = {
     let aufgeklappt = false;
     let gewaehlt = null;
 
-    const el = this.rahmenBauen("einwilligung", `
-      <p class="startschirm-marke">Datenschutz und Einstellungen</p>
-      <h2>Bevor es losgeht</h2>
-
-      <p class="startschirm-klein">
-        Wir speichern während deines Besuchs, was du ausgewählt hast, damit deine Suche
-        beim Seitenwechsel erhalten bleibt. Die Angaben verlassen deinen Browser nicht
-        und werden nicht an Dritte weitergegeben.
-      </p>
-
-      <div class="startschirm-zeile">
-        <span class="startschirm-zeile-name">Notwendige Cookies</span>
-        <span class="startschirm-zeile-fest">Immer aktiv</span>
-      </div>
-
-      <div class="startschirm-zeile startschirm-zeile-offen">
-        <span class="startschirm-zeile-name">Reise-Assistent</span>
-      </div>
-
-      <p class="startschirm-klein">
-        Ein Assistent hilft dir bei der Suche: Er sucht, setzt Filter, vergleicht Häuser
-        und liest Bewertungen. Wie weit er dabei gehen darf, entscheidest du.
-      </p>
-
-      <div class="startschirm-stufen" role="radiogroup" aria-label="Freigabe für den Assistenten">
-        ${reihe.map((s) => `
-          <label class="startschirm-stufe">
-            <input type="radio" name="freigabe" value="${s.id}">
-            <span class="startschirm-stufe-text">
-              <strong>${s.kurz}</strong>
-              <span>${this.ERKLAERUNG[s.id]}</span>
-            </span>
-          </label>`).join("")}
-      </div>
-
-      <button type="button" class="startschirm-mehr" data-mehr>Was heißt das genau?</button>
-      <div class="startschirm-detail" hidden>
-        <p class="startschirm-klein">
-          Der Assistent bewegt den Mauszeiger sichtbar über die Seite. Du siehst jederzeit,
-          was er gerade tut, und kannst ihn im Chatfenster unterbrechen.
+    const el = document.createElement("div");
+    el.className = "cookiehinweis";
+    el.innerHTML = `
+      <div class="cookiehinweis-karte" role="dialog" aria-modal="true" tabindex="-1">
+        <h2>Cookies und Einstellungen</h2>
+        <p>
+          Wir speichern nur, was für deinen Besuch nötig ist. Nichts davon verlässt
+          deinen Browser. <a href="info.html?p=cookies" target="_blank" rel="noopener">Mehr erfahren</a>
         </p>
-        <p class="startschirm-klein">
-          Deine Wahl gilt nicht für immer: Im Chatfenster steht oben ein Regler, mit dem du
-          sie jederzeit änderst - nach oben wie nach unten.
-        </p>
-      </div>`,
-      `<div class="startschirm-fussverweise">
-         <a href="info.html?p=datenschutz" target="_blank" rel="noopener">Datenschutz</a>
-         <a href="info.html?p=cookies" target="_blank" rel="noopener">Cookies</a>
-         <a href="info.html?p=impressum" target="_blank" rel="noopener">Impressum</a>
-       </div>
-       <button type="button" class="startschirm-knopf startschirm-knopf-stark" disabled data-weiter>
-         Auswahl bestätigen
-       </button>`);
+
+        <div class="cookiehinweis-kategorie">
+          <span>Notwendig</span>
+          <span class="cookiehinweis-fest">Immer aktiv</span>
+        </div>
+
+        <div class="cookiehinweis-kategorie cookiehinweis-kategorie-offen">
+          <span>Reise-Assistent</span>
+        </div>
+        <p class="cookiehinweis-frage">Wie weit darf er gehen?</p>
+
+        <div class="cookiehinweis-stufen" role="radiogroup" aria-label="Freigabe für den Assistenten">
+          ${reihe.map((s) => `
+            <label class="cookiehinweis-stufe">
+              <input type="radio" name="freigabe" value="${s.id}">
+              <span>
+                <strong>${s.kurz}</strong>
+                <em>${this.KURZ[s.id]}</em>
+              </span>
+            </label>`).join("")}
+        </div>
+
+        <button type="button" class="cookiehinweis-mehr" data-mehr>Was heißt das genau?</button>
+        <div class="cookiehinweis-detail" hidden>
+          ${stufen.map((s) => `<p><strong>${s.kurz}.</strong> ${this.ERKLAERUNG[s.id]}</p>`).join("")}
+          <p>Du kannst das jederzeit im Chatfenster ändern.</p>
+        </div>
+
+        <button type="button" class="cookiehinweis-knopf" disabled data-weiter>Speichern</button>
+
+        <div class="cookiehinweis-verweise">
+          <a href="info.html?p=datenschutz" target="_blank" rel="noopener">Datenschutz</a>
+          <a href="info.html?p=impressum" target="_blank" rel="noopener">Impressum</a>
+        </div>
+      </div>`;
+
+    document.body.appendChild(el);
+    document.body.classList.add("startschirm-offen");
+    el.addEventListener("keydown", (e) => { if (e.key === "Escape") e.stopPropagation(); }, true);
 
     const knopf = el.querySelector("[data-weiter]");
-
     el.addEventListener("change", (e) => {
       if (e.target.name !== "freigabe") return;
       gewaehlt = e.target.value;
@@ -220,7 +260,7 @@ const Startbildschirm = {
     });
 
     el.querySelector("[data-mehr]").addEventListener("click", (e) => {
-      const kasten = el.querySelector(".startschirm-detail");
+      const kasten = el.querySelector(".cookiehinweis-detail");
       aufgeklappt = true;
       kasten.hidden = !kasten.hidden;
       e.target.textContent = kasten.hidden ? "Was heißt das genau?" : "Weniger anzeigen";
@@ -239,33 +279,14 @@ const Startbildschirm = {
     });
   },
 
-  /* ==================================================================
-     Gemeinsamer Rahmen
-     ================================================================== */
-
-  rahmenBauen(art, inhalt, fuss) {
-    const el = document.createElement("div");
-    el.className = `startschirm startschirm-${art}`;
-    el.innerHTML = `
-      <div class="startschirm-karte" role="dialog" aria-modal="true" tabindex="-1">
-        <div class="startschirm-inhalt">${inhalt}</div>
-        <div class="startschirm-fuss">${fuss}</div>
-      </div>`;
-    document.body.appendChild(el);
-    document.body.classList.add("startschirm-offen");
-
-    // Kein Wegklicken: keine Schliessen-Schaltflaeche, kein Escape, kein
-    // Klick daneben. Wer sich hier nicht entscheidet, erzeugt einen
-    // Datensatz ohne den einen Wert, um den es geht.
-    el.addEventListener("keydown", (e) => { if (e.key === "Escape") e.stopPropagation(); }, true);
-
-    // Bewusst kein Fokus auf ein Eingabefeld: Der Browser scrollt es in
-    // den Blick, und auf einem kleinen Bildschirm stand die Karte damit
-    // sofort mitten in der Liste - Ueberschrift und Erklaerung waren
-    // nach oben herausgeschoben, bevor jemand sie lesen konnte.
-    const karte = el.querySelector(".startschirm-karte");
-    setTimeout(() => karte.focus({ preventScroll: true }), 50);
-    return el;
+  /* Ein Satz je Stufe, gleich gebaut: was er tut, was bei dir bleibt.
+     In der schmalen Karte muss es kurz sein, gleich lang bleibt es
+     trotzdem - eine ausfuehrlichere Zeile waere eine Empfehlung. */
+  KURZ: {
+    vorschlagen: "Er schlägt vor, du klickst selbst.",
+    suchen:      "Er sucht und filtert, du entscheidest.",
+    vorbereiten: "Er legt die Buchung bereit, du bestätigst.",
+    buchen:      "Er bucht in deinem Rahmen selbst.",
   },
 
   /* Gleich lang, gleich sachlich, keine Stufe empfohlen. Jede sagt, was

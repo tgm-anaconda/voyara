@@ -864,6 +864,13 @@ Vor der ersten Nutzung stehen zwei Bildschirme nacheinander.
 
 ### 22.1 Der Studienhinweis
 
+**Er deckt die Seite vollständig ab** - eigener Bildschirm, eigene Farbe, die
+Buchungsseite ist dahinter nicht zu sehen. Die erste Fassung lag als Kasten
+über der Seite, und die schien dahinter durch; das erzeugte vor allem den
+Wunsch, ihn wegzuklicken und nachzusehen, was dahinter liegt. Gelesen wird ein
+Hinweis nur, wenn es nichts Interessanteres zu sehen gibt. Nebenbei trennt der
+eigene Bildschirm die Teilnahme sichtbar von der Aufgabe, die danach kommt.
+
 Er kommt zuerst, weil ohne ihn niemand einwilligen kann. Er nennt den Rahmen,
 den Ablauf in drei Schritten mit Zeitangaben, und drei Dinge, die sonst
 Unsicherheit erzeugen: dass nichts wirklich gebucht wird, dass keine
@@ -885,17 +892,46 @@ Protokolliert wird `hinweisSekunden` - wie lange der Hinweis offen stand. Wer
 ihn in zwei Sekunden wegklickt, hat ihn nicht gelesen; das gehört zu den
 Ernsthaftigkeitsindikatoren aus Abschnitt 18.
 
-### 22.2 Das Einwilligungsfenster
+### 22.2 Der Cookie-Hinweis
 
-Es sieht aus wie die Einwilligungsfenster, die man von jeder Seite kennt: eine
-Zeile "Notwendige Cookies - Immer aktiv", darunter der Abschnitt mit der
-Einstellung, unten die Schaltfläche und die kleinen Verweise auf Datenschutz,
-Cookies und Impressum.
+Er ist gebaut wie die Hinweise, die man von jeder Seite kennt: **eine schmale
+Karte unten rechts**, kurzer Text, zwei Kategorien mit Auswahlfeldern, darunter
+eine Schaltfläche und die kleinen Verweise. Auf dem Handy nimmt die Karte die
+Breite ein. Die Ecke unten rechts ist der Quasi-Standard solcher Hinweise.
 
 Diese Form ist kein Beiwerk. Ein ungewohntes Fenster wird als Fremdkörper
 gelesen, und die Wahl darin wäre dann eine Wahl im Versuch statt eine im Netz.
-Die erste Fassung wirkte wie ein Werbekasten und musste deshalb neu gebaut
-werden.
+Die ersten beiden Fassungen - erst ein Werbekasten, dann ein großes zentrales
+Fenster - hatten beide dieses Problem.
+
+**Die Leitlinien decken sich mit dem, was die Erhebung braucht.** Die
+Good-Practice-Initiative des Bundesjustizministeriums zum
+Einwilligungsmanagement verlangt für Cookie-Banner:
+
+| Leitlinie | Umsetzung hier |
+|---|---|
+| prominent, aber nicht bildschirmfüllend | Karte unten rechts, 372 px breit |
+| keine Vorauswahl von Kategorien | kein Feld gesetzt, Schaltfläche gesperrt |
+| alle Handlungsoptionen optisch gleichberechtigt | vier identisch gestaltete Zeilen |
+| keine Bevorzugung durch Farbe oder Größe | keine Stufe hervorgehoben |
+| klare Sprache, prägnante Formulierung | ein Satz je Stufe, alle gleich lang |
+
+Das ist ein günstiger Zufall: Was rechtlich gegen Nudging gedacht ist, hält hier
+den Messwert sauber. Die Anforderung "keine Vorauswahl" ist dieselbe
+Vorkehrung, die in 22a aus methodischen Gründen begründet wird, und die
+Gleichbehandlung der Optionen ist genau das, was eine Wahl zur Messung macht
+statt zur Reaktion auf ein Design.
+
+Für die Studie lässt sich das zudem als Argument führen: Der Hinweis ist nicht
+nur realistisch nachgebaut, sondern entspricht den in Deutschland empfohlenen
+Gestaltungsregeln. Ein Einwand, die Verteilung sei ein Artefakt des Banners,
+lässt sich damit beantworten.
+
+**Der Schleier dahinter ist bewusst schwach** (22 Prozent Deckung). Er nimmt der
+Seite nicht die Sichtbarkeit, verhindert aber, dass der Hinweis einfach liegen
+bleibt. Ohne ihn gäbe es Sitzungen ohne den einen Wert, um den es geht - und
+Cookie-Wände, die eine Entscheidung erzwingen, sind auf deutschen Seiten
+verbreitet genug, um nicht aufzufallen.
 
 ---
 
