@@ -250,15 +250,20 @@ function renderAgentRail() {
        jederzeit aenderbar - und damit die zentrale Messgroesse dieser
        Studie, nicht bloss eine Einstellung. -->
   <div class="agent-freigabe" id="agentFreigabe" hidden>
-    <button type="button" class="freigabe-knopf" id="freigabeKnopf" aria-expanded="false">
-      <span class="freigabe-marke">Freigabe</span>
-      <span class="freigabe-stufe" id="freigabeStufe">Suchen und filtern</span>
-    </button>
+    <!-- Knopf und Fragezeichen stehen nebeneinander in einer Zeile. Das
+         Fragezeichen lag vorher absolut positioniert auf dem Knopf und
+         ueberlappte dessen Rand und den Pfeil. -->
+    <div class="freigabe-zeile">
+      <button type="button" class="freigabe-knopf" id="freigabeKnopf" aria-expanded="false">
+        <span class="freigabe-marke">Freigabe</span>
+        <span class="freigabe-stufe" id="freigabeStufe">Suchen und filtern</span>
+      </button>
+      <!-- Ohne Erklaerung uebersehen viele, dass sich hier ueberhaupt etwas
+           einstellen laesst - und chatten einfach los. Genau diese Wahl ist
+           aber die Messgroesse der Studie. -->
+      <button type="button" class="freigabe-info" id="freigabeInfo" aria-expanded="false" aria-label="Wozu ist das da?">?</button>
+    </div>
     <div class="freigabe-liste" id="freigabeListe" hidden role="group" aria-label="Was darf der Chat für dich tun?"></div>
-    <!-- Ohne Erklaerung uebersehen viele, dass sich hier ueberhaupt etwas
-         einstellen laesst - und chatten einfach los. Genau diese Wahl ist
-         aber die Messgroesse der Studie. -->
-    <button type="button" class="freigabe-info" id="freigabeInfo" aria-expanded="false" aria-label="Wozu ist das da?">i</button>
     <p class="freigabe-erklaerung" id="freigabeErklaerung" hidden>
       Hier legst du fest, wie weit der Chat für dich gehen darf: nur Vorschläge machen,
       selbst suchen und filtern, die Buchung vorbereiten oder sie ganz abschließen.

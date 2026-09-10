@@ -173,9 +173,13 @@ img, svg { max-width: 100%; }
    Der Chat soll nicht alles allein machen: Wer lieber selbst schaut, klickt
    hier direkt in den Vorschlag statt den Chat darum zu bitten. */
 /* Freigaberegler im Chatkopf */
-.agent-freigabe { position: relative; padding: 8px 16px 0; }
+.agent-freigabe { padding: 8px 16px 0; }
+/* Knopf und Fragezeichen nebeneinander. Vorher lag das Fragezeichen
+   absolut positioniert ueber dem rechten Rand des Knopfes - es
+   ueberdeckte den Aufklapp-Pfeil und stand halb auf der Rundung. */
+.freigabe-zeile { display: flex; align-items: stretch; gap: 6px; }
 .freigabe-knopf {
-  display: flex; align-items: center; gap: 7px; width: 100%;
+  display: flex; align-items: center; gap: 7px; flex: 1; min-width: 0;
   background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.14);
   border-radius: var(--r-md); padding: 7px 11px; cursor: pointer;
   color: rgba(255,255,255,.85); font-family: var(--font-body); font-size: .78rem;
@@ -184,7 +188,7 @@ img, svg { max-width: 100%; }
 .freigabe-knopf::after { content: "▾"; margin-left: auto; opacity: .6; }
 .freigabe-knopf[aria-expanded="true"]::after { content: "▴"; }
 .freigabe-marke { color: rgba(255,255,255,.5); }
-.freigabe-stufe { font-weight: 600; }
+.freigabe-stufe { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* Oberste Stufe sichtbar machen: Wer das Buchen freigibt, soll es merken */
 .agent-freigabe.voll .freigabe-knopf { border-color: rgba(240,139,58,.55); }
 .agent-freigabe.voll .freigabe-stufe { color: var(--accent-500); }
@@ -208,14 +212,13 @@ img, svg { max-width: 100%; }
 
 /* Der Hinweis, wozu der Regler da ist */
 .freigabe-info {
-  position: absolute; top: 8px; right: 16px;
-  width: 19px; height: 19px; border-radius: 50%;
-  background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.2);
-  color: rgba(255,255,255,.75); font-family: var(--font-body);
-  font-size: .7rem; font-weight: 700; font-style: italic;
+  flex: none; width: 30px; border-radius: var(--r-md);
+  background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.14);
+  color: rgba(255,255,255,.6); font-family: var(--font-body);
+  font-size: .82rem; font-weight: 700;
   cursor: pointer; line-height: 1; padding: 0;
 }
-.freigabe-info:hover, .freigabe-info.offen { background: rgba(255,255,255,.22); color: #fff; }
+.freigabe-info:hover, .freigabe-info.offen { background: rgba(255,255,255,.14); color: #fff; }
 .freigabe-erklaerung[hidden] { display: none !important; }
 .freigabe-erklaerung {
   margin: 6px 0 0; font-size: .74rem; line-height: 1.45;
@@ -1423,87 +1426,123 @@ body.agent-collapsed .agent-head .icon-btn { margin-left: 0; transform: rotate(4
    Deckt die Seite vollstaendig ab. Vorher lag der Hinweis als Kasten
    ueber der Buchungsseite, die dahinter durchschien - das erzeugte vor
    allem den Wunsch, ihn wegzuklicken und nachzusehen, was dahinter
-   liegt. Ein eigener Bildschirm mit eigener Farbe laesst nichts
-   anderes zu, als ihn zu lesen, und trennt die Teilnahme sichtbar von
-   der Aufgabe, die danach kommt.
+   liegt. Ein eigener Bildschirm laesst nichts anderes zu, als ihn zu
+   lesen, und trennt die Teilnahme sichtbar von der Aufgabe danach.
+
+   Aufbau wie beim Einstieg der VERDEA-Erhebung, weil der sich bewaehrt
+   hat: Symbol und grosse Ueberschrift mittig, darunter die Schritte
+   als ruhige Zeilen, dann der Hinweiskasten, die Einwilligung und
+   zuletzt der Knopf. Die Reihenfolge fuehrt von "worum geht es" ueber
+   "was kommt auf mich zu" zu "ich bin einverstanden".
    ================================================================== */
 .einstieg {
   position: fixed; inset: 0; z-index: 950;
-  background: #16324a;
-  background-image: radial-gradient(120% 90% at 15% 0%, #1d4667 0%, #16324a 55%, #101f2e 100%);
+  background: #06352c;
+  background-image:
+    radial-gradient(85% 60% at 50% -10%, rgba(29,145,121,.38) 0%, rgba(6,53,44,0) 70%),
+    linear-gradient(165deg, #0a4f42 0%, #06352c 55%, #04251f 100%);
   display: flex; align-items: center; justify-content: center;
-  padding: 28px 20px; overflow-y: auto;
+  padding: 18px 20px; overflow-y: auto;
 }
 body.startschirm-offen { overflow: hidden; }
 
 .einstieg-blatt {
-  background: #fff; border-radius: 14px; width: 100%; max-width: 680px;
-  padding: 34px 40px 30px; outline: none;
-  box-shadow: 0 24px 70px rgba(0, 0, 0, .35);
-  margin: auto;
+  background: #fff; border-radius: 18px; width: 100%; max-width: 660px;
+  padding: 32px 46px 26px; outline: none; margin: auto;
+  box-shadow: 0 28px 80px rgba(0, 0, 0, .34);
+  animation: einstiegAuf .42s cubic-bezier(.2,.8,.2,1);
 }
+@keyframes einstiegAuf {
+  from { transform: translateY(16px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) { .einstieg-blatt { animation: none; } }
 
-.einstieg-kopf {
-  display: flex; align-items: center; justify-content: space-between;
-  gap: 14px; padding-bottom: 16px; margin-bottom: 22px;
-  border-bottom: 1px solid var(--line);
+/* Kopf: Symbol, kleine Zeile, grosse Ueberschrift, Vorspann */
+.einstieg-hero { text-align: center; margin-bottom: 22px; }
+.einstieg-siegel {
+  display: inline-grid; place-items: center; width: 52px; height: 52px;
+  border-radius: 50%; margin-bottom: 11px;
+  background: var(--brand-50); color: var(--brand-500);
 }
-.einstieg-marke {
-  font-size: .95rem; font-weight: 700; letter-spacing: .14em;
-  text-transform: uppercase; color: var(--brand-800, #24614a);
-}
+.einstieg-siegel svg { width: 25px; height: 25px; }
 .einstieg-etikett {
-  font-size: .68rem; letter-spacing: .09em; text-transform: uppercase;
-  color: var(--ink-500, #7c858e); font-weight: 600;
+  font-size: .7rem; letter-spacing: .13em; text-transform: uppercase;
+  color: var(--brand-500); font-weight: 700; margin: 0 0 9px;
 }
-
 .einstieg-blatt h1 {
-  font-size: 1.6rem; line-height: 1.25; color: var(--ink-900, #1a1f24);
-  margin: 0 0 14px; font-weight: 700;
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 3vw, 1.92rem); line-height: 1.18; font-weight: 700;
+  color: var(--brand-900); margin: 0 0 11px; letter-spacing: -.02em;
 }
 .einstieg-vorspann {
-  font-size: 1rem; line-height: 1.6; color: var(--ink-700); margin: 0 0 26px;
+  font-size: .93rem; line-height: 1.58; color: var(--ink-700);
+  max-width: 500px; margin: 0 auto;
+}
+.einstieg-vorspann strong { color: var(--brand-900); }
+
+/* Die drei Schritte */
+.einstieg-schritte { list-style: none; display: grid; gap: 7px; margin: 0 0 15px; padding: 0; }
+.einstieg-schritte li {
+  display: flex; gap: 14px; align-items: flex-start;
+  background: var(--brand-50); border-radius: 10px; padding: 12px 15px;
+}
+.einstieg-symbol { flex: none; color: var(--brand-500); display: inline-flex; padding-top: 1px; }
+.einstieg-symbol svg { width: 21px; height: 21px; }
+.einstieg-schritte strong {
+  display: block; font-size: .93rem; font-weight: 600;
+  color: var(--brand-900); margin-bottom: 3px;
+}
+.einstieg-schritte span:not(.einstieg-symbol) {
+  font-size: .86rem; line-height: 1.55; color: var(--ink-700);
 }
 
-.einstieg-ablauf {
-  display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
-  padding: 22px 0; margin-bottom: 22px;
-  border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+/* Der Hinweiskasten */
+.einstieg-merker {
+  display: flex; gap: 11px; align-items: flex-start;
+  background: var(--accent-100); border-radius: 10px; padding: 12px 14px;
+  font-size: .83rem; line-height: 1.5; color: var(--ink-700); margin-bottom: 14px;
 }
-.einstieg-ablauf > div > span {
-  display: grid; place-items: center; width: 25px; height: 25px; border-radius: 50%;
-  background: var(--bg-soft, #eef2f0); color: var(--brand-800, #24614a);
-  font-size: .78rem; font-weight: 700; margin-bottom: 9px;
-}
-.einstieg-ablauf h3 {
-  font-size: .9rem; color: var(--ink-900, #1a1f24); margin: 0 0 5px; font-weight: 600;
-}
-.einstieg-ablauf p { font-size: .84rem; line-height: 1.5; color: var(--ink-600, #5c656e); margin: 0; }
+.einstieg-merker strong { color: var(--accent-600); }
+.einstieg-merker-symbol { flex: none; color: var(--accent-600); display: inline-flex; padding-top: 1px; }
+.einstieg-merker-symbol svg { width: 17px; height: 17px; }
 
-.einstieg-hinweise { margin-bottom: 26px; }
-.einstieg-hinweise p {
-  font-size: .85rem; line-height: 1.55; color: var(--ink-600, #5c656e); margin: 0 0 11px;
+/* Die Einwilligung */
+.einstieg-einwilligung {
+  background: var(--brand-50); border-left: 3px solid var(--brand-500);
+  border-radius: 6px; padding: 13px 15px; margin-bottom: 18px;
 }
-.einstieg-hinweise p:last-child { margin-bottom: 0; }
-.einstieg-hinweise strong { color: var(--ink-900, #1a1f24); }
-.einstieg-hinweise a { color: var(--brand-700, #2e7d5b); }
+.einstieg-einwilligung label {
+  display: flex; gap: 12px; align-items: flex-start; cursor: pointer;
+  font-size: .82rem; line-height: 1.5; color: var(--ink-700);
+}
+.einstieg-einwilligung input {
+  flex: none; margin-top: 2px; width: 17px; height: 17px;
+  accent-color: var(--brand-500); cursor: pointer;
+}
+.einstieg-einwilligung a { color: var(--brand-700); }
 
+.einstieg-fuss { text-align: center; }
 .einstieg-knopf {
-  width: 100%; border: none; border-radius: 9px; cursor: pointer;
-  background: var(--brand-600, #2e7d5b); color: #fff;
-  padding: 14px 22px; font-size: .95rem; font-weight: 600;
+  border: none; border-radius: 100px; cursor: pointer;
+  background: var(--brand-500); color: #fff;
+  padding: 14px 42px; font-size: .93rem; font-weight: 600;
+  font-family: var(--font-body); transition: background .15s, opacity .15s;
 }
-.einstieg-knopf:hover { background: var(--brand-700, #24614a); }
-.einstieg-dauer {
-  text-align: center; font-size: .78rem; color: var(--ink-500, #7c858e); margin: 11px 0 0;
-}
+.einstieg-knopf:hover:not(:disabled) { background: var(--brand-700); }
+.einstieg-knopf:disabled { opacity: .38; cursor: not-allowed; }
 
 @media (max-width: 640px) {
   .einstieg { padding: 0; align-items: stretch; }
-  .einstieg-blatt { border-radius: 0; padding: 26px 20px 24px; max-width: none; box-shadow: none; }
-  .einstieg-blatt h1 { font-size: 1.32rem; }
-  .einstieg-vorspann { font-size: .93rem; margin-bottom: 20px; }
-  .einstieg-ablauf { grid-template-columns: 1fr; gap: 16px; padding: 18px 0; }
+  .einstieg-blatt {
+    border-radius: 0; padding: 30px 20px 26px; max-width: none;
+    box-shadow: none; animation: none;
+  }
+  .einstieg-hero { margin-bottom: 24px; }
+  .einstieg-siegel { width: 54px; height: 54px; }
+  .einstieg-siegel svg { width: 26px; height: 26px; }
+  .einstieg-schritte li { padding: 13px 14px; }
+  .einstieg-knopf { width: 100%; padding: 15px 24px; }
 }
 
 /* ==================================================================

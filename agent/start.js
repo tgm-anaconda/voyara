@@ -122,58 +122,63 @@ const Startbildschirm = {
     el.className = "einstieg";
     el.innerHTML = `
       <div class="einstieg-blatt" role="dialog" aria-modal="true" tabindex="-1">
-        <header class="einstieg-kopf">
-          <span class="einstieg-marke">Voyara</span>
-          <span class="einstieg-etikett">Teilnahmehinweis</span>
-        </header>
-
-        <h1>Schön, dass du dabei bist.</h1>
-        <p class="einstieg-vorspann">
-          Diese Erhebung entsteht im Rahmen ${zusatz ? `einer ${zusatz}` : "einer Bachelorarbeit"}
-          und fragt, wie sich das Buchen im Netz verändert, wenn sich Aufgaben an
-          automatisierte Assistenten abgeben lassen. Du brauchst dafür kein Vorwissen -
-          buch einfach so, wie du es sonst auch tun würdest.
-        </p>
-
-        <div class="einstieg-ablauf">
-          <div>
-            <span>1</span>
-            <h3>Eine Buchungsseite benutzen</h3>
-            <p>Du bekommst gleich eine Aufgabe und suchst dafür auf dieser Seite eine
-               Unterkunft. Etwa zehn Minuten.</p>
-          </div>
-          <div>
-            <span>2</span>
-            <h3>Ein paar Fragen beantworten</h3>
-            <p>Danach geht es um deine Eindrücke: was gut lief, was nicht, und wie du
-               das Erlebte einschätzt. Etwa fünf Minuten.</p>
-          </div>
-          <div>
-            <span>3</span>
-            <h3>Auflösung</h3>
-            <p>Zum Schluss erfährst du, was genau untersucht wurde und warum.</p>
-          </div>
-        </div>
-
-        <div class="einstieg-hinweise">
-          <p>
-            <strong>Es wird nichts wirklich gebucht.</strong> Die Seite ist ein Nachbau für
-            diese Untersuchung. Es entstehen keine Kosten, und Zahlungsdaten werden an keiner
-            Stelle abgefragt. Wenn dich ein Formular nach Namen oder Adresse fragt, trag ein,
-            was du möchtest.
-          </p>
-          <p>
-            <strong>Freiwillig und anonym.</strong> Du kannst jederzeit abbrechen, indem du das
-            Fenster schließt. Ausgewertet wird nur, was du auf dieser Seite tust und antwortest -
-            keine Namen, keine Mailadressen, keine IP-Adressen.
-            ${STUDIE.kontakt ? `Fragen? <a href="mailto:${STUDIE.kontakt}">${STUDIE.kontakt}</a>` : ""}
+        <div class="einstieg-hero">
+          <span class="einstieg-siegel">${this.SYMBOL.kompass}</span>
+          <p class="einstieg-etikett">Willkommen zur Studie</p>
+          <h1>Reisen buchen<br>im Netz von morgen</h1>
+          <p class="einstieg-vorspann">
+            Schön, dass du dabei bist. Diese Erhebung entsteht im Rahmen
+            ${zusatz ? `einer ${zusatz}` : "einer Bachelorarbeit"} und fragt, wie sich das
+            Buchen verändert, wenn sich Aufgaben abgeben lassen. Dauer: etwa
+            <strong>${STUDIE.dauerMinuten} Minuten</strong>.
           </p>
         </div>
 
-        <button type="button" class="einstieg-knopf" data-weiter>
-          Verstanden, los geht es
-        </button>
-        <p class="einstieg-dauer">Insgesamt etwa ${STUDIE.dauerMinuten} Minuten</p>
+        <ul class="einstieg-schritte">
+          <li>
+            <span class="einstieg-symbol">${this.SYMBOL.koffer}</span>
+            <div>
+              <strong>Eine Buchungsseite benutzen</strong>
+              <span>Du bekommst eine Aufgabe und suchst dafür eine Unterkunft - so,
+                    wie du es sonst auch tun würdest.</span>
+            </div>
+          </li>
+          <li>
+            <span class="einstieg-symbol">${this.SYMBOL.sprechblase}</span>
+            <div>
+              <strong>Ein paar Fragen beantworten</strong>
+              <span>Danach geht es um deine Eindrücke: was gut lief und was nicht.</span>
+            </div>
+          </li>
+          <li>
+            <span class="einstieg-symbol">${this.SYMBOL.schluessel}</span>
+            <div>
+              <strong>Auflösung</strong>
+              <span>Zum Schluss erfährst du, was genau untersucht wurde und warum.</span>
+            </div>
+          </li>
+        </ul>
+
+        <div class="einstieg-merker">
+          <span class="einstieg-merker-symbol">${this.SYMBOL.hinweis}</span>
+          <span><strong>Es wird nichts wirklich gebucht.</strong> Die Seite ist ein Nachbau.
+            Es entstehen keine Kosten, Zahlungsdaten werden nie abgefragt, und in Formulare
+            trägst du ein, was du möchtest.</span>
+        </div>
+
+        <div class="einstieg-einwilligung">
+          <label>
+            <input type="checkbox" id="einstiegHaken">
+            <span>Ich willige ein, dass meine anonymisierten Antworten und mein Verhalten
+              auf dieser Seite zu Forschungszwecken ausgewertet werden. Es werden keine
+              personenbezogenen Daten gespeichert, und ich kann jederzeit
+              abbrechen.${STUDIE.kontakt ? ` <a href="mailto:${STUDIE.kontakt}">Fragen?</a>` : ""}</span>
+          </label>
+        </div>
+
+        <div class="einstieg-fuss">
+          <button type="button" class="einstieg-knopf" disabled data-weiter>Los geht es</button>
+        </div>
       </div>`;
 
     document.body.appendChild(el);
@@ -181,10 +186,28 @@ const Startbildschirm = {
     el.addEventListener("keydown", (e) => { if (e.key === "Escape") e.stopPropagation(); }, true);
     setTimeout(() => el.querySelector(".einstieg-blatt").focus({ preventScroll: true }), 50);
 
-    el.querySelector("[data-weiter]").addEventListener("click", () => {
+    // Der Knopf bleibt gesperrt, bis eingewilligt wurde. Eine Teilnahme
+    // ohne ausdrueckliche Einwilligung waere nicht verwertbar.
+    const knopf = el.querySelector("[data-weiter]");
+    const haken = el.querySelector("#einstiegHaken");
+    haken.addEventListener("change", () => { knopf.disabled = !haken.checked; });
+
+    knopf.addEventListener("click", () => {
+      if (!haken.checked) return;
       el.remove();
       weiter({ hinweisSekunden: Math.round((Date.now() - gezeigt) / 1000) });
     });
+  },
+
+  /* Strichzeichnungen, damit der Einstieg nicht aus reinem Text besteht.
+     Bewusst nur Umrisse in einer Staerke - gefuellte oder bunte Symbole
+     wuerden die Schritte unterschiedlich gewichten. */
+  SYMBOL: {
+    kompass: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>`,
+    koffer: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>`,
+    sprechblase: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`,
+    schluessel: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3"/></svg>`,
+    hinweis: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>`,
   },
 
   /* ==================================================================

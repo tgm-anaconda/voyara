@@ -892,6 +892,18 @@ Protokolliert wird `hinweisSekunden` - wie lange der Hinweis offen stand. Wer
 ihn in zwei Sekunden wegklickt, hat ihn nicht gelesen; das gehört zu den
 Ernsthaftigkeitsindikatoren aus Abschnitt 18.
 
+Aufgebaut ist er wie der Einstieg der VERDEA-Erhebung, weil der sich bewährt
+hat: Symbol und große Überschrift mittig, darunter die drei Schritte als ruhige
+Zeilen mit eigenem Symbol, dann der Hinweiskasten, die Einwilligung und zuletzt
+der Knopf. Die Reihenfolge führt von "worum geht es" über "was kommt auf mich
+zu" zu "ich bin einverstanden".
+
+**Neu ist die ausdrückliche Einwilligung.** Ein Haken bestätigt, dass die
+anonymisierten Antworten und das Verhalten auf der Seite ausgewertet werden
+dürfen; der Knopf bleibt bis dahin gesperrt. Eine Teilnahme ohne diese
+Bestätigung wäre nicht verwertbar, und für die Ethikfreigabe ist sie ohnehin
+zu belegen.
+
 ### 22.2 Der Cookie-Hinweis
 
 Er ist gebaut wie die Hinweise, die man von jeder Seite kennt: **eine schmale
