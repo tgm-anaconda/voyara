@@ -906,10 +906,15 @@ zu belegen.
 
 ### 22.2 Der Cookie-Hinweis
 
-Er ist gebaut wie die Hinweise, die man von jeder Seite kennt: **eine schmale
-Karte unten rechts**, kurzer Text, zwei Kategorien mit Auswahlfeldern, darunter
-eine Schaltfläche und die kleinen Verweise. Auf dem Handy nimmt die Karte die
-Breite ein. Die Ecke unten rechts ist der Quasi-Standard solcher Hinweise.
+Er ist gebaut wie die Hinweise, die man von jeder Seite kennt: **eine flache
+Leiste über die Breite**, unten angesetzt, 1020 px breit und rund 250 px hoch.
+Kopfzeile, Wahl und Fußleiste sind je eine Zeile; die vier Stufen stehen
+nebeneinander. Auf dem Handy stapeln sie sich.
+
+Die Zwischenfassung war eine schmale, hohe Karte in der Ecke unten rechts.
+Die Ecke ist zwar der Quasi-Standard, eine hohe Säule liest sich aber als
+Dialogfenster und nicht als Banner - und ein Fenster, das nach Dialog aussieht,
+wird als Teil des Versuchs gelesen statt als Teil des Netzes.
 
 Diese Form ist kein Beiwerk. Ein ungewohntes Fenster wird als Fremdkörper
 gelesen, und die Wahl darin wäre dann eine Wahl im Versuch statt eine im Netz.

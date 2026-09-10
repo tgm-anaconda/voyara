@@ -226,48 +226,53 @@ const Startbildschirm = {
     let aufgeklappt = false;
     let gewaehlt = null;
 
+    // Breit und flach statt schmal und hoch. Echte Einwilligungsbanner
+    // legen sich als Leiste ueber die Breite und bleiben niedrig - eine
+    // hohe Saeule an der Seite sieht nach Dialogfenster aus. Die vier
+    // Stufen stehen deshalb nebeneinander in einer Reihe.
     const el = document.createElement("div");
     el.className = "cookiehinweis";
     el.innerHTML = `
       <div class="cookiehinweis-karte" role="dialog" aria-modal="true" tabindex="-1">
-        <h2>Cookies und Einstellungen</h2>
-        <p>
-          Wir speichern nur, was für deinen Besuch nötig ist. Nichts davon verlässt
-          deinen Browser. <a href="info.html?p=cookies" target="_blank" rel="noopener">Mehr erfahren</a>
-        </p>
 
-        <div class="cookiehinweis-kategorie">
-          <span>Notwendig</span>
-          <span class="cookiehinweis-fest">Immer aktiv</span>
+        <div class="cookiehinweis-oben">
+          <div class="cookiehinweis-text">
+            <h2>Cookies und Einstellungen</h2>
+            <p>Wir speichern nur, was für deinen Besuch nötig ist. Nichts davon verlässt
+               deinen Browser. <a href="info.html?p=cookies" target="_blank" rel="noopener">Mehr erfahren</a></p>
+          </div>
+          <span class="cookiehinweis-fest">Notwendige Cookies · immer aktiv</span>
         </div>
 
-        <div class="cookiehinweis-kategorie cookiehinweis-kategorie-offen">
-          <span>Reise-Assistent</span>
+        <div class="cookiehinweis-wahl">
+          <p class="cookiehinweis-frage">
+            <strong>Reise-Assistent</strong> Er sucht, filtert und vergleicht für dich.
+            Wie weit darf er gehen?
+          </p>
+          <div class="cookiehinweis-stufen" role="radiogroup" aria-label="Freigabe für den Assistenten">
+            ${reihe.map((s) => `
+              <label class="cookiehinweis-stufe">
+                <input type="radio" name="freigabe" value="${s.id}">
+                <span>
+                  <strong>${s.kurz}</strong>
+                  <em>${this.KURZ[s.id]}</em>
+                </span>
+              </label>`).join("")}
+          </div>
         </div>
-        <p class="cookiehinweis-frage">Wie weit darf er gehen?</p>
 
-        <div class="cookiehinweis-stufen" role="radiogroup" aria-label="Freigabe für den Assistenten">
-          ${reihe.map((s) => `
-            <label class="cookiehinweis-stufe">
-              <input type="radio" name="freigabe" value="${s.id}">
-              <span>
-                <strong>${s.kurz}</strong>
-                <em>${this.KURZ[s.id]}</em>
-              </span>
-            </label>`).join("")}
-        </div>
-
-        <button type="button" class="cookiehinweis-mehr" data-mehr>Was heißt das genau?</button>
         <div class="cookiehinweis-detail" hidden>
           ${stufen.map((s) => `<p><strong>${s.kurz}.</strong> ${this.ERKLAERUNG[s.id]}</p>`).join("")}
           <p>Du kannst das jederzeit im Chatfenster ändern.</p>
         </div>
 
-        <button type="button" class="cookiehinweis-knopf" disabled data-weiter>Speichern</button>
-
-        <div class="cookiehinweis-verweise">
-          <a href="info.html?p=datenschutz" target="_blank" rel="noopener">Datenschutz</a>
-          <a href="info.html?p=impressum" target="_blank" rel="noopener">Impressum</a>
+        <div class="cookiehinweis-unten">
+          <div class="cookiehinweis-verweise">
+            <button type="button" class="cookiehinweis-mehr" data-mehr>Was heißt das genau?</button>
+            <a href="info.html?p=datenschutz" target="_blank" rel="noopener">Datenschutz</a>
+            <a href="info.html?p=impressum" target="_blank" rel="noopener">Impressum</a>
+          </div>
+          <button type="button" class="cookiehinweis-knopf" disabled data-weiter>Speichern</button>
         </div>
       </div>`;
 

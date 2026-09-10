@@ -1546,20 +1546,21 @@ body.startschirm-offen { overflow: hidden; }
 }
 
 /* ==================================================================
-   2. Cookie-Hinweis - schmale Karte unten rechts
+   2. Cookie-Hinweis - flache Leiste ueber die Breite
    ------------------------------------------------------------------
-   Gebaut nach dem, was solche Hinweise ueblicherweise ausmacht: die
-   Ecke unten rechts als Quasi-Standard, schmal, kurzer Text,
-   Kategorien mit Auswahlfeldern, darunter Schaltflaeche und die
-   kleinen Verweise. Auf dem Handy nimmt die Karte die Breite ein.
+   Echte Einwilligungsbanner legen sich als Leiste ueber die Breite und
+   bleiben niedrig. Die erste Fassung war eine schmale, hohe Saeule in
+   der Ecke - die liest sich als Dialogfenster und nicht als Banner.
+   Die vier Stufen stehen deshalb nebeneinander in einer Reihe, und
+   Kopfzeile, Wahl und Fussleiste sind jeweils eine Zeile.
 
    Die Good-Practice-Leitlinien des Bundesjustizministeriums zum
    Einwilligungsmanagement verlangen: prominent, aber nicht
    bildschirmfuellend; keine Vorauswahl; alle Handlungsoptionen optisch
    gleichberechtigt, ohne Bevorzugung durch Farbe oder Groesse. Fuer
-   die vier Freigabestufen heisst das vier identisch gestaltete Zeilen.
-   Was rechtlich gegen Nudging gedacht ist, haelt hier den Messwert
-   sauber.
+   die vier Freigabestufen heisst das vier identisch gestaltete Felder
+   gleicher Breite. Was rechtlich gegen Nudging gedacht ist, haelt hier
+   den Messwert sauber.
 
    Der Schleier dahinter ist bewusst schwach: Er nimmt der Seite nicht
    die Sichtbarkeit, verhindert aber, dass der Hinweis einfach liegen
@@ -1569,75 +1570,101 @@ body.startschirm-offen { overflow: hidden; }
 .cookiehinweis {
   position: fixed; inset: 0; z-index: 900;
   background: rgba(16, 22, 30, .22);
-  display: flex; align-items: flex-end; justify-content: flex-end;
-  padding: 20px;
+  display: flex; align-items: flex-end; justify-content: center;
+  padding: 18px;
 }
 .cookiehinweis-karte {
-  background: #fff; border: 1px solid var(--line); border-radius: 10px;
-  width: 100%; max-width: 372px; padding: 17px 18px 15px; outline: none;
-  box-shadow: 0 10px 34px rgba(0, 0, 0, .22);
-  max-height: calc(100dvh - 40px); overflow-y: auto;
+  background: #fff; border: 1px solid var(--line); border-radius: 12px;
+  width: 100%; max-width: 1020px; padding: 15px 20px 13px; outline: none;
+  box-shadow: 0 10px 34px rgba(0, 0, 0, .2);
+  max-height: calc(100dvh - 36px); overflow-y: auto;
 }
-.cookiehinweis-karte h2 {
-  font-size: .95rem; font-weight: 600; color: var(--ink-900, #1a1f24); margin: 0 0 7px;
-}
-.cookiehinweis-karte > p {
-  font-size: .8rem; line-height: 1.5; color: var(--ink-600, #5c656e); margin: 0 0 13px;
-}
-.cookiehinweis-karte a { color: var(--ink-600, #5c656e); }
 
-.cookiehinweis-kategorie {
-  display: flex; align-items: center; justify-content: space-between; gap: 10px;
-  border-top: 1px solid var(--line); padding: 9px 0 8px;
-  font-size: .82rem; font-weight: 600; color: var(--ink-900, #1a1f24);
+/* Kopfzeile: Text links, die feste Kategorie rechts - dadurch braucht
+   die Angabe "immer aktiv" keine eigene Zeile. */
+.cookiehinweis-oben {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 20px; padding-bottom: 10px; border-bottom: 1px solid var(--line);
 }
-.cookiehinweis-fest { font-size: .74rem; font-weight: 400; color: var(--ink-500, #7c858e); }
-.cookiehinweis-kategorie-offen { padding-bottom: 2px; }
+.cookiehinweis-text h2 {
+  font-size: .93rem; font-weight: 600; color: var(--ink-900, #1a1f24);
+  margin: 0 0 2px; display: inline-block;
+}
+.cookiehinweis-text p {
+  font-size: .8rem; line-height: 1.45; color: var(--ink-600, #5c656e); margin: 0;
+}
+.cookiehinweis-text a { color: var(--ink-600, #5c656e); }
+.cookiehinweis-fest {
+  flex: none; font-size: .75rem; color: var(--ink-500, #7c858e); white-space: nowrap;
+}
+
+.cookiehinweis-wahl { padding: 10px 0 0; }
 .cookiehinweis-frage {
-  font-size: .78rem !important; color: var(--ink-600, #5c656e) !important; margin: 0 0 8px !important;
+  font-size: .8rem; color: var(--ink-600, #5c656e); margin: 0 0 8px;
 }
+.cookiehinweis-frage strong { color: var(--ink-900, #1a1f24); font-weight: 600; }
 
-.cookiehinweis-stufen { display: flex; flex-direction: column; gap: 5px; margin-bottom: 10px; }
+/* Vier gleich breite Felder nebeneinander. Gleiche Breite ist hier
+   nicht nur Optik: Ein breiteres Feld waere eine Empfehlung. */
+.cookiehinweis-stufen {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+}
 .cookiehinweis-stufe {
-  display: flex; gap: 9px; align-items: flex-start; cursor: pointer;
-  border: 1px solid var(--line); border-radius: 6px; padding: 8px 9px;
+  display: flex; gap: 8px; align-items: flex-start; cursor: pointer;
+  border: 1px solid var(--line); border-radius: 7px; padding: 9px 10px;
   transition: border-color .15s, background .15s;
 }
 .cookiehinweis-stufe:hover { background: var(--bg-soft, #f7f9f8); }
 .cookiehinweis-stufe:has(input:checked) { border-color: var(--brand-600, #2e7d5b); background: var(--bg-soft, #f4f8f6); }
 .cookiehinweis-stufe input { margin-top: 1px; flex: none; width: 15px; height: 15px; accent-color: var(--brand-600, #2e7d5b); }
-.cookiehinweis-stufe span { display: flex; flex-direction: column; gap: 1px; }
-.cookiehinweis-stufe strong { font-size: .82rem; font-weight: 600; color: var(--ink-900, #1a1f24); }
-.cookiehinweis-stufe em { font-size: .76rem; font-style: normal; color: var(--ink-600, #5c656e); line-height: 1.4; }
+.cookiehinweis-stufe span { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.cookiehinweis-stufe strong { font-size: .8rem; font-weight: 600; color: var(--ink-900, #1a1f24); }
+.cookiehinweis-stufe em { font-size: .73rem; font-style: normal; color: var(--ink-600, #5c656e); line-height: 1.35; }
 
-.cookiehinweis-mehr {
-  background: none; border: none; padding: 0; cursor: pointer;
-  font-size: .76rem; color: var(--ink-500, #7c858e); text-decoration: underline;
-}
-.cookiehinweis-detail { margin-top: 9px; }
 .cookiehinweis-detail[hidden] { display: none !important; }
-.cookiehinweis-detail p {
-  font-size: .76rem; line-height: 1.45; color: var(--ink-600, #5c656e); margin: 0 0 7px;
+.cookiehinweis-detail {
+  margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line);
+  columns: 2; column-gap: 24px;
 }
+.cookiehinweis-detail p {
+  font-size: .75rem; line-height: 1.45; color: var(--ink-600, #5c656e);
+  margin: 0 0 6px; break-inside: avoid;
+}
+
+/* Fussleiste: Verweise links, Schaltflaeche rechts */
+.cookiehinweis-unten {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 18px; margin-top: 12px; padding-top: 11px; border-top: 1px solid var(--line);
+}
+.cookiehinweis-verweise { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
+.cookiehinweis-verweise a, .cookiehinweis-mehr {
+  font-size: .75rem; color: var(--ink-500, #7c858e); text-decoration: underline;
+  background: none; border: none; padding: 0; cursor: pointer; font-family: inherit;
+}
+.cookiehinweis-verweise a { text-decoration: none; }
+.cookiehinweis-verweise a:hover { text-decoration: underline; }
 
 .cookiehinweis-knopf {
-  width: 100%; margin-top: 13px; cursor: pointer;
+  flex: none; cursor: pointer;
   border: 1px solid var(--brand-600, #2e7d5b); border-radius: 7px;
   background: var(--brand-600, #2e7d5b); color: #fff;
-  padding: 10px 16px; font-size: .85rem; font-weight: 600;
+  padding: 9px 30px; font-size: .84rem; font-weight: 600; font-family: inherit;
 }
 .cookiehinweis-knopf:disabled { opacity: .38; cursor: not-allowed; }
 
-.cookiehinweis-verweise {
-  display: flex; gap: 13px; justify-content: center; margin-top: 11px;
+@media (max-width: 900px) {
+  .cookiehinweis-stufen { grid-template-columns: repeat(2, 1fr); }
+  .cookiehinweis-detail { columns: 1; }
 }
-.cookiehinweis-verweise a { font-size: .72rem; color: var(--ink-500, #7c858e); text-decoration: none; }
-.cookiehinweis-verweise a:hover { text-decoration: underline; }
-
 @media (max-width: 560px) {
   .cookiehinweis { padding: 0; }
   .cookiehinweis-karte {
     max-width: none; border-radius: 12px 12px 0 0; border-bottom: none;
-    padding: 18px 17px 16px; max-height: calc(100dvh - 24px);
+    padding: 14px 15px 12px; max-height: calc(100dvh - 20px);
   }
+  .cookiehinweis-oben { flex-direction: column; gap: 5px; align-items: flex-start; }
+  .cookiehinweis-stufen { grid-template-columns: 1fr; gap: 6px; }
+  .cookiehinweis-unten { flex-direction: column-reverse; align-items: stretch; gap: 10px; }
+  .cookiehinweis-knopf { width: 100%; padding: 11px 20px; }
+  .cookiehinweis-verweise { justify-content: center; }
 }
