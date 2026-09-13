@@ -50,7 +50,7 @@ Felder:
   Ein Betrag ist entweder maxPreis oder budgetGesamt, nie beides. Im Zweifel bei Betraegen ab 1000 budgetGesamt.
 - budget: "niedrig", "hoch" oder null
 - kriterien: Liste aus diesen Werten, nur was wirklich gewuenscht ist:
-  sauberkeit, ruhe, essen, lage, service, preis, pool, wellness, familie, strandnah, bewertung
+  sauberkeit, ruhe, essen, lage, service, preis, pool, wellness, familie, kinderclub, strandnah, bewertung
 - betont: true, wenn ein Wunsch ausdruecklich hervorgehoben wird ("sehr wichtig", "lege Wert auf", "unbedingt"), sonst false
 
 Regeln:

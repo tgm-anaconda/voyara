@@ -495,6 +495,11 @@ const Kern = {
     if (pr0.zimmer == null && ausText.zimmer != null) pr0.zimmer = ausText.zimmer;
     if (pr0.maxStrand == null && ausText.maxStrand != null) pr0.maxStrand = ausText.maxStrand;
     if (pr0.budgetGesamt == null && ausText.budgetGesamt != null) { pr0.budgetGesamt = ausText.budgetGesamt; pr0.maxPreis = null; }
+    // Kriterien aus dem Wortlaut ergaenzen, die das Modell nicht
+    // geliefert hat - was die Person genannt hat, ist genannt
+    for (const g of ausText.kriterien || []) {
+      if (!pr0.kriterien.some((k) => k.id === g.id)) pr0.kriterien.push({ ...g });
+    }
     Politik.gesamtzahlAufloesen(pr0, text);
     Politik.nachtpreisAbleiten(pr0);
 
