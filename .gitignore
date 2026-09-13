@@ -9,3 +9,8 @@ _backup/
 # Bildvorrat - Arbeitsmaterial, mehrere hundert MB
 bilder/pool/
 _pruefung/
+.vercel/
+.vercel
+.env*
+.env.local
+.env*.local
