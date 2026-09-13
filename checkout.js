@@ -15,7 +15,10 @@ function readParams() {
   nights = p.get("nights") ? +p.get("nights") : Reisedaten.naechte(7);
   roomIdx = +(p.get("room") || 0);
   boardIdx = +(p.get("board") || 0);
-  if (Account.get()) guest.name = Account.get();
+  // Gastdaten aus dem Konto - so, wie jede Buchungsseite die Felder fuer
+  // angemeldete Nutzer vorbelegt
+  const konto = Account.konto?.();
+  if (konto) { guest.name = `${konto.vorname} ${konto.nachname}`.trim(); guest.mail = konto.mail || ""; }
 }
 
 function isStay() { return entry.type === "hotel" || entry.type === "apartment"; }
@@ -131,6 +134,11 @@ function renderStep2() {
   document.getElementById("backBtn").addEventListener("click", () => { step = 1; render(); });
   document.getElementById("confirmBtn").addEventListener("click", () => {
     step = 3;
+    // Der Studienablauf erfaehrt von der Buchung - egal, ob die Person
+    // oder der Agent geklickt hat
+    if (typeof Studie !== "undefined") {
+      Studie.buchungBestaetigt({ id: entry.id, gesamt: priceLines().total, naechte: nights });
+    }
     render();
     window.scrollTo({ top: 0, behavior: "smooth" });
   });
@@ -152,10 +160,15 @@ function renderStep3() {
         <div class="kv"><span>Bestätigung an</span><strong>${guest.mail || "—"}</strong></div>
       </div>
       <div style="display:flex;gap:10px;justify-content:center;margin-top:20px">
-        <a class="btn btn-ghost" href="merkzettel.html">Zum Merkzettel</a>
-        <a class="btn btn-primary" href="index.html">Weitere Reise suchen</a>
+        ${typeof Studie !== "undefined" && Studie.laeuft()
+          ? `<button type="button" class="btn btn-primary" id="studieWeiter">Weiter zur Studie</button>`
+          : `<a class="btn btn-ghost" href="merkzettel.html">Zum Merkzettel</a>
+             <a class="btn btn-primary" href="index.html">Weitere Reise suchen</a>`}
       </div>
     </section>`;
+  // Nach der Buchung geht es in die Zwischenfragen. Der Knopf statt
+  // eines Automatismus: Die Person soll die Bestaetigung lesen koennen.
+  document.getElementById("studieWeiter")?.addEventListener("click", () => Studie.aufgabeAbschliessen("gebucht"));
 }
 
 function renderSummary() {

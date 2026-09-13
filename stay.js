@@ -384,4 +384,26 @@ document.addEventListener("DOMContentLoaded", () => {
   renderReviews();
   renderSimilar();
   renderWidget();
+
+  // Verweildauer auf der Detailseite - fuer die Studie: Wer drei Sekunden
+  // bleibt, hat durchgewunken; wer eine Minute liest, hat geprueft.
+  // pagehide statt unload, weil es auch beim Zurueck-Wischen auf dem
+  // Handy zuverlaessig feuert; der sessionStorage-Schreibzugriff darin
+  // ist synchron und geht nicht verloren.
+  if (typeof Studie !== "undefined" && item) {
+    let seit = Date.now();
+    let gemeldet = false;
+    const melden = () => {
+      if (gemeldet) return;
+      gemeldet = true;
+      Studie.detailVerlassen(item.id, Math.round((Date.now() - seit) / 1000));
+    };
+    window.addEventListener("pagehide", melden);
+    // Wer den Tab wechselt und zurueckkommt, liest weiter: Der zweite
+    // Abschnitt wird als eigener Eintrag gemeldet, die Auswertung summiert.
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "hidden") melden();
+      else { seit = Date.now(); gemeldet = false; }
+    });
+  }
 });

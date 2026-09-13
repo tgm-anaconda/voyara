@@ -103,8 +103,64 @@ const Politik = {
     if (/günstig|guenstig|billig|preiswert|wenig geld|sparen|schmales budget/.test(t)) a.budget = "niedrig";
     if (/luxus|gehoben|erstklassig|5 sterne|fünf sterne|fuenf sterne/.test(t)) a.budget = "hoch";
 
-    const summe = t.match(/(?:max(?:imal)?|bis(?: zu)?|unter|höchstens|hoechstens)\s*(\d{2,4})\s*(?:€|euro)?/);
-    if (summe) a.maxPreis = +summe[1];
+    // Preisgrenze. "900 Euro insgesamt" ist etwas anderes als "150 pro
+    // Nacht" - die Suchmaske filtert pro Nacht, also muss eine Gesamt-
+    // summe durch die Naechte geteilt werden, sobald die bekannt sind.
+    // Bis dahin bleibt sie als budgetGesamt stehen.
+    // Entfernungen zuerst, damit "hoechstens 500 m zum Strand" nicht als
+    // Preisgrenze gelesen wird
+    const strand = t.match(/(\d+(?:[.,]\d+)?)\s*(m|meter|km|kilometer)\b[^.]{0,25}?(strand|meer|wasser)/);
+    if (strand) {
+      const wert = parseFloat(strand[1].replace(",", "."));
+      a.maxStrand = /^k/.test(strand[2]) ? wert : wert / 1000;
+    } else if (/direkt am strand|direkt am meer|erste strandlinie|strandlage/.test(t)) a.maxStrand = 0.2;
+
+    // Alle Betragsangaben durchgehen und die ueberspringen, hinter denen
+    // eine Entfernung steht ("hoechstens 500 m"). Mit Waehrung ist eine
+    // Angabe eindeutig und beendet die Suche.
+    const geld = /(?:max(?:imal)?|bis(?: zu)?|unter|höchstens|hoechstens|nicht mehr als|budget(?: von)?)\s*(?:etwa |ca\.? |rund )?(\d{1,2}[.,]\d{3}|\d{2,5})(?!\d)\s*(€|euro|eur)?/g;
+    let summe = null, treffer;
+    while ((treffer = geld.exec(t))) {
+      const danach = t.slice(treffer.index + treffer[0].length, treffer.index + treffer[0].length + 12);
+      if (/^\s*(m\b|meter|km|kilometer|min)/.test(danach)) continue;
+      summe = treffer;
+      if (treffer[2]) break;
+    }
+    // Ohne "hoechstens" davor: ein Betrag mit Waehrung ist trotzdem ein
+    // Budget ("wir haben 1.600 Euro", "so 900 Euro")
+    if (!summe) summe = t.match(/(\d{1,2}[.,]\d{3}|\d{3,4})(?!\d)\s*(€|euro|eur)\b/);
+    if (summe) {
+      const betrag = +String(summe[1]).replace(/[.,]/g, "");
+      const gesamt = /insgesamt|gesamt|zusammen|für alles|fuer alles|für die ganze|fuer die ganze|alles in allem|komplett|für (?:die |den )?(?:woche|reise|urlaub|aufenthalt)/.test(t);
+      const proNacht = /pro nacht|je nacht|die nacht|\/ ?nacht|nachtpreis/.test(t);
+      if (gesamt && !proNacht) a.budgetGesamt = betrag;
+      else if (betrag >= 1000 && !proNacht) a.budgetGesamt = betrag;   // vierstellig ist nie ein Nachtpreis
+      else a.maxPreis = betrag;
+    }
+
+    // Zimmer. "ein Familienzimmer", "ein gemeinsames Zimmer" = 1,
+    // "zwei Zimmer", "getrennte Zimmer" = 2
+    if (/zwei zimmer|2 zimmer|getrennte zimmer|zwei getrennte|separate zimmer/.test(t)) a.zimmer = 2;
+    else if (/familienzimmer|gemeinsame[sn]? zimmer|ein zimmer|einem zimmer|1 zimmer|familiensuite/.test(t)) a.zimmer = 1;
+
+    // Verpflegung. Kein Filter der Suchmaske, aber eine Wahl auf der
+    // Detailseite - der Agent stellt sie dort ein, bevor er bucht.
+    if (/all.?inclusive|alles inklusive|all.?in\b/.test(t)) a.verpflegung = "ai";
+    else if (/vollpension/.test(t)) a.verpflegung = "voll";
+    else if (/halbpension/.test(t)) a.verpflegung = "halb";
+    else if (/frühstück|fruehstueck|fruehstück|frühstueck/.test(t)) a.verpflegung = "fruehstueck";
+
+    // Reisedauer. "eine Woche", "4 Naechte", "ein verlaengertes Wochenende"
+    const naechte = t.match(new RegExp(`(${ZAHLEN}|zehn|vierzehn)\\s*(?:nächte|naechte|übernachtungen|uebernachtungen|tage)`));
+    if (naechte) {
+      const n = zahl(naechte[1]) ?? ({ zehn: 10, vierzehn: 14 })[naechte[1]] ?? null;
+      if (n) a.naechte = Math.min(21, n);
+    }
+    else if (/zwei wochen|14 tage/.test(t)) a.naechte = 14;
+    else if (/eine woche|1 woche|woche lang|wochenurlaub/.test(t)) a.naechte = 7;
+    else if (/verlängertes wochenende|verlaengertes wochenende|langes wochenende/.test(t)) a.naechte = 4;
+    else if (/wochenende/.test(t)) a.naechte = 2;
+    else if (/kurztrip|kurzurlaub|paar tage|ein paar tage|einige tage/.test(t)) a.naechte = 3;
 
     // Ein Ortsname, den wir nicht haben. Ohne Modell erkennt das niemand,
     // und der Agent antwortete dann "das habe ich nicht ganz verstanden" -
@@ -155,7 +211,9 @@ const Politik = {
     { id: "wellness", label: "Wellness", filter: { ausstattung: "spa" },
       woerter: ["wellness", "spa", "sauna", "therme", "massage", "hot pot", "dampfbad"] },
     { id: "familie", label: "Familienfreundlichkeit", filter: { ausstattung: "familyFriendly" },
-      woerter: ["famili", "kinderfreundlich", "mit kindern", "kinderbetreuung", "kinderclub"] },
+      woerter: ["famili", "kinderfreundlich", "mit kindern", "mit kind"] },
+    { id: "kinderclub", label: "Kinderclub", filter: { ausstattung: "kidsClub" },
+      woerter: ["kinderclub", "kids club", "kidsclub", "kinderbetreuung", "miniclub", "kinderanimation", "kinderprogramm"] },
     { id: "strandnah", label: "Strandnähe", filter: { maxStrand: 1 },
       woerter: ["strand", "am meer", "meernah", "ans wasser", "direkt am wasser", "küste", "kueste"] },
     { id: "bewertung", label: "gute Bewertungen", filter: { mindestbewertung: 4.5 },
@@ -700,16 +758,25 @@ const Politik = {
     },
     {
       id: "zeitraum",
-      frage: "Wann soll es losgehen? Ein Monat reicht mir.",
-      braucht: () => "Wann die Reise sein soll. Ein Monat genuegt, ein genaues Datum brauchst du nicht.",
-      chips: ["Im Juni", "Im September", "Im Januar", "Im Februar"],
-      ueberspringen: (p) => p.monat != null,
+      frage: "Wann soll es losgehen, und wie lange? Ein Monat und die Zahl der Nächte reichen mir.",
+      braucht: (p) => {
+        if (p.monat != null && p.naechte == null) return "Wie viele Naechte die Reise dauern soll. Der Monat ist schon bekannt.";
+        if (p.monat == null && p.naechte != null) return "In welchem Monat die Reise sein soll. Ein Monat genuegt, ein genaues Datum brauchst du nicht.";
+        return "Wann die Reise sein soll und wie lange - ein Monat und die Zahl der Naechte. Ein genaues Datum brauchst du nicht.";
+      },
+      chips: (p) => p.monat != null
+        ? ["3 Nächte", "4 Nächte", "Eine Woche", "Zwei Wochen"]
+        : ["Eine Woche im August", "4 Nächte im Oktober", "Ein Wochenende im Mai", "Zwei Wochen im Juli"],
+      ueberspringen: (p) => p.monat != null && p.naechte != null,
       auswerten(text, p) {
-        const t = text.toLowerCase();
-        for (const [name, nr] of Object.entries(Politik.MONATE)) {
-          if (t.includes(name)) { p.monat = nr; return name.charAt(0).toUpperCase() + name.slice(1); }
+        Politik.uebernehmen(text, p, { kriterien: false });
+        const teile = [];
+        if (p.monat) {
+          const name = Object.keys(Politik.MONATE).find((m) => Politik.MONATE[m] === p.monat && m.length > 3);
+          if (name) teile.push(name.charAt(0).toUpperCase() + name.slice(1));
         }
-        return null;
+        if (p.naechte) teile.push(`${p.naechte} Nächte`);
+        return teile.length ? teile.join(", ") : null;
       },
     },
     {
@@ -744,7 +811,7 @@ const Politik = {
       frage: "Ein gemeinsames Zimmer oder zwei getrennte?",
       braucht: () => "Ob ein gemeinsames Zimmer reichen soll oder zwei getrennte gebucht werden. Das aendert den Preis deutlich.",
       chips: ["Ein Zimmer", "Zwei Zimmer"],
-      ueberspringen: (p) => p.typ === "apartment" || ((p.erwachsene || 0) + (p.kinder || 0)) <= 2,
+      ueberspringen: (p) => p.zimmer != null || p.typ === "apartment" || ((p.erwachsene || 0) + (p.kinder || 0)) <= 2,
       auswerten(text, p) {
         const t = text.toLowerCase();
         p.zimmer = /zwei|getrennt|zwei zimmer|2 zimmer|separat/.test(t) ? 2 : 1;
@@ -805,6 +872,30 @@ const Politik = {
      wer fragt, hat sich noch nicht entschieden. Die Gewichte haetten
      danach still die Rangfolge verschoben, ohne dass jemand etwas
      verlangt haette. */
+  // Aus einem Gesamtbudget wird ein Nachtpreis, sobald die Naechte
+  // bekannt sind. Die Endreinigung (35 Euro je Zimmer) wird abgezogen,
+  // Zimmeraufschlaege nicht - die Trefferliste zeigt den Grundpreis, und
+  // genau daran soll die Person spaeter selbst merken, ob es passt.
+  nachtpreisAbleiten(profil) {
+    if (profil.budgetGesamt && profil.naechte) {
+      const zimmer = profil.zimmer || 1;
+      profil.maxPreis = Math.floor((profil.budgetGesamt - 35 * zimmer) / profil.naechte / zimmer);
+    }
+  },
+
+  // Eine Gesamtzahl ohne jeden Hinweis auf Kinder heisst: lauter
+  // Erwachsene. Nur, wenn im ganzen bisherigen Gespraech von keiner
+  // Familie und keinen Kindern die Rede war - deshalb am Profil und
+  // nicht am einzelnen Satz.
+  gesamtzahlAufloesen(profil, text = "") {
+    const kindImSatz = /kind|kids|klein|jahre? alt|sohn|tochter/.test(String(text).toLowerCase());
+    if (kindImSatz) profil.familieGenannt = true;
+    if (profil.personen != null && profil.erwachsene == null && !profil.familieGenannt && !kindImSatz) {
+      profil.erwachsene = profil.personen;
+      profil.kinder = 0;
+    }
+  },
+
   uebernehmen(text, profil, optionen = {}) {
     const a = this.absicht(text);
     const t = text.toLowerCase();
@@ -823,15 +914,15 @@ const Politik = {
     // den letzten Satz sieht. "Ich fahre mit meiner Familie" und drei
     // Nachrichten spaeter "wir sind zu dritt" ergibt sonst wieder drei
     // Erwachsene, und die Frage nach den Kindern faellt aus.
-    const kindImSatz = /kind|kids|klein|jahre? alt|sohn|tochter/.test(t);
-    if (kindImSatz) profil.familieGenannt = true;
-    if (profil.personen != null && profil.erwachsene == null
-        && !profil.familieGenannt && !kindImSatz) {
-      profil.erwachsene = profil.personen;
-      profil.kinder = 0;
-    }
+    this.gesamtzahlAufloesen(profil, t);
     if (a.monat != null) profil.monat = a.monat;
-    if (a.maxPreis != null) profil.maxPreis = a.maxPreis;
+    if (a.naechte != null) profil.naechte = a.naechte;
+    if (a.verpflegung) profil.verpflegung = a.verpflegung;
+    if (a.zimmer != null) profil.zimmer = a.zimmer;
+    if (a.maxStrand != null) profil.maxStrand = a.maxStrand;
+    if (a.budgetGesamt != null) { profil.budgetGesamt = a.budgetGesamt; delete profil.maxPreis; }
+    if (a.maxPreis != null) { profil.maxPreis = a.maxPreis; delete profil.budgetGesamt; }
+    this.nachtpreisAbleiten(profil);
     if (a.budget) profil.budget = a.budget;
     if (a.zielId) profil.zielId = a.zielId;
     if (a.artGenannt) { profil.typ = a.typ; profil.artGenannt = true; }
@@ -890,7 +981,11 @@ const Politik = {
     if (profil.kinder) personen.push(`${profil.kinder} Kinder`);
     if (personen.length) raus.push({ feld: "Wer", wert: personen.join(" + ") });
     if (profil.zimmer > 1) raus.push({ feld: "Zimmer", wert: String(profil.zimmer) });
-    if (profil.maxPreis) raus.push({ feld: "Bis", wert: `${profil.maxPreis} €` });
+    if (profil.naechte) raus.push({ feld: "Dauer", wert: `${profil.naechte} Nächte` });
+    if (profil.maxStrand != null) raus.push({ feld: "Strand", wert: profil.maxStrand < 1 ? `bis ${Math.round(profil.maxStrand * 1000)} m` : `bis ${profil.maxStrand} km` });
+    if (profil.verpflegung && typeof BOARD_LABELS !== "undefined") raus.push({ feld: "Essen", wert: BOARD_LABELS[profil.verpflegung] });
+    if (profil.budgetGesamt) raus.push({ feld: "Budget", wert: `${profil.budgetGesamt} € gesamt` });
+    else if (profil.maxPreis) raus.push({ feld: "Bis", wert: `${profil.maxPreis} €/Nacht` });
     else if (profil.budget === "niedrig") raus.push({ feld: "Preis", wert: "günstig" });
     for (const k of profil.kriterien || []) {
       const l = this.kriterium(k.id)?.label;
@@ -1079,7 +1174,7 @@ const Politik = {
   suchschritte(profil) {
     const schritte = [];
     const ziel = profil.zielId && typeof ZIEL_NACH_ID !== "undefined" ? ZIEL_NACH_ID[profil.zielId] : null;
-    const zeitraum = this.zeitraum(profil.monat);
+    const zeitraum = this.zeitraum(profil.monat, profil.naechte);
 
     schritte.push({
       werkzeug: "suchen",
@@ -1097,7 +1192,12 @@ const Politik = {
     const filter = this.filterAusKriterien(profil.kriterien || []);
     if (profil.zielId) filter.zielId = profil.zielId;
     if (profil.maxPreis) filter.maxPreis = profil.maxPreis;
-    if (profil.maxStrand) filter.maxStrand = profil.maxStrand;
+    // Die Suchmaske kennt 0,2 / 1 / 5 km - die kleinste Stufe, die den
+    // Wunsch noch einschliesst. Die genaue Grenze prueft der Agent selbst
+    // beim Bewerten (erfuellt), die Person an der Karte.
+    if (profil.maxStrand != null) {
+      filter.maxStrand = [0.2, 1, 5].find((s) => s >= profil.maxStrand) ?? 5;
+    }
     if (profil.budget === "hoch") filter.sterne = [5];
     if (Object.keys(filter).length) {
       schritte.push({ werkzeug: "filterSetzen", status: "setzt Filter…", args: this.fehlerEinbauen(filter) });
@@ -1129,23 +1229,24 @@ const Politik = {
 
   // Ein Zeitraum aus dem genannten Monat. Ohne Monatsangabe bleibt es beim
   // Standard der Suchmaske - der Agent erfindet keine Reisedaten.
-  zeitraum(monat) {
+  zeitraum(monat, naechte = 7) {
     if (!monat) return { von: "", bis: "" };
     const heute = new Date();
     let jahr = heute.getFullYear();
     if (monat < heute.getMonth() + 1) jahr += 1;
     const iso = (d) => Reisedaten.alsIso(d);
-    return {
-      von: iso(new Date(jahr, monat - 1, 12)),
-      bis: iso(new Date(jahr, monat - 1, 19)),
-    };
+    const von = new Date(jahr, monat - 1, 12);
+    const bis = new Date(jahr, monat - 1, 12 + (naechte || 7));
+    return { von: iso(von), bis: iso(bis) };
   },
 
   ansage(profil) {
     const teile = [];
     if (profil.typ === "apartment") teile.push("Ferienwohnung");
     if (profil.zielId && typeof ZIEL_NACH_ID !== "undefined") teile.push(ZIEL_NACH_ID[profil.zielId]?.name);
-    if (profil.maxPreis) teile.push(`bis ${profil.maxPreis} €`);
+    if (profil.budgetGesamt) teile.push(`bis ${profil.budgetGesamt} € insgesamt`);
+    else if (profil.maxPreis) teile.push(`bis ${profil.maxPreis} €`);
+    if (profil.naechte) teile.push(`${profil.naechte} Nächte`);
     else if (profil.budget === "niedrig") teile.push("günstig");
     else if (profil.budget === "hoch") teile.push("gehoben");
     if (profil.erwachsene) teile.push(`${profil.erwachsene} Erwachsene${profil.kinder ? ` und ${profil.kinder} Kinder` : ""}`);
@@ -1223,7 +1324,7 @@ const Politik = {
     // 1. Womit habe ich gearbeitet?
     const vorgaben = [];
     if (profil.maxPreis) vorgaben.push(`bis ${profil.maxPreis} €`);
-    if (profil.maxStrand) vorgaben.push(`höchstens ${profil.maxStrand} km zum Strand`);
+    if (profil.maxStrand) vorgaben.push(profil.maxStrand < 1 ? `höchstens ${Math.round(profil.maxStrand * 1000)} m zum Strand` : `höchstens ${profil.maxStrand} km zum Strand`);
     for (const { id } of profil.kriterien || []) {
       const k = this.kriterium(id);
       if (k?.filter) vorgaben.push(k.label);

@@ -43,7 +43,11 @@ Felder:
 - monat: Zahl 1-12 oder null
 - erwachsene: Zahl oder null
 - kinder: Zahl oder null
-- maxPreis: Zahl in Euro pro Nacht oder null
+- personen: Gesamtzahl der Reisenden, wenn nur die genannt ist ("zu dritt", "vier Personen"), sonst null
+- naechte: Zahl der Naechte oder null ("eine Woche" = 7, "verlaengertes Wochenende" = 4, "Wochenende" = 2)
+- maxPreis: Zahl in Euro PRO NACHT oder null. Nur, wenn der Preis erkennbar pro Nacht gemeint ist.
+- budgetGesamt: Zahl in Euro fuer die GANZE Reise oder null ("900 Euro insgesamt", "Budget 1.600", vierstellige Betraege).
+  Ein Betrag ist entweder maxPreis oder budgetGesamt, nie beides. Im Zweifel bei Betraegen ab 1000 budgetGesamt.
 - budget: "niedrig", "hoch" oder null
 - kriterien: Liste aus diesen Werten, nur was wirklich gewuenscht ist:
   sauberkeit, ruhe, essen, lage, service, preis, pool, wellness, familie, strandnah, bewertung
@@ -52,7 +56,7 @@ Felder:
 Regeln:
 - Verneinungen ergeben KEIN Kriterium ("kein Pool noetig" -> pool nicht aufnehmen).
 - Rate nichts. Was nicht dasteht, ist null oder fehlt in der Liste.
-- "zu zweit" = 2 Erwachsene, "zu viert" = 4 Erwachsene, "allein" = 1.
+- "zu zweit" = 2 Erwachsene (erwachsene: 2), "allein" = 1. "zu dritt" oder "zu viert" ohne Hinweis auf Kinder: personen setzen, erwachsene null.
 - "Familie", "wir", "meine Kinder" ohne Zahl ergibt KEINE Zahl. Schreib null.
   Wie viele Menschen eine Familie hat, weiss nur die Person selbst - danach
   wird gefragt, es wird nicht angenommen.`;

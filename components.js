@@ -177,13 +177,28 @@ const Wishlist = {
    Konto (fiktiv) — damit "Anmelden" nicht ins Leere läuft
    ================================================================== */
 const Account = {
-  key: "voyara_user",
-  get() { return localStorage.getItem(this.key); },
-  login(name) { localStorage.setItem(this.key, name); this.refresh(); },
-  logout() { localStorage.removeItem(this.key); this.refresh(); },
+  key: "voyara_konto",
+  // Das Konto liegt im sessionStorage: Es verschwindet, sobald das Fenster
+  // zugeht. Das ist die Zusage aus dem Einstieg - der Name wird nirgends
+  // gespeichert - und hier ist sie eingeloest.
+  konto() {
+    try { const roh = sessionStorage.getItem(this.key); return roh ? JSON.parse(roh) : null; }
+    catch { return null; }
+  },
+  get() {
+    const k = this.konto();
+    return k ? `${k.vorname} ${k.nachname}`.trim() : null;
+  },
+  setzen(konto) {
+    try { sessionStorage.setItem(this.key, JSON.stringify(konto)); } catch { /* egal */ }
+    this.refresh();
+  },
+  login(name) { this.setzen({ vorname: name.split(" ")[0] || name, nachname: name.split(" ").slice(1).join(" "), mail: "" }); },
+  logout() { sessionStorage.removeItem(this.key); this.refresh(); },
   refresh() {
     const el = document.getElementById("accountLabel");
-    if (el) el.textContent = this.get() ? this.get().split(" ")[0] : "Anmelden";
+    const k = this.konto();
+    if (el) el.textContent = k ? `${k.vorname} ${(k.nachname || "").charAt(0)}${k.nachname ? "." : ""}`.trim() : "Anmelden";
   },
 };
 
@@ -870,18 +885,15 @@ function mountChrome(activeNav) {
   if (account) {
     account.addEventListener("click", () => {
       if (Account.get()) {
+        const k = Account.konto();
         openModal(
           "Dein Konto",
-          `<p>Angemeldet als <strong>${Account.get()}</strong>.</p>
+          `<p>Angemeldet als <strong>${Account.get()}</strong>${k?.mail ? `, ${k.mail}` : ""}.</p>
+           <p>Diese Angaben nutzt der Assistent, wenn er für dich bucht. Sie bleiben in diesem Browser und verschwinden, sobald du das Fenster schließt.</p>
            <p>Dein Merkzettel enthält aktuell ${Wishlist.count()} ${Wishlist.count() === 1 ? "Eintrag" : "Einträge"}.</p>`,
           `<a class="btn btn-ghost" href="merkzettel.html">Merkzettel öffnen</a>
-           <button type="button" class="btn btn-primary" id="logoutBtn">Abmelden</button>`
+           <button type="button" class="btn btn-primary" data-close>Schließen</button>`
         );
-        document.getElementById("logoutBtn").addEventListener("click", () => {
-          Account.logout();
-          document.querySelector(".modal-backdrop")?.remove();
-          toast("Abgemeldet");
-        });
       } else {
         const { close } = openModal(
           "Anmelden",

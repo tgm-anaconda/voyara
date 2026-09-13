@@ -458,42 +458,76 @@ const Werkzeuge = {
 
   // Fuehrt bis zur Buchungsseite. Ob der Agent dort auch abschliesst, regelt
   // die Autonomiestufe in agent/kern.js - nicht dieses Werkzeug.
-  async zurBuchung(id) {
+  async zurBuchung(id, verpflegung = null) {
+    // Verpflegung einstellen, wenn eine gewuenscht war. Sichtbar, wie
+    // jeder andere Schritt - und wenn das Haus sie nicht anbietet, wird
+    // das gesagt statt still uebergangen.
+    let hinweis = "";
+    if (verpflegung && typeof BOARD_LABELS !== "undefined") {
+      const label = BOARD_LABELS[verpflegung];
+      const chip = [...document.querySelectorAll(".js-board")].find((b) => b.textContent.trim().startsWith(label));
+      if (chip) {
+        if (!chip.classList.contains("active")) await Zeiger.klicke(chip, { hinweis: label });
+      } else {
+        hinweis = ` ${label} gibt es hier nicht - ich habe die Standardverpflegung gelassen.`;
+      }
+    }
     const knopf = this.finde("#bwBook, .bw-book, .booking-widget .btn-accent")
       || this.finde(`.js-book[data-id="${id}"]`);
     if (!knopf) return this.fehlt("Der Buchungsknopf");
     await Zeiger.klicke(knopf, { hinweis: "zur Buchung" });
-    return { ok: true, text: "Buchungsstrecke geöffnet.", daten: { navigiert: true, id } };
+    return { ok: true, text: "Buchungsstrecke geöffnet." + hinweis, daten: { navigiert: true, id } };
   },
 
-  // Die Buchungsstrecke hat zwei Schritte: erst die Gastdaten, dann die
-  // Bestaetigung. Der Agent fuellt die Gastdaten NICHT aus - er wuerde sonst
-  // Namen und Mailadresse erfinden. In einer Studie waere das gleich doppelt
-  // falsch: es sind fremde Personendaten, und im Protokoll stuende eine
-  // Eingabe, die die teilnehmende Person nie gemacht hat.
-  async buchungAbschliessen() {
-    // Schritt 2: Bestaetigungsknopf liegt vor
+  // Die Buchungsstrecke hat drei Schritte: Gastdaten, Pruefen, Bestaetigung.
+  //
+  // Die Gastdaten kommen aus dem Voyara-Konto der Person - so, wie ein
+  // echter Kaufagent mit dem hinterlegten Profil arbeitet. Erfinden darf
+  // der Agent nichts: Gibt es kein Konto und sind die Felder leer, nennt
+  // er, was fehlt, und wartet. Erfundene Personendaten waeren in einer
+  // Studie doppelt falsch - fremde Daten, und im Protokoll stuende eine
+  // Eingabe, die die Person nie gemacht hat.
+  //
+  // Bis wohin er geht, regelt die Freigabestufe in agent/kern.js:
+  // "vorbereiten" endet vor dem letzten Klick mit einer Zusammenfassung,
+  // "buchen" schliesst ab.
+  async buchungAbschliessen({ nurVorbereiten = false } = {}) {
+    // Schritt 2 oder 3: Bestaetigungsknopf liegt schon vor
     let knopf = this.finde("#confirmBtn");
 
     if (!knopf) {
-      // Schritt 1: Gastdaten. Nur weiter, wenn die Person sie ausgefuellt hat.
+      // Schritt 1: Gastdaten
       const form = this.finde("#guestForm");
       if (!form) return this.fehlt("Die Buchungsstrecke");
 
-      const name = this.finde("#gName")?.value.trim();
-      const mail = this.finde("#gMail")?.value.trim();
-      const zugestimmt = this.finde("#gTerms")?.checked;
+      const konto = (typeof Account !== "undefined" && Account.konto?.()) || null;
+      const feldName = this.finde("#gName");
+      const feldMail = this.finde("#gMail");
+      const feldTerms = this.finde("#gTerms");
+
+      // Leere Felder aus dem Konto fuellen - sichtbar, damit die Person
+      // sieht, welche Daten der Agent benutzt
+      if (konto && feldName && !feldName.value.trim()) {
+        await Zeiger.tippe(feldName, `${konto.vorname} ${konto.nachname}`, { hinweis: "Name aus deinem Konto" });
+      }
+      if (konto && feldMail && !feldMail.value.trim()) {
+        await Zeiger.tippe(feldMail, konto.mail, { hinweis: "E-Mail aus deinem Konto" });
+      }
+      if (feldTerms && !feldTerms.checked) {
+        await Zeiger.klicke(feldTerms, { hinweis: "Studienhinweis bestätigen" });
+      }
+
+      const name = feldName?.value.trim();
+      const mail = feldMail?.value.trim();
       const fehlt = [];
       if (!name) fehlt.push("Name");
       if (!mail) fehlt.push("E-Mail");
-      if (!zugestimmt) fehlt.push("die Bestätigung der Studienhinweise");
       if (fehlt.length) {
-        const liste = fehlt.length < 2 ? fehlt[0]
-          : `${fehlt.slice(0, -1).join(", ")} und ${fehlt[fehlt.length - 1]}`;
+        const liste = fehlt.join(" und ");
         return {
           ok: false,
           daten: { wartetAufDaten: true },
-          text: `Für den letzten Schritt fehlen noch ${liste}. Die trage bitte selbst ein — deine Daten fülle ich nicht aus. Sag danach Bescheid, dann schließe ich ab.`,
+          text: `Für den letzten Schritt fehlt noch ${liste}. Ich habe kein Konto, aus dem ich das nehmen könnte - trag es bitte selbst ein und sag dann Bescheid.`,
         };
       }
 
@@ -505,8 +539,26 @@ const Werkzeuge = {
       if (!knopf) return this.fehlt("Der Bestätigungsknopf");
     }
 
+    if (nurVorbereiten) {
+      return { ok: true, text: "Die Buchung liegt zur Prüfung bereit.", daten: { vorbereitet: true } };
+    }
+
     await Zeiger.klicke(knopf, { hinweis: "Buchung abschließen" });
     return { ok: true, text: "Buchung abgeschlossen — simuliert, es wurde nichts gebucht.", daten: { gebucht: true } };
+  },
+
+  // Was auf der Pruefseite steht, fuer die Gegenzeichnung im Chat. Liest
+  // die Seite, statt selbst zu rechnen - der Agent soll vorlegen, was die
+  // Person auch sieht.
+  buchungsZusammenfassung() {
+    const block = this.finde("#checkoutMain");
+    if (!block) return null;
+    const titel = block.querySelector(".review-block h3")?.textContent.trim();
+    const zeitraum = block.querySelector(".review-block p")?.textContent.trim();
+    const kv = [...block.querySelectorAll(".kv")].map((k) => [k.querySelector("span")?.textContent.trim(), k.querySelector("strong")?.textContent.trim()]);
+    const wert = (label) => kv.find(([l]) => l === label)?.[1] || null;
+    if (!titel) return null;
+    return { titel, zeitraum, gesamt: wert("Gesamtpreis"), name: wert("Name"), mail: wert("E-Mail") };
   },
 };
 

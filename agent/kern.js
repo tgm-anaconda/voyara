@@ -194,6 +194,37 @@ const Kern = {
     return { stufe: Math.random() < 0.5 ? "vorschlagen" : "buchen", gewuerfelt: true };
   },
 
+  // Die gewaehlte Startstufe - einmal je Sitzung. Der Messpunkt, um den
+  // es geht: die Bereitschaft vor dem ersten Kontakt.
+  freigabeStartSetzen(stufe, messung = {}) {
+    if (!FREIGABE_RANG.hasOwnProperty(stufe)) return;
+    this.lauf.freigabe = stufe;
+    this.lauf.freigabeGewaehlt = true;
+    this.notieren("freigabe_start", { stufe, ...messung });
+    this.sichern();
+    AgentPanel.freigabeZeigen(stufe);
+  },
+
+  // Neuer Durchlauf fuer die zweite Aufgabe: Gespraech, Suche und
+  // Kandidaten von vorn, die Freigabestufe bleibt, wo die Person sie
+  // zuletzt hatte. Das Protokoll des ersten Durchlaufs hat der
+  // Studienablauf vorher kopiert.
+  neuerDurchlauf() {
+    const freigabe = this.lauf.freigabe;
+    this.lauf = this.leererLauf();
+    this.lauf.freigabe = freigabe;
+    this.lauf.freigabeGewaehlt = true;
+    this.lauf.durchlauf = (this.lauf.durchlauf || 0) + 1;
+    this.sichern();
+    Zeiger.verstecken?.();
+    const kasten = document.getElementById("agentMessages");
+    if (kasten) kasten.innerHTML = "";
+    AgentPanel.eckdatenZeigen([]);
+    this.sagen("Neue Reise? Sag mir, wonach du suchst - ich fange bei null an.");
+    AgentPanel.setSuggestions(Politik.vorschlaege());
+    AgentPanel.status("online");
+  },
+
   freigabe() {
     return this.lauf?.freigabe || "suchen";
   },
@@ -266,38 +297,31 @@ const Kern = {
     // Freigabestufe: einmal je Sitzung gewuerfelt, danach ueberdauert sie
     // den Seitenwechsel wie der Rest des Laufs.
     if (!this.lauf.freigabe) {
-      // Der Startbildschirm stellt die Wahl einmal ausdruecklich, bevor
-      // die Seite benutzbar ist. Das ist der Messpunkt: die Bereitschaft
-      // vor dem ersten Kontakt, bei allen unter denselben Bedingungen
-      // erhoben. Ohne ihn hing die Startstufe am Zufall, und wer den
-      // Regler nie fand, lieferte einen Datenpunkt ueber den Regler und
-      // nicht ueber sich.
-      const mitBildschirm = STELLSCHRAUBEN.startbildschirm
-        && typeof Startbildschirm !== "undefined" && !Startbildschirm.erledigt();
-
-      if (mitBildschirm) {
-        // Bis zur Wahl gilt die niedrigste Stufe. Sie wird nicht
-        // protokolliert und nicht angezeigt - waehrend der Bildschirm
-        // steht, ist die Seite ohnehin gesperrt. Wichtig ist nur, dass
-        // der Agent nicht schon losarbeitet, falls doch etwas dazwischen
-        // kommt: lieber zu wenig Freigabe als eine ungefragte.
-        this.lauf.freigabe = FREIGABE[0].id;
-        Startbildschirm.zeigen(FREIGABE, (stufe, messung) => {
-          this.lauf.freigabe = stufe;
-          this.notieren("freigabe_start", { stufe, quelle: "startbildschirm", ...messung });
-          this.sichern();
-          AgentPanel.freigabeZeigen(stufe);
-        });
-      } else {
-        // Ohne Startbildschirm bleibt es beim alten Weg: Stufe je nach
-        // Stellschraube gesetzt oder gewuerfelt. Nur so bleibt eine
-        // Variante moeglich, in der die Autonomie zugewiesen und nicht
-        // gewaehlt wird.
-        const start = this.startFreigabe();
-        this.lauf.freigabe = start.stufe;
-        this.notieren("freigabe_start", { stufe: start.stufe, quelle: start.gewuerfelt ? "zufall" : "vorgabe" });
-      }
+      // Bis zur Wahl gilt die niedrigste Stufe. Sie wird nicht
+      // protokolliert und nicht angezeigt - waehrend die Bildschirme
+      // stehen, ist die Seite ohnehin gesperrt. Wichtig ist nur, dass
+      // der Agent nicht schon losarbeitet, falls doch etwas dazwischen
+      // kommt: lieber zu wenig Freigabe als eine ungefragte.
+      this.lauf.freigabe = FREIGABE[0].id;
       this.sichern();
+    }
+
+    // Der Studienablauf (studie.js) fuehrt durch Hinweis, Konto, Aufgabe
+    // und Freigabewahl und ruft freigabeStartSetzen(), sobald die Person
+    // gewaehlt hat. Ohne Studienablauf zeigt start.js die Wahl allein,
+    // und ohne beides wird gewuerfelt - so bleibt eine Variante moeglich,
+    // in der die Autonomie zugewiesen und nicht gewaehlt wird.
+    if (!this.lauf.freigabeGewaehlt) {
+      if (typeof Studie !== "undefined") {
+        Studie.start(this);
+      } else if (STELLSCHRAUBEN.startbildschirm && typeof Startbildschirm !== "undefined" && !Startbildschirm.erledigt()) {
+        Startbildschirm.zeigen(FREIGABE, (stufe, messung) => this.freigabeStartSetzen(stufe, { quelle: "startbildschirm", ...messung }));
+      } else {
+        const start = this.startFreigabe();
+        this.freigabeStartSetzen(start.stufe, { quelle: start.gewuerfelt ? "zufall" : "vorgabe" });
+      }
+    } else if (typeof Studie !== "undefined") {
+      Studie.start(this);
     }
     AgentPanel.freigabeAufbauen(FREIGABE, this.lauf.freigabe, (stufe) => this.freigabeSetzen(stufe));
 
@@ -445,7 +469,9 @@ const Kern = {
 
     this.lauf.profil = {
       typ: a.typ, zielId: a.zielId, monat: a.monat, erwachsene: a.erwachsene,
-      kinder: a.kinder, budget: a.budget, maxPreis: a.maxPreis,
+      kinder: a.kinder, personen: a.personen ?? null, naechte: a.naechte ?? null,
+      verpflegung: a.verpflegung ?? null,
+      budget: a.budget, maxPreis: a.maxPreis, budgetGesamt: a.budgetGesamt ?? null,
       artGenannt: a.artGenannt === true,
       familieGenannt: a.familieGenannt === true,
       kriterien: a.kriterien || [],
@@ -458,6 +484,19 @@ const Kern = {
     const ausText = Politik.absicht(text);
     if (ausText.familieGenannt) this.lauf.profil.familieGenannt = true;
     if (ausText.artGenannt) { this.lauf.profil.artGenannt = true; this.lauf.profil.typ = ausText.typ; }
+    // Was der Modellpfad nicht liefert, kommt aus dem Wortlaut: Gesamt-
+    // zahl, Naechte, Gesamtbudget. Dann dieselben Schluesse wie bei jeder
+    // spaeteren Antwort - "zu zweit" heisst zwei Erwachsene, ein
+    // Gesamtbudget wird zum Nachtpreis, sobald die Naechte feststehen.
+    const pr0 = this.lauf.profil;
+    if (pr0.personen == null && ausText.personen != null) pr0.personen = ausText.personen;
+    if (pr0.naechte == null && ausText.naechte != null) pr0.naechte = ausText.naechte;
+    if (!pr0.verpflegung && ausText.verpflegung) pr0.verpflegung = ausText.verpflegung;
+    if (pr0.zimmer == null && ausText.zimmer != null) pr0.zimmer = ausText.zimmer;
+    if (pr0.maxStrand == null && ausText.maxStrand != null) pr0.maxStrand = ausText.maxStrand;
+    if (pr0.budgetGesamt == null && ausText.budgetGesamt != null) { pr0.budgetGesamt = ausText.budgetGesamt; pr0.maxPreis = null; }
+    Politik.gesamtzahlAufloesen(pr0, text);
+    Politik.nachtpreisAbleiten(pr0);
 
     // Riegel gegen geratene Personenzahlen. Das Modell ist angewiesen,
     // bei "Familie" ohne Zahl null zu schreiben, folgt dem aber nicht
@@ -996,7 +1035,7 @@ const Kern = {
         return w.zurueckZurListe();
       case "zurBuchung":
         this.vorher("Ich gehe zur Buchung.");
-        return w.zurBuchung(this.aufloesen(schritt.args?.id));
+        return w.zurBuchung(this.aufloesen(schritt.args?.id), schritt.args?.verpflegung || null);
       case "buchungAbschliessen": return w.buchungAbschliessen();
       case "vertiefung":          return this.vertiefungMelden();
       default:                    return { ok: false, text: `Unbekannter Schritt: ${schritt.werkzeug}` };
@@ -1375,7 +1414,7 @@ const Kern = {
       }
       this.notieren("zur_buchung", { id });
       this.lauf.phase = "arbeitet";
-      this.lauf.offeneSchritte = [{ werkzeug: "zurBuchung", status: "öffnet Buchung…", args: { id } }];
+      this.lauf.offeneSchritte = [{ werkzeug: "zurBuchung", status: "öffnet Buchung…", args: { id, verpflegung: this.lauf.profil.verpflegung || null } }];
       this.sichern();
       return this.abarbeiten();
     }
@@ -1429,24 +1468,59 @@ const Kern = {
     // Person - und genau diese Entscheidung ist die Messgroesse.
     const aufBuchungsseite = Werkzeuge.seite() === "checkout";
     if (aufBuchungsseite) {
-      if (!this.darf("buchen")) {
+      // Erst die Vorbereitung, bei jeder Stufe ab "vorbereiten": Gastdaten
+      // aus dem Konto, weiter zur Pruefseite. Sichtbar, mit dem Zeiger -
+      // die Person soll sehen, welche Daten der Agent benutzt.
+      this.sperreAn();
+      const vor = await Werkzeuge.buchungAbschliessen({ nurVorbereiten: true });
+      this.sperreAus();
+      if (vor.daten?.wartetAufDaten || !vor.ok) {
+        this.sagen(vor.text);
         this.lauf.phase = "nachfrage";
-        this.sagen("Ich bin bei der Buchung angekommen. Soll ich sie abschließen oder möchtest du das selbst machen?");
+        AgentPanel.setSuggestions(["Jetzt abschließen", "Ich mache das selbst"]);
+        AgentPanel.status("wartet auf deine Antwort");
+        AgentPanel.oeffnen();
+        this.sichern();
+        return;
+      }
+      this.notieren("buchung_vorbereitet", { id: this.lauf.gewaehlt });
+
+      if (!this.darf("buchen")) {
+        // Gegenzeichnung. Der Agent legt vor, was er buchen wuerde - Haus,
+        // Preis, Zeitraum, auf wessen Namen - und wartet auf ein Ja. Ob
+        // jemand das liest oder durchwinkt, zeigt die Zeit bis zur
+        // Antwort; beides steht im Protokoll.
+        this.lauf.phase = "nachfrage";
+        this.notieren("gegenzeichnung_vorgelegt", { id: this.lauf.gewaehlt });
+        const z = Werkzeuge.buchungsZusammenfassung();
+        const ersatz = z
+          ? `Alles liegt bereit: ${z.titel}, ${z.zeitraum}, ${z.gesamt} insgesamt, auf den Namen ${z.name}. Soll ich abschließen, oder möchtest du den letzten Schritt selbst machen?`
+          : "Die Buchung liegt zur Prüfung bereit. Soll ich abschließen, oder möchtest du das selbst machen?";
+        this.sagen(await this.formulieren({
+          lage: "Du hast die Buchung vorbereitet und legst sie der Person zur Bestaetigung vor. Nenne Haus, Zeitraum, Gesamtpreis und den Namen, auf den gebucht wird, und frag, ob du abschliessen sollst. Kurz, kein Werbeton, keine Bewertung des Hauses.",
+          buchung: z || null,
+        }, ersatz));
         AgentPanel.setSuggestions(["Ja, schließ ab", "Ich mache das selbst"]);
         AgentPanel.status("wartet auf deine Antwort");
         AgentPanel.oeffnen();
         this.sichern();
         return;
       }
-      {
-        this.sagen("Ich schließe die Buchung jetzt ab. Sag Stopp, wenn du das nicht willst.");
-        await Zeiger.warte(2600);
-        if (!Zeiger.abbruch) {
-          const e = await Werkzeuge.buchungAbschliessen();
-          this.sagen(e.text);
-          if (e.daten?.gebucht) this.notieren("gebucht", { id: this.lauf.gewaehlt, autonom: true });
-          if (e.daten?.wartetAufDaten) { this.lauf.phase = "nachfrage"; this.sichern(); return; }
-        }
+
+      // Stufe "buchen": abschliessen, mit einer Frist zum Widerruf. Die
+      // Zusammenfassung wird trotzdem genannt - wer dem Agenten das
+      // Buchen ueberlassen hat, soll wissen, was er gerade tut.
+      const z = Werkzeuge.buchungsZusammenfassung();
+      this.sagen(z
+        ? `Ich buche jetzt ${z.titel}, ${z.zeitraum}, ${z.gesamt} insgesamt, auf den Namen ${z.name}. Sag Stopp, wenn du das nicht willst.`
+        : "Ich schließe die Buchung jetzt ab. Sag Stopp, wenn du das nicht willst.");
+      await Zeiger.warte(3200);
+      if (!Zeiger.abbruch) {
+        this.sperreAn();
+        const e = await Werkzeuge.buchungAbschliessen();
+        this.sperreAus();
+        this.sagen(e.text);
+        if (e.daten?.gebucht) this.notieren("gebucht", { id: this.lauf.gewaehlt, autonom: true });
       }
     }
 

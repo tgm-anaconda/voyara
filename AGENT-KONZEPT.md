@@ -1129,3 +1129,143 @@ der Agent verstanden hat, steht seit Abschnitt 21 sichtbar in der Übersicht
 über dem Gespräch. Es zusätzlich in jede Nachricht zu schreiben, war eine
 Doppelung, und weil sie in jeder Nachricht stand, klang sie nach einem
 Formular, das abgehakt wird.
+
+---
+
+## 24. Der vollständige Studienablauf
+
+Bis hierher war die Seite ein Prototyp des Agenten. Seit diesem Abschnitt ist
+sie eine Erhebung: Sie führt jede Person vom Hinweis bis zur Auflösung, misst
+unterwegs, und legt die Daten ab. Der Ablauf steht in `agent/studie.js`; der
+Agentenkern weiß von alledem nichts und verhält sich in beiden Aufgaben gleich.
+
+### Der Ablauf
+
+| Schritt | Bildschirm | Was passiert |
+|---|---|---|
+| 1 | Teilnahmehinweis | Rahmen, Ablauf, Verlosung, Einwilligung per Haken |
+| 2 | Konto | Vorname, Nachname, Mail - Name darf erfunden sein, Mail nur für die Verlosung |
+| 3 | Aufgabe 1 | Szene, fünf Vorgaben, Rangfolge der Wünsche |
+| 4 | Cookie-Hinweis | Freigabewahl, nur vor Aufgabe 1 |
+| 5 | Seite | Suchen und buchen, mit oder ohne Agent; Reiter "Aufgabe" am Rand |
+| 6 | Zwischenfragen | sechs Fragen zu dieser Aufgabe |
+| 7 | Aufgabe 2 | Seite und Agent von vorn, Freigabe bleibt, wo sie war |
+| 8 | Zwischenfragen | |
+| 9 | Fragebogen | Vertrauen, Delegation, Transparenz, Weiternutzung, Kontrolle, Erfahrung, Person |
+| 10 | Auflösung | was untersucht wurde, Verlosung, Kontakt |
+
+### Within-Subjects: jede Person macht beide Aufgaben
+
+Die erste Überlegung war, jeder Person eine Aufgabe zu geben und zwei Aufgaben
+zu bauen, die sich in genau einer Sache unterscheiden. Das ist der saubere
+Between-Vergleich. Er hat aber einen Preis, der hier zu hoch ist: Bei einer
+Stichprobe in Bachelorarbeits-Größe halbiert er die Fallzahl je Bedingung, und
+zwei fast gleiche Aufgaben hintereinander würden sich für die Person wie eine
+Wiederholung anfühlen, falls sie doch beide bekäme.
+
+Deshalb Within-Subjects: Jede Person macht beide Aufgaben, in ausgeloster
+Reihenfolge. Die Aufgaben sind bewusst verschieden (Familie am Meer im Sommer
+gegen Paar im Hinterland im Herbst), damit die zweite nicht die erste
+wiederholt. Der Vergleich zwischen ihnen ist dann ein Vergleich zweier
+**Szenarien**, nicht einer isolierten Variable - das ist ehrlich zu benennen.
+Was er hergibt: die Bewegung der Freigabe zwischen Aufgabe 1 und 2 innerhalb
+derselben Person, und ob sich Delegationsverhalten mit der Einsatzhöhe
+verändert. Die Reihenfolge wird protokolliert und lässt sich als
+Kontrollvariable prüfen.
+
+**Keine Zuweisung nach Familienstand.** Die Idee lag nahe, Personen mit Familie
+die Familienaufgabe zu geben. Dann wäre die Aufgabe nicht mehr zufällig
+verteilt, sondern hinge an der Person, und jeder Unterschied könnte von den
+Personen kommen statt von der Aufgabe. Stattdessen: zufällig zuweisen, am Ende
+den echten Familienstand und "Wie gut konntest du dich hineinversetzen?"
+abfragen (Zwischenfragen, `z_hineinversetzt`). Wer unter 3 liegt, wird
+gesondert betrachtet.
+
+### Die zwei Aufgaben (agent/aufgaben.js)
+
+Beide haben fünf harte Vorgaben, die sich am Katalog objektiv prüfen lassen,
+eine benannte Rangfolge der Wünsche, und **genau eine beste Option**, die aus
+dem Katalog berechnet wird - nicht hinterlegt, damit sie bei Katalogänderungen
+richtig bleibt und die Rechenregel offen im Code steht.
+
+| | Familie | Paar |
+|---|---|---|
+| Ziel, Zeit | Mallorca, 7 Nächte im August | Algarve, 4 Nächte im Oktober |
+| Gruppe | 2 Erwachsene, 2 Kinder, ein Familienzimmer | 2 Erwachsene, Doppelzimmer |
+| Harte Vorgaben | Hotel mit Pool, bis 500 m Strand, bis 1.600 € | Frühstück, kein Familienresort, bis 900 € |
+| Rangfolge | Kinderclub, dann Bewertung | Essen, dann Ruhe |
+| Zulässig | 5 Häuser, 1.113 bis 1.519 € | 7 Häuser, 323 bis 707 € |
+| Beste Option | Cala Blanca Mar, 1.512 € | Casa das Amendoeiras, 667 € |
+| Der naheliegende Fehlkauf | Es Fogueró, 1.610 € (Budget) | Miradouro Sagres, Strandhotel mit mittelmäßigem Essen |
+
+Der Zielkonflikt ist jeweils ein anderer. Bei der Familie liegt er zwischen
+Budget und Ausstattung; die Trefferliste zeigt Grundpreise, und ein Haus mit
+205 € Grundpreis landet mit Familienzimmer bei 1.876 € - über dem Budget. Beim
+Paar liegt er zwischen dem Schema "Urlaub = Meer" und der genannten Rangfolge:
+Die besten Küchen stehen im Hinterland. Wer dem Agenten nur "Algarve, zu
+zweit, Oktober" sagt, bekommt ein Strandhotel; wer die Rangfolge übergibt,
+bekommt die Finca. Das ist die Delegationsqualität als Messwert.
+
+### Konto statt Autofill
+
+Eine Website kann die Autofill-Daten des Browsers nicht auslesen; das ist
+Absicht. Der gewünschte Effekt - der Agent bucht mit den Daten der Person,
+ohne dass sie tippt - entsteht über ein Voyara-Konto beim Einstieg. Das ist
+realistischer als Autofill: Echte Kaufagenten arbeiten mit hinterlegten
+Profilen. Das Konto liegt im sessionStorage und verschwindet mit dem Fenster;
+die Mail geht einmal, getrennt und ohne Teilnehmer-Nummer, in die
+Verlosungsliste. Beides steht so im Einstieg und ist so gebaut.
+
+### Die Freigabestufen an der Kasse
+
+Erst mit Konto werden die oberen Stufen erlebbar. Der Agent füllt die
+Gastdaten sichtbar aus dem Konto, geht zur Prüfseite und:
+
+- **vorbereiten:** legt vor, was er buchen würde (Haus, Zeitraum, Gesamtpreis,
+  Name) und wartet auf ein Ja - die Gegenzeichnung aus Abschnitt 18. Zeit bis
+  zur Antwort steht im Protokoll.
+- **buchen:** nennt dasselbe, wartet drei Sekunden auf ein Stopp, schließt ab.
+
+Der Agent erfindet keine Daten. Gibt es kein Konto, nennt er, was fehlt, und
+wartet.
+
+### Verhaltensmessung ohne Selbstbericht
+
+| Messgröße | Woher | Spalte |
+|---|---|---|
+| Freigabe vor dem ersten Kontakt, Bedenkzeit, Reihenfolge der Optionen | Cookie-Hinweis | `freigabeStart`, `freigabeBedenkzeitMs`, `freigabeReihenfolge` |
+| Bewegung der Freigabe je Aufgabe | Kern-Protokoll | `a1_freigabeStart`, `a1_freigabeEnde`, `a1_freigabeAenderungen` |
+| Was von der Aufgabe ankam | Abgleich Vorgaben gegen Chatverlauf | `a1_uebergebenAnteil` |
+| Einfügen im Chat | `paste`-Ereignis, Anteil aus dem Aufgabentext | `a1_einfuegen`, `a1_einfuegenAusAufgabeMax` |
+| Klicks außerhalb der Shortlist | Klicks auf Detailseiten | `a1_detailsAusserhalbShortlist` |
+| Verweildauer auf Detailseiten | `pagehide` | `a1_detailSekunden` |
+| Ergebnisgüte | Buchung gegen beste Option | `a1_zulaessig`, `a1_verletzt`, `a1_istBeste`, `a1_abstandEur`, `a1_platz`, `a1_rangGebucht` |
+| Wer geklickt hat | Sperrfläche beim letzten Klick | `a1_gebuchtDurchAgent`, `a1_gebuchtOhneRueckfrage` |
+| Nachfragen, Sperren, Übernahmen | Kern-Protokoll | `a1_warumKlicks`, `a1_gesperrt`, `a1_uebernahmen` |
+
+### Datenablage: Sheets mit Sperre, eine Zeile je Person
+
+GitHub als Datenbank wurde verworfen: Der Schlüssel dürfte nie in den Browser,
+jede Änderung wäre ein Commit mit Versionskonflikt bei gleichzeitigen
+Schreibern, Löschen wäre unmöglich, und das Repo müsste privat sein.
+
+Google Sheets war bei VERDEA nicht das Problem, sondern das Schreibmuster
+(eine Zeile je Ereignis). Jetzt: **eine Zeile je Person**, an vier Punkten
+überschrieben (nach der Freigabewahl, nach jeder Aufgabe, nach dem
+Fragebogen), und das Apps Script arbeitet mit `LockService`, das gleichzeitige
+Schreibzugriffe nacheinander abarbeitet. Die Seite schickt an die
+Vercel-Funktion `api/daten.js`, die an das Script weiterreicht, dreimal
+wiederholt, und die Trennung durchsetzt: Studiendaten ohne Mail, Verlosung
+ohne Nummer. Fehlt die Ablage, bleibt die Kopie im Browser. Das Script liegt
+in `datenablage/apps-script.gs`, mit Einrichtungsschritten im Kopf.
+
+Die Tabelle hat eine Spalte je Kennzahl (siehe oben) und eine Spalte `json`
+mit dem vollständigen Protokoll - für alles, was die Spalten nicht vorsehen.
+
+### Offen
+
+- Der eingebaute Fehler (Abschnitt 17): Budget als Fehler erschien zu leicht
+  zu erkennen; eine falsch übernommene Mailadresse wäre eleganter, greift aber
+  nur, wenn der Agent bucht. Entscheidung nach dem Gespräch mit dem Betreuer.
+- `STUDIE.hochschule` und `STUDIE.kontakt` in `agent/start.js` eintragen.
+- Die Fragebogen-Entwürfe sind Vorschläge; sie sind als Entwurf gekennzeichnet.

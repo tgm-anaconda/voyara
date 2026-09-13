@@ -86,6 +86,9 @@ const Modell = {
       erwachsene: Number.isInteger(a.erwachsene) ? Math.min(6, Math.max(1, a.erwachsene)) : null,
       kinder: Number.isInteger(a.kinder) ? Math.min(4, Math.max(0, a.kinder)) : null,
       maxPreis: Number.isFinite(a.maxPreis) && a.maxPreis > 10 && a.maxPreis < 2000 ? Math.round(a.maxPreis) : undefined,
+      budgetGesamt: Number.isFinite(a.budgetGesamt) && a.budgetGesamt >= 100 && a.budgetGesamt < 20000 ? Math.round(a.budgetGesamt) : undefined,
+      naechte: Number.isInteger(a.naechte) && a.naechte >= 1 && a.naechte <= 21 ? a.naechte : undefined,
+      personen: Number.isInteger(a.personen) && a.personen >= 1 && a.personen <= 8 ? a.personen : undefined,
       budget: ["niedrig", "hoch"].includes(a.budget) ? a.budget : null,
       kriterien: [],
     };

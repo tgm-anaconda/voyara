@@ -77,9 +77,11 @@
    soll - der Rest des Textes bleibt davon unberuehrt. */
 const STUDIE = {
   rahmen: "Bachelorarbeit",
-  hochschule: "",                 // z.B. "Universität Musterstadt"
-  kontakt: "",                    // Mailadresse für Rückfragen
-  dauerMinuten: 15,
+  hochschule: "",                 // z.B. "Universität Musterstadt" - leer: wird weggelassen
+  kontakt: "",                    // Mailadresse für Rückfragen - leer: wird weggelassen
+  dauerMinuten: 20,
+  gutscheine: 2,                  // Verlosung unter allen, die abschliessen
+  gutscheinWert: 20,              // Euro je Gutschein
 };
 
 const Startbildschirm = {
@@ -93,8 +95,9 @@ const Startbildschirm = {
     try { sessionStorage.setItem(this.SCHLUESSEL, "1"); } catch { /* egal */ }
   },
 
-  /* Beide Bildschirme nacheinander. `fertig(stufe, messung)` wird
-     aufgerufen, sobald die Freigabestufe gewaehlt ist. */
+  /* Rueckfall ohne Studienablauf (studie.js nicht eingebunden): beide
+     Bildschirme nacheinander. Mit Studienablauf ruft studie.js die
+     beiden Bildschirme einzeln auf, mit Konto und Aufgabe dazwischen. */
   zeigen(stufen, fertig) {
     this.hinweisZeigen((hinweisMessung) => {
       this.einwilligungZeigen(stufen, (stufe, messung) => {
@@ -138,9 +141,9 @@ const Startbildschirm = {
           <li>
             <span class="einstieg-symbol">${this.SYMBOL.koffer}</span>
             <div>
-              <strong>Eine Buchungsseite benutzen</strong>
-              <span>Du bekommst eine Aufgabe und suchst dafür eine Unterkunft - so,
-                    wie du es sonst auch tun würdest.</span>
+              <strong>Zwei Reisen buchen</strong>
+              <span>Du bekommst nacheinander zwei kurze Aufgaben und suchst dafür je
+                    eine Unterkunft - so, wie du es sonst auch tun würdest.</span>
             </div>
           </li>
           <li>
@@ -162,8 +165,9 @@ const Startbildschirm = {
         <div class="einstieg-merker">
           <span class="einstieg-merker-symbol">${this.SYMBOL.hinweis}</span>
           <span><strong>Es wird nichts wirklich gebucht.</strong> Die Seite ist ein Nachbau.
-            Es entstehen keine Kosten, Zahlungsdaten werden nie abgefragt, und in Formulare
-            trägst du ein, was du möchtest.</span>
+            Es entstehen keine Kosten, und Zahlungsdaten werden nie abgefragt.
+            Unter allen, die die Studie abschließen, verlosen wir
+            <strong>${STUDIE.gutscheine} Amazon-Gutscheine über je ${STUDIE.gutscheinWert} Euro</strong>.</span>
         </div>
 
         <div class="einstieg-einwilligung">
@@ -195,6 +199,7 @@ const Startbildschirm = {
     knopf.addEventListener("click", () => {
       if (!haken.checked) return;
       el.remove();
+      document.body.classList.remove("startschirm-offen");
       weiter({ hinweisSekunden: Math.round((Date.now() - gezeigt) / 1000) });
     });
   },
@@ -297,6 +302,9 @@ const Startbildschirm = {
     knopf.addEventListener("click", () => {
       if (!gewaehlt) return;
       el.remove();
+      // Die Sperre am body gehoert zum Bildschirm, nicht zum Aufrufer -
+      // sonst bleibt die Seite nach der Wahl unscrollbar
+      document.body.classList.remove("startschirm-offen");
       fertig(gewaehlt, {
         // Wie lange jemand ueberlegt hat, sagt etwas darueber, wie sehr
         // die Wahl eine Wahl war. Zwei Sekunden heisst durchgeklickt.

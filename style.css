@@ -1668,3 +1668,153 @@ body.startschirm-offen { overflow: hidden; }
   .cookiehinweis-knopf { width: 100%; padding: 11px 20px; }
   .cookiehinweis-verweise { justify-content: center; }
 }
+
+/* ==================================================================
+   Studienablauf: Konto, Aufgabe, Fragen, Aufloesung
+   ------------------------------------------------------------------
+   Alle Bildschirme nutzen den Rahmen des Studienhinweises (.einstieg,
+   .einstieg-blatt), damit der Einstieg wie aus einem Guss wirkt. Hier
+   stehen nur die Teile, die dort nicht vorkommen.
+   ================================================================== */
+
+/* Konto */
+.konto-form { display: grid; gap: 12px; margin: 0 0 18px; }
+.konto-zeile { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.konto-form label {
+  display: flex; flex-direction: column; gap: 5px;
+  font-size: .8rem; font-weight: 600; color: var(--ink-700);
+}
+.konto-form input {
+  font: inherit; font-size: .95rem; font-weight: 400; color: var(--ink-900);
+  padding: 11px 13px; border: 1.5px solid var(--line); border-radius: 9px;
+  background: #fafbfa; outline: none; transition: border-color .15s, background .15s;
+}
+.konto-form input:focus { border-color: var(--brand-500); background: #fff; }
+.konto-fehler {
+  margin: 0; font-size: .82rem; color: #b3261e; background: #fdecea;
+  border-radius: 7px; padding: 9px 12px;
+}
+.konto-fehler[hidden] { display: none !important; }
+
+/* Aufgabe */
+.aufgabe-szene { text-align: left; max-width: none; }
+.aufgabe-vorgaben {
+  background: var(--brand-50); border-radius: 12px; padding: 18px 20px 16px; margin: 0 0 16px;
+}
+.aufgabe-vorgaben h3 {
+  font-size: .78rem; letter-spacing: .09em; text-transform: uppercase;
+  color: var(--brand-700); margin: 0 0 10px; font-weight: 700;
+}
+.aufgabe-vorgaben ul { margin: 0 0 12px; padding: 0 0 0 20px; display: grid; gap: 6px; }
+.aufgabe-vorgaben li { font-size: .92rem; line-height: 1.5; color: var(--ink-900); }
+.aufgabe-wuensche {
+  margin: 0; padding-top: 12px; border-top: 1px solid rgba(29,145,121,.2);
+  font-size: .9rem; line-height: 1.55; color: var(--ink-700); font-style: italic;
+}
+
+/* Der Reiter am rechten Rand */
+.aufgabe-reiter {
+  position: fixed; right: 0; top: 42%; z-index: 700;
+  writing-mode: vertical-rl; transform: rotate(180deg);
+  background: var(--brand-900); color: #fff; border: none; cursor: pointer;
+  padding: 14px 9px; border-radius: 0 9px 9px 0; font: inherit;
+  font-size: .8rem; font-weight: 600; letter-spacing: .04em;
+  box-shadow: -3px 0 14px rgba(0,0,0,.18);
+}
+.aufgabe-reiter:hover { background: var(--brand-800); }
+@media (max-width: 720px) {
+  .aufgabe-reiter { top: auto; bottom: 92px; padding: 12px 7px; font-size: .74rem; }
+}
+
+.aufgabe-fenster {
+  position: fixed; inset: 0; z-index: 940; background: rgba(6,53,44,.55);
+  display: flex; align-items: center; justify-content: center; padding: 20px; overflow-y: auto;
+}
+.aufgabe-fenster-karte {
+  background: #fff; border-radius: 16px; width: 100%; max-width: 640px;
+  padding: 30px 40px 26px; box-shadow: 0 24px 70px rgba(0,0,0,.3); margin: auto;
+  max-height: calc(100dvh - 40px); overflow-y: auto;
+}
+.aufgabe-fenster-karte h1 { font-family: var(--font-display); font-size: 1.45rem; color: var(--brand-900); margin: 0 0 10px; }
+.aufgabe-fenster-karte .einstieg-etikett { font-size: .7rem; letter-spacing: .13em; text-transform: uppercase; color: var(--brand-500); font-weight: 700; margin: 0 0 8px; }
+.aufgabe-fenster-karte .einstieg-vorspann { font-size: .92rem; line-height: 1.58; color: var(--ink-700); margin: 0 0 16px; }
+.aufgabe-fenster-fuss { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 6px; }
+.aufgabe-abschliessen {
+  background: none; border: none; cursor: pointer; font: inherit; font-size: .8rem;
+  color: var(--ink-500); text-decoration: underline; padding: 8px 0;
+}
+.aufgabe-abschliessen:hover { color: var(--ink-900); }
+@media (max-width: 640px) {
+  .aufgabe-fenster { padding: 0; align-items: flex-end; }
+  .aufgabe-fenster-karte { border-radius: 16px 16px 0 0; padding: 24px 20px 20px; max-height: 92dvh; }
+}
+
+/* Fragebogen */
+.einstieg-fragen .einstieg-blatt { max-width: 700px; }
+.einstieg-fragen-lang .einstieg-blatt { max-width: 720px; }
+.fb-entwurf {
+  display: inline-block; margin-left: 6px; padding: 2px 8px; border-radius: 100px;
+  background: var(--accent-100); color: var(--accent-600);
+  font-size: .68rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; vertical-align: middle;
+}
+.fb-form { display: grid; gap: 4px; margin-bottom: 18px; }
+.fb-block { padding: 16px 0 6px; border-top: 1px solid var(--line); }
+.fb-block:first-child { border-top: none; padding-top: 0; }
+.fb-block h3 { font-size: .95rem; color: var(--brand-900); margin: 0 0 4px; }
+.fb-hinweis { font-size: .8rem; color: var(--ink-500); margin: 0 0 10px; }
+.fb-frage { padding: 12px 10px; border-radius: 10px; transition: background .15s; }
+.fb-frage.fb-fehlt { background: #fdecea; outline: 1.5px solid #e8a19b; }
+.fb-text { font-size: .92rem; line-height: 1.5; color: var(--ink-900); margin: 0 0 9px; }
+.fb-optional { font-size: .72rem; color: var(--ink-500); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; margin-left: 6px; }
+
+.fb-skala { display: flex; align-items: center; gap: 12px; }
+.fb-pol { font-size: .72rem; color: var(--ink-500); width: 74px; line-height: 1.3; flex: none; }
+.fb-pol:last-child { text-align: right; }
+.fb-stufen { display: flex; gap: 6px; flex: 1; justify-content: center; }
+.fb-stufen label { position: relative; }
+.fb-stufen input { position: absolute; opacity: 0; pointer-events: none; }
+.fb-stufen span {
+  display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%;
+  border: 1.5px solid var(--line); background: #fafbfa; font-size: .85rem; font-weight: 600;
+  color: var(--ink-700); cursor: pointer; transition: all .12s;
+}
+.fb-stufen span:hover { border-color: var(--brand-500); }
+.fb-stufen input:checked + span { background: var(--brand-500); border-color: var(--brand-500); color: #fff; }
+.fb-stufen input:focus-visible + span { outline: 2px solid var(--brand-500); outline-offset: 2px; }
+
+.fb-wahl { display: flex; flex-wrap: wrap; gap: 8px; }
+.fb-wahl label { position: relative; }
+.fb-wahl input { position: absolute; opacity: 0; pointer-events: none; }
+.fb-wahl span {
+  display: inline-block; padding: 9px 15px; border-radius: 100px; cursor: pointer;
+  border: 1.5px solid var(--line); background: #fafbfa; font-size: .84rem; color: var(--ink-700); transition: all .12s;
+}
+.fb-wahl span:hover { border-color: var(--brand-500); }
+.fb-wahl input:checked + span { background: var(--brand-500); border-color: var(--brand-500); color: #fff; }
+
+.fb-textarea, .fb-zahl {
+  font: inherit; font-size: .9rem; color: var(--ink-900); width: 100%;
+  padding: 10px 12px; border: 1.5px solid var(--line); border-radius: 9px; background: #fafbfa; outline: none;
+}
+.fb-textarea:focus, .fb-zahl:focus { border-color: var(--brand-500); background: #fff; }
+.fb-zahl { width: 110px; }
+
+@media (max-width: 640px) {
+  .fb-skala { flex-wrap: wrap; gap: 8px; }
+  .fb-pol { width: auto; font-size: .7rem; }
+  .fb-pol:first-child { order: 2; }
+  .fb-pol:last-child { order: 3; margin-left: auto; }
+  .fb-stufen { order: 1; width: 100%; gap: 4px; }
+  .fb-stufen span { width: 36px; height: 36px; }
+  .konto-zeile { grid-template-columns: 1fr; }
+}
+
+/* Aufloesung */
+.aufloesung-text p { font-size: .92rem; line-height: 1.6; color: var(--ink-700); margin: 0 0 13px; }
+.aufloesung-text strong { color: var(--brand-900); }
+.aufloesung-text a { color: var(--brand-700); }
+.studie-fertig {
+  position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 700;
+  background: var(--brand-900); color: #fff; padding: 11px 18px; border-radius: 100px;
+  font-size: .84rem; box-shadow: 0 8px 24px rgba(0,0,0,.25); max-width: calc(100vw - 32px); text-align: center;
+}
