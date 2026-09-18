@@ -2353,10 +2353,13 @@ const Kern = {
       vorgelegteHaeuser: kandidaten,
       gewaehltesHaus: this.lauf.gewaehlt ? (getItemById?.(this.lauf.gewaehlt)?.name || null) : null,
       verlauf: this.lauf.verlauf.slice(-6).map((n) => `${n.rolle === "user" ? "Person" : "Assistent"}: ${String(n.text).slice(0, 160)}`),
+      letzteAbsicht: this.lauf.letzteAbsicht || null,
     };
     let e = null;
     if (typeof Modell !== "undefined") { try { e = await Modell.einordnen(text, kontext); } catch { e = null; } }
-    return e || Politik.einordnenLokal(text, { haeuser: kandidaten });
+    e = e || Politik.einordnenLokal(text, { haeuser: kandidaten, letzteAbsicht: this.lauf.letzteAbsicht || null });
+    this.lauf.letzteAbsicht = e.absicht;
+    return e;
   },
 
   // "2", "das zweite", "Petra Lofos" -> Katalogeintrag

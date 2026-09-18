@@ -672,6 +672,7 @@ const Politik = {
     else if (/^(mach weiter|weiter|ok|okay|ja)$/.test(t)) absicht = "weiter";
     else if (/\?$|^(was|wie|wieso|warum|welche|wer|gibt es|hast du|habt ihr|kannst du|kann man|gibts)\b/.test(t)) absicht = "frage";
     else if ((kontext.haeuser || []).length && /günstiger|guenstiger|billiger|ruhiger|näher|naeher|lieber|mehr |weniger |mindestens|höchstens|hoechstens/.test(t)) absicht = "nachschaerfen";
+    else if ((kontext.haeuser || []).length && aspekte.length && (kontext.letzteAbsicht === "vergleich" || /check|anschau|ansehen|wissen|interessier/.test(t))) absicht = "vergleich";
     else if (/^(hallo|hi|danke|dankeschön|super|toll)\b/.test(t)) absicht = "smalltalk";
     let haus = null;
     const nummer = t.match(/^(?:nummer |das |die |nr\.? ?)?([123])\b/);

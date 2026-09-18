@@ -90,7 +90,9 @@ Regeln:
 - Wenn der Assistent gerade eine Frage gestellt hat und die Nachricht sie beantwortet, ist es "antwort" - auch wenn die Antwort knapp ist ("zu viert", "Kreta", "egal").
 - "vergleiche", "welches ist besser bei", "wie schneiden die ab bei", "unterschied zwischen" ist "vergleich", nie "nachschaerfen".
 - "neu" nur, wenn die Person ausdruecklich etwas anderes von vorn will. Ein zusaetzlicher Wunsch ist "nachschaerfen".
-- Im Zweifel zwischen "frage" und "nachschaerfen": Fragezeichen oder Frageform heisst "frage".`;
+- Im Zweifel zwischen "frage" und "nachschaerfen": Fragezeichen oder Frageform heisst "frage".
+- "nachschaerfen" nur, wenn die Person die Suche VERAENDERT haben will (guenstiger, ruhiger, naeher, lieber X, mindestens Y). Nennt sie nur Punkte, die sie "gecheckt", "verglichen", "angeschaut" oder "gewusst" haben will, ist es "vergleich" (bei vorgelegten Haeusern) oder "frage".
+- Steht unter letzteAbsicht "vergleich" und die Person nennt weitere Punkte ("auch", "dazu", "zusaetzlich", "und noch"), ist es wieder "vergleich".`;
 
 const ANWEISUNG_FORMULIEREN = `Du bist der Reise-Assistent von Voyara, einer deutschen Buchungsseite. Du hilfst jemandem, eine Unterkunft zu finden.
 

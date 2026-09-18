@@ -171,8 +171,11 @@ const Modell = {
         hinweisAnDich: `Deine letzte Antwort enthielt die Zahl ${fremd.join(" und ")}, die in keinem Faktum vorkommt. Schreib die Antwort neu und verwende nur Zahlen, die in den Fakten stehen - oder lass die Zahl weg.`,
       } });
       text = zweiter?.text?.trim();
-      if (!text || this.fremdeZahlen(text, fakten).length) {
-        console.info("Modellantwort enthielt ungedeckte Zahlen - eigener Text verwendet.");
+      const nochFremd = text ? this.fremdeZahlen(text, fakten) : ["leer"];
+      if (!text || nochFremd.length) {
+        console.info("Modellantwort enthielt ungedeckte Zahlen - eigener Text verwendet.", nochFremd);
+        // Fuer die Fehlersuche: welche Zahl hat den Ersatzsatz ausgeloest?
+        if (typeof Kern !== "undefined" && Kern.lauf) Kern.notieren("formulierung_verworfen", { zahlen: nochFremd, lage: String(fakten.lage || "").slice(0, 80) });
         return ersatz;
       }
     }
@@ -190,7 +193,9 @@ const Modell = {
     sammle(fakten);
     const fremd = [];
     for (const z of text.match(/\d+/g) || []) {
-      if (+z <= 10) continue;
+      // Kleine Zahlen, Tage und Jahre sind keine Messwerte
+      if (+z <= 31) continue;
+      if (+z >= 2024 && +z <= 2030) continue;
       if (!belegt.has(z) && !fremd.includes(z)) fremd.push(z);
     }
     return fremd;
