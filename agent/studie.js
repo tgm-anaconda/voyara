@@ -561,7 +561,8 @@ const Studie = {
       <p class="einstieg-etikett">Geschafft</p>
       <h1>Danke fürs Mitmachen.</h1>
       <p class="einstieg-vorspann">
-        Hier ist, worum es tatsächlich ging.
+        Zum Schluss, wofür deine Angaben verwendet werden - und ein Punkt, den wir dir
+        vorher nicht sagen konnten.
       </p>
       <div class="aufloesung-text">
         <p>

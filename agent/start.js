@@ -131,9 +131,9 @@ const Startbildschirm = {
           <h1>Eine neue Reiseseite<br>im Test</h1>
           <p class="einstieg-vorspann">
             Schön, dass du dabei bist. Diese Erhebung entsteht im Rahmen
-            ${zusatz ? `einer ${zusatz}` : "einer Bachelorarbeit"} und untersucht, wie
-            Menschen auf einer neuen Buchungsseite zurechtkommen und entscheiden. Dauer: etwa
-            <strong>${STUDIE.dauerMinuten} Minuten</strong>.
+            ${zusatz ? `einer ${zusatz}` : "einer Bachelorarbeit"} zur Optimierung von
+            Buchungsseiten: Wir testen, wie gut sich Voyara bedienen lässt und wo die Seite
+            besser werden kann. Dauer: etwa <strong>${STUDIE.dauerMinuten} Minuten</strong>.
           </p>
         </div>
 
@@ -156,8 +156,9 @@ const Startbildschirm = {
           <li>
             <span class="einstieg-symbol">${this.SYMBOL.schluessel}</span>
             <div>
-              <strong>Auflösung</strong>
-              <span>Zum Schluss erfährst du, was genau untersucht wurde und warum.</span>
+              <strong>Fertig</strong>
+              <span>Am Ende kommst du in die Verlosung, und wir sagen dir kurz, wofür
+                    deine Angaben verwendet werden.</span>
             </div>
           </li>
         </ul>
