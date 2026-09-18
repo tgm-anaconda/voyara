@@ -1315,3 +1315,16 @@ Messwert: Partnerhaus gebucht (ja/nein), dazu die Maße aus Station 3 und 4. Erg
 - Reine Kontrollgruppe ohne jeden Hinweis (Log ohne die Zeile), falls der Betreuer sie will.
 - Persönliche Präferenzen vor der Aufgabe erfragen und die beste Option daraus berechnen (gegen den Vorgabe-Bias). Noch nicht gebaut.
 - Nur am Rechner getestet; die Cursor-Position der Einladung setzt eine Maus voraus.
+
+## 26. Nachbesserungen nach dem ersten Live-Test (18.09.2026, spät)
+
+Der erste Durchlauf auf der Live-Seite ergab eine Liste, die in einem Zug abgearbeitet wurde:
+
+- **Der Agent spricht frei.** Bisher gingen nur Fragen und Vorschläge durch das Modell; rund 40 Stellen schrieben feste Sätze in den Chat, und der Zahlenriegel ersetzte Modellantworten mit fremden Zahlen sofort durch den Ersatzsatz. Jetzt läuft jede Äußerung über `Kern.sprechen(lage, fakten, ersatz)`; jede Formulierung bekommt die letzten acht Züge des Gesprächs, den geprüften Stand (der Eckdaten-Kasten) und die Freigabe mit (`mitKontext`). Bei fremden Zahlen wird einmal neu angefordert, mit dem Hinweis, welche Zahl nirgends steht. Der feste Satz ist nur noch der Notnagel ohne Verbindung. Sprechen: gpt-4.1; Verstehen: gpt-4o-mini.
+- **Zustand nur aus klaren Angaben.** "Zu viert" ist eine Gesamtzahl, keine Aufteilung. Der Riegel in `auftrag()` verwirft Erwachsene und Kinder, sobald sie nicht ausdrücklich genannt sind (auch wenn das Modell sie geraten hat). Die Gruppenfrage wird bis zu dreimal gestellt, mit den Aufteilungen als Knöpfen; erst danach eine protokollierte Annahme. Die Persona weiß: "feststehend" ist die einzige Wahrheit.
+- **Bot links, Log rechts oben.** Schublade und Reiter am linken Rand; das Agenten-Log als schwebende Bubble rechts oben unter dem Kopf, mit Zählblase und kurzem Pulsieren bei neuen Zeilen. Der Aufgaben-Reiter bleibt rechts.
+- **Prozess nur im Log.** `prozessImChat: false`: Schrittmeldungen und Ansagen stehen nur im Log; der Chat sagt beim Start einmal, dass man dort nachsehen kann. Im Chat bleiben Fragen, Vorlage, Gegenzeichnung und Entscheidungen ("kann ich nicht filtern, ich gewichte").
+- **Filter:** `mindestSterne` (Hotelkategorie) und `mindestbewertung` (Gästenote, auf 3,5 / 4,0 / 4,5 gerundet) im Parser, in den Eckdaten, in den Suchschritten, in der harten Prüfung und als Nachschärfung.
+- **Hausnamen mit Tippfehlern** (`Politik.hausImText`, Wortabstand, Ortsnamen ausgenommen): in jeder Phase wird "Gibt es die Villa Figuera?" mit Fakten und Verweis beantwortet, "Nimm die Villa …" führt zur Vertiefung, "auf den Merkzettel" merkt vor.
+- **Merken** läuft nicht mehr durch die Arbeitsschleife (die im Abschluss endete), sondern direkt; die Phase bleibt erhalten, mit Verweis auf den Merkzettel.
+- **Aufgaben ohne feste Region:** beide Aufgaben lassen Mallorca, Kreta, Sardinien, Algarve oder Teneriffa zu (`ZIELE_WARM`). Die beste Option wird über alle Ziele berechnet, dazu die beste im gewählten Ziel (`istBesteImZiel`, `platzImZiel`). Das Partnerhaus wird bei der Vorlage aus den Häusern bestimmt, die die Vorgaben der Person einhalten (`Aufgaben.partnerAus`), damit es in jedem Ziel vorhanden ist.
