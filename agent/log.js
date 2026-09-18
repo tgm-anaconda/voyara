@@ -28,15 +28,35 @@ const Log = {
   anbinden(kern) {
     this.kern = kern;
     if (typeof STELLSCHRAUBEN !== "undefined" && STELLSCHRAUBEN.log === false) return;
-    const knopf = document.getElementById("logBtn");
-    if (!knopf) return;
-    knopf.hidden = false;
+    // Die Bubble rechts oben, gegenueber dem Agenten. Der Eintrag im
+    // Seitenkopf blieb unsichtbar zwischen Merkzettel und Hilfe.
+    let knopf = document.getElementById("logBubble");
+    if (!knopf) {
+      knopf = document.createElement("button");
+      knopf.type = "button";
+      knopf.id = "logBubble";
+      knopf.className = "log-bubble";
+      knopf.title = "Was macht der Assistent gerade?";
+      knopf.setAttribute("aria-expanded", "false");
+      knopf.innerHTML = `<span class="log-bubble-symbol">${typeof ICONS !== "undefined" ? ICONS.list : ""}</span><span class="log-bubble-text">Agenten-Log</span><span class="badge" id="logBadge" hidden>0</span>`;
+      document.body.appendChild(knopf);
+    }
+    // Unter dem Seitenkopf, nicht darueber: Der Kopf ist je nach Seite
+    // und Breite verschieden hoch.
+    const ausrichten = () => {
+      const kopf = document.querySelector(".site-header");
+      const unten = kopf ? kopf.getBoundingClientRect().bottom : 0;
+      knopf.style.top = `${Math.round(Math.max(12, unten) + 12)}px`;
+    };
+    ausrichten();
+    window.addEventListener("resize", ausrichten);
+    window.addEventListener("scroll", ausrichten, { passive: true });
     if (!knopf.dataset.verdrahtet) {
       knopf.dataset.verdrahtet = "1";
       knopf.addEventListener("click", (e) => { e.stopPropagation(); this.umschalten(); });
       document.addEventListener("click", (e) => {
         const p = document.getElementById("logPanel");
-        if (p && !p.hidden && !e.target.closest("#logPanel, #logBtn")) this.schliessen();
+        if (p && !p.hidden && !e.target.closest("#logPanel, #logBubble")) this.schliessen();
       });
       document.addEventListener("keydown", (e) => { if (e.key === "Escape") this.schliessen(); });
     }
@@ -120,13 +140,18 @@ const Log = {
   // wuesste niemand, dass sich hinter dem Knopf etwas bewegt.
   abzeichen() {
     const b = document.getElementById("logBadge");
-    const knopf = document.getElementById("logBtn");
+    const knopf = document.getElementById("logBubble");
     if (!b || !knopf) return;
     const p = document.getElementById("logPanel");
     const neu = p && !p.hidden ? 0 : Math.max(0, this.zeilen().length - this.gesehen);
     b.hidden = neu === 0;
     b.textContent = neu > 9 ? "9+" : String(neu);
     knopf.classList.toggle("hat-neues", neu > 0);
+    if (neu > 0) {
+      knopf.classList.remove("puls");
+      void knopf.offsetWidth;   // Animation neu starten
+      knopf.classList.add("puls");
+    }
   },
 
   umschalten() {
@@ -137,7 +162,7 @@ const Log = {
   oeffnen() {
     const p = this.panel();
     p.hidden = false;
-    const knopf = document.getElementById("logBtn");
+    const knopf = document.getElementById("logBubble");
     knopf?.setAttribute("aria-expanded", "true");
     // Unter dem Knopf ausrichten, rechtsbuendig - nicht am Fensterrand,
     // denn dort liegt die Schublade, wenn sie offen ist.
@@ -170,7 +195,7 @@ const Log = {
     const p = document.getElementById("logPanel");
     if (!p || p.hidden) return;
     p.hidden = true;
-    document.getElementById("logBtn")?.setAttribute("aria-expanded", "false");
+    document.getElementById("logBubble")?.setAttribute("aria-expanded", "false");
     const dauerMs = this.offenSeit ? Date.now() - this.offenSeit : 0;
     this.gesehen = this.zeilen().length;
     try { sessionStorage.setItem("voyara_log_gesehen", String(this.gesehen)); } catch { /* egal */ }

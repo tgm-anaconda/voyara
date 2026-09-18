@@ -22,7 +22,7 @@ const Modell = {
   // Schluesselwort-Logik benutzt. Sonst laeuft bei einer Stoerung jede
   // Eingabe in denselben Zeitablauf.
   MAX_FEHLER: 3,
-  MAX_AUFRUFE: 60,          // pro Sitzung, grosszuegig ueber dem Bedarf
+  MAX_AUFRUFE: 140,         // pro Sitzung; jede Aeusserung geht jetzt durchs Modell
   fehler: 0,
   aufrufe: 0,
   aus: false,
@@ -131,13 +131,42 @@ const Modell = {
 
   async formulieren(fakten, ersatz) {
     const daten = await this.ruf({ aufgabe: "formulieren", fakten });
-    const text = daten?.text?.trim();
+    let text = daten?.text?.trim();
     if (!text) return ersatz;
-    if (!this.zahlenGedeckt(text, fakten)) {
-      console.info("Modellantwort enthielt ungedeckte Zahlen - eigener Text verwendet.");
-      return ersatz;
+    // Ungedeckte Zahl: einmal neu anfordern, mit dem Hinweis, welche
+    // Zahl nirgends steht. Frueher ersetzte hier sofort der feste Satz
+    // die Antwort - das war einer der Gruende, warum der Agent nach
+    // Formular klang.
+    const fremd = this.fremdeZahlen(text, fakten);
+    if (fremd.length) {
+      const zweiter = await this.ruf({ aufgabe: "formulieren", fakten: {
+        ...fakten,
+        hinweisAnDich: `Deine letzte Antwort enthielt die Zahl ${fremd.join(" und ")}, die in keinem Faktum vorkommt. Schreib die Antwort neu und verwende nur Zahlen, die in den Fakten stehen - oder lass die Zahl weg.`,
+      } });
+      text = zweiter?.text?.trim();
+      if (!text || this.fremdeZahlen(text, fakten).length) {
+        console.info("Modellantwort enthielt ungedeckte Zahlen - eigener Text verwendet.");
+        return ersatz;
+      }
     }
     return text;
+  },
+
+  fremdeZahlen(text, fakten) {
+    const belegt = new Set();
+    const sammle = (wert) => {
+      if (typeof wert === "number") belegt.add(String(Math.round(wert)));
+      else if (typeof wert === "string") for (const z of wert.match(/\d+/g) || []) belegt.add(z);
+      else if (Array.isArray(wert)) wert.forEach(sammle);
+      else if (wert && typeof wert === "object") Object.values(wert).forEach(sammle);
+    };
+    sammle(fakten);
+    const fremd = [];
+    for (const z of text.match(/\d+/g) || []) {
+      if (+z <= 10) continue;
+      if (!belegt.has(z) && !fremd.includes(z)) fremd.push(z);
+    }
+    return fremd;
   },
 
   // Jede Zahl im Text muss in den Fakten vorkommen. Kleine Zahlen bis zehn

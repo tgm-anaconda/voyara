@@ -1828,19 +1828,19 @@ body.startschirm-offen { overflow: hidden; }
    Offen schiebt er die Seite nach links, statt sie zu ueberdecken - so
    bleibt sichtbar, worauf er gerade klickt. */
 body.agent-schublade .app-shell { grid-template-columns: minmax(0, 1fr); }
-body.agent-schublade .app-main { transition: margin-right .28s ease; }
 body.agent-schublade .agent-rail {
-  position: fixed; top: 0; right: 0; left: auto; bottom: 0;
+  position: fixed; top: 0; left: 0; right: auto; bottom: 0;
   width: 380px; max-width: 100vw; height: 100vh; height: 100dvh;
-  border-right: none; border-left: 1px solid rgba(0,0,0,.28);
-  box-shadow: -3px 0 18px rgba(16,33,30,.16);
-  transform: translateX(104%); transition: transform .28s ease;
+  border-right: 1px solid rgba(0,0,0,.28); border-left: none;
+  box-shadow: 3px 0 18px rgba(16,33,30,.16);
+  transform: translateX(-104%); transition: transform .28s ease;
   z-index: 660; border-radius: 0; overflow: hidden;
 }
 body.agent-schublade.agent-open .agent-rail { transform: none; }
 @media (min-width: 1041px) {
-  body.agent-schublade.agent-open .app-main { margin-right: 380px; }
+  body.agent-schublade.agent-open .app-main { margin-left: 380px; }
 }
+body.agent-schublade .app-main { transition: margin-left .28s ease; }
 body.agent-schublade .agent-rail-inner { height: 100%; position: static; }
 body.agent-schublade .agent-head { cursor: default; padding: 15px 16px 13px; align-items: center; background: var(--chat-head); }
 body.agent-schublade .agent-head .agent-avatar { width: 34px; height: 34px; }
@@ -1855,29 +1855,54 @@ body.agent-schublade .agent-name::after { content: "Reise-Assistent"; }
 body.agent-schublade .agent-name { font-size: 0; }
 body.agent-schublade .agent-name::after { font-size: .92rem; }
 
-/* Reiter am rechten Rand: schmal, dezent, mit Pfeil nach links */
+/* Reiter am linken Rand: schmal, dezent, mit Pfeil nach rechts */
 .agent-reiter {
-  position: fixed; right: 0; top: 58%; z-index: 640;
+  position: fixed; left: 0; top: 42%; z-index: 640;
   display: flex; flex-direction: column; align-items: center; gap: 6px;
-  padding: 12px 7px 12px 6px; border: 1px solid var(--line-strong); border-right: none;
-  border-radius: 10px 0 0 10px; background: #fff; color: var(--ink-700);
+  padding: 12px 6px 12px 7px; border: 1px solid var(--line-strong); border-left: none;
+  border-radius: 0 10px 10px 0; background: #fff; color: var(--ink-700);
   cursor: pointer; font: inherit; font-size: .7rem; font-weight: 600; letter-spacing: .04em;
-  box-shadow: -2px 0 10px rgba(16,33,30,.12);
+  box-shadow: 2px 0 10px rgba(16,33,30,.12);
   transition: background .15s ease, color .15s ease, padding .15s ease;
 }
-.agent-reiter:hover { background: var(--brand-50); color: var(--brand-800); padding-right: 10px; }
-.agent-reiter-pfeil { display: grid; place-items: center; color: var(--brand-700); }
-.agent-reiter-text { writing-mode: vertical-rl; transform: rotate(180deg); }
+.agent-reiter:hover { background: var(--brand-50); color: var(--brand-800); padding-left: 10px; }
+.agent-reiter-pfeil { display: grid; place-items: center; color: var(--brand-700); transform: rotate(180deg); }
+.agent-reiter-text { writing-mode: vertical-rl; }
 .agent-reiter.hat-neues::before {
-  content: ""; position: absolute; top: 6px; left: 6px; width: 8px; height: 8px;
+  content: ""; position: absolute; top: 6px; right: 6px; width: 8px; height: 8px;
   border-radius: 50%; background: var(--accent-500); animation: reiterPuls 1.6s ease-in-out infinite;
 }
 @keyframes reiterPuls { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.5); opacity: .55; } }
 body.agent-open .agent-reiter, body.startschirm-offen .agent-reiter { display: none; }
-/* Der Aufgaben-Reiter rueckt nach oben, damit beide Platz haben */
-body.agent-schublade .aufgabe-reiter { top: 30%; }
-body.agent-schublade.agent-open .aufgabe-reiter { right: 380px; }
-@media (max-width: 1040px) { body.agent-schublade.agent-open .aufgabe-reiter { display: none; } }
+/* Der Aufgaben-Reiter bleibt rechts und weicht der Log-Bubble nach unten aus */
+body.agent-schublade .aufgabe-reiter { top: 42%; }
+
+/* Log-Bubble rechts oben, gegenueber dem Agenten */
+.log-bubble {
+  position: fixed; top: 78px; right: 18px; z-index: 650;
+  display: inline-flex; align-items: center; gap: 9px;
+  padding: 9px 16px 9px 11px; border-radius: 999px; border: 1px solid var(--line-strong);
+  background: #fff; color: var(--ink-900); cursor: pointer; font: inherit; font-size: .82rem; font-weight: 600;
+  box-shadow: 0 6px 20px rgba(16,33,30,.16);
+  transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
+}
+.log-bubble:hover { transform: translateY(-1px); box-shadow: 0 10px 26px rgba(16,33,30,.2); background: var(--brand-50); }
+.log-bubble[aria-expanded="true"] { background: var(--brand-800); color: #fff; border-color: var(--brand-800); }
+.log-bubble[aria-expanded="true"] .log-bubble-symbol { background: rgba(255,255,255,.14); color: #fff; }
+.log-bubble-symbol {
+  width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--brand-50); color: var(--brand-700);
+}
+.log-bubble .badge {
+  position: static; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px;
+  display: inline-grid; place-items: center; font-size: .7rem; font-weight: 700;
+  background: var(--accent-500); color: #fff;
+}
+.log-bubble .badge[hidden] { display: none; }
+.log-bubble.puls { animation: bubblePuls .9s ease; }
+@keyframes bubblePuls { 0% { transform: scale(1); } 30% { transform: scale(1.06); } 100% { transform: scale(1); } }
+body.startschirm-offen .log-bubble { display: none; }
+@media (max-width: 720px) { .log-bubble { top: 66px; right: 10px; padding: 8px 12px 8px 9px; } .log-bubble-text { display: none; } }
 
 /* Freigabe-Karte: die erste Nachricht des Agenten ist eine Frage.
    Bis sie beantwortet ist, gibt es weder Regler noch Eingabefeld. */
@@ -1931,6 +1956,8 @@ body.agent-ohne-freigabe #agentEckdaten { display: none !important; }
 .einladung-nein { background: #fff; color: var(--ink-700); border: 1px solid var(--line-strong); }
 .einladung-nein:hover { background: var(--brand-50); }
 .einladung-unten-rechts { right: 18px; bottom: 18px; transform: translateY(8px); }
+.einladung-unten-links { left: 18px; bottom: 18px; transform: translateY(8px); }
+.einladung-unten-links.sichtbar { transform: none; }
 .einladung-unten-rechts.sichtbar { transform: none; }
 .einladung-cursor { inset: 0; pointer-events: none; }
 .einladung-cursor .einladung-karte { position: absolute; pointer-events: auto; }
@@ -1940,7 +1967,6 @@ body.agent-ohne-freigabe #agentEckdaten { display: none !important; }
 
 /* Agenten-Log: Knopf oben rechts im Kopf, Fenster darunter, niedrig
    genug, dass man scrollen muss */
-.header-log.hat-neues svg { color: var(--brand-700); }
 .log-panel {
   position: fixed; top: 64px; right: 16px; z-index: 690; width: 380px; max-width: calc(100vw - 24px);
   background: #fff; border: 1px solid var(--line-strong); border-radius: 12px;

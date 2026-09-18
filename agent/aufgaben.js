@@ -23,6 +23,14 @@
    nicht. Was davon im Gespraech ankommt, ist einer der Messwerte.
    ================================================================== */
 
+/* Warme Regionen am Meer, aus denen beide Aufgaben waehlen lassen. Eine
+   feste Region (Mallorca) liess zu wenig Auswahl: fuenf harte Vorgaben
+   und ein Ziel ergaben fuenf zulaessige Haeuser. Mit fuenf Zielen bleibt
+   die Wahrheit berechenbar, die Auswahl aber gross genug, dass Suchen
+   sich lohnt. */
+const ZIELE_WARM = ["mallorca", "kreta", "algarve", "sardinien", "teneriffa"];
+const ZIELE_WARM_NAMEN = "Mallorca, Kreta, Sardinien, die Algarve oder Teneriffa";
+
 const AUFGABEN = {
 
   /* ------------------------------------------------------------------
@@ -43,14 +51,15 @@ const AUFGABEN = {
   familie: {
     id: "familie",
     titel: "Sommerferien mit der Familie",
-    kurz: "Familie, Mallorca, August",
+    kurz: "Familie, ans Meer, August",
     szene: `Ihr seid zu viert: du, dein Partner oder deine Partnerin und eure beiden
       Kinder, sechs und neun Jahre alt. In den Sommerferien soll es eine Woche ans
-      Meer gehen. Die Kinder haben eine klare Vorstellung - Pool und Strand -, und ihr
+      Meer gehen, irgendwohin, wo es warm ist - ${ZIELE_WARM_NAMEN}, das ist euch
+      offen. Die Kinder haben eine klare Vorstellung - Pool und Strand -, und ihr
       wollt ein Haus, in dem sie beschäftigt sind, während ihr auch mal in Ruhe
       lesen könnt. Das Geld dafür habt ihr zurückgelegt, aber es ist eine Grenze.`,
     vorgaben: [
-      "Mallorca, sieben Nächte im August",
+      `Ans Meer, in eine warme Region (${ZIELE_WARM_NAMEN}), sieben Nächte im August`,
       "Zwei Erwachsene und zwei Kinder in einem gemeinsamen Familienzimmer",
       "Ein Hotel mit Pool",
       "Höchstens 500 Meter bis zum Strand",
@@ -60,7 +69,7 @@ const AUFGABEN = {
       Danach zählt die Bewertung anderer Gäste.`,
 
     // Fuer Suche, Belegung und Preisrechnung
-    zielId: "mallorca",
+    ziele: ZIELE_WARM,
     monat: 8,
     naechte: 7,
     erwachsene: 2,
@@ -74,7 +83,7 @@ const AUFGABEN = {
     // falschen Buchung nicht stimmte.
     pruefen(h, gesamt) {
       const gruende = [];
-      if (h.ziel !== "mallorca") gruende.push("nicht auf Mallorca");
+      if (!ZIELE_WARM.includes(h.ziel)) gruende.push("nicht in einer der warmen Regionen");
       if (h.type !== "hotel") gruende.push("kein Hotel");
       if (!h.amenities?.includes("pool")) gruende.push("kein Pool");
       if (h.distanceToBeach == null || h.distanceToBeach > 0.5) gruende.push("mehr als 500 m zum Strand");
@@ -108,14 +117,15 @@ const AUFGABEN = {
   paar: {
     id: "paar",
     titel: "Ein paar Tage zu zweit",
-    kurz: "Paar, Algarve, Oktober",
-    szene: `Ihr seid zu zweit und wollt im Oktober für ein verlängertes Wochenende raus.
-      Keine Kinder, kein Programm, keine Verpflichtungen. Worauf ihr euch freut: abends
-      richtig gut essen, morgens in Ruhe frühstücken, und sonst nichts müssen. Ob das Haus
-      am Meer liegt oder im Hinterland, ist euch ehrlich gesagt egal - Hauptsache, es ist
-      ruhig und die Küche stimmt.`,
+    kurz: "Paar, in den Süden, Oktober",
+    szene: `Ihr seid zu zweit und wollt im Oktober für ein verlängertes Wochenende raus,
+      irgendwohin in den Süden, wo es dann noch warm ist - ${ZIELE_WARM_NAMEN}, das
+      ist euch offen. Keine Kinder, kein Programm, keine Verpflichtungen. Worauf ihr euch
+      freut: abends richtig gut essen, morgens in Ruhe frühstücken, und sonst nichts
+      müssen. Ob das Haus am Meer liegt oder im Hinterland, ist euch ehrlich gesagt
+      egal - Hauptsache, es ist ruhig und die Küche stimmt.`,
     vorgaben: [
-      "Algarve, vier Nächte im Oktober",
+      `In den Süden, in eine warme Region (${ZIELE_WARM_NAMEN}), vier Nächte im Oktober`,
       "Zwei Erwachsene in einem Doppelzimmer",
       "Frühstück inklusive",
       "Kein Familienresort und keine Partymeile - ihr wollt Ruhe",
@@ -124,7 +134,7 @@ const AUFGABEN = {
     wuensche: `Am wichtigsten ist euch das Essen im Haus - es soll wirklich gut sein.
       Meerblick wäre schön, ist aber kein Muss.`,
 
-    zielId: "algarve",
+    ziele: ZIELE_WARM,
     monat: 10,
     naechte: 4,
     erwachsene: 2,
@@ -135,7 +145,7 @@ const AUFGABEN = {
 
     pruefen(h, gesamt) {
       const gruende = [];
-      if (h.ziel !== "algarve") gruende.push("nicht an der Algarve");
+      if (!ZIELE_WARM.includes(h.ziel)) gruende.push("nicht in einer der warmen Regionen");
       if (h.type !== "hotel") gruende.push("kein Hotel");
       if (!h.boards?.some((b) => b.key === "fruehstueck")) gruende.push("kein Frühstück buchbar");
       if (h.amenities?.includes("familyFriendly") && h.amenities?.includes("kidsClub")) gruende.push("Familienresort");
@@ -197,6 +207,27 @@ const Aufgaben = {
     return this.zulaessige(aufgabe)[0] || null;
   },
 
+  // Die zulaessigen Haeuser eines bestimmten Ziels - fuer die Frage
+  // "hat die Person im gewaehlten Ziel das Beste genommen?"
+  zulaessigeImZiel(aufgabe, zielId) {
+    return this.zulaessige(aufgabe).filter((x) => {
+      const h = typeof getItemById === "function" ? getItemById(x.id) : null;
+      return h && h.ziel === zielId;
+    });
+  },
+
+  /* Das Partnerhaus fuer eine konkrete Trefferliste: das beste oder das
+     zweitbeste zulaessige Haus unter denen, die der Agent tatsaechlich
+     gefunden hat. So ist es immer dabei, egal welches Ziel die Person
+     gewaehlt hat. */
+  partnerAus(aufgabe, ids, rang) {
+    const menge = new Set(ids || []);
+    const liste = this.zulaessige(aufgabe).filter((x) => menge.has(x.id));
+    if (!liste.length) return null;
+    if (rang === "beste" || liste.length < 2) return { ...liste[0], rang: "beste" };
+    return { ...liste[1], rang: "zweitbeste" };
+  },
+
   /* Bewertung einer Buchung gegen die Aufgabe.
      ------------------------------------------------------------------
      Liefert, ob die Buchung zulaessig war, welche Vorgaben sie verletzt,
@@ -216,7 +247,15 @@ const Aufgaben = {
     const verletzt = aufgabe.pruefen(h, gesamt);
     const liste = this.zulaessige(aufgabe);
     const platz = liste.findIndex((x) => x.id === gebuchtId);
+    const imZiel = this.zulaessigeImZiel(aufgabe, h.ziel);
+    const besteImZiel = imZiel[0] || null;
     return {
+      ziel: h.ziel,
+      besteImZiel: besteImZiel?.id || null,
+      besteImZielName: besteImZiel?.name || null,
+      istBesteImZiel: !!besteImZiel && besteImZiel.id === gebuchtId,
+      platzImZiel: imZiel.findIndex((x) => x.id === gebuchtId) + 1 || null,
+      zulaessigeImZiel: imZiel.length,
       gebucht: gebuchtId,
       gebuchtName: h.name,
       gebuchtGesamt: Math.round(gesamt),
@@ -246,11 +285,11 @@ const Aufgaben = {
   uebergeben(aufgabe, verlauf) {
     const text = (verlauf || []).filter((n) => n.rolle === "user").map((n) => n.text).join(" ").toLowerCase();
     const muster = aufgabe.id === "familie" ? {
-      ziel: /mallorca/, zeit: /august|sommer/, gruppe: /kind|famili|vier|zu viert|2 erw/,
+      ziel: /mallorca|kreta|algarve|sardinien|teneriffa|meer|warm|süden|sueden/, zeit: /august|sommer/, gruppe: /kind|famili|vier|zu viert|2 erw/,
       pool: /pool/, strand: /strand|meer/, budget: /1[.,]?600|budget|höchstens|maximal|euro|€/,
       kinderclub: /kinderclub|club|betreuung|animation/,
     } : {
-      ziel: /algarve|portugal/, zeit: /oktober|herbst/, gruppe: /zu zweit|zweit|paar|2 erw|zwei erw/,
+      ziel: /mallorca|kreta|algarve|sardinien|teneriffa|meer|warm|süden|sueden/, zeit: /oktober|herbst/, gruppe: /zu zweit|zweit|paar|2 erw|zwei erw/,
       fruehstueck: /frühstück|fruehstueck/, ruhe: /ruhig|ruhe|kein.*famil|party/,
       budget: /900|budget|höchstens|maximal|euro|€/, essen: /essen|küche|kueche|restaurant|kulinar/,
     };
@@ -261,4 +300,4 @@ const Aufgaben = {
   },
 };
 
-if (typeof module !== "undefined" && module.exports) module.exports = { AUFGABEN, Aufgaben };
+if (typeof module !== "undefined" && module.exports) module.exports = { AUFGABEN, Aufgaben, ZIELE_WARM };

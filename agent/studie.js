@@ -116,14 +116,18 @@ const Studie = {
 
   // Das Partnerhaus der laufenden Aufgabe: die beste oder die zweitbeste
   // zulaessige Option, je nach Auslosung. Null, wenn keins vorgesehen ist.
-  partnerhaus() {
+  // Das Partnerhaus der laufenden Aufgabe, bezogen auf das, was der Agent
+  // gerade gefunden hat (ids): das beste oder zweitbeste zulaessige Haus
+  // darunter. Ohne ids: ueber den ganzen Katalog.
+  partnerhaus(ids = null) {
     const a = this.aufgabe();
     if (!a || typeof Aufgaben === "undefined") return null;
     const g = this.gruppe();
     if (g.partnerBesteIn === "ohne") return null;
+    const beste = g.partnerBesteIn === "beide" || g.partnerBesteIn === a.id;
+    if (ids) return Aufgaben.partnerAus(a, ids, beste ? "beste" : "zweitbeste");
     const zulaessige = Aufgaben.zulaessige(a);
     if (zulaessige.length < 2) return null;
-    const beste = g.partnerBesteIn === "beide" || g.partnerBesteIn === a.id;
     const wahl = beste ? zulaessige[0] : zulaessige[1];
     return { id: wahl.id, name: wahl.name, rang: beste ? "beste" : "zweitbeste" };
   },
@@ -770,6 +774,10 @@ const Studie = {
         [p + "verletzt"]: (r.bewertung?.verletzt || []).join("; "),
         [p + "beste"]: z(r.bewertung?.beste),
         [p + "istBeste"]: r.bewertung ? (r.bewertung.istBeste ? 1 : 0) : "",
+        [p + "ziel"]: z(r.bewertung?.ziel),
+        [p + "besteImZiel"]: z(r.bewertung?.besteImZiel),
+        [p + "istBesteImZiel"]: r.bewertung ? (r.bewertung.istBesteImZiel ? 1 : 0) : "",
+        [p + "platzImZiel"]: z(r.bewertung?.platzImZiel),
         [p + "abstandEur"]: z(r.bewertung?.abstandEur),
         [p + "platz"]: z(r.bewertung?.platz),
         [p + "rangGebucht"]: z(r.bewertung?.rangGebucht),

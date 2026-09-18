@@ -107,7 +107,24 @@ const Politik = {
     }
 
     if (/günstig|guenstig|billig|preiswert|wenig geld|sparen|schmales budget/.test(t)) a.budget = "niedrig";
-    if (/luxus|gehoben|erstklassig|5 sterne|fünf sterne|fuenf sterne/.test(t)) a.budget = "hoch";
+    if (/luxus|gehoben|erstklassig/.test(t)) a.budget = "hoch";
+
+    // Sterne (Hotelkategorie) und Mindestbewertung (Gaestenote). "Vier
+    // Sterne" ohne das Wort Bewertung ist die Kategorie; "Bewertung ab
+    // 4,5" oder "mindestens 4,5 Sterne Bewertung" ist die Gaestenote,
+    // gerundet auf die Stufen der Suchmaske (3,5 / 4,0 / 4,5).
+    const sternWort = { drei: 3, vier: 4, fünf: 5, fuenf: 5, "3": 3, "4": 4, "5": 5 };
+    const sterne = t.match(/(?:mindestens|min\.?|ab|wenigstens)?\s*(drei|vier|fünf|fuenf|[345])[\s-]*sterne?(?!\s*bewertung)/);
+    const bewertungsNote = t.match(/bewertung(?:en)?\s*(?:von\s*)?(?:mindestens|min\.?|ab|über|ueber|wenigstens|besser als)?\s*(\d(?:[.,]\d)?)/)
+      || t.match(/(?:mindestens|min\.?|ab|wenigstens)\s*(\d(?:[.,]\d)?)\s*(?:sterne?\s*)?(?:bewertung|gästebewertung|gaestebewertung|note|punkte)/)
+      || t.match(/(?:note|bewertet mit)\s*(?:mindestens|ab|über|ueber)?\s*(\d(?:[.,]\d)?)/);
+    if (bewertungsNote) {
+      const n = parseFloat(bewertungsNote[1].replace(",", "."));
+      if (n >= 3 && n <= 5) a.mindestbewertung = n >= 4.5 ? 4.5 : n >= 4 ? 4 : 3.5;
+    } else if (sterne && !/bewertung|note/.test(t)) {
+      a.mindestSterne = sternWort[sterne[1]];
+      if (a.mindestSterne === 5) a.budget = "hoch";
+    }
 
     // Preisgrenze. "900 Euro insgesamt" ist etwas anderes als "150 pro
     // Nacht" - die Suchmaske filtert pro Nacht, also muss eine Gesamt-
@@ -388,6 +405,8 @@ const Politik = {
      Agent schlaegt lieber nichts vor als etwas Falsches. */
   erfuellt(item, preis, profil) {
     if (profil.maxPreis && (preis ?? item.pricePerNight) > profil.maxPreis) return false;
+    if (profil.mindestSterne && (item.stars || 0) < profil.mindestSterne) return false;
+    if (profil.mindestbewertung && (item.rating || 0) < profil.mindestbewertung) return false;
     if (profil.zielId && item.ziel !== profil.zielId) return false;
     if (profil.maxStrand != null && (item.distanceToBeach ?? 99) > profil.maxStrand) return false;
 
@@ -622,6 +641,64 @@ const Politik = {
     return `es ${this.aufzaehlen(gruende)}`;
   },
 
+  /* Ein Haus im Text erkennen, auch mit Tippfehlern.
+     ------------------------------------------------------------------
+     "Gibt es die Villa Figuera?" meint die Villa Figueira. Verglichen
+     werden die kennzeichnenden Woerter des Namens (ohne Hotel, Villa,
+     Casa ...) mit den Woertern im Text, mit ein bis zwei Buchstaben
+     Spielraum je Wort. Liefert das beste Haus oder null. */
+  hausImText(text) {
+    const katalog = [
+      ...(typeof HOTELS !== "undefined" ? HOTELS : []),
+      ...(typeof APARTMENTS !== "undefined" ? APARTMENTS : []),
+    ];
+    if (!katalog.length || !text) return null;
+    const norm = (w) => w.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .replace(/ß/g, "ss").replace(/[^a-z0-9]+/g, " ").trim();
+    const FUELL = new Set(["hotel", "villa", "casa", "finca", "apart", "apartment", "apartments", "resort", "suites", "suite",
+      "das", "der", "die", "de", "del", "la", "le", "les", "los", "las", "el", "al", "da", "do", "dos", "und", "and", "by", "am", "im", "von"]);
+    // Ortsnamen zaehlen nicht als Hausname: "nach Sardinien" soll kein
+    // "Sardinia Resort" treffen.
+    const orte = new Set();
+    for (const z of (typeof ZIELE !== "undefined" ? ZIELE : [])) {
+      for (const w of norm(`${z.name} ${z.land || ""}`).split(" ")) if (w.length >= 3) orte.add(w);
+    }
+    const textWoerter = norm(text).split(" ").filter((w) => w.length >= 3 && !orte.has(w));
+    if (!textWoerter.length) return null;
+
+    const abstand = (a, b) => {
+      if (a === b) return 0;
+      const m = a.length, n = b.length;
+      if (Math.abs(m - n) > 2) return 3;
+      let prev = Array.from({ length: n + 1 }, (_, j) => j);
+      for (let i = 1; i <= m; i++) {
+        const cur = [i];
+        for (let j = 1; j <= n; j++) {
+          cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+        }
+        prev = cur;
+      }
+      return prev[n];
+    };
+    const passt = (a, b) => abstand(a, b) <= (Math.max(a.length, b.length) <= 5 ? 1 : 2);
+
+    let bester = null, besteQuote = 0, besteTreffer = 0;
+    for (const item of katalog) {
+      const kenn = norm(item.name).split(" ").filter((w) => w.length >= 3 && !FUELL.has(w));
+      if (!kenn.length) continue;
+      const treffer = kenn.filter((k) => textWoerter.some((w) => passt(k, w))).length;
+      if (!treffer) continue;
+      const quote = treffer / kenn.length;
+      if (quote > besteQuote || (quote === besteQuote && treffer > besteTreffer)) {
+        bester = item; besteQuote = quote; besteTreffer = treffer;
+      }
+    }
+    // Ein Wort allein reicht nur, wenn der Name nur aus einem besteht;
+    // sonst muss mindestens die Haelfte passen.
+    if (!bester || besteQuote < 0.5) return null;
+    return bester;
+  },
+
   aufzaehlen(liste) {
     if (!liste || !liste.length) return "";
     if (liste.length === 1) return liste[0];
@@ -640,6 +717,15 @@ const Politik = {
     const neu = { ...profil, kriterien: [...(profil.kriterien || [])] };
     const gemacht = [];
 
+    // Harte Grenzen, die auch als Nachschaerfung kommen koennen:
+    // "mindestens vier Sterne", "Bewertung ab 4,5", "hoechstens 500 m
+    // zum Strand", "bis 150 Euro".
+    const a = this.absicht(text);
+    if (a.mindestSterne != null && a.mindestSterne !== neu.mindestSterne) { neu.mindestSterne = a.mindestSterne; gemacht.push(`mindestens ${a.mindestSterne} Sterne`); }
+    if (a.mindestbewertung != null && a.mindestbewertung !== neu.mindestbewertung) { neu.mindestbewertung = a.mindestbewertung; gemacht.push(`Bewertung ab ${String(a.mindestbewertung).replace(".", ",")}`); }
+    if (a.maxStrand != null && a.maxStrand !== neu.maxStrand) { neu.maxStrand = a.maxStrand; gemacht.push(a.maxStrand < 1 ? `höchstens ${Math.round(a.maxStrand * 1000)} m zum Strand` : `höchstens ${a.maxStrand} km zum Strand`); }
+    if (a.maxPreis != null && a.maxPreis !== neu.maxPreis) { neu.maxPreis = a.maxPreis; delete neu.budgetGesamt; gemacht.push(`höchstens ${a.maxPreis} € pro Nacht`); }
+
     if (/günstiger|guenstiger|billiger|zu teuer|weniger kosten/.test(t)) {
       neu.maxPreis = Math.round((neu.letzterPreisschnitt || 200) * 0.8);
       neu.budget = "niedrig";
@@ -650,7 +736,7 @@ const Politik = {
       delete neu.maxPreis;
       gemacht.push("eine Stufe gehobener");
     }
-    if (/näher am strand|naeher am strand|dichter ans meer|direkt am meer/.test(t)) {
+    if (a.maxStrand == null && /näher am strand|naeher am strand|dichter ans meer|direkt am meer/.test(t)) {
       neu.maxStrand = 0.5;
       gemacht.push("höchstens 500 Meter zum Strand");
     }
@@ -768,10 +854,13 @@ const Politik = {
       auswerten(text, p) {
         Politik.uebernehmen(text, p);
         // Aufteilung als blosse Zahl: "2 und 1", "einer mit zwei"
-        if (p.personen != null && p.erwachsene == null) {
-          const zahlen = (text.match(/\d+/g) || []).map(Number);
-          if (zahlen.length === 2 && zahlen[0] + zahlen[1] === p.personen) {
-            p.erwachsene = zahlen[0]; p.kinder = zahlen[1];
+        if (p.erwachsene == null) {
+          // "2 und 2", "2 + 2", "zwei und eins": erst Erwachsene, dann Kinder
+          const worte = { ein: 1, eins: 1, eine: 1, einer: 1, zwei: 2, drei: 3, vier: 4, fuenf: 5, "fünf": 5, sechs: 6 };
+          const zahlen = (text.toLowerCase().match(/\b(\d+|eins?|eine|einer|zwei|drei|vier|fünf|fuenf|sechs)\b/g) || [])
+            .map((z) => (/^\d+$/.test(z) ? +z : worte[z])).filter((z) => z != null);
+          if (zahlen.length === 2 && /\s(und|\+|plus|,)\s*/.test(text) && (p.personen == null || zahlen[0] + zahlen[1] === p.personen)) {
+            p.erwachsene = zahlen[0]; p.kinder = zahlen[1]; p.personen = zahlen[0] + zahlen[1];
           }
         }
         if (p.erwachsene != null && p.kinder == null) {
@@ -954,6 +1043,8 @@ const Politik = {
     if (a.verpflegung) profil.verpflegung = a.verpflegung;
     if (a.zimmer != null) profil.zimmer = a.zimmer;
     if (a.maxStrand != null) profil.maxStrand = a.maxStrand;
+    if (a.mindestSterne != null) profil.mindestSterne = a.mindestSterne;
+    if (a.mindestbewertung != null) profil.mindestbewertung = a.mindestbewertung;
     if (a.budgetGesamt != null) { profil.budgetGesamt = a.budgetGesamt; delete profil.maxPreis; }
     if (a.maxPreis != null) { profil.maxPreis = a.maxPreis; delete profil.budgetGesamt; }
     this.nachtpreisAbleiten(profil);
@@ -1017,6 +1108,8 @@ const Politik = {
     if (profil.zimmer > 1) raus.push({ feld: "Zimmer", wert: String(profil.zimmer) });
     if (profil.naechte) raus.push({ feld: "Dauer", wert: `${profil.naechte} Nächte` });
     if (profil.maxStrand != null) raus.push({ feld: "Strand", wert: profil.maxStrand < 1 ? `bis ${Math.round(profil.maxStrand * 1000)} m` : `bis ${profil.maxStrand} km` });
+    if (profil.mindestSterne) raus.push({ feld: "Sterne", wert: `ab ${profil.mindestSterne}` });
+    if (profil.mindestbewertung) raus.push({ feld: "Note", wert: `ab ${String(profil.mindestbewertung).replace(".", ",")}` });
     if (profil.verpflegung && typeof BOARD_LABELS !== "undefined") raus.push({ feld: "Essen", wert: BOARD_LABELS[profil.verpflegung] });
     if (profil.budgetGesamt) raus.push({ feld: "Budget", wert: `${profil.budgetGesamt} € gesamt` });
     else if (profil.maxPreis) raus.push({ feld: "Bis", wert: `${profil.maxPreis} €/Nacht` });
@@ -1157,9 +1250,14 @@ const Politik = {
 
   annahme(frageId, profil) {
     if (frageId === "gruppe" && profil.erwachsene == null) {
-      profil.erwachsene = profil.personen || 2;
-      profil.kinder = 0;
-      return { feld: "gruppe", erwachsene: profil.erwachsene, kinder: 0 };
+      // Nur noch als letzter Ausweg nach dreimaligem Nachfragen. Ohne
+      // Familienhinweis: lauter Erwachsene. Mit Familienhinweis: zwei
+      // Erwachsene, der Rest Kinder - und beides steht als Annahme im
+      // Protokoll, nicht als Angabe der Person.
+      const gesamt = profil.personen || 2;
+      if (profil.familieGenannt && gesamt > 2) { profil.erwachsene = 2; profil.kinder = gesamt - 2; }
+      else { profil.erwachsene = gesamt; profil.kinder = 0; }
+      return { feld: "gruppe", erwachsene: profil.erwachsene, kinder: profil.kinder };
     }
     if (frageId === "art" && !profil.artGenannt) {
       profil.typ = "hotel"; profil.artGenannt = true;
@@ -1232,7 +1330,9 @@ const Politik = {
     if (profil.maxStrand != null) {
       filter.maxStrand = [0.2, 1, 5].find((s) => s >= profil.maxStrand) ?? 5;
     }
-    if (profil.budget === "hoch") filter.sterne = [5];
+    if (profil.budget === "hoch" && !profil.mindestSterne) filter.sterne = [5];
+    if (profil.mindestSterne) filter.sterne = [5, 4, 3].filter((s) => s >= profil.mindestSterne);
+    if (profil.mindestbewertung) filter.mindestbewertung = Math.max(filter.mindestbewertung || 0, profil.mindestbewertung);
     if (Object.keys(filter).length) {
       schritte.push({ werkzeug: "filterSetzen", status: "setzt Filter…", args: this.fehlerEinbauen(filter) });
     }

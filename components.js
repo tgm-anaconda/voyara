@@ -739,10 +739,6 @@ function renderHeader(active) {
           <span class="action-icon">${ICONS.heart}<span class="badge" id="wishCount" hidden>0</span></span>
           <span>Merkzettel</span>
         </a>
-        <button type="button" class="header-action header-log" id="logBtn" title="Was macht der Assistent gerade?" hidden aria-expanded="false">
-          <span class="action-icon">${ICONS.list}<span class="badge" id="logBadge" hidden>0</span></span>
-          <span>Agenten-Log</span>
-        </button>
         <button type="button" class="header-action" id="helpBtn" title="Hilfe">${ICONS.chat}<span>Hilfe</span></button>
         <button type="button" class="header-action" id="accountBtn" title="Konto">${ICONS.user}<span id="accountLabel">Anmelden</span></button>
       </div>

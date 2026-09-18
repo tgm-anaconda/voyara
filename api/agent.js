@@ -23,13 +23,17 @@
 // GPT frei entscheiden, maesse die Studie die Streuung des Modells statt den
 // Effekt des Agenten.
 
-const MODELL = "gpt-4o-mini";
-const ZEITGRENZE_MS = 12000;
+// Zwei Modelle: das kleine fuer das Verstehen (strukturiert, geprueft,
+// billig), das grosse fuer das Sprechen. Der Agent soll klingen wie
+// jemand, der mitdenkt - dafuer reicht das kleine nicht.
+const MODELL_VERSTEHEN = "gpt-4o-mini";
+const MODELL_FORMULIEREN = "gpt-4.1";
+const ZEITGRENZE_MS = 14000;
 
 // Kostenbremse. Ein Lauf braucht ueblicherweise unter zehn Aufrufe; die
 // Grenzen greifen nur, wenn etwas im Kreis laeuft.
-const MAX_ZEICHEN_EINGABE = 6000;
-const MAX_TOKEN_ANTWORT = { verstehen: 300, formulieren: 400 };
+const MAX_ZEICHEN_EINGABE = 16000;   // die Fakten tragen jetzt auch das bisherige Gespraech
+const MAX_TOKEN_ANTWORT = { verstehen: 300, formulieren: 450 };
 
 /* ==================================================================
    Systemanweisungen
@@ -100,6 +104,11 @@ Alle Fakten aufzaehlen, die du bekommst. Du bekommst mehr, als in eine Antwort g
 
 Zahlen erfinden. Nur die Zahlen aus den mitgelieferten Fakten duerfen vorkommen. Keine Schaetzungen, nichts aus deinem Weltwissen ueber echte Orte, keine Angaben zu Verfuegbarkeit oder Preisen, die dir niemand gegeben hat.
 
+WAS FESTSTEHT UND WAS NICHT
+Unter "feststehend" bekommst du, was bisher gesichert bekannt ist - genau das, was die Person in ihrer Uebersicht sieht. Das ist die einzige Wahrheit. Was dort nicht steht, ist nicht bekannt, auch wenn es im Gespraech naheliegt: "Wir sind zu viert" heisst vier Personen, nicht zwei Erwachsene und zwei Kinder. Behandle nie etwas als geklaert, was nicht unter "feststehend" steht, und frag stattdessen - so, wie ein Berater nachfragt, der es wirklich wissen will, mit den moeglichen Antworten, wenn sie dir mitgeliefert werden.
+
+Unter "gespraechBisher" bekommst du die letzten Zuege. Nimm Bezug darauf, wo es passt: auf etwas, das die Person vorhin erwaehnt hat, auf eine Frage, die noch im Raum steht. Du entscheidest selbst, wie du es sagst - die Lagebeschreibung sagt dir, was gerade dran ist, nicht, in welchen Worten.
+
 Du bekommst gleich die Situation und ein JSON mit den Fakten. Schreib die Antwort, die an dieser Stelle des Gespraechs passt.`;
 
 /* ==================================================================
@@ -110,7 +119,7 @@ function fehler(res, status, text) {
   res.status(status).json({ ok: false, fehler: text });
 }
 
-async function openai(nachrichten, maxToken, temperatur) {
+async function openai(nachrichten, maxToken, temperatur, modell = MODELL_FORMULIEREN) {
   const abbruch = new AbortController();
   const uhr = setTimeout(() => abbruch.abort(), ZEITGRENZE_MS);
   try {
@@ -121,7 +130,7 @@ async function openai(nachrichten, maxToken, temperatur) {
         Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
       },
       body: JSON.stringify({
-        model: MODELL,
+        model: modell,
         messages: nachrichten,
         max_tokens: maxToken,
         temperature: temperatur,
@@ -168,7 +177,8 @@ export default async function handler(req, res) {
         { role: "user", content: text.slice(0, MAX_ZEICHEN_EINGABE) },
       ],
       MAX_TOKEN_ANTWORT.verstehen,
-      0                      // keine Kreativitaet beim Verstehen
+      0,                     // keine Kreativitaet beim Verstehen
+      MODELL_VERSTEHEN
     );
     if (!e.ok) return fehler(res, e.status || 502, "Modell nicht erreichbar.");
 
@@ -193,10 +203,11 @@ export default async function handler(req, res) {
       { role: "user", content: `Situation: ${fakten.lage || "Du antwortest der Person."}\n\nFakten:\n${alsText}` },
     ],
     MAX_TOKEN_ANTWORT.formulieren,
-    0.5                      // Spielraum in der Formulierung. Niedriger klang das
+    0.6,                     // Spielraum in der Formulierung. Niedriger klang das
                              // Modell in jeder Antwort gleich - es griff dieselbe
                              // Wendung immer wieder auf. Die Entscheidungen haengen
                              // nicht daran, nur die Wortwahl.
+    MODELL_FORMULIEREN
   );
   if (!e.ok) return fehler(res, e.status || 502, "Modell nicht erreichbar.");
 

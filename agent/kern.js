@@ -107,6 +107,10 @@ const STELLSCHRAUBEN = {
   offenlegung: null,             // etikett | log | offen | null = auslosen
   partner: "wechselnd",          // zweitbeste | beste | wechselnd | keine
   log: true,
+  // Schrittmeldungen ("Filter gesetzt, noch 9 Treffer") im Chat oder nur
+  // im Log. Mit Log: nur im Log. Der Chat sagt beim Start einmal, wo man
+  // nachsehen kann - ob jemand das tut, ist eine der Messungen.
+  prozessImChat: false,
 };
 
 /* Gruppenzuweisung ueber die Adresse
@@ -130,7 +134,7 @@ const STELLSCHRAUBEN = {
     begruendung: ["knapp", "ausfuehrlich"],
     initiative: ["abwartend", "vorschlagend"],
     zugang: ["schublade", "seitenleiste"],
-    einladung: ["unten-rechts", "cursor", "mitte", "liste", "keine"],
+    einladung: ["unten-rechts", "unten-links", "cursor", "mitte", "liste", "keine"],
     einladungAusloeser: ["detail", "zeit"],
     freigabeFrage: ["erstoeffnung", "start"],
     offenlegung: ["etikett", "log", "offen"],
@@ -156,7 +160,7 @@ const STELLSCHRAUBEN = {
     const v = parseInt(p.get("einladungSekunden"), 10);
     if (!Number.isNaN(v) && v >= 5 && v <= 600) { gruppe.einladungSekunden = v; neu = true; }
   }
-  for (const feld of ["eingangsfrage", "freigabeRegler", "log"]) {
+  for (const feld of ["eingangsfrage", "freigabeRegler", "log", "prozessImChat"]) {
     const v = p.get(feld);
     if (v === "0" || v === "1") { gruppe[feld] = v === "1"; neu = true; }
   }
@@ -294,9 +298,12 @@ const Kern = {
         document.body.classList.remove("agent-ohne-freigabe");
         this.freigabeStartSetzen(s.id, messung);
         if (typeof Studie !== "undefined") Studie.freigabeGewaehlt?.(s.id, messung);
-        this.sagen("Danke. Wonach suchst du? Beschreib es einfach — ich suche, filtere und vergleiche für dich.");
         AgentPanel.setSuggestions(Politik.vorschlaege());
-        AgentPanel.ansEnde?.();
+        this.sprechen(
+          "Die Person hat dir gerade gesagt, wie weit du gehen darfst (siehe deineFreigabe). Begruesse sie kurz, ohne die Freigabe zu wiederholen, und frag offen, wohin oder was fuer eine Reise es werden soll. Ein bis zwei Saetze.",
+          {},
+          "Danke. Wonach suchst du? Beschreib es einfach, ich suche, filtere und vergleiche für dich."
+        ).then(() => { AgentPanel.ansEnde?.(); });
         document.getElementById("agentInput")?.focus({ preventScroll: true });
       });
       liste.appendChild(b);
@@ -330,8 +337,12 @@ const Kern = {
     if (kasten) kasten.innerHTML = "";
     AgentPanel.eckdatenZeigen([]);
     if (gewaehlt) {
-      this.sagen("Neue Reise? Sag mir, wonach du suchst - ich fange bei null an.");
       AgentPanel.setSuggestions(Politik.vorschlaege());
+      this.sprechen(
+        "Die Person beginnt eine neue, zweite Reise mit dir. Sag kurz, dass du bei null anfaengst, und frag, wonach sie diesmal sucht. Ein Satz, zwei hoechstens.",
+        {},
+        "Neue Reise? Sag mir, wonach du suchst, ich fange bei null an."
+      );
     }
     AgentPanel.status("online");
     if (typeof Log !== "undefined") Log.leeren();
@@ -407,8 +418,12 @@ const Kern = {
     // was die Person vom Agenten sieht, nicht eine Nachricht darueber.
     const erstoeffnung = STELLSCHRAUBEN.freigabeFrage === "erstoeffnung";
     if (!this.lauf.verlauf.length && (!erstoeffnung || this.lauf.freigabeGewaehlt)) {
-      this.sagen("Hallo! Wonach suchst du? Beschreib es einfach — ich suche, filtere und vergleiche für dich.");
       AgentPanel.setSuggestions(Politik.vorschlaege());
+      this.sprechen(
+        "Erste Nachricht des Gespraechs. Begruesse die Person kurz und frag offen, was fuer eine Reise es werden soll. Ein bis zwei Saetze.",
+        {},
+        "Hallo! Wonach suchst du? Beschreib es einfach, ich suche, filtere und vergleiche für dich."
+      );
     }
 
     // Freigabestufe: einmal je Sitzung gewuerfelt, danach ueberdauert sie
@@ -551,7 +566,41 @@ const Kern = {
   // den Fakten stehen - sonst wird der eigene Satz genommen.
   async formulieren(fakten, ersatz) {
     if (typeof Modell === "undefined" || !fakten) return ersatz;
-    return Modell.formulieren(fakten, ersatz);
+    return Modell.formulieren(this.mitKontext(fakten), ersatz);
+  },
+
+  /* Gespraechskontext fuer jede Formulierung.
+     ------------------------------------------------------------------
+     Das Modell bekam bisher nur die letzte Nachricht und ein paar
+     Fakten. Es konnte deshalb nicht auf frueher Gesagtes eingehen und
+     klang wie eine Liste. Jetzt bekommt es bei jeder Aeusserung die
+     letzten Zuege des Gespraechs, den geprueften Stand (das, was der
+     Kasten "Verstanden" zeigt) und die Freigabe. Der Stand ist die
+     einzige Wahrheit: Was dort nicht steht, ist nicht bekannt, auch
+     wenn es im Gespraech plausibel klingt. */
+  mitKontext(fakten) {
+    const verlauf = (this.lauf?.verlauf || []).slice(-8).map((n) => ({
+      wer: n.rolle === "user" ? "Person" : "Du",
+      text: String(n.text).slice(0, 400),
+    }));
+    const stand = Politik.eckdaten(this.lauf?.profil || {}).map((e) => `${e.feld}: ${e.wert}`);
+    const freigabe = FREIGABE.find((f) => f.id === this.freigabe());
+    return {
+      ...fakten,
+      gespraechBisher: fakten.gespraechBisher || verlauf,
+      feststehend: fakten.feststehend || (stand.length ? stand : "noch nichts"),
+      deineFreigabe: freigabe ? freigabe.lang : null,
+    };
+  },
+
+  // Eine Aeusserung des Agenten: Lage beschreiben, Modell formulieren
+  // lassen, Ersatzsatz nur ohne Verbindung. Ueber diesen Weg laeuft
+  // alles, was die Person liest - feste Saetze gibt es nur noch als
+  // Notnagel.
+  async sprechen(lage, extra = {}, ersatz = "", links = null) {
+    const text = await this.formulieren({ lage, ...extra }, ersatz);
+    this.sagen(text || ersatz, "bot", links);
+    return text || ersatz;
   },
 
   async denkpause(ms = 1100, text = "denkt nach…") {
@@ -631,6 +680,8 @@ const Kern = {
     if (!pr0.verpflegung && ausText.verpflegung) pr0.verpflegung = ausText.verpflegung;
     if (pr0.zimmer == null && ausText.zimmer != null) pr0.zimmer = ausText.zimmer;
     if (pr0.maxStrand == null && ausText.maxStrand != null) pr0.maxStrand = ausText.maxStrand;
+    if (ausText.mindestSterne != null) pr0.mindestSterne = ausText.mindestSterne;
+    if (ausText.mindestbewertung != null) pr0.mindestbewertung = ausText.mindestbewertung;
     if (pr0.budgetGesamt == null && ausText.budgetGesamt != null) { pr0.budgetGesamt = ausText.budgetGesamt; pr0.maxPreis = null; }
     // Kriterien aus dem Wortlaut ergaenzen, die das Modell nicht
     // geliefert hat - was die Person genannt hat, ist genannt
@@ -646,9 +697,21 @@ const Kern = {
     // setzt zwei Erwachsene und zwei Kinder ein. Steht im Satz weder
     // eine Ziffer noch ein Zahlwort, kann keine Zahl gemeint gewesen
     // sein. Sie wird verworfen und erfragt.
-    if (this.lauf.profil.familieGenannt && !/\d|zwei|drei|vier|fünf|fuenf|sechs|zweit|dritt|viert|allein|einzeln/i.test(text)) {
-      this.lauf.profil.erwachsene = null;
-      this.lauf.profil.kinder = null;
+    // Erweitert: Auch "wir sind zu viert" ist keine Aufteilung. Eine
+    // Aufteilung gibt es nur, wenn Erwachsene oder Kinder ausdruecklich
+    // mit Zahl genannt sind ("zwei Erwachsene und zwei Kinder", "2 und 2",
+    // "allein", "zu zweit" ohne Kinder). Sonst bleibt nur die Gesamtzahl,
+    // und der Agent fragt, wie sie sich aufteilt.
+    {
+      const t0 = text.toLowerCase();
+      const ausdruecklich = /\b(\d+|ein|eine|einen|zwei|drei|vier|fünf|fuenf|sechs)\s+(erwachsen|kind|kids)/.test(t0)
+        || /\d\s*(\+|und)\s*\d/.test(t0)
+        || /\b(allein|solo|nur ich|zu zweit|paar|ohne kinder|keine kinder)\b/.test(t0);
+      const kindImSatz = /kind|kids|klein|jahre? alt|sohn|tochter/.test(t0);
+      if ((this.lauf.profil.familieGenannt || kindImSatz || this.lauf.profil.personen != null) && !ausdruecklich) {
+        this.lauf.profil.erwachsene = null;
+        this.lauf.profil.kinder = null;
+      }
     }
     // Fuer die Auswertung: hat das Modell verstanden oder die Ersatzlogik?
     this.notieren("verstanden", { quelle: ausModell ? "modell" : "schluesselwoerter", profil: this.lauf.profil });
@@ -677,7 +740,6 @@ const Kern = {
     const verstanden = Politik.ansage(this.lauf.profil);
 
     if (!STELLSCHRAUBEN.eingangsfrage) {
-      if (verstanden) this.sagen(`Verstanden: ${verstanden}.`);
       return this.suchen();
     }
 
@@ -805,7 +867,11 @@ const Kern = {
 
     if (!treffer) {
       const namen = Politik.zielnamen(auswahl);
-      this.sagen(`Das konnte ich nicht zuordnen. Zur Wahl stehen ${Politik.aufzaehlen(namen)} — oder sag "egal", dann suche ich mir eins aus.`);
+      await this.sprechen(
+        "Die Person hat auf deine Frage nach dem Reiseziel geantwortet, aber keines der Ziele zur Wahl getroffen. Nenne die Ziele, die zur Wahl stehen, und biete an, selbst eines auszusuchen, wenn es ihr egal ist. Kurz.",
+        { zurWahl: namen, wasDiePersonSchrieb: text },
+        `Das konnte ich nicht zuordnen. Zur Wahl stehen ${Politik.aufzaehlen(namen)}, oder sag "egal", dann suche ich mir eins aus.`
+      );
       AgentPanel.setSuggestions([...namen, "Ist mir egal"]);
       this.sichern();
       return;
@@ -815,13 +881,15 @@ const Kern = {
     this.notieren("zielwahl", { gewaehlt: treffer, ausMehreren: auswahl.length, egal });
     const name = typeof ZIEL_NACH_ID !== "undefined" ? ZIEL_NACH_ID[treffer]?.name : treffer;
     await Zeiger.warte(400);
-    if (egal) this.sagen(`Dann nehme ich ${name}.`);
+    if (egal) await this.sprechen(
+      "Der Person war das Ziel egal, du hast eines ausgesucht. Sag in einem Satz, welches, und warum es zu dem passt, was sie sich wuenscht.",
+      { gewaehltesZiel: name },
+      `Dann nehme ich ${name}.`
+    );
 
     // Ab hier die restlichen Pflichtangaben, dann die Frage nach dem
     // Vorgehen.
     if (!STELLSCHRAUBEN.eingangsfrage) {
-      const verstanden = Politik.ansage(this.lauf.profil);
-      if (verstanden) this.sagen(`Verstanden: ${verstanden}.`);
       return this.suchen();
     }
     await this.naechstePflichtfrage(egal ? `${name}, ausgesucht` : name);
@@ -880,7 +948,11 @@ const Kern = {
 
     if (!abstimmen) {
       await this.denkpause(600);
-      this.sagen("Gut, dann schaue ich mich um und melde mich mit einer Auswahl.");
+      await this.sprechen(
+        "Die Person will, dass du direkt suchst. Sag in ein bis zwei Saetzen, dass du jetzt losgehst, und erwaehne beilaeufig, dass sie im Agenten-Log oben rechts sehen kann, was du dabei tust, falls es sie interessiert. Zaehle nichts auf.",
+        {},
+        "Gut, dann schaue ich mich um und melde mich mit einer Auswahl. Was ich dabei tue, siehst du im Agenten-Log oben rechts."
+      );
       return this.suchen();
     }
 
@@ -910,12 +982,11 @@ const Kern = {
       // steht im Eckdaten-Kasten, und "Alles notiert: Ferienwohnung,
       // Suedtirol, bis 180 Euro, 2 Erwachsene, Sauberkeit" war genau die
       // Formularsprache, die aus dem Gespraech eine Quittung machte.
-      const ersatz = "Ich suche jetzt.";
-      this.sagen(await this.formulieren({
-        lage: "Sag in einem Satz, dass du jetzt suchst. Zaehle nicht auf, was du "
-          + "verstanden hast - das steht sichtbar in der Uebersicht.",
-        auftrag: zusammen || null,
-      }, ersatz));
+      await this.sprechen(
+        "Alle Vorlieben sind besprochen. Sag in ein bis zwei Saetzen, dass du jetzt suchst, und erwaehne beilaeufig, dass sie im Agenten-Log oben rechts sehen kann, was du dabei tust, falls es sie interessiert. Zaehle nicht auf, was du verstanden hast.",
+        { auftrag: zusammen || null },
+        "Ich suche jetzt. Was ich dabei tue, siehst du im Agenten-Log oben rechts."
+      );
       return this.suchen();
     }
     this.lauf.phase = "vorfrage";
@@ -996,7 +1067,10 @@ const Kern = {
     const istPflicht = Politik.PFLICHTFRAGEN.some((f) => f.id === frage.id);
     const beantwortet = !istPflicht || frage.ueberspringen(this.lauf.profil);
     const zaehler = (this.lauf.nachgehakt ||= {});
-    if (!beantwortet && (zaehler[frage.id] || 0) < 1) {
+    // Bei der Reisegruppe wird bis zu dreimal nachgefragt: Eine Familie
+    // wird nicht geraten, und die Aufteilung steht als Knopf bereit.
+    const maxNachhaken = frage.id === "gruppe" ? 3 : 1;
+    if (!beantwortet && (zaehler[frage.id] || 0) < maxNachhaken) {
       zaehler[frage.id] = (zaehler[frage.id] || 0) + 1;
       this.notieren("nachgehakt", { frage: frage.id, antwort: text });
       AgentPanel.eckdatenZeigen(Politik.eckdaten(this.lauf.profil));
@@ -1049,7 +1123,11 @@ const Kern = {
         ? `Du hast mir nur das Vorschlagen erlaubt, ich fasse die Seite also nicht an. Ich würde nach ${ziel} suchen${this.lauf.profil.maxPreis ? ` und den Preis auf ${this.lauf.profil.maxPreis} € begrenzen` : ""}. Mach das gern selbst — oder gib mir das Suchen frei, dann übernehme ich.`
         : "Du hast mir nur das Vorschlagen erlaubt. Sag mir, wonach ich schauen soll, dann beschreibe ich dir die Schritte — oder gib mir das Suchen frei.";
       this.notieren("gesperrt", { wollte: "suchen", freigabe: this.freigabe() });
-      this.sagen(ersatz);
+      await this.sprechen(
+        "Die Person hat dir nur das Vorschlagen erlaubt, du fasst die Seite also nicht an. Beschreib in zwei, drei Saetzen, wonach du an ihrer Stelle suchen wuerdest (Ziel, Preisgrenze, worauf achten), so dass sie es selbst klicken kann, und erwaehne, dass sie dir das Suchen auch freigeben kann.",
+        { wonachDuSuchenWuerdest: { ziel, hoechstpreisProNacht: this.lauf.profil.maxPreis || null, wuensche: (this.lauf.profil.kriterien || []).map((x) => Politik.kriterium(x.id)?.label).filter(Boolean) } },
+        ersatz
+      );
       AgentPanel.setSuggestions(["Such du", "Ich mache es selbst"]);
       AgentPanel.status("wartet auf deine Antwort");
       AgentPanel.oeffnen();
@@ -1136,7 +1214,11 @@ const Kern = {
 
       // Was der Schritt erfahren hat, wird unter seinem Merknamen abgelegt.
       if (schritt.merken && ergebnis.daten) this.lauf.merker[schritt.merken] = ergebnis.daten;
-      if (ergebnis.text && schritt.melden !== false) this.sagen(ergebnis.text, "bot", ergebnis.links);
+      // Schrittmeldungen: in den Chat nur, wenn so eingestellt oder wenn
+      // der Schritt etwas sagt, das eine Antwort braucht (uebernimmt) oder
+      // ausdruecklich in den Chat soll (wichtig).
+      const inDenChat = STELLSCHRAUBEN.prozessImChat || ergebnis.daten?.uebernimmt || schritt.wichtig;
+      if (ergebnis.text && schritt.melden !== false && inDenChat) this.sagen(ergebnis.text, "bot", ergebnis.links);
       if (ergebnis.text && !ergebnis.daten?.uebernimmt) this.logZeile(`Ergebnis: ${ergebnis.text}`, "ergebnis");
 
       // Ein Schritt, der die Seite wechselt, beendet diesen Durchlauf. Der
@@ -1154,7 +1236,7 @@ const Kern = {
       // Nach einer Meldung so lange warten, wie man zum Lesen braucht.
       // Ohne Meldung reicht eine kurze Pause, damit die Bewegung auf der
       // Seite nicht in einem Ruck passiert.
-      await Zeiger.warte(ergebnis.text ? this.lesezeit(ergebnis.text) : 700);
+      await Zeiger.warte(ergebnis.text && inDenChat ? this.lesezeit(ergebnis.text) : 900);
     }
 
     await this.abschluss();
@@ -1250,8 +1332,10 @@ const Kern = {
     if (fehlend.length && STELLSCHRAUBEN.fehler !== "kriterium") {
       const namen = Politik.aufzaehlen(fehlend.map((k) => k.label));
       this.lauf.nichtFilterbar = fehlend.map((k) => k.id);
-      setTimeout(() => this.sagen(
-        `${namen} kann ich hier nicht als Filter setzen — ich gewichte das stattdessen beim Vergleich.`), 400);
+      setTimeout(() => this.sprechen(
+        "Ein Wunsch der Person laesst sich auf der Seite nicht als Filter setzen; du gewichtest ihn stattdessen beim Vergleich. Sag das in einem Satz.",
+        { nichtFilterbar: fehlend.map((k) => k.label) },
+        `${namen} kann ich hier nicht als Filter setzen, ich gewichte das stattdessen beim Vergleich.`), 400);
     }
 
     // Das Werkzeug nennt die Trefferzahl teils schon selbst - dann nicht
@@ -1359,20 +1443,21 @@ const Kern = {
        ausgeloste Bedingung. Das Haus wird nur vorgelegt, wenn es die
        Vorgaben der Person tatsaechlich einhaelt; sonst wird nichts
        hineingeschummelt, und das Fehlen steht im Protokoll. */
-    const partner = typeof Studie !== "undefined" && Studie.partnerhaus ? Studie.partnerhaus() : null;
+    // Das Partnerhaus wird aus den Haeusern bestimmt, die die Vorgaben der
+    // Person einhalten (bewertet) - so ist es immer eines, das der Agent
+    // ohnehin vorlegen koennte, in jedem Ziel.
+    const partner = typeof Studie !== "undefined" && Studie.partnerhaus && this.lauf.runde === 0
+      ? Studie.partnerhaus(bewertet.map((k) => k.id)) : null;
     const offenlegung = partner ? (typeof Studie !== "undefined" && Studie.gruppe ? Studie.gruppe().offenlegung : STELLSCHRAUBEN.offenlegung) : null;
-    if (partner && this.lauf.runde === 0) {
+    if (partner) {
       const treffer = bewertet.find((k) => k.id === partner.id);
-      if (treffer) {
-        treffer.partner = true;
-        this.lauf.kandidaten = [treffer, ...this.lauf.kandidaten.filter((k) => k.id !== partner.id)].slice(0, 3);
-        this.lauf.partnerId = partner.id;
-        this.lauf.offenlegung = offenlegung;
-        this.notieren("partner_vorgelegt", { id: partner.id, rang: partner.rang, offenlegung, position: 1 });
-      } else {
-        const gesehen = treffer || roh.some((x) => x.id === partner.id);
-        this.notieren("partner_fehlt", { id: partner.id, rang: partner.rang, grund: gesehen ? "vorgaben" : "nicht_in_treffern" });
-      }
+      treffer.partner = true;
+      this.lauf.kandidaten = [treffer, ...this.lauf.kandidaten.filter((k) => k.id !== partner.id)].slice(0, 3);
+      this.lauf.partnerId = partner.id;
+      this.lauf.offenlegung = offenlegung;
+      this.notieren("partner_vorgelegt", { id: partner.id, rang: partner.rang, offenlegung, position: 1, zulaessigeImErgebnis: bewertet.length });
+    } else if (this.lauf.runde === 0 && typeof Studie !== "undefined" && Studie.daten) {
+      this.notieren("partner_fehlt", { grund: "kein_zulaessiges_haus_im_ergebnis", treffer: bewertet.length });
     }
 
     this.notieren("shortlist", {
@@ -1391,9 +1476,13 @@ const Kern = {
     const n = this.lauf.kandidaten.length;
     const zahlwort = { 1: "Einer", 2: "Zwei", 3: "Drei" }[n] || `${n}`;
     const verb = n === 1 ? "kommt" : "kommen";
-    this.sagen(this.lauf.runde === 0
-      ? `${zahlwort} ${verb} für mich in die engere Wahl:`
-      : "So sieht die Auswahl jetzt aus:");
+    await this.sprechen(
+      this.lauf.runde === 0
+        ? `Du hast gesucht und legst jetzt ${n} ${n === 1 ? "Haus" : "Haeuser"} vor, die gleich einzeln folgen. Kuendige das in einem Satz an, ohne die Haeuser schon zu nennen.`
+        : `Du hast nach der Aenderung der Person noch einmal gesucht und legst jetzt ${n} ${n === 1 ? "Haus" : "Haeuser"} vor, die gleich folgen. Ein Satz.`,
+      { anzahl: n },
+      this.lauf.runde === 0 ? `${zahlwort} ${verb} für mich in die engere Wahl:` : "So sieht die Auswahl jetzt aus:"
+    );
 
     for (const [i, k] of this.lauf.kandidaten.entries()) {
       await Zeiger.warte(i === 0 ? 900 : 1600);
@@ -1453,7 +1542,11 @@ const Kern = {
     }
 
     this.lauf.phase = "shortlist";
-    this.sagen("Welches soll ich mir genauer ansehen? Oder sag mir, was dir noch fehlt — ich suche dann anders.");
+    await this.sprechen(
+      "Die Auswahl steht jetzt vollstaendig im Chat. Frag die Person, welches Haus du dir genauer ansehen sollst, und biete an, anders zu suchen, wenn ihr etwas fehlt. Ein bis zwei Saetze, keine Wiederholung der Haeuser.",
+      {},
+      "Welches soll ich mir genauer ansehen? Oder sag mir, was dir noch fehlt, ich suche dann anders."
+    );
     AgentPanel.setSuggestions(this.shortlistChips());
     AgentPanel.status("wartet auf deine Wahl");
     AgentPanel.oeffnen();
@@ -1524,7 +1617,11 @@ const Kern = {
     // Sonst als Nachschaerfung lesen
     const { profil, gemacht } = Politik.nachschaerfung(text, this.lauf.profil);
     if (!gemacht.length) {
-      this.sagen("Das konnte ich nicht sicher zuordnen. Nenn mir eine Nummer oder einen Namen — oder sag, was dir fehlt, zum Beispiel günstiger, ruhiger oder näher am Strand.");
+      await this.sprechen(
+        "Die Person hat auf deine Auswahl geantwortet, aber du konntest weder eines der Haeuser noch einen Wunsch zum Nachschaerfen erkennen. Frag nach, was sie meint: eines der Haeuser (Nummer oder Name) oder etwas, das ihr an der Auswahl fehlt. Beziehe dich auf das, was sie geschrieben hat.",
+        { wasDiePersonSchrieb: text, zurWahl: (this.lauf.kandidaten || []).map((k, i) => `${i + 1}. ${k.item?.name}`) },
+        "Das konnte ich nicht sicher zuordnen. Nenn mir eine Nummer oder einen Namen, oder sag, was dir fehlt, zum Beispiel günstiger, ruhiger oder näher am Strand."
+      );
       AgentPanel.setSuggestions(this.shortlistChips());
       this.sichern();
       return;
@@ -1535,7 +1632,11 @@ const Kern = {
     this.notieren("nachschaerfung", { text, gemacht, runde: this.lauf.runde });
 
     await this.denkpause(700);
-    this.sagen(`Verstanden: ${Politik.aufzaehlen(gemacht)}. Ich sehe noch einmal nach.`);
+    await this.sprechen(
+      "Die Person moechte die Auswahl veraendert haben (siehe geaendert). Sag in einem Satz, dass du mit dieser Aenderung noch einmal nachsiehst. Nicht aufzaehlen, was sonst noch feststeht.",
+      { geaendert: gemacht, wasDiePersonSchrieb: text },
+      `Verstanden: ${Politik.aufzaehlen(gemacht)}. Ich sehe noch einmal nach.`
+    );
 
     // Auf der Trefferliste reicht neu filtern, sonst muss der Agent erst zurueck
     if (Werkzeuge.seite() !== "results") {
@@ -1568,7 +1669,11 @@ const Kern = {
     // Versuch endete mit "ist in der Liste gerade nicht sichtbar".
     const schonOffen = Werkzeuge.seite() === "stay"
       && new URLSearchParams(location.search).get("id") === id;
-    if (schonOffen && !still) this.sagen(`Gute Wahl, ich sehe mir ${name} genauer an.`);
+    if (schonOffen && !still) await this.sprechen(
+      "Die Person hat sich fuer eines der vorgeschlagenen Haeuser entschieden und ist schon auf dessen Seite. Sag kurz, dass du es dir jetzt genauer ansiehst. Ein Satz.",
+      { haus: name },
+      `Gute Wahl, ich sehe mir ${name} genauer an.`
+    );
 
     this.lauf.offeneSchritte = [
       ...(schonOffen ? [] : [{ werkzeug: "unterkunftOeffnen", status: "öffnet…", args: { id },
@@ -1635,19 +1740,16 @@ const Kern = {
     const t = text.toLowerCase();
     const id = this.lauf.gewaehlt;
 
-    if (/merk|vormerken|merkzettel|speichern/.test(t)) {
-      this.sagen(text, "user");
-      this.notieren("merken", { id });
-      this.lauf.phase = "arbeitet";
-      this.lauf.offeneSchritte = [{ werkzeug: "merken", status: "merkt vor…", args: { id } }];
-      this.sichern();
-      return this.abarbeiten();
-    }
+    if (/merk|vormerken|merkzettel|speichern/.test(t)) return this.merken(id, text);
     if (/buch|reservier|zur buchung|nehmen/.test(t)) {
       this.sagen(text, "user");
       if (!this.darf("vorbereiten")) {
         this.notieren("gesperrt", { wollte: "vorbereiten", freigabe: this.freigabe() });
-        this.sagen("Zur Buchung darf ich nicht — du hast mir das nicht freigegeben. Der Knopf ist auf der Seite, oder du hebst die Freigabe an.");
+        await this.sprechen(
+          "Die Person will, dass du zur Buchung gehst, aber ihre Freigabe erlaubt dir das nicht (siehe deineFreigabe). Sag das freundlich und nenne die zwei Wege: selbst auf der Seite buchen, oder dir die Freigabe anheben. Kurz.",
+          {},
+          "Zur Buchung darf ich nicht, das hast du mir nicht freigegeben. Der Knopf ist auf der Seite, oder du hebst die Freigabe an."
+        );
         AgentPanel.setSuggestions(["Freigabe anheben", "Ich mache es selbst"]);
         this.sichern();
         return;
@@ -1680,7 +1782,9 @@ const Kern = {
   // alles, was danach kaeme, ginge verloren. Nebenbei ueberbrueckt die stehende
   // Meldung die Ladezeit - ohne sie entstuende genau dort eine Luecke.
   vorher(text) {
-    this.sagen(text);
+    // Ohne Prozess im Chat entfaellt die Ansage ganz: Der Schritt selbst
+    // steht bereits als Zeile im Log (logSchritt).
+    if (STELLSCHRAUBEN.prozessImChat) this.sagen(text);
   },
 
   // Schritte werden geplant, bevor die Treffer bekannt sind. "$bester" wird
@@ -1800,7 +1904,11 @@ const Kern = {
         return;
       }
     } else {
-      this.sagen("Alles klar, dann überlasse ich dir den letzten Schritt. Ich bleibe hier, falls du noch etwas brauchst.");
+      await this.sprechen(
+        "Die Person macht den letzten Schritt der Buchung lieber selbst. Sag in einem Satz, dass das in Ordnung ist und du da bist, falls sie noch etwas braucht.",
+        {},
+        "Alles klar, dann überlasse ich dir den letzten Schritt. Ich bleibe hier, falls du noch etwas brauchst."
+      );
     }
     this.lauf.phase = "fertig";
     AgentPanel.status("online");
@@ -1834,7 +1942,11 @@ const Kern = {
     this.sperreAus();
     this.lauf.phase = "angehalten";
     this.notieren("uebernahme", { seite: Werkzeuge.seite() });
-    this.sagen("Angehalten — du hast übernommen. Sag Bescheid, wenn ich weitermachen soll.");
+    this.sprechen(
+      "Die Person hat waehrend deiner Arbeit selbst geklickt, du hast angehalten. Sag das in einem Satz und biete an weiterzumachen, wenn sie will.",
+      {},
+      "Angehalten, du hast übernommen. Sag Bescheid, wenn ich weitermachen soll."
+    );
     AgentPanel.status("angehalten · du hast übernommen");
     AgentPanel.setSuggestions(this.lauf.offeneSchritte.length ? ["Mach weiter"] : Politik.vorschlaege());
     this.sichern();
@@ -1849,7 +1961,11 @@ const Kern = {
 
   async fortsetzen() {
     if (!this.lauf.offeneSchritte.length) {
-      this.sagen("Es ist nichts offen. Sag mir einfach, was ich als Nächstes tun soll.");
+      await this.sprechen(
+        "Die Person sagt 'mach weiter', aber es gibt gerade nichts, was du fortsetzen koenntest. Frag in einem Satz, was du als Naechstes tun sollst.",
+        {},
+        "Es ist nichts offen. Sag mir einfach, was ich als Nächstes tun soll."
+      );
       return;
     }
     Zeiger.freigeben();
@@ -1867,6 +1983,84 @@ const Kern = {
      ein neuer Auftrag.
      ================================================================== */
 
+  /* Ein Haus vormerken, aus jeder Phase heraus. Frueher lief das als
+     Arbeitsschritt durch die Schleife und endete im Abschluss, der fuer
+     den Weg zur Kasse gebaut ist: Der Agent stand danach auf "fertig",
+     die Auswahl war weg. Jetzt bleibt die Phase, wie sie war. */
+  async merken(id, text) {
+    const item = typeof getItemById === "function" ? getItemById(id) : null;
+    this.sagen(text, "user");
+    this.notieren("merken", { id, phase: this.lauf.phase });
+    const phase = this.lauf.phase;
+    const chips = [...document.querySelectorAll("#agentSuggestions .chip")].map((c) => c.textContent);
+    this.sperreAn();
+    AgentPanel.status("merkt vor…");
+    let e;
+    try { e = await Werkzeuge.merken(id); } finally { this.sperreAus(); }
+    this.logZeile(`Merkzettel: ${item?.name || id} ${e?.ok ? "vorgemerkt" : "konnte nicht vorgemerkt werden"}`);
+    if (!e?.ok && typeof Wishlist !== "undefined" && !Wishlist.has(id)) {
+      // Kein Merken-Knopf auf dieser Seite (etwa in der Kasse): dann
+      // direkt in den Merkzettel, das Ergebnis ist dasselbe.
+      Wishlist.toggle?.(id);
+      e = { ok: true };
+    }
+    await this.sprechen(
+      e?.ok
+        ? "Du hast das Haus gerade auf den Merkzettel gesetzt. Sag das in einem Satz und frag, wie es weitergehen soll - zur Buchung, zurueck zur Auswahl, oder weiter schauen."
+        : "Du wolltest das Haus vormerken, aber es hat nicht geklappt. Sag das ehrlich in einem Satz.",
+      { haus: item?.name || id, schonVorgemerkt: /schon/.test(e?.text || "") },
+      e?.ok ? `${item?.name || "Das Haus"} steht auf dem Merkzettel. Soll ich zur Buchung gehen, oder zurück zur Auswahl?` : "Das Vormerken hat nicht geklappt.",
+      [{ text: "Merkzettel", href: "merkzettel.html" }]
+    );
+    this.lauf.phase = phase === "arbeitet" ? "fertig" : phase;
+    AgentPanel.status(phase === "shortlist" ? "wartet auf deine Wahl" : "wartet auf deine Antwort");
+    AgentPanel.setSuggestions(phase === "vertieft" || phase === "fertig"
+      ? ["Zur Buchung", "Zurück zur Auswahl"]
+      : (chips.length ? chips : this.shortlistChips()));
+    this.sichern();
+  },
+
+  // "Nimm die Villa Figueira" / "buch das Casa Mar": zum Haus, dann wie
+  // nach einer Wahl aus der Auswahl - vertiefen und je nach Freigabe weiter.
+  async hausBuchen(id, text) {
+    this.sagen(text, "user");
+    this.notieren("haus_genannt", { id, absicht: "buchen" });
+    if (!this.lauf.kandidaten?.some((k) => k.id === id)) {
+      // Nicht aus der Auswahl: als Kandidat aufnehmen, damit Begruendung
+      // und Bewertung dazu funktionieren.
+      const item = typeof getItemById === "function" ? getItemById(id) : null;
+      if (item) (this.lauf.kandidaten ||= []).push({ id, item, preis: item.pricePerNight, punkte: 0, belege: [] });
+    }
+    return this.vertiefen(id);
+  },
+
+  // Frage nach einem bestimmten Haus: mit Fakten aus dem Katalog
+  // antworten, Verweis dazu, und anbieten, es zu oeffnen oder zu buchen.
+  async antwortHausfrage(haus, text) {
+    this.sagen(text, "user");
+    this.notieren("haus_genannt", { id: haus.id, absicht: "frage" });
+    await this.denkpause(600);
+    const kurz = typeof aspektKurzfassung === "function" ? aspektKurzfassung(haus) : null;
+    const fakten = {
+      lage: "Die Person fragt nach einem bestimmten Haus aus dem Katalog (vielleicht mit Tippfehler geschrieben - nenne den richtigen Namen, ohne den Fehler zu kommentieren). Beantworte ihre Frage mit den Fakten, sag, was fuer ihre Vorgaben spricht oder dagegen, und biete an, es zu oeffnen oder direkt zur Buchung zu gehen. Zwei bis vier Saetze.",
+      wasDiePersonSchrieb: text,
+      haus: {
+        name: haus.name, ort: haus.location, art: haus.type === "apartment" ? "Ferienwohnung" : "Hotel",
+        sterne: haus.stars || null, bewertung: haus.rating, anzahlBewertungen: haus.reviewCount,
+        preisProNachtAb: haus.pricePerNight, metersZumStrand: haus.distanceToBeach != null ? Math.round(haus.distanceToBeach * 1000) : null,
+        ausstattung: (haus.amenities || []).slice(0, 8),
+        gelobt: kurz?.staerken?.slice(0, 2) || null, kritik: kurz?.schwaechen?.slice(0, 1) || null,
+      },
+    };
+    await this.sprechen(fakten.lage, fakten,
+      `${haus.name} haben wir im Angebot: in ${haus.location}, ab ${haus.pricePerNight} € pro Nacht, ${String(haus.rating).replace(".", ",")} aus ${haus.reviewCount} Bewertungen. Soll ich es öffnen oder gleich zur Buchung gehen?`,
+      [this.linkZu(haus.id, haus.name)]);
+    const kurzname = haus.name.split(" ").slice(0, 2).join(" ");
+    AgentPanel.setSuggestions([`Öffne ${kurzname}`, `Buch ${kurzname}`, ...(this.lauf.phase === "shortlist" ? ["Zurück zur Auswahl"] : [])]);
+    AgentPanel.status("wartet auf deine Antwort");
+    this.sichern();
+  },
+
   async eingabe(text) {
     const t = text.trim();
     // Die Freigabe laesst sich auch im Gespraech aendern, nicht nur ueber
@@ -1874,13 +2068,21 @@ const Kern = {
     if (/freigabe anheben|such du|du darfst suchen/i.test(t)) {
       this.sagen(t, "user");
       this.freigabeSetzen("suchen", "gespraech");
-      this.sagen("Gut, ich darf jetzt suchen und filtern. Ich lege los.");
+      await this.sprechen(
+        "Die Person hat dir gerade das Suchen und Filtern freigegeben. Sag in einem Satz, dass du jetzt loslegst.",
+        {},
+        "Gut, ich darf jetzt suchen und filtern. Ich lege los."
+      );
       return this.suchen();
     }
     if (/darfst buchen|freigabe.*buchen|buchung freigeben/i.test(t)) {
       this.sagen(t, "user");
       this.freigabeSetzen("buchen", "gespraech");
-      this.sagen("Verstanden, ich darf die Buchung abschließen.");
+      await this.sprechen(
+        "Die Person hat dir gerade erlaubt, die Buchung selbst abzuschliessen. Bestaetige das in einem Satz, ohne Werbeton.",
+        {},
+        "Verstanden, ich darf die Buchung abschließen."
+      );
       return;
     }
 
@@ -1889,7 +2091,11 @@ const Kern = {
       // Uebernahme, die es nie gab, und das Protokoll zaehlt sie mit.
       if (this.lauf.phase !== "arbeitet" && !this.laeuft) {
         this.sagen(t, "user");
-        this.sagen("Ich arbeite gerade nicht. Sag mir einfach, was ich tun soll.");
+        await this.sprechen(
+          "Die Person will dich anhalten, aber du arbeitest gerade gar nicht. Sag das in einem Satz und frag, was du tun sollst.",
+          {},
+          "Ich arbeite gerade nicht. Sag mir einfach, was ich tun soll."
+        );
         return;
       }
       return this.uebernahme();
@@ -1903,17 +2109,45 @@ const Kern = {
 
     if (/^(mach weiter|weiter)$/i.test(t)) return this.fortsetzen();
     if (/^(neue suche|von vorn|neu anfangen)$/i.test(t)) {
-      const verlauf = this.lauf.verlauf;
-      const freigabe = this.lauf.freigabe;
-      const protokoll = this.lauf.protokoll;
+      const alt = this.lauf;
       this.zuruecksetzen();
-      this.lauf.verlauf = verlauf;
-      this.lauf.freigabe = freigabe;
-      this.lauf.protokoll = protokoll || [];
+      this.lauf.verlauf = alt.verlauf;
+      this.lauf.freigabe = alt.freigabe;
+      this.lauf.freigabeGewaehlt = !!alt.freigabeGewaehlt;
+      this.lauf.durchlauf = alt.durchlauf || 0;
+      this.lauf.log = alt.log || [];
+      this.lauf.protokoll = alt.protokoll || [];
       this.sagen(t, "user");
-      this.sagen("Gut, fangen wir neu an. Wohin soll es gehen?");
+      await this.sprechen(
+        "Die Person will von vorn anfangen. Sag das kurz und frag, wohin oder was fuer eine Reise es diesmal werden soll.",
+        {},
+        "Gut, fangen wir neu an. Wohin soll es gehen?"
+      );
       AgentPanel.setSuggestions(Politik.vorschlaege());
       return;
+    }
+
+    // Ein Haus aus dem Katalog im Text - auch mit Tippfehler. Das geht
+    // vor die Phasenlogik: "Gibt es die Villa Figuera?" ist in jeder
+    // Phase eine Frage nach diesem Haus, und "pack die Villa auf den
+    // Merkzettel" ein Auftrag dazu. Vorher landete beides in der
+    // jeweiligen Phasenantwort und wurde als "kenne ich nicht" oder als
+    // neuer Suchauftrag gelesen.
+    const haus = Politik.hausImText(t);
+    if (haus) {
+      const merkWunsch = /merk|vormerk|speicher/i.test(t);
+      const oeffneWunsch = /öffne|oeffne|zeig|anschauen|ansehen|genauer|details?/i.test(t);
+      const buchWunsch = /buch|reservier|nehmen wir|nimm/i.test(t);
+      if (merkWunsch) return this.merken(haus.id, t);
+      if (buchWunsch) return this.hausBuchen(haus.id, t);
+      if (oeffneWunsch) { this.sagen(t, "user"); this.notieren("haus_genannt", { id: haus.id, absicht: "oeffnen" }); return this.vertiefen(haus.id); }
+      if (Politik.istRueckfrage(t) || /^(gibt|habt|hast|kennst)/i.test(t)) return this.antwortHausfrage(haus, t);
+    }
+    // Merken ohne Hausnamen: das gerade gewaehlte oder geoeffnete Haus
+    if (/merk|vormerk|speicher/i.test(t) && !/^(mach weiter|weiter)$/i.test(t)) {
+      const id = this.lauf.gewaehlt
+        || (Werkzeuge.seite() === "stay" ? new URLSearchParams(location.search).get("id") : null);
+      if (id) return this.merken(id, t);
     }
 
     switch (this.lauf.phase) {
