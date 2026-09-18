@@ -628,10 +628,14 @@ const Politik = {
     const gruende = [];
     const kriterien = (profil.kriterien || []).map((x) => this.kriterium(x.id)).filter(Boolean);
     const ausstattung = new Set(item.amenities || []);
+    const WENDUNG = {
+      pool: "einen Pool hat", kinderclub: "einen Kinderclub hat", familie: "familienfreundlich ist",
+      wellness: "Wellness bietet", strandnah: "nah am Strand liegt", ruhe: "ruhig liegt",
+    };
     const erfuellt = kriterien
       .filter((kr) => kr.filter?.ausstattung && ausstattung.has(kr.filter.ausstattung))
-      .map((kr) => kr.label.toLowerCase());
-    if (erfuellt.length) gruende.push(`${this.aufzaehlen(erfuellt)} hat`);
+      .map((kr) => WENDUNG[kr.id] || `${kr.label} bietet`);
+    gruende.push(...erfuellt);
     if (profil.maxStrand != null && item.distanceToBeach != null && item.distanceToBeach <= profil.maxStrand) {
       gruende.push(`nur ${item.distanceToBeach < 1 ? `${Math.round(item.distanceToBeach * 1000)} m` : `${item.distanceToBeach} km`} vom Strand liegt`);
     }

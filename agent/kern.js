@@ -1690,7 +1690,7 @@ const Kern = {
   // Abschluss auf der Detailseite: was spricht dafuer, was dagegen, wie es
   // weitergeht. Die Zahlen kommen aus den Bewertungsdaten, nicht aus dem
   // Modell - erfundene Prozentwerte waeren in einer Studie fatal.
-  vertiefungMelden() {
+  async vertiefungMelden() {
     const b = this.lauf.merker.bewertungen;
     const item = typeof getItemById === "function" ? getItemById(this.lauf.gewaehlt) : null;
     if (!b || !item) return { ok: true, text: "Ich habe dir das Haus geöffnet. Sieh es dir in Ruhe an." };
@@ -1727,10 +1727,24 @@ const Kern = {
     this.sperreAus();
     this.sichern();
 
+    // Auch diese Zusammenfassung formuliert das Modell - aus denselben
+    // Zahlen, die der feste Satz nennt.
+    const text = await this.formulieren({
+      lage: "Du hast die Detailseite des gewaehlten Hauses gelesen und die Bewertungen ausgewertet. Fass in zwei, drei Saetzen zusammen, was fuer die Person daran wichtig ist (zuerst das, was sie genannt hatte), nenne auch die Kritik, und frag, ob du es vormerken, zur Buchung gehen oder zurueck zur Auswahl sollst.",
+      haus: item.name,
+      bewertungenAusgewertet: b.anzahl,
+      genannteWuensche: [...genannt].map((label) => {
+        const e = (b.bilanz || []).find((a) => a.aspekt === label);
+        return e ? { wunsch: label, prozentPositiv: Math.round(e.anteilPositiv * 100), erwaehnungen: e.erwaehnungen } : { wunsch: label };
+      }),
+      sonstGelobt: uebrig,
+      kritisiert: b.kritisiert || [],
+    }, teile.join(" "));
+
     return {
       ok: true,
       daten: { uebernimmt: true },
-      text: teile.join(" "),
+      text,
       links: [{ text: "Merkzettel", href: "merkzettel.html" }],
     };
   },
@@ -2041,9 +2055,21 @@ const Kern = {
     this.notieren("haus_genannt", { id: haus.id, absicht: "frage" });
     await this.denkpause(600);
     const kurz = typeof aspektKurzfassung === "function" ? aspektKurzfassung(haus) : null;
+    // Preis und Budget vorrechnen - sonst rechnet das Modell selbst und
+    // verrechnet sich ("168 pro Nacht liegt ueber 1600 fuer sieben Naechte").
+    const pr = this.lauf.profil || {};
+    const naechte = pr.naechte || null;
+    const zimmer = pr.zimmer || 1;
+    const gesamt = naechte ? haus.pricePerNight * naechte * zimmer + (haus.type === "apartment" ? (haus.cleaningFee || 0) : 35 * zimmer) : null;
+    let budget = null;
+    if (pr.budgetGesamt && gesamt != null) budget = { grenze: pr.budgetGesamt, gesamtFuerDeineReise: gesamt, passt: gesamt <= pr.budgetGesamt };
+    else if (pr.maxPreis) budget = { grenzeProNacht: pr.maxPreis, passt: haus.pricePerNight <= pr.maxPreis };
+    const erfuellt = Politik.erfuellt(haus, haus.pricePerNight, pr);
     const fakten = {
-      lage: "Die Person fragt nach einem bestimmten Haus aus dem Katalog (vielleicht mit Tippfehler geschrieben - nenne den richtigen Namen, ohne den Fehler zu kommentieren). Beantworte ihre Frage mit den Fakten, sag, was fuer ihre Vorgaben spricht oder dagegen, und biete an, es zu oeffnen oder direkt zur Buchung zu gehen. Zwei bis vier Saetze.",
+      lage: "Die Person fragt nach einem bestimmten Haus aus dem Katalog (vielleicht mit Tippfehler geschrieben - nenne den richtigen Namen, ohne den Fehler zu kommentieren). Beantworte ihre Frage mit den Fakten, sag, was fuer ihre Vorgaben spricht oder dagegen (Budget nur so, wie es unter budget vorgerechnet steht - rechne nicht selbst), und biete an, es zu oeffnen oder direkt zur Buchung zu gehen. Zwei bis vier Saetze.",
       wasDiePersonSchrieb: text,
+      budget,
+      haeltAlleHartenVorgabenEin: erfuellt,
       haus: {
         name: haus.name, ort: haus.location, art: haus.type === "apartment" ? "Ferienwohnung" : "Hotel",
         sterne: haus.stars || null, bewertung: haus.rating, anzahlBewertungen: haus.reviewCount,
