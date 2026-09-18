@@ -128,11 +128,11 @@ const Startbildschirm = {
         <div class="einstieg-hero">
           <span class="einstieg-siegel">${this.SYMBOL.kompass}</span>
           <p class="einstieg-etikett">Willkommen zur Studie</p>
-          <h1>Reisen buchen<br>im Netz von morgen</h1>
+          <h1>Eine neue Reiseseite<br>im Test</h1>
           <p class="einstieg-vorspann">
             Schön, dass du dabei bist. Diese Erhebung entsteht im Rahmen
-            ${zusatz ? `einer ${zusatz}` : "einer Bachelorarbeit"} und fragt, wie sich das
-            Buchen verändert, wenn sich Aufgaben abgeben lassen. Dauer: etwa
+            ${zusatz ? `einer ${zusatz}` : "einer Bachelorarbeit"} und untersucht, wie
+            Menschen auf einer neuen Buchungsseite zurechtkommen und entscheiden. Dauer: etwa
             <strong>${STUDIE.dauerMinuten} Minuten</strong>.
           </p>
         </div>

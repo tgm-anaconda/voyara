@@ -74,6 +74,39 @@ const STELLSCHRAUBEN = {
   initiative: "abwartend",      // abwartend | vorschlagend
   eingangsfrage: true,
   startbildschirm: true,   // Wahl der Freigabestufe vor dem ersten Kontakt          // false = springt ohne Rueckfrage in die Suche
+
+  /* Aufbau der Erhebung (Stand 18.09.2026), siehe AGENT-KONZEPT Abschnitt 25.
+     ------------------------------------------------------------------
+     zugang       schublade = der Agent ist zu Beginn unsichtbar und nur
+                  ueber einen schmalen Reiter am rechten Rand erreichbar;
+                  seitenleiste = die alte, dauerhaft offene Spalte links.
+     einladung    Ort des Angebots "Moechtest du den Assistenten nutzen?",
+                  das nach dem Ausloeser erscheint, falls der Reiter bis
+                  dahin nicht benutzt wurde. keine = kein Angebot.
+     einladungAusloeser  detail = beim ersten Oeffnen einer Detailseite;
+                  danach greift in jedem Fall die Zeit (Sekunden seit
+                  Beginn der Aufgabe) als Ersatz fuer Personen, die nichts
+                  oeffnen.
+     freigabeFrage  erstoeffnung = die Freigabestufe wird beim ersten
+                  Oeffnen des Agenten erfragt, als seine erste Nachricht,
+                  ohne Voreinstellung; start = im Einstieg (alt).
+     offenlegung  Wie der Agent zu erkennen gibt, dass sein erster
+                  Vorschlag ein Partnerhaus ist: etikett (Chip am
+                  Vorschlag), log (nur im Agenten-Log, ganz unten), offen
+                  (er sagt es selbst, mit Begruendung). Wird je Person
+                  ausgelost (studie.js); ueber die Adresse festlegbar.
+     partner      Welches zulaessige Haus der Aufgabe das Partnerhaus ist:
+                  zweitbeste | beste | wechselnd (eine Aufgabe die beste,
+                  die andere die zweitbeste, ausgelost) | keine.
+     log          Agenten-Log oben rechts im Kopf der Seite. */
+  zugang: "schublade",           // schublade | seitenleiste
+  einladung: "unten-rechts",     // unten-rechts | cursor | mitte | liste | keine
+  einladungAusloeser: "detail",  // detail | zeit
+  einladungSekunden: 75,
+  freigabeFrage: "erstoeffnung", // erstoeffnung | start
+  offenlegung: null,             // etikett | log | offen | null = auslosen
+  partner: "wechselnd",          // zweitbeste | beste | wechselnd | keine
+  log: true,
 };
 
 /* Gruppenzuweisung ueber die Adresse
@@ -96,6 +129,12 @@ const STELLSCHRAUBEN = {
     fehler: ["keine", "filter", "kriterium", "behauptung"],
     begruendung: ["knapp", "ausfuehrlich"],
     initiative: ["abwartend", "vorschlagend"],
+    zugang: ["schublade", "seitenleiste"],
+    einladung: ["unten-rechts", "cursor", "mitte", "liste", "keine"],
+    einladungAusloeser: ["detail", "zeit"],
+    freigabeFrage: ["erstoeffnung", "start"],
+    offenlegung: ["etikett", "log", "offen"],
+    partner: ["zweitbeste", "beste", "wechselnd", "keine"],
   };
   const SCHLUESSEL = "voyara_agent_gruppe";
   let gruppe = {};
@@ -113,13 +152,27 @@ const STELLSCHRAUBEN = {
     const v = parseFloat(p.get(feld));
     if (!Number.isNaN(v) && v >= 0.25 && v <= 4) { gruppe[feld] = v; neu = true; }
   }
-  for (const feld of ["eingangsfrage", "freigabeRegler"]) {
+  {
+    const v = parseInt(p.get("einladungSekunden"), 10);
+    if (!Number.isNaN(v) && v >= 5 && v <= 600) { gruppe.einladungSekunden = v; neu = true; }
+  }
+  for (const feld of ["eingangsfrage", "freigabeRegler", "log"]) {
     const v = p.get(feld);
     if (v === "0" || v === "1") { gruppe[feld] = v === "1"; neu = true; }
   }
 
   if (neu) { try { sessionStorage.setItem(SCHLUESSEL, JSON.stringify(gruppe)); } catch { /* egal */ } }
   Object.assign(STELLSCHRAUBEN, gruppe);
+
+  // Schubladen-Zugang so frueh wie moeglich an den Body, damit die alte
+  // Seitenleiste nicht erst aufblitzt. Ob die Schublade offen war, weiss
+  // der sessionStorage (siehe AgentPanel.umschalten).
+  if (STELLSCHRAUBEN.zugang === "schublade" && typeof document !== "undefined") {
+    document.body.classList.add("agent-schublade");
+    let offen = null;
+    try { offen = sessionStorage.getItem("voyara_chat_offen"); } catch { /* egal */ }
+    if (offen === "1") document.body.classList.add("agent-open");
+  }
 })();
 
 const Kern = {
@@ -205,24 +258,83 @@ const Kern = {
     AgentPanel.freigabeZeigen(stufe);
   },
 
+  /* Freigabe beim ersten Oeffnen
+     ------------------------------------------------------------------
+     Die erste Nachricht des Agenten ist eine Frage: Wie weit darf ich
+     gehen? Vier Stufen, keine vorausgewaehlt, kein Eingabefeld, bis
+     gewaehlt ist. So trifft die Frage nur die, die den Agenten wirklich
+     oeffnen - fuer alle anderen stellt sie sich nicht. Die Wahl ist ein
+     Messpunkt (Quelle "erstoeffnung", Bedenkzeit), danach kommt die
+     Begruessung wie sonst. */
+  freigabeFragen() {
+    if (this.lauf.freigabeGewaehlt) return;
+    const box = document.getElementById("agentMessages");
+    if (!box || document.getElementById("freigabeKarte")) return;
+
+    const gezeigt = Date.now();
+    const el = document.createElement("div");
+    el.className = "msg bot freigabe-karte neu";
+    el.id = "freigabeKarte";
+    const frage = document.createElement("p");
+    frage.innerHTML = "Hallo! Bevor ich loslege: <strong>Wie weit darf ich für dich gehen?</strong> Du kannst das jederzeit ändern.";
+    el.appendChild(frage);
+    const liste = document.createElement("div");
+    liste.className = "freigabe-karte-optionen";
+    for (const s of FREIGABE) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.dataset.stufe = s.id;
+      const k = document.createElement("b"); k.textContent = s.kurz;
+      const l = document.createElement("span"); l.textContent = s.lang;
+      b.append(k, l);
+      b.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const messung = { quelle: "erstoeffnung", bedenkzeitMs: Date.now() - gezeigt };
+        el.remove();
+        document.body.classList.remove("agent-ohne-freigabe");
+        this.freigabeStartSetzen(s.id, messung);
+        if (typeof Studie !== "undefined") Studie.freigabeGewaehlt?.(s.id, messung);
+        this.sagen("Danke. Wonach suchst du? Beschreib es einfach — ich suche, filtere und vergleiche für dich.");
+        AgentPanel.setSuggestions(Politik.vorschlaege());
+        AgentPanel.ansEnde?.();
+        document.getElementById("agentInput")?.focus({ preventScroll: true });
+      });
+      liste.appendChild(b);
+    }
+    el.appendChild(liste);
+    box.appendChild(el);
+    box.scrollTop = box.scrollHeight;
+    document.body.classList.add("agent-ohne-freigabe");
+    this.notieren("freigabe_gefragt", { quelle: "erstoeffnung" });
+    this.sichern();
+  },
+
   // Neuer Durchlauf fuer die zweite Aufgabe: Gespraech, Suche und
   // Kandidaten von vorn, die Freigabestufe bleibt, wo die Person sie
   // zuletzt hatte. Das Protokoll des ersten Durchlaufs hat der
   // Studienablauf vorher kopiert.
   neuerDurchlauf() {
     const freigabe = this.lauf.freigabe;
+    // Wer den Agenten in der ersten Aufgabe nie geoeffnet hat, hat auch
+    // keine Stufe gewaehlt - dann kommt die Frage beim ersten Oeffnen in
+    // der zweiten Aufgabe.
+    const gewaehlt = !!this.lauf.freigabeGewaehlt;
+    const durchlauf = (this.lauf.durchlauf || 0) + 1;
     this.lauf = this.leererLauf();
     this.lauf.freigabe = freigabe;
-    this.lauf.freigabeGewaehlt = true;
-    this.lauf.durchlauf = (this.lauf.durchlauf || 0) + 1;
+    this.lauf.freigabeGewaehlt = gewaehlt;
+    this.lauf.durchlauf = durchlauf;
     this.sichern();
     Zeiger.verstecken?.();
     const kasten = document.getElementById("agentMessages");
     if (kasten) kasten.innerHTML = "";
     AgentPanel.eckdatenZeigen([]);
-    this.sagen("Neue Reise? Sag mir, wonach du suchst - ich fange bei null an.");
-    AgentPanel.setSuggestions(Politik.vorschlaege());
+    if (gewaehlt) {
+      this.sagen("Neue Reise? Sag mir, wonach du suchst - ich fange bei null an.");
+      AgentPanel.setSuggestions(Politik.vorschlaege());
+    }
     AgentPanel.status("online");
+    if (typeof Log !== "undefined") Log.leeren();
   },
 
   freigabe() {
@@ -283,13 +395,18 @@ const Kern = {
       // Funktion wird beim Zurueckschreiben neu angehaengt.
       const aktionen = (n.aktionen || []).map((a) => a.warumFuer
         ? { text: a.text, ausklappen: () => this.warumText(a.warumFuer) } : a);
-      AgentPanel.say(n.text, n.rolle, { still: true, links: n.links, aktionen });
+      AgentPanel.say(n.text, n.rolle, { still: true, links: n.links, aktionen, etikett: n.etikett || null });
     }
 
     // Erste Seite der Sitzung: begruessen. Das muss hier passieren und nicht
     // im Panel - der Kasten wird eine Zeile darueber geleert, und eine vorher
     // gesetzte Nachricht waere damit weg gewesen.
-    if (!this.lauf.verlauf.length) {
+    //
+    // Wird die Freigabe beim ersten Oeffnen erfragt, kommt die Begruessung
+    // erst danach (siehe freigabeFragen): Die Frage soll das Erste sein,
+    // was die Person vom Agenten sieht, nicht eine Nachricht darueber.
+    const erstoeffnung = STELLSCHRAUBEN.freigabeFrage === "erstoeffnung";
+    if (!this.lauf.verlauf.length && (!erstoeffnung || this.lauf.freigabeGewaehlt)) {
       this.sagen("Hallo! Wonach suchst du? Beschreib es einfach — ich suche, filtere und vergleiche für dich.");
       AgentPanel.setSuggestions(Politik.vorschlaege());
     }
@@ -314,6 +431,9 @@ const Kern = {
     if (!this.lauf.freigabeGewaehlt) {
       if (typeof Studie !== "undefined") {
         Studie.start(this);
+      } else if (erstoeffnung) {
+        // Die Frage kommt beim ersten Oeffnen des Agenten (freigabeFragen),
+        // bis dahin bleibt die niedrigste Stufe stehen.
       } else if (STELLSCHRAUBEN.startbildschirm && typeof Startbildschirm !== "undefined" && !Startbildschirm.erledigt()) {
         Startbildschirm.zeigen(FREIGABE, (stufe, messung) => this.freigabeStartSetzen(stufe, { quelle: "startbildschirm", ...messung }));
       } else {
@@ -324,6 +444,18 @@ const Kern = {
       Studie.start(this);
     }
     AgentPanel.freigabeAufbauen(FREIGABE, this.lauf.freigabe, (stufe) => this.freigabeSetzen(stufe));
+
+    // Solange die Stufe nicht gewaehlt ist, zeigt das Panel weder Regler
+    // noch Eingabefeld - nur die Frage. Die Klasse steuert das per CSS.
+    document.body.classList.toggle("agent-ohne-freigabe", erstoeffnung && !this.lauf.freigabeGewaehlt);
+
+    // Zugang: Reiter am Rand, Einladung, Log. Ohne die Module laeuft der
+    // Agent wie frueher in der Seitenleiste.
+    if (typeof Zugang !== "undefined") Zugang.anbinden(this);
+    if (typeof Log !== "undefined") Log.anbinden(this);
+    if (erstoeffnung && !this.lauf.freigabeGewaehlt && typeof Zugang !== "undefined" && Zugang.istOffen()) {
+      this.freigabeFragen();
+    }
 
     this.kandidatenAuffrischen();
     AgentPanel.eckdatenZeigen(Politik.eckdaten(this.lauf.profil || {}));
@@ -441,8 +573,13 @@ const Kern = {
     this.lauf.protokoll = alt.protokoll || [];
     // Die Freigabestufe gilt fuer die Sitzung, nicht fuer den einzelnen
     // Auftrag. Wer sie einmal gesenkt hat, will sie nicht bei der
-    // naechsten Frage wieder auf dem Ausgangswert vorfinden.
+    // naechsten Frage wieder auf dem Ausgangswert vorfinden. Dasselbe
+    // gilt fuer die Tatsache, dass sie gewaehlt wurde, fuer die Nummer
+    // des Durchlaufs und fuer das Log der Aufgabe.
     this.lauf.freigabe = alt.freigabe || null;
+    this.lauf.freigabeGewaehlt = !!alt.freigabeGewaehlt;
+    this.lauf.durchlauf = alt.durchlauf || 0;
+    this.lauf.log = alt.log || [];
 
     this.lauf.auftrag = text;
     this.sagen(text, "user");
@@ -933,8 +1070,17 @@ const Kern = {
 
     this.lauf.offeneSchritte = schritte.slice(0, this.MAX_SCHRITTE);
     this.notieren("suche_start", { runde: this.lauf.runde });
+    this.logZeile(`Suche gestartet mit: ${Politik.eckdaten(this.lauf.profil || {}).map((e) => `${e.feld} ${e.wert}`).join(", ") || "ohne Vorgaben"}`, "auftrag");
+    this.logZeile(`Freigabe: ${FREIGABE.find((f) => f.id === this.freigabe())?.kurz || this.freigabe()}`, "auftrag");
     this.sichern();
     await this.abarbeiten();
+  },
+
+  // Eine Zeile ins Agenten-Log. Das Log ist die nuechterne Spur dessen,
+  // was der Agent tut - anders als der Chat, der erklaert und fragt.
+  logZeile(text, art = "schritt") {
+    if (typeof Log === "undefined" || !text) return;
+    Log.zeile(text, art);
   },
 
   async abarbeiten() {
@@ -961,6 +1107,7 @@ const Kern = {
 
       const schritt = this.lauf.offeneSchritte[0];
       AgentPanel.status(schritt.status || "arbeitet…");
+      this.logZeile(this.logSchritt(schritt));
 
       // Der Schritt wird entfernt und gesichert, BEVOR er ausgefuehrt wird.
       // Grund: Ein Klick auf "Details ansehen" startet die Navigation sofort:
@@ -990,6 +1137,7 @@ const Kern = {
       // Was der Schritt erfahren hat, wird unter seinem Merknamen abgelegt.
       if (schritt.merken && ergebnis.daten) this.lauf.merker[schritt.merken] = ergebnis.daten;
       if (ergebnis.text && schritt.melden !== false) this.sagen(ergebnis.text, "bot", ergebnis.links);
+      if (ergebnis.text && !ergebnis.daten?.uebernimmt) this.logZeile(`Ergebnis: ${ergebnis.text}`, "ergebnis");
 
       // Ein Schritt, der die Seite wechselt, beendet diesen Durchlauf. Der
       // Rest wird nach dem Laden fortgesetzt.
@@ -1010,6 +1158,45 @@ const Kern = {
     }
 
     await this.abschluss();
+  },
+
+  // Was ein Schritt im Log heisst. Nuechtern, mit den Werten, die der
+  // Agent wirklich setzt - im Chat steht die freundliche Fassung.
+  logSchritt(schritt) {
+    const a = schritt.args || {};
+    const name = (id) => (typeof getItemById === "function" ? getItemById(this.aufloesen(id))?.name : null) || id || "";
+    switch (schritt.werkzeug) {
+      case "suchen": {
+        const teile = [];
+        if (a.ziel) teile.push(`Ziel ${a.ziel}`);
+        if (a.typ) teile.push(a.typ === "apartment" ? "Ferienwohnung" : "Hotel");
+        if (a.von && a.bis) teile.push(`${a.von} bis ${a.bis}`);
+        if (a.erwachsene || a.kinder) teile.push(`${a.erwachsene || 0} Erw., ${a.kinder || 0} Kinder`);
+        return `Suchmaske gesetzt: ${teile.join(", ") || "Standard"}`;
+      }
+      case "filterSetzen": {
+        const teile = [];
+        if (a.maxPreis) teile.push(`Preis bis ${a.maxPreis} € pro Nacht`);
+        if (a.maxStrand != null) teile.push(`Strand bis ${a.maxStrand} km`);
+        if (a.ausstattung?.length) teile.push(`Ausstattung ${a.ausstattung.join(", ")}`);
+        if (a.sterne?.length) teile.push(`${a.sterne.join("/")} Sterne`);
+        if (a.zielId && !teile.length) teile.push(`Ziel ${a.zielId}`);
+        return `Filter gesetzt: ${teile.join(", ") || "keine"}`;
+      }
+      case "sortieren":          return `Liste sortiert nach ${a.nach || "Empfehlung"}`;
+      case "ergebnisseLesen":    return `Lese die ersten ${a.anzahl ?? 8} Treffer`;
+      case "bewertungenSichten": return `Sichte Bewertungen der ersten ${a.anzahl ?? 5} Treffer`;
+      case "shortlist":          return "Vergleiche die Treffer mit den Vorgaben";
+      case "unterkunftOeffnen":  return `Öffne ${name(a.id)}`;
+      case "bewertungenLesen":   return `Lese Bewertungen zu ${name(a.id)}`;
+      case "merken":             return `Setze ${name(a.id)} auf den Merkzettel`;
+      case "zurStartseite":      return "Wechsle zur Startseite";
+      case "zurueckZurListe":    return "Zurück zur Trefferliste";
+      case "zurBuchung":         return `Öffne die Buchung für ${name(a.id)}${a.verpflegung ? `, Verpflegung ${a.verpflegung}` : ""}`;
+      case "buchungAbschliessen": return "Fülle die Buchung aus";
+      case "vertiefung":         return "Fasse die Detailseite zusammen";
+      default:                   return schritt.status || schritt.werkzeug;
+    }
   },
 
   async ausfuehren(schritt) {
@@ -1161,6 +1348,33 @@ const Kern = {
     const auswahl = Politik.auswaehlen(bewertet, this.lauf.profil);
     this.lauf.kandidaten = auswahl.kandidaten;
     this.lauf.strategie = auswahl.strategie;
+    this.logZeile(`${bewertet.length} ${bewertet.length === 1 ? "Haus hält" : "Häuser halten"} die Vorgaben ein, sortiert nach Passung`, "ergebnis");
+
+    /* Partnerhaus
+       ------------------------------------------------------------------
+       Der Aufbau der Erhebung (Konzept, Abschnitt 25): Der erste Vorschlag
+       ist ein Partnerhaus der Plattform - zulaessig, gut, in einer der
+       beiden Aufgaben sogar das beste, in der anderen das zweitbeste. Wie
+       der Agent das zu erkennen gibt (Etikett, Log, offen), ist die
+       ausgeloste Bedingung. Das Haus wird nur vorgelegt, wenn es die
+       Vorgaben der Person tatsaechlich einhaelt; sonst wird nichts
+       hineingeschummelt, und das Fehlen steht im Protokoll. */
+    const partner = typeof Studie !== "undefined" && Studie.partnerhaus ? Studie.partnerhaus() : null;
+    const offenlegung = partner ? (typeof Studie !== "undefined" && Studie.gruppe ? Studie.gruppe().offenlegung : STELLSCHRAUBEN.offenlegung) : null;
+    if (partner && this.lauf.runde === 0) {
+      const treffer = bewertet.find((k) => k.id === partner.id);
+      if (treffer) {
+        treffer.partner = true;
+        this.lauf.kandidaten = [treffer, ...this.lauf.kandidaten.filter((k) => k.id !== partner.id)].slice(0, 3);
+        this.lauf.partnerId = partner.id;
+        this.lauf.offenlegung = offenlegung;
+        this.notieren("partner_vorgelegt", { id: partner.id, rang: partner.rang, offenlegung, position: 1 });
+      } else {
+        const gesehen = treffer || roh.some((x) => x.id === partner.id);
+        this.notieren("partner_fehlt", { id: partner.id, rang: partner.rang, grund: gesehen ? "vorgaben" : "nicht_in_treffern" });
+      }
+    }
+
     this.notieren("shortlist", {
       runde: this.lauf.runde,
       ids: this.lauf.kandidaten.map((k) => k.id),
@@ -1168,6 +1382,8 @@ const Kern = {
       // wie viel hatte die Person bis dahin preisgegeben?
       strategie: auswahl.strategie,
       informationswert: auswahl.informationswert,
+      partnerId: this.lauf.partnerId || null,
+      offenlegung: this.lauf.offenlegung || null,
     });
 
     // Die Zahl muss zur Liste passen - "Drei kommen in die engere Wahl"
@@ -1181,20 +1397,39 @@ const Kern = {
 
     for (const [i, k] of this.lauf.kandidaten.entries()) {
       await Zeiger.warte(i === 0 ? 900 : 1600);
+      const istPartner = !!k.partner;
       // Der Verweis macht aus dem Vorschlag ein Angebot statt einer Ansage:
       // wer lieber selbst schaut, klickt hier direkt hinein.
       const eigener = Politik.vorschlagssatz(k, this.lauf.profil);
-      const satz = await this.formulieren(Politik.faktenVorschlag(k, this.lauf.profil), eigener);
+      // Der Partnervorschlag wird nicht vom Modell umformuliert: Sein
+      // Wortlaut muss in allen drei Bedingungen derselbe sein, bis auf
+      // den Satz zur Offenlegung.
+      const satz = istPartner ? eigener : await this.formulieren(Politik.faktenVorschlag(k, this.lauf.profil), eigener);
+      let text = istPartner ? `Mein Vorschlag: ${satz}` : `${i + 1}. ${satz}`;
+      if (istPartner && this.lauf.offenlegung === "offen") {
+        text += ` Nur zur Info: Für dieses Haus bekommt Voyara eine Provision. Ich halte es trotzdem für die beste Option für euch, weil ${Politik.partnerGruende(k, this.lauf.profil)}.`;
+      }
+      const etikett = istPartner && this.lauf.offenlegung === "etikett" ? "Partner" : null;
       // Der Verweis fuehrt zum Haus, der Knopf klappt die Begruendung auf.
       // Beide sind freiwillig - und genau deshalb zaehlbar.
-      this.lauf.verlauf.push({ rolle: "bot", text: `${i + 1}. ${satz}`, zeit: Date.now(),
+      this.lauf.verlauf.push({ rolle: "bot", text, zeit: Date.now(),
         links: [this.linkZu(k.id, k.item.name)],
-        aktionen: [{ text: "Warum dieses?", warumFuer: k.id }] });
-      AgentPanel.say(`${i + 1}. ${satz}`, "bot", {
+        aktionen: [{ text: "Warum dieses?", warumFuer: k.id }],
+        etikett });
+      AgentPanel.say(text, "bot", {
         links: [this.linkZu(k.id, k.item.name)],
         aktionen: [{ text: "Warum dieses?", ausklappen: () => this.warumText(k.id) }],
+        etikett,
       });
+      this.logZeile(`${istPartner ? "Vorschlag 1 (mein Vorschlag)" : `Vorschlag ${i + 1}`}: ${k.item.name}, ${k.preis} € pro Nacht, Bewertung ${k.item.rating}`, "ergebnis");
       this.sichern();
+    }
+    // In der Log-Bedingung steht der Hinweis nur hier - als letzte Zeile,
+    // die man erst nach dem Scrollen sieht. So versteckt sind solche
+    // Hinweise auf echten Seiten auch.
+    if (this.lauf.partnerId && this.lauf.offenlegung === "log") {
+      const p = this.lauf.kandidaten.find((k) => k.partner);
+      if (p) this.logZeile(`${p.item.name}: Partnerhaus von Voyara, bevorzugt gelistet (Provision)`, "hinweis");
     }
     await Zeiger.warte(1500);
 

@@ -27,6 +27,8 @@ const ICONS = {
   users: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.4"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M17 5.2a3.4 3.4 0 0 1 0 6.6M18.5 20a6.5 6.5 0 0 0-3-5.5"/></svg>',
   luggage: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="7" width="14" height="14" rx="2"/><path d="M9 7V4h6v3M9 21v1M15 21v1"/></svg>',
   gear: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9 7 7M17 17l2.1 2.1M19.1 4.9 17 7M7 17l-2.1 2.1"/></svg>',
+  list: '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13"/><path d="M3 6h.01M3 12h.01M3 18h.01"/></svg>',
+  chevronLeft: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 5-7 7 7 7"/></svg>',
 };
 
 const CATEGORY_ICONS = {
@@ -339,8 +341,14 @@ const AgentPanel = {
     // Weiche statt zweier Bedienelemente.
     const schmal = () => window.matchMedia("(max-width: 1040px)").matches;
 
+    // Schublade: Der Agent liegt als ausziehbares Fach am rechten Rand,
+    // zu Beginn geschlossen. Dann gibt es nur zwei Zustaende, offen und
+    // zu, auf jeder Bildschirmbreite - das Zusammenklappen zur schmalen
+    // Spalte entfaellt.
+    const schublade = () => document.body.classList.contains("agent-schublade");
+
     const umschalten = (soll) => {
-      if (!schmal()) { document.body.classList.toggle("agent-collapsed"); return; }
+      if (!schmal() && !schublade()) { document.body.classList.toggle("agent-collapsed"); return; }
       const offen = soll === undefined
         ? document.body.classList.toggle("agent-open")
         : (document.body.classList.toggle("agent-open", soll), soll);
@@ -348,6 +356,7 @@ const AgentPanel = {
       // Die Entscheidung gilt fuer die Sitzung. Wer den Chat zuklappt,
       // will ihn nicht auf jeder Seite wieder aufgeklappt vorfinden.
       try { sessionStorage.setItem("voyara_chat_offen", offen ? "1" : "0"); } catch { /* egal */ }
+      if (schublade() && typeof Zugang !== "undefined") Zugang.zustandGemeldet(offen);
     };
     this.umschalten = umschalten;
 
@@ -378,7 +387,7 @@ const AgentPanel = {
     // Beim ersten Aufruf der Sitzung steht der Chat offen - er ist der Teil,
     // um den es hier geht, und ein zugeklappter Streifen wird uebersehen.
     // Danach gilt, was die Person zuletzt wollte.
-    if (schmal()) {
+    if (schmal() && !schublade()) {
       let gemerkt = null;
       try { gemerkt = sessionStorage.getItem("voyara_chat_offen"); } catch { /* egal */ }
       if (gemerkt !== "0") { document.body.classList.add("agent-open"); this.ungelesenLeeren(); }
@@ -392,7 +401,7 @@ const AgentPanel = {
     // Auf dem Handy ist der ganze Kopf die Schaltflaeche - ein 30-Pixel-Ziel
     // waere auf einem Telefon zu klein.
     document.querySelector(".agent-head")?.addEventListener("click", () => {
-      if (schmal()) umschalten();
+      if (schmal() && !schublade()) umschalten();
     });
 
     // Das Eingabefeld darf den Chat nicht wieder zuklappen
@@ -413,12 +422,23 @@ const AgentPanel = {
   // `aktionen` sind Schaltflaechen unter der Nachricht, die eine Eingabe
   // ausloesen statt zu einer Seite zu fuehren. Gebraucht fuer "Warum
   // dieses Haus?" - eine Nachfrage, die zaehlbar sein soll.
-  say(text, role = "bot", { still = false, links = null, aktionen = null } = {}) {
+  say(text, role = "bot", { still = false, links = null, aktionen = null, etikett = null } = {}) {
     const box = document.getElementById("agentMessages");
     if (!box) return;
     const el = document.createElement("div");
     el.className = `msg ${role}${still ? "" : " neu"}`;
     el.textContent = text;
+
+    // Ein kleines Etikett am Kopf der Nachricht ("Partner"), wie es
+    // Trefferlisten an gekennzeichneten Angeboten tragen. Eine der drei
+    // Formen der Offenlegung in der Erhebung.
+    if (etikett) {
+      const chip = document.createElement("span");
+      chip.className = "msg-etikett";
+      chip.textContent = etikett;
+      el.prepend(chip);
+      el.classList.add("hat-etikett");
+    }
 
     if (aktionen && aktionen.length) {
       const reihe = document.createElement("div");
@@ -477,6 +497,7 @@ const AgentPanel = {
     box.scrollTop = box.scrollHeight;
     if (role === "bot" && !document.body.classList.contains("agent-arbeitet")) this.vorschauSetzen(text);
     if (role === "bot" && !still) this.ungelesenZaehlen();
+    if (role === "bot" && !still && typeof Zugang !== "undefined") Zugang.neueNachricht();
   },
 
   // Letzte Antwort in einer Zeile im Kopf
@@ -626,12 +647,20 @@ const AgentPanel = {
 
   // Auf dem Handy aufklappen, wenn der Chat etwas von der Person will.
   oeffnen() {
-    if (!window.matchMedia("(max-width: 1040px)").matches) return;
+    const schublade = document.body.classList.contains("agent-schublade");
+    if (!window.matchMedia("(max-width: 1040px)").matches && !schublade) return;
+    // In der Schublade oeffnet der Agent sich nur von selbst, wenn die
+    // Person ihn schon einmal benutzt hat. Vorher waere das ein
+    // ungefragtes Aufspringen - und genau das soll die Einladung sein,
+    // nicht der Chat.
+    if (schublade && typeof Zugang !== "undefined" && !Zugang.jeGeoeffnet()) return;
+    const warZu = !document.body.classList.contains("agent-open");
     this.arbeitetAus();
     document.body.classList.add("agent-open");
     try { sessionStorage.setItem("voyara_chat_offen", "1"); } catch { /* egal */ }
     this.ungelesenLeeren();
     this.ansEnde();
+    if (warZu && schublade && typeof Zugang !== "undefined") Zugang.zustandGemeldet(true);
   },
 
   /* Beim Aufklappen ans Ende des Gespraechs springen.
@@ -710,6 +739,10 @@ function renderHeader(active) {
           <span class="action-icon">${ICONS.heart}<span class="badge" id="wishCount" hidden>0</span></span>
           <span>Merkzettel</span>
         </a>
+        <button type="button" class="header-action header-log" id="logBtn" title="Was macht der Assistent gerade?" hidden aria-expanded="false">
+          <span class="action-icon">${ICONS.list}<span class="badge" id="logBadge" hidden>0</span></span>
+          <span>Agenten-Log</span>
+        </button>
         <button type="button" class="header-action" id="helpBtn" title="Hilfe">${ICONS.chat}<span>Hilfe</span></button>
         <button type="button" class="header-action" id="accountBtn" title="Konto">${ICONS.user}<span id="accountLabel">Anmelden</span></button>
       </div>
@@ -732,6 +765,7 @@ function renderFooter() {
           <span class="brand-name">Voyara</span>
         </a>
         <p>Hotels, Ferienwohnungen, Mietwagen und Flüge vergleichen und buchen.</p>
+        <p class="footer-partner">Voyara arbeitet mit Partnerhäusern zusammen. Für Buchungen bei Partnern erhält Voyara eine Provision; als Partner gekennzeichnete Angebote können bevorzugt gelistet sein.</p>
       </div>
       <div class="footer-col">
         <h4>Buchen</h4>
@@ -873,7 +907,7 @@ function mountChrome(activeNav) {
       openModal(
         "Hilfe & Kontakt",
         `<p>Voyara ist ein Prototyp für eine wissenschaftliche Studie. Es sind keine echten Buchungen möglich.</p>
-         <p><strong>Fragen zur Bedienung?</strong> Der Chat links hilft dir bei der Suche.</p>
+         <p><strong>Fragen zur Bedienung?</strong> Der Reise-Assistent am rechten Rand hilft dir bei der Suche.</p>
          <p><strong>Fragen zur Studie?</strong> Schreib an <a href="mailto:studie@voyara.example">studie@voyara.example</a>.</p>`,
         `<a class="btn btn-ghost" href="info.html?p=faq">Zu den häufigen Fragen</a>
          <button type="button" class="btn btn-primary" data-close>Verstanden</button>`

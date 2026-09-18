@@ -1269,3 +1269,49 @@ mit dem vollständigen Protokoll - für alles, was die Spalten nicht vorsehen.
   nur, wenn der Agent bucht. Entscheidung nach dem Gespräch mit dem Betreuer.
 - `STUDIE.hochschule` und `STUDIE.kontakt` in `agent/start.js` eintragen.
 - Die Fragebogen-Entwürfe sind Vorschläge; sie sind als Entwurf gekennzeichnet.
+
+## 25. Der Aufbau der Erhebung (Stand 18.09.2026)
+
+Nach einem Tag Ringen um die Frage, was sich an einem handelnden Agenten so sauber messen lässt wie die Position eines Chatbots, steht dieser Aufbau. Er ersetzt Abschnitt 22 (Einwilligungsfenster mit Freigabewahl) und ergänzt Abschnitt 24. Die Überlegungen dahinter stehen im Vault (Studiendesign-Optionen, Der Übergabepunkt, Katalog Gestaltungsvariablen).
+
+### Fünf Stationen, für alle gleich, alle gemessen
+
+1. **Zugang.** Der Agent ist zu Beginn nicht zu sehen. Am rechten Rand sitzt ein schmaler Reiter "Assistent" (`agent/zugang.js`), so dezent, wie Assistenten auf echten Seiten sitzen. Wer ihn bis zum Auslöser nicht benutzt hat, bekommt einmal eine Einladung: "Übrigens: Voyara hat einen Reise-Assistenten. Möchtest du ihn nutzen?" Ja oder Nein. Auslöser ist die erste geöffnete Detailseite, ersatzweise die Zeit (75 Sekunden nach Beginn der Aufgabe). Drei Klicks, sauber getrennt: **Pull** (Reiter vor der Einladung), **Push** (Einladung angenommen), **Umentschieden** (nach Nein doch der Reiter). Die Einladung kommt je Person genau einmal. Ihre Position ist eine Stellschraube (`STELLSCHRAUBEN.einladung`: unten-rechts, cursor, mitte, liste), zurzeit für alle gleich.
+2. **Freigabe.** Die erste Nachricht des Agenten ist die Frage "Wie weit darf ich für dich gehen?" mit den vier Stufen, keine vorausgewählt, kein Eingabefeld, bis gewählt ist (`Kern.freigabeFragen`). So trifft die Frage nur die, die ihn öffnen, und die Wahl ist eine Messung (Stufe, Bedenkzeit, in welcher Aufgabe). Der Regler bleibt danach sichtbar. Wer den Agenten nie öffnet, wählt nie: kein Fehler, ein Befund.
+3. **Vorlage.** Der Agent legt drei Häuser vor wie bisher. Der erste Vorschlag ist das **Partnerhaus** (siehe unten), mit festem Wortlaut statt Modellformulierung, damit die Überzeugungskraft in allen Gruppen gleich ist. Gemessen wird, wie "überzeugt" die Person ist, ohne Fragebogen: Übernahme ohne Nachprüfung (bucht ein vorgelegtes Haus, ohne eine andere Detailseite zu öffnen), Zeit von Vorlage bis Klick und bis Buchung, Detailseiten außerhalb der Vorlage, Nachrichten und "Warum?"-Klicks nach der Vorlage.
+4. **Log.** Oben rechts im Kopf der Seite ein Knopf "Agenten-Log", geschlossen (`agent/log.js`). Dahinter die nüchterne Spur: Suchmaske, Filter, Sortierung, Treffer, Vorschläge, mit Uhrzeit. Das Fenster ist so niedrig, dass man scrollen muss. Gemessen: geöffnet, Dauer, tiefste Scrollposition, Ende erreicht, und ob vor der Buchung.
+5. **Ergebnis.** Wie in Abschnitt 24: gebuchte Unterkunft gegen die berechnete beste Option, Wiederverwendung in Aufgabe 2 (die Schublade beginnt jede Aufgabe geschlossen, das Wiederaufziehen ist ein Klick).
+
+### Der Between-Faktor: Offenlegung des Partnerhauses
+
+Der Agent stellt in beiden Aufgaben ein Partnerhaus der Plattform an die erste Stelle: ein zulässiges, gut bewertetes Haus, in einer Aufgabe die beste, in der anderen die zweitbeste Option (ausgelost, `gruppe.partnerBesteIn`). Damit lässt sich beides messen: zu wenig Abzug (schlechter, trotzdem genommen) und zu viel Abzug (bestes, trotzdem abgelehnt). Das Haus wird nur vorgelegt, wenn es die Vorgaben der Person tatsächlich einhält (`partner_vorgelegt` / `partner_fehlt` im Protokoll).
+
+Wie der Agent das zu erkennen gibt, ist die ausgeloste Bedingung (`gruppe.offenlegung`, über die Adresse festlegbar: `?offenlegung=log`):
+
+| Bedingung | Was die Person sieht |
+|---|---|
+| **etikett** | Ein Chip "Partner" am Kopf des Vorschlags, wie auf Trefferlisten |
+| **log** | Nichts im Chat. Im Agenten-Log als letzte Zeile: "…: Partnerhaus von Voyara, bevorzugt gelistet (Provision)". Nur wer bis unten scrollt, sieht es |
+| **offen** | Der Agent sagt es selbst: "Nur zur Info: Für dieses Haus bekommt Voyara eine Provision. Ich halte es trotzdem für die beste Option für euch, weil …" mit Gründen aus den Vorgaben |
+
+Glaubhaft gemacht wird die Provision durch einen Satz in der Fußzeile jeder Seite ("Voyara arbeitet mit Partnerhäusern zusammen …"). Aufgelöst wird sie im Debriefing: Es gibt weder Partnerhäuser noch Provisionen, das Haus war in jedem Fall eine gute Wahl.
+
+Messwert: Partnerhaus gebucht (ja/nein), dazu die Maße aus Station 3 und 4. Ergebnis in einem Satz: "Mit Etikett buchen X Prozent das Partnerhaus, mit Selbstoffenlegung Y, mit vergrabenem Log Z." Die Log-Gruppe ist zugleich Kontrollgruppe: Wer dort nicht bis unten scrollt, hat faktisch keine Offenlegung gesehen.
+
+### Was aus dem alten Aufbau bleibt und was geht
+
+- Das Cookie-Fenster mit Freigabewahl (22) ist abgeschaltet (`freigabeFrage: "erstoeffnung"`), der Code bleibt für `freigabeFrage: "start"`.
+- Die Seitenleiste links ist durch die Schublade rechts ersetzt (`zugang: "schublade"`); `"seitenleiste"` stellt das alte Bild her.
+- Der Einstieg sagt nicht mehr "Netz von morgen" und "Aufgaben abgeben", sondern "eine neue Reiseseite im Test". Die Aufgabe erwähnt den Assistenten nicht. Beides gegen die Vermutung, der Bot sei der Zweck der Studie.
+- Zwischenfragen: neu "Bei einer echten Buchung mit meinem eigenen Geld hätte ich genauso entschieden" (z_echt), als Maß für den Nullrisiko-Bias.
+
+### Neue Spalten in der Datentabelle
+
+`gruppeOffenlegung`, `gruppePartnerBesteIn`, `gruppeEinladung`, `freigabeQuelle`, `freigabeInAufgabe`; je Aufgabe `agentGeoeffnet`, `agentGeoeffnetArt` (pull/push/umentschieden/erneut), `agentGeoeffnetS`, `einladungGezeigt/Ausloeser/Position/S/Antwort/BedenkzeitMs`, `logGeoeffnet`, `logGeoeffnetVorBuchung`, `logDauerMs`, `logScrollMax`, `logEndeErreicht`, `logScrollNoetig`, `partnerId`, `partnerRang`, `partnerVorgelegt`, `partnerFehltGrund`, `partnerGebucht`, `vorlageVorhanden`, `vorlageGebucht`, `uebernahmeOhnePruefung`, `vorlageBisKlickS`, `vorlageBisBuchungS`, `detailsAusserhalbNachVorlage`, `nachrichtenNachVorlage`, `warumNachVorlage`.
+
+### Offen
+
+- Position der Einladung als zweiter Faktor (2 x 2 mit der Offenlegung), falls die Stichprobe es trägt.
+- Reine Kontrollgruppe ohne jeden Hinweis (Log ohne die Zeile), falls der Betreuer sie will.
+- Persönliche Präferenzen vor der Aufgabe erfragen und die beste Option daraus berechnen (gegen den Vorgabe-Bias). Noch nicht gebaut.
+- Nur am Rechner getestet; die Cursor-Position der Einladung setzt eine Maus voraus.

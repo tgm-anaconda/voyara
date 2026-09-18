@@ -5,15 +5,21 @@
      hinweis        Teilnahmehinweis, Einwilligung        (start.js)
      konto          Voyara-Konto: Name und Mail
      aufgabe        Aufgabe 1 lesen
-     (cookie)       Freigabe waehlen - nur vor Aufgabe 1 (start.js)
-     arbeitet       die Seite benutzen, mit oder ohne Agent
+     arbeitet       die Seite benutzen; der Agent ist nur ueber einen
+                    Reiter erreichbar (zugang.js), nach dem Ausloeser
+                    kommt einmal die Einladung; wer ihn oeffnet, waehlt
+                    als Erstes die Freigabe (kern.js, freigabeFragen)
      zwischenfragen kurze Fragen zu dieser Aufgabe
-     aufgabe        Aufgabe 2 lesen, Seite und Agent neu
+     aufgabe        Aufgabe 2 lesen, Seite und Agent neu, Schublade zu
      arbeitet
      zwischenfragen
      fragebogen     der allgemeine Fragebogen
-     aufloesung     was untersucht wurde, Verlosung
+     aufloesung     was untersucht wurde (auch das Partnerhaus), Verlosung
      fertig
+
+   Between-Faktor: die Offenlegung des Partnerhauses (etikett | log |
+   offen), ausgelost in auslosen(). Alles andere ist fuer alle gleich
+   und wird gemessen. Konzept, Abschnitt 25.
 
    Warum ein eigenes Modul
    -------------------------------------------------------------------
@@ -60,6 +66,7 @@ const Studie = {
       phase: "hinweis",
       konto: null,
       reihenfolge,
+      gruppe: this.auslosen(reihenfolge),
       aktuelle: 0,                // Index in reihenfolge
       durchlaeufe: [],            // je Aufgabe ein Eintrag, siehe durchlaufAnlegen
       einstieg: {},               // hinweisSekunden, Freigabemessung
@@ -80,6 +87,54 @@ const Studie = {
 
   sichern() {
     try { sessionStorage.setItem(this.SCHLUESSEL, JSON.stringify(this.daten)); } catch { /* egal */ }
+  },
+
+  /* Gruppenzuweisung
+     ------------------------------------------------------------------
+     Der Between-Faktor der Erhebung ist die Offenlegung des Partnerhauses
+     (etikett | log | offen), je Person einmal ausgelost - es sei denn,
+     die Adresse legt sie fest (?offenlegung=log fuer Tests und Links).
+     Dazu wird ausgelost, in welcher der beiden Aufgaben das Partnerhaus
+     die beste Option ist; in der anderen ist es die zweitbeste. */
+  auslosen(reihenfolge) {
+    const s = typeof STELLSCHRAUBEN !== "undefined" ? STELLSCHRAUBEN : {};
+    const stufen = ["etikett", "log", "offen"];
+    const offenlegung = stufen.includes(s.offenlegung) ? s.offenlegung : stufen[Math.floor(Math.random() * stufen.length)];
+    let partnerBesteIn = null;
+    if (s.partner === "beste") partnerBesteIn = "beide";
+    else if (s.partner === "zweitbeste") partnerBesteIn = "keine";
+    else if (s.partner === "keine") partnerBesteIn = "ohne";
+    else partnerBesteIn = reihenfolge[Math.floor(Math.random() * 2)];
+    return { offenlegung, partnerBesteIn, einladung: s.einladung || null, ausgelost: Date.now() };
+  },
+
+  gruppe() {
+    if (!this.daten) this.laden();
+    if (!this.daten.gruppe) { this.daten.gruppe = this.auslosen(this.daten.reihenfolge); this.sichern(); }
+    return this.daten.gruppe;
+  },
+
+  // Das Partnerhaus der laufenden Aufgabe: die beste oder die zweitbeste
+  // zulaessige Option, je nach Auslosung. Null, wenn keins vorgesehen ist.
+  partnerhaus() {
+    const a = this.aufgabe();
+    if (!a || typeof Aufgaben === "undefined") return null;
+    const g = this.gruppe();
+    if (g.partnerBesteIn === "ohne") return null;
+    const zulaessige = Aufgaben.zulaessige(a);
+    if (zulaessige.length < 2) return null;
+    const beste = g.partnerBesteIn === "beide" || g.partnerBesteIn === a.id;
+    const wahl = beste ? zulaessige[0] : zulaessige[1];
+    return { id: wahl.id, name: wahl.name, rang: beste ? "beste" : "zweitbeste" };
+  },
+
+  // Vom Kern gerufen, wenn die Person beim ersten Oeffnen die Stufe waehlt
+  freigabeGewaehlt(stufe, messung = {}) {
+    if (!this.daten) return;
+    this.daten.einstieg.freigabe = { stufe, ...messung, aufgabe: this.aufgabe()?.id || null };
+    const d = this.durchlauf(); if (d) d.freigabeStart = stufe;
+    this.sichern();
+    this.senden("start");
   },
 
   aktiv() { return !!this.daten && this.daten.phase !== "fertig"; },
@@ -150,10 +205,13 @@ const Studie = {
         return true;
       case "arbeitet":
         this.reiterZeigen();
-        // Vor der ersten Aufgabe kommt die Einwilligung mit der
-        // Freigabewahl. Vor der zweiten nicht mehr: Die Stufe steht, und
-        // ob sie jemand aendert, ist die Messung.
-        if (!this.daten.einstieg.freigabe && this.kern) {
+        // Die Freigabestufe wird nicht mehr vorab erfragt, sondern als
+        // erste Nachricht des Agenten, wenn jemand ihn oeffnet
+        // (Kern.freigabeFragen). Wer ihn nie oeffnet, waehlt auch nie -
+        // und das ist eine Messung, keine Luecke. Die alte Einwilligung
+        // im Cookie-Stil bleibt fuer freigabeFrage = "start" erhalten.
+        if (typeof STELLSCHRAUBEN !== "undefined" && STELLSCHRAUBEN.freigabeFrage === "start"
+          && !this.daten.einstieg.freigabe && this.kern) {
           Startbildschirm.einwilligungZeigen(FREIGABE, (stufe, messung) => {
             this.daten.einstieg.freigabe = { stufe, ...messung };
             const d = this.durchlauf(); if (d) d.freigabeStart = stufe;
@@ -163,6 +221,7 @@ const Studie = {
           });
           return true;
         }
+        if (!this.daten.gesendet?.start) this.senden("start");
         return false;
       case "zwischenfragen":
         this.zwischenfragenZeigen();
@@ -192,9 +251,9 @@ const Studie = {
       <p class="einstieg-etikett">Dein Konto</p>
       <h1>Angemeldet bei Voyara</h1>
       <p class="einstieg-vorspann">
-        Wie auf jeder Buchungsseite bist du hier angemeldet. Der Assistent nutzt diese
-        Angaben, wenn er für dich bucht - so, wie es ein echter Kaufagent mit deinem
-        Profil tun würde.
+        Wie auf jeder Buchungsseite bist du hier angemeldet. Die Seite trägt diese
+        Angaben beim Buchen für dich ein, so wie es dein Profil bei einem echten
+        Anbieter tun würde.
       </p>
 
       <form class="konto-form" id="kontoForm" novalidate>
@@ -280,8 +339,8 @@ const Studie = {
         <span class="einstieg-merker-symbol">${Startbildschirm.SYMBOL.hinweis}</span>
         <span>
           Such auf Voyara eine Unterkunft, die dazu passt, und buche sie - so, wie du es
-          zu Hause tun würdest. Ob du den Assistenten nutzt und wie weit, liegt bei dir.
-          Die Aufgabe kannst du jederzeit über den Reiter <strong>"Aufgabe"</strong> am
+          zu Hause tun würdest. Es gibt kein Zeitlimit; schau dich in Ruhe um. Die
+          Aufgabe kannst du jederzeit über den Reiter <strong>"Aufgabe"</strong> am
           rechten Rand wieder öffnen.
         </span>
       </div>
@@ -295,6 +354,12 @@ const Studie = {
       this.phaseSetzen("arbeitet");
       this.sichern();
 
+      // Jede Aufgabe beginnt mit geschlossener Schublade, wie ein neuer
+      // Besuch der Seite. Ob jemand den Assistenten in Aufgabe 2 wieder
+      // aufzieht, ist die Wiederverwendung - und die braucht einen Klick.
+      try { sessionStorage.setItem("voyara_chat_offen", "0"); } catch { /* egal */ }
+      document.body.classList.remove("agent-open");
+
       // Jede Aufgabe beginnt auf der Startseite. Nach der ersten Buchung
       // stuende man sonst noch auf der Bestaetigungsseite der letzten -
       // und die Einwilligung (vor Aufgabe 1) zeigt start() nach dem Laden.
@@ -303,6 +368,9 @@ const Studie = {
       el.remove();
       document.body.classList.remove("startschirm-offen");
       this.start(this.kern);
+      // Ohne Seitenwechsel muss die Uhr fuer die Einladung hier gestellt
+      // werden - beim Laden der Seite lief noch keine Aufgabe.
+      if (typeof Zugang !== "undefined" && Zugang.stand) Zugang.einladungPruefen();
     });
   },
 
@@ -497,18 +565,25 @@ const Studie = {
       </p>
       <div class="aufloesung-text">
         <p>
-          <strong>Untersucht wurde, wie viel Entscheidungsgewalt Menschen einem
-          Kaufagenten geben</strong> - und wovon das abhängt. Der Regler "Freigabe" war
-          deshalb nicht nur eine Einstellung, sondern die zentrale Messgröße: welche Stufe
-          du zu Beginn gewählt hast, ob du sie während der Aufgaben verändert hast, und
-          in welchem Moment.
+          <strong>Untersucht wurde, wie Menschen mit einem Kaufagenten umgehen, der für
+          sie sucht und bucht</strong>: ob sie ihn überhaupt öffnen und wann, wie viel
+          sie ihm erlauben, ob sie nachsehen, was er tut, und wie sie mit seinen
+          Vorschlägen umgehen.
+        </p>
+        <p>
+          <strong>Ein Punkt war absichtlich gebaut:</strong> Der erste Vorschlag des
+          Assistenten war ein "Partnerhaus", für das Voyara angeblich eine Provision
+          bekommt. Ob und wie er das zu erkennen gab (ein Etikett, ein Satz, oder nur eine
+          Zeile ganz unten im Agenten-Log), war je Person verschieden. Wir wollten wissen,
+          welche Form der Offenlegung überhaupt ankommt. Tatsächlich gibt es weder
+          Partnerhäuser noch Provisionen; das Haus war in jedem Fall eine gute, zulässige
+          Wahl - in einer Aufgabe die beste, in der anderen die zweitbeste.
         </p>
         <p>
           Dazu kam, was du dem Assistenten von der Aufgabe erzählt hast, ob du seine
           Vorschläge nachgeprüft hast, und wie gut die gebuchte Unterkunft zu den Vorgaben
           passte. Beide Aufgaben hatten im Katalog genau eine Option, die alle Vorgaben
-          erfüllt und die genannten Wünsche am besten trifft. Das war für dich nicht
-          erkennbar, und es gab keine falsche Antwort.
+          erfüllt und die genannten Wünsche am besten trifft. Es gab keine falsche Antwort.
         </p>
         <p>
           <strong>Es wurde nichts gebucht</strong>, und die Seite ist ein Nachbau. Die
@@ -658,7 +733,12 @@ const Studie = {
       phase: d.phase,
       reihenfolge: d.reihenfolge.join("-"),
       hinweisSekunden: z(d.einstieg.hinweisSekunden),
+      gruppeOffenlegung: z(d.gruppe?.offenlegung),
+      gruppePartnerBesteIn: z(d.gruppe?.partnerBesteIn),
+      gruppeEinladung: z(d.gruppe?.einladung),
       freigabeStart: z(d.einstieg.freigabe?.stufe),
+      freigabeQuelle: z(d.einstieg.freigabe?.quelle),
+      freigabeInAufgabe: z(d.einstieg.freigabe?.aufgabe),
       freigabeBedenkzeitMs: z(d.einstieg.freigabe?.bedenkzeitMs),
       freigabeReihenfolge: z(d.einstieg.freigabe?.reihenfolge),
       freigabeErklaerungGeoeffnet: z(d.einstieg.freigabe?.erklaerungGeoeffnet),
@@ -702,6 +782,62 @@ const Studie = {
         [p + "detailsAusserhalbShortlist"]: details.filter((e) => e.shortlistVorhanden && !e.inShortlist).length,
         [p + "detailSekunden"]: verweil.reduce((s, e) => s + (e.sekunden || 0), 0),
         [p + "aufgabeErneutGeoeffnet"]: zaehle(ereignisse, "aufgabe_erneut_geoeffnet"),
+      });
+
+      /* Zugang: die drei Klicks (Pull, Push, Umentschieden) und das Log */
+      const oeffnungen = ereignisse.filter((e) => e.ereignis === "agent_geoeffnet");
+      const einladung = ereignisse.find((e) => e.ereignis === "einladung_gezeigt");
+      const antwort = ereignisse.find((e) => e.ereignis === "einladung_ja" || e.ereignis === "einladung_nein");
+      const logAuf = protokoll.filter((e) => e.ereignis === "log_geoeffnet");
+      const logZu = protokoll.filter((e) => e.ereignis === "log_geschlossen");
+      const buchungT = r.buchung?.zeit || null;
+      Object.assign(spalten, {
+        [p + "agentGeoeffnet"]: oeffnungen.length,
+        [p + "agentGeoeffnetArt"]: z(oeffnungen[0]?.art),
+        [p + "agentGeoeffnetQuelle"]: z(oeffnungen[0]?.quelle),
+        [p + "agentGeoeffnetS"]: z(oeffnungen[0]?.sekundenSeitAufgabe),
+        [p + "einladungGezeigt"]: einladung ? 1 : 0,
+        [p + "einladungAusloeser"]: z(einladung?.ausloeser),
+        [p + "einladungPosition"]: z(einladung?.position),
+        [p + "einladungS"]: z(einladung?.sekundenSeitAufgabe),
+        [p + "einladungAntwort"]: antwort ? antwort.ereignis.replace("einladung_", "") : "",
+        [p + "einladungBedenkzeitMs"]: z(antwort?.bedenkzeitMs),
+        [p + "logGeoeffnet"]: logAuf.length,
+        [p + "logGeoeffnetVorBuchung"]: buchungT ? logAuf.filter((e) => e.t < buchungT).length : logAuf.length,
+        [p + "logDauerMs"]: logZu.reduce((s, e) => s + (e.dauerMs || 0), 0),
+        [p + "logScrollMax"]: logZu.length ? Math.max(...logZu.map((e) => e.scrollMax || 0)) : "",
+        [p + "logEndeErreicht"]: logZu.length ? (logZu.some((e) => e.endeErreicht) ? 1 : 0) : "",
+        [p + "logScrollNoetig"]: logAuf.length ? (logAuf.some((e) => e.scrollNoetig) ? 1 : 0) : "",
+      });
+
+      /* Partnerhaus und Vorlage: wurde es vorgelegt, wurde es gebucht,
+         und wie "ueberzeugt" war die Person - schnell, ohne
+         Nachpruefung, mit Rueckfragen? */
+      const vorgelegt = protokoll.find((e) => e.ereignis === "partner_vorgelegt");
+      const fehlt = protokoll.find((e) => e.ereignis === "partner_fehlt");
+      const vorlage = protokoll.find((e) => e.ereignis === "shortlist" && e.runde === 0);
+      const vorlageT = vorlage?.t || null;
+      const vorlageIds = vorlage?.ids || [];
+      const auswahl = protokoll.find((e) => e.ereignis === "auswahl" && vorlageT && e.t >= vorlageT);
+      const detailsNach = vorlageT ? details.filter((e) => e.t >= vorlageT) : [];
+      const ersterKlickNach = [auswahl?.t, ...detailsNach.filter((e) => e.inShortlist).map((e) => e.t)].filter(Boolean).sort()[0] || null;
+      const userNach = vorlageT ? (r.verlauf || []).filter((n) => n.rolle === "user" && n.zeit >= vorlageT).length : 0;
+      const partnerId = vorgelegt?.id || fehlt?.id || null;
+      Object.assign(spalten, {
+        [p + "partnerId"]: z(partnerId),
+        [p + "partnerRang"]: z(vorgelegt?.rang || fehlt?.rang),
+        [p + "partnerVorgelegt"]: vorgelegt ? 1 : (fehlt ? 0 : ""),
+        [p + "partnerFehltGrund"]: z(fehlt?.grund),
+        [p + "partnerGebucht"]: r.buchung && partnerId ? (r.buchung.id === partnerId ? 1 : 0) : "",
+        [p + "vorlageVorhanden"]: vorlage ? 1 : 0,
+        [p + "vorlageGebucht"]: r.buchung && vorlage ? (vorlageIds.includes(r.buchung.id) ? 1 : 0) : "",
+        [p + "uebernahmeOhnePruefung"]: r.buchung && vorlage
+          ? (vorlageIds.includes(r.buchung.id) && !detailsNach.some((e) => !e.inShortlist) ? 1 : 0) : "",
+        [p + "vorlageBisKlickS"]: vorlageT && ersterKlickNach ? Math.round((ersterKlickNach - vorlageT) / 1000) : "",
+        [p + "vorlageBisBuchungS"]: vorlageT && buchungT ? Math.round((buchungT - vorlageT) / 1000) : "",
+        [p + "detailsAusserhalbNachVorlage"]: detailsNach.filter((e) => !e.inShortlist).length,
+        [p + "nachrichtenNachVorlage"]: userNach,
+        [p + "warumNachVorlage"]: protokoll.filter((e) => e.ereignis === "warum_gefragt" && vorlageT && e.t >= vorlageT).length,
       });
       for (const [k, v] of Object.entries(r.zwischenfragen || {})) spalten[p + k] = z(v);
     });

@@ -25,6 +25,7 @@ const ZWISCHENFRAGEN = [
   { id: "z_verstanden", text: "Der Assistent hat verstanden, worauf es mir ankam.", skala: SKALA_ZUSTIMMUNG },
   { id: "z_hineinversetzt", text: "Ich konnte mich gut in die Situation der Aufgabe hineinversetzen.", skala: SKALA_ZUSTIMMUNG },
   { id: "z_anstrengung", text: "Wie anstrengend war die Aufgabe für dich?", skala: SKALA_ANSTRENGUNG },
+  { id: "z_echt", text: "Bei einer echten Buchung mit meinem eigenen Geld hätte ich genauso entschieden.", skala: SKALA_ZUSTIMMUNG },
   { id: "z_offen", text: "Gab es einen Moment, in dem du dem Assistenten nicht mehr vertraut hast? Was war passiert?", art: "text", optional: true },
 ];
 

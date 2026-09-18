@@ -1818,3 +1818,142 @@ body.startschirm-offen { overflow: hidden; }
   background: var(--brand-900); color: #fff; padding: 11px 18px; border-radius: 100px;
   font-size: .84rem; box-shadow: 0 8px 24px rgba(0,0,0,.25); max-width: calc(100vw - 32px); text-align: center;
 }
+
+/* =================================================================
+   26. Erhebung, Stand 18.09.2026: Schublade, Reiter, Einladung,
+       Freigabe-Karte, Agenten-Log, Etikett
+   ================================================================= */
+
+/* Schublade: der Agent liegt rechts als ausziehbares Fach, zu Beginn zu.
+   Offen schiebt er die Seite nach links, statt sie zu ueberdecken - so
+   bleibt sichtbar, worauf er gerade klickt. */
+body.agent-schublade .app-shell { grid-template-columns: minmax(0, 1fr); }
+body.agent-schublade .app-main { transition: margin-right .28s ease; }
+body.agent-schublade .agent-rail {
+  position: fixed; top: 0; right: 0; left: auto; bottom: 0;
+  width: 380px; max-width: 100vw; height: 100vh; height: 100dvh;
+  border-right: none; border-left: 1px solid rgba(0,0,0,.28);
+  box-shadow: -3px 0 18px rgba(16,33,30,.16);
+  transform: translateX(104%); transition: transform .28s ease;
+  z-index: 660; border-radius: 0; overflow: hidden;
+}
+body.agent-schublade.agent-open .agent-rail { transform: none; }
+@media (min-width: 1041px) {
+  body.agent-schublade.agent-open .app-main { margin-right: 380px; }
+}
+body.agent-schublade .agent-rail-inner { height: 100%; position: static; }
+body.agent-schublade .agent-head { cursor: default; padding: 15px 16px 13px; align-items: center; background: var(--chat-head); }
+body.agent-schublade .agent-head .agent-avatar { width: 34px; height: 34px; }
+body.agent-schublade .agent-status { display: block; }
+body.agent-schublade .agent-vorschau, body.agent-schublade .agent-griff, body.agent-schublade .agent-ungelesen { display: none; }
+body.agent-schublade .agent-head .icon-btn svg { transform: none; }
+body.agent-schublade .agent-messages { display: flex; }
+body.agent-schublade .agent-foot { display: block; }
+body.agent-schublade .agent-input { padding-bottom: 12px; }
+/* Der Name im Kopf: nicht "Chat", sondern das, was der Reiter verspricht */
+body.agent-schublade .agent-name::after { content: "Reise-Assistent"; }
+body.agent-schublade .agent-name { font-size: 0; }
+body.agent-schublade .agent-name::after { font-size: .92rem; }
+
+/* Reiter am rechten Rand: schmal, dezent, mit Pfeil nach links */
+.agent-reiter {
+  position: fixed; right: 0; top: 58%; z-index: 640;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 12px 7px 12px 6px; border: 1px solid var(--line-strong); border-right: none;
+  border-radius: 10px 0 0 10px; background: #fff; color: var(--ink-700);
+  cursor: pointer; font: inherit; font-size: .7rem; font-weight: 600; letter-spacing: .04em;
+  box-shadow: -2px 0 10px rgba(16,33,30,.12);
+  transition: background .15s ease, color .15s ease, padding .15s ease;
+}
+.agent-reiter:hover { background: var(--brand-50); color: var(--brand-800); padding-right: 10px; }
+.agent-reiter-pfeil { display: grid; place-items: center; color: var(--brand-700); }
+.agent-reiter-text { writing-mode: vertical-rl; transform: rotate(180deg); }
+.agent-reiter.hat-neues::before {
+  content: ""; position: absolute; top: 6px; left: 6px; width: 8px; height: 8px;
+  border-radius: 50%; background: var(--accent-500); animation: reiterPuls 1.6s ease-in-out infinite;
+}
+@keyframes reiterPuls { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.5); opacity: .55; } }
+body.agent-open .agent-reiter, body.startschirm-offen .agent-reiter { display: none; }
+/* Der Aufgaben-Reiter rueckt nach oben, damit beide Platz haben */
+body.agent-schublade .aufgabe-reiter { top: 30%; }
+body.agent-schublade.agent-open .aufgabe-reiter { right: 380px; }
+@media (max-width: 1040px) { body.agent-schublade.agent-open .aufgabe-reiter { display: none; } }
+
+/* Freigabe-Karte: die erste Nachricht des Agenten ist eine Frage.
+   Bis sie beantwortet ist, gibt es weder Regler noch Eingabefeld. */
+body.agent-ohne-freigabe #agentFreigabe,
+body.agent-ohne-freigabe #agentForm,
+body.agent-ohne-freigabe #agentSuggestions,
+body.agent-ohne-freigabe #agentEckdaten { display: none !important; }
+.freigabe-karte { max-width: 100%; }
+.freigabe-karte p { margin: 0 0 10px; }
+.freigabe-karte-optionen { display: grid; gap: 7px; }
+.freigabe-karte-optionen button {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
+  width: 100%; padding: 9px 12px; border-radius: 10px; text-align: left;
+  border: 1px solid var(--brand-100); background: #fff; color: var(--ink-900);
+  font: inherit; font-size: .85rem; cursor: pointer;
+  transition: border-color .12s ease, background .12s ease;
+}
+.freigabe-karte-optionen button b { font-weight: 700; }
+.freigabe-karte-optionen button span { font-size: .76rem; color: var(--ink-500); }
+.freigabe-karte-optionen button:hover { border-color: var(--brand-500); background: var(--brand-50); }
+
+/* Etikett an einer Nachricht ("Partner") */
+.msg.hat-etikett { padding-top: 8px; }
+.msg-etikett {
+  display: inline-block; margin: 0 0 6px; padding: 1px 7px; border-radius: 5px;
+  background: #f3f4f6; color: #5b6573; border: 1px solid #dfe3e8;
+  font-size: .66rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
+}
+.msg.hat-etikett::before { content: ""; display: block; }
+
+/* Einladung: "Uebrigens: Voyara hat einen Reise-Assistenten." */
+.einladung { position: fixed; z-index: 680; opacity: 0; transition: opacity .22s ease, transform .22s ease; }
+.einladung.sichtbar { opacity: 1; }
+.einladung-karte {
+  width: 340px; max-width: calc(100vw - 24px); padding: 14px 16px 14px;
+  background: #fff; border: 1px solid var(--line-strong); border-radius: 14px;
+  box-shadow: 0 14px 40px rgba(16,33,30,.22);
+}
+.einladung-kopf { display: flex; align-items: flex-start; gap: 10px; font-size: .92rem; line-height: 1.35; }
+.einladung-symbol {
+  flex-shrink: 0; width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center;
+  background: var(--brand-50); color: var(--brand-700);
+}
+.einladung-karte p { margin: 8px 0 12px; font-size: .86rem; color: var(--ink-700); line-height: 1.45; }
+.einladung-knoepfe { display: flex; gap: 8px; }
+.einladung-knoepfe button {
+  flex: 1; padding: 9px 10px; border-radius: 9px; font: inherit; font-size: .86rem; font-weight: 600; cursor: pointer;
+}
+.einladung-ja { background: var(--brand-700); color: #fff; border: 1px solid var(--brand-700); }
+.einladung-ja:hover { background: var(--brand-800); }
+.einladung-nein { background: #fff; color: var(--ink-700); border: 1px solid var(--line-strong); }
+.einladung-nein:hover { background: var(--brand-50); }
+.einladung-unten-rechts { right: 18px; bottom: 18px; transform: translateY(8px); }
+.einladung-unten-rechts.sichtbar { transform: none; }
+.einladung-cursor { inset: 0; pointer-events: none; }
+.einladung-cursor .einladung-karte { position: absolute; pointer-events: auto; }
+.einladung-mitte { inset: 0; display: grid; place-items: center; background: rgba(16,33,30,.35); }
+.einladung-liste { position: static; margin: 0 0 14px; opacity: 1; }
+.einladung-liste .einladung-karte { width: 100%; box-shadow: none; }
+
+/* Agenten-Log: Knopf oben rechts im Kopf, Fenster darunter, niedrig
+   genug, dass man scrollen muss */
+.header-log.hat-neues svg { color: var(--brand-700); }
+.log-panel {
+  position: fixed; top: 64px; right: 16px; z-index: 690; width: 380px; max-width: calc(100vw - 24px);
+  background: #fff; border: 1px solid var(--line-strong); border-radius: 12px;
+  box-shadow: 0 14px 40px rgba(16,33,30,.2);
+}
+.log-kopf { display: flex; align-items: center; justify-content: space-between; padding: 10px 8px 10px 14px; border-bottom: 1px solid var(--line); font-size: .86rem; }
+.log-liste { margin: 0; padding: 6px 0; list-style: none; max-height: 210px; overflow-y: auto; font-size: .8rem; }
+.log-zeile { display: grid; grid-template-columns: 58px 1fr; gap: 8px; padding: 5px 14px; line-height: 1.4; }
+.log-zeile time { color: var(--ink-500); font-variant-numeric: tabular-nums; font-size: .72rem; padding-top: 2px; }
+.log-zeile.log-ergebnis span { color: var(--ink-700); }
+.log-zeile.log-auftrag span { font-weight: 600; }
+.log-zeile.log-hinweis span { color: var(--ink-500); font-size: .74rem; }
+.log-leer { padding: 12px 14px; color: var(--ink-500); }
+@media (max-width: 720px) { .log-panel { top: 58px; right: 8px; } }
+
+.footer-partner { font-size: .72rem; color: rgba(255,255,255,.5); margin-top: 8px; }

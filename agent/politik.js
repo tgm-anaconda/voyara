@@ -36,7 +36,9 @@ const Politik = {
       // Vorgabewert und keine Aussage der Person.
       artGenannt: /ferienwohnung|apartment|wohnung|ferienhaus|hütte|huette|chalet|hotel/.test(t),
       // "mit meiner Familie" ohne Zahl: dann muss nachgefragt werden
-      familieGenannt: /famili/.test(t),
+      // "kein Familienresort" oder "ohne Familien" ist keine Familie -
+      // die Verneinung davor gilt.
+      familieGenannt: /famili/.test(t) && !/\b(kein|keine|keinen|ohne|nicht)\s+(\w+\s+)?famili/.test(t),
       zielId: null,
       erwachsene: null,
       kinder: null,
@@ -76,7 +78,7 @@ const Politik = {
     // ist. Das war der Unterschied, an dem es scheiterte: Auf "wir sind
     // zu dritt" machte der Agent zwei Erwachsene und ein Kind daraus -
     // ebenso gut koennte es ein Elternteil mit zwei Kindern sein.
-    const erwGenau = t.match(new RegExp(`(${ZAHLEN})\\s+erwachsene[nr]?`));
+    const erwGenau = t.match(new RegExp(`\\b(${ZAHLEN})\\s+erwachsene[nr]?`));
     const gesamt = t.match(new RegExp(`(${ZAHLEN})\\s+(?:personen|leute|pers\\.?)`));
     if (erwGenau) a.erwachsene = Math.min(6, zahl(erwGenau[1]) ?? 2);
     else if (gesamt) a.personen = Math.min(8, zahl(gesamt[1]) ?? 2);
@@ -91,10 +93,14 @@ const Politik = {
     // Grund, warum der Agent ungefragt von zwei Erwachsenen und zwei
     // Kindern ausging und danach gar nicht mehr nachfragte.
 
-    const kin = t.match(new RegExp(`(${ZAHLEN})\\s+kind`));
-    if (kin) a.kinder = Math.min(4, zahl(kin[1]) ?? 1);
-    else if (/\bein kind\b/.test(t)) a.kinder = 1;
-    else if (/ohne kinder|keine kinder/.test(t)) a.kinder = 0;
+    // Verneinung zuerst: "keine Kinder" enthaelt "eine Kinder", und der
+    // Zahlenausdruck haette daraus ein Kind gemacht.
+    if (/ohne kind|keine kinder|kein kind|keine kids/.test(t)) a.kinder = 0;
+    else {
+      const kin = t.match(new RegExp(`\\b(${ZAHLEN})\\s+kind`));
+      if (kin) a.kinder = Math.min(4, zahl(kin[1]) ?? 1);
+      else if (/\bein kind\b/.test(t)) a.kinder = 1;
+    }
 
     for (const [name, nr] of Object.entries(this.MONATE)) {
       if (t.includes(name)) { a.monat = nr; break; }
@@ -595,6 +601,27 @@ const Politik = {
     return teile.join(" ");
   },
 
+  /* Begruendung fuer den Partnervorschlag in der offenen Bedingung.
+     Nur Dinge, die am Katalog pruefbar sind und die die Person genannt
+     hat - der Agent begruendet mit den Vorgaben, nicht mit Werbung. */
+  partnerGruende(k, profil) {
+    const item = k.item || {};
+    const gruende = [];
+    const kriterien = (profil.kriterien || []).map((x) => this.kriterium(x.id)).filter(Boolean);
+    const ausstattung = new Set(item.amenities || []);
+    const erfuellt = kriterien
+      .filter((kr) => kr.filter?.ausstattung && ausstattung.has(kr.filter.ausstattung))
+      .map((kr) => kr.label.toLowerCase());
+    if (erfuellt.length) gruende.push(`${this.aufzaehlen(erfuellt)} hat`);
+    if (profil.maxStrand != null && item.distanceToBeach != null && item.distanceToBeach <= profil.maxStrand) {
+      gruende.push(`nur ${item.distanceToBeach < 1 ? `${Math.round(item.distanceToBeach * 1000)} m` : `${item.distanceToBeach} km`} vom Strand liegt`);
+    }
+    if (profil.maxPreis && k.preis && k.preis <= profil.maxPreis) gruende.push("im Budget bleibt");
+    if (item.rating >= 4.4) gruende.push(`mit ${String(item.rating).replace(".", ",")} sehr gut bewertet ist`);
+    if (!gruende.length) gruende.push("zu allem passt, was du mir genannt hast");
+    return `es ${this.aufzaehlen(gruende)}`;
+  },
+
   aufzaehlen(liste) {
     if (!liste || !liste.length) return "";
     if (liste.length === 1) return liste[0];
@@ -915,6 +942,13 @@ const Politik = {
     // Nachrichten spaeter "wir sind zu dritt" ergibt sonst wieder drei
     // Erwachsene, und die Frage nach den Kindern faellt aus.
     this.gesamtzahlAufloesen(profil, t);
+    // "Zwei Erwachsene" ausdruecklich, und im ganzen Gespraech kein Wort
+    // von Kindern oder Familie: dann reisen keine Kinder mit. Nachzufragen
+    // "Wer reist mit?" waere hier keine Sorgfalt, sondern Ueberhoeren.
+    if (profil.erwachsene != null && profil.kinder == null && !profil.familieGenannt
+      && /erwachsen/.test(t) && !/kind|kids|klein|jahre? alt|sohn|tochter/.test(t)) {
+      profil.kinder = 0;
+    }
     if (a.monat != null) profil.monat = a.monat;
     if (a.naechte != null) profil.naechte = a.naechte;
     if (a.verpflegung) profil.verpflegung = a.verpflegung;
