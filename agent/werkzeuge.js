@@ -412,6 +412,20 @@ const Werkzeuge = {
 
   // Hat diese Seite ueberhaupt eine Suchmaske? Auf der Detail-, Buchungs-
   // und Merkzettelseite gibt es keine.
+  // Regionen mit Trefferzahl aus der Filterspalte - fuer die Etappe
+  // "wo gibt es in dem Zeitraum etwas", bevor das Ziel feststeht.
+  zieleZaehlen() {
+    if (this.seite() !== "results") return { ok: false, text: "Keine Trefferliste offen.", daten: { regionen: [] } };
+    const regionen = [...document.querySelectorAll(".js-ziel")].map((el) => {
+      const zeile = el.closest("label");
+      const name = (zeile?.querySelector("span")?.textContent || "").replace(/·.*$/, "").trim();
+      const anzahl = parseInt(zeile?.querySelector(".count")?.textContent || "0", 10) || 0;
+      const saison = /Saison/.test(zeile?.textContent || "");
+      return { id: el.value, name, anzahl, saison };
+    }).filter((r) => r.id);
+    return { ok: true, text: `${regionen.length} Regionen gezählt.`, daten: { regionen } };
+  },
+
   hatSuchmaske() {
     return !!this.finde("#sbForm");
   },

@@ -645,6 +645,104 @@ const Politik = {
     return `es ${this.aufzaehlen(gruende)}`;
   },
 
+  /* Absicht einer Nachricht ohne Modell - grob, aber besser als der
+     Phasenverteiler allein. Das Modell (Modell.einordnen) ist die
+     Regel, das hier der Ersatz. */
+  ASPEKT_WOERTER: {
+    sauberkeit: /sauber|hygien|schmutz/, essen: /essen|küche|kueche|restaurant|frühstück|fruehstueck|kulinar|buffet/,
+    lage: /\blage\b|zentral|gelegen/, service: /service|personal|freundlich/, ruhe: /ruhig|ruhe|leise|laut/,
+    preis: /preis|kost|günstig|guenstig|teuer|budget/, pool: /pool/, wellness: /wellness|spa\b|sauna/,
+    strand: /strand|meer|beach/, verpflegung: /verpflegung|halbpension|vollpension|all.inclusive|frühstück|fruehstueck/,
+    sterne: /sterne/, bewertung: /bewertung|note|rezension/, zimmer: /zimmer|suite/, familie: /famili|kinderfreundlich/,
+    kinderclub: /kinderclub|kids ?club|betreuung|animation/,
+  },
+  aspekteAusText(text) {
+    const t = String(text).toLowerCase();
+    return Object.entries(this.ASPEKT_WOERTER).filter(([, re]) => re.test(t)).map(([id]) => id);
+  },
+  einordnenLokal(text, kontext = {}) {
+    const t = String(text).toLowerCase().trim();
+    const aspekte = this.aspekteAusText(t);
+    let absicht = "antwort";
+    if (/vergleich|unterschied|welches (ist|hat|schneidet)|besser bei|wie schneiden|gegenüber|gegenueber/.test(t)) absicht = "vergleich";
+    else if (/merk|vormerk|speicher/.test(t)) absicht = "merken";
+    else if (/buch|reservier|nehmen wir|nimm\b/.test(t)) absicht = "buchen";
+    else if (/zurück|zurueck|andere vorschl|nochmal die auswahl|zur auswahl/.test(t)) absicht = "zurueck";
+    else if (/^(neue suche|von vorn|neu anfangen|andere reise)/.test(t)) absicht = "neu";
+    else if (/^(mach weiter|weiter|ok|okay|ja)$/.test(t)) absicht = "weiter";
+    else if (/\?$|^(was|wie|wieso|warum|welche|wer|gibt es|hast du|habt ihr|kannst du|kann man|gibts)\b/.test(t)) absicht = "frage";
+    else if ((kontext.haeuser || []).length && /günstiger|guenstiger|billiger|ruhiger|näher|naeher|lieber|mehr |weniger |mindestens|höchstens|hoechstens/.test(t)) absicht = "nachschaerfen";
+    else if (/^(hallo|hi|danke|dankeschön|super|toll)\b/.test(t)) absicht = "smalltalk";
+    let haus = null;
+    const nummer = t.match(/^(?:nummer |das |die |nr\.? ?)?([123])\b/);
+    if (nummer) haus = nummer[1];
+    return { absicht, aspekte, haus, alleHaeuser: /alle|beide|drei/.test(t), quelle: "lokal" };
+  },
+
+  /* Vergleichsfakten fuer die vorgelegten Haeuser: je Haus die Punkte,
+     nach denen gefragt wurde, mit Zahlen aus Katalog und Bewertungen.
+     Was sich nicht beantworten laesst, steht als null darin - das
+     Modell soll dann sagen, dass es dazu nichts hat. */
+  vergleichsfakten(kandidaten, aspekte, profil = {}) {
+    const alle = aspekte && aspekte.length ? aspekte : ["bewertung", "preis"];
+    return kandidaten.map((k, i) => {
+      const it = k.item || {};
+      const bilanz = typeof aspektbilanz === "function" ? (aspektbilanz(it, 400) || []) : [];
+      const eintrag = (id) => bilanz.find((a) => a.id === id) || null;
+      const punkte = {};
+      for (const a of alle) {
+        switch (a) {
+          case "sauberkeit": case "essen": case "lage": case "service": case "ruhe": case "preis": {
+            const e = eintrag(a);
+            punkte[a] = e ? { prozentPositiv: Math.round(e.anteilPositiv * 100), erwaehnungen: e.erwaehnungen,
+              teilnote: it.ratingBreakdown?.[a] ?? null } : { teilnote: it.ratingBreakdown?.[a] ?? null };
+            if (a === "preis") punkte[a].proNacht = k.preis;
+            break;
+          }
+          case "pool": punkte.pool = (it.amenities || []).includes("pool"); break;
+          case "wellness": punkte.wellness = (it.amenities || []).includes("wellness") || (it.amenities || []).includes("spa"); break;
+          case "kinderclub": punkte.kinderclub = (it.amenities || []).includes("kidsClub"); break;
+          case "familie": punkte.familienfreundlich = (it.amenities || []).includes("familyFriendly"); break;
+          case "strand": punkte.meterZumStrand = it.distanceToBeach != null ? Math.round(it.distanceToBeach * 1000) : null; break;
+          case "verpflegung": punkte.verpflegung = (it.boards || []).map((b) => `${typeof BOARD_LABELS !== "undefined" ? BOARD_LABELS[b.key] || b.key : b.key}${b.priceDelta ? ` (+${b.priceDelta} €/Nacht)` : ""}`); break;
+          case "sterne": punkte.sterne = it.stars ?? null; break;
+          case "bewertung": punkte.bewertung = { note: it.rating, anzahl: it.reviewCount }; break;
+          case "zimmer": punkte.zimmer = (it.rooms || []).map((r) => `${r.name || r.key}: bis ${r.maxGuests} Pers.${r.priceDelta ? `, +${r.priceDelta} €` : ""}`); break;
+        }
+      }
+      return { nummer: i + 1, name: it.name, ort: it.location, preisProNacht: k.preis, note: it.rating, ...punkte };
+    });
+  },
+
+  // Vergleich ohne Modell: je Punkt die Werte der Haeuser und das beste
+  vergleichssatz(fakten, aspekte) {
+    const saetze = [];
+    const LABEL = { sauberkeit: "Sauberkeit", essen: "Essen", lage: "Lage", service: "Service", ruhe: "Ruhe", preis: "Preis-Leistung" };
+    for (const a of aspekte) {
+      if (LABEL[a]) {
+        const werte = fakten.filter((f) => f[a]?.prozentPositiv != null);
+        if (!werte.length) { saetze.push(`Zu ${LABEL[a]} habe ich keine Zahlen.`); continue; }
+        const best = [...werte].sort((x, y) => y[a].prozentPositiv - x[a].prozentPositiv)[0];
+        saetze.push(`${LABEL[a]}: ${werte.map((f) => `${f.name} ${f[a].prozentPositiv} % positiv`).join(", ")}. Am besten ${best.name}.`);
+      } else if (a === "strand") {
+        const werte = fakten.filter((f) => f.meterZumStrand != null);
+        if (werte.length) saetze.push(`Strand: ${werte.map((f) => `${f.name} ${f.meterZumStrand} m`).join(", ")}.`);
+      } else if (a === "verpflegung") {
+        saetze.push(`Verpflegung: ${fakten.map((f) => `${f.name}: ${(f.verpflegung || []).join(", ") || "keine Angabe"}`).join("; ")}.`);
+      } else if (a === "preis") {
+        saetze.push(`Preis: ${fakten.map((f) => `${f.name} ${f.preisProNacht} €`).join(", ")} pro Nacht.`);
+      } else if (a === "bewertung") {
+        saetze.push(`Bewertung: ${fakten.map((f) => `${f.name} ${String(f.note).replace(".", ",")}`).join(", ")}.`);
+      } else if (a === "sterne") {
+        saetze.push(`Sterne: ${fakten.map((f) => `${f.name} ${f.sterne ?? "-"}`).join(", ")}.`);
+      } else if (["pool", "wellness", "kinderclub"].includes(a)) {
+        const key = a;
+        saetze.push(`${a.charAt(0).toUpperCase() + a.slice(1)}: ${fakten.map((f) => `${f.name} ${f[key] ? "ja" : "nein"}`).join(", ")}.`);
+      }
+    }
+    return saetze.length ? `${saetze.join(" ")} Welches soll ich mir genauer ansehen?` : "Dazu habe ich gerade keine Zahlen. Welches Haus soll ich mir genauer ansehen?";
+  },
+
   /* Ein Haus im Text erkennen, auch mit Tippfehlern.
      ------------------------------------------------------------------
      "Gibt es die Villa Figuera?" meint die Villa Figueira. Verglichen
@@ -807,18 +905,26 @@ const Politik = {
 
   PFLICHTFRAGEN: [
     {
-      // Die wichtigste Frage ueberhaupt, und sie fehlte: Ohne Ziel gibt
-      // es nichts zu suchen. Bisher kam sie nur zufaellig zustande, weil
-      // die Person das Ziel von sich aus nannte.
-      id: "ziel",
-      frage: "Wohin soll es gehen?",
-      braucht: () => "Wohin die Reise gehen soll. Ein Land, eine Region oder eine Insel reicht. Wenn die Person Kinder erwaehnt hat, darfst du auch fragen, ob die schon einen Wunsch haben.",
-      chips: ["Mallorca", "Kreta", "Tirol", "Ans Meer"],
-      ueberspringen: (p) => p.zielId != null,
+      id: "zeitraum",
+      frage: "Wann soll es losgehen, und wie lange? Ein Monat und die Zahl der Nächte reichen mir.",
+      braucht: (p) => {
+        if (p.monat != null && p.naechte == null) return "Wie viele Naechte die Reise dauern soll. Der Monat ist schon bekannt.";
+        if (p.monat == null && p.naechte != null) return "In welchem Monat die Reise sein soll. Ein Monat genuegt, ein genaues Datum brauchst du nicht.";
+        return "Wann die Reise sein soll und wie lange - ein Monat und die Zahl der Naechte. Ein genaues Datum brauchst du nicht.";
+      },
+      chips: (p) => p.monat != null
+        ? ["3 Nächte", "4 Nächte", "Eine Woche", "Zwei Wochen"]
+        : ["Eine Woche im August", "4 Nächte im Oktober", "Ein Wochenende im Mai", "Zwei Wochen im Juli"],
+      ueberspringen: (p) => p.monat != null && p.naechte != null,
       auswerten(text, p) {
-        Politik.uebernehmen(text, p);
-        if (p.zielId && typeof ZIEL_NACH_ID !== "undefined") return ZIEL_NACH_ID[p.zielId]?.name;
-        return null;   // der Kern klaert Reiseart oder unbekannten Ort
+        Politik.uebernehmen(text, p, { kriterien: false });
+        const teile = [];
+        if (p.monat) {
+          const name = Object.keys(Politik.MONATE).find((m) => Politik.MONATE[m] === p.monat && m.length > 3);
+          if (name) teile.push(name.charAt(0).toUpperCase() + name.slice(1));
+        }
+        if (p.naechte) teile.push(`${p.naechte} Nächte`);
+        return teile.length ? teile.join(", ") : null;
       },
     },
     {
@@ -842,10 +948,10 @@ const Politik = {
       },
       braucht: (p) => {
         if (p.personen != null && p.erwachsene == null) {
-          return `Wie sich die ${p.personen} Personen aufteilen. Nenn die moeglichen `
-            + `Aufteilungen ausdruecklich und lass die Person waehlen, statt eine `
-            + `anzunehmen: ${Politik.aufteilungen(p.personen).join(", oder ")}. `
-            + `Rate nicht.`;
+          return `Die Person hat nur die Gesamtzahl genannt (${p.personen}). Du weisst nicht, `
+            + `ob Kinder dabei sind. Frag kurz und natuerlich, ob es ${p.personen} Erwachsene `
+            + `sind oder Kinder dabei sind - und nenne die Moeglichkeiten: `
+            + `${Politik.aufteilungen(p.personen).join(", oder ")}. Nimm nichts an.`;
         }
         if (p.familieGenannt) {
           return "Wie viele Menschen mitreisen. Die Person hat von ihrer Familie "
@@ -877,26 +983,18 @@ const Politik = {
       },
     },
     {
-      id: "zeitraum",
-      frage: "Wann soll es losgehen, und wie lange? Ein Monat und die Zahl der Nächte reichen mir.",
-      braucht: (p) => {
-        if (p.monat != null && p.naechte == null) return "Wie viele Naechte die Reise dauern soll. Der Monat ist schon bekannt.";
-        if (p.monat == null && p.naechte != null) return "In welchem Monat die Reise sein soll. Ein Monat genuegt, ein genaues Datum brauchst du nicht.";
-        return "Wann die Reise sein soll und wie lange - ein Monat und die Zahl der Naechte. Ein genaues Datum brauchst du nicht.";
-      },
-      chips: (p) => p.monat != null
-        ? ["3 Nächte", "4 Nächte", "Eine Woche", "Zwei Wochen"]
-        : ["Eine Woche im August", "4 Nächte im Oktober", "Ein Wochenende im Mai", "Zwei Wochen im Juli"],
-      ueberspringen: (p) => p.monat != null && p.naechte != null,
+      // Die wichtigste Frage ueberhaupt, und sie fehlte: Ohne Ziel gibt
+      // es nichts zu suchen. Bisher kam sie nur zufaellig zustande, weil
+      // die Person das Ziel von sich aus nannte.
+      id: "ziel",
+      frage: "Wohin soll es gehen?",
+      braucht: () => "Wohin die Reise gehen soll. Ein Land, eine Region oder eine Insel reicht. Wenn die Person Kinder erwaehnt hat, darfst du auch fragen, ob die schon einen Wunsch haben.",
+      chips: ["Mallorca", "Kreta", "Tirol", "Ans Meer"],
+      ueberspringen: (p) => p.zielId != null,
       auswerten(text, p) {
-        Politik.uebernehmen(text, p, { kriterien: false });
-        const teile = [];
-        if (p.monat) {
-          const name = Object.keys(Politik.MONATE).find((m) => Politik.MONATE[m] === p.monat && m.length > 3);
-          if (name) teile.push(name.charAt(0).toUpperCase() + name.slice(1));
-        }
-        if (p.naechte) teile.push(`${p.naechte} Nächte`);
-        return teile.length ? teile.join(", ") : null;
+        Politik.uebernehmen(text, p);
+        if (p.zielId && typeof ZIEL_NACH_ID !== "undefined") return ZIEL_NACH_ID[p.zielId]?.name;
+        return null;   // der Kern klaert Reiseart oder unbekannten Ort
       },
     },
     {
@@ -1010,7 +1108,12 @@ const Politik = {
   gesamtzahlAufloesen(profil, text = "") {
     const kindImSatz = /kind|kids|klein|jahre? alt|sohn|tochter/.test(String(text).toLowerCase());
     if (kindImSatz) profil.familieGenannt = true;
-    if (profil.personen != null && profil.erwachsene == null && !profil.familieGenannt && !kindImSatz) {
+    // Nur "allein" und "zu zweit" werden aufgeloest (ein bzw. zwei
+    // Erwachsene). Ab drei Personen ist nichts klar - "zu viert" kann
+    // vier Erwachsene sein oder zwei mit zwei Kindern - und der Agent
+    // fragt nach der Aufteilung, statt sie anzunehmen.
+    if (profil.personen != null && profil.erwachsene == null && !profil.familieGenannt && !kindImSatz
+      && profil.personen <= 2) {
       profil.erwachsene = profil.personen;
       profil.kinder = 0;
     }

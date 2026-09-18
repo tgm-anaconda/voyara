@@ -769,6 +769,16 @@ const Kern = {
       if (thema) {
         this.lauf.profil.thema = thema.id;
         this.lauf.zielAuswahl = thema.ziele;
+        // Etappen: Erst wann und wie viele, dann sieht der Agent nach,
+        // was es in dem Zeitraum gibt, und stellt die Regionen mit
+        // Anzahl zur Wahl. Die Reiseart ist gemerkt, die Frage nach dem
+        // Ort kommt an ihrer Stelle in der Reihe (Pflichtfrage "ziel").
+        const p = this.lauf.profil;
+        if (p.monat == null || p.naechte == null || p.erwachsene == null || p.kinder == null) {
+          this.notieren("thema_gemerkt", { thema: thema.id, ziele: thema.ziele });
+          this.sichern();
+          return false;
+        }
         this.lauf.phase = "zielwahl";
         const namen = Politik.zielnamen(thema.ziele);
         this.notieren("zielwahl_gestellt", { thema: thema.id, ziele: thema.ziele });
@@ -862,7 +872,7 @@ const Kern = {
 
     // "Egal" oder "such du aus": der Agent nimmt das erste - und sagt das,
     // statt es stillschweigend zu tun.
-    const egal = /egal|such du|entscheide|aussuchen|beliebig|weiß nicht|weiss nicht/.test(gesucht);
+    const egal = /egal|such du|entscheide|aussuchen|beliebig|weiß nicht|weiss nicht|schlag|vorschlag|empfiehl/.test(gesucht);
     if (!treffer && egal) treffer = auswahl[0];
 
     if (!treffer) {
@@ -915,14 +925,84 @@ const Kern = {
     const frage = Politik.naechstePflichtfrage(this.lauf.profil, this.lauf.vorfragenErledigt);
     if (!frage) return this.eingangsfrageStellen(quittung);
 
+    /* Etappe 2: Bevor nach dem Ziel gefragt wird, stellt der Agent
+       Zeitraum und Reisende in der Suchmaske ein und sieht nach, in
+       welchen Regionen es dafuer etwas gibt. Die Zielfrage kommt dann
+       mit Zahlen: "63 Haeuser in sieben Regionen, die meisten auf
+       Mallorca". Nur mit Freigabe zum Suchen - sonst wie bisher. */
+    if (frage.id === "ziel" && !this.lauf.vorabSuche && this.darf("suchen")
+      && this.lauf.profil.monat != null && this.lauf.profil.naechte != null && this.lauf.profil.erwachsene != null) {
+      return this.vorabSuche();
+    }
+
     this.lauf.phase = "vorfrage";
     this.lauf.offeneVorfrage = frage.id;
-    const ersatz = Politik.ersatzfrage(frage, this.lauf.profil);
-    this.sagen(await this.formulieren(Politik.faktenVorfrage(frage, quittung, this.lauf.profil, this.letzteEingabe()), ersatz));
-    AgentPanel.setSuggestions(Politik.chipsFuer(frage, this.lauf.profil, this.lauf.verlauf));
+    let ersatz = Politik.ersatzfrage(frage, this.lauf.profil);
+    const fakten = Politik.faktenVorfrage(frage, quittung, this.lauf.profil, this.letzteEingabe());
+    if (frage.id === "ziel" && this.lauf.merker.regionen) {
+      const rs = this.lauf.merker.regionen;
+      ersatz = `Für den Zeitraum habe ich ${this.lauf.merker.regionenGesamt} Häuser in ${rs.length} Regionen, die meisten ${rs.slice(0, 2).map((r) => `${r.name} (${r.anzahl})`).join(" und ")}. Hast du ein Ziel im Kopf, oder soll ich eines vorschlagen?`;
+      fakten.wasDirNochFehlt = "Wohin die Reise gehen soll. Du hast fuer den Zeitraum und die Reisenden schon nachgesehen: "
+        + "Unter regionenImZeitraum steht, in welchen Regionen es wie viele passende Haeuser gibt. Nenne die Zahl insgesamt und "
+        + "die zwei, drei Regionen mit den meisten Haeusern, und frag, ob die Person schon ein Ziel im Kopf hat oder ob du eines vorschlagen sollst."
+        + (this.lauf.zielAuswahl?.length ? " Die Person hatte eine Reiseart genannt (siehe reiseart) - beschraenke dich auf die Regionen, die dazu passen." : "");
+      fakten.regionenImZeitraum = this.lauf.merker.regionen;
+      if (this.lauf.zielAuswahl?.length) fakten.reiseart = { passendeRegionen: Politik.zielnamen(this.lauf.zielAuswahl) };
+    }
+    this.sagen(await this.formulieren(fakten, ersatz));
+    AgentPanel.setSuggestions(frage.id === "ziel" && this.lauf.merker.regionen
+      ? [...this.regionenChips(), "Schlag mir eines vor"]
+      : Politik.chipsFuer(frage, this.lauf.profil, this.lauf.verlauf));
     AgentPanel.status("wartet auf deine Antwort");
     AgentPanel.oeffnen();
     this.sichern();
+  },
+
+  /* Etappe 2: Suchmaske einstellen und Regionen zaehlen */
+  async vorabSuche() {
+    const p = this.lauf.profil;
+    this.lauf.vorabSuche = "laeuft";
+    this.lauf.phase = "arbeitet";
+    const zeitraum = Politik.zeitraum(p.monat, p.naechte);
+    this.lauf.offeneSchritte = [
+      ...(Werkzeuge.hatSuchmaske() ? [] : [{ werkzeug: "zurStartseite", status: "wechselt zur Suche…" }]),
+      { werkzeug: "suchen", status: "stellt Zeitraum und Reisende ein…",
+        args: { typ: p.typ || "hotel", ziel: "", von: zeitraum.von, bis: zeitraum.bis, erwachsene: p.erwachsene, kinder: p.kinder || 0 } },
+      { werkzeug: "zieleZaehlen", status: "sieht nach, wo es etwas gibt…" },
+    ];
+    this.notieren("vorabsuche_start", {});
+    this.logZeile(`Vorab-Suche: ${Politik.eckdaten(p).map((e) => `${e.feld} ${e.wert}`).join(", ")}`, "auftrag");
+    await this.sprechen(
+      "Zeitraum und Reisende stehen fest. Sag in einem Satz, dass du kurz nachsiehst, wo es in dem Zeitraum fuer die Gruppe etwas gibt, bevor ihr das Ziel festlegt.",
+      {},
+      "Ich schaue kurz, wo es in dem Zeitraum für euch etwas gibt, dann besprechen wir das Ziel."
+    );
+    this.sichern();
+    await this.abarbeiten();
+  },
+
+  async regionenMelden() {
+    const e = Werkzeuge.zieleZaehlen();
+    const regionen = e.daten?.regionen || [];
+    // Nur Regionen mit Haeusern, und wenn eine Reiseart genannt war, nur
+    // die dazu passenden
+    const passend = this.lauf.zielAuswahl?.length ? new Set(this.lauf.zielAuswahl) : null;
+    this.lauf.merker.regionen = regionen
+      .filter((r) => r.anzahl > 0 && (!passend || passend.has(r.id)))
+      .sort((a, b) => b.anzahl - a.anzahl);
+    this.lauf.merker.regionenGesamt = this.lauf.merker.regionen.reduce((n, r) => n + r.anzahl, 0);
+    this.lauf.vorabSuche = "fertig";
+    this.notieren("vorabsuche", { regionen: this.lauf.merker.regionen.map((r) => `${r.id}:${r.anzahl}`), gesamt: this.lauf.merker.regionenGesamt });
+    this.logZeile(`Verfügbar im Zeitraum: ${this.lauf.merker.regionenGesamt} Häuser in ${this.lauf.merker.regionen.length} Regionen (${this.lauf.merker.regionen.slice(0, 4).map((r) => `${r.name} ${r.anzahl}`).join(", ")})`, "ergebnis");
+    this.sperreAus();
+    this.lauf.phase = "vorfrage";
+    this.sichern();
+    await this.naechstePflichtfrage();
+    return { ok: true, daten: { uebernimmt: true } };
+  },
+
+  regionenChips() {
+    return (this.lauf.merker.regionen || []).slice(0, 4).map((r) => r.name);
   },
 
   // Der Uebergang von "verstanden" zu "wie gehen wir vor". Kommt erst,
@@ -1044,6 +1124,21 @@ const Kern = {
     // Korrektur verschwand. Deshalb erst durch die allgemeine Erkennung,
     // dann durch die Auswertung der offenen Frage.
     Politik.uebernehmen(text, this.lauf.profil);
+
+    // Zielfrage nach der Vorab-Suche: "egal" oder "schlag vor" heisst,
+    // der Agent nimmt die Region mit den meisten passenden Haeusern -
+    // und sagt das, als Vorschlag, nicht als Annahme.
+    if (frage.id === "ziel" && !this.lauf.profil.zielId && this.lauf.merker.regionen?.length
+      && /egal|schlag|vorschlag|empfiehl|such du|entscheide|weiß nicht|weiss nicht/i.test(text)) {
+      const r = this.lauf.merker.regionen[0];
+      this.lauf.profil.zielId = r.id;
+      this.notieren("ziel_vorgeschlagen", { ziel: r.id, anzahl: r.anzahl });
+      await this.sprechen(
+        "Die Person ueberlaesst dir die Wahl der Region. Du nimmst die mit den meisten passenden Haeusern im Zeitraum (siehe vorschlag). Sag das in einem Satz, mit der Zahl, und dass sie jederzeit eine andere nennen kann.",
+        { vorschlag: { region: r.name, haeuser: r.anzahl }, alternativen: this.lauf.merker.regionen.slice(1, 4).map((x) => `${x.name} (${x.anzahl})`) },
+        `Dann nehme ich ${r.name}, dort gibt es mit ${r.anzahl} Häusern die größte Auswahl. Sag Bescheid, wenn du lieber woanders hin willst.`
+      );
+    }
 
     const quittung = frage.auswerten(text, this.lauf.profil);
 
@@ -1277,6 +1372,7 @@ const Kern = {
       case "zurBuchung":         return `Öffne die Buchung für ${name(a.id)}${a.verpflegung ? `, Verpflegung ${a.verpflegung}` : ""}`;
       case "buchungAbschliessen": return "Fülle die Buchung aus";
       case "vertiefung":         return "Fasse die Detailseite zusammen";
+      case "zieleZaehlen":       return "Zähle, in welchen Regionen es im Zeitraum etwas gibt";
       default:                   return schritt.status || schritt.werkzeug;
     }
   },
@@ -1312,6 +1408,7 @@ const Kern = {
         return w.zurBuchung(this.aufloesen(schritt.args?.id), schritt.args?.verpflegung || null);
       case "buchungAbschliessen": return w.buchungAbschliessen();
       case "vertiefung":          return this.vertiefungMelden();
+      case "zieleZaehlen":        return this.regionenMelden();
       default:                    return { ok: false, text: `Unbekannter Schritt: ${schritt.werkzeug}` };
     }
   },
@@ -2176,15 +2273,145 @@ const Kern = {
       if (id) return this.merken(id, t);
     }
 
-    switch (this.lauf.phase) {
+    /* Absicht einordnen, bevor die Phase entscheidet.
+       ------------------------------------------------------------------
+       Frueher lief jede Nachricht in die Antwortlogik ihrer Phase, und
+       was dort nicht passte, wurde als neuer Auftrag gelesen - mit
+       Verlust des ganzen Zustands. "Vergleiche die drei in puncto
+       Sauberkeit" wurde so zu einer neuen Suche. Jetzt sagt das Modell,
+       was die Person will, und der Zustand bleibt, was er ist. */
+    const phase = this.lauf.phase;
+    const mitAuswahl = ["shortlist", "vertieft", "fertig", "nachfrage"].includes(phase) && (this.lauf.kandidaten || []).length;
+    const offeneFrage = ["vorfrage", "eingangsfrage", "zielwahl", "nachfrage"].includes(phase);
+    if (mitAuswahl || offeneFrage || phase === "fertig") {
+      const e = await this.einordnen(t);
+      this.notieren("einordnung", { absicht: e.absicht, aspekte: e.aspekte, quelle: e.quelle, phase });
+      switch (e.absicht) {
+        case "vergleich":  if (mitAuswahl) return this.antwortVergleich(t, e);
+          break;
+        case "frage": {
+          const hausGefragt = e.haus ? this.hausAusEinordnung(e.haus) : null;
+          if (hausGefragt) return this.antwortHausfrage(hausGefragt, t);
+          if (mitAuswahl) return this.antwortVergleich(t, e);
+          if (offeneFrage) break;          // Rueckfrage innerhalb der Frage - die Phase kann das
+          return this.antwortAllgemeineFrage(t);
+        }
+        case "auswahl": {
+          const haus = e.haus ? this.hausAusEinordnung(e.haus) : null;
+          if (haus && mitAuswahl) { this.sagen(t, "user"); this.notieren("auswahl", { id: haus.id, runde: this.lauf.runde, ueber: "einordnung" }); return this.vertiefen(haus.id); }
+          break;
+        }
+        case "merken": {
+          const haus = (e.haus ? this.hausAusEinordnung(e.haus) : null) || (this.lauf.gewaehlt ? getItemById?.(this.lauf.gewaehlt) : null);
+          if (haus) return this.merken(haus.id, t);
+          break;
+        }
+        case "buchen": {
+          const haus = e.haus ? this.hausAusEinordnung(e.haus) : null;
+          if (haus && mitAuswahl && haus.id !== this.lauf.gewaehlt) return this.hausBuchen(haus.id, t);
+          break;                            // sonst regelt die Phase (vertieft/nachfrage)
+        }
+        case "zurueck":
+          if (phase === "vertieft" || phase === "fertig") { if (phase === "fertig") this.lauf.phase = "vertieft"; return this.antwortVertieft("zurück zur auswahl"); }
+          break;
+        case "smalltalk":
+          if (!offeneFrage) return this.antwortSmalltalk(t);
+          break;
+        case "neu":
+          return this.auftrag(t);
+        case "nachschaerfen":
+          if (mitAuswahl) return this.antwortShortlist(t);
+          break;
+        default: break;
+      }
+    }
+
+    switch (phase) {
       case "zielwahl":      return this.antwortZielwahl(t);
       case "eingangsfrage": return this.antwortEingangsfrage(t);
       case "vorfrage":      return this.antwortVorfrage(t);
       case "shortlist":     return this.antwortShortlist(t);
       case "vertieft":      return this.antwortVertieft(t);
       case "nachfrage":     return this.antwortAufNachfrage(t);
+      case "fertig":
+        // Nach einer Buchung oder einem Abschluss: Bezug auf die Auswahl
+        // bleibt moeglich, nur ein klarer Neuanfang startet neu.
+        if ((this.lauf.kandidaten || []).length) return this.antwortShortlist(t);
+        return this.auftrag(t);
       default:              return this.auftrag(t);
     }
+  },
+
+  /* Einordnung einer Nachricht: Modell, sonst Schluesselwoerter */
+  async einordnen(text) {
+    const kandidaten = (this.lauf.kandidaten || []).map((k, i) => `${i + 1}. ${k.item?.name || k.id}`);
+    const letzteBot = [...this.lauf.verlauf].reverse().find((n) => n.rolle !== "user")?.text || null;
+    const frage = this.lauf.offeneVorfrage ? Politik.VORFRAGEN.find((f) => f.id === this.lauf.offeneVorfrage) : null;
+    const kontext = {
+      phase: this.lauf.phase,
+      offeneFrageDesAssistenten: ["vorfrage", "eingangsfrage", "zielwahl", "nachfrage"].includes(this.lauf.phase) ? (letzteBot || frage?.frage || null) : null,
+      vorgelegteHaeuser: kandidaten,
+      gewaehltesHaus: this.lauf.gewaehlt ? (getItemById?.(this.lauf.gewaehlt)?.name || null) : null,
+      verlauf: this.lauf.verlauf.slice(-6).map((n) => `${n.rolle === "user" ? "Person" : "Assistent"}: ${String(n.text).slice(0, 160)}`),
+    };
+    let e = null;
+    if (typeof Modell !== "undefined") { try { e = await Modell.einordnen(text, kontext); } catch { e = null; } }
+    return e || Politik.einordnenLokal(text, { haeuser: kandidaten });
+  },
+
+  // "2", "das zweite", "Petra Lofos" -> Katalogeintrag
+  hausAusEinordnung(hinweis) {
+    const kandidaten = this.lauf.kandidaten || [];
+    const n = String(hinweis).trim();
+    if (/^[1-9]$/.test(n)) return kandidaten[+n - 1]?.item || null;
+    const direkt = kandidaten.find((k) => (k.item?.name || "").toLowerCase() === n.toLowerCase());
+    if (direkt) return direkt.item;
+    return Politik.hausImText(n) || Politik.hausImText(hinweis) || null;
+  },
+
+  /* Vergleich der vorgelegten Haeuser in den genannten Punkten - mit
+     Zahlen und einer Empfehlung. Die Auswahl bleibt stehen. */
+  async antwortVergleich(text, e) {
+    this.kandidatenAuffrischen();
+    this.sagen(text, "user");
+    const aspekte = e.aspekte?.length ? e.aspekte : Politik.aspekteAusText(text);
+    this.notieren("vergleich", { aspekte, runde: this.lauf.runde, phase: this.lauf.phase });
+    await this.denkpause(900, "vergleicht…");
+    const fakten = Politik.vergleichsfakten(this.lauf.kandidaten, aspekte, this.lauf.profil);
+    await this.sprechen(
+      "Die Person moechte die vorgelegten Haeuser in bestimmten Punkten verglichen haben (siehe gefragt). Vergleiche sie anhand der Zahlen unter haeuser, Punkt fuer Punkt, und sprich am Ende eine klare Empfehlung aus, mit Begruendung. Wo ein Punkt in den Fakten fehlt oder null ist, sag, dass du dazu keine Angabe hast. Kein Werbeton, keine Aufzaehlungszeichen, drei bis sechs Saetze.",
+      { gefragt: aspekte.length ? aspekte : "allgemein", wasDiePersonSchrieb: text, haeuser: fakten },
+      Politik.vergleichssatz(fakten, aspekte.length ? aspekte : ["bewertung", "preis"])
+    );
+    if (this.lauf.phase === "fertig") this.lauf.phase = "shortlist";
+    AgentPanel.setSuggestions(this.shortlistChips());
+    AgentPanel.status(this.lauf.phase === "shortlist" ? "wartet auf deine Wahl" : "wartet auf deine Antwort");
+    this.sichern();
+  },
+
+  // Frage ohne Bezug zu einem Haus oder zur Auswahl: mit dem, was der
+  // Agent weiss, antworten, ohne die Phase zu verlassen.
+  async antwortAllgemeineFrage(text) {
+    this.sagen(text, "user");
+    this.notieren("frage_allgemein", { phase: this.lauf.phase });
+    await this.denkpause(600);
+    await this.sprechen(
+      "Die Person hat eine Frage gestellt. Beantworte sie mit dem, was du weisst (Fakten, Stand, was du kannst). Weisst du es nicht, sag das. Kehre danach in einem Satz zu dem zurueck, was gerade ansteht.",
+      { wasDiePersonSchrieb: text, wasDuKannst: ["Unterkuenfte suchen", "filtern und sortieren", "Bewertungen auswerten", "eine Auswahl mit Begruendung vorlegen", "vergleichen", "vormerken", "die Buchung vorbereiten oder abschliessen, je nach Freigabe"],
+        wasEsAufDerSeiteGibt: ["Hotels", "Ferienwohnungen", "Mietwagen", "Fluege (nur selbst buchbar)"] },
+      "Das weiß ich gerade nicht. Womit kann ich weitermachen?"
+    );
+    this.sichern();
+  },
+
+  async antwortSmalltalk(text) {
+    this.sagen(text, "user");
+    await this.sprechen(
+      "Die Person hat etwas geschrieben, das keine Frage zur Reise ist (Gruss, Dank, Bemerkung). Antworte kurz und freundlich darauf und knuepfe in einem Satz an das an, was gerade ansteht.",
+      { wasDiePersonSchrieb: text },
+      "Gern. Sag mir, wie es weitergehen soll."
+    );
+    this.sichern();
   },
 };
 

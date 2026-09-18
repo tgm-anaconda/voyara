@@ -33,7 +33,7 @@ const ZEITGRENZE_MS = 14000;
 // Kostenbremse. Ein Lauf braucht ueblicherweise unter zehn Aufrufe; die
 // Grenzen greifen nur, wenn etwas im Kreis laeuft.
 const MAX_ZEICHEN_EINGABE = 16000;   // die Fakten tragen jetzt auch das bisherige Gespraech
-const MAX_TOKEN_ANTWORT = { verstehen: 300, formulieren: 450 };
+const MAX_TOKEN_ANTWORT = { verstehen: 300, formulieren: 450, einordnen: 200 };
 
 /* ==================================================================
    Systemanweisungen
@@ -64,6 +64,33 @@ Regeln:
 - "Familie", "wir", "meine Kinder" ohne Zahl ergibt KEINE Zahl. Schreib null.
   Wie viele Menschen eine Familie hat, weiss nur die Person selbst - danach
   wird gefragt, es wird nicht angenommen.`;
+
+const ANWEISUNG_EINORDNEN = `Du ordnest eine Nachricht in einem Gespraech zwischen einer Person und einem Reise-Assistenten ein. Antworte AUSSCHLIESSLICH mit einem JSON-Objekt, ohne Fliesstext und ohne Markdown.
+
+Du bekommst: die Nachricht der Person, die Phase des Gespraechs, die zuletzt vom Assistenten gestellte Frage, die gerade vorgelegten Haeuser (falls es welche gibt) und den bisherigen Verlauf.
+
+Felder:
+- absicht: genau einer dieser Werte
+    "antwort"       beantwortet die zuletzt gestellte Frage des Assistenten
+    "auswahl"       waehlt eines der vorgelegten Haeuser ("das zweite", "nimm Petra Lofos", "1")
+    "vergleich"     will die vorgelegten Haeuser (oder mehrere davon) in bestimmten Punkten verglichen haben
+    "frage"         stellt eine Frage - zu einem Haus, zur Auswahl, zum Angebot, zum Vorgehen
+    "nachschaerfen" will die Suche veraendert haben (guenstiger, ruhiger, naeher am Strand, mehr Sterne, anderes Kriterium)
+    "merken"        will ein Haus vormerken / auf den Merkzettel setzen
+    "buchen"        will ein Haus buchen oder zur Buchung gehen
+    "zurueck"       will zurueck zur Auswahl oder andere Vorschlaege sehen
+    "neu"           will eine wirklich neue, andere Reise planen (anderes Ziel UND Neuanfang ausdruecklich)
+    "smalltalk"     etwas ohne Bezug zur Aufgabe (Gruss, Dank, Frage zum Assistenten selbst)
+    "weiter"        "mach weiter", "ok", "ja" ohne offene Frage
+- aspekte: Liste der genannten Punkte fuer Vergleich oder Frage, nur aus: sauberkeit, essen, lage, service, ruhe, preis, pool, wellness, strand, verpflegung, sterne, bewertung, zimmer, familie, kinderclub. Leer, wenn keine.
+- haus: der Name oder die Nummer (1, 2, 3) eines vorgelegten Hauses, auf das sich die Nachricht bezieht, sonst null.
+- alleHaeuser: true, wenn sich die Nachricht auf alle vorgelegten Haeuser bezieht.
+
+Regeln:
+- Wenn der Assistent gerade eine Frage gestellt hat und die Nachricht sie beantwortet, ist es "antwort" - auch wenn die Antwort knapp ist ("zu viert", "Kreta", "egal").
+- "vergleiche", "welches ist besser bei", "wie schneiden die ab bei", "unterschied zwischen" ist "vergleich", nie "nachschaerfen".
+- "neu" nur, wenn die Person ausdruecklich etwas anderes von vorn will. Ein zusaetzlicher Wunsch ist "nachschaerfen".
+- Im Zweifel zwischen "frage" und "nachschaerfen": Fragezeichen oder Frageform heisst "frage".`;
 
 const ANWEISUNG_FORMULIEREN = `Du bist der Reise-Assistent von Voyara, einer deutschen Buchungsseite. Du hilfst jemandem, eine Unterkunft zu finden.
 
@@ -160,10 +187,34 @@ export default async function handler(req, res) {
   if (req.method !== "POST") return fehler(res, 405, "Nur POST.");
   if (!process.env.OPENAI_API_KEY) return fehler(res, 503, "Kein Schlüssel hinterlegt.");
 
-  const { aufgabe, text, fakten } = req.body || {};
+  const { aufgabe, text, fakten, kontext } = req.body || {};
 
-  if (aufgabe !== "verstehen" && aufgabe !== "formulieren") {
+  if (!["verstehen", "formulieren", "einordnen"].includes(aufgabe)) {
     return fehler(res, 400, "Unbekannte Aufgabe.");
+  }
+
+  /* --- Einordnen ---------------------------------------------------- */
+  if (aufgabe === "einordnen") {
+    if (typeof text !== "string" || !text.trim()) return fehler(res, 400, "Kein Text.");
+    const k = kontext && typeof kontext === "object" ? kontext : {};
+    const alsText = JSON.stringify(k);
+    if (alsText.length > MAX_ZEICHEN_EINGABE) return fehler(res, 413, "Kontext zu lang.");
+    const e = await openai(
+      [
+        { role: "system", content: ANWEISUNG_EINORDNEN },
+        { role: "user", content: `Kontext:\n${alsText}\n\nNachricht der Person:\n${text.slice(0, 2000)}` },
+      ],
+      MAX_TOKEN_ANTWORT.einordnen,
+      0,
+      MODELL_VERSTEHEN
+    );
+    if (!e.ok) return fehler(res, e.status || 502, "Modell nicht erreichbar.");
+    try {
+      const roh = e.text.replace(/^```(?:json)?|```$/g, "").trim();
+      return res.status(200).json({ ok: true, einordnung: JSON.parse(roh) });
+    } catch {
+      return fehler(res, 502, "Antwort war kein JSON.");
+    }
   }
 
   /* --- Verstehen ---------------------------------------------------- */

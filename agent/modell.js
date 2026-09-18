@@ -120,6 +120,33 @@ const Modell = {
   },
 
   /* ==================================================================
+     Einordnen
+     ------------------------------------------------------------------
+     Welche Absicht steckt in einer Nachricht - Antwort, Auswahl,
+     Vergleich, Frage, Nachschaerfen, Merken, Buchen, Zurueck, neue
+     Reise, Smalltalk? Das Modell sieht Phase, offene Frage, vorgelegte
+     Haeuser und Verlauf. Geprueft wird gegen die erlaubten Werte; alles
+     andere faellt weg. Ohne Modell greift die Schluesselwort-Einordnung
+     in Politik.einordnenLokal.
+     ================================================================== */
+
+  ABSICHTEN: ["antwort", "auswahl", "vergleich", "frage", "nachschaerfen", "merken", "buchen", "zurueck", "neu", "smalltalk", "weiter"],
+  ASPEKTE: ["sauberkeit", "essen", "lage", "service", "ruhe", "preis", "pool", "wellness", "strand", "verpflegung", "sterne", "bewertung", "zimmer", "familie", "kinderclub"],
+
+  async einordnen(text, kontext) {
+    const daten = await this.ruf({ aufgabe: "einordnen", text, kontext });
+    const e = daten?.einordnung;
+    if (!e || !this.ABSICHTEN.includes(e.absicht)) return null;
+    return {
+      absicht: e.absicht,
+      aspekte: Array.isArray(e.aspekte) ? e.aspekte.filter((a) => this.ASPEKTE.includes(a)) : [],
+      haus: e.haus == null ? null : String(e.haus),
+      alleHaeuser: !!e.alleHaeuser,
+      quelle: "modell",
+    };
+  },
+
+  /* ==================================================================
      Formulieren
      ------------------------------------------------------------------
      Das Modell bekommt die Zahlen vorgelegt und soll sie in Saetze
