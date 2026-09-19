@@ -241,7 +241,7 @@ const Politik = {
     { id: "wellness", label: "Wellness", filter: { ausstattung: "spa" },
       woerter: ["wellness", "spa", "sauna", "therme", "massage", "hot pot", "dampfbad"] },
     { id: "familie", label: "Familienfreundlichkeit", filter: { ausstattung: "familyFriendly" },
-      woerter: ["famili", "kinderfreundlich", "mit kindern", "mit kind"] },
+      woerter: ["famili", "kinderfreundlich", "mit kindern", "mit kind", "spielplatz", "zum spielen", "was zum spielen", "beschäftigung für die kinder", "beschaeftigung fuer die kinder", "kinder brauchen", "für die kinder", "fuer die kinder", "die kleinen"] },
     { id: "kinderclub", label: "Kinderclub", filter: { ausstattung: "kidsClub" },
       woerter: ["kinderclub", "kids club", "kidsclub", "kinderbetreuung", "miniclub", "kinderanimation", "kinderprogramm"] },
     { id: "strandnah", label: "Strandnähe", filter: { maxStrand: 1 },
@@ -300,6 +300,10 @@ const Politik = {
       woerter: ["wintersonne", "sonne im winter", "warm im winter", "der kälte entfliehen", "der kaelte entfliehen"] },
     { id: "fern", label: "in die Ferne", ziele: ["krabi", "kapstadt", "newyork", "kyoto"],
       woerter: ["fernreise", "weit weg", "fernost", "asien", "übersee", "uebersee"] },
+    // "Irgendwo, wo es warm ist" - kein Ort, aber ein klarer Wunsch. Ohne
+    // diesen Eintrag zaehlte der Agent Lappland und Island mit.
+    { id: "warm", label: "irgendwohin, wo es warm ist", ziele: ["mallorca", "kreta", "algarve", "sardinien", "teneriffa", "krabi", "marrakesch", "kapstadt"],
+      woerter: ["wo es warm ist", "wo es noch warm ist", "warm ist", "warmes wetter", "in die sonne", "in der sonne", "sonne tanken", "sonnig", "hitze", "baden"] },
   ],
 
   // Reiseart aus dem Text. Laengste Wortliste zuerst, damit "Wintersonne"
@@ -891,11 +895,15 @@ const Politik = {
       if (h.type === "apartment") return (h.maxGuests || 0) >= personen;
       return !h.rooms?.length || Math.max(...h.rooms.map((r) => r.maxGuests || 0)) >= personen;
     };
+    // Regionen ausserhalb ihrer Saison (Lappland im Oktober) fallen
+    // weg, sobald der Monat feststeht - niemand schlaegt sie vor.
+    const passung = (z) => (typeof saisonPassung === "function" && profil.monat ? saisonPassung(z, profil.monat) : 1);
     return (typeof ZIELE !== "undefined" ? ZIELE : []).map((z) => ({
       id: z.id, name: z.name,
       anzahl: bestand.filter((h) => h.ziel === z.id && passt(h)).length,
-      saison: typeof saisonPassung === "function" && profil.monat ? saisonPassung(z, profil.monat) === 1 : false,
-    })).filter((r) => r.anzahl > 0);
+      saison: passung(z) === 1,
+      passung: passung(z),
+    })).filter((r) => r.anzahl > 0 && r.passung >= 0.5);
   },
 
   /* Ein Haus im Text erkennen, auch mit Tippfehlern.
@@ -904,8 +912,8 @@ const Politik = {
      werden die kennzeichnenden Woerter des Namens (ohne Hotel, Villa,
      Casa ...) mit den Woertern im Text, mit ein bis zwei Buchstaben
      Spielraum je Wort. Liefert das beste Haus oder null. */
-  hausImText(text) {
-    const katalog = [
+  hausImText(text, bestand = null) {
+    const katalog = bestand || [
       ...(typeof HOTELS !== "undefined" ? HOTELS : []),
       ...(typeof APARTMENTS !== "undefined" ? APARTMENTS : []),
     ];
@@ -920,7 +928,15 @@ const Politik = {
     for (const z of (typeof ZIELE !== "undefined" ? ZIELE : [])) {
       for (const w of norm(`${z.name} ${z.land || ""}`).split(" ")) if (w.length >= 3) orte.add(w);
     }
-    const textWoerter = norm(text).split(" ").filter((w) => w.length >= 3 && !orte.has(w));
+    // Alltagswoerter zaehlen nicht: "das erste" traf sonst "Dar Ourika",
+    // weil "das" und "dar" nur einen Buchstaben auseinanderliegen.
+    const ALLTAG = new Set(["das", "dem", "den", "des", "der", "die", "ein", "eine", "einen", "einem", "einer", "und", "oder", "was",
+      "wie", "wer", "wann", "warum", "ist", "sind", "war", "hat", "haben", "bei", "beim", "zum", "zur", "mit", "ohne", "fuer", "fur",
+      "von", "vom", "aus", "auf", "nach", "vor", "ueber", "uber", "unter", "denn", "dann", "noch", "mal", "nur", "auch", "aber", "doch",
+      "erste", "ersten", "erstes", "zweite", "zweiten", "zweites", "dritte", "dritten", "drittes", "letzte", "letzten", "letztes",
+      "alle", "beide", "beiden", "jedes", "welche", "welches", "welcher", "hotel", "haus", "essen", "pool", "strand", "preis", "lage",
+      "bitte", "danke", "gerne", "nimm", "nehme", "zeig", "zeige", "buch", "buche", "merk", "merke", "unterschied", "vergleich", "vergleiche"]);
+    const textWoerter = norm(text).split(" ").filter((w) => w.length >= 3 && !orte.has(w) && !ALLTAG.has(w));
     if (!textWoerter.length) return null;
 
     const abstand = (a, b) => {
@@ -937,7 +953,9 @@ const Politik = {
       }
       return prev[n];
     };
-    const passt = (a, b) => abstand(a, b) <= (Math.max(a.length, b.length) <= 5 ? 1 : 2);
+    // Kurze Woerter muessen genau stimmen, mittlere duerfen einen
+    // Buchstaben abweichen, lange zwei.
+    const passt = (a, b) => abstand(a, b) <= (Math.max(a.length, b.length) <= 4 ? 0 : Math.max(a.length, b.length) <= 6 ? 1 : 2);
 
     let bester = null, besteQuote = 0, besteTreffer = 0;
     for (const item of katalog) {
@@ -1835,10 +1853,12 @@ const Politik = {
   faktenAnsage(profil, text) {
     const ziel = profil.zielId ? this.zielFakten(profil.zielId) : null;
     return {
-      lage: "Bestaetige kurz den Wunsch und frag, ob du vorher ein paar Eckdaten durchgehen sollst oder direkt losziehen darfst.",
+      lage: "Bestaetige kurz den Wunsch und frag, ob du vorher ein paar Vorlieben durchgehen sollst oder direkt losziehen darfst. "
+        + "Wenn du Beispiele fuer Vorlieben nennst, dann nur solche, die noch nicht unter genannteWuensche stehen und die nicht schon feststehen "
+        + "(Preisrahmen, Verpflegung, Ausstattung, Lage) - nicht Reisende, Alter der Kinder oder Zeitraum, das ist geklaert.",
       wasDiePersonSchrieb: text,
       ziel: ziel ? { name: ziel.name, land: ziel.land } : null,
-      unterkunftsart: profil.typ === "apartment" ? "Ferienwohnung" : "Hotel",
+      unterkunftsart: profil.artGenannt ? (profil.typ === "apartment" ? "Ferienwohnung" : "Hotel") : "noch offen",
       reisemonat: profil.monat,
       erwachsene: profil.erwachsene,
       kinder: profil.kinder,
@@ -1858,8 +1878,9 @@ const Politik = {
       // einmal zu sagen, war eine Doppelung, und weil sie in jeder
       // Nachricht stand, klang sie nach Formular: "Ostsee ist notiert.
       // Maerz ist notiert. Ein Hotel mit Pool ist notiert."
-      lage: "Stell die naechste Frage. Wiederhole nicht, was du verstanden hast - "
-        + "das steht bereits sichtbar in der Uebersicht ueber dem Gespraech.",
+      lage: "Stell die naechste Frage - und zwar genau die unter wasDirNochFehlt, keine andere. "
+        + "Frag nicht nach Wuenschen, Ausstattung oder Preis, wenn das nicht die Frage ist; die kommen spaeter. "
+        + "Wiederhole nicht, was du verstanden hast - das steht bereits sichtbar in der Uebersicht ueber dem Gespraech.",
       _quittungNurFuerDenNotfall: quittung || null,
       // Bewusst kein fertiger Fragesatz: Bekam das Modell einen, gab es
       // ihn unveraendert weiter, und die Frage stand dann neben der
@@ -1870,7 +1891,7 @@ const Politik = {
       worumEsGeht: frage.id,
       ziel: ziel ? { name: ziel.name, land: ziel.land, beschreibung: ziel.beschreibung } : null,
       bereitsBekannt: {
-        unterkunftsart: profil.typ === "apartment" ? "Ferienwohnung" : "Hotel",
+        unterkunftsart: profil.artGenannt ? (profil.typ === "apartment" ? "Ferienwohnung" : "Hotel") : "noch offen (nicht als bekannt behandeln)",
         reisemonat: profil.monat,
         erwachsene: profil.erwachsene,
         kinder: profil.kinder,
@@ -1957,7 +1978,7 @@ const Politik = {
 
     if (auswahl?.strategie === "spreizung") {
       return {
-        lage: "Erklaer, warum du bewusst unterschiedliche Haeuser vorgelegt hast statt der drei bestbewerteten, und bitte um eine Richtung.",
+        lage: "Erklaer in zwei kurzen Saetzen, warum du bewusst unterschiedliche Haeuser vorgelegt hast statt der drei bestbewerteten, und bitte um eine Richtung.",
         grund: "Die Person hat ein Ziel genannt, aber keine Vorlieben - also gibt es nichts, wonach sich sinnvoll sortieren liesse.",
         wasDuGetanHast: "Drei Haeuser ausgesucht, die sich in Preisklasse, Art und Lage unterscheiden.",
         haeuserZurAuswahl: zustand.trefferGesamt ?? null,
@@ -1973,7 +1994,9 @@ const Politik = {
     }
 
     return {
-      lage: "Leg offen, worauf deine Reihenfolge beruht und wo deine Pruefung aufhoert.",
+      lage: "Sag in hoechstens drei kurzen Saetzen, worauf deine Reihenfolge beruht: erst die harten Vorgaben, dann die genannten Kriterien, "
+        + "und was beim ersten Haus den Ausschlag gab (ausschlaggebend). Ein halber Satz dazu, dass Verfuegbarkeit und Storno erst beim Buchen "
+        + "sichtbar werden. Nicht die Haeuser wiederholen, nicht rechtfertigen, keine Woerter wie 'offengelegt' oder 'transparent'.",
       haeuserNachVorgaben: zustand.trefferGesamt ?? null,
       imDetailGeprueft: (merker?.sichtung?.gesichtet || []).length || (merker?.treffer?.treffer || []).length,
       vorgaben: [...new Set(vorgaben)],

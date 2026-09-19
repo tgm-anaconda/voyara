@@ -1068,8 +1068,12 @@ const Kern = {
     // Nur Regionen mit Haeusern, und wenn eine Reiseart genannt war, nur
     // die dazu passenden
     const passend = this.lauf.zielAuswahl?.length ? new Set(this.lauf.zielAuswahl) : null;
+    // Ausserhalb der Saison (Lappland im Oktober) zaehlt nicht mit
+    const monat = this.lauf.profil?.monat;
+    const inSaison = (r) => !monat || typeof saisonPassung !== "function" || typeof ZIEL_NACH_ID === "undefined"
+      || !ZIEL_NACH_ID[r.id] || saisonPassung(ZIEL_NACH_ID[r.id], monat) >= 0.5;
     this.lauf.merker.regionen = regionen
-      .filter((r) => r.anzahl > 0 && (!passend || passend.has(r.id)))
+      .filter((r) => r.anzahl > 0 && (!passend || passend.has(r.id)) && inSaison(r))
       .sort((a, b) => b.anzahl - a.anzahl);
     this.lauf.merker.regionenGesamt = this.lauf.merker.regionen.reduce((n, r) => n + r.anzahl, 0);
     this.lauf.vorabSuche = "fertig";
@@ -2004,7 +2008,7 @@ const Kern = {
     // Auch diese Zusammenfassung formuliert das Modell - aus denselben
     // Zahlen, die der feste Satz nennt.
     const text = await this.formulieren({
-      lage: "Du hast die Detailseite des gewaehlten Hauses gelesen und die Bewertungen ausgewertet. Fass in zwei, drei Saetzen zusammen, was fuer die Person daran wichtig ist (zuerst das, was sie genannt hatte), nenne auch die Kritik, und frag, ob du es vormerken, zur Buchung gehen oder zurueck zur Auswahl sollst.",
+      lage: "Du hast die Detailseite des gewaehlten Hauses gelesen und die Bewertungen ausgewertet. Fass in zwei, drei Saetzen zusammen, was fuer die Person daran wichtig ist (zuerst das, was sie genannt hatte), nenne die Kritik nur so, wie sie unter kritisiert steht - ist die Liste leer, sag, dass kaum Kritik vorkommt, und erfinde keine Beispiele. Frag dann, ob du es vormerken, zur Buchung gehen oder zurueck zur Auswahl sollst.",
       haus: item.name,
       bewertungenAusgewertet: b.anzahl,
       genannteWuensche: [...genannt].map((label) => {
@@ -2342,11 +2346,30 @@ const Kern = {
     let budget = null;
     if (pr.budgetGesamt && gesamt != null) budget = { grenze: pr.budgetGesamt, gesamtFuerDeineReise: gesamt, passt: gesamt <= pr.budgetGesamt };
     else if (pr.maxPreis) budget = { grenzeProNacht: pr.maxPreis, passt: haus.pricePerNight <= pr.maxPreis };
+    // Gesamtpreis fuer die Reise vorrechnen, wie ihn die Seite rechnet
+    // (guenstigstes Zimmer, je Verpflegung, plus Servicegebuehr) - sonst
+    // rechnet das Modell und liegt daneben.
+    const gebuehr = haus.type === "apartment" ? (haus.cleaningFee || 0) : 35 * zimmer;
+    const gesamtpreis = naechte ? {
+      naechte, zimmer,
+      hinweis: "Preise so nennen, wie sie hier stehen; nicht selbst rechnen.",
+      guenstigstesZimmer: (haus.type === "apartment" ? [] : (haus.boards || [])).map((b) => ({
+        verpflegung: (typeof BOARD_LABELS !== "undefined" && BOARD_LABELS[b.key]) || b.key,
+        proNacht: haus.pricePerNight + (b.priceDelta || 0),
+        gesamtInklGebuehr: (haus.pricePerNight + (b.priceDelta || 0)) * naechte * zimmer + gebuehr,
+      })),
+      ...(haus.type === "apartment" ? { proNacht: haus.pricePerNight, gesamtInklEndreinigung: gesamt } : {}),
+      gebuehr: haus.type === "apartment" ? `${gebuehr} Euro Endreinigung` : `${gebuehr} Euro Servicegebühr`,
+    } : null;
     const erfuellt = Politik.erfuellt(haus, haus.pricePerNight, pr);
+    const schonOffen = haus.id === this.lauf.gewaehlt && /^(vertieft|nachfrage|fertig)$/.test(this.lauf.phase);
     const fakten = {
-      lage: "Die Person fragt nach einem bestimmten Haus aus dem Katalog (vielleicht mit Tippfehler geschrieben - nenne den richtigen Namen, ohne den Fehler zu kommentieren). Beantworte ihre Frage mit den Fakten, sag, was fuer ihre Vorgaben spricht oder dagegen (Budget nur so, wie es unter budget vorgerechnet steht - rechne nicht selbst), und biete an, es zu oeffnen oder direkt zur Buchung zu gehen. Zwei bis vier Saetze.",
+      lage: schonOffen
+        ? "Die Person fragt etwas zu dem Haus, das gerade geoeffnet ist. Beantworte genau ihre Frage mit den Fakten (Preise nur so, wie sie unter gesamtpreis und budget vorgerechnet stehen - rechne nicht selbst). Zwei bis drei Saetze, dann frag, ob du es vormerken oder zur Buchung gehen sollst."
+        : "Die Person fragt nach einem bestimmten Haus aus dem Katalog (vielleicht mit Tippfehler geschrieben - nenne den richtigen Namen, ohne den Fehler zu kommentieren). Beantworte ihre Frage mit den Fakten, sag, was fuer ihre Vorgaben spricht oder dagegen (Budget und Preise nur so, wie sie unter budget und gesamtpreis vorgerechnet stehen - rechne nicht selbst), und biete an, es zu oeffnen oder direkt zur Buchung zu gehen. Zwei bis vier Saetze.",
       wasDiePersonSchrieb: text,
       budget,
+      gesamtpreis,
       haeltAlleHartenVorgabenEin: erfuellt,
       haus: {
         name: haus.name, ort: haus.location, art: haus.type === "apartment" ? "Ferienwohnung" : "Hotel",
@@ -2360,7 +2383,9 @@ const Kern = {
       `${haus.name} haben wir im Angebot: in ${haus.location}, ab ${haus.pricePerNight} € pro Nacht, ${String(haus.rating).replace(".", ",")} aus ${haus.reviewCount} Bewertungen. Soll ich es öffnen oder gleich zur Buchung gehen?`,
       [this.linkZu(haus.id, haus.name)]);
     const kurzname = haus.name.split(" ").slice(0, 2).join(" ");
-    AgentPanel.setSuggestions([`Öffne ${kurzname}`, `Buch ${kurzname}`, ...(this.lauf.phase === "shortlist" ? ["Zurück zur Auswahl"] : [])]);
+    AgentPanel.setSuggestions(schonOffen
+      ? ["Auf den Merkzettel", "Zur Buchung", "Zurück zur Auswahl"]
+      : [`Öffne ${kurzname}`, `Buch ${kurzname}`, ...(this.lauf.phase === "shortlist" ? ["Zurück zur Auswahl"] : [])]);
     AgentPanel.status("wartet auf deine Antwort");
     this.sichern();
   },
@@ -2438,7 +2463,8 @@ const Kern = {
     // Merkzettel" ein Auftrag dazu. Vorher landete beides in der
     // jeweiligen Phasenantwort und wurde als "kenne ich nicht" oder als
     // neuer Suchauftrag gelesen.
-    const haus = Politik.hausImText(t);
+    const vorgelegt = (this.lauf.kandidaten || []).map((k) => k.item).filter(Boolean);
+    const haus = (vorgelegt.length && Politik.hausImText(t, vorgelegt)) || Politik.hausImText(t);
     if (haus) {
       const merkWunsch = /merk|vormerk|speicher/i.test(t);
       const oeffneWunsch = /öffne|oeffne|zeig|anschauen|ansehen|genauer|details?/i.test(t);
@@ -2485,8 +2511,17 @@ const Kern = {
         case "vergleich":  if (mitAuswahl) return this.antwortVergleich(t, e);
           break;
         case "frage": {
+          // Zwei Haeuser oder ein "Unterschied" in der Frage: das ist ein
+          // Vergleich, auch wenn das Modell "frage" sagt
+          const zwei = (t.match(/\b(erste|zweite|dritte|letzte)[snm]?\b|\b[1-3]\b/gi) || []).length >= 2;
+          if (mitAuswahl && (zwei || /unterschied|vergleich|versus|\bvs\b|gegenüber|besser als/i.test(t))) return this.antwortVergleich(t, e);
           const hausGefragt = e.haus ? this.hausAusEinordnung(e.haus) : null;
           if (hausGefragt) return this.antwortHausfrage(hausGefragt, t);
+          // Beim geoeffneten Haus meint "das" dieses Haus, nicht die Auswahl
+          if (this.lauf.gewaehlt && /^(vertieft|nachfrage|fertig)$/.test(phase) && typeof getItemById === "function") {
+            const offen = getItemById(this.lauf.gewaehlt);
+            if (offen) return this.antwortHausfrage(offen, t);
+          }
           if (mitAuswahl) return this.antwortVergleich(t, e);
           // Frage nach Orten, solange das Ziel offen ist: Recherche-Etappe
           if ((phase === "vorfrage" && this.lauf.offeneVorfrage === "ziel") || phase === "zielwahl"
@@ -2593,10 +2628,19 @@ const Kern = {
   hausAusEinordnung(hinweis) {
     const kandidaten = this.lauf.kandidaten || [];
     const n = String(hinweis).trim();
-    if (/^[1-9]$/.test(n)) return kandidaten[+n - 1]?.item || null;
+    if (/^[1-9]\.?$/.test(n)) return kandidaten[parseInt(n, 10) - 1]?.item || null;
+    // "das erste", "Nummer 2", "das letzte" - Ordnungszahlen meinen die Auswahl
+    const ord = n.toLowerCase().match(/\b(erste|zweite|dritte|letzte)[snm]?\b|\b(?:nummer|nr\.?|vorschlag|haus)\s*([1-9])\b/);
+    if (ord) {
+      const i = ord[2] ? parseInt(ord[2], 10) - 1 : { erste: 0, zweite: 1, dritte: 2, letzte: kandidaten.length - 1 }[ord[1]];
+      return kandidaten[i]?.item || null;
+    }
     const direkt = kandidaten.find((k) => (k.item?.name || "").toLowerCase() === n.toLowerCase());
     if (direkt) return direkt.item;
-    return Politik.hausImText(n) || Politik.hausImText(hinweis) || null;
+    // Erst unter den vorgelegten Haeusern suchen - "Cala Blanca" meint
+    // das aus der Auswahl, nicht ein aehnlich heissendes in Sardinien
+    const vorgelegt = kandidaten.map((k) => k.item).filter(Boolean);
+    return (vorgelegt.length && Politik.hausImText(n, vorgelegt)) || Politik.hausImText(n) || null;
   },
 
   /* Vergleich der vorgelegten Haeuser in den genannten Punkten - mit
