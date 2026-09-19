@@ -2421,13 +2421,32 @@ const Kern = {
     } : null;
     const erfuellt = Politik.erfuellt(haus, haus.pricePerNight, pr);
     const schonOffen = haus.id === this.lauf.gewaehlt && /^(vertieft|nachfrage|fertig)$/.test(this.lauf.phase);
+    const inDerBuchung = schonOffen && this.lauf.phase === "nachfrage";
+    // In der Buchungsstrecke zaehlt, was dort eingestellt ist - Zimmer,
+    // Verpflegung, Gesamtpreis -, nicht das guenstigste Zimmer
+    let buchung = null;
+    if (inDerBuchung && Werkzeuge.seite() === "checkout") {
+      const q = new URLSearchParams(location.search);
+      const zimmerWahl = haus.rooms?.[+q.get("room") || 0];
+      const boardWahl = haus.boards?.[+q.get("board") || 0];
+      const summe = document.querySelector(".bw-total strong, .summary-total, [data-gesamt]")?.textContent?.trim() || null;
+      buchung = {
+        zimmer: zimmerWahl?.name || null,
+        verpflegung: boardWahl ? ((typeof BOARD_LABELS !== "undefined" && BOARD_LABELS[boardWahl.key]) || boardWahl.key) : null,
+        gesamtpreisWieAngezeigt: summe,
+        hinweis: "Das ist eingestellt; Fruehstueck ist enthalten, wenn verpflegung nicht 'Ohne Verpflegung' ist.",
+      };
+    }
     const fakten = {
-      lage: schonOffen
+      lage: inDerBuchung
+        ? "Die Person fragt etwas, waehrend die Buchung vorbereitet ist (siehe buchung: was eingestellt ist). Beantworte genau ihre Frage mit den Fakten, zwei Saetze, und frag dann, ob du abschliessen sollst oder sie es lieber selbst macht."
+        : schonOffen
         ? "Die Person fragt etwas zu dem Haus, das gerade geoeffnet ist. Beantworte genau ihre Frage mit den Fakten (Preise nur so, wie sie unter gesamtpreis und budget vorgerechnet stehen - rechne nicht selbst). Zwei bis drei Saetze, dann frag, ob du es vormerken oder zur Buchung gehen sollst."
         : "Die Person fragt nach einem bestimmten Haus aus dem Katalog (vielleicht mit Tippfehler geschrieben - nenne den richtigen Namen, ohne den Fehler zu kommentieren). Beantworte ihre Frage mit den Fakten, sag, was fuer ihre Vorgaben spricht oder dagegen (Budget und Preise nur so, wie sie unter budget und gesamtpreis vorgerechnet stehen - rechne nicht selbst), und biete an, es zu oeffnen oder direkt zur Buchung zu gehen. Zwei bis vier Saetze.",
       wasDiePersonSchrieb: text,
       budget,
       gesamtpreis,
+      buchung,
       haeltAlleHartenVorgabenEin: erfuellt,
       haus: {
         name: haus.name, ort: haus.location, art: haus.type === "apartment" ? "Ferienwohnung" : "Hotel",
@@ -2441,7 +2460,9 @@ const Kern = {
       `${haus.name} haben wir im Angebot: in ${haus.location}, ab ${haus.pricePerNight} € pro Nacht, ${String(haus.rating).replace(".", ",")} aus ${haus.reviewCount} Bewertungen. Soll ich es öffnen oder gleich zur Buchung gehen?`,
       [this.linkZu(haus.id, haus.name)]);
     const kurzname = haus.name.split(" ").slice(0, 2).join(" ");
-    AgentPanel.setSuggestions(schonOffen
+    AgentPanel.setSuggestions(inDerBuchung
+      ? ["Ja, schließ ab", "Ich mache das selbst"]
+      : schonOffen
       ? ["Auf den Merkzettel", "Zur Buchung", "Zurück zur Auswahl"]
       : [`Öffne ${kurzname}`, `Buch ${kurzname}`, ...(this.lauf.phase === "shortlist" ? ["Zurück zur Auswahl"] : [])]);
     AgentPanel.status("wartet auf deine Antwort");

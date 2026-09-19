@@ -183,16 +183,19 @@ const Modell = {
   },
 
   fremdeZahlen(text, fakten) {
+    // "1.519 €" ist eine Zahl, nicht "1" und "519" - Tausenderpunkte
+    // fallen vor dem Vergleich weg, auf beiden Seiten
+    const zahlenIn = (s) => (String(s).match(/\d{1,3}(?:\.\d{3})+(?!\d)|\d+/g) || []).map((z) => z.replace(/\./g, ""));
     const belegt = new Set();
     const sammle = (wert) => {
       if (typeof wert === "number") belegt.add(String(Math.round(wert)));
-      else if (typeof wert === "string") for (const z of wert.match(/\d+/g) || []) belegt.add(z);
+      else if (typeof wert === "string") for (const z of zahlenIn(wert)) belegt.add(z);
       else if (Array.isArray(wert)) wert.forEach(sammle);
       else if (wert && typeof wert === "object") Object.values(wert).forEach(sammle);
     };
     sammle(fakten);
     const fremd = [];
-    for (const z of text.match(/\d+/g) || []) {
+    for (const z of zahlenIn(text)) {
       // Kleine Zahlen, Tage und Jahre sind keine Messwerte
       if (+z <= 31) continue;
       if (+z >= 2024 && +z <= 2030) continue;

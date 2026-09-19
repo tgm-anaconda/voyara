@@ -156,7 +156,7 @@ const Studie = {
   },
 
   durchlauf() {
-    return this.daten?.durchlaeufe[this.daten.aktuelle] || null;
+    return this.daten?.durchlaeufe?.[this.daten.aktuelle] || null;
   },
 
   durchlaufAnlegen() {
