@@ -997,7 +997,12 @@ const Kern = {
         + "Unter regionenImZeitraum steht, in welchen Regionen es wie viele passende Haeuser gibt. Nenne die Zahl insgesamt und "
         + "die zwei, drei Regionen mit den meisten Haeusern, und frag, ob die Person schon ein Ziel im Kopf hat oder ob du eines vorschlagen sollst."
         + (this.lauf.zielAuswahl?.length ? " Die Person hatte eine Reiseart genannt (siehe reiseart) - beschraenke dich auf die Regionen, die dazu passen." : "");
-      fakten.regionenImZeitraum = this.lauf.merker.regionen;
+      fakten.regionenImZeitraum = {
+        insgesamt: this.lauf.merker.regionenGesamt,
+        anzahlRegionen: rs.length,
+        jeRegion: rs.map((r) => ({ region: r.name, haeuser: r.anzahl, saison: r.saison ? "Hauptsaison" : "Nebensaison" })),
+        hinweis: "Nenne nur diese Zahlen. Rechne nichts zusammen.",
+      };
       if (this.lauf.zielAuswahl?.length) fakten.reiseart = { passendeRegionen: Politik.zielnamen(this.lauf.zielAuswahl) };
     }
     this.sagen(await this.formulieren(fakten, ersatz));
