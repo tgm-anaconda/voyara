@@ -2338,6 +2338,19 @@ const Kern = {
     const phase = this.lauf.phase;
     const mitAuswahl = ["shortlist", "vertieft", "fertig", "nachfrage"].includes(phase) && (this.lauf.kandidaten || []).length;
     const offeneFrage = ["vorfrage", "eingangsfrage", "zielwahl", "nachfrage"].includes(phase);
+    // Ausserhalb eines laufenden Gespraechs: Traegt die Nachricht
+    // Reiseangaben (Monat, Naechte, Personen, Ziel, Reiseart, Wuensche),
+    // ist sie ein Auftrag - auch wenn sie wie Plauderei klingt ("ich
+    // wuerde gerne im Oktober wegfliegen"). Sonst ging der Oktober
+    // verloren, und der Agent fragte danach.
+    if (["leer", "fertig"].includes(phase) && !mitAuswahl) {
+      const a0 = Politik.absicht(t);
+      const reiseInfo = a0.monat != null || a0.naechte != null || a0.personen != null || a0.erwachsene != null
+        || a0.zielId || a0.budgetGesamt != null || a0.maxPreis != null || (a0.kriterien || []).length
+        || a0.artGenannt || a0.familieGenannt || !!Politik.themaAusText(t);
+      if (reiseInfo) return this.auftrag(t);
+    }
+
     if (mitAuswahl || offeneFrage || phase === "fertig") {
       const e = await this.einordnen(t);
       this.notieren("einordnung", { absicht: e.absicht, aspekte: e.aspekte, quelle: e.quelle, phase });
@@ -2452,6 +2465,7 @@ const Kern = {
   // Agent weiss, antworten, ohne die Phase zu verlassen.
   async antwortAllgemeineFrage(text) {
     this.sagen(text, "user");
+    Politik.uebernehmen(text, this.lauf.profil);
     this.notieren("frage_allgemein", { phase: this.lauf.phase });
     await this.denkpause(600);
     await this.sprechen(
@@ -2465,6 +2479,7 @@ const Kern = {
 
   async antwortSmalltalk(text) {
     this.sagen(text, "user");
+    Politik.uebernehmen(text, this.lauf.profil);
     await this.sprechen(
       "Die Person hat etwas geschrieben, das keine Frage zur Reise ist (Gruss, Dank, Bemerkung). Antworte kurz und freundlich darauf und knuepfe in einem Satz an das an, was gerade ansteht.",
       { wasDiePersonSchrieb: text },
