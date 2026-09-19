@@ -188,10 +188,26 @@ export default async function handler(req, res) {
 // Die Antwortvorschlaege stehen als letzte Zeile "CHIPS: a | b | c" im
 // Text. Sie werden hier abgetrennt, bevor die Absaetze zusammenfallen.
 function chipsTrennen(inhalt) {
-  const m = String(inhalt).match(/CHIPS?\s*:\s*([^\n]+?)\s*$/im);
-  if (!m) return { text: inhalt, chips: [] };
-  const chips = m[1].split("|").map((s) => s.replace(/^[\s\-*"']+|[\s"'.]+$/g, "").trim()).filter(Boolean).slice(0, 4);
-  return { text: String(inhalt).replace(m[0], "").trim(), chips };
+  const alle = [...String(inhalt).matchAll(/CHIPS?\s*:\s*([^\n]+?)\s*$/gim)];
+  if (!alle.length) return { text: saetzeEntdoppeln(inhalt), chips: [] };
+  const letzte = alle[alle.length - 1][1];
+  const chips = letzte.split("|").map((s) => s.replace(/^[\s\-*"']+|[\s"'.]+$/g, "").trim()).filter(Boolean).slice(0, 4);
+  let text = String(inhalt);
+  for (const m of alle) text = text.replace(m[0], "");
+  return { text: saetzeEntdoppeln(text.trim()), chips };
+}
+
+// Das kleine Modell schreibt denselben Satz gelegentlich zweimal
+// hintereinander. Der zweite faellt weg.
+function saetzeEntdoppeln(text) {
+  const saetze = String(text).split(/(?<=[.!?])\s+/);
+  const raus = [];
+  for (const s of saetze) {
+    const norm = s.replace(/\W+/g, "").toLowerCase();
+    if (norm && raus.some((r) => r.replace(/\W+/g, "").toLowerCase() === norm)) continue;
+    raus.push(s);
+  }
+  return raus.join(" ");
 }
 
 // Ausrufezeichen sind in der Rolle verboten, das Modell setzt sie
