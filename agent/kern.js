@@ -749,6 +749,12 @@ const Kern = {
         this.lauf.profil.erwachsene = null;
         this.lauf.profil.kinder = null;
       }
+      // Erwachsene ausdruecklich genannt, kein Wort von Kindern: dann
+      // reisen keine mit ("zu zweit", "zwei Erwachsene", "allein").
+      if (this.lauf.profil.erwachsene != null && this.lauf.profil.kinder == null
+        && !this.lauf.profil.familieGenannt && !kindImSatz) {
+        this.lauf.profil.kinder = 0;
+      }
     }
     // Fuer die Auswertung: hat das Modell verstanden oder die Ersatzlogik?
     this.notieren("verstanden", { quelle: ausModell ? "modell" : "schluesselwoerter", profil: this.lauf.profil });
