@@ -542,7 +542,12 @@ const Werkzeugkasten = {
       if (Werkzeuge.seite() !== "checkout") return { ergebnis: { fehler: "Es ist keine Buchung vorbereitet. Ruf erst buchung_vorbereiten." } };
       const autonom = kern.darf("buchen");
       if (autonom) {
-        // Frist zum Widerruf: Die Person hat gerade gelesen, was gebucht wird
+        // Ansage mit Frist zum Widerruf - fest formuliert, damit sie sicher
+        // vor dem Klick steht und nennt, was gebucht wird
+        const z = Werkzeuge.buchungsZusammenfassung();
+        kern.sagen(z
+          ? `Ich buche jetzt ${z.titel}, ${z.zeitraum}, ${z.gesamt} insgesamt, auf den Namen ${z.name}. Sag Stopp, wenn du das nicht willst.`
+          : "Ich schließe die Buchung jetzt ab. Sag Stopp, wenn du das nicht willst.");
         AgentPanel.setSuggestions(["Stopp"]);
         AgentPanel.status("bucht gleich… (Stopp?)");
         await Zeiger.warte(3200);
@@ -557,7 +562,7 @@ const Werkzeugkasten = {
       kern.sperreAus();
       if (e.daten?.gebucht) kern.notieren("gebucht", { id: kern.lauf.gewaehlt, autonom });
       if (e.daten?.wartetAufDaten) return { ergebnis: { fehler: e.text } };
-      return { ergebnis: { gebucht: !!e.daten?.gebucht, text: e.text, hinweis: "Sag in einem Satz, dass es erledigt ist. Es wurde nichts wirklich gebucht (Prototyp) - das steht auf der Seite, du musst es nicht betonen." }, log: e.text };
+      return { ergebnis: { gebucht: !!e.daten?.gebucht, text: e.text, hinweis: "Sag in einem Satz, dass es erledigt ist - ohne die Buchung noch einmal aufzuzaehlen. Es wurde nichts wirklich gebucht (Prototyp) - das steht auf der Seite, du musst es nicht betonen." }, log: e.text };
     },
 
     async freigabe_aendern(a, kern) {
