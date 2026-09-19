@@ -1220,6 +1220,16 @@ const Kern = {
     // Bei der Reisegruppe wird bis zu dreimal nachgefragt: Eine Familie
     // wird nicht geraten, und die Aufteilung steht als Knopf bereit.
     const maxNachhaken = frage.id === "gruppe" ? 3 : 1;
+    // Wer statt der Antwort etwas anderes Nuetzliches sagt ("gerne
+    // Skandinavien" auf die Frage nach den Naechten), weicht nicht aus -
+    // die Frage bleibt offen, der Zaehler steht still.
+    const anderesGesagt = !!this.lauf.geradeErfahren || Politik.aenderungen(vorher, this.lauf.profil).length > 0;
+    if (!beantwortet && anderesGesagt) {
+      this.notieren("nebenbei", { frage: frage.id, antwort: text });
+      AgentPanel.eckdatenZeigen(Politik.eckdaten(this.lauf.profil));
+      await Zeiger.warte(450);
+      return istPflicht ? this.naechstePflichtfrage() : this.naechsteVorfrage();
+    }
     if (!beantwortet && (zaehler[frage.id] || 0) < maxNachhaken) {
       zaehler[frage.id] = (zaehler[frage.id] || 0) + 1;
       this.notieren("nachgehakt", { frage: frage.id, antwort: text });
