@@ -71,9 +71,10 @@ const Werkzeugkasten = {
       f("suchen",
         "Sucht Haeuser nach den gemerkten Angaben (Ziel, Zeit, Reisende, Art) und den genannten Filtern. Bei Freigabe ab 'suchen' bedient es sichtbar die Seite (Suchmaske, Filter, Sortierung), sonst sucht es im Katalog. Liefert bis zu acht Treffer mit Preis pro Nacht und Gaestenote. Ruf vorher stand_merken mit allem, was feststeht.",
         {
-          ausstattung: { type: "array", items: { type: "string", enum: ["pool", "spa", "kidsClub", "familyFriendly", "beachfront", "wifi", "parking", "restaurant", "gym", "seaView"] }, description: "Ausstattung, die das Haus haben muss" },
+          ziel: text("Region-id (z.B. mallorca), falls sie feststeht und noch nicht gemerkt ist"),
+          ausstattung: { type: "array", items: { type: "string", enum: ["pool", "spa", "kidsClub", "familyFriendly", "beachfront", "wifi", "parking", "restaurant", "gym", "seaView"] }, description: "Ausstattung, die das Haus haben muss. beachfront nur bei 'direkt am Strand'; 'nah am Strand' ist maxStrandMeter 500" },
           maxPreis: zahl("Hoechstpreis pro Nacht in Euro"),
-          maxStrandMeter: zahl("Hoechstens so viele Meter zum Strand"),
+          maxStrandMeter: zahl("Hoechstens so viele Meter zum Strand (nah am Strand = 500, direkt = 200)"),
           mindestbewertung: { type: "number", description: "Mindest-Gaestenote" },
           mindestSterne: zahl("Mindestens so viele Sterne"),
           sortierung: { type: "string", enum: ["passung", "preis", "bewertung"], description: "Reihenfolge der Treffer; passung = nach den Wuenschen" },
@@ -311,6 +312,7 @@ const Werkzeugkasten = {
     async suchen(a, kern, stufe) {
       const p = kern.lauf.profil;
       // Filter aus dem Aufruf in den Stand uebernehmen
+      if (a.ziel && typeof ZIEL_NACH_ID !== "undefined" && ZIEL_NACH_ID[String(a.ziel).toLowerCase()]) p.zielId = String(a.ziel).toLowerCase();
       if (a.maxPreis) p.maxPreis = a.maxPreis;
       if (a.maxStrandMeter != null) p.maxStrand = Math.round(a.maxStrandMeter) / 1000;
       if (a.mindestbewertung) p.mindestbewertung = a.mindestbewertung;

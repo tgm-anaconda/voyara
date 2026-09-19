@@ -625,10 +625,11 @@ const Kern = {
         const gleich = (x, y) => x && y && x.replace(/\W+/g, "").toLowerCase() === y.replace(/\W+/g, "").toLowerCase();
         if (text && !gleich(text, zuletzt)) this.sagen(text);
         if (!nachricht.tool_calls) {
-          this.lauf.chips = antwort.chips || [];
+          this.lauf.chips = (antwort.chips || []).length ? antwort.chips : this.ersatzChips();
           AgentPanel.setSuggestions(this.lauf.chips);
           break;
         }
+        this.lauf.letztesWerkzeug = nachricht.tool_calls[nachricht.tool_calls.length - 1]?.function?.name || null;
         this.lauf.chips = [];
         AgentPanel.setSuggestions([]);
         this.lauf.ausstehend = { calls: antwort.tool_calls, i: 0, stufe: 1 };
@@ -640,6 +641,19 @@ const Kern = {
     } finally {
       this.zugBeenden();
     }
+  },
+
+  // Wenn das Modell keine Antwortvorschlaege mitgibt: passende aus der Lage
+  ersatzChips() {
+    const w = this.lauf.letztesWerkzeug;
+    const seite = Werkzeuge.seite();
+    if (w === "buchung_vorbereiten" && seite === "checkout") return ["Ja, schließ ab", "Ich mache das selbst"];
+    if (w === "buchung_abschliessen") return [];
+    if (w === "auswahl_vorlegen" && this.lauf.letzteVorlage?.length) {
+      return [...this.lauf.letzteVorlage.map((id, i) => `${i + 1}. ${(getItemById?.(id)?.name || id).split(" ").slice(0, 2).join(" ")}`), "Etwas anderes"];
+    }
+    if (w === "haus_oeffnen" || (seite === "stay" && this.lauf.gewaehlt)) return ["Auf den Merkzettel", "Zur Buchung", "Zurück zur Auswahl"];
+    return [];
   },
 
   zugBeenden() {
