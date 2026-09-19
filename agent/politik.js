@@ -80,8 +80,12 @@ const Politik = {
     // ebenso gut koennte es ein Elternteil mit zwei Kindern sein.
     const erwGenau = t.match(new RegExp(`\\b(${ZAHLEN})\\s+erwachsene[nr]?`));
     const gesamt = t.match(new RegExp(`(${ZAHLEN})\\s+(?:personen|leute|pers\\.?)`));
+    // "Meine Freundin und ich", "mit meiner Frau": zwei Erwachsene, ganz
+    // ausdruecklich - Kinder nur, wenn sie genannt werden.
+    const paar = /\b(mein|meine)\s+(freundin|freund|frau|mann|partnerin|partner|verlobte[rn]?)\s+und\s+ich\b|\bich\s+und\s+(mein|meine)\s+(freundin|freund|frau|mann|partnerin|partner)\b|\b(mit|nur mit)\s+(meiner|meinem)\s+(freundin|freund|frau|mann|partnerin|partner)\b|\bals paar\b|\bwir zwei\b|\bwir beide\b/.test(t);
     if (erwGenau) a.erwachsene = Math.min(6, zahl(erwGenau[1]) ?? 2);
     else if (gesamt) a.personen = Math.min(8, zahl(gesamt[1]) ?? 2);
+    else if (paar) a.erwachsene = 2;
     else if (/zu zweit|für zwei|fuer zwei/.test(t)) a.personen = 2;
     else if (/zu dritt|für drei|fuer drei/.test(t)) a.personen = 3;
     else if (/zu viert|für vier|fuer vier/.test(t)) a.personen = 4;
@@ -293,7 +297,7 @@ const Politik = {
     { id: "norden", label: "in den hohen Norden", ziele: ["lappland", "island"],
       woerter: ["norden", "nordlicht", "polarlicht", "aurora", "skandinavien", "arktis", "schnee und eis"] },
     { id: "strand", label: "ans Meer", ziele: ["mallorca", "kreta", "algarve", "sardinien", "teneriffa", "krabi", "ostsee"],
-      woerter: ["ans meer", "strandurlaub", "an den strand", "badeurlaub", "meer", "küste", "kueste", "insel"] },
+      woerter: ["ans meer", "strandurlaub", "an den strand", "badeurlaub", "meer", "küste", "kueste", "insel", "baden", "am strand", "strand"] },
     { id: "stadt", label: "in eine Stadt", ziele: ["barcelona", "wien", "lissabon", "newyork", "kyoto"],
       woerter: ["städtetrip", "staedtetrip", "städtereise", "staedtereise", "stadt", "city"] },
     { id: "wintersonne", label: "in die Wintersonne", ziele: ["teneriffa", "krabi", "marrakesch", "kapstadt"],
@@ -303,7 +307,7 @@ const Politik = {
     // "Irgendwo, wo es warm ist" - kein Ort, aber ein klarer Wunsch. Ohne
     // diesen Eintrag zaehlte der Agent Lappland und Island mit.
     { id: "warm", label: "irgendwohin, wo es warm ist", ziele: ["mallorca", "kreta", "algarve", "sardinien", "teneriffa", "krabi", "marrakesch", "kapstadt"],
-      woerter: ["wo es warm ist", "wo es noch warm ist", "warm ist", "warmes wetter", "in die sonne", "in der sonne", "sonne tanken", "sonnig", "hitze", "baden"] },
+      woerter: ["wo es warm ist", "wo es noch warm ist", "warm ist", "warmes wetter", "in die sonne", "in der sonne", "sonne tanken", "sonnig", "hitze"] },
   ],
 
   // Reiseart aus dem Text. Laengste Wortliste zuerst, damit "Wintersonne"
@@ -595,6 +599,14 @@ const Politik = {
   /* Ein Satz je Vorschlag: was spricht dafuer, wo hakt es.
      Die Zahlen kommen aus den Daten, nicht aus dem Modell - erfundene
      Prozentwerte waeren in einer Studie fatal. */
+  // "bei Essen" klingt nach Maschine - "beim Essen", "bei der Lage"
+  beiAspekt(label) {
+    const ARTIKEL = { "Essen": "beim Essen", "Lage": "bei der Lage", "Sauberkeit": "bei der Sauberkeit", "Service": "beim Service",
+      "Ausstattung": "bei der Ausstattung", "Preis-Leistung": "beim Preis-Leistungs-Verhältnis", "Ruhe": "bei der Ruhe",
+      "Pool & Anlage": "bei Pool und Anlage", "Kommunikation": "bei der Kommunikation", "Küche": "bei der Küche", "Check-in": "beim Check-in" };
+    return ARTIKEL[label] || `bei ${label}`;
+  },
+
   vorschlagssatz(k, profil) {
     const teile = [];
     const note = k.item.rating.toFixed(1).replace(".", ",");
@@ -624,9 +636,9 @@ const Politik = {
     }
 
     if (schwach) {
-      teile.push(`Beim Thema ${schwach.kriterium} ist es dünner: nur ${Math.round(schwach.anteil * 100)} Prozent positiv.`);
+      teile.push(`${this.beiAspekt(schwach.kriterium).charAt(0).toUpperCase()}${this.beiAspekt(schwach.kriterium).slice(1)} ist es dünner: nur ${Math.round(schwach.anteil * 100)} Prozent positiv.`);
     } else if (kurz?.schwaechen?.length) {
-      teile.push(`Kritik gibt es bei ${kurz.schwaechen[0]}.`);
+      teile.push(`Kritik gibt es ${this.beiAspekt(kurz.schwaechen[0])}.`);
     }
     return teile.join(" ");
   },
@@ -2002,11 +2014,15 @@ const Politik = {
       vorgaben: [...new Set(vorgaben)],
       genannteKriterien: (profil.kriterien || []).map((x) => this.kriterium(x.id)?.label).filter(Boolean),
       erstesHaus: erster ? erster.item.name : null,
-      ausschlaggebend: beleg ? {
+      // Beim Partnerhaus gibt es keinen "Ausschlag" aus den Zahlen - der
+      // Platz ist gesetzt. Ein Beleg an dieser Stelle verleitete das
+      // Modell zu falschen Superlativen ("den kuerzesten Weg").
+      ausschlaggebend: beleg && !erster?.partner ? {
         thema: beleg.kriterium,
         prozentPositiv: Math.round(beleg.anteil * 100),
         erwaehnungen: beleg.erwaehnungen,
       } : null,
+      keineSuperlative: "Sag nicht 'am naechsten', 'am besten', 'den kuerzesten Weg' - solche Vergleiche stehen nicht in den Fakten.",
       nichtGeprueft: ["Verfügbarkeit", "Stornobedingungen"],
     };
   },

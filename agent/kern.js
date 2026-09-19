@@ -820,24 +820,14 @@ const Kern = {
         // was es in dem Zeitraum gibt, und stellt die Regionen mit
         // Anzahl zur Wahl. Die Reiseart ist gemerkt, die Frage nach dem
         // Ort kommt an ihrer Stelle in der Reihe (Pflichtfrage "ziel").
-        const p = this.lauf.profil;
-        if (p.monat == null || p.naechte == null || p.erwachsene == null || p.kinder == null) {
-          this.notieren("thema_gemerkt", { thema: thema.id, ziele: thema.ziele });
-          this.sichern();
-          return false;
-        }
-        this.lauf.phase = "zielwahl";
-        const namen = Politik.zielnamen(thema.ziele);
-        this.notieren("zielwahl_gestellt", { thema: thema.id, ziele: thema.ziele });
-        // Formuliert das Modell. Der Satz unten ist nur der Rueckfall, wenn
-        // die Schnittstelle nicht antwortet - nicht die Regelantwort.
-        const ersatz = `${thema.label.charAt(0).toUpperCase() + thema.label.slice(1)} — gerne. Dafür habe ich ${Politik.aufzaehlen(namen)}. Wohin soll ich schauen?`;
-        this.sagen(await this.formulieren(Politik.faktenZielwahl(text, thema), ersatz));
-        AgentPanel.setSuggestions(namen);
-        AgentPanel.status("wartet auf deine Antwort");
-        AgentPanel.oeffnen();
+        // Auch wenn schon alles andere feststeht: Die Zielfrage stellt
+        // die Pflichtfragen-Reihe, denn dort sieht der Agent vorher nach,
+        // wie viele Haeuser es je Region gibt. Eine blosse Namensliste
+        // ("Dafuer habe ich Mallorca, Kreta ...") verleitete das Modell
+        // dazu, die Orte aus dem Weltwissen zu beschreiben.
+        this.notieren("thema_gemerkt", { thema: thema.id, ziele: thema.ziele });
         this.sichern();
-        return true;
+        return false;
       }
     }
 
@@ -1849,6 +1839,7 @@ const Kern = {
     const kandidaten = this.lauf.kandidaten || [];
     const gesucht = text.toLowerCase();
     const k = kandidaten.find((x) => gesucht.includes((x.item?.name || "").toLowerCase()))
+      || (() => { const h = this.hausAusEinordnung(text); return h ? kandidaten.find((x) => x.id === h.id) : null; })()
       || (Werkzeuge.seite() === "stay"
         ? kandidaten.find((x) => x.id === new URLSearchParams(location.search).get("id"))
         : null);
@@ -1995,7 +1986,7 @@ const Kern = {
       const dazu = genannt.size ? "außerdem " : "vor allem ";
       teile.push(`Gelobt ${uebrig.length > 1 ? "werden" : "wird"} ${dazu}${Politik.aufzaehlen(uebrig)}.`);
     }
-    if (b.kritisiert?.length) teile.push(`Kritik gibt es bei ${Politik.aufzaehlen(b.kritisiert)}.`);
+    if (b.kritisiert?.length) teile.push(`Kritik gibt es ${Politik.aufzaehlen(b.kritisiert.map((x) => Politik.beiAspekt(x)))}.`);
     teile.push("Soll ich es vormerken, zur Buchung gehen — oder möchtest du zurück zur Auswahl?");
 
     this.lauf.phase = "vertieft";
@@ -2463,6 +2454,9 @@ const Kern = {
     // Merkzettel" ein Auftrag dazu. Vorher landete beides in der
     // jeweiligen Phasenantwort und wurde als "kenne ich nicht" oder als
     // neuer Suchauftrag gelesen.
+    // "Warum dieses Haus?" - vor allem anderen, sonst liest der Hausname
+    // in der Frage sich wie eine neue Frage nach dem Haus
+    if (/^(warum|wieso|weshalb)\b/i.test(t) && (this.lauf.kandidaten || []).length && await this.antwortWarum(t)) return;
     const vorgelegt = (this.lauf.kandidaten || []).map((k) => k.item).filter(Boolean);
     const haus = (vorgelegt.length && Politik.hausImText(t, vorgelegt)) || Politik.hausImText(t);
     if (haus) {
