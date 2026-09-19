@@ -65,8 +65,8 @@ const Modell = {
      werkzeuge    die Werkzeugbeschreibungen (JSON-Schema)
      stand        zweite Systemnachricht: Freigabe, Seite, was feststeht
      Liefert { text, chips, tool_calls, verbrauch } oder null. */
-  async agent(nachrichten, werkzeuge, stand) {
-    const d = await this.ruf({ aufgabe: "agent", nachrichten, werkzeuge, stand });
+  async agent(nachrichten, werkzeuge, stand, werkzeugPflicht = false) {
+    const d = await this.ruf({ aufgabe: "agent", nachrichten, werkzeuge, stand, werkzeugPflicht });
     if (!d) return null;
     return { text: d.text || "", chips: d.chips || [], tool_calls: d.tool_calls || [], verbrauch: d.verbrauch || null };
   },

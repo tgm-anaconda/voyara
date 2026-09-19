@@ -31,11 +31,13 @@ const ROLLE = `Du bist der Reise-Assistent von Voyara, einer deutschen Buchungss
 WIE DU ARBEITEST
 Du fuehrst ein Gespraech wie jemand im Reisebuero, dem gegenueber jemand Platz genommen hat. Du entscheidest selbst, was du als Naechstes fragst, in welcher Reihenfolge, und wann du nachsiehst. Es gibt keinen festen Fragebogen. Du gehst von dem aus, was die Person sagt, und fragst nur, was noch fehlt.
 
-Was du fuer eine Suche brauchst: Ziel (oder eine Richtung wie "warm", "ans Meer", "Stadt"), wann (Monat, und ob es feste Daten gibt oder die Person flexibel ist), wie lange, wer mitreist (Erwachsene und Kinder getrennt, bei Kindern das Alter), Hotel oder Ferienwohnung, wie viele Zimmer, ob nur die Unterkunft oder auch ein Flug gewuenscht ist, und dann Wuensche (Budget, Pool, Strandnaehe, Kinderclub, Ruhe, Wellness, Verpflegung, was der Person wichtig ist). Alles, was die Person schon gesagt hat, fragst du nicht mehr. Eine Frage pro Nachricht.
+Was du fuer eine Suche brauchst: Ziel (oder eine Richtung wie "warm", "ans Meer", "Stadt"), wann (Monat, und ob es feste Daten gibt oder die Person flexibel ist), wie lange, wer mitreist (Erwachsene und Kinder getrennt, bei Kindern das Alter), Hotel oder Ferienwohnung, wie viele Zimmer, ob nur die Unterkunft oder auch ein Flug gewuenscht ist, und dann Wuensche (Budget, Pool, Strandnaehe, Kinderclub, Ruhe, Wellness, Verpflegung, was der Person wichtig ist). Alles, was die Person schon gesagt hat, fragst du nicht mehr. Genau eine Frage pro Nachricht - nie zwei Fragen in einer Nachricht, auch nicht mit "und". Die naechste kommt, wenn die erste beantwortet ist.
 
 Du nimmst nichts an. "Zu viert" ist keine Aufteilung in Erwachsene und Kinder. "Familie mit zwei Kindern" nennt keine Erwachsenenzahl. Ein Budget, ein Alter, ein Datum: Das weiss nur die Person. Was fehlt, erfragst du. Bei Daten: Gibt es feste Daten, nimm sie. Ist die Person flexibel, sag ehrlich, dass auf dieser Seite im gewuenschten Monat alle Haeuser durchgehend frei sind und die Preise im Monat gleich bleiben; setz dann einen Zeitraum ein (zum Beispiel ab dem 12. des Monats) und nenn ihn, damit die Person widersprechen kann.
 
-Sobald du etwas Neues ueber die Reise erfaehrst, rufst du stand_merken auf, gleichzeitig mit deiner Antwort. Der Stand ist das Gedaechtnis, das die Person ueber dem Chat sieht.
+Nach jeder Nachricht der Person rufst du zuerst stand_merken mit allem, was sie darin Neues gesagt hat (Monat, Dauer, Reisende, Richtung wie "ans Meer" als Wunsch strandnah, Wuensche, Budget), und antwortest danach. Der Stand ist dein Gedaechtnis und das, was die Person ueber dem Chat sieht. Was nicht im Stand steht, gilt als nicht gesagt.
+
+Wenn du ein Werkzeug rufst, schreibst du im selben Zug keinen Text, hoechstens einen Halbsatz wie "Moment, ich sehe nach." Nach dem Werkzeugergebnis schreibst du deine Antwort einmal - nie dasselbe zweimal, nie eine Frage wiederholen, die schon im Chat steht.
 
 WAS DU WEISST UND WAS NICHT
 Dein Allgemeinwissen darfst du benutzen: Klima und Reisezeit einer Region, was einen Ort ausmacht, was fuer Familien oder Paare typisch passt, Reisetipps. Wenn jemand fragt, wo es im Oktober warm ist, antwortest du aus deinem Wissen und beziehst es auf die Ziele, die diese Seite hat (die stehen unter regionen_zaehlen).
@@ -132,7 +134,7 @@ export default async function handler(req, res) {
   if (req.method !== "POST") return fehler(res, 405, "Nur POST.");
   if (!process.env.OPENAI_API_KEY) return fehler(res, 503, "Kein Schlüssel hinterlegt.");
 
-  const { aufgabe, nachrichten, werkzeuge, stand } = req.body || {};
+  const { aufgabe, nachrichten, werkzeuge, stand, werkzeugPflicht } = req.body || {};
   if (!["agent", "text"].includes(aufgabe)) return fehler(res, 400, "Unbekannte Aufgabe.");
 
   const verlauf = nachrichtenPruefen(nachrichten);
@@ -150,7 +152,9 @@ export default async function handler(req, res) {
   };
   if (aufgabe === "agent" && Array.isArray(werkzeuge) && werkzeuge.length) {
     koerper.tools = werkzeuge;
-    koerper.tool_choice = "auto";
+    // Nach jeder Nachricht der Person ist der erste Zug ein Werkzeug
+    // (meist stand_merken) - das kleine Modell laesst es sonst gern weg
+    koerper.tool_choice = werkzeugPflicht === true ? "required" : "auto";
     koerper.parallel_tool_calls = false;
   }
 
@@ -180,7 +184,7 @@ export default async function handler(req, res) {
 // Die Antwortvorschlaege stehen als letzte Zeile "CHIPS: a | b | c" im
 // Text. Sie werden hier abgetrennt, bevor die Absaetze zusammenfallen.
 function chipsTrennen(inhalt) {
-  const m = String(inhalt).match(/^\s*CHIPS?\s*:\s*(.+?)\s*$/im);
+  const m = String(inhalt).match(/CHIPS?\s*:\s*([^\n]+?)\s*$/im);
   if (!m) return { text: inhalt, chips: [] };
   const chips = m[1].split("|").map((s) => s.replace(/^[\s\-*"']+|[\s"'.]+$/g, "").trim()).filter(Boolean).slice(0, 4);
   return { text: String(inhalt).replace(m[0], "").trim(), chips };

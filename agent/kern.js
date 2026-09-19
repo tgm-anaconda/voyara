@@ -583,7 +583,10 @@ const Kern = {
           this.sagen("Ich bin gerade nicht erreichbar. Du kannst auf der Seite selbst weitersuchen, ich melde mich, sobald es wieder geht.");
           break;
         }
-        const antwort = await Modell.agent(this.gespraechFuerModell(), Werkzeugkasten.definitionen(), this.standFuerModell());
+        // Erster Zug nach einer Nachricht der Person: ein Werkzeug ist Pflicht
+        const letzte = this.lauf.gespraech[this.lauf.gespraech.length - 1];
+        const pflicht = i === 0 && letzte?.role === "user";
+        const antwort = await Modell.agent(this.gespraechFuerModell(), Werkzeugkasten.definitionen(), this.standFuerModell(), pflicht);
         if (!antwort) {
           this.sagen("Da ist gerade etwas schiefgegangen. Sag es mir bitte noch einmal.");
           break;
@@ -614,7 +617,11 @@ const Kern = {
           }
         }
         this.gespraechPush(nachricht);
-        if (text) this.sagen(text);
+        // Denselben Satz nicht zweimal zeigen (das kleine Modell wiederholt
+        // nach einem Werkzeug gern, was es davor schon gesagt hat)
+        const zuletzt = [...this.lauf.verlauf].reverse().find((n) => n.rolle === "bot")?.text || "";
+        const gleich = (x, y) => x && y && x.replace(/\W+/g, "").toLowerCase() === y.replace(/\W+/g, "").toLowerCase();
+        if (text && !gleich(text, zuletzt)) this.sagen(text);
         if (!nachricht.tool_calls) {
           this.lauf.chips = antwort.chips || [];
           AgentPanel.setSuggestions(this.lauf.chips);
