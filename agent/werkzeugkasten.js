@@ -403,20 +403,28 @@ const Werkzeugkasten = {
       const zimmer = Math.max(1, p.zimmer || 1);
       const gebuehr = item.type === "apartment" ? (item.cleaningFee || 0) : 35 * zimmer;
       const proNacht = k.preisProNacht;
+      // Das Zimmer, das zur Gruppe passt (wie die Seite es vorbelegt):
+      // das erste, in das alle passen - bei mehreren Zimmern je Zimmer
+      const personen = (p.erwachsene || 0) + (p.kinder || 0);
+      const jeZimmer = personen ? Math.ceil(personen / zimmer) : 0;
+      const passend = (item.rooms || []).find((r) => (r.maxGuests || 0) >= jeZimmer) || (item.rooms || [])[0] || null;
+      const zimmerAufpreis = passend?.priceDelta || 0;
       const preise = item.type === "apartment"
         ? { proNacht, ...(naechte ? { gesamtInklEndreinigung: proNacht * naechte + gebuehr } : {}) }
-        : { guenstigstesZimmer: (item.boards || []).map((b) => ({
+        : { zimmer: passend ? `${passend.name} (bis ${passend.maxGuests} Personen${zimmerAufpreis ? `, +${zimmerAufpreis} € je Nacht` : ""})` : null,
+            jeVerpflegung: (item.boards || []).map((b) => ({
             verpflegung: (typeof BOARD_LABELS !== "undefined" && BOARD_LABELS[b.key]) || b.key,
-            proNacht: proNacht + (b.priceDelta || 0),
-            ...(naechte ? { gesamtInklGebuehr: (proNacht + (b.priceDelta || 0)) * naechte * zimmer + gebuehr } : {}),
-          })), zimmerkategorien: (item.rooms || []).map((r) => ({ name: r.name, bisPersonen: r.maxGuests, aufpreisProNacht: r.priceDelta })) };
+            proNachtUndZimmer: proNacht + zimmerAufpreis + (b.priceDelta || 0),
+            ...(naechte ? { gesamtInklGebuehr: (proNacht + zimmerAufpreis + (b.priceDelta || 0)) * naechte * zimmer + gebuehr } : {}),
+          })), weitereZimmer: (item.rooms || []).filter((r) => r !== passend).map((r) => ({ name: r.name, bisPersonen: r.maxGuests, aufpreisProNacht: r.priceDelta })) };
       const kurz = typeof aspektKurzfassung === "function" ? aspektKurzfassung(item) : null;
       kern.notieren("haus_genannt", { id: item.id, absicht: "details" });
       return {
         ergebnis: {
           ...k, beschreibung: item.shortDescription, highlights: (item.highlights || []).slice(0, 4),
           kmZumZentrum: item.distanceToCenter ?? null, kmZumFlughafen: item.distanceToAirport ?? null,
-          preise: { hinweis: naechte ? `fuer ${naechte} Naechte, ${zimmer} Zimmer, Preise nur so nennen` : "Naechte unbekannt, daher kein Gesamtpreis", ...preise },
+          preise: { hinweis: naechte ? `fuer ${naechte} Naechte, ${zimmer} Zimmer, ${personen || "?"} Personen - Preise nur so nennen, nicht rechnen` : "Naechte unbekannt, daher kein Gesamtpreis", ...preise },
+          ...(p.budgetGesamt ? { budgetGesamt: p.budgetGesamt } : {}),
           bewertungen: kurz ? { anzahl: item.reviewCount, jeAspekt: (kurz.bilanz || []).slice(0, 6).map((x) => ({ aspekt: x.label, prozentPositiv: Math.round(x.anteilPositiv * 100), erwaehnungen: x.erwaehnungen })) } : null,
           haeltGemerkteVorgabenEin: typeof Politik !== "undefined" ? Politik.erfuellt(item, proNacht, p) : null,
         },
