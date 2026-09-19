@@ -118,7 +118,13 @@ const Politik = {
     const bewertungsNote = t.match(/bewertung(?:en)?\s*(?:von\s*)?(?:mindestens|min\.?|ab|über|ueber|wenigstens|besser als)?\s*(\d(?:[.,]\d)?)/)
       || t.match(/(?:mindestens|min\.?|ab|wenigstens)\s*(\d(?:[.,]\d)?)\s*(?:sterne?\s*)?(?:bewertung|gästebewertung|gaestebewertung|note|punkte)/)
       || t.match(/(?:note|bewertet mit)\s*(?:mindestens|ab|über|ueber)?\s*(\d(?:[.,]\d)?)/);
-    if (bewertungsNote) {
+    // "3,5 Sterne" ist eine Gaestenote, keine Hotelkategorie - Sterne
+    // gibt es nur ganz.
+    const dezimalSterne = t.match(/(\d[.,]\d)\s*sterne?/);
+    if (dezimalSterne) {
+      const n = parseFloat(dezimalSterne[1].replace(",", "."));
+      if (n >= 3 && n <= 5) a.mindestbewertung = n >= 4.5 ? 4.5 : n >= 4 ? 4 : 3.5;
+    } else if (bewertungsNote) {
       const n = parseFloat(bewertungsNote[1].replace(",", "."));
       if (n >= 3 && n <= 5) a.mindestbewertung = n >= 4.5 ? 4.5 : n >= 4 ? 4 : 3.5;
     } else if (sterne && !/bewertung|note/.test(t)) {
@@ -136,7 +142,8 @@ const Politik = {
     if (strand) {
       const wert = parseFloat(strand[1].replace(",", "."));
       a.maxStrand = /^k/.test(strand[2]) ? wert : wert / 1000;
-    } else if (/direkt am strand|direkt am meer|erste strandlinie|strandlage/.test(t)) a.maxStrand = 0.2;
+    } else if (/direkt am strand|direkt am meer|erste strandlinie|strandlage|sehr nah am strand|ganz nah am strand|unmittelbar am strand/.test(t)) a.maxStrand = 0.2;
+    else if (/nah am strand|nahe am strand|strandnah|in strandnähe|in strandnaehe/.test(t)) a.maxStrand = 0.5;
 
     // Alle Betragsangaben durchgehen und die ueberspringen, hinter denen
     // eine Entfernung steht ("hoechstens 500 m"). Mit Waehrung ist eine
@@ -240,7 +247,7 @@ const Politik = {
     { id: "strandnah", label: "Strandnähe", filter: { maxStrand: 1 },
       woerter: ["strand", "am meer", "meernah", "ans wasser", "direkt am wasser", "küste", "kueste"] },
     { id: "bewertung", label: "gute Bewertungen", filter: { mindestbewertung: 4.5 },
-      woerter: ["gut bewertet", "beste bewertung", "hohe bewertung", "top bewertet"] },
+      woerter: ["gut bewertet", "beste bewertung", "hohe bewertung", "top bewertet", "gute bewertung", "gute bewertungen", "guten bewertungen", "gut bewertete"] },
   ],
 
   // Erkennt genannte Kriterien und wie stark sie betont wurden. "sehr wichtig"
@@ -744,6 +751,132 @@ const Politik = {
     return saetze.length ? `${saetze.join(" ")} Welches soll ich mir genauer ansehen?` : "Dazu habe ich gerade keine Zahlen. Welches Haus soll ich mir genauer ansehen?";
   },
 
+  /* Suche im Katalog ohne die Seite zu bedienen (Stufe "nur
+     vorschlagen"). Dieselben Bedingungen wie die Filter der Seite: Art,
+     Ziel oder alle Regionen, Ausstattung aus den Kriterien, Preisgrenze,
+     Strand, Sterne, Note, Platz fuer die Gruppe. Liefert Treffer in der
+     Form, die die Trefferliste auch liefert. */
+  katalogSuche(profil) {
+    const bestand = profil.typ === "apartment"
+      ? (typeof APARTMENTS !== "undefined" ? APARTMENTS : [])
+      : (typeof HOTELS !== "undefined" ? HOTELS : []);
+    const filter = this.filterAusKriterien(profil.kriterien || []);
+    const ausstattung = filter.ausstattung || [];
+    const treffer = bestand.filter((h) => {
+      if (profil.zielId && h.ziel !== profil.zielId) return false;
+      if (profil.zielOffen !== true && !profil.zielId && profil.thema && !(this.THEMEN.find((t) => t.id === profil.thema)?.ziele || []).includes(h.ziel)) return false;
+      if (ausstattung.some((a) => !(h.amenities || []).includes(a))) return false;
+      const preis = typeof saisonpreis === "function" ? saisonpreis(h) : h.pricePerNight;
+      return this.erfuellt(h, preis, profil);
+    });
+    return treffer
+      .sort((a, b) => (b.rating || 0) - (a.rating || 0))
+      .map((h) => ({ id: h.id, name: h.name, ort: h.location, preis: h.pricePerNight, note: h.rating }));
+  },
+
+  /* Steckbriefe der Regionen fuer die Recherche-Etappe: "Welche Orte
+     eignen sich, wenn mir Strandnaehe und gute Bewertungen wichtig sind?"
+     Zahlen aus dem Katalog je Region, dazu die Kurzbeschreibung und ob
+     der Reisemonat in die Saison faellt. Die Punkte ergeben eine grobe
+     Reihung fuer die Knoepfe; das Modell formuliert die Empfehlung. */
+  regionenSteckbriefe(profil = {}, aspekte = [], nurIds = null) {
+    const alle = profil.typ === "apartment"
+      ? (typeof APARTMENTS !== "undefined" ? APARTMENTS : [])
+      : (typeof HOTELS !== "undefined" ? HOTELS : []);
+    const personen = (profil.erwachsene || 0) + (profil.kinder || 0);
+    const passt = (h) => !personen || (h.type === "apartment" ? (h.maxGuests || 0) >= personen
+      : !h.rooms?.length || Math.max(...h.rooms.map((r) => r.maxGuests || 0)) >= personen);
+    const menge = nurIds ? new Set(nurIds) : null;
+    const briefe = (typeof ZIELE !== "undefined" ? ZIELE : [])
+      .filter((z) => !menge || menge.has(z.id))
+      .map((z) => {
+        const hs = alle.filter((h) => h.ziel === z.id && passt(h));
+        if (!hs.length) return null;
+        const mittel = (f) => Math.round(hs.reduce((n, h) => n + (f(h) || 0), 0) / hs.length * 10) / 10;
+        const anteil = (f) => hs.filter(f).length;
+        const b = {
+          id: z.id, name: z.name, land: z.land, art: z.typ, beschreibung: z.kurz,
+          haeuser: hs.length,
+          saison: profil.monat ? (typeof saisonPassung === "function" ? (saisonPassung(z, profil.monat) === 1 ? "Hauptsaison" : "Nebensaison") : null) : null,
+          direktAmStrand: anteil((h) => h.distanceToBeach != null && h.distanceToBeach <= 0.3),
+          strandBis1km: anteil((h) => h.distanceToBeach != null && h.distanceToBeach <= 1),
+          bewertungImSchnitt: mittel((h) => h.rating),
+          ab4_5: anteil((h) => h.rating >= 4.5),
+          mitPool: anteil((h) => h.amenities?.includes("pool")),
+          familienfreundlich: anteil((h) => h.amenities?.includes("familyFriendly")),
+          mitKinderclub: anteil((h) => h.amenities?.includes("kidsClub")),
+          mitWellness: anteil((h) => h.amenities?.includes("spa") || h.amenities?.includes("wellness")),
+          preisAbProNacht: Math.min(...hs.map((h) => h.pricePerNight)),
+          preisMittelProNacht: mittel((h) => h.pricePerNight),
+        };
+        // Reihung nach den genannten Punkten
+        let punkte = b.haeuser / 10;
+        for (const a of aspekte) {
+          if (a === "strand") punkte += b.direktAmStrand * 2 + b.strandBis1km * 0.5;
+          if (a === "bewertung") punkte += b.ab4_5 * 1.5 + b.bewertungImSchnitt;
+          if (a === "pool") punkte += b.mitPool;
+          if (a === "familie" || a === "kinderclub") punkte += b.familienfreundlich + b.mitKinderclub * 2;
+          if (a === "wellness") punkte += b.mitWellness * 2;
+          if (a === "preis") punkte += Math.max(0, 200 - b.preisMittelProNacht) / 20;
+          if (a === "ruhe") punkte += (z.typ === "natur" ? 3 : 0);
+          if (a === "lage") punkte += (z.typ === "stadt" ? 3 : 0);
+        }
+        if (b.saison === "Nebensaison") punkte -= 2;
+        b.punkte = Math.round(punkte * 10) / 10;
+        return b;
+      })
+      .filter(Boolean)
+      .sort((a, b) => b.punkte - a.punkte);
+    return briefe;
+  },
+
+  /* Wenn nichts passt: die weichste Grenze eine Stufe lockern.
+     ------------------------------------------------------------------
+     Reihenfolge: Strandnaehe (200 m -> 1 km -> egal), Gaestenote eine
+     Stufe runter, Sterne einen runter, ein Zimmer -> zwei Zimmer, Preis
+     um ein Fuenftel hoch, zuletzt die Region oeffnen. Gibt zurueck, was
+     gelockert wurde (fuer den Chat und das Protokoll), oder null. */
+  lockern(profil) {
+    // Erst im Katalog probieren, welche Lockerung ueberhaupt etwas
+    // bringt - sonst weitet der Agent dreimal den Strand, obwohl die
+    // fuenf Sterne das Problem waren.
+    const schritte = [
+      (p) => { if (p.maxStrand != null && p.maxStrand < 1) { p.maxStrand = 1; return { feld: "maxStrand", text: "Strand bis 1 km statt direkt am Strand" }; } return null; },
+      (p) => { if (p.mindestSterne && p.mindestSterne > 3) { p.mindestSterne -= 1; return { feld: "mindestSterne", text: `ab ${p.mindestSterne} Sternen` }; } return null; },
+      (p) => { if (p.mindestbewertung && p.mindestbewertung > 3.5) { p.mindestbewertung = p.mindestbewertung >= 4.5 ? 4 : 3.5; return { feld: "mindestbewertung", text: `Bewertung ab ${String(p.mindestbewertung).replace(".", ",")}` }; } return null; },
+      (p) => { const n = (p.erwachsene || 0) + (p.kinder || 0); if ((p.zimmer || 1) === 1 && n >= 4) { p.zimmer = 2; this.nachtpreisAbleiten(p); return { feld: "zimmer", text: "zwei Zimmer statt einem" }; } return null; },
+      (p) => { if (p.maxPreis) { p.maxPreis = Math.round(p.maxPreis * 1.2); return { feld: "maxPreis", text: `bis ${p.maxPreis} € pro Nacht` }; } return null; },
+      (p) => { if (p.maxStrand != null) { delete p.maxStrand; return { feld: "maxStrand", text: "ohne Grenze zum Strand" }; } return null; },
+      (p) => { if (p.mindestbewertung) { delete p.mindestbewertung; return { feld: "mindestbewertung", text: "ohne Mindestbewertung" }; } return null; },
+      (p) => { if (p.mindestSterne) { delete p.mindestSterne; p.budget = null; return { feld: "mindestSterne", text: "ohne Sternevorgabe" }; } return null; },
+      (p) => { if (p.zielId) { p.zielOffen = true; p.zielId = null; return { feld: "ziel", text: "in allen Regionen" }; } return null; },
+    ];
+    let erste = null;
+    for (const schritt of schritte) {
+      const probe = { ...profil, kriterien: [...(profil.kriterien || [])] };
+      const was = schritt(probe);
+      if (!was) continue;
+      if (!erste) erste = schritt;
+      if (this.katalogSuche(probe).length > 0) { return schritt(profil); }
+    }
+    return erste ? erste(profil) : this.lockernAlt(profil);
+  },
+
+  lockernAlt(profil) {
+    const p = profil;
+    if (p.maxStrand != null && p.maxStrand < 1) { p.maxStrand = 1; return { feld: "maxStrand", text: "Strand bis 1 km statt direkt am Strand" }; }
+    if (p.maxStrand != null && p.maxStrand < 5) { delete p.maxStrand; return { feld: "maxStrand", text: "ohne Grenze zum Strand" }; }
+    if (p.mindestbewertung && p.mindestbewertung > 3.5) { p.mindestbewertung = p.mindestbewertung >= 4.5 ? 4 : 3.5; return { feld: "mindestbewertung", text: `Bewertung ab ${String(p.mindestbewertung).replace(".", ",")}` }; }
+    if (p.mindestbewertung) { delete p.mindestbewertung; return { feld: "mindestbewertung", text: "ohne Mindestbewertung" }; }
+    if (p.mindestSterne && p.mindestSterne > 3) { p.mindestSterne -= 1; return { feld: "mindestSterne", text: `ab ${p.mindestSterne} Sternen` }; }
+    if (p.mindestSterne) { delete p.mindestSterne; p.budget = null; return { feld: "mindestSterne", text: "ohne Sternevorgabe" }; }
+    const personen = (p.erwachsene || 0) + (p.kinder || 0);
+    if ((p.zimmer || 1) === 1 && personen >= 4) { p.zimmer = 2; this.nachtpreisAbleiten(p); return { feld: "zimmer", text: "zwei Zimmer statt einem" }; }
+    if (p.maxPreis) { p.maxPreis = Math.round(p.maxPreis * 1.2); return { feld: "maxPreis", text: `bis ${p.maxPreis} € pro Nacht` }; }
+    if (p.zielId) { p.zielOffen = true; p.zielId = null; return { feld: "ziel", text: "in allen Regionen" }; }
+    return null;
+  },
+
   /* Regionen mit Anzahl passender Haeuser, direkt aus dem Katalog - fuer
      die Etappe "wo gibt es etwas", wenn der Agent die Seite nicht
      bedienen darf (Stufe "nur vorschlagen"). Dieselben Zahlen, die die
@@ -1012,10 +1145,11 @@ const Politik = {
       frage: "Wohin soll es gehen?",
       braucht: () => "Wohin die Reise gehen soll. Ein Land, eine Region oder eine Insel reicht. Wenn die Person Kinder erwaehnt hat, darfst du auch fragen, ob die schon einen Wunsch haben.",
       chips: ["Mallorca", "Kreta", "Tirol", "Ans Meer"],
-      ueberspringen: (p) => p.zielId != null,
+      ueberspringen: (p) => p.zielId != null || p.zielOffen === true,
       auswerten(text, p) {
         Politik.uebernehmen(text, p);
         if (p.zielId && typeof ZIEL_NACH_ID !== "undefined") return ZIEL_NACH_ID[p.zielId]?.name;
+        if (p.zielOffen) return "alle Regionen";
         return null;   // der Kern klaert Reiseart oder unbekannten Ort
       },
     },
@@ -1224,6 +1358,8 @@ const Politik = {
     const raus = [];
     if (profil.zielId && typeof ZIEL_NACH_ID !== "undefined") {
       raus.push({ feld: "Ziel", wert: ZIEL_NACH_ID[profil.zielId]?.name });
+    } else if (profil.zielOffen) {
+      raus.push({ feld: "Ziel", wert: "alle Regionen" });
     }
     if (profil.artGenannt) raus.push({ feld: "Art", wert: profil.typ === "apartment" ? "Ferienwohnung" : "Hotel" });
     if (profil.monat) {

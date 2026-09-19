@@ -434,11 +434,10 @@ const Werkzeuge = {
   // Sichtbar ueber das Logo geklickt, nicht per location.href - der Weg soll
   // nachvollziehbar bleiben.
   async zurStartseite() {
-    const marke = this.finde('a.brand[href*="index"]') || this.finde('a[href="index.html"]');
-    if (marke) {
-      await Zeiger.klicke(marke, { hinweis: "zur Startseite" });
-      return { ok: true, daten: { navigiert: true } };
-    }
+    // Frueher klickte der Zeiger dafuer auf das Logo oben links - fuer die
+    // Person sah das aus wie ein Klick ins Leere. Der Seitenwechsel
+    // passiert jetzt direkt; im Log steht er trotzdem.
+    await Zeiger.warte(400);
     location.href = "index.html";
     return { ok: true, daten: { navigiert: true } };
   },

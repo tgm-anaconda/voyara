@@ -263,7 +263,13 @@ ${showFlightAddon ? `
         if (rooms.length < MAX_ROOMS) { rooms.push({ adults: 2, children: 0, childAges: [] }); renderRooms(); }
       });
       document.addEventListener("click", (e) => {
-        if (!pop.hidden && !pop.contains(e.target) && e.target !== trigger) {
+        // composedPath statt contains: Die Plus- und Minus-Knoepfe werden
+        // beim Klick neu gezeichnet, das geklickte Element ist danach
+        // nicht mehr im Fenster - und das Fenster klappte bei jedem
+        // Klick zu.
+        const pfad = typeof e.composedPath === "function" ? e.composedPath() : [];
+        const drinnen = pfad.includes(pop) || pop.contains(e.target);
+        if (!pop.hidden && !drinnen && e.target !== trigger) {
           trigger.textContent = summaryText();
           pop.hidden = true;
         }

@@ -66,7 +66,7 @@ const STELLSCHRAUBEN = {
   // man dem Zeiger auf der Seite noch folgen kann - und damit die
   // Voraussetzung dafuer, ueberhaupt messen zu koennen, ob jemand
   // zusieht. Als Stellschraube variierbar (?tempo=1.5).
-  tempo: 0.75,                  // Geschwindigkeit des Zeigers
+  tempo: 0.6,                   // Geschwindigkeit des Zeigers (0.75 war zu schnell zum Folgen)
   fehler: "keine",              // keine | filter | kriterium | behauptung
   // knapp      = nur der Vorschlag, keine Herleitung
   // ausfuehrlich = Vorschlag mit Zahlen und offengelegter Grundlage
@@ -1222,8 +1222,16 @@ const Kern = {
     // Zielfrage nach der Vorab-Suche: "egal" oder "schlag vor" heisst,
     // der Agent nimmt die Region mit den meisten passenden Haeusern -
     // und sagt das, als Vorschlag, nicht als Annahme.
-    if (frage.id === "ziel" && !this.lauf.profil.zielId && this.lauf.merker.regionen?.length
-      && /egal|schlag|vorschlag|empfiehl|such du|entscheide|weiß nicht|weiss nicht/i.test(text)) {
+    // "Ohne Region", "ueberall", "egal": in allen Regionen suchen. Nur
+    // "schlag vor" / "entscheide du" heisst, der Agent waehlt eine.
+    if (frage.id === "ziel" && !this.lauf.profil.zielId
+      && /ohne region|ohne ziel|überall|ueberall|alle regionen|egal wo|egal welche|ist mir egal|^egal$|offen lassen|keine region/i.test(text)) {
+      this.lauf.profil.zielOffen = true;
+      this.notieren("ziel_offen", { regionen: (this.lauf.merker.regionen || []).length });
+      this.lauf.geradeErfahren = "Die Person will keine Region festlegen; du suchst in allen Regionen.";
+    }
+    if (frage.id === "ziel" && !this.lauf.profil.zielId && !this.lauf.profil.zielOffen && this.lauf.merker.regionen?.length
+      && /schlag|vorschlag|empfiehl|such du|entscheide|weiß nicht|weiss nicht|dir überlassen|dir ueberlassen/i.test(text)) {
       const r = this.lauf.merker.regionen[0];
       this.lauf.profil.zielId = r.id;
       this.notieren("ziel_vorgeschlagen", { ziel: r.id, anzahl: r.anzahl });
@@ -1263,6 +1271,13 @@ const Kern = {
     // Skandinavien" auf die Frage nach den Naechten), weicht nicht aus -
     // die Frage bleibt offen, der Zaehler steht still.
     const anderesGesagt = !!this.lauf.geradeErfahren || Politik.aenderungen(vorher, this.lauf.profil).length > 0;
+    // Zielfrage, aber statt einer Region kommen Wuensche oder eine Frage
+    // nach passenden Orten: dann recherchiert der Agent die Regionen.
+    if (!beantwortet && frage.id === "ziel" && !this.lauf.profil.zielOffen
+      && (Politik.aspekteAusText(text).length || /welche (orte|regionen|ziele|insel)|empfiehl|eignen|wo (gibt|ist|sind)|was (gibt|bietet)/i.test(text))) {
+      this.lauf.geradeErfahren = null;
+      return this.antwortRegionsfrage(text, Politik.aspekteAusText(text));
+    }
     if (!beantwortet && anderesGesagt) {
       this.notieren("nebenbei", { frage: frage.id, antwort: text });
       AgentPanel.eckdatenZeigen(Politik.eckdaten(this.lauf.profil));
@@ -1315,6 +1330,20 @@ const Kern = {
     // sagt, was er tun wuerde, und ueberlaesst das Klicken der Person.
     // Ohne diese Sperre waere der Regler eine Attrappe.
     if (!this.darf("suchen")) {
+      // Stufe "nur vorschlagen": Der Agent fasst die Seite nicht an, aber
+      // er sieht in den Katalog und legt Vorschlaege vor - klicken tut
+      // die Person. Frueher beschrieb er nur, was er tun wuerde.
+      const liste = Politik.katalogSuche(this.lauf.profil);
+      this.notieren("katalogsuche", { treffer: liste.length, runde: this.lauf.runde });
+      this.logZeile(`Im Katalog gesucht (ohne die Seite zu bedienen): ${liste.length} Häuser passen zu ${Politik.eckdaten(this.lauf.profil || {}).map((e) => `${e.feld} ${e.wert}`).join(", ") || "den Angaben"}`, "auftrag");
+      await this.denkpause(1500, "sieht im Katalog nach…");
+      this.lauf.merker.treffer = { treffer: liste.slice(0, 12) };
+      this.lauf.merker.treffer2 = null;
+      this.lauf.phase = "arbeitet";
+      await this.shortlistStellen();
+      return;
+    }
+    if (false) {
       this.lauf.phase = "fertig";
       const ziel = this.lauf.profil.zielId && typeof ZIEL_NACH_ID !== "undefined"
         ? ZIEL_NACH_ID[this.lauf.profil.zielId]?.name : null;
@@ -1432,7 +1461,10 @@ const Kern = {
 
       // Der Schritt hat das Gespraech uebernommen (Shortlist, Rueckfrage) -
       // dann endet die Schleife hier, ohne den Abschluss zu durchlaufen.
-      if (ergebnis.daten?.uebernimmt) { this.sichern(); return; }
+      // Ausnahme: Er hat neue Schritte eingereiht (Lockerung) - dann geht
+      // es damit weiter.
+      if (ergebnis.daten?.uebernimmt && !ergebnis.daten?.weiterArbeiten) { this.sichern(); return; }
+      if (ergebnis.daten?.weiterArbeiten) { this.sichern(); continue; }
 
       this.sichern();
       // Nach einer Meldung so lange warten, wie man zum Lesen braucht.
@@ -1590,6 +1622,44 @@ const Kern = {
     const gesehen = new Set();
     const treffer = roh.filter((x) => (gesehen.has(x.id) ? false : gesehen.add(x.id)));
     if (!treffer.length) treffer.push(...(Werkzeuge.zustand().treffer || []));
+    const bewertet0 = treffer.length ? Politik.bewerten(treffer, this.lauf.profil) : [];
+
+    /* Nichts gefunden: erst selbst lockern, dann fragen.
+       ------------------------------------------------------------------
+       "Mit diesen Vorgaben finde ich nichts" war eine Sackgasse. Ein
+       Berater sagt stattdessen: "Direkt am Strand gibt es nichts, bis
+       1 km schon - ich zeige dir die." Bis zu drei Lockerungen, jede
+       angesagt und protokolliert; erst danach die Frage an die Person. */
+    if (!treffer.length || !bewertet0.length) {
+      this.lauf.gelockert = this.lauf.gelockert || [];
+      const lockerung = this.lauf.gelockert.length < 3 ? Politik.lockern(this.lauf.profil) : null;
+      if (lockerung) {
+        this.lauf.gelockert.push(lockerung.feld);
+        this.notieren("gelockert", { feld: lockerung.feld, text: lockerung.text, treffer: treffer.length, zulaessig: bewertet0.length });
+        this.logZeile(`Nichts Passendes (${treffer.length} Treffer, ${bewertet0.length} zulässig) - gelockert: ${lockerung.text}`, "ergebnis");
+        AgentPanel.eckdatenZeigen(Politik.eckdaten(this.lauf.profil));
+        await this.sprechen(
+          "Mit den bisherigen Vorgaben hast du nichts gefunden. Du lockerst deshalb eine Vorgabe (siehe gelockert) und suchst noch einmal. Sag in ein, zwei Saetzen, was du lockerst und warum, und dass die Person widersprechen kann.",
+          { gelockert: lockerung.text, trefferVorher: treffer.length },
+          `Mit den bisherigen Vorgaben finde ich nichts. Ich versuche es ${lockerung.text} noch einmal - sag Bescheid, wenn du das nicht willst.`
+        );
+        if (!this.darf("suchen")) {
+          // Ohne Seitenzugriff: noch einmal im Katalog, mit der Lockerung
+          this.lauf.merker.treffer = { treffer: Politik.katalogSuche(this.lauf.profil).slice(0, 12) };
+          this.lauf.merker.treffer2 = null;
+          this.sichern();
+          return this.shortlistStellen();
+        }
+        this.lauf.phase = "arbeitet";
+        this.lauf.offeneSchritte = [
+          ...(Werkzeuge.seite() === "results" ? [] : [{ werkzeug: "zurueckZurListe", status: "geht zurück…" }]),
+          ...Politik.suchschritte(this.lauf.profil).slice(Werkzeuge.seite() === "results" ? 1 : 0),
+        ];
+        this.sichern();
+        return { ok: true, daten: { uebernimmt: true, weiterArbeiten: true } };
+      }
+    }
+
     if (!treffer.length) {
       this.lauf.phase = "shortlist";
       this.lauf.kandidaten = [];
@@ -1605,7 +1675,7 @@ const Kern = {
 
     await this.denkpause(1200, "wägt ab…");
 
-    const bewertet = Politik.bewerten(treffer, this.lauf.profil);
+    const bewertet = bewertet0;
 
     // Es gab Treffer, aber keiner haelt die ausdruecklichen Vorgaben ein.
     // Dann wird nichts vorgeschlagen: ein Haus fuer 320 Euro, wenn 300
@@ -2418,6 +2488,12 @@ const Kern = {
           const hausGefragt = e.haus ? this.hausAusEinordnung(e.haus) : null;
           if (hausGefragt) return this.antwortHausfrage(hausGefragt, t);
           if (mitAuswahl) return this.antwortVergleich(t, e);
+          // Frage nach Orten, solange das Ziel offen ist: Recherche-Etappe
+          if ((phase === "vorfrage" && this.lauf.offeneVorfrage === "ziel") || phase === "zielwahl"
+            || (!this.lauf.profil.zielId && /welche (orte|regionen|ziele|insel)|empfiehl|eignen|wo (gibt|ist|sind)/i.test(t))) {
+            this.sagen(t, "user");
+            return this.antwortRegionsfrage(t, e.aspekte || []);
+          }
           if (offeneFrage) break;          // Rueckfrage innerhalb der Frage - die Phase kann das
           return this.antwortAllgemeineFrage(t);
         }
@@ -2466,6 +2542,31 @@ const Kern = {
         return this.auftrag(t);
       default:              return this.auftrag(t);
     }
+  },
+
+  /* Recherche-Etappe fuer das Ziel: "Welche Orte eignen sich, wenn mir X
+     wichtig ist?" Der Agent sieht in den Katalog, vergleicht die Regionen
+     in den genannten Punkten und empfiehlt zwei, drei. Danach steht die
+     Zielfrage wieder, mit den empfohlenen Regionen als Knoepfen. */
+  async antwortRegionsfrage(text, aspekte = []) {
+    this.notieren("regionsfrage", { aspekte, text: text.slice(0, 120) });
+    const nurIds = this.lauf.zielAuswahl?.length ? this.lauf.zielAuswahl
+      : (this.lauf.merker.regionen?.length ? this.lauf.merker.regionen.map((r) => r.id) : null);
+    const alleAspekte = aspekte.length ? aspekte : Politik.aspekteAusText(text);
+    await this.denkpause(1300, "vergleicht Regionen…");
+    const briefe = Politik.regionenSteckbriefe(this.lauf.profil, alleAspekte, nurIds);
+    const top = briefe.slice(0, 3);
+    this.logZeile(`Regionen verglichen nach ${alleAspekte.join(", ") || "Auswahl"}: ${top.map((b) => `${b.name} (${b.punkte})`).join(", ")}`, "ergebnis");
+    this.lauf.phase = "vorfrage";
+    this.lauf.offeneVorfrage = "ziel";
+    await this.sprechen(
+      "Die Person moechte wissen, welche Regionen zu ihren Wuenschen passen (siehe gefragt und wasDiePersonSchrieb). Du hast die Regionen im Katalog verglichen (regionen, nach Passung sortiert, mit Zahlen). Empfiehl zwei oder drei Regionen mit den Zahlen, die den Unterschied machen, kurz und konkret, und frag dann, welche es sein soll oder ob du eine nehmen sollst. Keine Aufzaehlungszeichen.",
+      { gefragt: alleAspekte.length ? alleAspekte : "allgemein", wasDiePersonSchrieb: text, regionen: briefe.slice(0, 6) },
+      `Nach ${Politik.aufzaehlen(alleAspekte) || "Auswahl"} passen am besten ${Politik.aufzaehlen(top.map((b) => `${b.name} (${b.direktAmStrand} Häuser direkt am Strand, Bewertung im Schnitt ${String(b.bewertungImSchnitt).replace(".", ",")})`))}. Welche soll es sein?`
+    );
+    AgentPanel.setSuggestions([...top.map((b) => b.name), "Schlag mir eines vor"]);
+    AgentPanel.status("wartet auf deine Antwort");
+    this.sichern();
   },
 
   /* Einordnung einer Nachricht: Modell, sonst Schluesselwoerter */
