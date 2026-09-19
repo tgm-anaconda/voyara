@@ -42,8 +42,9 @@ const Werkzeugkasten = {
           bis: text("Abreise als YYYY-MM-DD"),
           flexibel: { type: "boolean", description: "true, wenn die Person im Monat flexibel ist" },
           naechte: zahl("Zahl der Naechte"),
-          erwachsene: zahl("Zahl der Erwachsenen"),
-          kinder: zahl("Zahl der Kinder (0, wenn ausdruecklich keine)"),
+          personenGesamt: zahl("Nur die Gesamtzahl, wenn die Person sie so nennt ('zu viert', 'vier Leute') - dann erwachsene und kinder leer lassen und nachfragen"),
+          erwachsene: zahl("Zahl der Erwachsenen - nur, wenn die Person sie ausdruecklich nennt"),
+          kinder: zahl("Zahl der Kinder (0, wenn ausdruecklich keine) - nur, wenn die Person sie ausdruecklich nennt"),
           kinderAlter: { type: "array", items: { type: "integer" }, description: "Alter der Kinder in Jahren" },
           typ: { type: "string", enum: ["hotel", "apartment"], description: "Hotel oder Ferienwohnung" },
           zimmer: zahl("Zahl der Zimmer (Hotel)"),
@@ -234,7 +235,9 @@ const Werkzeugkasten = {
         if (n > 0 && n < 60) setze("naechte", n);
         if (!a.monat) setze("monat", new Date(a.von).getMonth() + 1);
       }
+      setze("personen", a.personenGesamt);
       setze("erwachsene", a.erwachsene); setze("kinder", a.kinder);
+      if (p.erwachsene != null && p.kinder != null) p.personen = p.erwachsene + p.kinder;
       if (Array.isArray(a.kinderAlter)) setze("kinderAlter", a.kinderAlter.slice(0, 6));
       if (a.typ) { setze("typ", a.typ); p.artGenannt = true; }
       setze("zimmer", a.zimmer);
@@ -369,7 +372,7 @@ const Werkzeugkasten = {
         mindestbewertung: p.mindestbewertung || undefined,
         sterne: p.mindestSterne ? [5, 4, 3].filter((s) => s >= p.mindestSterne) : undefined,
       });
-      if (gesetzt.text) kern.logZeile(`Filter: ${gesetzt.text}`, "ergebnis");
+      if (gesetzt.text) kern.logZeile(gesetzt.text, "ergebnis");
       const nach = p.sortierung === "preis" ? "preis-asc" : "rating";
       await Werkzeuge.sortieren(nach);
       const gelesen = await Werkzeuge.ergebnisseLesen(8);

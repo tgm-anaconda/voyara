@@ -483,6 +483,7 @@ const Kern = {
     if (p.von && p.bis) teile.push(`${p.von} bis ${p.bis}`);
     else if (p.flexibel) teile.push("Daten flexibel");
     if (p.naechte) teile.push(`${p.naechte} Nächte`);
+    if (p.personen != null && p.erwachsene == null) teile.push(`${p.personen} Personen (Aufteilung Erwachsene/Kinder noch offen)`);
     if (p.erwachsene != null) teile.push(`${p.erwachsene} Erwachsene`);
     if (p.kinder != null) teile.push(p.kinder ? `${p.kinder} Kinder${p.kinderAlter?.length ? ` (${p.kinderAlter.join(", ")} Jahre)` : ""}` : "keine Kinder");
     if (p.artGenannt) teile.push(p.typ === "apartment" ? "Ferienwohnung" : "Hotel");
@@ -515,6 +516,7 @@ const Kern = {
     else if (this.lauf.letzteTreffer?.length) zeilen.push(`Letztes Suchergebnis (ids): ${this.lauf.letzteTreffer.join(", ")}.`);
     if (this.lauf.gewaehlt) zeilen.push(`Geoeffnetes Haus: ${getItemById?.(this.lauf.gewaehlt)?.name || this.lauf.gewaehlt} (${this.lauf.gewaehlt}).`);
     if (this.lauf.phase === "angehalten") zeilen.push("Die Person hat waehrend deiner Arbeit selbst geklickt; du hast angehalten.");
+    zeilen.push("Fuer deine naechste Antwort: hoechstens drei Saetze, genau eine Frage (nie zwei), und wenn du fragst, als letzte Zeile CHIPS: mit zwei bis vier Antworten.");
     return zeilen.join("\n");
   },
 
