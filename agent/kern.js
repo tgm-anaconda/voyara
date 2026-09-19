@@ -341,7 +341,7 @@ const Kern = {
     this.lauf.freigabeGewaehlt = gewaehlt;
     this.lauf.durchlauf = durchlauf;
     this.sichern();
-    Zeiger.verstecken?.();
+    Zeiger.verbergen?.();
     const kasten = document.getElementById("agentMessages");
     if (kasten) kasten.innerHTML = "";
     AgentPanel.eckdatenZeigen([]);
@@ -403,7 +403,11 @@ const Kern = {
 
     // Der Zeiger erscheint dort, wo er vor dem Seitenwechsel stand. Sprang er
     // in die Mitte, waere der Eindruck nach dem ersten Klick zerstoert.
-    Zeiger.wiederherstellen(this.lauf.zeiger);
+    // Sichtbar ist er nur, solange der Agent arbeitet - danach stand er
+    // als gruenes "Chat"-Schild am Rand herum.
+    Zeiger.mount?.();
+    if (this.lauf.phase === "arbeitet" && this.lauf.offeneSchritte?.length) Zeiger.wiederherstellen(this.lauf.zeiger);
+    else if (this.lauf.zeiger) Zeiger.setzePosition?.(this.lauf.zeiger.x, this.lauf.zeiger.y);
 
     // Gespraech zurueckschreiben, damit der Faden nicht abreisst. Der Kasten
     // wird vorher geleert, damit das Zurueckschreiben immer dasselbe Ergebnis
@@ -1371,6 +1375,9 @@ const Kern = {
     } finally {
       this.laeuft = false;
       AgentPanel.arbeitetAus();
+      // Nach der Arbeit verschwindet der Zeiger, ausser die Seite wechselt
+      // gerade (dann verschwindet er mit ihr).
+      if (!this.lauf.offeneSchritte?.length) setTimeout(() => { if (!this.laeuft) Zeiger.verbergen(); }, 900);
     }
   },
 
@@ -2066,9 +2073,13 @@ const Kern = {
       // Zusammenfassung wird trotzdem genannt - wer dem Agenten das
       // Buchen ueberlassen hat, soll wissen, was er gerade tut.
       const z = Werkzeuge.buchungsZusammenfassung();
-      this.sagen(z
-        ? `Ich buche jetzt ${z.titel}, ${z.zeitraum}, ${z.gesamt} insgesamt, auf den Namen ${z.name}. Sag Stopp, wenn du das nicht willst.`
-        : "Ich schließe die Buchung jetzt ab. Sag Stopp, wenn du das nicht willst.");
+      await this.sprechen(
+        "Die Person hat dir erlaubt, selbst zu buchen. Du schliesst die Buchung jetzt ab. Sag in ein, zwei Saetzen, was du buchst (Haus, Zeitraum, Gesamtpreis, auf wessen Namen), und dass sie 'Stopp' sagen kann, wenn sie das nicht will. Nichts weglassen, nichts dazuerfinden.",
+        { buchung: z || null },
+        z ? `Ich buche jetzt ${z.titel}, ${z.zeitraum}, ${z.gesamt} insgesamt, auf den Namen ${z.name}. Sag Stopp, wenn du das nicht willst.`
+          : "Ich schließe die Buchung jetzt ab. Sag Stopp, wenn du das nicht willst."
+      );
+      AgentPanel.setSuggestions(["Stopp"]);
       await Zeiger.warte(3200);
       if (!Zeiger.abbruch) {
         this.sperreAn();
@@ -2319,6 +2330,7 @@ const Kern = {
           {},
           "Ich arbeite gerade nicht. Sag mir einfach, was ich tun soll."
         );
+        AgentPanel.setSuggestions(this.chipsFuerPhase());
         return;
       }
       return this.uebernahme();
@@ -2519,7 +2531,26 @@ const Kern = {
         wasEsAufDerSeiteGibt: ["Hotels", "Ferienwohnungen", "Mietwagen", "Fluege (nur selbst buchbar)"] },
       "Das weiß ich gerade nicht. Womit kann ich weitermachen?"
     );
+    AgentPanel.setSuggestions(this.chipsFuerPhase());
     this.sichern();
+  },
+
+  // Die Knoepfe, die zur Phase passen - nach einer Zwischenantwort
+  // (Smalltalk, "ich arbeite gerade nicht") wieder anbieten, sonst steht
+  // die Leiste leer da.
+  chipsFuerPhase() {
+    switch (this.lauf.phase) {
+      case "shortlist": return this.shortlistChips();
+      case "vertieft":  return ["Auf den Merkzettel", "Zur Buchung", "Zurück zur Auswahl"];
+      case "nachfrage": return ["Ja, schließ ab", "Ich mache das selbst"];
+      case "eingangsfrage": return ["Nach Vorlieben fragen", "Such mit dem, was du hast"];
+      case "vorfrage": {
+        const frage = Politik.VORFRAGEN.find((f) => f.id === this.lauf.offeneVorfrage);
+        return frage ? Politik.chipsFuer(frage, this.lauf.profil, this.lauf.verlauf) : [];
+      }
+      case "fertig": return (this.lauf.kandidaten || []).length ? ["Zurück zur Auswahl", "Etwas günstiger", "Neue Suche"] : Politik.vorschlaege();
+      default: return Politik.vorschlaege();
+    }
   },
 
   async antwortSmalltalk(text) {
@@ -2530,6 +2561,7 @@ const Kern = {
       { wasDiePersonSchrieb: text },
       "Gern. Sag mir, wie es weitergehen soll."
     );
+    AgentPanel.setSuggestions(this.chipsFuerPhase());
     this.sichern();
   },
 };

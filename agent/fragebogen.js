@@ -22,7 +22,7 @@ const ZWISCHENFRAGEN = [
   { id: "z_zufrieden", text: "Ich bin mit dem Ergebnis dieser Aufgabe zufrieden.", skala: SKALA_ZUSTIMMUNG },
   { id: "z_passt", text: "Ich vertraue darauf, dass das Ergebnis zu den Vorgaben der Aufgabe passt.", skala: SKALA_ZUSTIMMUNG },
   { id: "z_kontrolle", text: "Ich hatte während der Aufgabe das Gefühl, die Kontrolle zu behalten.", skala: SKALA_ZUSTIMMUNG },
-  { id: "z_verstanden", text: "Der Assistent hat verstanden, worauf es mir ankam.", skala: SKALA_ZUSTIMMUNG },
+  { id: "z_verstanden", text: "Der Assistent hat verstanden, worauf es mir ankam.", skala: SKALA_ZUSTIMMUNG, nichtGenutzt: "Assistent nicht genutzt" },
   { id: "z_hineinversetzt", text: "Ich konnte mich gut in die Situation der Aufgabe hineinversetzen.", skala: SKALA_ZUSTIMMUNG },
   { id: "z_anstrengung", text: "Wie anstrengend war die Aufgabe für dich?", skala: SKALA_ANSTRENGUNG },
   { id: "z_echt", text: "Bei einer echten Buchung mit meinem eigenen Geld hätte ich genauso entschieden.", skala: SKALA_ZUSTIMMUNG },
@@ -67,7 +67,7 @@ const FRAGEBOGEN = [
     hinweis: "Zwei Fragen dazu, wie die Studie bei dir angekommen ist.",
     fragen: [
       { id: "m_freigabe", text: "Welche Freigabe war bei dir zuletzt eingestellt?", art: "wahl",
-        optionen: ["Nur vorschlagen", "Suchen und filtern", "Buchung vorbereiten", "Auch buchen", "Weiß ich nicht mehr"] },
+        optionen: ["Nur vorschlagen", "Suchen und filtern", "Buchung vorbereiten", "Auch buchen", "Weiß ich nicht mehr", "Ich habe den Assistenten nicht genutzt"] },
       { id: "m_geaendert", text: "Hast du die Freigabe während der Studie geändert?", art: "wahl",
         optionen: ["Ja", "Nein", "Weiß ich nicht mehr"] },
     ],
@@ -136,6 +136,7 @@ const Fragebogen = {
           </div>
           <span class="fb-pol">${s.rechts}</span>
         </div>
+        ${f.nichtGenutzt ? `<label class="fb-nichtgenutzt"><input type="radio" name="${f.id}" value="0"><span>${f.nichtGenutzt}</span></label>` : ""}
       </div>`;
     }).join("");
   },
@@ -152,7 +153,10 @@ const Fragebogen = {
       let wert = null;
       if (f.art === "text") wert = form.querySelector(`[name="${f.id}"]`)?.value.trim() || null;
       else if (f.art === "zahl") { const v = form.querySelector(`[name="${f.id}"]`)?.value; wert = v ? +v : null; }
-      else wert = +(form.querySelector(`[name="${f.id}"]:checked`)?.value || 0) || null;
+      else {
+        const v = form.querySelector(`[name="${f.id}"]:checked`)?.value;
+        wert = v == null || v === "" ? null : +v;   // "0" = nicht genutzt, zaehlt als beantwortet
+      }
       antworten[f.id] = wert;
       if (wert == null && !f.optional) fehlend.push(f.id);
     }

@@ -1838,7 +1838,16 @@ body.agent-schublade .agent-rail {
 }
 body.agent-schublade.agent-open .agent-rail { transform: none; }
 body.agent-lautlos .agent-rail, body.agent-lautlos .app-main { transition: none !important; }
-@media (min-width: 1041px) {
+/* Auf schmalen Bildschirmen haelt die Seite oben Platz fuer den
+   zusammengeklappten Chat-Streifen frei - in der Schublade gibt es den
+   Streifen nicht, also auch keinen Platz dafuer. */
+body.agent-schublade .app-main { padding-top: 0 !important; }
+body.agent-schublade #siteHeader { top: 0 !important; }
+@media (max-width: 1040px) {
+  body.agent-schublade .agent-rail { width: min(380px, 100vw); height: 100vh; height: 100dvh; border-radius: 0; }
+  body.agent-schublade .agent-messages { display: flex; }
+}
+@media (min-width: 900px) {
   body.agent-schublade.agent-open .app-main { margin-left: 380px; }
 }
 body.agent-schublade .app-main { transition: margin-left .28s ease; }
@@ -1851,10 +1860,6 @@ body.agent-schublade .agent-head .icon-btn svg { transform: none; }
 body.agent-schublade .agent-messages { display: flex; }
 body.agent-schublade .agent-foot { display: block; }
 body.agent-schublade .agent-input { padding-bottom: 12px; }
-/* Der Name im Kopf: nicht "Chat", sondern das, was der Reiter verspricht */
-body.agent-schublade .agent-name::after { content: "Reise-Assistent"; }
-body.agent-schublade .agent-name { font-size: 0; }
-body.agent-schublade .agent-name::after { font-size: .92rem; }
 
 /* Reiter am linken Rand: schmal, dezent, mit Pfeil nach rechts */
 .agent-reiter {
@@ -1877,10 +1882,11 @@ body.agent-schublade .agent-name::after { font-size: .92rem; }
 body.agent-open .agent-reiter, body.startschirm-offen .agent-reiter { display: none; }
 /* Der Aufgaben-Reiter bleibt rechts und weicht der Log-Bubble nach unten aus */
 body.agent-schublade .aufgabe-reiter { top: 42%; }
+@media (max-width: 899px) { body.agent-schublade.agent-open .aufgabe-reiter { display: none; } }
 
 /* Log-Bubble rechts oben, gegenueber dem Agenten */
 .log-bubble {
-  position: fixed; top: 78px; right: 18px; z-index: 650;
+  position: fixed; top: 13px; right: 16px; z-index: 150;
   display: inline-flex; align-items: center; gap: 9px;
   padding: 9px 16px 9px 11px; border-radius: 999px; border: 1px solid var(--line-strong);
   background: #fff; color: var(--ink-900); cursor: pointer; font: inherit; font-size: .82rem; font-weight: 600;
@@ -1903,7 +1909,11 @@ body.agent-schublade .aufgabe-reiter { top: 42%; }
 .log-bubble.puls { animation: bubblePuls .9s ease; }
 @keyframes bubblePuls { 0% { transform: scale(1); } 30% { transform: scale(1.06); } 100% { transform: scale(1); } }
 body.startschirm-offen .log-bubble { display: none; }
-@media (max-width: 720px) { .log-bubble { top: 66px; right: 10px; padding: 8px 12px 8px 9px; } .log-bubble-text { display: none; } }
+/* Der Kopf haelt rechts Platz frei, damit die Bubble nichts verdeckt;
+   beim Scrollen bleibt sie in der Ecke, wo sie am wenigsten im Weg ist. */
+body.mit-log .header-main { padding-right: 168px; }
+.log-panel { z-index: 160; }
+@media (max-width: 720px) { .log-bubble { top: 9px; right: 10px; padding: 8px 12px 8px 9px; } .log-bubble-text { display: none; } body.mit-log .header-main { padding-right: 60px; } }
 
 /* Freigabe-Karte: die erste Nachricht des Agenten ist eine Frage.
    Bis sie beantwortet ist, gibt es weder Regler noch Eingabefeld. */
@@ -1969,7 +1979,7 @@ body.agent-ohne-freigabe #agentEckdaten { display: none !important; }
 /* Agenten-Log: Knopf oben rechts im Kopf, Fenster darunter, niedrig
    genug, dass man scrollen muss */
 .log-panel {
-  position: fixed; top: 64px; right: 16px; z-index: 690; width: 380px; max-width: calc(100vw - 24px);
+  position: fixed; top: 64px; right: 16px; width: 380px; max-width: calc(100vw - 24px);
   background: #fff; border: 1px solid var(--line-strong); border-radius: 12px;
   box-shadow: 0 14px 40px rgba(16,33,30,.2);
 }
@@ -1984,3 +1994,6 @@ body.agent-ohne-freigabe #agentEckdaten { display: none !important; }
 @media (max-width: 720px) { .log-panel { top: 58px; right: 8px; } }
 
 .footer-partner { font-size: .72rem; color: rgba(255,255,255,.5); margin-top: 8px; }
+
+.fb-nichtgenutzt { display: inline-flex; align-items: center; gap: 6px; margin-top: 8px; font-size: .8rem; color: var(--ink-500); cursor: pointer; }
+.fb-nichtgenutzt input { accent-color: var(--brand-700); }

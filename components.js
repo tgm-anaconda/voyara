@@ -184,8 +184,14 @@ const Account = {
   // zugeht. Das ist die Zusage aus dem Einstieg - der Name wird nirgends
   // gespeichert - und hier ist sie eingeloest.
   konto() {
-    try { const roh = sessionStorage.getItem(this.key); return roh ? JSON.parse(roh) : null; }
-    catch { return null; }
+    try {
+      const roh = sessionStorage.getItem(this.key);
+      if (roh) return JSON.parse(roh);
+      // Rueckfall: das Konto aus dem Studienablauf, falls der eigene
+      // Eintrag fehlt (etwa nach einem Wechsel des Fensters).
+      const st = JSON.parse(sessionStorage.getItem("voyara_studie") || "null");
+      return st?.konto?.vorname ? st.konto : null;
+    } catch { return null; }
   },
   get() {
     const k = this.konto();
@@ -251,7 +257,7 @@ function renderAgentRail() {
          was hier nicht gemessen werden soll. -->
     <div class="agent-avatar">${ICONS.chat}</div>
     <div class="agent-kopftext">
-      <div class="agent-name">Chat</div>
+      <div class="agent-name">Reise-Assistent</div>
       <div class="agent-status" id="agentStatus">online</div>
       <!-- Nur auf dem Handy und nur im zugeklappten Zustand: die letzte
            Antwort in einer Zeile. So sieht man, dass der Chat etwas gesagt

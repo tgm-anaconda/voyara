@@ -41,16 +41,9 @@ const Log = {
       knopf.innerHTML = `<span class="log-bubble-symbol">${typeof ICONS !== "undefined" ? ICONS.list : ""}</span><span class="log-bubble-text">Agenten-Log</span><span class="badge" id="logBadge" hidden>0</span>`;
       document.body.appendChild(knopf);
     }
-    // Unter dem Seitenkopf, nicht darueber: Der Kopf ist je nach Seite
-    // und Breite verschieden hoch.
-    const ausrichten = () => {
-      const kopf = document.querySelector(".site-header");
-      const unten = kopf ? kopf.getBoundingClientRect().bottom : 0;
-      knopf.style.top = `${Math.round(Math.max(12, unten) + 12)}px`;
-    };
-    ausrichten();
-    window.addEventListener("resize", ausrichten);
-    window.addEventListener("scroll", ausrichten, { passive: true });
+    // Oben rechts im Kopfband; der Kopf haelt dort Platz frei (CSS
+    // body.mit-log), damit die Bubble keine Inhalte verdeckt.
+    document.body.classList.add("mit-log");
     if (!knopf.dataset.verdrahtet) {
       knopf.dataset.verdrahtet = "1";
       knopf.addEventListener("click", (e) => { e.stopPropagation(); this.umschalten(); });

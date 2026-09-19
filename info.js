@@ -5,9 +5,9 @@ const INFO_PAGES = {
   studie: {
     title: "Hintergrund der Studie",
     body: `
-      <p>Voyara ist keine echte Buchungsplattform, sondern ein Prototyp für eine wissenschaftliche Abschlussarbeit. Untersucht wird, wie Menschen im Onlinehandel mit digitalen Assistenzsystemen umgehen, die eigenständig Aufgaben übernehmen — von der Recherche bis zur Auswahl.</p>
+      <p>Voyara ist keine echte Buchungsplattform, sondern ein Prototyp für eine wissenschaftliche Abschlussarbeit zur Optimierung von Buchungsseiten. Untersucht wird, wie gut sich die Seite bedienen lässt, wie Menschen darauf zu einer Entscheidung kommen und wo die Seite besser werden kann.</p>
       <h3>Worum geht es genau?</h3>
-      <p>Der Chat auf dieser Seite kann für dich suchen, filtern und Vorschläge machen. Uns interessiert unter anderem, wie viel Kontrolle Nutzerinnen und Nutzer abgeben möchten, wie sie die Vorschläge prüfen und wovon ihr Vertrauen abhängt.</p>
+      <p>Du benutzt die Seite so, wie du es zu Hause tun würdest: suchen, vergleichen, buchen. Alle Funktionen der Seite, auch der Reise-Assistent, stehen dir dabei offen. Was genau ausgewertet wird, erfährst du am Ende der Teilnahme.</p>
       <h3>Sind die Angebote echt?</h3>
       <p>Nein. Alle Hotels, Ferienwohnungen, Mietwagen, Flüge, Preise und Bewertungen sind erfunden. Es können keine echten Buchungen ausgelöst werden und es fließt kein Geld.</p>`,
   },
@@ -23,13 +23,13 @@ const INFO_PAGES = {
   ablauf: {
     title: "Studienablauf",
     body: `
-      <p>Die Teilnahme dauert ungefähr zehn bis fünfzehn Minuten und läuft in drei Schritten ab.</p>
-      <h3>1. Kurze Einführung</h3>
-      <p>Du erhältst eine Aufgabe, zum Beispiel: eine passende Unterkunft für einen bestimmten Zeitraum finden.</p>
+      <p>Die Teilnahme dauert ungefähr zwanzig Minuten und läuft in drei Schritten ab.</p>
+      <h3>1. Zwei Aufgaben</h3>
+      <p>Du erhältst nacheinander zwei kurze Reisesituationen und suchst dafür je eine passende Unterkunft.</p>
       <h3>2. Nutzung der Plattform</h3>
-      <p>Du bewegst dich frei auf Voyara. Der Chat steht dir zur Verfügung, du kannst aber jederzeit auch selbst suchen, filtern und vergleichen.</p>
+      <p>Du bewegst dich frei auf Voyara: suchen, filtern, vergleichen, buchen. Alle Funktionen der Seite stehen dir offen.</p>
       <h3>3. Fragebogen</h3>
-      <p>Zum Schluss beantwortest du einige Fragen zu deinem Erleben. Danach klären wir dich vollständig über Zweck und Aufbau der Studie auf.</p>`,
+      <p>Nach jeder Aufgabe und zum Schluss beantwortest du einige Fragen zu deinem Erleben. Danach erfährst du, wofür deine Angaben verwendet werden.</p>`,
   },
   faq: {
     title: "Häufige Fragen",
