@@ -905,6 +905,28 @@ body.agent-collapsed .agent-head .icon-btn { margin-left: 0; transform: rotate(4
 }
 .flight-addon input { accent-color: var(--brand-700); width: 16px; height: 16px; cursor: pointer; }
 
+/* Leiste unter der Suchmaske: Abflughafen und Klasse, nur wenn Flug dazu */
+.flight-bar {
+  display: grid; grid-template-columns: 1.4fr 1fr 2fr; gap: 10px; align-items: end;
+  margin-top: 10px; padding: 12px 14px; border: 1px solid var(--brand-100); border-radius: var(--r-md);
+  background: var(--brand-50, #f3f8f5);
+}
+.flight-bar[hidden] { display: none; }
+.flight-bar-note { font-size: .8rem; color: var(--ink-500); padding-bottom: 10px; }
+@media (max-width: 720px) { .flight-bar { grid-template-columns: 1fr; } .flight-bar-note { padding-bottom: 0; } }
+
+/* Paketpreis mit Flug in der Trefferkarte */
+.price-flight { margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--ink-200, #dfe5e0); font-size: .8rem; color: var(--ink-700); }
+.price-flight strong { display: block; color: var(--ink-900); font-size: .95rem; }
+.price-flight small { color: var(--ink-500); }
+
+/* Flugblock im Buchungskasten der Hausseite */
+.bw-flight { margin: 10px 0 12px; padding: 10px 12px; border: 1px solid var(--brand-100); border-radius: var(--r-md); background: var(--brand-50, #f3f8f5); }
+.bw-flight .bw-flight-head { display: flex; align-items: center; gap: 6px; font-weight: 600; font-size: .9rem; margin-bottom: 8px; }
+.bw-flight .bw-flight-head svg { width: 16px; height: 16px; }
+.bw-flight .field { margin-bottom: 8px; }
+.bw-flight .bw-flight-none { font-size: .82rem; color: var(--ink-500); }
+
 .btn.is-wished { border-color: #e9b9b9; color: #d64545; }
 .btn svg { flex-shrink: 0; }
 

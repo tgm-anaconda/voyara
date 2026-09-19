@@ -349,6 +349,33 @@ function renderWidget() {
     ? `Gesamte Wohnung · ${Belegung.text()}`
     : `${item.rooms[selectedRoom].name} · ${BOARD_LABELS[item.boards[selectedBoard].key]} · ${Belegung.text()}`;
 
+  // Flug dazu (nur Hotels): der gewaehlte oder guenstigste Flug ab dem
+  // Abflughafen aus der Suchleiste, Klasse aenderbar
+  const flugAn = !isApartment && typeof Flug !== "undefined" && Flug.get().mit;
+  const flugStand = flugAn ? Flug.get() : null;
+  const flugOptionen = flugAn ? (Flug.optionen(item.ziel, flugStand.ab).length ? Flug.optionen(item.ziel, flugStand.ab) : Flug.optionen(item.ziel, "")) : [];
+  const flug = flugAn ? Flug.wahl(item.ziel) : null;
+  const flugProPerson = flug ? Flug.preisProPerson(flug) : 0;
+  const flugGesamt = flugProPerson * b.personen;
+  const totalMitFlug = total + flugGesamt;
+  const flugBlock = !flugAn ? "" : `
+    <div class="bw-flight">
+      <div class="bw-flight-head">${ICONS.plane} Flug dazu</div>
+      ${flug ? `
+      <div class="field">
+        <label for="bwFlug">Verbindung</label>
+        <select class="select" id="bwFlug">
+          ${flugOptionen.map((f) => `<option value="${f.id}" ${f.id === flug.id ? "selected" : ""}>${f.airline} · ${f.from} → ${f.to} · ${f.depart}–${f.arrive} · ${f.stops === 0 ? "direkt" : `${f.stops} Stopp`} · ${formatPrice(Flug.preisProPerson(f))} p. P.</option>`).join("")}
+        </select>
+      </div>
+      <div class="field" style="margin-bottom:0">
+        <label for="bwKlasse">Klasse</label>
+        <select class="select" id="bwKlasse">
+          ${Object.entries(Flug.KLASSEN).map(([k, v]) => `<option value="${k}" ${k === flugStand.klasse ? "selected" : ""}>${v.label}</option>`).join("")}
+        </select>
+      </div>` : `<div class="bw-flight-none">Ab ${flugStand.ab || "deinem Flughafen"} gibt es keinen Flug zu diesem Ziel.</div>`}
+    </div>`;
+
   document.getElementById("bookingWidget").innerHTML = `
     <div class="bw-price">
       <strong>${formatPrice(perNight)}</strong>
@@ -366,12 +393,16 @@ function renderWidget() {
       <div class="bw-line"><span>${formatPrice(perNight)} × ${nights} Nächte${zimmerAnzahl > 1 ? ` × ${zimmerAnzahl} Zimmer` : ""}</span><span>${formatPrice(stay)}</span></div>
       <div class="bw-line"><span>Endreinigung</span><span>${formatPrice(cleaning)}</span></div>
       <div class="bw-line" style="color:var(--ok)"><span>Servicegebühr</span><span>0 €</span></div>
+      ${flug ? `<div class="bw-line"><span>Flug ${formatPrice(flugProPerson)} × ${b.personen} ${b.personen === 1 ? "Person" : "Personen"} (Hin und zurück)</span><span>${formatPrice(flugGesamt)}</span></div>` : ""}
     </div>
-    <div class="bw-total"><span>Gesamtpreis</span><strong>${formatPrice(total)}</strong></div>
-    <a class="btn btn-accent btn-block" href="${Belegung.anLink(`checkout.html?id=${item.id}&nights=${nights}&room=${selectedRoom}&board=${selectedBoard}`)}">Jetzt buchen</a>
+    ${flugBlock}
+    <div class="bw-total"><span>Gesamtpreis${flug ? " mit Flug" : ""}</span><strong>${formatPrice(totalMitFlug)}</strong></div>
+    <a class="btn btn-accent btn-block" href="${typeof Flug !== "undefined" ? Flug.anLink(Belegung.anLink(`checkout.html?id=${item.id}&nights=${nights}&room=${selectedRoom}&board=${selectedBoard}`)) : Belegung.anLink(`checkout.html?id=${item.id}&nights=${nights}&room=${selectedRoom}&board=${selectedBoard}`)}">Jetzt buchen</a>
     <p class="bw-hint">${ICONS.check} Kostenlos stornierbar bis 24 h vor Anreise</p>`;
 
   document.getElementById("bwNights").addEventListener("change", (e) => { nights = +e.target.value; renderWidget(); });
+  document.getElementById("bwFlug")?.addEventListener("change", (e) => { Flug.set({ flugId: e.target.value }); renderWidget(); });
+  document.getElementById("bwKlasse")?.addEventListener("change", (e) => { Flug.set({ klasse: e.target.value }); renderWidget(); });
 }
 
 document.addEventListener("DOMContentLoaded", () => {

@@ -115,7 +115,7 @@ const Werkzeuge = {
      Suchen
      ================================================================== */
 
-  async suchen({ typ = null, ziel = "", von = "", bis = "", erwachsene = null, kinder = null } = {}) {
+  async suchen({ typ = null, ziel = "", von = "", bis = "", erwachsene = null, kinder = null, flug = null } = {}) {
     if (!this.finde("#sbForm")) return this.fehlt("Die Suchmaske");
 
     const getan = [];
@@ -157,6 +157,28 @@ const Werkzeuge = {
     if (erwachsene !== null || kinder !== null) {
       await this.belegungSetzen(erwachsene, kinder);
       getan.push(`${erwachsene ?? "?"} Erwachsene${kinder ? `, ${kinder} Kinder` : ""}`);
+    }
+
+    // Flug dazu: Haken und Leiste (Abflughafen, Klasse), nur bei Hotels
+    if (flug && (typ || "hotel") === "hotel") {
+      const haken = this.finde("#sbWithFlight");
+      if (haken && haken.checked !== !!flug.mit) {
+        await Zeiger.klicke(haken, { hinweis: flug.mit ? "mit Flug" : "ohne Flug" });
+        await Zeiger.warte(200);
+        getan.push(flug.mit ? "mit Flug" : "ohne Flug");
+      }
+      if (flug.mit) {
+        const feldAb = this.finde("#sbFlightFrom");
+        if (feldAb && flug.ab !== undefined && feldAb.value !== (flug.ab || "")) {
+          await Zeiger.setzeWert(feldAb, flug.ab || "", { hinweis: "Abflughafen" });
+          getan.push(`ab ${flug.ab || "günstigstem Flughafen"}`);
+        }
+        const feldKlasse = this.finde("#sbFlightClass");
+        if (feldKlasse && flug.klasse && feldKlasse.value !== flug.klasse) {
+          await Zeiger.setzeWert(feldKlasse, flug.klasse, { hinweis: "Klasse" });
+          getan.push(flug.klasse);
+        }
+      }
     }
 
     // Auf der Ergebnisseite bleibt die Suche auf der Seite, ueberall sonst

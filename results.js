@@ -67,6 +67,27 @@ function priceBounds() {
   return { min: Math.min(...prices), max: Math.max(...prices) };
 }
 
+// Verweis auf die Hausseite mit Reisedaten, Reisenden und Flugwahl
+function hausLink(id) {
+  let href = Reisedaten.anLink(Belegung.anLink(`stay.html?id=${id}`));
+  if (typeof Flug !== "undefined" && state.type === "hotel") href = Flug.anLink(href);
+  return href;
+}
+
+// Paketpreis mit Flug in der Trefferkarte (nur Hotels, nur mit Flug dazu)
+function paketZeile(item, preisProNacht) {
+  if (!state.withFlight || state.type !== "hotel" || typeof Flug === "undefined") return "";
+  const b = Belegung.get();
+  const paket = Flug.paket(item, b.personen);
+  if (!paket) return `<div class="price-flight"><small>Kein Flug ab ${Flug.get().ab || "deinem Flughafen"} zu diesem Ziel</small></div>`;
+  const naechte = Reisedaten.naechte(7);
+  const unterkunft = preisProNacht * naechte * b.zimmer + 35 * b.zimmer;
+  return `<div class="price-flight">
+    <strong>${formatPrice(unterkunft + paket.gesamt)} mit Flug</strong>
+    <small>${naechte} Nächte + ${paket.flug.airline} ab ${paket.flug.from}, ${paket.klasse}, Hin und zurück, ${b.personen} ${b.personen === 1 ? "Person" : "Personen"}</small>
+  </div>`;
+}
+
 function readUrl() {
   const p = new URLSearchParams(window.location.search);
   state.type = p.get("type") || "hotel";
@@ -74,7 +95,8 @@ function readUrl() {
   if (p.get("category")) state.categories.add(p.get("category"));
   if (p.get("sort")) state.sort = p.get("sort");
   if (p.get("deals")) state.onlyDeals = true;
-  if (p.get("flight") === "1") state.withFlight = true;
+  // Flug dazu: aus der Adresse, sonst aus dem gemerkten Zustand
+  state.withFlight = typeof Flug !== "undefined" ? Flug.get().mit : p.get("flight") === "1";
   state.ziel = p.get("ziel") || "";
 }
 
@@ -303,14 +325,14 @@ function stayResultCard(item) {
 
   return `
 <div class="result-card">
-  <a class="result-media" href="${Reisedaten.anLink(Belegung.anLink(`stay.html?id=${item.id}`))}" data-bild="${titelbildVon(item.id)}" aria-label="${item.name}">
+  <a class="result-media" href="${hausLink(item.id)}" data-bild="${titelbildVon(item.id)}" aria-label="${item.name}">
     ${item.oldPrice ? '<span class="hotel-flag">Angebot</span>' : ""}
     ${wishButton(item.id)}
   </a>
   <div class="result-body">
     <div class="result-main">
       <div class="hotel-stars">${sub}</div>
-      <a class="hotel-name" style="font-size:1.1rem;text-decoration:none" href="${Reisedaten.anLink(Belegung.anLink(`stay.html?id=${item.id}`))}">${item.name}</a>
+      <a class="hotel-name" style="font-size:1.1rem;text-decoration:none" href="${hausLink(item.id)}">${item.name}</a>
       <div class="hotel-loc">${ICONS.pin}${item.location}${ziel ? ` · ${ziel.name}, ${ziel.land}` : ""}</div>
       ${saison ? `<div class="saison-zeile"><span class="saison ${saison.klasse}">${saison.text}</span><span class="saison-info">Hauptsaison ${saisonText(ziel)}</span></div>` : ""}
       <p class="result-desc">${item.shortDescription}</p>
@@ -326,7 +348,8 @@ function stayResultCard(item) {
           : item.oldPrice ? `<div class="price-old">${formatPrice(item.oldPrice)}</div>` : ""}
         <div class="price-main">${formatPrice(preis)}</div>
         <div class="price-note">pro Nacht inkl. Steuern</div>
-        <a class="btn btn-primary btn-sm" style="margin-top:8px" href="${Reisedaten.anLink(Belegung.anLink(`stay.html?id=${item.id}`))}">Details ansehen</a>
+        ${paketZeile(item, preis)}
+        <a class="btn btn-primary btn-sm" style="margin-top:8px" href="${hausLink(item.id)}">Details ansehen</a>
       </div>
     </div>
   </div>
@@ -413,25 +436,19 @@ function cardFor(item) {
 /* ---------- Flug-Zusatzblock bei Unterkunftssuche ---------- */
 function renderFlightAddon() {
   const box = document.getElementById("flightAddon");
-  if (!state.withFlight || (state.type !== "hotel" && state.type !== "apartment")) { box.innerHTML = ""; return; }
-  // Nur Fluege zum gesuchten Ziel vorschlagen - vorher kamen die drei
-  // guenstigsten der ganzen Welt, unabhaengig vom Reiseziel
-  const passend = state.ziel ? FLIGHTS.filter((f) => f.ziel === state.ziel) : FLIGHTS;
-  const cheapest = [...passend].sort((a, b) => a.price - b.price).slice(0, 3);
+  if (!state.withFlight || state.type !== "hotel" || typeof Flug === "undefined") { box.innerHTML = ""; return; }
+  // Eine Zeile: was der Flug kostet, steht bei jedem Hotel in der Karte.
+  // Den konkreten Flug waehlt man auf der Hausseite.
+  const s = Flug.get();
+  const ab = s.ab ? (Flug.flughaefen().find((h) => h.code === s.ab)?.name || s.ab) : "dem günstigsten Flughafen";
+  const b = Belegung.get();
+  const ziel = state.ziel && typeof ZIEL_NACH_ID !== "undefined" ? ZIEL_NACH_ID[state.ziel] : null;
+  const flug = ziel ? Flug.wahl(ziel.id) : null;
   box.innerHTML = `
   <div class="addon-panel">
     <div class="addon-head">
-      <div>${ICONS.plane}<strong>Flug dazubuchen</strong></div>
+      <div>${ICONS.plane}<strong>Mit Flug ab ${ab}</strong> · ${Flug.KLASSEN[s.klasse].label} · Hin- und Rückflug für ${b.personen} ${b.personen === 1 ? "Person" : "Personen"}${flug ? ` · ab ${formatPrice(Flug.preisProPerson(flug))} pro Person nach ${ziel.name}` : ""}</div>
       <a class="section-link" href="results.html?type=flight${state.ziel ? `&ziel=${state.ziel}` : ""}">Alle Flüge ansehen →</a>
-    </div>
-    <div class="addon-flights">
-      ${cheapest.map((f) => `
-        <button type="button" class="addon-flight js-book" data-id="${f.id}">
-          <span class="af-air">${f.airline}</span>
-          <span class="af-route">${f.fromCode} → ${f.toCode}</span>
-          <span class="af-time">${f.depart}–${f.arrive}</span>
-          <span class="af-price">${formatPrice(f.price)}</span>
-        </button>`).join("")}
     </div>
   </div>`;
 }
@@ -504,6 +521,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const typeChanged = query.type !== state.type;
       state.q = query.q;
       state.withFlight = query.flight === "1";
+      if (typeof Flug !== "undefined") Flug.set({ mit: state.withFlight, ab: query.ab || "", klasse: query.klasse || "economy" });
       // Zuerst die URL setzen: Belegung.get() liest die Reisegruppe daraus.
       // Vorher wurde erst gerendert und danach die URL geschrieben - eine
       // geaenderte Personenzahl wirkte deshalb erst nach dem Neuladen.

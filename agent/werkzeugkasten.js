@@ -56,7 +56,7 @@ const Werkzeugkasten = {
           wuensche: { type: "array", items: { type: "string", enum: ["pool", "strandnah", "kinderclub", "familie", "wellness", "ruhe", "essen", "sauberkeit", "lage", "service", "preis", "bewertung"] }, description: "Was der Person wichtig ist" },
           verpflegung: { type: "string", enum: ["ohne", "fruehstueck", "halb", "voll", "ai"], description: "Gewuenschte Verpflegung" },
           flug: { type: "boolean", description: "true, wenn ein Flug dazu gewuenscht ist; false, wenn nur die Unterkunft" },
-          flugAb: text("Abflughafen, wenn genannt"),
+          flugAb: text("Abflughafen, wenn genannt (Hamburg, Stuttgart, Düsseldorf, Hannover, München, Köln, Frankfurt, Berlin - was die Seite anbietet)"),
           flugKlasse: { type: "string", enum: ["economy", "premium", "business"], description: "Flugklasse, wenn genannt" },
         }),
       f("regionen_zaehlen",
@@ -202,6 +202,23 @@ const Werkzeugkasten = {
       ausstattung: (item.amenities || []).slice(0, 8),
       gelobt: kurz?.staerken?.slice(0, 2) || [],
       kritisiert: kurz?.schwaechen?.slice(0, 1) || [],
+      ...this.flugTeil(item, profil),
+    };
+  },
+
+  // Flug dazu, wenn gewuenscht: Preis pro Person (Hin und zurueck) und
+  // Paket fuer alle Reisenden ueber die gemerkte Dauer
+  flugTeil(item, profil) {
+    if (!profil.flug || item.type === "apartment" || typeof Flug === "undefined") return {};
+    const personen = (profil.erwachsene || 0) + (profil.kinder || 0);
+    const paket = Flug.paket(item, personen || 1, profil.flugKlasse || null);
+    if (!paket) return { flug: `kein Flug ab ${Flug.code(profil.flugAb) || "dem gewuenschten Flughafen"} zu diesem Ziel` };
+    const naechte = profil.naechte || null;
+    const zimmer = Math.max(1, profil.zimmer || 1);
+    const unterkunft = naechte ? this.preis(item, profil.monat) * naechte * zimmer + 35 * zimmer : null;
+    return {
+      flug: { verbindung: `${paket.flug.airline} ${paket.flug.from} nach ${paket.flug.to}, ${paket.flug.depart} bis ${paket.flug.arrive}, ${paket.flug.stops === 0 ? "direkt" : `${paket.flug.stops} Stopp`}`, klasse: paket.klasse, proPersonHinUndZurueck: paket.proPerson, personen: paket.personen, gesamt: paket.gesamt },
+      ...(unterkunft != null ? { paketGesamtUnterkunftUndFlug: unterkunft + paket.gesamt } : {}),
     };
   },
 
@@ -257,6 +274,9 @@ const Werkzeugkasten = {
       setze("verpflegung", a.verpflegung);
       if (a.flug !== undefined) setze("flug", !!a.flug);
       setze("flugAb", a.flugAb); setze("flugKlasse", a.flugKlasse);
+      if ((a.flug !== undefined || a.flugAb || a.flugKlasse) && typeof Flug !== "undefined") {
+        Flug.set({ mit: !!p.flug, ab: Flug.code(p.flugAb), klasse: p.flugKlasse || "economy" });
+      }
       // Budget fuer die ganze Reise in einen Preis pro Nacht umrechnen,
       // wie auf der Seite gerechnet wird (Servicegebuehr 35 Euro)
       if (p.budgetGesamt && p.naechte && !a.maxPreis) {
@@ -358,14 +378,24 @@ const Werkzeugkasten = {
         }
         kern.sperreAn();
         const ziel = p.zielId && typeof ZIEL_NACH_ID !== "undefined" ? ZIEL_NACH_ID[p.zielId]?.name : "";
-        const e = await Werkzeuge.suchen({ typ: p.typ || "hotel", ziel: ziel || "", von: zeitraum.von, bis: zeitraum.bis, erwachsene: p.erwachsene, kinder: p.kinder });
+        const flug = p.flug != null ? { mit: !!p.flug, ab: typeof Flug !== "undefined" ? Flug.code(p.flugAb) : "", klasse: p.flugKlasse || "economy" } : null;
+        if (flug && typeof Flug !== "undefined") Flug.set(flug);
+        const e = await Werkzeuge.suchen({ typ: p.typ || "hotel", ziel: ziel || "", von: zeitraum.von, bis: zeitraum.bis, erwachsene: p.erwachsene, kinder: p.kinder, flug });
         if (!e.ok) { kern.sperreAus(); return { ergebnis: { fehler: e.text } }; }
-        kern.logZeile(`Suchmaske gesetzt: ${[ziel, p.typ === "apartment" ? "Ferienwohnung" : "Hotel", zeitraum.von && `${zeitraum.von} bis ${zeitraum.bis}`, p.erwachsene != null && `${p.erwachsene} Erw.`, p.kinder ? `${p.kinder} Kinder` : null].filter(Boolean).join(", ")}`, "ergebnis");
-        return { navigiert: true, stufe: 2 };
+        kern.logZeile(`Suchmaske gesetzt: ${[ziel, p.typ === "apartment" ? "Ferienwohnung" : "Hotel", zeitraum.von && `${zeitraum.von} bis ${zeitraum.bis}`, p.erwachsene != null && `${p.erwachsene} Erw.`, p.kinder ? `${p.kinder} Kinder` : null, flug?.mit ? `mit Flug${flug.ab ? ` ab ${flug.ab}` : ""}` : null].filter(Boolean).join(", ")}`, "ergebnis");
+        if (e.daten?.navigiert) return { navigiert: true, stufe: 2 };
+        // Auf der Trefferliste bleibt die Suche auf der Seite: gleich weiter
+        await Zeiger.warte(400);
+        stufe = 2;
       }
       // Stufe 2: auf der Trefferliste
       if (seite !== "results") return { ergebnis: { fehler: "Die Trefferliste ist nicht offen." } };
       kern.sperreAn();
+      // Alte Filter einer frueheren Suche zuerst weg - sichtbar, wie ein
+      // Mensch auch erst "Filter zuruecksetzen" klickt
+      const reset = document.getElementById("fReset");
+      const aktiv = document.querySelectorAll("#filterPanel input:checked:not([value=''])").length;
+      if (reset && aktiv > 0 && (kern.lauf.runde || 0) > 0) { await Zeiger.klicke(reset, { hinweis: "Filter zurücksetzen" }); await Zeiger.warte(250); }
       const gesetzt = await Werkzeuge.filterSetzen({
         zielId: p.zielId || undefined,
         maxPreis: p.maxPreis || undefined,

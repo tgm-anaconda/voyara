@@ -1443,6 +1443,7 @@ const Politik = {
       const l = this.kriterium(k.id)?.label;
       if (l) raus.push({ feld: "Wunsch", wert: l });
     }
+    if (profil.flug != null) raus.push({ feld: "Flug", wert: profil.flug ? `ja${profil.flugAb ? `, ab ${profil.flugAb}` : ""}` : "nein" });
     return raus.filter((x) => x.wert);
   },
 

@@ -44,10 +44,24 @@ function priceLines() {
     : entry.pricePerNight + entry.rooms[roomIdx].priceDelta + entry.boards[boardIdx].priceDelta;
   const base = perNight * nights * zimmerAnzahl;
   const cleaning = (entry.type === "apartment" ? entry.cleaningFee : 35) * zimmerAnzahl;
+  // Flug dazu (nur Hotels): gewaehlte Verbindung, Hin- und Rueckflug, alle Reisenden
+  const f = flugDazu();
   return {
     unit: `${formatPrice(perNight)} × ${nights} Nächte${zimmerAnzahl > 1 ? ` × ${zimmerAnzahl} Zimmer` : ""}`,
-    base, extraLabel: "Endreinigung", extra: cleaning, total: base + cleaning,
+    base, extraLabel: "Endreinigung", extra: cleaning,
+    unterkunft: base + cleaning,
+    flug: f,
+    total: base + cleaning + (f ? f.gesamt : 0),
   };
+}
+
+function flugDazu() {
+  if (entry.type !== "hotel" || typeof Flug === "undefined" || !Flug.get().mit) return null;
+  const flug = Flug.wahl(entry.ziel);
+  if (!flug) return null;
+  const personen = Belegung.get().personen;
+  const proPerson = Flug.preisProPerson(flug);
+  return { flug, id: flug.id, proPerson, personen, gesamt: proPerson * personen, text: Flug.text(flug) };
 }
 
 function subtitle() {
@@ -57,7 +71,8 @@ function subtitle() {
     return `${entry.from} → ${entry.to} · ${entry.depart}–${entry.arrive} · ${entry.stops === 0 ? "Direktflug" : entry.stops + " Stopp"} · ${personen} ${personen === 1 ? "Person" : "Personen"}`;
   }
   if (entry.type === "apartment") return `Gesamte Wohnung · ${Belegung.text()}`;
-  return `${entry.rooms[roomIdx].name} · ${BOARD_LABELS[entry.boards[boardIdx].key]} · ${Belegung.text()}`;
+  const f = flugDazu();
+  return `${entry.rooms[roomIdx].name} · ${BOARD_LABELS[entry.boards[boardIdx].key]} · ${Belegung.text()}${f ? ` · mit Flug: ${f.text}` : ""}`;
 }
 
 function renderSteps() {
@@ -115,6 +130,8 @@ function renderStep2() {
       <div class="review-block">
         <h3>${itemTitle(entry)}</h3>
         <p style="margin:0 0 10px;color:var(--ink-500)">${subtitle()}</p>
+        ${p.flug ? `<div class="kv"><span>Unterkunft</span><strong>${formatPrice(p.unterkunft)}</strong></div>
+        <div class="kv"><span>Flug (${p.flug.personen} ${p.flug.personen === 1 ? "Person" : "Personen"}, Hin und zurück)</span><strong>${formatPrice(p.flug.gesamt)}</strong></div>` : ""}
         <div class="kv"><span>Gesamtpreis</span><strong>${formatPrice(p.total)}</strong></div>
       </div>
       <div class="review-block">
@@ -137,7 +154,10 @@ function renderStep2() {
     // Der Studienablauf erfaehrt von der Buchung - egal, ob die Person
     // oder der Agent geklickt hat
     if (typeof Studie !== "undefined") {
-      Studie.buchungBestaetigt({ id: entry.id, gesamt: priceLines().total, naechte: nights });
+      // Fuer die Auswertung zaehlt der Unterkunftspreis (die Aufgaben-
+      // Budgets gelten fuer die Unterkunft); der Flug steht daneben.
+      const pl = priceLines();
+      Studie.buchungBestaetigt({ id: entry.id, gesamt: pl.unterkunft ?? pl.total, naechte: nights, flug: pl.flug ? { id: pl.flug.id, gesamt: pl.flug.gesamt, personen: pl.flug.personen } : null });
     }
     render();
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -185,8 +205,9 @@ function renderSummary() {
       <div class="bw-line"><span>${p.unit}</span><span>${formatPrice(p.base)}</span></div>
       <div class="bw-line"><span>${p.extraLabel}</span><span>${formatPrice(p.extra)}</span></div>
       <div class="bw-line" style="color:var(--ok)"><span>Servicegebühr</span><span>0 €</span></div>
+      ${p.flug ? `<div class="bw-line"><span>Flug ${formatPrice(p.flug.proPerson)} × ${p.flug.personen} (Hin und zurück)</span><span>${formatPrice(p.flug.gesamt)}</span></div>` : ""}
     </div>
-    <div class="bw-total"><span>Gesamt</span><strong>${formatPrice(p.total)}</strong></div>
+    <div class="bw-total"><span>Gesamt${p.flug ? " mit Flug" : ""}</span><strong>${formatPrice(p.total)}</strong></div>
     <p class="bw-hint">${ICONS.shield} Simulierte Buchung — keine Zahlung, keine Weitergabe von Daten</p>`;
 
   applyScenes(document.getElementById("checkoutSummary"));

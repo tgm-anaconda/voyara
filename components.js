@@ -144,6 +144,101 @@ const Reisedaten = {
 };
 
 /* ==================================================================
+   Flug dazu
+   ------------------------------------------------------------------
+   Bei Hotels laesst sich ein Flug dazubuchen: Abflughafen und Klasse
+   kommen aus der Leiste unter der Suchmaske, die Wahl des konkreten
+   Flugs von der Hausseite. Der Zustand wandert wie die Reisedaten in
+   der Adresse mit und liegt zusaetzlich im sessionStorage, damit er
+   auch ohne Parameter erhalten bleibt. Preise: Hin- und Rueckflug je
+   Person, Klasse als Faktor auf den Katalogpreis (eine Richtung).
+   ================================================================== */
+const Flug = {
+  SCHLUESSEL: "voyara_flug",
+  KLASSEN: {
+    economy: { label: "Economy", faktor: 1 },
+    premium: { label: "Premium Economy", faktor: 1.5 },
+    business: { label: "Business", faktor: 2.6 },
+  },
+  urlGelesen: false,
+  lesen() {
+    let s = {};
+    try { s = JSON.parse(sessionStorage.getItem(this.SCHLUESSEL) || "{}") || {}; } catch { s = {}; }
+    // Die Adresse zaehlt einmal beim Laden der Seite; danach gilt, was auf
+    // der Seite geaendert wurde (Klasse, Verbindung)
+    const p = new URLSearchParams(window.location.search);
+    if (!this.urlGelesen && p.has("flight")) {
+      s = { mit: p.get("flight") === "1", ab: p.get("ab") ?? s.ab ?? "", klasse: p.get("klasse") || s.klasse || "economy", flugId: p.get("flug") || s.flugId || null };
+      this.speichern(s);
+    }
+    this.urlGelesen = true;
+    return { mit: !!s.mit, ab: s.ab || "", klasse: this.KLASSEN[s.klasse] ? s.klasse : "economy", flugId: s.flugId || null };
+  },
+  get() { return this.lesen(); },
+  speichern(s) { try { sessionStorage.setItem(this.SCHLUESSEL, JSON.stringify(s)); } catch { /* egal */ } },
+  set(werte) {
+    const s = { ...this.lesen(), ...werte };
+    if (!this.KLASSEN[s.klasse]) s.klasse = "economy";
+    this.speichern(s);
+    return s;
+  },
+  flughaefen() {
+    const liste = typeof FLIGHTS !== "undefined" ? FLIGHTS : [];
+    const map = new Map();
+    for (const f of liste) if (!map.has(f.fromCode)) map.set(f.fromCode, { code: f.fromCode, name: f.from });
+    return [...map.values()].sort((a, b) => a.name.localeCompare(b.name, "de"));
+  },
+  // Flughafencode aus Name oder Code ("Frankfurt", "FRA", "frankfurt (fra)")
+  code(text) {
+    const t = String(text || "").trim().toLowerCase();
+    if (!t) return "";
+    for (const h of this.flughaefen()) {
+      if (h.code.toLowerCase() === t || h.name.toLowerCase() === t || t.includes(h.name.toLowerCase()) || t.includes(h.code.toLowerCase())) return h.code;
+    }
+    return "";
+  },
+  optionen(zielId, ab = null) {
+    const liste = typeof FLIGHTS !== "undefined" ? FLIGHTS : [];
+    const code = ab === null ? this.lesen().ab : ab;
+    return liste.filter((f) => f.ziel === zielId && (!code || f.fromCode === code)).sort((a, b) => a.price - b.price);
+  },
+  // Der gewaehlte oder sonst der guenstigste Flug zum Ziel
+  wahl(zielId) {
+    const s = this.lesen();
+    const liste = typeof FLIGHTS !== "undefined" ? FLIGHTS : [];
+    const gewaehlt = s.flugId ? liste.find((f) => f.id === s.flugId && f.ziel === zielId) : null;
+    if (gewaehlt && (!s.ab || gewaehlt.fromCode === s.ab)) return gewaehlt;
+    // Nur vom gewuenschten Flughafen - sonst stuende "ab Duesseldorf" in
+    // der Karte, obwohl Frankfurt gewaehlt war
+    return this.optionen(zielId, s.ab)[0] || null;
+  },
+  preisProPerson(flug, klasse = null) {
+    if (!flug) return 0;
+    const k = this.KLASSEN[klasse || this.lesen().klasse] || this.KLASSEN.economy;
+    return Math.round(flug.price * 2 * k.faktor);   // Hin- und Rueckflug
+  },
+  // Paket fuer ein Hotel: Flug fuer alle Reisenden
+  paket(item, personen, klasse = null) {
+    if (!item || item.type === "apartment") return null;
+    const flug = this.wahl(item.ziel);
+    if (!flug) return null;
+    const proPerson = this.preisProPerson(flug, klasse);
+    return { flug, proPerson, personen, gesamt: proPerson * personen, klasse: this.KLASSEN[klasse || this.lesen().klasse].label };
+  },
+  text(flug, klasse = null) {
+    if (!flug) return "";
+    const k = this.KLASSEN[klasse || this.lesen().klasse] || this.KLASSEN.economy;
+    return `${flug.airline} ab ${flug.from}, ${k.label}, Hin- und Rückflug`;
+  },
+  anLink(href) {
+    const s = this.lesen();
+    if (!s.mit) return href;
+    const trenner = href.includes("?") ? "&" : "?";
+    return `${href}${trenner}flight=1&ab=${encodeURIComponent(s.ab)}&klasse=${s.klasse}${s.flugId ? `&flug=${s.flugId}` : ""}`;
+  },
+};
+
+/* ==================================================================
    Merkzettel — echte Funktion via localStorage
    ================================================================== */
 const Wishlist = {

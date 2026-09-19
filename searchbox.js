@@ -11,6 +11,8 @@ const SearchBox = (() => {
   let onSubmit = null;
   let activeType = "hotel";
   let withFlight = false;
+  let flightAb = "";
+  let flightKlasse = "economy";
 
   const AIRPORTS = ["Berlin (BER)", "Bremen (BRE)", "Düsseldorf (DUS)", "Frankfurt (FRA)", "Hamburg (HAM)", "Hannover (HAJ)", "Köln (CGN)", "Leipzig (LEJ)", "München (MUC)", "Nürnberg (NUE)", "Stuttgart (STR)"];
 
@@ -129,7 +131,11 @@ const SearchBox = (() => {
       { key: "car", label: "Mietwagen" },
       { key: "flight", label: "Flüge" },
     ];
-    const showFlightAddon = activeType === "hotel" || activeType === "apartment";
+    // Flug dazu gibt es nur bei Hotels (Wunsch des Nutzers: bei Wohnungen
+    // passt es selten)
+    const showFlightAddon = activeType === "hotel";
+    const flughaefen = typeof Flug !== "undefined" ? Flug.flughaefen() : [];
+    const klassen = typeof Flug !== "undefined" ? Flug.KLASSEN : { economy: { label: "Economy" } };
 
     return `
 <div class="searchbox-tabs">
@@ -142,8 +148,24 @@ const SearchBox = (() => {
 ${showFlightAddon ? `
 <label class="flight-addon">
   <input type="checkbox" id="sbWithFlight" ${withFlight ? "checked" : ""} />
-  <span>Flug dazubuchen — wir zeigen dir passende Verbindungen zum Ziel</span>
-</label>` : ""}`;
+  <span>Flug dazubuchen</span>
+</label>
+<div class="flight-bar" id="sbFlightBar" ${withFlight ? "" : "hidden"}>
+  <div class="field">
+    <label for="sbFlightFrom">Abflughafen</label>
+    <select class="select" id="sbFlightFrom">
+      <option value="">Günstigster Flughafen</option>
+      ${flughaefen.map((h) => `<option value="${h.code}" ${flightAb === h.code ? "selected" : ""}>${h.name} (${h.code})</option>`).join("")}
+    </select>
+  </div>
+  <div class="field">
+    <label for="sbFlightClass">Klasse</label>
+    <select class="select" id="sbFlightClass">
+      ${Object.entries(klassen).map(([k, v]) => `<option value="${k}" ${flightKlasse === k ? "selected" : ""}>${v.label}</option>`).join("")}
+    </select>
+  </div>
+  <div class="flight-bar-note">Hin- und Rückflug für alle Reisenden, Preis steht bei jedem Hotel dabei.</div>
+</div>` : ""}`;
   }
 
   function renderRooms() {
@@ -230,7 +252,10 @@ ${showFlightAddon ? `
       if (ziel) query.ziel = ziel;
     }
     if (activeType === "car") query.age = get("#sbAge");
-    if (withFlight) query.flight = "1";
+    if (activeType === "hotel") {
+      query.flight = withFlight ? "1" : "0";
+      if (withFlight) { query.ab = flightAb; query.klasse = flightKlasse; }
+    }
     return query;
   }
 
@@ -292,7 +317,11 @@ ${showFlightAddon ? `
     }
 
     const flightBox = mountEl.querySelector("#sbWithFlight");
-    if (flightBox) flightBox.addEventListener("change", () => { withFlight = flightBox.checked; });
+    const flightBar = mountEl.querySelector("#sbFlightBar");
+    const merken = () => { if (typeof Flug !== "undefined") Flug.set({ mit: withFlight, ab: flightAb, klasse: flightKlasse }); };
+    if (flightBox) flightBox.addEventListener("change", () => { withFlight = flightBox.checked; if (flightBar) flightBar.hidden = !withFlight; merken(); });
+    mountEl.querySelector("#sbFlightFrom")?.addEventListener("change", (e) => { flightAb = e.target.value; merken(); });
+    mountEl.querySelector("#sbFlightClass")?.addEventListener("change", (e) => { flightKlasse = e.target.value; merken(); });
 
     mountEl.querySelector("#sbForm").addEventListener("submit", (e) => {
       e.preventDefault();
@@ -315,7 +344,10 @@ ${showFlightAddon ? `
     const params = new URLSearchParams(window.location.search);
     const d = defaultDates();
     activeType = params.get("type") || options.type || "hotel";
-    withFlight = params.get("flight") === "1";
+    const flug = typeof Flug !== "undefined" ? Flug.get() : { mit: params.get("flight") === "1", ab: "", klasse: "economy" };
+    withFlight = flug.mit;
+    flightAb = flug.ab || "";
+    flightKlasse = flug.klasse || "economy";
 
     const initial = {
       ziel: params.get("ziel") || "",

@@ -425,7 +425,7 @@ const Studie = {
   // Von der Kasse aufgerufen, sobald die Bestaetigung erscheint - egal,
   // ob die Person oder der Agent geklickt hat. Ob der Agent es war,
   // steht im Kern-Protokoll ("gebucht" mit autonom: true).
-  buchungBestaetigt({ id, gesamt, naechte }) {
+  buchungBestaetigt({ id, gesamt, naechte, flug = null }) {
     if (!this.laeuft()) return;
     const d = this.durchlauf();
     if (!d || d.buchung) return;
@@ -434,7 +434,7 @@ const Studie = {
     // "vorbereiten") oder nicht (Stufe "buchen"), steht im Kern-Protokoll
     // und wird beim Abschluss der Aufgabe nachgetragen.
     const durchAgent = !!document.getElementById("agentSperre");
-    d.buchung = { id, gesamt: Math.round(gesamt), naechte, durchAgent, ohneRueckfrage: null, zeit: Date.now() };
+    d.buchung = { id, gesamt: Math.round(gesamt), naechte, durchAgent, ohneRueckfrage: null, zeit: Date.now(), flug: flug || null };
     this.notieren("buchung", { id, gesamt: Math.round(gesamt), durchAgent });
     this.sichern();
   },
@@ -768,6 +768,8 @@ const Studie = {
         [p + "uebergebenAnteil"]: z(r.uebergeben?.anteil),
         [p + "gebucht"]: z(r.buchung?.id),
         [p + "gebuchtGesamt"]: z(r.buchung?.gesamt),
+        [p + "gebuchtMitFlug"]: r.buchung ? (r.buchung.flug ? 1 : 0) : "",
+        [p + "gebuchtFlugGesamt"]: z(r.buchung?.flug?.gesamt),
         [p + "gebuchtDurchAgent"]: r.buchung ? (r.buchung.durchAgent ? 1 : 0) : "",
         [p + "gebuchtOhneRueckfrage"]: r.buchung ? (r.buchung.ohneRueckfrage ? 1 : 0) : "",
         [p + "zulaessig"]: r.bewertung ? (r.bewertung.zulaessig ? 1 : 0) : "",
