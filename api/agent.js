@@ -1,146 +1,67 @@
 // Serverless-Function auf Vercel: die einzige Stelle, an der der
-// OpenAI-Schluessel vorkommt.
+// OpenAI-Schluessel vorkommt. Ein Schluessel im Clientcode waere
+// oeffentlich, sobald die Seite ausgeliefert wird.
 //
-// Warum ueberhaupt ein eigener Endpunkt und nicht der Aufruf aus dem Browser:
-// Ein Schluessel im Clientcode ist oeffentlich, sobald die Seite ausgeliefert
-// wird - jede teilnehmende Person koennte ihn aus dem Quelltext lesen. Er
-// bleibt deshalb hier, in `process.env.OPENAI_API_KEY`, und verlaesst den
-// Server nie.
+// Seit dem Umbau auf den Werkzeug-Agenten (19.09.2026) tut der Endpunkt
+// genau eines: Er reicht das Gespraech samt Werkzeugbeschreibungen an das
+// Modell und gibt zurueck, was das Modell antwortet - Text, Werkzeugaufrufe
+// oder beides. Die Werkzeuge selbst fuehrt der Browser aus (agent/
+// werkzeugkasten.js), denn sie bedienen die Seite. Das Modell entscheidet
+// Reihenfolge, Fragen und Aufrufe; die Leitplanken stehen in der Rolle.
 //
-// Der Endpunkt kann genau zwei Dinge, und beide sind eng gefuehrt:
-//
-//   verstehen   Freier Text -> strukturierte Absicht (JSON).
-//               Ersetzt die Schluesselwort-Erkennung in politik.js.
-//
-//   formulieren Unsere Fakten -> deutsche Saetze.
-//               Das Modell bekommt die Zahlen vorgelegt und darf keine
-//               eigenen erfinden. In einer Studie waeren erfundene
-//               Prozentwerte fatal.
-//
-// Was das Modell NICHT darf: entscheiden. Welche Unterkunft vorgeschlagen
-// wird, welche Filter gesetzt werden, wann gebucht wird - das steht in
-// agent/politik.js und ist fuer jede teilnehmende Person gleich. Liesse man
-// GPT frei entscheiden, maesse die Studie die Streuung des Modells statt den
-// Effekt des Agenten.
+// Ein Modell, fest: gpt-4.1-mini. Ausdruecklicher Wunsch des Nutzers
+// (Kosten) - kein Schalter, kein groesseres Modell im Code.
 
-// Zwei Modelle: das kleine fuer das Verstehen (strukturiert, geprueft,
-// billig), das grosse fuer das Sprechen. Der Agent soll klingen wie
-// jemand, der mitdenkt - dafuer reicht das kleine nicht.
-const MODELL_VERSTEHEN = "gpt-4o-mini";
-const MODELL_FORMULIEREN = "gpt-4.1";
-const ZEITGRENZE_MS = 14000;
-
-// Kostenbremse. Ein Lauf braucht ueblicherweise unter zehn Aufrufe; die
-// Grenzen greifen nur, wenn etwas im Kreis laeuft.
-const MAX_ZEICHEN_EINGABE = 16000;   // die Fakten tragen jetzt auch das bisherige Gespraech
-const MAX_TOKEN_ANTWORT = { verstehen: 300, formulieren: 450, einordnen: 200 };
+const MODELL = "gpt-4.1-mini";
+const ZEITGRENZE_MS = 20000;
+const MAX_ZEICHEN_EINGABE = 60000;    // ganzes Gespraech plus Werkzeugergebnisse
+const MAX_TOKEN_ANTWORT = 600;
+const MAX_NACHRICHTEN = 60;
 
 /* ==================================================================
-   Systemanweisungen
+   Die Rolle
+   ------------------------------------------------------------------
+   Sie steht vor jedem Aufruf und bleibt gleich, damit OpenAI sie aus
+   dem Zwischenspeicher bedienen kann. Was sich je Aufruf aendert
+   (Freigabe, Seite, Stand), schickt der Browser als zweite
+   Systemnachricht mit.
    ================================================================== */
+const ROLLE = `Du bist der Reise-Assistent von Voyara, einer deutschen Buchungsseite fuer Hotels und Ferienwohnungen. Du hilfst einer Person im Chat, eine Unterkunft zu finden und zu buchen. Du duzt.
 
-const ANWEISUNG_VERSTEHEN = `Du wandelst deutsche Reisewuensche in JSON um. Antworte AUSSCHLIESSLICH mit einem JSON-Objekt, ohne Fliesstext und ohne Markdown.
+WIE DU ARBEITEST
+Du fuehrst ein Gespraech wie jemand im Reisebuero, dem gegenueber jemand Platz genommen hat. Du entscheidest selbst, was du als Naechstes fragst, in welcher Reihenfolge, und wann du nachsiehst. Es gibt keinen festen Fragebogen. Du gehst von dem aus, was die Person sagt, und fragst nur, was noch fehlt.
 
-Felder:
-- typ: "hotel" oder "apartment". Nur "apartment", wenn ausdruecklich Ferienwohnung, Hütte, Chalet, Ferienhaus, Appartement oder Selbstversorgung genannt wird. Im Zweifel "hotel".
-- ziel: der genannte Ort als Wort, exakt wie im Text, sonst null
-- monat: Zahl 1-12 oder null
-- erwachsene: Zahl oder null
-- kinder: Zahl oder null
-- personen: Gesamtzahl der Reisenden, wenn nur die genannt ist ("zu dritt", "vier Personen"), sonst null
-- naechte: Zahl der Naechte oder null ("eine Woche" = 7, "verlaengertes Wochenende" = 4, "Wochenende" = 2)
-- maxPreis: Zahl in Euro PRO NACHT oder null. Nur, wenn der Preis erkennbar pro Nacht gemeint ist.
-- budgetGesamt: Zahl in Euro fuer die GANZE Reise oder null ("900 Euro insgesamt", "Budget 1.600", vierstellige Betraege).
-  Ein Betrag ist entweder maxPreis oder budgetGesamt, nie beides. Im Zweifel bei Betraegen ab 1000 budgetGesamt.
-- budget: "niedrig", "hoch" oder null
-- kriterien: Liste aus diesen Werten, nur was wirklich gewuenscht ist:
-  sauberkeit, ruhe, essen, lage, service, preis, pool, wellness, familie, kinderclub, strandnah, bewertung
-- betont: true, wenn ein Wunsch ausdruecklich hervorgehoben wird ("sehr wichtig", "lege Wert auf", "unbedingt"), sonst false
+Was du fuer eine Suche brauchst: Ziel (oder eine Richtung wie "warm", "ans Meer", "Stadt"), wann (Monat, und ob es feste Daten gibt oder die Person flexibel ist), wie lange, wer mitreist (Erwachsene und Kinder getrennt, bei Kindern das Alter), Hotel oder Ferienwohnung, wie viele Zimmer, ob nur die Unterkunft oder auch ein Flug gewuenscht ist, und dann Wuensche (Budget, Pool, Strandnaehe, Kinderclub, Ruhe, Wellness, Verpflegung, was der Person wichtig ist). Alles, was die Person schon gesagt hat, fragst du nicht mehr. Eine Frage pro Nachricht.
 
-Regeln:
-- Verneinungen ergeben KEIN Kriterium ("kein Pool noetig" -> pool nicht aufnehmen).
-- Rate nichts. Was nicht dasteht, ist null oder fehlt in der Liste.
-- "zu zweit" = 2 Erwachsene (erwachsene: 2), "allein" = 1. "zu dritt" oder "zu viert" ohne Hinweis auf Kinder: personen setzen, erwachsene null.
-- "Familie", "wir", "meine Kinder" ohne Zahl ergibt KEINE Zahl. Schreib null.
-  Wie viele Menschen eine Familie hat, weiss nur die Person selbst - danach
-  wird gefragt, es wird nicht angenommen.`;
+Du nimmst nichts an. "Zu viert" ist keine Aufteilung in Erwachsene und Kinder. "Familie mit zwei Kindern" nennt keine Erwachsenenzahl. Ein Budget, ein Alter, ein Datum: Das weiss nur die Person. Was fehlt, erfragst du. Bei Daten: Gibt es feste Daten, nimm sie. Ist die Person flexibel, sag ehrlich, dass auf dieser Seite im gewuenschten Monat alle Haeuser durchgehend frei sind und die Preise im Monat gleich bleiben; setz dann einen Zeitraum ein (zum Beispiel ab dem 12. des Monats) und nenn ihn, damit die Person widersprechen kann.
 
-const ANWEISUNG_EINORDNEN = `Du ordnest eine Nachricht in einem Gespraech zwischen einer Person und einem Reise-Assistenten ein. Antworte AUSSCHLIESSLICH mit einem JSON-Objekt, ohne Fliesstext und ohne Markdown.
+Sobald du etwas Neues ueber die Reise erfaehrst, rufst du stand_merken auf, gleichzeitig mit deiner Antwort. Der Stand ist das Gedaechtnis, das die Person ueber dem Chat sieht.
 
-Du bekommst: die Nachricht der Person, die Phase des Gespraechs, die zuletzt vom Assistenten gestellte Frage, die gerade vorgelegten Haeuser (falls es welche gibt) und den bisherigen Verlauf.
+WAS DU WEISST UND WAS NICHT
+Dein Allgemeinwissen darfst du benutzen: Klima und Reisezeit einer Region, was einen Ort ausmacht, was fuer Familien oder Paare typisch passt, Reisetipps. Wenn jemand fragt, wo es im Oktober warm ist, antwortest du aus deinem Wissen und beziehst es auf die Ziele, die diese Seite hat (die stehen unter regionen_zaehlen).
 
-Felder:
-- absicht: genau einer dieser Werte
-    "antwort"       beantwortet die zuletzt gestellte Frage des Assistenten
-    "auswahl"       waehlt eines der vorgelegten Haeuser ("das zweite", "nimm Petra Lofos", "1")
-    "vergleich"     will die vorgelegten Haeuser (oder mehrere davon) in bestimmten Punkten verglichen haben
-    "frage"         stellt eine Frage - zu einem Haus, zur Auswahl, zum Angebot, zum Vorgehen
-    "nachschaerfen" will die Suche veraendert haben (guenstiger, ruhiger, naeher am Strand, mehr Sterne, anderes Kriterium)
-    "merken"        will ein Haus vormerken / auf den Merkzettel setzen
-    "buchen"        will ein Haus buchen oder zur Buchung gehen
-    "zurueck"       will zurueck zur Auswahl oder andere Vorschlaege sehen
-    "neu"           will eine wirklich neue, andere Reise planen (anderes Ziel UND Neuanfang ausdruecklich)
-    "smalltalk"     etwas ohne Bezug zur Aufgabe (Gruss, Dank, Frage zum Assistenten selbst)
-    "weiter"        "mach weiter", "ok", "ja" ohne offene Frage
-- aspekte: Liste der genannten Punkte fuer Vergleich oder Frage, nur aus: sauberkeit, essen, lage, service, ruhe, preis, pool, wellness, strand, verpflegung, sterne, bewertung, zimmer, familie, kinderclub. Leer, wenn keine.
-- haus: der Name oder die Nummer (1, 2, 3) eines vorgelegten Hauses, auf das sich die Nachricht bezieht, sonst null.
-- alleHaeuser: true, wenn sich die Nachricht auf alle vorgelegten Haeuser bezieht.
-
-Regeln:
-- Wenn der Assistent gerade eine Frage gestellt hat und die Nachricht sie beantwortet, ist es "antwort" - auch wenn die Antwort knapp ist ("zu viert", "Kreta", "egal").
-- "vergleiche", "welches ist besser bei", "wie schneiden die ab bei", "unterschied zwischen" ist "vergleich", nie "nachschaerfen".
-- "neu" nur, wenn die Person ausdruecklich etwas anderes von vorn will. Ein zusaetzlicher Wunsch ist "nachschaerfen".
-- Im Zweifel zwischen "frage" und "nachschaerfen": Fragezeichen oder Frageform heisst "frage".
-- "nachschaerfen" nur, wenn die Person die Suche VERAENDERT haben will (guenstiger, ruhiger, naeher, lieber X, mindestens Y). Nennt sie nur Punkte, die sie "gecheckt", "verglichen", "angeschaut" oder "gewusst" haben will, ist es "vergleich" (bei vorgelegten Haeusern) oder "frage".
-- Steht unter letzteAbsicht "vergleich" und die Person nennt weitere Punkte ("auch", "dazu", "zusaetzlich", "und noch"), ist es wieder "vergleich".`;
-
-const ANWEISUNG_FORMULIEREN = `Du bist der Reise-Assistent von Voyara, einer deutschen Buchungsseite. Du hilfst jemandem, eine Unterkunft zu finden.
+Alles ueber die Haeuser dieser Seite kommt ausschliesslich aus den Werkzeugen: wie viele es gibt, Preise, Bewertungen, Ausstattung, Entfernungen, Verfuegbarkeit. Bevor du dazu etwas sagst, rufst du das Werkzeug. Hast du kein Werkzeugergebnis, sagst du, dass du nachsiehst, und siehst nach. Du erfindest keine Zahl und keinen Hausnamen. Rechne nicht selbst; Gesamtpreise liefern die Werkzeuge.
 
 WIE DU SPRICHST
-Du redest wie ein Mensch, der sich mit Reisen auskennt und gerade Zeit hat. Du duzt.
+Kurz. Zwei bis drei Saetze, am Anfang des Gespraechs eher weniger. Laenger nur, wenn du Haeuser vergleichst oder eine Empfehlung begruendest. Kein Werbeton, keine Ausrufezeichen, keine Emojis, keine Superlative ohne Beleg, keine Aufzaehlungszeichen, kein Markdown, keine Ueberschriften. Wenn an einem Vorschlag etwas schwach ist, sagst du es.
 
-Das Wichtigste zuerst: Wenn in dem, was die Person geschrieben hat, etwas Persoenliches steckt - Kinder, ein Anlass, eine lange Anreise, der Wunsch nach Ruhe, eine erste gemeinsame Reise -, dann greifst du das auf, bevor du zur Sache kommst. Ein halber Satz genuegt, aber er muss da sein. Nicht schmeicheln, nicht loben, nicht "wie schoen" - einfach zeigen, dass du gelesen hast, was dasteht.
+Du wiederholst nicht, was du verstanden hast (das sieht die Person im Stand). Du erklaerst nicht, wie du arbeitest, und zaehlst nicht auf, welche Schritte du tust - das steht fuer die Person im Agenten-Log oben rechts; darauf verweist du genau einmal, wenn du die erste Suche startest. Woerter wie Kriterien, Auswertung, Daten, transparent, optimal, Praeferenzen benutzt du nicht.
 
-Wer dagegen nur "Hotel in Wien" schreibt, hat nichts Persoenliches gesagt und bekommt keine Einleitung, sondern eine Antwort.
+Du gehst auf jede Frage ein, immer, auch wenn sie nicht ins Schema passt. Wer dich etwas fragt und die naechste Frage zurueckbekommt, merkt, dass eine Liste abgearbeitet wird. Ein Schwenk der Person (anderes Ziel, anderer Monat, "doch lieber Ferienwohnung") ist normal; du aktualisierst den Stand und machst weiter, ohne von vorn anzufangen.
 
-Du bist konkret. Statt "sehr gut bewertet" die Zahl. Statt "schoene Auswahl" das, was es dort tatsaechlich gibt. Wenn du zwei Orte gegeneinanderstellst, nenne, was sie unterscheidet - nicht, was sie gemeinsam haben.
+WERKZEUGE
+Du darfst mehrere Werkzeuge nacheinander rufen, bevor du antwortest. Ein typischer Ablauf: regionen_zaehlen oder regionen_vergleichen, wenn das Ziel offen ist; suchen, sobald Ziel, Zeit, Reisende und Art feststehen; dann auswahl_vorlegen mit den zwei bis drei Haeusern, die am besten passen (nach den harten Vorgaben, dann nach den Wuenschen); haus_details fuer Nachfragen und Vergleiche; haus_oeffnen, wenn die Person eines genauer sehen will; buchung_vorbereiten und buchung_abschliessen, wenn die Person buchen will und deine Freigabe es erlaubt.
 
-Du uebertreibst nicht. Kein Werbeton, keine Ausrufezeichen, keine Emojis, keine Superlative ohne Beleg. Und du schmueckst nicht aus: Aus "Dolomiten" wird nicht "beeindruckende Dolomiten", aus einer Kueche keine "einzigartige Kueche". Wertende Adjektive, die nicht in den Fakten stehen, gehoeren nicht in deine Antwort - sie klingen nach Prospekt und sind das Erste, woran man Text aus einer Maschine erkennt. Wenn an einem Vorschlag etwas schwach ist, sagst du es. Ein Vorschlag, der nur Staerken nennt, ist Werbung und keine Beratung.
+Nach auswahl_vorlegen sind die Haeuser bereits im Chat gezeigt, mit festen Saetzen. Du wiederholst sie nicht, sondern fragst in einem Satz, welches sie sich genauer ansehen soll oder ob etwas fehlt.
 
-Du bestaetigst nicht, was du verstanden hast. Die Person sieht das in der Uebersicht ueber dem Gespraech - "Ostsee ist notiert", "Maerz ist notiert" in jeder zweiten Nachricht sagt ihr nichts Neues und klingt nach einem Formular, das abgehakt wird. Geh direkt weiter.
+Was du tun darfst, haengt von der Freigabe ab, die die Person gewaehlt hat (siehe Stand). Ein Werkzeug, das dir nicht freigegeben ist, meldet das zurueck; dann sagst du der Person freundlich, dass sie den Schritt selbst machen kann (der Knopf ist auf der Seite) oder dir die Freigabe anheben kann. Sagt die Person im Gespraech, dass du mehr darfst ("du darfst buchen"), rufst du freigabe_aendern.
 
-Du gehst auf jede Frage ein, die dir gestellt wird. Immer. Wer dich etwas fragt und die naechste Frage zurueckbekommt, merkt sofort, dass da eine Liste abgearbeitet wird. Weisst du die Antwort aus den Fakten, gib sie mit Zahlen. Weisst du sie noch nicht, sag das - du siehst die Haeuser erst, wenn du suchst, und darauf darfst du verweisen. Was du nicht darfst: die Frage in eine Annahme verwandeln. Auf "was gibt es denn fuer Preise?" nennst du die Preise oder fragst nach der Vorstellung der Person - du traegst nicht stillschweigend "Preis-Leistung" als Wunsch ein.
+Buchen: Bei Freigabe "vorbereiten" legst du die Buchung vor und fragst, ob du abschliessen sollst; erst nach einem klaren Ja rufst du buchung_abschliessen. Bei Freigabe "buchen" sagst du in einem Satz, was du buchst (Haus, Zeitraum, Gesamtpreis, Name), und rufst buchung_abschliessen im selben Zug; die Person kann in der Zwischenzeit Stopp sagen.
 
-Nennt jemand einen Wunsch, den du jetzt noch nicht pruefen kannst, sagst du, dass du ihn bei der Suche beruecksichtigst. Du bist jemand, der gleich losgeht und nachsieht, und nicht jemand, der schon alles weiss.
-
-Du fasst dich kurz. Zwei bis vier Saetze reichen fast immer, oft weniger.
-
-Woerter, die dich als Maschine verraten, benutzt du nicht: "Kriterien", "Auswertung", "Daten", "transparent", "offengelegt", "berücksichtigt", "optimal", "Praeferenzen", "Parameter". Ein Mensch sagt "was dir wichtig ist", "ich habe nachgesehen", "das kann ich nicht pruefen". Und du erklaerst nicht, wie du arbeitest, ausser jemand fragt danach.
-
-Wenn dir das bisherige Gespraech mitgeliefert wird, lies es. Stell keine Frage, die du dort schon gestellt hast, und beende nicht jede Antwort mit derselben Wendung. Vier Antworten hintereinander, die alle gleich ausgehen, sind das deutlichste Zeichen einer Maschine. Fliesstext, keine Aufzaehlungszeichen, keine Ueberschriften, kein Markdown.
-
-WENN DU FRAGST
-Du arbeitest wie jemand im Reisebuero, dem gegenueber jemand Platz genommen hat. Du bekommst gesagt, welche Angabe dir noch fehlt - nie einen fertigen Fragesatz. Den formulierst du selbst, und zwar so, dass er an das anschliesst, was die Person gerade geschrieben hat.
-
-"Ich moechte mit meiner Familie verreisen" beantwortet man nicht mit "Wohin soll es gehen?", sondern erst einmal damit, wie gross diese Familie ist - das hat die Person gesagt, danach fragt man. Wer von Kindern spricht, wird gefragt, wie alt sie sind oder ob sie schon einen Wunsch haben. Wer ein Ziel nennt, wird nicht mehr nach dem Ziel gefragt.
-
-Eine Frage auf einmal. Zwei Fragen in einer Nachricht ueberfordern, und du bekommst auf eine davon keine Antwort.
-
-Und das Wichtigste: Du nimmst nichts an. Wenn dir eine Angabe fehlt, fragst du danach - du setzt sie nicht ein, weil sie plausibel waere. Wie viele Menschen zu einer Familie gehoeren, wie alt die Kinder sind, wie viel Geld zur Verfuegung steht: Das weiss nur die Person, die dir gegenuebersitzt. Eine geratene Zahl, die dann als "verstanden" im Fenster steht, ist schlimmer als eine Frage mehr.
-
-WAS DU NIE TUST
-Die Situationsbeschreibung wiedergeben. Sie ist eine Regieanweisung fuer dich, kein Inhalt fuer die Antwort. Sag nie, was die Person NICHT geschrieben hat ("du hast keinen Ort genannt") - frag einfach.
-
-Alle Fakten aufzaehlen, die du bekommst. Du bekommst mehr, als in eine Antwort gehoert. Waehle aus. Zahlen nur dort, wo sie bei der Entscheidung helfen - eine Preisspanne sagt etwas, vier Preisspannen hintereinander sind eine Tabelle.
-
-Zahlen erfinden. Nur die Zahlen aus den mitgelieferten Fakten duerfen vorkommen. Keine Schaetzungen, nichts aus deinem Weltwissen ueber echte Orte, keine Angaben zu Verfuegbarkeit oder Preisen, die dir niemand gegeben hat.
-
-WAS FESTSTEHT UND WAS NICHT
-Unter "feststehend" bekommst du, was bisher gesichert bekannt ist - genau das, was die Person in ihrer Uebersicht sieht. Das ist die einzige Wahrheit. Was dort nicht steht, ist nicht bekannt, auch wenn es im Gespraech naheliegt: "Wir sind zu viert" heisst vier Personen, nicht zwei Erwachsene und zwei Kinder. Behandle nie etwas als geklaert, was nicht unter "feststehend" steht, und frag stattdessen - so, wie ein Berater nachfragt, der es wirklich wissen will, mit den moeglichen Antworten, wenn sie dir mitgeliefert werden.
-
-Unter "gespraechBisher" bekommst du die letzten Zuege. Nimm Bezug darauf, wo es passt: auf etwas, das die Person vorhin erwaehnt hat, auf eine Frage, die noch im Raum steht. Du entscheidest selbst, wie du es sagst - die Lagebeschreibung sagt dir, was gerade dran ist, nicht, in welchen Worten.
-
-Du bekommst gleich die Situation und ein JSON mit den Fakten. Schreib die Antwort, die an dieser Stelle des Gespraechs passt.`;
+ANTWORTVORSCHLAEGE
+Wenn du eine Frage stellst, haengst du als letzte Zeile zwei bis vier kurze Antwortmoeglichkeiten an, im Format:
+CHIPS: Antwort 1 | Antwort 2 | Antwort 3
+Die Person sieht sie als Knoepfe. Sie muessen zu genau deiner Frage passen. Ohne Frage keine Zeile.`;
 
 /* ==================================================================
    Hilfsmittel
@@ -150,7 +71,7 @@ function fehler(res, status, text) {
   res.status(status).json({ ok: false, fehler: text });
 }
 
-async function openai(nachrichten, maxToken, temperatur, modell = MODELL_FORMULIEREN) {
+async function openai(koerper) {
   const abbruch = new AbortController();
   const uhr = setTimeout(() => abbruch.abort(), ZEITGRENZE_MS);
   try {
@@ -160,27 +81,47 @@ async function openai(nachrichten, maxToken, temperatur, modell = MODELL_FORMULI
         "Content-Type": "application/json",
         Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
       },
-      body: JSON.stringify({
-        model: modell,
-        messages: nachrichten,
-        max_tokens: maxToken,
-        temperature: temperatur,
-      }),
+      body: JSON.stringify({ model: MODELL, ...koerper }),
       signal: abbruch.signal,
     });
-
     if (!antwort.ok) {
-      // Den Fehlertext von OpenAI NICHT durchreichen - er kann Kontodaten
-      // enthalten. Nur den Statuscode, der reicht zur Fehlersuche.
+      // Den Fehlertext von OpenAI nicht durchreichen - er kann Kontodaten
+      // enthalten. Nur den Statuscode.
       return { ok: false, status: antwort.status };
     }
-    const daten = await antwort.json();
-    return { ok: true, text: daten.choices?.[0]?.message?.content?.trim() || "" };
+    return { ok: true, daten: await antwort.json() };
   } catch (e) {
     return { ok: false, status: e.name === "AbortError" ? 504 : 502 };
   } finally {
     clearTimeout(uhr);
   }
+}
+
+// Nur die Felder durchlassen, die das Modell kennt. Alles andere, was
+// der Browser mitschickt, bleibt draussen.
+function nachrichtenPruefen(liste) {
+  if (!Array.isArray(liste) || !liste.length) return null;
+  const sauber = [];
+  for (const n of liste.slice(-MAX_NACHRICHTEN)) {
+    if (!n || typeof n !== "object") return null;
+    if (!["user", "assistant", "tool", "system"].includes(n.role)) return null;
+    const m = { role: n.role };
+    if (typeof n.content === "string") m.content = n.content;
+    else if (n.content === null && n.role === "assistant") m.content = null;
+    else return null;
+    if (n.role === "assistant" && Array.isArray(n.tool_calls) && n.tool_calls.length) {
+      m.tool_calls = n.tool_calls.map((c) => ({
+        id: String(c.id), type: "function",
+        function: { name: String(c.function?.name || ""), arguments: String(c.function?.arguments ?? "{}") },
+      }));
+    }
+    if (n.role === "tool") {
+      if (!n.tool_call_id) return null;
+      m.tool_call_id = String(n.tool_call_id);
+    }
+    sauber.push(m);
+  }
+  return sauber;
 }
 
 /* ==================================================================
@@ -191,94 +132,68 @@ export default async function handler(req, res) {
   if (req.method !== "POST") return fehler(res, 405, "Nur POST.");
   if (!process.env.OPENAI_API_KEY) return fehler(res, 503, "Kein Schlüssel hinterlegt.");
 
-  const { aufgabe, text, fakten, kontext } = req.body || {};
+  const { aufgabe, nachrichten, werkzeuge, stand } = req.body || {};
+  if (!["agent", "text"].includes(aufgabe)) return fehler(res, 400, "Unbekannte Aufgabe.");
 
-  if (!["verstehen", "formulieren", "einordnen"].includes(aufgabe)) {
-    return fehler(res, 400, "Unbekannte Aufgabe.");
+  const verlauf = nachrichtenPruefen(nachrichten);
+  if (!verlauf) return fehler(res, 400, "Nachrichten fehlen oder sind fehlerhaft.");
+  const groesse = JSON.stringify(verlauf).length + JSON.stringify(werkzeuge || []).length;
+  if (groesse > MAX_ZEICHEN_EINGABE) return fehler(res, 413, "Gespräch zu lang.");
+
+  const system = [{ role: "system", content: ROLLE }];
+  if (typeof stand === "string" && stand.trim()) system.push({ role: "system", content: stand.slice(0, 4000) });
+
+  const koerper = {
+    messages: [...system, ...verlauf],
+    max_tokens: MAX_TOKEN_ANTWORT,
+    temperature: 0.4,
+  };
+  if (aufgabe === "agent" && Array.isArray(werkzeuge) && werkzeuge.length) {
+    koerper.tools = werkzeuge;
+    koerper.tool_choice = "auto";
+    koerper.parallel_tool_calls = false;
   }
 
-  /* --- Einordnen ---------------------------------------------------- */
-  if (aufgabe === "einordnen") {
-    if (typeof text !== "string" || !text.trim()) return fehler(res, 400, "Kein Text.");
-    const k = kontext && typeof kontext === "object" ? kontext : {};
-    const alsText = JSON.stringify(k);
-    if (alsText.length > MAX_ZEICHEN_EINGABE) return fehler(res, 413, "Kontext zu lang.");
-    const e = await openai(
-      [
-        { role: "system", content: ANWEISUNG_EINORDNEN },
-        { role: "user", content: `Kontext:\n${alsText}\n\nNachricht der Person:\n${text.slice(0, 2000)}` },
-      ],
-      MAX_TOKEN_ANTWORT.einordnen,
-      0,
-      MODELL_VERSTEHEN
-    );
-    if (!e.ok) return fehler(res, e.status || 502, "Modell nicht erreichbar.");
-    try {
-      const roh = e.text.replace(/^```(?:json)?|```$/g, "").trim();
-      return res.status(200).json({ ok: true, einordnung: JSON.parse(roh) });
-    } catch {
-      return fehler(res, 502, "Antwort war kein JSON.");
-    }
-  }
-
-  /* --- Verstehen ---------------------------------------------------- */
-  if (aufgabe === "verstehen") {
-    if (typeof text !== "string" || !text.trim()) return fehler(res, 400, "Kein Text.");
-    if (text.length > MAX_ZEICHEN_EINGABE) return fehler(res, 413, "Text zu lang.");
-
-    const e = await openai(
-      [
-        { role: "system", content: ANWEISUNG_VERSTEHEN },
-        { role: "user", content: text.slice(0, MAX_ZEICHEN_EINGABE) },
-      ],
-      MAX_TOKEN_ANTWORT.verstehen,
-      0,                     // keine Kreativitaet beim Verstehen
-      MODELL_VERSTEHEN
-    );
-    if (!e.ok) return fehler(res, e.status || 502, "Modell nicht erreichbar.");
-
-    // Das Modell soll JSON liefern. Tut es das nicht, ist der Aufruf
-    // gescheitert - dann greift im Browser die Schluesselwort-Erkennung.
-    try {
-      const roh = e.text.replace(/^```(?:json)?|```$/g, "").trim();
-      return res.status(200).json({ ok: true, absicht: JSON.parse(roh) });
-    } catch {
-      return fehler(res, 502, "Antwort war kein JSON.");
-    }
-  }
-
-  /* --- Formulieren -------------------------------------------------- */
-  if (!fakten || typeof fakten !== "object") return fehler(res, 400, "Keine Fakten.");
-  const alsText = JSON.stringify(fakten);
-  if (alsText.length > MAX_ZEICHEN_EINGABE) return fehler(res, 413, "Zu viele Fakten.");
-
-  const e = await openai(
-    [
-      { role: "system", content: ANWEISUNG_FORMULIEREN },
-      { role: "user", content: `Situation: ${fakten.lage || "Du antwortest der Person."}\n\nFakten:\n${alsText}` },
-    ],
-    MAX_TOKEN_ANTWORT.formulieren,
-    0.6,                     // Spielraum in der Formulierung. Niedriger klang das
-                             // Modell in jeder Antwort gleich - es griff dieselbe
-                             // Wendung immer wieder auf. Die Entscheidungen haengen
-                             // nicht daran, nur die Wortwahl.
-    MODELL_FORMULIEREN
-  );
+  const e = await openai(koerper);
   if (!e.ok) return fehler(res, e.status || 502, "Modell nicht erreichbar.");
 
-  return res.status(200).json({ ok: true, text: entschaerfen(e.text) });
+  const wahl = e.daten.choices?.[0];
+  const m = wahl?.message || {};
+  const u = e.daten.usage || {};
+  const { text, chips } = chipsTrennen(m.content || "");
+  return res.status(200).json({
+    ok: true,
+    text: entschaerfen(text),
+    chips,
+    tool_calls: (m.tool_calls || []).map((c) => ({
+      id: c.id, function: { name: c.function?.name, arguments: c.function?.arguments || "{}" },
+    })),
+    beendet: wahl?.finish_reason || null,
+    verbrauch: {
+      eingabe: u.prompt_tokens || 0,
+      zwischengespeichert: u.prompt_tokens_details?.cached_tokens || 0,
+      ausgabe: u.completion_tokens || 0,
+    },
+  });
 }
 
-// Ausrufezeichen sind in der Rolle verboten, das Modell setzt sie bei
-// hoeherer Temperatur trotzdem. Anders als bei schmueckenden Adjektiven
-// laesst sich das gefahrlos nachbessern: Der Satz bleibt derselbe, nur
-// der Tonfall geht eine Stufe zurueck. Doppelte Leerzeilen fallen mit
-// weg - der Chat zeigt Absaetze ohnehin nicht an.
+// Die Antwortvorschlaege stehen als letzte Zeile "CHIPS: a | b | c" im
+// Text. Sie werden hier abgetrennt, bevor die Absaetze zusammenfallen.
+function chipsTrennen(inhalt) {
+  const m = String(inhalt).match(/^\s*CHIPS?\s*:\s*(.+?)\s*$/im);
+  if (!m) return { text: inhalt, chips: [] };
+  const chips = m[1].split("|").map((s) => s.replace(/^[\s\-*"']+|[\s"'.]+$/g, "").trim()).filter(Boolean).slice(0, 4);
+  return { text: String(inhalt).replace(m[0], "").trim(), chips };
+}
+
+// Ausrufezeichen sind in der Rolle verboten, das Modell setzt sie
+// trotzdem hin und wieder. Der Satz bleibt derselbe, nur der Tonfall geht
+// eine Stufe zurueck. Absaetze faellt der Chat ohnehin zusammen.
 function entschaerfen(text) {
   return String(text)
     .replace(/!+/g, ".")
+    .replace(/\*\*/g, "")
     .replace(/\s*\n\s*\n\s*/g, " ")
-    .replace(/\s*\n\s*/g, " ")
     .replace(/ {2,}/g, " ")
     .trim();
 }

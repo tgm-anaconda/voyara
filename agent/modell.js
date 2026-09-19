@@ -1,31 +1,26 @@
-// Anbindung an das Sprachmodell - die Browserseite von api/agent.js.
+// Anbindung an das Sprachmodell ueber den eigenen Endpunkt (api/agent.js).
 //
-// Zwei Aufgaben, beide eng gefuehrt:
+// Seit dem Werkzeug-Agenten (19.09.2026) gibt es nur noch einen Aufruf:
+// das Gespraech samt Werkzeugbeschreibungen hin, Text oder Werkzeugaufrufe
+// zurueck. Die Werkzeuge fuehrt der Browser aus (werkzeugkasten.js), das
+// Modell entscheidet, wann es sie ruft.
 //
-//   verstehen()    Freier Text -> strukturierte Absicht.
-//   formulieren()  Unsere Fakten -> deutsche Saetze.
-//
-// Wichtiger als beides ist, was hier NICHT passiert: Das Modell entscheidet
-// nichts. Welche Unterkunft vorgeschlagen wird, welche Filter gesetzt werden,
-// wann gebucht wird - das steht in agent/politik.js und ist bei jeder
-// teilnehmenden Person gleich.
-//
-// Und: Jeder Aufruf hat einen Rueckfall. Faellt die Schnittstelle mitten in
-// einer Sitzung aus, arbeitet der Agent schlechter weiter statt gar nicht.
-// Eine abgebrochene Sitzung ist ein verlorener Datenpunkt.
+// Faellt der Endpunkt aus (kein Schluessel, lokaler Dateiserver, Netz),
+// schaltet die Anbindung ab und der Kern zeigt einen festen Hinweis - ein
+// Werkzeug-Agent ohne Modell kann kein Gespraech fuehren.
 
 const Modell = {
   PFAD: "/api/agent",
 
-  // Kostenbremse und Ausfallschutz in einem: Nach mehreren Fehlversuchen
-  // hintereinander wird nicht weiter angeklopft, sondern nur noch die
-  // Schluesselwort-Logik benutzt. Sonst laeuft bei einer Stoerung jede
-  // Eingabe in denselben Zeitablauf.
   MAX_FEHLER: 3,
-  MAX_AUFRUFE: 140,         // pro Sitzung; jede Aeusserung geht jetzt durchs Modell
+  MAX_AUFRUFE: 400,         // je Sitzung; ein Zug braucht oft zwei, drei Aufrufe
   fehler: 0,
   aufrufe: 0,
   aus: false,
+
+  // Preise gpt-4.1-mini (USD je Million Tokens) - nur fuer die Anzeige
+  // der Kosten in der Konsole und im Protokoll
+  PREIS: { eingabe: 0.40, zwischengespeichert: 0.10, ausgabe: 1.60 },
 
   verfuegbar() {
     return !this.aus && this.fehler < this.MAX_FEHLER && this.aufrufe < this.MAX_AUFRUFE;
@@ -34,7 +29,7 @@ const Modell = {
   merkeFehler(grund) {
     this.fehler += 1;
     if (this.fehler >= this.MAX_FEHLER) {
-      console.info(`Modellanbindung abgeschaltet (${grund}) - der Agent arbeitet mit der hinterlegten Logik weiter.`);
+      console.info(`Modellanbindung abgeschaltet (${grund}).`);
     }
   },
 
@@ -48,9 +43,8 @@ const Modell = {
         body: JSON.stringify(koerper),
       });
       if (!antwort.ok) {
-        // 404/405/501 heisst: an dieser Adresse gibt es keine Function -
-        // etwa auf dem lokalen Dateiserver. Dann gar nicht weiter anklopfen.
-        // 503 heisst: Function da, aber kein Schluessel hinterlegt.
+        // 404/405/501: an dieser Adresse gibt es keine Function (lokaler
+        // Dateiserver). 503: Function da, aber kein Schluessel.
         if ([404, 405, 501, 503].includes(antwort.status)) { this.aus = true; }
         this.merkeFehler(`HTTP ${antwort.status}`);
         return null;
@@ -65,126 +59,40 @@ const Modell = {
     }
   },
 
-  /* ==================================================================
-     Verstehen
+  /* Ein Zug des Agenten.
      ------------------------------------------------------------------
-     Das Modell liefert lose Angaben. Uebernommen wird nur, was hier
-     gegen den Katalog geprueft werden kann - ein erfundenes Reiseziel
-     oder ein unbekanntes Kriterium faellt weg. Das Modell darf
-     vorschlagen, nicht bestimmen.
-     ================================================================== */
-
-  async verstehen(text) {
-    const daten = await this.ruf({ aufgabe: "verstehen", text });
-    if (!daten?.absicht) return null;
-    const a = daten.absicht;
-
-    const geprueft = {
-      typ: a.typ === "apartment" ? "apartment" : "hotel",
-      zielId: null,
-      monat: Number.isInteger(a.monat) && a.monat >= 1 && a.monat <= 12 ? a.monat : null,
-      erwachsene: Number.isInteger(a.erwachsene) ? Math.min(6, Math.max(1, a.erwachsene)) : null,
-      kinder: Number.isInteger(a.kinder) ? Math.min(4, Math.max(0, a.kinder)) : null,
-      maxPreis: Number.isFinite(a.maxPreis) && a.maxPreis > 10 && a.maxPreis < 2000 ? Math.round(a.maxPreis) : undefined,
-      budgetGesamt: Number.isFinite(a.budgetGesamt) && a.budgetGesamt >= 100 && a.budgetGesamt < 20000 ? Math.round(a.budgetGesamt) : undefined,
-      naechte: Number.isInteger(a.naechte) && a.naechte >= 1 && a.naechte <= 21 ? a.naechte : undefined,
-      personen: Number.isInteger(a.personen) && a.personen >= 1 && a.personen <= 8 ? a.personen : undefined,
-      budget: ["niedrig", "hoch"].includes(a.budget) ? a.budget : null,
-      kriterien: [],
-    };
-
-    // Reiseziel gegen den Katalog pruefen, laengster Name zuerst - sonst
-    // schluckt "Tirol" das "Suedtirol".
-    if (typeof a.ziel === "string" && a.ziel.trim() && typeof ZIELE !== "undefined") {
-      const gesucht = a.ziel.toLowerCase();
-      const nachLaenge = [...ZIELE].sort((x, y) => y.name.length - x.name.length);
-      const treffer = nachLaenge.find((z) => gesucht.includes(z.name.toLowerCase()) || z.name.toLowerCase().includes(gesucht))
-        || nachLaenge.find((z) => gesucht.includes(z.land.toLowerCase()));
-      if (treffer) geprueft.zielId = treffer.id;
-      // Kein Treffer: Der genannte Ort bleibt trotzdem erhalten. Der
-      // Agent soll sagen koennen "Madrid habe ich nicht", statt so zu
-      // tun, als haette er die Frage nicht verstanden.
-      else geprueft.zielRoh = a.ziel.trim();
-    }
-
-    // Kriterien nur, wenn Politik sie kennt
-    const erlaubt = typeof Politik !== "undefined" ? new Set(Politik.KRITERIEN.map((k) => k.id)) : new Set();
-    const gewicht = a.betont === true ? 2 : 1;
-    for (const id of Array.isArray(a.kriterien) ? a.kriterien : []) {
-      if (erlaubt.has(id) && !geprueft.kriterien.some((k) => k.id === id)) {
-        geprueft.kriterien.push({ id, gewicht });
-      }
-    }
-
-    return geprueft;
+     nachrichten  das Gespraech im Format der Schnittstelle
+     werkzeuge    die Werkzeugbeschreibungen (JSON-Schema)
+     stand        zweite Systemnachricht: Freigabe, Seite, was feststeht
+     Liefert { text, chips, tool_calls, verbrauch } oder null. */
+  async agent(nachrichten, werkzeuge, stand) {
+    const d = await this.ruf({ aufgabe: "agent", nachrichten, werkzeuge, stand });
+    if (!d) return null;
+    return { text: d.text || "", chips: d.chips || [], tool_calls: d.tool_calls || [], verbrauch: d.verbrauch || null };
   },
 
-  /* ==================================================================
-     Einordnen
-     ------------------------------------------------------------------
-     Welche Absicht steckt in einer Nachricht - Antwort, Auswahl,
-     Vergleich, Frage, Nachschaerfen, Merken, Buchen, Zurueck, neue
-     Reise, Smalltalk? Das Modell sieht Phase, offene Frage, vorgelegte
-     Haeuser und Verlauf. Geprueft wird gegen die erlaubten Werte; alles
-     andere faellt weg. Ohne Modell greift die Schluesselwort-Einordnung
-     in Politik.einordnenLokal.
-     ================================================================== */
-
-  ABSICHTEN: ["antwort", "auswahl", "vergleich", "frage", "nachschaerfen", "merken", "buchen", "zurueck", "neu", "smalltalk", "weiter"],
-  ASPEKTE: ["sauberkeit", "essen", "lage", "service", "ruhe", "preis", "pool", "wellness", "strand", "verpflegung", "sterne", "bewertung", "zimmer", "familie", "kinderclub"],
-
-  async einordnen(text, kontext) {
-    const daten = await this.ruf({ aufgabe: "einordnen", text, kontext });
-    const e = daten?.einordnung;
-    if (!e || !this.ABSICHTEN.includes(e.absicht)) return null;
-    return {
-      absicht: e.absicht,
-      aspekte: Array.isArray(e.aspekte) ? e.aspekte.filter((a) => this.ASPEKTE.includes(a)) : [],
-      haus: e.haus == null ? null : String(e.haus),
-      alleHaeuser: !!e.alleHaeuser,
-      quelle: "modell",
-    };
+  // Nur Text, ohne Werkzeuge - fuer "Warum dieses Haus?" und aehnliche
+  // Einzelantworten, die keine Seitenbedienung brauchen.
+  async text(nachrichten, stand) {
+    const d = await this.ruf({ aufgabe: "text", nachrichten, stand });
+    if (!d) return null;
+    return { text: d.text || "", chips: d.chips || [], verbrauch: d.verbrauch || null };
   },
 
-  /* ==================================================================
-     Formulieren
-     ------------------------------------------------------------------
-     Das Modell bekommt die Zahlen vorgelegt und soll sie in Saetze
-     bringen. Danach wird geprueft, ob es sich daran gehalten hat:
-     Steht in der Antwort eine Zahl, die in den Fakten nicht vorkommt,
-     wird der eigene Satz genommen. Eine erfundene Prozentangabe in
-     einer Studie waere nicht zu reparieren.
-     ================================================================== */
-
-  async formulieren(fakten, ersatz) {
-    const daten = await this.ruf({ aufgabe: "formulieren", fakten });
-    let text = daten?.text?.trim();
-    if (!text) return ersatz;
-    // Ungedeckte Zahl: einmal neu anfordern, mit dem Hinweis, welche
-    // Zahl nirgends steht. Frueher ersetzte hier sofort der feste Satz
-    // die Antwort - das war einer der Gruende, warum der Agent nach
-    // Formular klang.
-    const fremd = this.fremdeZahlen(text, fakten);
-    if (fremd.length) {
-      const zweiter = await this.ruf({ aufgabe: "formulieren", fakten: {
-        ...fakten,
-        hinweisAnDich: `Deine letzte Antwort enthielt die Zahl ${fremd.join(" und ")}, die in keinem Faktum vorkommt. Schreib die Antwort neu und verwende nur Zahlen, die in den Fakten stehen - oder lass die Zahl weg.`,
-      } });
-      text = zweiter?.text?.trim();
-      const nochFremd = text ? this.fremdeZahlen(text, fakten) : ["leer"];
-      if (!text || nochFremd.length) {
-        console.info("Modellantwort enthielt ungedeckte Zahlen - eigener Text verwendet.", nochFremd);
-        // Fuer die Fehlersuche: welche Zahl hat den Ersatzsatz ausgeloest?
-        if (typeof Kern !== "undefined" && Kern.lauf) Kern.notieren("formulierung_verworfen", { zahlen: nochFremd, lage: String(fakten.lage || "").slice(0, 80) });
-        return ersatz;
-      }
-    }
-    return text;
+  kosten(verbrauch) {
+    if (!verbrauch) return 0;
+    const frisch = Math.max(0, (verbrauch.eingabe || 0) - (verbrauch.zwischengespeichert || 0));
+    return (frisch * this.PREIS.eingabe + (verbrauch.zwischengespeichert || 0) * this.PREIS.zwischengespeichert
+      + (verbrauch.ausgabe || 0) * this.PREIS.ausgabe) / 1e6;
   },
 
-  fremdeZahlen(text, fakten) {
-    // "1.519 €" ist eine Zahl, nicht "1" und "519" - Tausenderpunkte
-    // fallen vor dem Vergleich weg, auf beiden Seiten
+  /* Zahlen im Text, die nirgends im Gespraech belegt sind.
+     ------------------------------------------------------------------
+     Belegt ist, was in Werkzeugergebnissen, Nachrichten der Person oder
+     dem Stand steht. Kleine Zahlen (bis 31: Tage, Naechte, Personen)
+     und Jahreszahlen zaehlen nicht. Tausenderpunkte werden entfernt,
+     "1.519" ist eine Zahl. */
+  fremdeZahlen(text, belege) {
     const zahlenIn = (s) => (String(s).match(/\d{1,3}(?:\.\d{3})+(?!\d)|\d+/g) || []).map((z) => z.replace(/\./g, ""));
     const belegt = new Set();
     const sammle = (wert) => {
@@ -193,35 +101,14 @@ const Modell = {
       else if (Array.isArray(wert)) wert.forEach(sammle);
       else if (wert && typeof wert === "object") Object.values(wert).forEach(sammle);
     };
-    sammle(fakten);
+    sammle(belege);
     const fremd = [];
     for (const z of zahlenIn(text)) {
-      // Kleine Zahlen, Tage und Jahre sind keine Messwerte
       if (+z <= 31) continue;
       if (+z >= 2024 && +z <= 2030) continue;
       if (!belegt.has(z) && !fremd.includes(z)) fremd.push(z);
     }
     return fremd;
-  },
-
-  // Jede Zahl im Text muss in den Fakten vorkommen. Kleine Zahlen bis zehn
-  // sind ausgenommen: "drei Häuser", "zwei Nächte" - die stehen fuer
-  // Aufzaehlungen und nicht fuer Messwerte.
-  zahlenGedeckt(text, fakten) {
-    const belegt = new Set();
-    const sammle = (wert) => {
-      if (typeof wert === "number") belegt.add(String(Math.round(wert)));
-      else if (typeof wert === "string") for (const z of wert.match(/\d+/g) || []) belegt.add(z);
-      else if (Array.isArray(wert)) wert.forEach(sammle);
-      else if (wert && typeof wert === "object") Object.values(wert).forEach(sammle);
-    };
-    sammle(fakten);
-
-    for (const z of text.match(/\d+/g) || []) {
-      if (+z <= 10) continue;
-      if (!belegt.has(z)) return false;
-    }
-    return true;
   },
 };
 
