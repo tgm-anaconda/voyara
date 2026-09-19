@@ -810,9 +810,24 @@ const Politik = {
         if (!hs.length) return null;
         const mittel = (f) => Math.round(hs.reduce((n, h) => n + (f(h) || 0), 0) / hs.length * 10) / 10;
         const anteil = (f) => hs.filter(f).length;
+        // Ein Haus, das ALLE genannten Punkte erfuellt - die Zahlen je
+        // Punkt sind unabhaengig, und "5 mit Kinderclub, davon 9 am
+        // Strand" war die Folge, wenn das Modell sie verknuepfte.
+        const PRUEF = {
+          strand: (h) => h.distanceToBeach != null && h.distanceToBeach <= (profil.maxStrand ?? 0.5),
+          bewertung: (h) => h.rating >= (profil.mindestbewertung ?? 4.5),
+          pool: (h) => h.amenities?.includes("pool"),
+          familie: (h) => h.amenities?.includes("familyFriendly"),
+          kinderclub: (h) => h.amenities?.includes("kidsClub"),
+          wellness: (h) => h.amenities?.includes("spa") || h.amenities?.includes("wellness"),
+          preis: (h) => !profil.maxPreis || h.pricePerNight <= profil.maxPreis,
+        };
+        const pruefbar = aspekte.filter((a) => PRUEF[a]);
+        const allesErfuellt = pruefbar.length ? anteil((h) => pruefbar.every((a) => PRUEF[a](h))) : null;
         const b = {
           id: z.id, name: z.name, land: z.land, art: z.typ, beschreibung: z.kurz,
           haeuser: hs.length,
+          ...(allesErfuellt != null ? { haeuserMitAllenGenanntenPunkten: allesErfuellt } : {}),
           saison: profil.monat ? (typeof saisonPassung === "function" ? (saisonPassung(z, profil.monat) === 1 ? "Hauptsaison" : "Nebensaison") : null) : null,
           direktAmStrand: anteil((h) => h.distanceToBeach != null && h.distanceToBeach <= 0.3),
           strandBis1km: anteil((h) => h.distanceToBeach != null && h.distanceToBeach <= 1),
@@ -1625,7 +1640,9 @@ const Politik = {
     if (profil.maxStrand != null) {
       filter.maxStrand = [0.2, 1, 5].find((s) => s >= profil.maxStrand) ?? 5;
     }
-    if (profil.budget === "hoch" && !profil.mindestSterne) filter.sterne = [5];
+    // "gehoben" heisst fuenf Sterne - aber nur, wenn kein konkreter Preis
+    // genannt ist; der zaehlt mehr als eine Preisklasse
+    if (profil.budget === "hoch" && !profil.mindestSterne && !profil.maxPreis && !profil.budgetGesamt) filter.sterne = [5];
     if (profil.mindestSterne) filter.sterne = [5, 4, 3].filter((s) => s >= profil.mindestSterne);
     if (profil.mindestbewertung) filter.mindestbewertung = Math.max(filter.mindestbewertung || 0, profil.mindestbewertung);
     if (Object.keys(filter).length) {

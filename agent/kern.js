@@ -747,7 +747,17 @@ const Kern = {
       const t0 = text.toLowerCase();
       const ausdruecklich = /\b(\d+|ein|eine|einen|zwei|drei|vier|fünf|fuenf|sechs)\s+(erwachsen|kind|kids)/.test(t0)
         || /\d\s*(\+|und)\s*\d/.test(t0)
-        || /\b(allein|solo|nur ich|zu zweit|paar|ohne kinder|keine kinder)\b/.test(t0);
+        || /\b(allein|solo|nur ich|zu zweit|paar|ohne kinder|keine kinder|wir beide|wir zwei)\b/.test(t0)
+        || /\b(mein|meine)\s+(freundin|freund|frau|mann|partnerin|partner)\s+und\s+ich\b|\b(mit|nur mit)\s+(meiner|meinem)\s+(freundin|freund|frau|mann|partnerin|partner)\b/.test(t0);
+      // Preisklasse ("hoch", "niedrig") nur, wenn sie im Satz steht. Das
+      // Modell las aus "1600 Euro insgesamt" ein hohes Budget und der
+      // Agent filterte danach auf fuenf Sterne - und fand nichts.
+      if (this.lauf.profil.budget && !/luxus|gehoben|erstklassig|günstig|guenstig|billig|preiswert|wenig geld|sparen|schmales budget|edel|nobel/.test(t0)) {
+        this.lauf.profil.budget = null;
+      }
+      // Sterne und Mindestnote nur, wenn davon die Rede war
+      if (this.lauf.profil.mindestSterne && !/stern/.test(t0)) this.lauf.profil.mindestSterne = null;
+      if (this.lauf.profil.mindestbewertung && !/bewert|note|stern|punkte|von 5|von fünf/.test(t0)) this.lauf.profil.mindestbewertung = null;
       const kindImSatz = /kind|kids|klein|jahre? alt|sohn|tochter/.test(t0);
       if ((this.lauf.profil.familieGenannt || kindImSatz || this.lauf.profil.personen != null) && !ausdruecklich) {
         this.lauf.profil.erwachsene = null;
@@ -995,7 +1005,7 @@ const Kern = {
         insgesamt: this.lauf.merker.regionenGesamt,
         anzahlRegionen: rs.length,
         jeRegion: rs.map((r) => ({ region: r.name, haeuser: r.anzahl, saison: r.saison ? "Hauptsaison" : "Nebensaison" })),
-        hinweis: "Nenne nur diese Zahlen. Rechne nichts zusammen.",
+        hinweis: "Nenne nur diese Zahlen. Rechne nichts zusammen. Es sind die Haeuser, die im Zeitraum fuer die Gruppe buchbar sind - noch nicht nach Wuenschen wie Pool oder Strandnaehe gefiltert; behaupte also nicht, sie passten zu den Wuenschen.",
       };
       if (this.lauf.zielAuswahl?.length) fakten.reiseart = { passendeRegionen: Politik.zielnamen(this.lauf.zielAuswahl) };
     }
@@ -1633,8 +1643,8 @@ const Kern = {
         this.logZeile(`Nichts Passendes (${treffer.length} Treffer, ${bewertet0.length} zulässig) - gelockert: ${lockerung.text}`, "ergebnis");
         AgentPanel.eckdatenZeigen(Politik.eckdaten(this.lauf.profil));
         await this.sprechen(
-          "Mit den bisherigen Vorgaben hast du nichts gefunden. Du lockerst deshalb eine Vorgabe (siehe gelockert) und suchst noch einmal. Sag in ein, zwei Saetzen, was du lockerst und warum, und dass die Person widersprechen kann.",
-          { gelockert: lockerung.text, trefferVorher: treffer.length },
+          "Mit den bisherigen Vorgaben hast du nichts gefunden. Du lockerst deshalb eine Vorgabe (siehe gelockert) und suchst noch einmal. Ein Satz, hoechstens zwei: was du lockerst, und dass die Person widersprechen kann. Keine Begruendung aus dem Weltwissen (nicht 'weil viele Hotels im August teurer sind'). Ist es schon der zweite oder dritte Anlauf (siehe anlauf), formuliere anders als beim letzten Mal und noch kuerzer.",
+          { gelockert: lockerung.text, trefferVorher: treffer.length, anlauf: this.lauf.gelockert.length },
           `Mit den bisherigen Vorgaben finde ich nichts. Ich versuche es ${lockerung.text} noch einmal - sag Bescheid, wenn du das nicht willst.`
         );
         if (!this.darf("suchen")) {
@@ -2589,7 +2599,7 @@ const Kern = {
     this.lauf.phase = "vorfrage";
     this.lauf.offeneVorfrage = "ziel";
     await this.sprechen(
-      "Die Person moechte wissen, welche Regionen zu ihren Wuenschen passen (siehe gefragt und wasDiePersonSchrieb). Du hast die Regionen im Katalog verglichen (regionen, nach Passung sortiert, mit Zahlen). Empfiehl zwei oder drei Regionen mit den Zahlen, die den Unterschied machen, kurz und konkret, und frag dann, welche es sein soll oder ob du eine nehmen sollst. Keine Aufzaehlungszeichen.",
+      "Die Person moechte wissen, welche Regionen zu ihren Wuenschen passen (siehe gefragt und wasDiePersonSchrieb). Du hast die Regionen im Katalog verglichen (regionen, nach Passung sortiert, mit Zahlen). Empfiehl zwei oder drei Regionen mit hoechstens zwei, drei Zahlen je Region - die, die den Unterschied machen -, kurz und konkret, und frag dann, welche es sein soll oder ob du eine nehmen sollst. Die Zahlen je Punkt (Strand, Kinderclub, Pool ...) sind unabhaengig voneinander - verknuepfe sie nie mit 'davon'. Wie viele Haeuser alles Genannte zugleich erfuellen, steht unter haeuserMitAllenGenanntenPunkten. Keine Aufzaehlungszeichen.",
       { gefragt: alleAspekte.length ? alleAspekte : "allgemein", wasDiePersonSchrieb: text, regionen: briefe.slice(0, 6) },
       `Nach ${Politik.aufzaehlen(alleAspekte) || "Auswahl"} passen am besten ${Politik.aufzaehlen(top.map((b) => `${b.name} (${b.direktAmStrand} Häuser direkt am Strand, Gästenote im Schnitt ${String(b.gaestenoteImSchnitt).replace(".", ",")})`))}. Welche soll es sein?`
     );
