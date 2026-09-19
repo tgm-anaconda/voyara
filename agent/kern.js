@@ -967,9 +967,12 @@ const Kern = {
        welchen Regionen es dafuer etwas gibt. Die Zielfrage kommt dann
        mit Zahlen: "63 Haeuser in sieben Regionen, die meisten auf
        Mallorca". Nur mit Freigabe zum Suchen - sonst wie bisher. */
-    if (frage.id === "ziel" && !this.lauf.vorabSuche && this.darf("suchen")
+    if (frage.id === "ziel" && !this.lauf.vorabSuche
       && this.lauf.profil.monat != null && this.lauf.profil.naechte != null && this.lauf.profil.erwachsene != null) {
-      return this.vorabSuche();
+      if (this.darf("suchen")) return this.vorabSuche();
+      // Ohne Freigabe fuer die Seite: im Katalog nachsehen, ohne zu
+      // klicken. Die Zahlen sind dieselben, nur der Weg ist unsichtbar.
+      await this.vorabZaehlen();
     }
 
     this.lauf.phase = "vorfrage";
@@ -1021,6 +1024,27 @@ const Kern = {
     );
     this.sichern();
     await this.abarbeiten();
+  },
+
+  // Etappe 2 ohne Seitenbedienung: kurz sagen, dass nachgesehen wird,
+  // dann aus dem Katalog zaehlen.
+  async vorabZaehlen() {
+    const p = this.lauf.profil;
+    this.lauf.vorabSuche = "gezaehlt";
+    await this.sprechen(
+      "Zeitraum und Reisende stehen fest. Sag in einem Satz, dass du kurz nachsiehst, wie viele Haeuser es in dem Zeitraum fuer die Gruppe gibt und in welchen Regionen, bevor ihr das Ziel festlegt.",
+      {},
+      "Lass mich kurz nachsehen, wo es in dem Zeitraum für euch etwas gibt."
+    );
+    await this.denkpause(1400, "sieht nach…");
+    const passend = this.lauf.zielAuswahl?.length ? new Set(this.lauf.zielAuswahl) : null;
+    this.lauf.merker.regionen = Politik.regionenZaehlen(p)
+      .filter((r) => !passend || passend.has(r.id))
+      .sort((a, b) => b.anzahl - a.anzahl);
+    this.lauf.merker.regionenGesamt = this.lauf.merker.regionen.reduce((n, r) => n + r.anzahl, 0);
+    this.notieren("vorabsuche", { regionen: this.lauf.merker.regionen.map((r) => `${r.id}:${r.anzahl}`), gesamt: this.lauf.merker.regionenGesamt, weg: "katalog" });
+    this.logZeile(`Im Katalog nachgesehen: ${this.lauf.merker.regionenGesamt} Häuser in ${this.lauf.merker.regionen.length} Regionen (${this.lauf.merker.regionen.slice(0, 4).map((r) => `${r.name} ${r.anzahl}`).join(", ")})`, "ergebnis");
+    this.sichern();
   },
 
   async regionenMelden() {

@@ -744,6 +744,27 @@ const Politik = {
     return saetze.length ? `${saetze.join(" ")} Welches soll ich mir genauer ansehen?` : "Dazu habe ich gerade keine Zahlen. Welches Haus soll ich mir genauer ansehen?";
   },
 
+  /* Regionen mit Anzahl passender Haeuser, direkt aus dem Katalog - fuer
+     die Etappe "wo gibt es etwas", wenn der Agent die Seite nicht
+     bedienen darf (Stufe "nur vorschlagen"). Dieselben Zahlen, die die
+     Filterspalte zeigt. */
+  regionenZaehlen(profil = {}) {
+    const bestand = profil.typ === "apartment"
+      ? (typeof APARTMENTS !== "undefined" ? APARTMENTS : [])
+      : (typeof HOTELS !== "undefined" ? HOTELS : []);
+    const personen = (profil.erwachsene || 0) + (profil.kinder || 0);
+    const passt = (h) => {
+      if (!personen) return true;
+      if (h.type === "apartment") return (h.maxGuests || 0) >= personen;
+      return !h.rooms?.length || Math.max(...h.rooms.map((r) => r.maxGuests || 0)) >= personen;
+    };
+    return (typeof ZIELE !== "undefined" ? ZIELE : []).map((z) => ({
+      id: z.id, name: z.name,
+      anzahl: bestand.filter((h) => h.ziel === z.id && passt(h)).length,
+      saison: typeof saisonPassung === "function" && profil.monat ? saisonPassung(z, profil.monat) === 1 : false,
+    })).filter((r) => r.anzahl > 0);
+  },
+
   /* Ein Haus im Text erkennen, auch mit Tippfehlern.
      ------------------------------------------------------------------
      "Gibt es die Villa Figuera?" meint die Villa Figueira. Verglichen
