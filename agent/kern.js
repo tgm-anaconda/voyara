@@ -763,6 +763,16 @@ const Kern = {
         this.lauf.profil.erwachsene = null;
         this.lauf.profil.kinder = null;
       }
+      // "Familie mit zwei Kindern": die Kinder sind genannt, die
+      // Erwachsenen nicht - zwei Eltern sind eine Annahme, keine Angabe.
+      const erwAusdruecklich = /\b(\d+|ein|eine|einen|zwei|drei|vier|fünf|fuenf|sechs)\s+erwachsen/.test(t0)
+        || /\d\s*(\+|und)\s*\d/.test(t0)
+        || /\b(allein|solo|nur ich|zu zweit|paar|wir beide|wir zwei)\b/.test(t0)
+        || /\b(mein|meine)\s+(freundin|freund|frau|mann|partnerin|partner)\s+und\s+ich\b|\b(mit|nur mit)\s+(meiner|meinem)\s+(freundin|freund|frau|mann|partnerin|partner)\b/.test(t0)
+        || /\b(wir|ich)\b.*\b(als|mit)\s+(meiner|meinem|meine|meinen)\s+(frau|mann|partner)/.test(t0);
+      if (this.lauf.profil.erwachsene != null && kindImSatz && !erwAusdruecklich && !/erwachsen/.test(t0)) {
+        this.lauf.profil.erwachsene = null;
+      }
       // Erwachsene ausdruecklich genannt, kein Wort von Kindern: dann
       // reisen keine mit ("zu zweit", "zwei Erwachsene", "allein").
       if (this.lauf.profil.erwachsene != null && this.lauf.profil.kinder == null
@@ -1235,14 +1245,29 @@ const Kern = {
       this.lauf.geradeErfahren = "Die Person will keine Region festlegen; du suchst in allen Regionen.";
     }
     if (frage.id === "ziel" && !this.lauf.profil.zielId && !this.lauf.profil.zielOffen && this.lauf.merker.regionen?.length
-      && /schlag|vorschlag|empfiehl|such du|entscheide|weiß nicht|weiss nicht|dir überlassen|dir ueberlassen/i.test(text)) {
-      const r = this.lauf.merker.regionen[0];
+      && /schlag|vorschlag|empfiehl|such du|such (dir )?(eine|eins|was) aus|nimm (du )?(eine|eins|was|die)|wähl|waehl|entscheide|du entscheidest|mach du|deine wahl|was du meinst|weiß nicht|weiss nicht|dir überlassen|dir ueberlassen|überlass|ueberlass/i.test(text)) {
+      // Sind Wuensche bekannt, zaehlt die Region, in der die meisten
+      // Haeuser alles erfuellen - nicht die mit den meisten Haeusern
+      const aspekte = (this.lauf.profil.kriterien || []).map((k) => ({ strandnah: "strand", bewertung: "bewertung" })[k.id] || k.id)
+        .filter((a) => ["strand", "bewertung", "pool", "familie", "kinderclub", "wellness", "preis"].includes(a));
+      const ids = this.lauf.merker.regionen.map((x) => x.id);
+      const briefe = aspekte.length ? Politik.regionenSteckbriefe(this.lauf.profil, aspekte, ids) : [];
+      const best = briefe.find((b) => b.haeuserMitAllenGenanntenPunkten > 0);
+      const r = best ? { id: best.id, name: best.name, anzahl: best.haeuserMitAllenGenanntenPunkten, passend: true }
+        : this.lauf.merker.regionen[0];
       this.lauf.profil.zielId = r.id;
-      this.notieren("ziel_vorgeschlagen", { ziel: r.id, anzahl: r.anzahl });
+      this.notieren("ziel_vorgeschlagen", { ziel: r.id, anzahl: r.anzahl, nachWuenschen: !!best });
+      const alternativen = best
+        ? briefe.filter((b) => b.id !== r.id).slice(0, 3).map((b) => `${b.name} (${b.haeuserMitAllenGenanntenPunkten} Häuser, die alles erfüllen)`)
+        : this.lauf.merker.regionen.slice(1, 4).map((x) => `${x.name} (${x.anzahl})`);
       await this.sprechen(
-        "Die Person ueberlaesst dir die Wahl der Region. Du nimmst die mit den meisten passenden Haeusern im Zeitraum (siehe vorschlag). Sag das in einem Satz, mit der Zahl, und dass sie jederzeit eine andere nennen kann.",
-        { vorschlag: { region: r.name, haeuser: r.anzahl }, alternativen: this.lauf.merker.regionen.slice(1, 4).map((x) => `${x.name} (${x.anzahl})`) },
-        `Dann nehme ich ${r.name}, dort gibt es mit ${r.anzahl} Häusern die größte Auswahl. Sag Bescheid, wenn du lieber woanders hin willst.`
+        best
+          ? "Die Person ueberlaesst dir die Wahl der Region. Du nimmst die, in der die meisten Haeuser alles erfuellen, was sie sich wuenscht (siehe vorschlag). Sag das in einem Satz, mit der Zahl, und dass sie jederzeit eine andere nennen kann."
+          : "Die Person ueberlaesst dir die Wahl der Region. Du nimmst die mit den meisten passenden Haeusern im Zeitraum (siehe vorschlag). Sag das in einem Satz, mit der Zahl, und dass sie jederzeit eine andere nennen kann.",
+        { vorschlag: { region: r.name, haeuser: r.anzahl, wasDieZahlHeisst: best ? "Haeuser, die alle genannten Wuensche erfuellen" : "Haeuser im Zeitraum" }, alternativen },
+        best
+          ? `Dann nehme ich ${r.name}: Dort erfüllen ${r.anzahl} Häuser alles, was ihr euch wünscht. Sag Bescheid, wenn du lieber woanders hin willst.`
+          : `Dann nehme ich ${r.name}, dort gibt es mit ${r.anzahl} Häusern die größte Auswahl. Sag Bescheid, wenn du lieber woanders hin willst.`
       );
     }
 
@@ -1887,8 +1912,16 @@ const Kern = {
     this.kandidatenAuffrischen();
 
     // Erst pruefen, ob jemand einen der Vorschlaege gewaehlt hat
-    const gewaehlt = Politik.auswahlAusText(text, this.lauf.kandidaten);
+    const gewaehlt = Politik.auswahlAusText(text, this.lauf.kandidaten)
+      || (() => { const h = this.hausAusEinordnung(text); return h && (this.lauf.kandidaten || []).some((k) => k.id === h.id) ? h.id : null; })();
     if (gewaehlt) {
+      // "buch das erste", "pack das zweite auf den Merkzettel": nicht
+      // erst oeffnen und noch einmal fragen, sondern tun
+      if (/\b(buch|buche|bucht|reservier|nehmen wir|nimm)\b/i.test(text) && !/nicht|kein/i.test(text)) {
+        this.lauf.verlauf.pop();   // die Nachricht steht gleich noch einmal
+        return this.hausBuchen(gewaehlt, text);
+      }
+      if (/merk|vormerk|merkzettel/i.test(text)) { this.lauf.verlauf.pop(); return this.merken(gewaehlt, text); }
       this.notieren("auswahl", { id: gewaehlt, runde: this.lauf.runde });
       return this.vertiefen(gewaehlt);
     }
@@ -1972,6 +2005,17 @@ const Kern = {
   async vertiefungMelden() {
     const b = this.lauf.merker.bewertungen;
     const item = typeof getItemById === "function" ? getItemById(this.lauf.gewaehlt) : null;
+    // Buchung war schon beauftragt: nicht zusammenfassen und fragen,
+    // sondern zur Buchungsstrecke
+    if (this.lauf.buchenNachOeffnen && item && this.darf("vorbereiten")) {
+      this.lauf.buchenNachOeffnen = false;
+      this.notieren("zur_buchung", { id: item.id, direkt: true });
+      this.lauf.phase = "arbeitet";
+      this.lauf.offeneSchritte.push({ werkzeug: "zurBuchung", status: "öffnet Buchung…", args: { id: item.id, verpflegung: this.lauf.profil.verpflegung || null } });
+      this.sichern();
+      return { ok: true, text: "" };
+    }
+    this.lauf.buchenNachOeffnen = false;
     if (!b || !item) return { ok: true, text: "Ich habe dir das Haus geöffnet. Sieh es dir in Ruhe an." };
 
     const teile = [`${item.name} im Detail: ${b.anzahl.toLocaleString("de-DE")} Bewertungen ausgewertet.`];
@@ -2328,6 +2372,19 @@ const Kern = {
       const item = typeof getItemById === "function" ? getItemById(id) : null;
       if (item) (this.lauf.kandidaten ||= []).push({ id, item, preis: item.pricePerNight, punkte: 0, belege: [] });
     }
+    // "Buch das erste" heisst buchen, nicht oeffnen und noch einmal
+    // fragen. Darf der Agent die Buchung vorbereiten, geht er nach dem
+    // Oeffnen gleich weiter zur Buchungsstrecke (siehe vertiefungMelden).
+    if (this.darf("vorbereiten")) {
+      this.lauf.buchenNachOeffnen = true;
+      const name = (typeof getItemById === "function" ? getItemById(id)?.name : null) || id;
+      await this.sprechen(
+        "Die Person will, dass du ein bestimmtes Haus buchst. Sag in einem Satz, dass du es oeffnest und die Buchung vorbereitest. Kein Nachfragen.",
+        { haus: name },
+        `Gut, ich öffne ${name} und bereite die Buchung vor.`
+      );
+      return this.vertiefen(id, { still: true });
+    }
     return this.vertiefen(id);
   },
 
@@ -2537,7 +2594,7 @@ const Kern = {
           return this.antwortAllgemeineFrage(t);
         }
         case "auswahl": {
-          const haus = e.haus ? this.hausAusEinordnung(e.haus) : null;
+          const haus = (e.haus ? this.hausAusEinordnung(e.haus) : null) || this.hausAusEinordnung(t);
           if (haus && mitAuswahl) { this.sagen(t, "user"); this.notieren("auswahl", { id: haus.id, runde: this.lauf.runde, ueber: "einordnung" }); return this.vertiefen(haus.id); }
           break;
         }
@@ -2547,7 +2604,7 @@ const Kern = {
           break;
         }
         case "buchen": {
-          const haus = e.haus ? this.hausAusEinordnung(e.haus) : null;
+          const haus = (e.haus ? this.hausAusEinordnung(e.haus) : null) || (mitAuswahl ? this.hausAusEinordnung(t) : null);
           if (haus && mitAuswahl && haus.id !== this.lauf.gewaehlt) return this.hausBuchen(haus.id, t);
           break;                            // sonst regelt die Phase (vertieft/nachfrage)
         }
@@ -2598,9 +2655,21 @@ const Kern = {
     this.logZeile(`Regionen verglichen nach ${alleAspekte.join(", ") || "Auswahl"}: ${top.map((b) => `${b.name} (${b.punkte})`).join(", ")}`, "ergebnis");
     this.lauf.phase = "vorfrage";
     this.lauf.offeneVorfrage = "ziel";
+    // Mit genannten Punkten bekommt das Modell je Region nur drei
+    // Zahlen: wie viele Haeuser alles erfuellen, Preis ab, Gaestenote.
+    // Mehr Zahlen verknuepfte es falsch ("3 mit Kinderclub, 8 davon am
+    // Strand").
+    const knapp = alleAspekte.length && briefe.some((b) => b.haeuserMitAllenGenanntenPunkten != null);
+    const regionenFakten = briefe.slice(0, 6).map((b) => knapp ? {
+      region: b.name, land: b.land,
+      haeuserDieAllesGenannteErfuellen: b.haeuserMitAllenGenanntenPunkten,
+      preisAbProNacht: b.preisAbProNacht, gaestenoteImSchnitt: b.gaestenoteImSchnitt, saison: b.saison,
+    } : b);
     await this.sprechen(
-      "Die Person moechte wissen, welche Regionen zu ihren Wuenschen passen (siehe gefragt und wasDiePersonSchrieb). Du hast die Regionen im Katalog verglichen (regionen, nach Passung sortiert, mit Zahlen). Empfiehl zwei oder drei Regionen mit hoechstens zwei, drei Zahlen je Region - die, die den Unterschied machen -, kurz und konkret, und frag dann, welche es sein soll oder ob du eine nehmen sollst. Die Zahlen je Punkt (Strand, Kinderclub, Pool ...) sind unabhaengig voneinander - verknuepfe sie nie mit 'davon'. Wie viele Haeuser alles Genannte zugleich erfuellen, steht unter haeuserMitAllenGenanntenPunkten. Keine Aufzaehlungszeichen.",
-      { gefragt: alleAspekte.length ? alleAspekte : "allgemein", wasDiePersonSchrieb: text, regionen: briefe.slice(0, 6) },
+      knapp
+        ? "Die Person moechte wissen, welche Regionen zu ihren Wuenschen passen (siehe gefragt und wasDiePersonSchrieb). Du hast die Regionen im Katalog verglichen (regionen, nach Passung sortiert). Empfiehl zwei oder drei Regionen, je Region: wie viele Haeuser alles Genannte erfuellen, Preis ab, und wenn es einen Unterschied macht die Gaestenote. Keine anderen Zahlen, kein 'davon'. Dann frag, welche es sein soll oder ob du eine nehmen sollst. Kurz, keine Aufzaehlungszeichen."
+        : "Die Person moechte wissen, welche Regionen zu ihren Wuenschen passen (siehe gefragt und wasDiePersonSchrieb). Du hast die Regionen im Katalog verglichen (regionen, nach Passung sortiert, mit Zahlen). Empfiehl zwei oder drei Regionen mit hoechstens zwei, drei Zahlen je Region - die, die den Unterschied machen -, kurz und konkret, und frag dann, welche es sein soll oder ob du eine nehmen sollst. Die Zahlen je Punkt sind unabhaengig voneinander - verknuepfe sie nie mit 'davon'. Keine Aufzaehlungszeichen.",
+      { gefragt: alleAspekte.length ? alleAspekte : "allgemein", wasDiePersonSchrieb: text, regionen: regionenFakten },
       `Nach ${Politik.aufzaehlen(alleAspekte) || "Auswahl"} passen am besten ${Politik.aufzaehlen(top.map((b) => `${b.name} (${b.direktAmStrand} Häuser direkt am Strand, Gästenote im Schnitt ${String(b.gaestenoteImSchnitt).replace(".", ",")})`))}. Welche soll es sein?`
     );
     AgentPanel.setSuggestions([...top.map((b) => b.name), "Schlag mir eines vor"]);

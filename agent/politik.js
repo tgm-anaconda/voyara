@@ -1143,10 +1143,15 @@ const Politik = {
         if (p.personen != null && p.erwachsene == null) {
           return Politik.aufteilungen(p.personen).map((s) => s.replace(" und keine Kinder", ""));
         }
+        if (p.kinder != null && p.erwachsene == null) return ["Zwei Erwachsene", "Ein Erwachsener", "Drei Erwachsene"];
         if (p.familieGenannt) return ["2 Erwachsene, 2 Kinder", "2 Erwachsene, 1 Kind", "1 Erwachsener, 2 Kinder"];
         return ["Zu zweit", "Allein", "Zu viert"];
       },
       braucht: (p) => {
+        if (p.kinder != null && p.erwachsene == null) {
+          return `Die Kinder sind genannt (${p.kinder}), die Erwachsenen nicht. Frag kurz, wie viele Erwachsene mitreisen - `
+            + "zwei Eltern sind naheliegend, aber du nimmst es nicht an.";
+        }
         if (p.personen != null && p.erwachsene == null) {
           return `Die Person hat nur die Gesamtzahl genannt (${p.personen}). Du weisst nicht, `
             + `ob Kinder dabei sind. Frag kurz und natuerlich, ob es ${p.personen} Erwachsene `
@@ -1172,13 +1177,23 @@ const Politik = {
           if (zahlen.length === 2 && /\s(und|\+|plus|,)\s*/.test(text) && (p.personen == null || zahlen[0] + zahlen[1] === p.personen)) {
             p.erwachsene = zahlen[0]; p.kinder = zahlen[1]; p.personen = zahlen[0] + zahlen[1];
           }
+          // Kinder schon bekannt, jetzt kommt eine einzelne Zahl: die Erwachsenen
+          else if (zahlen.length === 1 && p.kinder != null && !/kind/.test(text.toLowerCase())) {
+            p.erwachsene = Math.min(6, zahlen[0]);
+          }
+          else if (p.kinder != null && /\b(wir beide|wir zwei|zu zweit|meine frau und ich|mein mann und ich|beide eltern|wir eltern)\b/.test(text.toLowerCase())) {
+            p.erwachsene = 2;
+          }
+          else if (p.kinder != null && /\b(nur ich|allein|ich allein|alleinerziehend)\b/.test(text.toLowerCase())) {
+            p.erwachsene = 1;
+          }
         }
         if (p.erwachsene != null && p.kinder == null) {
           p.kinder = p.personen != null ? Math.max(0, p.personen - p.erwachsene) : 0;
         }
         if (p.erwachsene == null) return null;
         p.personen = p.erwachsene + (p.kinder || 0);
-        const wer = [`${p.erwachsene} Erwachsene`, p.kinder ? `${p.kinder} Kinder` : null].filter(Boolean);
+        const wer = [`${p.erwachsene} ${p.erwachsene === 1 ? "Erwachsener" : "Erwachsene"}`, p.kinder ? `${p.kinder} ${p.kinder === 1 ? "Kind" : "Kinder"}` : null].filter(Boolean);
         return Politik.aufzaehlen(wer);
       },
     },
