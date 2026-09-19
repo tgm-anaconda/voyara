@@ -33,6 +33,7 @@ const Zugang = {
       geoeffnet: null,            // erstes Oeffnen: { t, quelle, art }
       einladung: null,            // { t, ausloeser, position, antwort, antwortT }
       oeffnungen: 0,
+      seiten: 0,                  // Seitenaufrufe waehrend der Aufgabe
     };
   },
 
@@ -166,11 +167,19 @@ const Zugang = {
     // klicken. Wer keine Detailseite oeffnet, bekommt die Einladung
     // nach Ablauf der Zeit.
     const seite = typeof Werkzeuge !== "undefined" && Werkzeuge.seite ? Werkzeuge.seite() : "";
+    this.stand.seiten = (this.stand.seiten || 0) + 1;
+    this.sichern();
     if (s.einladungAusloeser === "detail" && seite === "stay") {
       setTimeout(() => this.einladungZeigen("detail"), 900);
       return;
     }
-    const rest = (s.einladungSekunden || 75) * 1000 - (Date.now() - this.aufgabeStart());
+    // Wer ohne Detailseite stoebert (Reiter wechselt, Listen durchsieht),
+    // bekommt die Einladung ab dem dritten Seitenaufruf der Aufgabe.
+    if (s.einladungAusloeser === "detail" && this.stand.seiten >= 3) {
+      setTimeout(() => this.einladungZeigen("seiten"), 1200);
+      return;
+    }
+    const rest = (s.einladungSekunden || 60) * 1000 - (Date.now() - this.aufgabeStart());
     this.timer = setTimeout(() => this.einladungZeigen("zeit"), Math.max(1500, rest));
   },
 

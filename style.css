@@ -1837,6 +1837,7 @@ body.agent-schublade .agent-rail {
   z-index: 660; border-radius: 0; overflow: hidden;
 }
 body.agent-schublade.agent-open .agent-rail { transform: none; }
+body.agent-lautlos .agent-rail, body.agent-lautlos .app-main { transition: none !important; }
 @media (min-width: 1041px) {
   body.agent-schublade.agent-open .app-main { margin-left: 380px; }
 }

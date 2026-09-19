@@ -102,7 +102,7 @@ const STELLSCHRAUBEN = {
   zugang: "schublade",           // schublade | seitenleiste
   einladung: "unten-rechts",     // unten-rechts | cursor | mitte | liste | keine
   einladungAusloeser: "detail",  // detail | zeit
-  einladungSekunden: 75,
+  einladungSekunden: 60,
   freigabeFrage: "erstoeffnung", // erstoeffnung | start
   offenlegung: null,             // etikett | log | offen | null = auslosen
   partner: "wechselnd",          // zweitbeste | beste | wechselnd | keine
@@ -171,11 +171,20 @@ const STELLSCHRAUBEN = {
   // Schubladen-Zugang so frueh wie moeglich an den Body, damit die alte
   // Seitenleiste nicht erst aufblitzt. Ob die Schublade offen war, weiss
   // der sessionStorage (siehe AgentPanel.umschalten).
-  if (STELLSCHRAUBEN.zugang === "schublade" && typeof document !== "undefined") {
-    document.body.classList.add("agent-schublade");
-    let offen = null;
-    try { offen = sessionStorage.getItem("voyara_chat_offen"); } catch { /* egal */ }
-    if (offen === "1") document.body.classList.add("agent-open");
+  if (typeof document !== "undefined") {
+    if (STELLSCHRAUBEN.zugang === "schublade") {
+      document.body.classList.add("agent-schublade");
+      let offen = null;
+      try { offen = sessionStorage.getItem("voyara_chat_offen"); } catch { /* egal */ }
+      if (offen === "1") document.body.classList.add("agent-open");
+    } else {
+      document.body.classList.remove("agent-schublade");
+    }
+    // Die Seiten tragen die Schubladen-Klasse schon im HTML, damit die
+    // Spalte nicht vor dem ersten Zeichnen als Leiste erscheint. Bis
+    // hierher sind Uebergaenge aus ("agent-lautlos") - sonst schnellte
+    // die geschlossene Schublade beim Laden sichtbar aus dem Bild.
+    requestAnimationFrame(() => requestAnimationFrame(() => document.body.classList.remove("agent-lautlos")));
   }
 })();
 
@@ -675,6 +684,8 @@ const Kern = {
     // spaeteren Antwort - "zu zweit" heisst zwei Erwachsene, ein
     // Gesamtbudget wird zum Nachtpreis, sobald die Naechte feststehen.
     const pr0 = this.lauf.profil;
+    if (pr0.monat == null && ausText.monat != null) pr0.monat = ausText.monat;
+    if (pr0.zielId == null && ausText.zielId != null) pr0.zielId = ausText.zielId;
     if (pr0.personen == null && ausText.personen != null) pr0.personen = ausText.personen;
     if (pr0.naechte == null && ausText.naechte != null) pr0.naechte = ausText.naechte;
     if (!pr0.verpflegung && ausText.verpflegung) pr0.verpflegung = ausText.verpflegung;
@@ -687,6 +698,32 @@ const Kern = {
     // geliefert hat - was die Person genannt hat, ist genannt
     for (const g of ausText.kriterien || []) {
       if (!pr0.kriterien.some((k) => k.id === g.id)) pr0.kriterien.push({ ...g });
+    }
+
+    /* Gedaechtnis ueber Nachrichten hinweg.
+       ------------------------------------------------------------------
+       "Ich wuerde gerne im Oktober wegfliegen" - "in den Norden" -
+       "Skandinavien": drei Nachrichten, ein Wunsch. Frueher begann mit
+       jeder ein neuer Lauf, und der Oktober war beim dritten Satz weg;
+       der Agent fragte, was er schon wusste. Solange noch nicht gesucht
+       wurde, bleibt alles stehen, was frueher gesagt wurde, und Neues
+       ergaenzt oder ueberschreibt es. Erst eine ausdrueckliche neue
+       Reise (Absicht "neu") oder eine abgeschlossene Suche setzt zurueck. */
+    const vorher = alt.profil || {};
+    const nochNichtGesucht = !(alt.kandidaten || []).length && alt.phase !== "arbeitet";
+    if (nochNichtGesucht && !alt.neueReise) {
+      for (const [k, v] of Object.entries(vorher)) {
+        if (k === "kriterien") {
+          for (const g of v || []) if (!pr0.kriterien.some((x) => x.id === g.id)) pr0.kriterien.push({ ...g });
+        } else if ((pr0[k] == null || pr0[k] === false) && v != null && v !== false) {
+          pr0[k] = v;
+        }
+      }
+      if (alt.zielAuswahl?.length && !this.lauf.zielAuswahl?.length) this.lauf.zielAuswahl = alt.zielAuswahl;
+      // Beantwortete Pflichtfragen bleiben beantwortet
+      this.lauf.vorfragenErledigt = [...new Set([...(alt.vorfragenErledigt || [])])];
+      this.lauf.vorabSuche = alt.vorabSuche || null;
+      if (alt.merker?.regionen) { this.lauf.merker.regionen = alt.merker.regionen; this.lauf.merker.regionenGesamt = alt.merker.regionenGesamt; }
     }
     Politik.gesamtzahlAufloesen(pr0, text);
     Politik.nachtpreisAbleiten(pr0);
@@ -939,6 +976,11 @@ const Kern = {
     this.lauf.offeneVorfrage = frage.id;
     let ersatz = Politik.ersatzfrage(frage, this.lauf.profil);
     const fakten = Politik.faktenVorfrage(frage, quittung, this.lauf.profil, this.letzteEingabe());
+    if (this.lauf.geradeErfahren) {
+      fakten.geradeErfahren = this.lauf.geradeErfahren;
+      fakten.lage += " Die Person hat nebenbei etwas gesagt (siehe geradeErfahren) - greif das in einem halben Satz auf, bevor du fragst.";
+      this.lauf.geradeErfahren = null;
+    }
     if (frage.id === "ziel" && this.lauf.merker.regionen) {
       const rs = this.lauf.merker.regionen;
       ersatz = `Für den Zeitraum habe ich ${this.lauf.merker.regionenGesamt} Häuser in ${rs.length} Regionen, die meisten ${rs.slice(0, 2).map((r) => `${r.name} (${r.anzahl})`).join(" und ")}. Hast du ein Ziel im Kopf, oder soll ich eines vorschlagen?`;
@@ -1124,6 +1166,19 @@ const Kern = {
     // Korrektur verschwand. Deshalb erst durch die allgemeine Erkennung,
     // dann durch die Auswertung der offenen Frage.
     Politik.uebernehmen(text, this.lauf.profil);
+
+    // Eine Reiseart, die nebenbei faellt ("gerne Skandinavien" auf die
+    // Frage nach dem Zeitraum), wird gemerkt und beim naechsten Satz
+    // aufgegriffen - nicht ueberhoert.
+    if (!this.lauf.profil.zielId && !this.lauf.zielAuswahl?.length) {
+      const thema = Politik.themaAusText(text);
+      if (thema) {
+        this.lauf.profil.thema = thema.id;
+        this.lauf.zielAuswahl = thema.ziele;
+        this.lauf.geradeErfahren = `Reiseart: ${thema.label}; dafuer gibt es ${Politik.zielnamen(thema.ziele).join(" und ")}`;
+        this.notieren("thema_gemerkt", { thema: thema.id, ziele: thema.ziele, bei: frage.id });
+      }
+    }
 
     // Zielfrage nach der Vorab-Suche: "egal" oder "schlag vor" heisst,
     // der Agent nimmt die Region mit den meisten passenden Haeusern -
@@ -2318,6 +2373,7 @@ const Kern = {
           if (!offeneFrage) return this.antwortSmalltalk(t);
           break;
         case "neu":
+          this.lauf.neueReise = true;
           return this.auftrag(t);
         case "nachschaerfen":
           if (mitAuswahl) return this.antwortShortlist(t);
