@@ -2562,7 +2562,7 @@ const Kern = {
     await this.sprechen(
       "Die Person moechte wissen, welche Regionen zu ihren Wuenschen passen (siehe gefragt und wasDiePersonSchrieb). Du hast die Regionen im Katalog verglichen (regionen, nach Passung sortiert, mit Zahlen). Empfiehl zwei oder drei Regionen mit den Zahlen, die den Unterschied machen, kurz und konkret, und frag dann, welche es sein soll oder ob du eine nehmen sollst. Keine Aufzaehlungszeichen.",
       { gefragt: alleAspekte.length ? alleAspekte : "allgemein", wasDiePersonSchrieb: text, regionen: briefe.slice(0, 6) },
-      `Nach ${Politik.aufzaehlen(alleAspekte) || "Auswahl"} passen am besten ${Politik.aufzaehlen(top.map((b) => `${b.name} (${b.direktAmStrand} Häuser direkt am Strand, Bewertung im Schnitt ${String(b.bewertungImSchnitt).replace(".", ",")})`))}. Welche soll es sein?`
+      `Nach ${Politik.aufzaehlen(alleAspekte) || "Auswahl"} passen am besten ${Politik.aufzaehlen(top.map((b) => `${b.name} (${b.direktAmStrand} Häuser direkt am Strand, Gästenote im Schnitt ${String(b.gaestenoteImSchnitt).replace(".", ",")})`))}. Welche soll es sein?`
     );
     AgentPanel.setSuggestions([...top.map((b) => b.name), "Schlag mir eines vor"]);
     AgentPanel.status("wartet auf deine Antwort");

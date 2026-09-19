@@ -800,8 +800,8 @@ const Politik = {
           saison: profil.monat ? (typeof saisonPassung === "function" ? (saisonPassung(z, profil.monat) === 1 ? "Hauptsaison" : "Nebensaison") : null) : null,
           direktAmStrand: anteil((h) => h.distanceToBeach != null && h.distanceToBeach <= 0.3),
           strandBis1km: anteil((h) => h.distanceToBeach != null && h.distanceToBeach <= 1),
-          bewertungImSchnitt: mittel((h) => h.rating),
-          ab4_5: anteil((h) => h.rating >= 4.5),
+          gaestenoteImSchnitt: mittel((h) => h.rating),
+          mitGaestenoteAb4_5: anteil((h) => h.rating >= 4.5),
           mitPool: anteil((h) => h.amenities?.includes("pool")),
           familienfreundlich: anteil((h) => h.amenities?.includes("familyFriendly")),
           mitKinderclub: anteil((h) => h.amenities?.includes("kidsClub")),
@@ -813,7 +813,7 @@ const Politik = {
         let punkte = b.haeuser / 10;
         for (const a of aspekte) {
           if (a === "strand") punkte += b.direktAmStrand * 2 + b.strandBis1km * 0.5;
-          if (a === "bewertung") punkte += b.ab4_5 * 1.5 + b.bewertungImSchnitt;
+          if (a === "bewertung") punkte += b.mitGaestenoteAb4_5 * 1.5 + b.gaestenoteImSchnitt;
           if (a === "pool") punkte += b.mitPool;
           if (a === "familie" || a === "kinderclub") punkte += b.familienfreundlich + b.mitKinderclub * 2;
           if (a === "wellness") punkte += b.mitWellness * 2;
