@@ -443,10 +443,17 @@ const Werkzeugkasten = {
       await Werkzeuge.sortieren(nach);
       const gelesen = darfEmpfehlen ? await Werkzeuge.ergebnisseLesen(8) : { daten: { treffer: [] } };
       kern.sperreAus();
-      const seitenIds = (gelesen.daten?.treffer || []).map((t) => t.id);
-      const liste = darfEmpfehlen
+      // Die Seite kennt nur grobe Stufen (Note ab 4,0 oder 4,5; Strand bis
+      // 1 km). Die genauen Vorgaben der Person prueft der Agent selbst -
+      // sonst landete ein Haus mit 4,1 in der Vorlage, obwohl 4,3 verlangt war.
+      const genau = new Set(imKatalog.map((h) => h.id));
+      const seitenIds = (gelesen.daten?.treffer || []).map((t) => t.id).filter((id) => genau.has(id));
+      let liste = darfEmpfehlen
         ? (seitenIds.length ? sortiere(seitenIds.map((id) => getItemById(id)).filter(Boolean)) : [])
         : imKatalog;
+      // Zeigt die Seite (acht gelesene Karten) zu wenige passende, nimmt der
+      // Agent den Rest aus dem Katalog dazu - dieselben Haeuser, nur weiter unten
+      if (darfEmpfehlen && liste.length < 3) liste = sortiere([...new Map([...liste, ...imKatalog].map((h) => [h.id, h])).values()]);
       kern.lauf.letzteTreffer = darfEmpfehlen ? liste.map((h) => h.id) : [];
       kern.lauf.runde = (kern.lauf.runde || 0) + 1;
       const gesamt = Werkzeuge.zustand().trefferGesamt ?? liste.length;
@@ -568,8 +575,16 @@ const Werkzeugkasten = {
       if (a.verpflegung) kern.lauf.profil.verpflegung = a.verpflegung;
       if (a.anreise) kern.lauf.profil.anreise = a.anreise;
       const flexibel = kern.lauf.profil.flexibel && !(kern.lauf.profil.von && kern.lauf.profil.bis);
-      if (flexibel && !kern.lauf.profil.anreise) {
-        return { ergebnis: { fehler: "Anreisetag fehlt", hinweis: "Die Suche war flexibel im Monat. Frag die Person, an welchem Tag sie anreisen will (im Prototyp ist jeder Tag frei, der Preis im Monat gleich), und ruf dann buchung_vorbereiten mit anreise." } };
+      if (flexibel) {
+        // Der Anreisetag muss von der Person kommen - das Modell hat ihn
+        // sonst gern selbst gesetzt ("1. Oktober"). Geprueft wird, ob in
+        // ihren letzten Nachrichten ueberhaupt ein Tag vorkommt.
+        const tagGenannt = kern.lauf.gespraech.filter((n) => n.role === "user").slice(-4)
+          .some((n) => /\b([1-9]|[12]\d|3[01])\.?\s*(oktober|november|dezember|januar|februar|märz|maerz|april|mai|juni|juli|august|september|\d{1,2}\.)|\b(am|ab dem|ab|vom)\s+([1-9]|[12]\d|3[01])\b|\d{4}-\d{2}-\d{2}/i.test(String(n.content)));
+        if (!kern.lauf.profil.anreise || !tagGenannt) {
+          kern.lauf.profil.anreise = null;
+          return { ergebnis: { fehler: "Anreisetag fehlt", hinweis: "Die Suche war flexibel im Monat, und die Person hat noch keinen Tag genannt. Frag sie, an welchem Tag sie anreisen will (im Prototyp ist jeder Tag frei, der Preis im Monat gleich). Erst mit ihrem Tag buchung_vorbereiten mit anreise rufen - keinen Tag selbst waehlen." } };
+        }
       }
       if (stufe === 1) {
         kern.notieren("zur_buchung", { id: a.id });
