@@ -994,11 +994,13 @@ const Werkzeugkasten = {
   },
 
   // Flexibel im Monat: Monat als YYYY-MM (naechstes Vorkommen) und Dauer
+  // Die Maske bietet die zwoelf Monate ab dem naechsten an - der laufende
+  // Monat ist keiner mehr (im September "im September" heisst naechstes Jahr)
   flexWahl(p) {
     if (!p.monat) return null;
     const heute = new Date();
     let jahr = heute.getFullYear();
-    if (p.monat < heute.getMonth() + 1) jahr += 1;
+    if (p.monat <= heute.getMonth() + 1) jahr += 1;
     return { monat: `${jahr}-${String(p.monat).padStart(2, "0")}`, naechte: p.naechte || 7, jahr };
   },
 
