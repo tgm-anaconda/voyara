@@ -126,6 +126,9 @@ const Werkzeuge = {
     if (typ) {
       const reiter = this.finde(`.searchbox-tab[data-type="${typ}"]`);
       if (reiter && !reiter.classList.contains("active")) {
+        // Auf der Trefferliste sind die Reiter ausgeblendet - dort ging der
+        // Klick ins Leere. Unsichtbar heisst: nicht klicken, sondern melden.
+        if (!Zeiger.sichtbar(reiter)) return { ok: false, text: "Die Art lässt sich hier nicht umstellen.", daten: { brauchtStartseite: true } };
         await Zeiger.klicke(reiter, { hinweis: typ === "apartment" ? "Ferienwohnungen" : "Hotels" });
         await Zeiger.warte(260);
         getan.push(typ === "apartment" ? "Ferienwohnungen" : "Hotels");
@@ -529,6 +532,9 @@ const Werkzeuge = {
       if (anreise && feldAnreise.value !== anreise) {
         await Zeiger.setzeWert(feldAnreise, anreise, { hinweis: "Anreise" });
         await Zeiger.warte(300);
+        // Ein Auswahlfeld (Flugtage) nimmt nur seine Optionen an
+        const jetzt = this.finde("#bwAnreise");
+        if (jetzt && jetzt.value !== anreise) return { ok: false, text: `Der ${anreise} ist hier kein möglicher Anreisetag.`, daten: { anreiseFehlt: true } };
       }
     }
     // Verpflegung einstellen, wenn eine gewuenscht war. Sichtbar, wie

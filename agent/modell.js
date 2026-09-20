@@ -61,9 +61,12 @@ const Modell = {
 
   /* Ein Zug des Agenten.
      ------------------------------------------------------------------
-     nachrichten  das Gespraech im Format der Schnittstelle
-     werkzeuge    die Werkzeugbeschreibungen (JSON-Schema)
-     stand        zweite Systemnachricht: Freigabe, Seite, was feststeht
+     nachrichten    das Gespraech im Format der Schnittstelle
+     werkzeuge      die Werkzeugbeschreibungen (JSON-Schema)
+     stand          zweite Systemnachricht: Freigabe, Seite, Fahrplan
+     werkzeugPflicht  true = irgendein Werkzeug ist Pflicht (stand_merken
+                    nach jeder Nachricht); ein Name = genau dieses
+                    Werkzeug (der Fahrplan erzwingt Ueberblick und Suche)
      Liefert { text, chips, tool_calls, verbrauch } oder null. */
   async agent(nachrichten, werkzeuge, stand, werkzeugPflicht = false) {
     const d = await this.ruf({ aufgabe: "agent", nachrichten, werkzeuge, stand, werkzeugPflicht });

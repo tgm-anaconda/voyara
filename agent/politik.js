@@ -1422,6 +1422,7 @@ const Politik = {
       raus.push({ feld: "Ziel", wert: "alle Regionen" });
     }
     if (profil.artGenannt) raus.push({ feld: "Art", wert: profil.typ === "apartment" ? "Ferienwohnung" : "Hotel" });
+    else if (profil.artEgal) raus.push({ feld: "Art", wert: "offen, Hotels zuerst" });
     if (profil.monat) {
       const name = Object.keys(this.MONATE).find((m) => this.MONATE[m] === profil.monat && m.length > 3);
       if (name) raus.push({ feld: "Zeit", wert: name.charAt(0).toUpperCase() + name.slice(1) });
@@ -2081,7 +2082,7 @@ const Politik = {
      und ueberlassen alles Weitere dem Gespraech - das ist ohnehin der
      Sinn der Pflichtfragen. */
   vorschlaege() {
-    return ["Ich suche ein Hotel", "Ich suche eine Ferienwohnung", "Ich will ans Meer", "In die Berge"];
+    return ["Ich weiß schon, wohin", "Ich bin noch offen", "Erst mal sehen, was es gibt"];
   },
 };
 

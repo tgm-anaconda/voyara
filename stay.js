@@ -16,6 +16,7 @@ let reviewSeite = 0;
 const REVIEWS_PRO_SEITE = 10;
 let nights = 7;
 let anreise = null;      // "" = flexibel gesucht, Anreisetag noch offen
+let vonFest = null;      // feste Anreise aus der Suche (from=...)
 
 function readParams() {
   const p = new URLSearchParams(window.location.search);
@@ -27,6 +28,7 @@ function readParams() {
   if (from && to) {
     const diff = Math.round((new Date(to) - new Date(from)) / 86400000);
     if (diff > 0) nights = diff;
+    vonFest = from;
   } else if (Reisedaten.flex()) {
     // Flexibel im Monat: Dauer aus der Suche, Anreisetag wird im
     // Buchungskasten gewaehlt
@@ -382,24 +384,52 @@ function renderWidget() {
       </div>` : `<div class="bw-flight-none">Ab ${flugStand.ab || "deinem Flughafen"} gibt es keinen Flug zu diesem Ziel.</div>`}
     </div>`;
 
-  // Flexibel gesucht: der Anreisetag wird hier gewaehlt, vorher gibt es
-  // keinen Buchungsknopf - kein erfundenes Datum
+  // Anreisetag. Flexibel gesucht: wird hier gewaehlt, vorher gibt es
+  // keinen Buchungsknopf - kein erfundenes Datum. Mit Flug: nur an
+  // Flugtagen der Verbindung, und nach n Naechten muss wieder einer sein;
+  // das gilt auch fuer feste Daten, die keinen Flugtag treffen.
   const flex = Reisedaten.flex();
-  const anreiseFeld = flex ? (() => {
+  const monatSchluessel = flex ? flex.schluessel : (vonFest ? vonFest.slice(0, 7) : null);
+  const flugTage = flug && monatSchluessel ? Flug.anreiseTage(flug, monatSchluessel, nights) : null;
+  const festPasst = !vonFest || !flug || Flug.passtTag(flug, vonFest, nights);
+  const anreiseNoetig = !!flex || !festPasst;
+  const anreiseFeld = !anreiseNoetig ? "" : (() => {
+    const monatName = monatSchluessel ? Reisedaten.MONATSNAMEN[parseInt(monatSchluessel.slice(5, 7), 10) - 1] : "";
+    const abreise = anreise ? `Abreise ${new Date(new Date(anreise).getTime() + nights * 86400000).toLocaleDateString("de-DE")}` : "";
+    if (flug) {
+      const tageText = `${flug.airline} ab ${flug.from} fliegt ${Flug.tageText(flug, true)}.`;
+      if (!flugTage.length) {
+        const alt = Flug.naechteAlternativen(flug, monatSchluessel, nights);
+        return `
+    <div class="field" style="margin-bottom:12px">
+      <label>Anreise im ${monatName}</label>
+      <small class="hint">${tageText} Mit ${nights} Nächten passt kein Rückflug${alt.length ? `; mit ${alt.join(" oder ")} Nächten geht es` : ""}.</small>
+    </div>`;
+      }
+      return `
+    <div class="field" style="margin-bottom:12px">
+      <label for="bwAnreise">Anreise im ${monatName}</label>
+      <select class="select" id="bwAnreise">
+        <option value="" ${!anreise ? "selected" : ""}>Flugtag wählen</option>
+        ${flugTage.map((d) => `<option value="${d}" ${d === anreise ? "selected" : ""}>${Flug.datumText(d)}</option>`).join("")}
+      </select>
+      <small class="hint">${tageText}${!festPasst && !anreise ? ` Der ${Flug.datumText(vonFest)} ist kein Flugtag, bitte einen wählen.` : ""}${abreise ? ` ${abreise}.` : ""}</small>
+    </div>`;
+    }
     const min = `${flex.schluessel}-01`;
     const letzter = new Date(flex.jahr, flex.monat, 0).getDate();
     const max = `${flex.schluessel}-${String(letzter).padStart(2, "0")}`;
     return `
     <div class="field" style="margin-bottom:12px">
-      <label for="bwAnreise">Anreise im ${Reisedaten.MONATSNAMEN[flex.monat - 1]}</label>
+      <label for="bwAnreise">Anreise im ${monatName}</label>
       <input class="input" type="date" id="bwAnreise" min="${min}" max="${max}" value="${anreise || ""}" />
-      <small class="hint">${anreise ? `Abreise ${new Date(new Date(anreise).getTime() + nights * 86400000).toLocaleDateString("de-DE")}` : "Im ganzen Monat frei, Preis gleich. Für die Buchung brauchen wir den Tag."}</small>
+      <small class="hint">${anreise ? abreise : "Im ganzen Monat frei, Preis gleich. Für die Buchung brauchen wir den Tag."}</small>
     </div>`;
-  })() : "";
+  })();
   const buchenLink = (() => {
     let href = `checkout.html?id=${item.id}&nights=${nights}&room=${selectedRoom}&board=${selectedBoard}`;
     href = Belegung.anLink(href);
-    if (flex && anreise) {
+    if (anreiseNoetig && anreise) {
       const bis = new Date(new Date(anreise).getTime() + nights * 86400000);
       href += `&from=${anreise}&to=${Reisedaten.alsIso(bis)}`;
     } else if (!flex) {
@@ -407,8 +437,8 @@ function renderWidget() {
     }
     return typeof Flug !== "undefined" ? Flug.anLink(href) : href;
   })();
-  const buchenKnopf = flex && !anreise
-    ? `<button type="button" class="btn btn-accent btn-block" id="bwBook" disabled title="Bitte erst den Anreisetag wählen">Anreisetag wählen</button>`
+  const buchenKnopf = anreiseNoetig && !anreise
+    ? `<button type="button" class="btn btn-accent btn-block" id="bwBook" disabled title="Bitte erst den Anreisetag wählen">${flug ? "Flugtag wählen" : "Anreisetag wählen"}</button>`
     : `<a class="btn btn-accent btn-block" id="bwBook" href="${buchenLink}">Jetzt buchen</a>`;
 
   document.getElementById("bookingWidget").innerHTML = `
@@ -436,9 +466,9 @@ function renderWidget() {
     ${buchenKnopf}
     <p class="bw-hint">${ICONS.check} Kostenlos stornierbar bis 24 h vor Anreise</p>`;
 
-  document.getElementById("bwNights").addEventListener("change", (e) => { nights = +e.target.value; renderWidget(); });
+  document.getElementById("bwNights").addEventListener("change", (e) => { nights = +e.target.value; if (flug) anreise = ""; renderWidget(); });
   document.getElementById("bwAnreise")?.addEventListener("change", (e) => { anreise = e.target.value; renderWidget(); });
-  document.getElementById("bwFlug")?.addEventListener("change", (e) => { Flug.set({ flugId: e.target.value }); renderWidget(); });
+  document.getElementById("bwFlug")?.addEventListener("change", (e) => { Flug.set({ flugId: e.target.value }); anreise = anreise === null ? null : ""; renderWidget(); });
   document.getElementById("bwKlasse")?.addEventListener("change", (e) => { Flug.set({ klasse: e.target.value }); renderWidget(); });
 }
 

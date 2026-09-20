@@ -197,6 +197,17 @@ const Zeiger = {
     return k.top >= 60 && k.bottom <= window.innerHeight - 40;
   },
 
+  // Ein Element, das nicht gezeichnet ist (display none, ausgeblendeter
+  // Reiter), hat keine Flaeche - ein Klick darauf ginge an 0/0. Solche
+  // Elemente bedient der Zeiger nicht.
+  sichtbar(el) {
+    if (!el || !el.isConnected) return false;
+    const k = el.getBoundingClientRect();
+    if (k.width < 2 || k.height < 2) return false;
+    const st = getComputedStyle(el);
+    return st.visibility !== "hidden" && st.display !== "none";
+  },
+
   // Ein Agent, der auf etwas klickt, das man nicht sieht, zerstoert die
   // Illusion. Also erst scrollen, warten bis es steht, dann anfahren.
   async insBlickfeld(el) {
@@ -241,6 +252,7 @@ const Zeiger = {
 
   async klicke(el, { hinweis = "" } = {}) {
     if (!el || this.abbruch) return false;
+    if (!this.sichtbar(el)) { console.warn("Zeiger: Element nicht sichtbar", el); return false; }
     this.aktiv = true;
 
     await this.insBlickfeld(el);
@@ -297,6 +309,7 @@ const Zeiger = {
 
   async tippe(el, text, { hinweis = "" } = {}) {
     if (!el || this.abbruch) return false;
+    if (!this.sichtbar(el)) { console.warn("Zeiger: Element nicht sichtbar", el); return false; }
     this.aktiv = true;
 
     await this.insBlickfeld(el);
@@ -328,6 +341,7 @@ const Zeiger = {
   // das entspricht auch im Browser nicht der Wirklichkeit.
   async setzeWert(el, wert, { hinweis = "" } = {}) {
     if (!el || this.abbruch) return false;
+    if (!this.sichtbar(el)) { console.warn("Zeiger: Element nicht sichtbar", el); return false; }
     this.aktiv = true;
 
     await this.insBlickfeld(el);

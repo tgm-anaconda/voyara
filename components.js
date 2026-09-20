@@ -273,6 +273,63 @@ const Flug = {
     const k = this.KLASSEN[klasse || this.lesen().klasse] || this.KLASSEN.economy;
     return `${flug.airline} ab ${flug.from}, ${k.label}, Hin- und Rückflug`;
   },
+
+  /* Flugtage
+     ------------------------------------------------------------------
+     Nicht jede Verbindung fliegt taeglich. Jede hat zwei bis vier feste
+     Wochentage (aus der Nummer abgeleitet, damit es ueber alle Seiten
+     gleich bleibt), und der Rueckflug geht an denselben Tagen. Wer mit
+     Flug bucht, kann deshalb nur an einem Flugtag anreisen - und nach n
+     Naechten muss wieder ein Flugtag sein. */
+  WOCHENTAGE: ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"],
+  WOCHENTAGE_LANG: ["sonntags", "montags", "dienstags", "mittwochs", "donnerstags", "freitags", "samstags"],
+  MUSTER: [[2, 4, 6], [1, 3, 5], [0, 2, 4, 6], [1, 4], [3, 6], [0, 3, 5], [1, 3, 6], [2, 5]],
+  tage(flug) {
+    if (!flug) return [0, 1, 2, 3, 4, 5, 6];
+    const n = parseInt(String(flug.id).replace(/\D/g, ""), 10) || 0;
+    return this.MUSTER[n % this.MUSTER.length];
+  },
+  tageText(flug, lang = false) {
+    const t = this.tage(flug);
+    const namen = t.map((d) => (lang ? this.WOCHENTAGE_LANG : this.WOCHENTAGE)[d]);
+    return namen.length > 1 ? `${namen.slice(0, -1).join(", ")} und ${namen[namen.length - 1]}` : namen[0];
+  },
+  // Moegliche Anreisetage im Monat (YYYY-MM) fuer n Naechte: Hinflug an
+  // einem Flugtag, Rueckflug nach n Naechten auch
+  anreiseTage(flug, monat, naechte) {
+    const [jahr, m] = String(monat).split("-").map((x) => parseInt(x, 10));
+    if (!jahr || !m) return [];
+    const t = new Set(this.tage(flug));
+    const letzter = new Date(jahr, m, 0).getDate();
+    const raus = [];
+    for (let d = 1; d <= letzter; d++) {
+      const an = new Date(jahr, m - 1, d);
+      const ab = new Date(jahr, m - 1, d + naechte);
+      if (t.has(an.getDay()) && t.has(ab.getDay())) raus.push(`${jahr}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`);
+    }
+    return raus;
+  },
+  passtTag(flug, iso, naechte) {
+    if (!flug || !iso) return true;
+    const t = new Set(this.tage(flug));
+    const an = new Date(iso);
+    const ab = new Date(an.getTime() + naechte * 86400000);
+    return t.has(an.getDay()) && t.has(ab.getDay());
+  },
+  // Wenn mit n Naechten kein Rueckflug passt: die naechsten Dauern, die gehen
+  naechteAlternativen(flug, monat, naechte) {
+    const raus = [];
+    for (const d of [1, -1, 2, -2, 3, -3]) {
+      const n = naechte + d;
+      if (n >= 2 && this.anreiseTage(flug, monat, n).length) raus.push(n);
+      if (raus.length >= 2) break;
+    }
+    return raus.sort((a, b) => a - b);
+  },
+  datumText(iso) {
+    const d = new Date(iso);
+    return `${this.WOCHENTAGE[d.getDay()]}, ${d.getDate()}.${d.getMonth() + 1}.`;
+  },
   anLink(href) {
     const s = this.lesen();
     if (!s.mit) return href;

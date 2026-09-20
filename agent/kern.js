@@ -193,7 +193,7 @@ const STELLSCHRAUBEN = {
    ================================================================== */
 const Kern = {
   SCHLUESSEL: "voyara_agent_lauf",
-  MAX_ZUEGE: 7,             // Modellaufrufe je Nachricht der Person
+  MAX_ZUEGE: 8,             // Modellaufrufe je Nachricht der Person
   MAX_GESPRAECH: 48,        // Nachrichten, die ans Modell gehen (aeltere fallen weg)
   lauf: null,
   laeuft: false,
@@ -212,6 +212,12 @@ const Kern = {
       letzteTreffer: [],       // ids des letzten Suchergebnisses
       letzteVorlage: [],       // ids der zuletzt vorgelegten Haeuser
       kandidaten: [],          // vorgelegte Haeuser mit Belegen (fuer "Warum dieses?")
+      besprochen: {},          // Themen des Fahrplans, die gefragt und beantwortet sind
+      gefragt: null,           // Thema, das der Agent zuletzt gefragt hat
+      gesuchtMit: null,        // Eckdaten-Schluessel der letzten Suche
+      vorgehenFuer: null,      // Eckdaten + Vorgehen, fuer die schon gesucht wurde
+      vorlageFuer: null,       // Vorgaben, fuer die zuletzt vorgelegt wurde
+      ueberblickGezeigt: false,
       gewaehlt: null,
       freigabe: null,
       runde: 0,
@@ -476,6 +482,7 @@ const Kern = {
     const p = this.lauf.profil || {};
     const teile = [];
     if (p.zielId && typeof ZIEL_NACH_ID !== "undefined") teile.push(`Ziel ${ZIEL_NACH_ID[p.zielId]?.name}`);
+    else if (p.zielOffen) teile.push("Ziel offen (alle Regionen)");
     if (p.monat && typeof Politik !== "undefined") {
       const name = Object.keys(Politik.MONATE).find((m) => Politik.MONATE[m] === p.monat && m.length > 3);
       if (name) teile.push(`Monat ${name}`);
@@ -487,6 +494,8 @@ const Kern = {
     if (p.erwachsene != null) teile.push(`${p.erwachsene} Erwachsene`);
     if (p.kinder != null) teile.push(p.kinder ? `${p.kinder} ${p.kinder === 1 ? "Kind" : "Kinder"}${p.kinderAlter?.length ? ` (${p.kinderAlter.join(", ")} Jahre)` : ""}` : "keine Kinder");
     if (p.artGenannt) teile.push(p.typ === "apartment" ? "Ferienwohnung" : "Hotel");
+    else if (p.artEgal) teile.push("Art nicht festgelegt (Hotels zuerst)");
+    if (p.vorgehen) teile.push(p.vorgehen === "top3" ? "Vorgehen: drei Favoriten" : "Vorgehen: schaut selbst");
     if (p.zimmer) teile.push(`${p.zimmer} Zimmer`);
     if (p.budgetGesamt) teile.push(`Budget ${p.budgetGesamt} € gesamt (${p.maxPreis ? `bis ${p.maxPreis} €/Nacht` : ""})`);
     else if (p.maxPreis) teile.push(`bis ${p.maxPreis} €/Nacht`);
@@ -517,12 +526,27 @@ const Kern = {
     if (this.lauf.letzteVorlage?.length) zeilen.push(`Zuletzt vorgelegt: ${this.lauf.letzteVorlage.map((id, i) => `${i + 1}. ${getItemById?.(id)?.name || id} (${id})`).join(", ")}.`);
     else if (this.lauf.letzteTreffer?.length) zeilen.push(`Letztes Suchergebnis (ids): ${this.lauf.letzteTreffer.join(", ")}.`);
     if (this.lauf.gewaehlt) zeilen.push(`Geoeffnetes Haus: ${getItemById?.(this.lauf.gewaehlt)?.name || this.lauf.gewaehlt} (${this.lauf.gewaehlt}).`);
-    const offen = Werkzeugkasten.nochOffen(this.lauf.profil || {});
-    if (offen.pflicht.length) zeilen.push(`Vor einer Empfehlung noch zu besprechen: ${offen.pflicht.join(", ")}.${offen.soll.length ? ` Auch ansprechen: ${offen.soll.join(", ")}.` : ""} Frag mit Zahlen aus dem Umfang (suchen liefert ihn, auch ohne Region und vor der Empfehlung) - nicht abstrakt.`);
-    else if (offen.soll.length && !this.lauf.letzteVorlage?.length) zeilen.push(`Empfehlung moeglich. Falls noch nicht angesprochen: ${offen.soll.join(", ")}.`);
+    zeilen.push(this.fahrplanText());
     if (this.lauf.phase === "angehalten") zeilen.push("Die Person hat waehrend deiner Arbeit selbst geklickt; du hast angehalten.");
     zeilen.push("Fuer deine naechste Antwort: hoechstens drei Saetze, genau eine Frage (nie zwei), und wenn du fragst, als letzte Zeile CHIPS: mit zwei bis vier Antworten.");
     return zeilen.join("\n");
+  },
+
+  // Der Fahrplan als Vorgabe fuer das Modell: was als Naechstes dran ist
+  fahrplanText() {
+    const p = this.lauf.profil || {};
+    const fp = Werkzeugkasten.fahrplan(p, this.lauf);
+    const bekannt = this.standKurz();
+    if (fp.phase === "ueberblick") return `FAHRPLAN: Die Person will erst einen Ueberblick. Ruf regionen_zaehlen und schildere die Lage in drei Saetzen (Regionen mit Zahlen, dein Wissen zu Klima und Art der Ziele dazu). Danach kommt das naechste Thema.`;
+    if (fp.phase === "eckdaten") return `FAHRPLAN: Eckdaten. Naechstes Thema, genau eines: ${fp.naechstes}. ${fp.frage} Nicht mehr fragen, was im Stand steht (${bekannt}). Geht die Person auf etwas anderes ein oder fragt sie etwas, antworte darauf zuerst - und stell dann diese Frage. Du darfst jederzeit suchen, wenn du fuer eine Antwort Zahlen brauchst.`;
+    if (fp.phase === "suche") return fp.empfehlungBereit
+      ? `FAHRPLAN: Die Eckdaten haben sich geaendert. Ruf suchen - es legt die passenden Haeuser neu vor.`
+      : `FAHRPLAN: Alle Eckdaten sind da. Ruf suchen und schildere danach die Lage (Regionen mit Zahlen, Preisspanne) - keine Haeuser.`;
+    if (fp.phase === "beratung") return `FAHRPLAN: Beratung, die Lage ist bekannt. Naechstes Thema, genau eines: ${fp.naechstes}. ${fp.frage}`;
+    if (fp.phase === "selbst") return `FAHRPLAN: Die Person schaut selbst durch die Liste. ${this.lauf.vorgehenFuer ? "Antworte nur, wenn sie etwas fragt oder will; keine Vorschlaege von dir, keine Frage hinterher." : "Ruf suchen (stellt die Filter) und sag ihr, dass die Liste steht."}`;
+    // vorschlaege
+    if (!this.lauf.letzteVorlage?.length) return `FAHRPLAN: Beratung abgeschlossen. Ruf suchen - es legt die drei passendsten Haeuser gleich im Chat vor. Danach ein Satz: welches sie sich ansehen will oder ob etwas fehlt.`;
+    return `FAHRPLAN: Vorschlaege liegen vor. Geh auf die Person ein: Nachfragen mit haus_details, ansehen mit haus_oeffnen, neue Vorgaben mit stand_merken und suchen (legt dann neu vor), buchen nach Freigabe.`;
   },
 
   async denkpause(ms = 1100, text = "denkt nach…") {
@@ -560,6 +584,13 @@ const Kern = {
     }
     this.sagen(t, "user");
     this.gespraechPush({ role: "user", content: t });
+    // Die Antwort auf ein gefragtes Thema zaehlt als besprochen - was die
+    // Person dazu gesagt hat, traegt das Modell mit stand_merken ein
+    if (this.lauf.gefragt) {
+      (this.lauf.besprochen ||= {})[this.lauf.gefragt] = true;
+      this.notieren("thema_beantwortet", { thema: this.lauf.gefragt });
+      this.lauf.gefragt = null;
+    }
     this.lauf.phase = "gespraech";
     Zeiger.freigeben?.();
     await this.zug();
@@ -585,14 +616,22 @@ const Kern = {
     AgentPanel.arbeitetAn();
     AgentPanel.status("denkt nach…");
     try {
+      const erzwungen = new Set();
       for (let i = 0; i < this.MAX_ZUEGE; i++) {
         if (typeof Modell === "undefined" || !Modell.verfuegbar()) {
           this.sagen("Ich bin gerade nicht erreichbar. Du kannst auf der Seite selbst weitersuchen, ich melde mich, sobald es wieder geht.");
           break;
         }
         // Erster Zug nach einer Nachricht der Person: ein Werkzeug ist Pflicht
+        // (stand_merken). Danach erzwingt der Fahrplan, was ansteht: den
+        // Ueberblick, die erste Suche, die Suche nach der Beratung - je
+        // einmal pro Zug, damit ein Fehlschlag keine Schleife wird.
         const letzte = this.lauf.gespraech[this.lauf.gespraech.length - 1];
-        const pflicht = i === 0 && letzte?.role === "user";
+        let pflicht = i === 0 && letzte?.role === "user";
+        if (!pflicht) {
+          const z = Werkzeugkasten.zwang(this.lauf.profil || {}, this.lauf);
+          if (z && !erzwungen.has(z)) { erzwungen.add(z); pflicht = z; this.notieren("zwang", { werkzeug: z }); }
+        }
         const antwort = await Modell.agent(this.gespraechFuerModell(), Werkzeugkasten.definitionen(), this.standFuerModell(), pflicht);
         if (!antwort) {
           this.sagen("Da ist gerade etwas schiefgegangen. Sag es mir bitte noch einmal.");
@@ -634,6 +673,9 @@ const Kern = {
         const gleich = (x, y) => x && y && x.replace(/\W+/g, "").toLowerCase() === y.replace(/\W+/g, "").toLowerCase();
         if (text && !gleich(text, zuletzt)) this.sagen(text);
         if (!nachricht.tool_calls) {
+          // Welches Thema des Fahrplans der Agent damit gefragt hat
+          const fp = Werkzeugkasten.fahrplan(this.lauf.profil || {}, this.lauf);
+          if (fp.naechstes && /\?/.test(text)) { this.lauf.gefragt = fp.naechstes; this.notieren("thema_gefragt", { thema: fp.naechstes, phase: fp.phase }); }
           this.lauf.chips = (antwort.chips || []).length ? antwort.chips : this.ersatzChips();
           AgentPanel.setSuggestions(this.lauf.chips);
           break;
@@ -668,6 +710,7 @@ const Kern = {
       return [...this.lauf.letzteVorlage.map((id, i) => `${i + 1}. ${(getItemById?.(id)?.name || id).split(" ").slice(0, 2).join(" ")}`), "Etwas anderes"];
     }
     if (w === "haus_oeffnen" || (seite === "stay" && this.lauf.gewaehlt)) return ["Auf den Merkzettel", "Zur Buchung", "Zurück zur Auswahl"];
+    if (this.lauf.gefragt && Werkzeugkasten.THEMEN[this.lauf.gefragt]?.chips) return Werkzeugkasten.THEMEN[this.lauf.gefragt].chips.split("|").map((x) => x.trim());
     return [];
   },
 
