@@ -538,12 +538,12 @@ const Kern = {
     const p = this.lauf.profil || {};
     const fp = Werkzeugkasten.fahrplan(p, this.lauf);
     const bekannt = this.standKurz();
-    if (fp.phase === "ueberblick") return `FAHRPLAN: Die Person will erst einen Ueberblick. Ruf regionen_zaehlen und schildere die Lage in drei Saetzen (Regionen mit Zahlen, dein Wissen zu Klima und Art der Ziele dazu). Danach kommt das naechste Thema.`;
-    if (fp.phase === "eckdaten") return `FAHRPLAN: Eckdaten. Naechstes Thema, genau eines: ${fp.naechstes}. ${fp.frage} Nicht mehr fragen, was im Stand steht (${bekannt}). Geht die Person auf etwas anderes ein oder fragt sie etwas, antworte darauf zuerst - und stell dann diese Frage. Du darfst jederzeit suchen, wenn du fuer eine Antwort Zahlen brauchst.`;
+    const chipsHinweis = fp.naechstes ? (fp.chips ? ` Chips etwa: ${fp.chips}.` : " Keine CHIPS-Zeile - die Frage ist offen.") : "";
+    if (fp.phase === "eckdaten") return `FAHRPLAN: Eckdaten. Naechstes Thema, genau eines: ${fp.naechstes}. ${fp.frage}${chipsHinweis} Nicht mehr fragen, was im Stand steht (${bekannt}). Geht die Person auf etwas anderes ein oder fragt sie etwas, antworte darauf zuerst - und stell dann diese Frage. Du darfst jederzeit suchen, wenn du fuer eine Antwort Zahlen brauchst.`;
     if (fp.phase === "suche") return fp.empfehlungBereit
       ? `FAHRPLAN: Die Eckdaten haben sich geaendert. Ruf suchen - es legt die passenden Haeuser neu vor.`
       : `FAHRPLAN: Alle Eckdaten sind da. Ruf suchen und schildere danach die Lage (Regionen mit Zahlen, Preisspanne) - keine Haeuser.`;
-    if (fp.phase === "beratung") return `FAHRPLAN: Beratung, die Lage ist bekannt. Naechstes Thema, genau eines: ${fp.naechstes}. ${fp.frage}`;
+    if (fp.phase === "beratung") return `FAHRPLAN: Beratung, die Lage ist bekannt. Naechstes Thema, genau eines: ${fp.naechstes}. ${fp.frage}${chipsHinweis}`;
     if (fp.phase === "selbst") return `FAHRPLAN: Die Person schaut selbst durch die Liste. ${this.lauf.vorgehenFuer ? "Antworte nur, wenn sie etwas fragt oder will; keine Vorschlaege von dir, keine Frage hinterher." : "Ruf suchen (stellt die Filter) und sag ihr, dass die Liste steht."}`;
     // vorschlaege
     if (!this.lauf.letzteVorlage?.length) return `FAHRPLAN: Beratung abgeschlossen. Ruf suchen - es legt die drei passendsten Haeuser gleich im Chat vor. Danach ein Satz: welches sie sich ansehen will oder ob etwas fehlt.`;
@@ -690,6 +690,9 @@ const Kern = {
           // Welches Thema des Fahrplans der Agent damit gefragt hat
           const fp = Werkzeugkasten.fahrplan(this.lauf.profil || {}, this.lauf);
           if (fp.naechstes && /\?/.test(text)) { this.lauf.gefragt = fp.naechstes; this.notieren("thema_gefragt", { thema: fp.naechstes, phase: fp.phase }); }
+          // Chips nur, wo das Thema welche vorsieht - das Modell haengt sonst
+          // an jede Frage Vorschlaege, die die Person in eine Richtung draengen
+          if (fp.naechstes && !Werkzeugkasten.THEMEN[fp.naechstes]?.chips) antwort.chips = [];
           this.lauf.chips = (antwort.chips || []).length ? antwort.chips : this.ersatzChips();
           AgentPanel.setSuggestions(this.lauf.chips);
           break;

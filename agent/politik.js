@@ -306,8 +306,10 @@ const Politik = {
       woerter: ["fernreise", "weit weg", "fernost", "asien", "übersee", "uebersee"] },
     // "Irgendwo, wo es warm ist" - kein Ort, aber ein klarer Wunsch. Ohne
     // diesen Eintrag zaehlte der Agent Lappland und Island mit.
-    { id: "warm", label: "irgendwohin, wo es warm ist", ziele: ["mallorca", "kreta", "algarve", "sardinien", "teneriffa", "krabi", "marrakesch", "kapstadt"],
-      woerter: ["wo es warm ist", "wo es noch warm ist", "warm ist", "warmes wetter", "in die sonne", "in der sonne", "sonne tanken", "sonnig", "hitze"] },
+    { id: "warm", label: "eher warm", ziele: ["mallorca", "kreta", "algarve", "sardinien", "teneriffa", "krabi", "marrakesch", "kapstadt"],
+      woerter: ["wo es warm ist", "wo es noch warm ist", "warm", "wärme", "waerme", "warmes wetter", "in die sonne", "in der sonne", "sonne tanken", "sonnig", "hitze", "heiss", "heiß"] },
+    { id: "kalt", label: "eher kalt", ziele: ["lappland", "island", "tirol", "suedtirol", "ostsee"],
+      woerter: ["kalt", "kälte", "kaelte", "kühl", "kuehl", "schnee", "winterlich", "frisch"] },
   ],
 
   // Reiseart aus dem Text. Laengste Wortliste zuerst, damit "Wintersonne"
@@ -2084,7 +2086,9 @@ const Politik = {
      und ueberlassen alles Weitere dem Gespraech - das ist ohnehin der
      Sinn der Pflichtfragen. */
   vorschlaege() {
-    return ["Ich weiß schon, wohin", "Ich bin noch offen", "Erst mal sehen, was es gibt"];
+    // Keine Vorschlaege unter der Begruessung - die Frage ist offen, und
+    // jeder Vorschlag draengt in eine Richtung
+    return [];
   },
 };
 

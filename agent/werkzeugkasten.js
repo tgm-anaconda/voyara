@@ -42,8 +42,8 @@ const Werkzeugkasten = {
           bis: text("Abreise als YYYY-MM-DD - nur bei genannten Tagen"),
           anreise: text("Anreisetag als YYYY-MM-DD, wenn die Person ihn fuer die Buchung nennt (bei flexibler Suche)"),
           zielOffen: { type: "boolean", description: "true, wenn die Person sagt, dass das Ziel noch offen ist oder sie sich beraten lassen will" },
-          richtung: { type: "string", enum: ["warm", "strand", "berge", "ski", "norden", "stadt", "wintersonne", "fern"], description: "Reiseart statt Ziel, wenn die Person so etwas sagt ('hauptsache warm', 'ans Meer', 'in die Berge') - die Suche beschraenkt sich dann auf passende Regionen" },
-          einstieg: { type: "string", enum: ["ueberblick", "eckdaten"], description: "Antwort auf die Einstiegsfrage: erst ein Ueberblick, was es gibt, oder erst die Eckdaten" },
+          richtung: { type: "string", enum: ["warm", "kalt", "strand", "berge", "ski", "norden", "stadt", "wintersonne", "fern"], description: "Richtung statt Ziel, wenn die Person so etwas sagt ('eher warm', 'kalt', 'ans Meer', 'in die Berge') - die Suche beschraenkt sich dann auf passende Regionen" },
+          weiter: { type: "string", enum: ["schauen", "klaeren"], description: "Antwort auf die Frage, ob du mit dem Bekannten schon mal schauen sollst (schauen) oder erst noch Eckdaten geklaert werden (klaeren)" },
           artEgal: { type: "boolean", description: "true, wenn die Person bei Hotel oder Ferienwohnung nicht festgelegt ist" },
           vorgehen: { type: "string", enum: ["top3", "selbst"], description: "top3 = du sollst drei Favoriten nennen; selbst = du stellst die Filter ein und die Person schaut selbst durch die Liste" },
           naechte: zahl("Zahl der Naechte"),
@@ -264,7 +264,7 @@ const Werkzeugkasten = {
       for (const f of ["zielOffen", "artEgal", "preisEgal", "ausstattungEgal", "bewertungEgal", "strandEgal", "verpflegungEgal"]) {
         if (a[f] === true && !offenGesagt) { delete a[f]; verworfen.push(f); }
       }
-      if (a.einstieg && !offenGesagt) { verworfen.push("einstieg"); delete a.einstieg; }
+      if (a.weiter && !gesagt(/schau|seh|zeig|guck|los|klär|klaer|erst|noch|mehr|weiter|frag|eckdaten|angaben|ja|nein|ok/i)) { verworfen.push("weiter"); delete a.weiter; }
       if (verworfen.length) kern.notieren("egal_verworfen", { felder: verworfen });
       if (a.zielOffen !== undefined && !p.zielId) setze("zielOffen", !!a.zielOffen);
       // Reiseart ("hauptsache warm", "ans Meer"): nur mit passendem Wort der
@@ -276,7 +276,7 @@ const Werkzeugkasten = {
           setze("richtung", th.id); p.zieleErlaubt = th.ziele.slice(); if (!p.zielId) p.zielOffen = true;
         } else kern.notieren("richtung_verworfen", { richtung: a.richtung });
       }
-      if (a.einstieg) setze("einstieg", a.einstieg);
+      if (a.weiter) { setze("weiter", a.weiter); kern.notieren("weiter", { wahl: a.weiter }); }
       // Ein Monat nur, wenn die Person einen genannt hat (oder eine
       // Jahreszeit) - auf "hauptsache warm" hatte das Modell Oktober gesetzt
       if (a.monat && !p.monat && !gesagt(/januar|februar|märz|maerz|april|\bmai\b|juni|juli|august|september|oktober|november|dezember|\bjan\b|\bfeb\b|\bokt\b|\bnov\b|\bdez\b|sommer|herbst|winter|frühling|fruehling|frühjahr|fruehjahr|ostern|pfingsten|weihnachten|silvester|ferien|nächsten monat|naechsten monat|\d{1,2}\.\s*\d{1,2}\.|\d{4}-\d{2}/i)) {
@@ -472,9 +472,9 @@ const Werkzeugkasten = {
         }
         if (!darfEmpfehlen) {
           return { ...basis, haeuser: "noch nicht - erst die Beratung",
-            hinweis: fp.phase === "suche" || !fp.gesucht
+            hinweis: (fp.phase === "suche" || !fp.gesucht
               ? "Schildere die Lage in zwei, drei Saetzen: wie viele Haeuser, in welchen Regionen (mit Zahlen), Preisspanne pro Nacht - dein Wissen zu Klima und Art der Regionen darfst du dazunehmen. Dann das naechste Thema."
-              : "Nenn, was sich an der Lage geaendert hat (Zahlen), dann das naechste Thema.",
+              : "Nenn, was sich an der Lage geaendert hat (Zahlen), dann das naechste Thema.") + (p.naechte ? "" : " Die Dauer ist noch offen; gerechnet ist eine Woche - sag das in einem Halbsatz."),
             ...Werkzeugkasten.fahrplanFuerModell(Werkzeugkasten.fahrplan(p, kern.lauf), p) };
         }
         // Beratung abgeschlossen: die drei passendsten Haeuser gleich vorlegen
@@ -849,24 +849,28 @@ const Werkzeugkasten = {
      geschildert. Beratung: preis, wuensche, vorgehen. Erst mit
      vorgehen "top3" gibt es Vorschlaege.
      ================================================================== */
+  /* Themen: Frage-Hinweis fuer das Modell und Chips. Chips nur, wo die
+     Antworten offensichtlich sind (Zahlen, warm/kalt, ja/nein) - alles
+     andere draengt die Person in eine Richtung. Ohne chips: keine Chips,
+     auch keine vom Modell. */
   THEMEN: {
-    einstieg: { frage: "Ob sie erst einen Ueberblick moechte, was es ueberhaupt gibt, oder erst die Eckdaten klaeren will. Beides anbieten, nichts vorwegnehmen.", chips: "Erst ein Überblick | Erst die Eckdaten" },
-    ziel: { frage: "Ob sie schon weiss, wohin es gehen soll, oder noch offen ist. 'Noch offen' ist eine gute Antwort (zielOffen true) - dann suchst du ueber alle Regionen.", chips: "Ich habe ein Ziel | Noch offen | Hauptsache warm" },
     zeit: { frage: "Wann es ungefaehr losgehen soll - ein Monat reicht. Feste Daten nur, wenn sie welche hat; nicht danach draengen. Ein Monat allein heisst flexibel im Monat.", chips: null },
-    dauer: { frage: "Wie lange, ungefaehr ('eine Woche' = 7 Naechte, '10 Tage' = 10 Naechte).", chips: "Eine Woche | 10 Nächte | Zwei Wochen" },
-    reisende: { frage: "Wer mitreist: Erwachsene und Kinder, bei Kindern gleich das Alter - in einer Frage.", chips: "Zu zweit | Familie mit Kindern | Allein" },
+    reisende: { frage: "Wer mitreist: wie viele Erwachsene, ob Kinder dabei sind und wie alt - in einer Frage.", chips: "1 | 2 | 3 | 4 oder mehr" },
     kinderAlter: { frage: "Wie alt die Kinder sind (die Zahl der Kinder ist bekannt, nur das Alter fehlt).", chips: null },
-    art: { frage: "Wie sie gern Urlaub macht: eher Hotel, eher Ferienwohnung, oder nicht festgelegt (artEgal true - dann faengst du bei Hotels an und sagst das spaeter beim Ueberblick).", chips: "Eher Hotel | Eher Ferienwohnung | Nicht festgelegt" },
-    flug: { frage: "Ob ein Flug dazu soll oder nur die Unterkunft. Sag in einem Halbsatz dazu, dass mit Flug der Anreisetag von den Flugtagen der Verbindung abhaengt (nicht jede Verbindung fliegt taeglich).", chips: "Mit Flug | Nur die Unterkunft" },
-    flugAb: { frage: "Von welchem Flughafen: Hamburg, Stuttgart, Duesseldorf, Hannover, Muenchen, Koeln, Frankfurt oder Berlin. Klasse nicht fragen - Economy ist gerechnet, sie kann es spaeter aendern.", chips: "Hamburg | Frankfurt | München | Düsseldorf" },
-    preis: { frage: "Ob sie beim Preis schon eine feste Grenze hat (pro Nacht oder gesamt) oder erst mal sehen will, was es gibt. Nicht 'wie viel darf es kosten' fragen. Offen heisst preisEgal true - der Preis wird dann an den Haeusern entschieden. Nenn die Preisspanne aus der Lage dazu.", chips: "Feste Grenze | Erst mal schauen" },
-    wuensche: { frage: "Was ihr am wichtigsten ist - offen, mit Beispielen aus der Lage (Strand, Pool, Kinderclub, gutes Essen, gute Bewertungen, Ruhe). Antworten werden Wuensche (wuensche); nur ausdrueckliche Grenzen ('mindestens 4,5', 'direkt am Strand') werden Filter. 'Nichts Besonderes' heisst ausstattungEgal true.", chips: "Strand | Pool | Gutes Essen | Gute Bewertungen" },
-    vorgehen: { frage: "Ob du ihr deine drei Favoriten nennen sollst (vorgehen top3) oder die Filter einstellst und sie selbst durch die Liste schaut (vorgehen selbst). Beides gleichwertig anbieten.", chips: "Deine Top 3 | Filter einstellen, ich schaue selbst" },
+    ziel: { frage: "Ob es eher in eine warme oder eher in eine kalte Region gehen soll, oder ob sie schon ein Ziel hat. Nichts anpreisen.", chips: "Eher warm | Eher kalt | Ich habe ein Ziel" },
+    art: { frage: "Ob sie eher ins Hotel oder in eine Ferienwohnung will, oder ob das noch offen ist (artEgal true - dann faengst du bei Hotels an).", chips: "Hotel | Ferienwohnung | Noch offen" },
+    weiter: { frage: "Ob du mit dem, was ihr bisher habt, schon mal schauen sollst, was es gibt (weiter schauen), oder ob ihr erst noch ein paar Eckdaten klaert, etwa Dauer und Flug (weiter klaeren).", chips: "Erst mal schauen | Noch ein paar Eckdaten" },
+    dauer: { frage: "Wie lange, ungefaehr ('eine Woche' = 7 Naechte, '10 Tage' = 10 Naechte).", chips: null },
+    flug: { frage: "Ob ein Flug dazu soll oder nur die Unterkunft. Sag in einem Halbsatz dazu, dass mit Flug der Anreisetag von den Flugtagen der Verbindung abhaengt.", chips: "Mit Flug | Nur die Unterkunft" },
+    flugAb: { frage: "Von welchem Flughafen: Hamburg, Stuttgart, Duesseldorf, Hannover, Muenchen, Koeln, Frankfurt oder Berlin. Klasse nicht fragen - Economy ist gerechnet, sie kann es spaeter aendern.", chips: null },
+    vorgehen: { frage: "Ob du die Filter so einstellst und sie selbst durch die Liste schaut (vorgehen selbst), oder ob du ihr drei Haeuser zur Auswahl raussuchst (vorgehen top3). Beides gleichwertig anbieten.", chips: "Ich schaue selbst | Such mir drei raus" },
+    preis: { frage: "Ob sie beim Preis schon eine feste Grenze hat (pro Nacht oder gesamt) oder offen ist. Nicht 'wie viel darf es kosten' fragen. Offen heisst preisEgal true. Die Preisspanne aus der Lage darfst du nennen.", chips: "Feste Grenze | Offen" },
+    wuensche: { frage: "Worauf sie bei der Unterkunft besonders achtet - offen gefragt (Sauberkeit, Essen, Lage, Ruhe, Strand, Pool, Kinderclub, Bewertungen). Antworten werden Wuensche (wuensche); nur ausdrueckliche Grenzen ('mindestens 4,5', 'direkt am Strand') werden Filter. 'Nichts Besonderes' heisst ausstattungEgal true.", chips: "Sauberkeit | Essen | Lage | Ruhe" },
   },
 
   // Schluessel der Eckdaten - aendert er sich, muss neu gesucht werden
   eckdatenSchluessel(p) {
-    return JSON.stringify([p.zielId || null, p.monat || null, p.von || null, p.bis || null, p.naechte || null,
+    return JSON.stringify([p.zielId || null, p.richtung || null, p.monat || null, p.von || null, p.bis || null, p.naechte || null,
       p.erwachsene ?? null, p.kinder ?? null, p.kinderAlter || [], p.typ || "hotel", p.flug ?? null, p.flugAb || null, p.flugKlasse || null]);
   },
 
@@ -877,70 +881,84 @@ const Werkzeugkasten = {
       (p.kriterien || []).map((k) => k.id), p.ausstattung || [], p.verpflegung || null, p.sortierung || null]);
   },
 
+  /* Der Fahrplan (Fassung 3, 20.09.2026 nachts, nach dem dritten Gespraech
+     mit dem Nutzer):
+     Kern: zeit, reisende (+kinderAlter), ziel (warm/kalt/Ziel), art.
+     Dann die Frage "schon mal schauen oder noch Eckdaten klaeren?" (weiter).
+     klaeren: dauer, flug, flugAb, dann die Suche. schauen: sofort die Suche
+     (Dauer notfalls eine Woche). Nach der Suche die Lage, dann die Frage
+     "selbst schauen oder drei raussuchen?" (vorgehen). Bei top3 folgen
+     dauer, flug, flugAb (falls offen), preis, wuensche - dann die Vorlage.
+     Bei selbst stehen die Filter, Ruhe. */
   fahrplan(p, lauf = {}) {
     const b = lauf.besprochen || {};
     const kinderAlterOk = p.kinder == null || p.kinder === 0 || (p.kinderAlter || []).length >= p.kinder;
-    const nichtsBekannt = !p.zielId && !p.zielOffen && !p.monat && !p.von && !p.naechte && p.erwachsene == null && p.personen == null && p.kinder == null && !p.artGenannt;
     const fertig = {
-      einstieg: !!p.einstieg || !!b.einstieg || !nichtsBekannt,
-      ziel: !!p.zielId || !!p.zielOffen || !!p.richtung,
       zeit: !!p.monat || !!(p.von && p.bis),
-      dauer: !!p.naechte,
       reisende: p.erwachsene != null && p.kinder != null,
       kinderAlter: kinderAlterOk,
+      ziel: !!p.zielId || !!p.zielOffen || !!p.richtung,
       art: !!p.artGenannt || !!p.artEgal,
+      weiter: !!p.weiter || !!b.weiter,
+      dauer: !!p.naechte,
       flug: p.flug != null || p.typ === "apartment",
       flugAb: !p.flug || !!p.flugAb || p.typ === "apartment",
+      vorgehen: !!p.vorgehen,
       preis: !!(p.maxPreis || p.budgetGesamt || p.preisEgal || b.preis),
       wuensche: !!((p.kriterien || []).length || p.ausstattungEgal || b.wuensche),
-      vorgehen: !!p.vorgehen,
     };
-    const ECKDATEN = ["einstieg", "ziel", "zeit", "dauer", "reisende", "kinderAlter", "art", "flug", "flugAb"];
-    const BERATUNG = ["preis", "wuensche", "vorgehen"];
-    const suchbereit = fertig.zeit && fertig.dauer && fertig.reisende && fertig.kinderAlter;
-    const eckdatenFertig = ECKDATEN.every((t) => fertig[t]);
+    const KERN = ["zeit", "reisende", "kinderAlter", "ziel", "art"];
+    const ECKDATEN = ["dauer", "flug", "flugAb"];
+    const BERATUNG = ["preis", "wuensche"];
+    const kernFertig = KERN.every((t) => fertig[t]);
+    const suchbereit = fertig.zeit && fertig.reisende && fertig.kinderAlter;
     const schluessel = this.eckdatenSchluessel(p);
     const gesucht = lauf.gesuchtMit === schluessel;
-    const ueberblickOffen = p.einstieg === "ueberblick" && !lauf.ueberblickGezeigt;
-    let naechstes = ueberblickOffen ? null : (ECKDATEN.find((t) => !fertig[t]) || null);
+    const weiter = p.weiter || (b.weiter ? "schauen" : null);
+    // Bereit fuer die erste Suche: Kern da und entweder "schauen" gesagt oder
+    // die restlichen Eckdaten geklaert
+    const eckdatenFertig = kernFertig && (weiter === "schauen" || (weiter === "klaeren" && ECKDATEN.every((t) => fertig[t])));
+    let naechstes = null;
     let phase = "eckdaten";
-    if (ueberblickOffen) phase = "ueberblick";
-    else if (!naechstes) {
-      if (!gesucht) phase = "suche";
-      else {
-        naechstes = BERATUNG.find((t) => !fertig[t]) || null;
-        phase = naechstes ? "beratung" : (p.vorgehen === "selbst" ? "selbst" : "vorschlaege");
-      }
+    if (!kernFertig) naechstes = KERN.find((t) => !fertig[t]);
+    else if (!lauf.gesuchtMit && !fertig.weiter) naechstes = "weiter";
+    else if (!lauf.gesuchtMit && weiter === "klaeren" && !ECKDATEN.every((t) => fertig[t])) naechstes = ECKDATEN.find((t) => !fertig[t]);
+    // Vor der Wahl des Vorgehens wird bei geaenderten Eckdaten neu gesucht
+    // (die Lage soll stimmen); danach erst wieder zur Vorlage bzw. Liste -
+    // sonst liefe mitten in der Beratung nach jeder Antwort die Maske
+    else if (!gesucht && !fertig.vorgehen) phase = "suche";
+    else if (!fertig.vorgehen) { naechstes = "vorgehen"; phase = "beratung"; }
+    else if (p.vorgehen === "selbst") phase = "selbst";
+    else {
+      naechstes = [...ECKDATEN, ...BERATUNG].find((t) => !fertig[t]) || null;
+      phase = naechstes ? "beratung" : "vorschlaege";
     }
-    // Feinheit bei den Reisenden: was genau fehlt
     let frage = naechstes ? this.THEMEN[naechstes]?.frage : null;
     let chips = naechstes ? this.THEMEN[naechstes]?.chips : null;
     if (naechstes === "reisende") {
       if (p.personen != null && p.erwachsene == null && p.kinder == null) { frage = `Wie viele der ${p.personen} Kinder sind, und wie alt - 'keine' ist eine Antwort. Erwachsene nicht fragen, das rechnet die Seite.`; chips = "Keine Kinder | Ein Kind | Zwei Kinder"; }
       else if (p.erwachsene != null && p.kinder == null) { frage = "Ob Kinder mitreisen - und wenn ja, wie viele und wie alt."; chips = "Keine Kinder | Ein Kind | Zwei Kinder"; }
-      else if (p.kinder != null && p.erwachsene == null) { frage = "Wie viele Erwachsene mitreisen."; chips = "Zwei Erwachsene | Ein Erwachsener"; }
+      else if (p.kinder != null && p.erwachsene == null) { frage = "Wie viele Erwachsene mitreisen."; chips = "1 | 2 | 3 | 4 oder mehr"; }
     }
-    return { fertig, naechstes, frage, chips, phase, suchbereit, eckdatenFertig, gesucht, schluessel, ueberblickOffen,
-      empfehlungBereit: fertig.preis && fertig.wuensche && p.vorgehen === "top3",
-      fehlt: ECKDATEN.filter((t) => !fertig[t]) };
+    const empfehlungBereit = p.vorgehen === "top3" && fertig.preis && fertig.wuensche && fertig.dauer && fertig.flug && fertig.flugAb;
+    return { fertig, naechstes, frage, chips, phase, suchbereit, eckdatenFertig, gesucht, schluessel, empfehlungBereit,
+      ueberblickOffen: false, fehlt: [...KERN, ...ECKDATEN].filter((t) => !fertig[t]) };
   },
 
   // Welches Werkzeug der Kern erzwingt, wenn das Modell es nicht von
-  // sich aus ruft: den Ueberblick, die erste Suche, die Suche nach der
-  // Beratung. Null, wenn nichts ansteht.
+  // sich aus ruft: die erste Suche, die Suche nach der Beratung. Null,
+  // wenn nichts ansteht.
   zwang(p, lauf = {}) {
     const fp = this.fahrplan(p, lauf);
-    if (fp.ueberblickOffen) return "regionen_zaehlen";
-    if (fp.eckdatenFertig && !fp.gesucht) return "suchen";
+    if (fp.eckdatenFertig && !fp.gesucht && !p.vorgehen) return "suchen";
     if ((fp.phase === "vorschlaege" || fp.phase === "selbst") && lauf.vorgehenFuer !== fp.schluessel + p.vorgehen) return "suchen";
     return null;
   },
 
   // Der Fahrplan als Teil eines Werkzeugergebnisses (stand_merken, suchen)
   fahrplanFuerModell(fp, p) {
-    if (fp.phase === "ueberblick") return { alsNaechstes: "Ruf regionen_zaehlen und schildere die Lage in drei Saetzen (Regionen mit Zahlen), dann frag das naechste Thema." };
-    if (fp.naechstes) return { alsNaechstes: `Frag genau ein Thema: ${fp.naechstes}. ${fp.frage}`, ...(fp.chips ? { chipsBeispiel: fp.chips } : {}), nochOffen: fp.fehlt };
-    if (fp.phase === "suche") return { alsNaechstes: "Alle Eckdaten sind da. Ruf suchen und schildere danach die Lage." };
+    if (fp.naechstes) return { alsNaechstes: `Frag genau ein Thema: ${fp.naechstes}. ${fp.frage}`, ...(fp.chips ? { chipsBeispiel: fp.chips } : { chips: "keine - die Frage ist offen" }), nochOffen: fp.fehlt };
+    if (fp.phase === "suche") return { alsNaechstes: "Ruf suchen und schildere danach die Lage." };
     if (fp.phase === "selbst") return { alsNaechstes: "Die Person will selbst schauen. Ruf suchen (stellt die Filter), dann sag ihr, dass die Liste steht und du da bist." };
     return { alsNaechstes: "Beratung abgeschlossen. Ruf suchen - es legt die drei passendsten Haeuser gleich vor." };
   },
@@ -949,9 +967,11 @@ const Werkzeugkasten = {
   nochOffen(p, lauf = {}) {
     const fp = this.fahrplan(p, lauf);
     const pflicht = [];
+    if (p.vorgehen !== "top3") pflicht.push("Vorgehen (drei raussuchen oder selbst schauen)");
+    if (!fp.fertig.dauer) pflicht.push("Dauer");
+    if (!fp.fertig.flug || !fp.fertig.flugAb) pflicht.push("Flug");
     if (!fp.fertig.preis) pflicht.push("Preis (fest oder offen)");
     if (!fp.fertig.wuensche) pflicht.push("Wuensche");
-    if (p.vorgehen !== "top3") pflicht.push("Vorgehen (Top 3 oder selbst schauen)");
     return { pflicht, soll: [] };
   },
 

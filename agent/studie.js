@@ -447,7 +447,7 @@ const Studie = {
     d.grund = grund;
     d.freigabeEnde = this.kern?.lauf?.freigabe || null;
     d.protokoll = [...(this.kern?.lauf?.protokoll || [])];
-    d.einstieg = this.kern?.lauf?.profil?.einstieg || null;
+    d.weiter = this.kern?.lauf?.profil?.weiter || null;
     if (d.buchung) {
       const g = d.protokoll.find((p) => p.ereignis === "gebucht");
       d.buchung.ohneRueckfrage = g ? !!g.autonom : false;
@@ -792,7 +792,7 @@ const Studie = {
         // und Selbst-Schauen, Korrekturen der Suchmaske
         [p + "themenGefragt"]: protokoll.filter((e) => e.ereignis === "thema_gefragt").map((e) => e.thema).join(","),
         [p + "vorgehen"]: z([...protokoll].reverse().find((e) => e.ereignis === "vorgehen")?.wahl),
-        [p + "einstieg"]: z(r.einstieg),
+        [p + "weiter"]: z(r.weiter),
         [p + "selbstGesucht"]: zaehle(protokoll, "selbst_gesucht"),
         [p + "maskeKorrigiert"]: zaehle(protokoll, "maske_korrigiert"),
         [p + "datumVerworfen"]: zaehle(protokoll, "datum_verworfen"),
