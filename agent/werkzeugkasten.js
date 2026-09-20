@@ -244,7 +244,7 @@ const Werkzeugkasten = {
       const p = kern.lauf.profil;
       const geaendert = [];
       const setze = (feld, wert) => { if (wert !== undefined && wert !== null && wert !== "") { if (p[feld] !== wert) geaendert.push(feld); p[feld] = wert; } };
-      const gesagt = (muster) => kern.lauf.gespraech.filter((n) => n.role === "user").slice(-3).some((n) => muster.test(String(n.content)));
+      const gesagt = (muster, letzte = 3) => kern.lauf.gespraech.filter((n) => n.role === "user").slice(-letzte).some((n) => muster.test(String(n.content)));
       if (a.ziel !== undefined) {
         const id = String(a.ziel).toLowerCase().trim();
         if (!id) { p.zielId = null; }
@@ -257,7 +257,7 @@ const Werkzeugkasten = {
       // "Offen" und "egal" nur, wenn die Person so etwas gesagt hat - auf
       // "hi" hatte das Modell sonst Ziel offen und Ueberblick gewuenscht
       // eingetragen, ohne dass jemand gefragt war
-      const OFFEN = /\b(egal|offen|flexibel|nicht so wichtig|unwichtig|nicht festgelegt|festgelegt|keine ahnung|beides|beide|hauptsache|überrasch|ueberrasch|du entscheidest|such du|schauen|sehen|zeig|gucken|kein(e|en)? (rahmen|grenze|limit|vorstellung|besonderen|besondere)|nichts besonderes|noch nicht|erst ?mal|mal sehen|spielt keine rolle|unentschieden|nicht sicher|vorschl|beraten|überblick|ueberblick|eckdaten|möglichkeiten|moeglichkeiten|angebot|was es gibt|was gibt)/i;
+      const OFFEN = /(egal|offen|flexibel|nicht so wichtig|unwichtig|nicht festgelegt|festgelegt|keine ahnung|beides|beide|hauptsache|überrasch|ueberrasch|du entscheidest|such du|schauen|sehen|zeig|gucken|kein(e|en)? (rahmen|grenze|limit|vorstellung|besonderen|besondere)|nichts besonderes|noch nicht|erst ?mal|mal sehen|spielt keine rolle|unentschieden|nicht sicher|vorschl|beraten|überblick|ueberblick|eckdaten|möglichkeiten|moeglichkeiten|angebot|was es gibt|was gibt)/i;
       const offenGesagt = gesagt(OFFEN);
       const verworfen = [];
       for (const f of ["zielOffen", "artEgal", "preisEgal", "ausstattungEgal", "bewertungEgal", "strandEgal", "verpflegungEgal"]) {
@@ -267,6 +267,11 @@ const Werkzeugkasten = {
       if (verworfen.length) kern.notieren("egal_verworfen", { felder: verworfen });
       if (a.zielOffen !== undefined && !p.zielId) setze("zielOffen", !!a.zielOffen);
       if (a.einstieg) setze("einstieg", a.einstieg);
+      // Ein Monat nur, wenn die Person einen genannt hat (oder eine
+      // Jahreszeit) - auf "hauptsache warm" hatte das Modell Oktober gesetzt
+      if (a.monat && !p.monat && !gesagt(/januar|februar|märz|maerz|april|\bmai\b|juni|juli|august|september|oktober|november|dezember|\bjan\b|\bfeb\b|\bokt\b|\bnov\b|\bdez\b|sommer|herbst|winter|frühling|fruehling|frühjahr|fruehjahr|ostern|pfingsten|weihnachten|silvester|ferien|nächsten monat|naechsten monat|\d{1,2}\.\s*\d{1,2}\.|\d{4}-\d{2}/i)) {
+        kern.notieren("monat_verworfen", { monat: a.monat }); delete a.monat;
+      }
       setze("monat", a.monat);
       // Feste Daten nur, wenn die Person einen Tag genannt hat. Aus "im
       // Oktober" machte das Modell sonst einen Zeitraum - und die Maske
@@ -285,6 +290,9 @@ const Werkzeugkasten = {
       // Ohne feste Daten wird flexibel im Monat gesucht - keine Entscheidung
       // des Modells, sondern die einzige Lesart von "im Oktober"
       p.flexibel = !(p.von && p.bis);
+      if (a.naechte && !p.naechte && !gesagt(/\d|woche|tage|nächte|naechte|übernacht|uebernacht|wochenende|lang|kurz|eine|zwei|drei|vier|fünf|fuenf|sechs|sieben|acht|neun|zehn|zwölf|zwoelf|vierzehn/i)) {
+        kern.notieren("naechte_verworfen", { naechte: a.naechte }); delete a.naechte;
+      }
       setze("naechte", a.naechte);
       setze("personen", a.personenGesamt);
       setze("erwachsene", a.erwachsene); setze("kinder", a.kinder);
@@ -309,7 +317,12 @@ const Werkzeugkasten = {
       for (const f of ["preisEgal", "bewertungEgal", "strandEgal", "verpflegungEgal", "ausstattungEgal"]) if (a[f] !== undefined) setze(f, !!a[f]);
       if (Array.isArray(a.wuensche)) {
         const ALIAS = { strand: "strandnah", meer: "strandnah", beach: "strandnah", kids: "kinderclub", kinder: "familie", spa: "wellness", bewertungen: "bewertung", essen: "essen" };
-        const ids = [...new Set(a.wuensche.map((w) => ALIAS[String(w).toLowerCase()] || String(w).toLowerCase()))].filter((w) => typeof Politik !== "undefined" && Politik.kriterium(w));
+        // Ein Wunsch zaehlt nur, wenn die Person ein passendes Wort gesagt
+        // hat (Wortlisten der Kriterien) - sonst wurde aus "warm" Strand und Pool
+        const alt = new Set((p.kriterien || []).map((k) => k.id));
+        const ids = [...new Set(a.wuensche.map((w) => ALIAS[String(w).toLowerCase()] || String(w).toLowerCase()))]
+          .filter((w) => typeof Politik !== "undefined" && Politik.kriterium(w))
+          .filter((w) => alt.has(w) || gesagt(new RegExp((Politik.kriterium(w).woerter || [w]).map((x) => x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|"), "i"), 99));
         p.kriterien = ids.map((id) => ({ id, gewicht: 1 }));
         geaendert.push("wuensche");
         for (const id of ids) {
