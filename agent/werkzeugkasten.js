@@ -573,8 +573,14 @@ const Werkzeugkasten = {
       const idHier = new URLSearchParams(location.search).get("id");
       kern.lauf.gewaehlt = a.id;
       if (a.verpflegung) kern.lauf.profil.verpflegung = a.verpflegung;
-      if (a.anreise) kern.lauf.profil.anreise = a.anreise;
       const flexibel = kern.lauf.profil.flexibel && !(kern.lauf.profil.von && kern.lauf.profil.bis);
+      if (a.anreise) {
+        // Bei flexibler Suche zaehlt nur der Tag - Monat und Jahr kommen aus
+        // der Suche (das Modell setzte sonst das laufende Jahr ein)
+        const fw = flexibel ? Werkzeugkasten.flexWahl(kern.lauf.profil) : null;
+        const tag = parseInt(String(a.anreise).slice(-2), 10);
+        kern.lauf.profil.anreise = fw && tag >= 1 && tag <= 31 ? `${fw.monat}-${String(tag).padStart(2, "0")}` : a.anreise;
+      }
       if (flexibel) {
         // Der Anreisetag muss von der Person kommen - das Modell hat ihn
         // sonst gern selbst gesetzt ("1. Oktober"). Geprueft wird, ob in
