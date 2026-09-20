@@ -42,6 +42,7 @@ const Werkzeugkasten = {
           bis: text("Abreise als YYYY-MM-DD - nur bei genannten Tagen"),
           anreise: text("Anreisetag als YYYY-MM-DD, wenn die Person ihn fuer die Buchung nennt (bei flexibler Suche)"),
           zielOffen: { type: "boolean", description: "true, wenn die Person sagt, dass das Ziel noch offen ist oder sie sich beraten lassen will" },
+          richtung: { type: "string", enum: ["warm", "strand", "berge", "ski", "norden", "stadt", "wintersonne", "fern"], description: "Reiseart statt Ziel, wenn die Person so etwas sagt ('hauptsache warm', 'ans Meer', 'in die Berge') - die Suche beschraenkt sich dann auf passende Regionen" },
           einstieg: { type: "string", enum: ["ueberblick", "eckdaten"], description: "Antwort auf die Einstiegsfrage: erst ein Ueberblick, was es gibt, oder erst die Eckdaten" },
           artEgal: { type: "boolean", description: "true, wenn die Person bei Hotel oder Ferienwohnung nicht festgelegt ist" },
           vorgehen: { type: "string", enum: ["top3", "selbst"], description: "top3 = du sollst drei Favoriten nennen; selbst = du stellst die Filter ein und die Person schaut selbst durch die Liste" },
@@ -266,6 +267,15 @@ const Werkzeugkasten = {
       if (a.einstieg && !offenGesagt) { verworfen.push("einstieg"); delete a.einstieg; }
       if (verworfen.length) kern.notieren("egal_verworfen", { felder: verworfen });
       if (a.zielOffen !== undefined && !p.zielId) setze("zielOffen", !!a.zielOffen);
+      // Reiseart ("hauptsache warm", "ans Meer"): nur mit passendem Wort der
+      // Person, dann bleiben nur die Regionen dieser Art in der Suche
+      if (a.richtung && typeof Politik !== "undefined") {
+        const th = (Politik.THEMEN || []).find((t) => t.id === a.richtung);
+        const woerter = th ? [...(th.woerter || []), th.id] : [];
+        if (th && gesagt(new RegExp(woerter.map((x) => x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|"), "i"), 99)) {
+          setze("richtung", th.id); p.zieleErlaubt = th.ziele.slice(); if (!p.zielId) p.zielOffen = true;
+        } else kern.notieren("richtung_verworfen", { richtung: a.richtung });
+      }
       if (a.einstieg) setze("einstieg", a.einstieg);
       // Ein Monat nur, wenn die Person einen genannt hat (oder eine
       // Jahreszeit) - auf "hauptsache warm" hatte das Modell Oktober gesetzt
@@ -358,7 +368,7 @@ const Werkzeugkasten = {
       const p = kern.lauf.profil;
       await kern.denkpause(900, "sieht nach…");
       const bestand = Werkzeugkasten.katalog(p);
-      const regionen = Werkzeugkasten.regionenInSaison(p.monat).map((z) => ({
+      const regionen = Werkzeugkasten.regionenInSaison(p.monat).filter((z) => !p.zieleErlaubt?.length || p.zieleErlaubt.includes(z.id)).map((z) => ({
         id: z.id, name: z.name, land: z.land, art: z.typ,
         haeuser: bestand.filter((h) => h.ziel === z.id && Werkzeugkasten.passtGruppe(h, p)).length,
         saison: p.monat ? (typeof saisonPassung === "function" && saisonPassung(z, p.monat) === 1 ? "Hauptsaison" : "Nebensaison") : null,
@@ -436,7 +446,10 @@ const Werkzeugkasten = {
       // Was das Modell zurueckbekommt
       const antwort = async (liste, weg, gesamt) => {
         const umfang = Werkzeugkasten.umfang(liste, p);
-        const basis = { weg, gesuchtMit: Werkzeugkasten.filterText(p), zeitraum: zeitText, trefferGesamt: gesamt ?? liste.length, lage: umfang };
+        // Bei einer Richtung (warm, Meer) zaehlt der eingegrenzte Katalog, nicht
+        // die Seite - die kennt nur eine Region auf einmal
+        const eingegrenzt = !p.zielId && p.zieleErlaubt?.length;
+        const basis = { weg, gesuchtMit: Werkzeugkasten.filterText(p), zeitraum: zeitText, trefferGesamt: eingegrenzt ? liste.length : (gesamt ?? liste.length), lage: umfang };
         kern.lauf.gesuchtMit = fp.schluessel;
         if (selbst) {
           kern.lauf.vorgehenFuer = fp.schluessel + p.vorgehen;
@@ -853,7 +866,7 @@ const Werkzeugkasten = {
     const nichtsBekannt = !p.zielId && !p.zielOffen && !p.monat && !p.von && !p.naechte && p.erwachsene == null && p.personen == null && p.kinder == null && !p.artGenannt;
     const fertig = {
       einstieg: !!p.einstieg || !!b.einstieg || !nichtsBekannt,
-      ziel: !!p.zielId || !!p.zielOffen,
+      ziel: !!p.zielId || !!p.zielOffen || !!p.richtung,
       zeit: !!p.monat || !!(p.von && p.bis),
       dauer: !!p.naechte,
       reisende: p.erwachsene != null && p.kinder != null,
@@ -984,6 +997,7 @@ const Werkzeugkasten = {
   filterText(p) {
     const t = [];
     if (p.zielId && typeof ZIEL_NACH_ID !== "undefined") t.push(ZIEL_NACH_ID[p.zielId]?.name);
+    else if (p.richtung && typeof Politik !== "undefined") t.push((Politik.THEMEN || []).find((x) => x.id === p.richtung)?.label || p.richtung);
     if (p.typ === "apartment") t.push("Ferienwohnung");
     if (p.maxPreis) t.push(`bis ${p.maxPreis} €/Nacht`);
     if (p.maxStrand != null) t.push(`Strand bis ${p.maxStrand < 1 ? `${Math.round(p.maxStrand * 1000)} m` : `${p.maxStrand} km`}`);
@@ -997,6 +1011,7 @@ const Werkzeugkasten = {
   katalogTreffer(p, filter) {
     return this.katalog(p).filter((h) => {
       if (p.zielId && h.ziel !== p.zielId) return false;
+      if (!p.zielId && p.zieleErlaubt?.length && !p.zieleErlaubt.includes(h.ziel)) return false;
       if (filter.ausstattung.some((x) => !(h.amenities || []).includes(x))) return false;
       if (!this.passtGruppe(h, p)) return false;
       const preis = this.preis(h, p.monat);

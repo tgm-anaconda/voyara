@@ -1418,6 +1418,8 @@ const Politik = {
     const raus = [];
     if (profil.zielId && typeof ZIEL_NACH_ID !== "undefined") {
       raus.push({ feld: "Ziel", wert: ZIEL_NACH_ID[profil.zielId]?.name });
+    } else if (profil.richtung) {
+      raus.push({ feld: "Ziel", wert: this.THEMEN.find((t) => t.id === profil.richtung)?.label || profil.richtung });
     } else if (profil.zielOffen) {
       raus.push({ feld: "Ziel", wert: "alle Regionen" });
     }

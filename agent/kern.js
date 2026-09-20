@@ -482,6 +482,7 @@ const Kern = {
     const p = this.lauf.profil || {};
     const teile = [];
     if (p.zielId && typeof ZIEL_NACH_ID !== "undefined") teile.push(`Ziel ${ZIEL_NACH_ID[p.zielId]?.name}`);
+    else if (p.richtung && typeof Politik !== "undefined") teile.push(`Ziel offen, Richtung ${(Politik.THEMEN || []).find((x) => x.id === p.richtung)?.label || p.richtung} (${(p.zieleErlaubt || []).map((id) => ZIEL_NACH_ID?.[id]?.name || id).join(", ")})`);
     else if (p.zielOffen) teile.push("Ziel offen (alle Regionen)");
     if (p.monat && typeof Politik !== "undefined") {
       const name = Object.keys(Politik.MONATE).find((m) => Politik.MONATE[m] === p.monat && m.length > 3);
@@ -617,6 +618,7 @@ const Kern = {
     AgentPanel.status("denkt nach…");
     try {
       const erzwungen = new Set();
+      this.lauf.vorlageImZug = false;
       for (let i = 0; i < this.MAX_ZUEGE; i++) {
         if (typeof Modell === "undefined" || !Modell.verfuegbar()) {
           this.sagen("Ich bin gerade nicht erreichbar. Du kannst auf der Seite selbst weitersuchen, ich melde mich, sobald es wieder geht.");
@@ -671,6 +673,18 @@ const Kern = {
         // nach einem Werkzeug gern, was es davor schon gesagt hat)
         const zuletzt = [...this.lauf.verlauf].reverse().find((n) => n.rolle === "bot")?.text || "";
         const gleich = (x, y) => x && y && x.replace(/\W+/g, "").toLowerCase() === y.replace(/\W+/g, "").toLowerCase();
+        // Nach einer Vorlage im selben Zug zaehlt das Modell die Haeuser gern
+        // noch einmal auf - dann bleibt nur die Frage
+        if (text && this.lauf.vorlageImZug && this.lauf.letzteVorlage?.length) {
+          const namen = this.lauf.letzteVorlage.map((id) => getItemById?.(id)?.name).filter(Boolean);
+          if (namen.filter((n) => text.includes(n)).length >= 2) {
+            const saetze = text.split(/(?<=[.!?])\s+/);
+            const frage = saetze.filter((x) => /\?\s*$/.test(x) && !namen.some((n) => x.includes(n)));
+            text = frage.length ? frage[frage.length - 1] : "Welches möchtest du dir genauer ansehen, oder fehlt dir noch etwas?";
+            nachricht.content = text;
+            this.notieren("vorlage_wiederholt");
+          }
+        }
         if (text && !gleich(text, zuletzt)) this.sagen(text);
         if (!nachricht.tool_calls) {
           // Welches Thema des Fahrplans der Agent damit gefragt hat
@@ -844,6 +858,7 @@ const Kern = {
 
     this.lauf.kandidaten = kandidaten;
     this.lauf.letzteVorlage = kandidaten.map((k) => k.id);
+    this.lauf.vorlageImZug = true;
     this.notieren("shortlist", { runde: this.lauf.vorlagen || 0, ids: this.lauf.letzteVorlage, partnerId: this.lauf.partnerId || null, offenlegung: this.lauf.offenlegung || null });
     this.lauf.vorlagen = (this.lauf.vorlagen || 0) + 1;
 
