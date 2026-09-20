@@ -13,6 +13,10 @@ const SearchBox = (() => {
   let withFlight = false;
   let flightAb = "";
   let flightKlasse = "economy";
+  // Zeitraum: feste Daten oder flexibel im Monat (Monat + Naechte)
+  let flexibel = false;
+  let flexMonat = "";
+  let flexNaechte = 7;
 
   const AIRPORTS = ["Berlin (BER)", "Bremen (BRE)", "Düsseldorf (DUS)", "Frankfurt (FRA)", "Hamburg (HAM)", "Hannover (HAJ)", "Köln (CGN)", "Leipzig (LEJ)", "München (MUC)", "Nürnberg (NUE)", "Stuttgart (STR)"];
 
@@ -113,14 +117,32 @@ const SearchBox = (() => {
     }
 
     // hotel + apartment
+    const monate = typeof Reisedaten !== "undefined" && Reisedaten.monateZurWahl ? Reisedaten.monateZurWahl() : [];
+    if (!flexMonat && monate.length) flexMonat = monate[0].schluessel;
+    const zeitraumFelder = flexibel
+      ? `
+      <div class="field">
+        <label for="sbMonat">Reisemonat</label>
+        <select class="select" id="sbMonat">
+          ${monate.map((m) => `<option value="${m.schluessel}" ${m.schluessel === flexMonat ? "selected" : ""}>${m.label}</option>`).join("")}
+        </select>
+      </div>
+      <div class="field">
+        <label for="sbNaechte">Dauer</label>
+        <select class="select" id="sbNaechte">
+          ${[3, 4, 5, 7, 10, 14, 21].map((n) => `<option value="${n}" ${n === flexNaechte ? "selected" : ""}>${n} Nächte</option>`).join("")}
+        </select>
+      </div>`
+      : `
+      <div class="field"><label for="sbFrom">Anreise</label><input class="input" type="date" id="sbFrom" value="${initial.from}" /></div>
+      <div class="field"><label for="sbTo">Abreise</label><input class="input" type="date" id="sbTo" value="${initial.to}" /></div>`;
     return `
       <div class="field">
         <label for="sbDest">${type === "apartment" ? "Region oder Wohnung" : "Reiseziel oder Hotel"}</label>
         <input class="input" type="text" id="sbDest" list="sbDestList" placeholder="Wohin soll es gehen?" autocomplete="off" value="${initial.q || ""}" />
         <datalist id="sbDestList">${destinationOptions()}</datalist>
       </div>
-      <div class="field"><label for="sbFrom">Anreise</label><input class="input" type="date" id="sbFrom" value="${initial.from}" /></div>
-      <div class="field"><label for="sbTo">Abreise</label><input class="input" type="date" id="sbTo" value="${initial.to}" /></div>
+      ${zeitraumFelder}
       ${guestField}`;
   }
 
@@ -141,6 +163,11 @@ const SearchBox = (() => {
 <div class="searchbox-tabs">
   ${tabs.map((t) => `<button type="button" class="searchbox-tab ${t.key === activeType ? "active" : ""}" data-type="${t.key}">${t.label}</button>`).join("")}
 </div>
+${activeType === "hotel" || activeType === "apartment" ? `
+<div class="date-mode" role="radiogroup" aria-label="Zeitraum">
+  <label><input type="radio" name="sbDateMode" value="fest" ${flexibel ? "" : "checked"} /> Feste Daten</label>
+  <label><input type="radio" name="sbDateMode" value="flex" ${flexibel ? "checked" : ""} /> Flexibel im Monat</label>
+</div>` : ""}
 <form class="searchbox-grid type-${activeType}" id="sbForm">
   ${fieldsFor(activeType, initial)}
   <button type="submit" class="btn btn-accent" style="height:41px">Suchen</button>
@@ -238,14 +265,22 @@ ${showFlightAddon ? `
     const t = totals();
     const get = (id) => mountEl.querySelector(id)?.value || "";
     const q = activeType === "flight" ? get("#sbOrigin") : get("#sbDest");
+    const unterkunft = activeType === "hotel" || activeType === "apartment";
     const query = {
       type: activeType,
       q: q.trim(),
-      from: get("#sbFrom"),
-      to: get("#sbTo"),
       adults: t.adults,
       children: t.children,
     };
+    if (unterkunft && flexibel) {
+      query.flex = "1";
+      query.monat = get("#sbMonat") || flexMonat;
+      query.nights = get("#sbNaechte") || String(flexNaechte);
+    } else {
+      query.from = get("#sbFrom");
+      query.to = get("#sbTo");
+    }
+    if (t.children) query.ages = rooms.flatMap((r) => r.childAges).slice(0, t.children).join(",");
     if (activeType === "hotel") query.rooms = t.rooms;
     if (activeType === "flight") {
       const ziel = mountEl.querySelector("#sbDest2")?.value;
@@ -275,6 +310,12 @@ ${showFlightAddon ? `
         render(initial);
       })
     );
+
+    mountEl.querySelectorAll('input[name="sbDateMode"]').forEach((r) =>
+      r.addEventListener("change", () => { flexibel = r.value === "flex"; render(initial); })
+    );
+    mountEl.querySelector("#sbMonat")?.addEventListener("change", (e) => { flexMonat = e.target.value; });
+    mountEl.querySelector("#sbNaechte")?.addEventListener("change", (e) => { flexNaechte = +e.target.value; });
 
     const trigger = mountEl.querySelector("#sbGuests");
     const pop = mountEl.querySelector("#sbGuestPop");
@@ -355,15 +396,18 @@ ${showFlightAddon ? `
       from: params.get("from") || d.start,
       to: params.get("to") || d.end,
     };
+    const flex = typeof Reisedaten !== "undefined" && Reisedaten.flex ? Reisedaten.flex() : null;
+    if (flex) { flexibel = true; flexMonat = flex.schluessel; flexNaechte = flex.naechte; }
 
     if (params.get("adults")) {
       const a = Math.max(1, +params.get("adults"));
       const c = Math.max(0, +(params.get("children") || 0));
       const r = Math.max(1, +(params.get("rooms") || 1));
+      const alter = (params.get("ages") || "").split(",").map((x) => parseInt(x, 10)).filter((x) => !Number.isNaN(x));
       rooms = Array.from({ length: r }, (_, i) => ({
         adults: i === 0 ? Math.max(1, a - (r - 1)) : 1,
         children: i === 0 ? c : 0,
-        childAges: i === 0 ? Array.from({ length: c }, () => 6) : [],
+        childAges: i === 0 ? Array.from({ length: c }, (_, k) => alter[k] ?? 6) : [],
       }));
     }
 

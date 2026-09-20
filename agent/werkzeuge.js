@@ -115,7 +115,7 @@ const Werkzeuge = {
      Suchen
      ================================================================== */
 
-  async suchen({ typ = null, ziel = "", von = "", bis = "", erwachsene = null, kinder = null, flug = null } = {}) {
+  async suchen({ typ = null, ziel = "", von = "", bis = "", erwachsene = null, kinder = null, kinderAlter = null, flug = null, flex = null } = {}) {
     if (!this.finde("#sbForm")) return this.fehlt("Die Suchmaske");
 
     const getan = [];
@@ -142,21 +142,39 @@ const Werkzeuge = {
       getan.push(ziel);
     }
 
-    const feldVon = this.finde("#sbFrom");
-    if (feldVon && von) {
-      await Zeiger.setzeWert(feldVon, von, { hinweis: "Anreise" });
-      getan.push(`ab ${von}`);
+    // Zeitraum: flexibel im Monat (Schalter, Monat, Dauer) oder feste Daten
+    const modus = this.finde(`input[name="sbDateMode"][value="${flex ? "flex" : "fest"}"]`);
+    if (modus && !modus.checked) {
+      await Zeiger.klicke(modus, { hinweis: flex ? "flexibel im Monat" : "feste Daten" });
+      await Zeiger.warte(250);
     }
-
-    const feldBis = this.finde("#sbTo");
-    if (feldBis && bis) {
-      await Zeiger.setzeWert(feldBis, bis, { hinweis: "Abreise" });
-      getan.push(`bis ${bis}`);
+    if (flex) {
+      const feldMonat = this.finde("#sbMonat");
+      if (feldMonat && flex.monat && feldMonat.value !== flex.monat) {
+        await Zeiger.setzeWert(feldMonat, flex.monat, { hinweis: "Reisemonat" });
+        getan.push(`im ${feldMonat.options[feldMonat.selectedIndex]?.textContent || flex.monat}`);
+      }
+      const feldNaechte = this.finde("#sbNaechte");
+      if (feldNaechte && flex.naechte && +feldNaechte.value !== +flex.naechte) {
+        await Zeiger.setzeWert(feldNaechte, String(flex.naechte), { hinweis: "Dauer" });
+        getan.push(`${flex.naechte} Nächte`);
+      }
+    } else {
+      const feldVon = this.finde("#sbFrom");
+      if (feldVon && von) {
+        await Zeiger.setzeWert(feldVon, von, { hinweis: "Anreise" });
+        getan.push(`ab ${von}`);
+      }
+      const feldBis = this.finde("#sbTo");
+      if (feldBis && bis) {
+        await Zeiger.setzeWert(feldBis, bis, { hinweis: "Abreise" });
+        getan.push(`bis ${bis}`);
+      }
     }
 
     if (erwachsene !== null || kinder !== null) {
-      await this.belegungSetzen(erwachsene, kinder);
-      getan.push(`${erwachsene ?? "?"} Erwachsene${kinder ? `, ${kinder} Kinder` : ""}`);
+      await this.belegungSetzen(erwachsene, kinder, kinderAlter);
+      getan.push(`${erwachsene ?? "?"} Erwachsene${kinder ? `, ${kinder} Kinder${kinderAlter?.length ? ` (${kinderAlter.join(", ")} J.)` : ""}` : ""}`);
     }
 
     // Flug dazu: Haken und Leiste (Abflughafen, Klasse), nur bei Hotels
@@ -201,7 +219,7 @@ const Werkzeuge = {
 
   // Die Belegung liegt hinter einem Aufklapper. Der Agent oeffnet ihn sichtbar,
   // stellt ein und bestaetigt - alles ueber dieselben Knoepfe wie ein Mensch.
-  async belegungSetzen(erwachsene, kinder) {
+  async belegungSetzen(erwachsene, kinder, kinderAlter = null) {
     const ausloeser = this.finde("#sbGuests");
     if (!ausloeser) return false;
     await Zeiger.klicke(ausloeser, { hinweis: "Reisende" });
@@ -226,6 +244,15 @@ const Werkzeuge = {
 
     await stellen("a", 0, erwachsene);   // erste Zeile: Erwachsene
     await stellen("c", 1, kinder);       // zweite Zeile: Kinder
+
+    // Alter der Kinder, sichtbar in den Auswahlfeldern
+    if (Array.isArray(kinderAlter) && kinderAlter.length) {
+      const felder = [...document.querySelectorAll("#sbRooms .js-age")];
+      for (const [i, alter] of kinderAlter.entries()) {
+        const feld = felder[i];
+        if (feld && +feld.value !== +alter) await Zeiger.setzeWert(feld, String(alter), { hinweis: `Kind ${i + 1}: ${alter} Jahre` });
+      }
+    }
 
     const uebernehmen = this.finde("#sbApply");
     if (uebernehmen) await Zeiger.klicke(uebernehmen, { hinweis: "übernehmen" });
@@ -493,7 +520,17 @@ const Werkzeuge = {
 
   // Fuehrt bis zur Buchungsseite. Ob der Agent dort auch abschliesst, regelt
   // die Autonomiestufe in agent/kern.js - nicht dieses Werkzeug.
-  async zurBuchung(id, verpflegung = null) {
+  async zurBuchung(id, verpflegung = null, anreise = null) {
+    // Flexibel gesucht: erst den Anreisetag eintragen, sonst gibt es
+    // keinen Buchungsknopf
+    const feldAnreise = this.finde("#bwAnreise");
+    if (feldAnreise) {
+      if (!anreise && !feldAnreise.value) return { ok: false, text: "Der Anreisetag fehlt noch.", daten: { anreiseFehlt: true } };
+      if (anreise && feldAnreise.value !== anreise) {
+        await Zeiger.setzeWert(feldAnreise, anreise, { hinweis: "Anreise" });
+        await Zeiger.warte(300);
+      }
+    }
     // Verpflegung einstellen, wenn eine gewuenscht war. Sichtbar, wie
     // jeder andere Schritt - und wenn das Haus sie nicht anbietet, wird
     // das gesagt statt still uebergangen.

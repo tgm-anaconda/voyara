@@ -15,6 +15,7 @@ let reviewFilter = "alle";
 let reviewSeite = 0;
 const REVIEWS_PRO_SEITE = 10;
 let nights = 7;
+let anreise = null;      // "" = flexibel gesucht, Anreisetag noch offen
 
 function readParams() {
   const p = new URLSearchParams(window.location.search);
@@ -26,6 +27,11 @@ function readParams() {
   if (from && to) {
     const diff = Math.round((new Date(to) - new Date(from)) / 86400000);
     if (diff > 0) nights = diff;
+  } else if (Reisedaten.flex()) {
+    // Flexibel im Monat: Dauer aus der Suche, Anreisetag wird im
+    // Buchungskasten gewaehlt
+    nights = Reisedaten.flex().naechte;
+    anreise = "";
   }
   if (isApartment && nights < item.minNights) nights = item.minNights;
 
@@ -376,6 +382,35 @@ function renderWidget() {
       </div>` : `<div class="bw-flight-none">Ab ${flugStand.ab || "deinem Flughafen"} gibt es keinen Flug zu diesem Ziel.</div>`}
     </div>`;
 
+  // Flexibel gesucht: der Anreisetag wird hier gewaehlt, vorher gibt es
+  // keinen Buchungsknopf - kein erfundenes Datum
+  const flex = Reisedaten.flex();
+  const anreiseFeld = flex ? (() => {
+    const min = `${flex.schluessel}-01`;
+    const letzter = new Date(flex.jahr, flex.monat, 0).getDate();
+    const max = `${flex.schluessel}-${String(letzter).padStart(2, "0")}`;
+    return `
+    <div class="field" style="margin-bottom:12px">
+      <label for="bwAnreise">Anreise im ${Reisedaten.MONATSNAMEN[flex.monat - 1]}</label>
+      <input class="input" type="date" id="bwAnreise" min="${min}" max="${max}" value="${anreise || ""}" />
+      <small class="hint">${anreise ? `Abreise ${new Date(new Date(anreise).getTime() + nights * 86400000).toLocaleDateString("de-DE")}` : "Im ganzen Monat frei, Preis gleich. Für die Buchung brauchen wir den Tag."}</small>
+    </div>`;
+  })() : "";
+  const buchenLink = (() => {
+    let href = `checkout.html?id=${item.id}&nights=${nights}&room=${selectedRoom}&board=${selectedBoard}`;
+    href = Belegung.anLink(href);
+    if (flex && anreise) {
+      const bis = new Date(new Date(anreise).getTime() + nights * 86400000);
+      href += `&from=${anreise}&to=${Reisedaten.alsIso(bis)}`;
+    } else if (!flex) {
+      href = Reisedaten.anLink(href);
+    }
+    return typeof Flug !== "undefined" ? Flug.anLink(href) : href;
+  })();
+  const buchenKnopf = flex && !anreise
+    ? `<button type="button" class="btn btn-accent btn-block" id="bwBook" disabled title="Bitte erst den Anreisetag wählen">Anreisetag wählen</button>`
+    : `<a class="btn btn-accent btn-block" id="bwBook" href="${buchenLink}">Jetzt buchen</a>`;
+
   document.getElementById("bookingWidget").innerHTML = `
     <div class="bw-price">
       <strong>${formatPrice(perNight)}</strong>
@@ -383,6 +418,7 @@ function renderWidget() {
       <span style="font-size:.82rem;color:var(--ink-500)">/ Nacht</span>
     </div>
     <div class="bw-note">${subtitle}</div>
+    ${anreiseFeld}
     <div class="field" style="margin-bottom:12px">
       <label for="bwNights">Aufenthaltsdauer</label>
       <select class="select" id="bwNights">
@@ -397,10 +433,11 @@ function renderWidget() {
     </div>
     ${flugBlock}
     <div class="bw-total"><span>Gesamtpreis${flug ? " mit Flug" : ""}</span><strong>${formatPrice(totalMitFlug)}</strong></div>
-    <a class="btn btn-accent btn-block" href="${typeof Flug !== "undefined" ? Flug.anLink(Belegung.anLink(`checkout.html?id=${item.id}&nights=${nights}&room=${selectedRoom}&board=${selectedBoard}`)) : Belegung.anLink(`checkout.html?id=${item.id}&nights=${nights}&room=${selectedRoom}&board=${selectedBoard}`)}">Jetzt buchen</a>
+    ${buchenKnopf}
     <p class="bw-hint">${ICONS.check} Kostenlos stornierbar bis 24 h vor Anreise</p>`;
 
   document.getElementById("bwNights").addEventListener("change", (e) => { nights = +e.target.value; renderWidget(); });
+  document.getElementById("bwAnreise")?.addEventListener("change", (e) => { anreise = e.target.value; renderWidget(); });
   document.getElementById("bwFlug")?.addEventListener("change", (e) => { Flug.set({ flugId: e.target.value }); renderWidget(); });
   document.getElementById("bwKlasse")?.addEventListener("change", (e) => { Flug.set({ klasse: e.target.value }); renderWidget(); });
 }

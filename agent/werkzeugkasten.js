@@ -40,7 +40,8 @@ const Werkzeugkasten = {
           monat: zahl("Reisemonat 1-12"),
           von: text("Anreise als YYYY-MM-DD, wenn feste Daten genannt sind"),
           bis: text("Abreise als YYYY-MM-DD"),
-          flexibel: { type: "boolean", description: "true, wenn die Person im Monat flexibel ist" },
+          flexibel: { type: "boolean", description: "true, wenn die Person im Monat flexibel ist (dann wird flexibel im Monat gesucht, ohne festes Datum)" },
+          anreise: text("Anreisetag als YYYY-MM-DD, wenn die Person ihn fuer die Buchung nennt (bei flexibler Suche)"),
           naechte: zahl("Zahl der Naechte"),
           personenGesamt: zahl("Nur die Gesamtzahl, wenn die Person sie so nennt ('zu viert', 'vier Leute') - dann erwachsene und kinder leer lassen und nachfragen"),
           erwachsene: zahl("Zahl der Erwachsenen - nur, wenn die Person sie ausdruecklich nennt"),
@@ -53,6 +54,11 @@ const Werkzeugkasten = {
           maxStrandMeter: zahl("Hoechstens so viele Meter zum Strand"),
           mindestbewertung: { type: "number", description: "Mindest-Gaestenote, z.B. 4.5 (nur wenn die Person das sagt)" },
           mindestSterne: zahl("Mindestens so viele Hotelsterne (nur wenn die Person das sagt)"),
+          preisEgal: { type: "boolean", description: "true, wenn die Person sagt, dass der Preis keine Rolle spielt oder sie keinen Rahmen nennen will" },
+          bewertungEgal: { type: "boolean", description: "true, wenn die Person sagt, dass Bewertung oder Sterne ihr egal sind" },
+          strandEgal: { type: "boolean", description: "true, wenn die Person sagt, dass die Naehe zum Strand egal ist" },
+          verpflegungEgal: { type: "boolean", description: "true, wenn Verpflegung egal ist" },
+          ausstattungEgal: { type: "boolean", description: "true, wenn die Person keine besonderen Ausstattungswuensche hat" },
           wuensche: { type: "array", items: { type: "string", enum: ["pool", "strandnah", "kinderclub", "familie", "wellness", "ruhe", "essen", "sauberkeit", "lage", "service", "preis", "bewertung"] }, description: "Was der Person wichtig ist" },
           verpflegung: { type: "string", enum: ["ohne", "fruehstueck", "halb", "voll", "ai"], description: "Gewuenschte Verpflegung" },
           flug: { type: "boolean", description: "true, wenn ein Flug dazu gewuenscht ist; false, wenn nur die Unterkunft" },
@@ -97,10 +103,11 @@ const Werkzeugkasten = {
         "Setzt ein Haus auf den Merkzettel der Person (Freigabe ab 'suchen').",
         { id: text("Haus-id") }, ["id"]),
       f("buchung_vorbereiten",
-        "Geht fuer ein Haus in die Buchungsstrecke, traegt die Gastdaten aus dem Konto ein und bleibt auf der Pruefseite stehen (Freigabe ab 'vorbereiten'). Liefert die Zusammenfassung, die die Person sieht.",
+        "Geht fuer ein Haus in die Buchungsstrecke, traegt die Gastdaten aus dem Konto ein und bleibt auf der Pruefseite stehen (Freigabe ab 'vorbereiten'). Bei flexibler Suche braucht es den Anreisetag - frag die Person vorher danach. Liefert die Zusammenfassung, die die Person sieht.",
         {
           id: text("Haus-id"),
           verpflegung: { type: "string", enum: ["ohne", "fruehstueck", "halb", "voll", "ai"], description: "Gewuenschte Verpflegung, falls genannt" },
+          anreise: text("Anreisetag als YYYY-MM-DD (Pflicht bei flexibler Suche; die Person nennt ihn)"),
         }, ["id"]),
       f("buchung_abschliessen",
         "Schliesst die vorbereitete Buchung ab (Freigabe 'buchen', oder 'vorbereiten' nach klarem Ja der Person). Es wird nichts wirklich gebucht, die Seite ist ein Prototyp.",
@@ -262,6 +269,8 @@ const Werkzeugkasten = {
       setze("maxPreis", a.maxPreis); setze("budgetGesamt", a.budgetGesamt);
       if (a.maxStrandMeter != null) setze("maxStrand", Math.round(a.maxStrandMeter) / 1000);
       setze("mindestbewertung", a.mindestbewertung); setze("mindestSterne", a.mindestSterne);
+      setze("anreise", a.anreise);
+      for (const f of ["preisEgal", "bewertungEgal", "strandEgal", "verpflegungEgal", "ausstattungEgal"]) if (a[f] !== undefined) setze(f, !!a[f]);
       if (Array.isArray(a.wuensche)) {
         const ids = a.wuensche.filter((w) => typeof Politik !== "undefined" && Politik.kriterium(w));
         p.kriterien = ids.map((id) => ({ id, gewicht: 1 }));
@@ -284,7 +293,9 @@ const Werkzeugkasten = {
       }
       kern.standAnzeigen();
       kern.notieren("stand", { felder: geaendert });
-      return { ergebnis: { gemerkt: geaendert.length ? geaendert : "nichts Neues", stand: kern.standKurz() } };
+      const offen = Werkzeugkasten.nochOffen(p);
+      return { ergebnis: { gemerkt: geaendert.length ? geaendert : "nichts Neues", stand: kern.standKurz(),
+        vorEinerEmpfehlungNochZuBesprechen: offen.pflicht, solltestDuAuchAnsprechen: offen.soll } };
     },
 
     async regionen_zaehlen(a, kern) {
@@ -341,8 +352,11 @@ const Werkzeugkasten = {
       if (a.sortierung) p.sortierung = a.sortierung;
       kern.standAnzeigen();
 
-      const zeitraum = Werkzeugkasten.zeitraum(p);
+      const flex = p.flexibel && !(p.von && p.bis) ? Werkzeugkasten.flexWahl(p) : null;
+      const zeitraum = flex ? { von: "", bis: "" } : Werkzeugkasten.zeitraum(p);
       const filter = Werkzeugkasten.filterAusStand(p);
+      const offen = Werkzeugkasten.nochOffen(p);
+      const darfEmpfehlen = offen.pflicht.length === 0;
       const treffer = (liste) => liste.slice(0, 8).map((h) => Werkzeugkasten.kompakt(h, p));
       const sortiere = (liste) => {
         const nach = p.sortierung || "passung";
@@ -353,46 +367,66 @@ const Werkzeugkasten = {
         const rang = new Map(bewertet.map((k, i) => [k.id, i]));
         return liste.sort((x, y) => (rang.get(x.id) ?? 99) - (rang.get(y.id) ?? 99));
       };
+      // Was das Modell zurueckbekommt: Umfang immer, Haeuser erst, wenn
+      // Preis, Bewertung und Strandnaehe besprochen sind
+      const antwort = (liste, weg, gesamt) => {
+        const umfang = Werkzeugkasten.umfang(liste, p);
+        const basis = { weg, gesuchtMit: Werkzeugkasten.filterText(p), zeitraum: flex ? `flexibel im Monat, ${flex.naechte} Naechte` : `${zeitraum.von} bis ${zeitraum.bis}`, trefferGesamt: gesamt ?? liste.length, umfang };
+        if (!darfEmpfehlen) {
+          return { ...basis, haeuser: "noch nicht - erst besprechen",
+            hinweis: `Nenn der Person den Umfang (Zahl der Haeuser, Regionen, Preisspanne, was es gibt) und sprich als Naechstes einen offenen Punkt an, mit Zahlen aus umfang. Vor einer Empfehlung noch zu besprechen: ${offen.pflicht.join(", ")}.${offen.soll.length ? ` Auch ansprechen: ${offen.soll.join(", ")}.` : ""}` };
+        }
+        return { ...basis, treffer: treffer(liste),
+          hinweis: liste.length ? "Alles Noetige ist besprochen. Waehle drei fuer auswahl_vorlegen (mindestens zwei)." : "Nichts gefunden - lockere eine Vorgabe (Strand weiter, Preis hoeher, Ausstattung weglassen), sag der Person, was du lockerst, und such noch einmal." };
+      };
 
-      // Katalogsuche (immer als Grundlage, auch fuer die Sperre bei 0)
+      // Katalogsuche (immer als Grundlage)
       const imKatalog = sortiere(Werkzeugkasten.katalogTreffer(p, filter));
+      const logUmfang = () => `${imKatalog.length} Haeuser (${Werkzeugkasten.filterText(p)})`;
 
       if (!kern.darf("suchen")) {
-        kern.lauf.letzteTreffer = imKatalog.map((h) => h.id);
+        kern.lauf.letzteTreffer = darfEmpfehlen ? imKatalog.map((h) => h.id) : [];
         kern.lauf.runde = (kern.lauf.runde || 0) + 1;
-        kern.notieren("suche", { weg: "katalog", treffer: imKatalog.length, filter: Werkzeugkasten.filterText(p) });
-        return {
-          ergebnis: { weg: "Katalog, ohne die Seite zu bedienen", gesuchtMit: Werkzeugkasten.filterText(p), trefferGesamt: imKatalog.length, treffer: treffer(imKatalog),
-            hinweis: imKatalog.length ? "Waehle zwei bis drei fuer auswahl_vorlegen." : "Nichts gefunden - lockere eine Vorgabe (Strand, Preis, Ausstattung) und such noch einmal, sag der Person, was du lockerst." },
-          log: `Im Katalog gesucht (${Werkzeugkasten.filterText(p)}): ${imKatalog.length} Treffer`,
-        };
+        kern.notieren("suche", { weg: "katalog", treffer: imKatalog.length, filter: Werkzeugkasten.filterText(p), empfehlung: darfEmpfehlen });
+        return { ergebnis: antwort(imKatalog, "Katalog, ohne die Seite zu bedienen"), log: `Im Katalog gesucht: ${logUmfang()}` };
       }
 
       // Seite bedienen
       const seite = Werkzeuge.seite();
       if (stufe === 1) {
         if (!Werkzeuge.hatSuchmaske()) {
-          // Auf Detail- oder Buchungsseite: erst zur Startseite
           await Werkzeuge.zurStartseite();
           return { navigiert: true, stufe: 1 };
         }
-        kern.sperreAn();
-        const ziel = p.zielId && typeof ZIEL_NACH_ID !== "undefined" ? ZIEL_NACH_ID[p.zielId]?.name : "";
-        const flug = p.flug != null ? { mit: !!p.flug, ab: typeof Flug !== "undefined" ? Flug.code(p.flugAb) : "", klasse: p.flugKlasse || "economy" } : null;
-        if (flug && typeof Flug !== "undefined") Flug.set(flug);
-        const e = await Werkzeuge.suchen({ typ: p.typ || "hotel", ziel: ziel || "", von: zeitraum.von, bis: zeitraum.bis, erwachsene: p.erwachsene, kinder: p.kinder, flug });
-        if (!e.ok) { kern.sperreAus(); return { ergebnis: { fehler: e.text } }; }
-        kern.logZeile(`Suchmaske gesetzt: ${[ziel, p.typ === "apartment" ? "Ferienwohnung" : "Hotel", zeitraum.von && `${zeitraum.von} bis ${zeitraum.bis}`, p.erwachsene != null && `${p.erwachsene} Erw.`, p.kinder ? `${p.kinder} Kinder` : null, flug?.mit ? `mit Flug${flug.ab ? ` ab ${flug.ab}` : ""}` : null].filter(Boolean).join(", ")}`, "ergebnis");
-        if (e.daten?.navigiert) return { navigiert: true, stufe: 2 };
-        // Auf der Trefferliste bleibt die Suche auf der Seite: gleich weiter
-        await Zeiger.warte(400);
+        // Steht die Maske schon so, wie sie sein soll, wird sie nicht noch
+        // einmal ausgefuellt (sonst lief der Agent zweimal durch die Leiste)
+        const q = new URLSearchParams(location.search);
+        const zielName = p.zielId && typeof ZIEL_NACH_ID !== "undefined" ? ZIEL_NACH_ID[p.zielId]?.name : "";
+        const passt = seite === "results"
+          && (q.get("q") || "") === (zielName || "")
+          && (flex ? (q.get("flex") === "1" && q.get("monat") === flex.monat && +q.get("nights") === +flex.naechte)
+                   : (q.get("from") === zeitraum.von && q.get("to") === zeitraum.bis))
+          && +(q.get("adults") || 2) === +(p.erwachsene ?? 2) && +(q.get("children") || 0) === +(p.kinder ?? 0)
+          && (p.flug == null || (q.get("flight") === (p.flug ? "1" : "0")));
+        if (!passt) {
+          kern.sperreAn();
+          const flug = p.flug != null ? { mit: !!p.flug, ab: typeof Flug !== "undefined" ? Flug.code(p.flugAb) : "", klasse: p.flugKlasse || "economy" } : null;
+          if (flug && typeof Flug !== "undefined") Flug.set(flug);
+          const e = await Werkzeuge.suchen({ typ: p.typ || "hotel", ziel: zielName || "", von: zeitraum.von, bis: zeitraum.bis,
+            erwachsene: p.erwachsene, kinder: p.kinder, kinderAlter: p.kinderAlter || null, flug, flex });
+          if (!e.ok) { kern.sperreAus(); return { ergebnis: { fehler: e.text } }; }
+          kern.logZeile(`Suchmaske gesetzt: ${[zielName, p.typ === "apartment" ? "Ferienwohnung" : "Hotel",
+            flex ? `${flex.monat}, ${flex.naechte} Nächte, Datum offen` : (zeitraum.von && `${zeitraum.von} bis ${zeitraum.bis}`),
+            p.erwachsene != null && `${p.erwachsene} Erw.`, p.kinder ? `${p.kinder} Kinder` : null,
+            flug?.mit ? `mit Flug${flug.ab ? ` ab ${flug.ab}` : ""}` : null].filter(Boolean).join(", ")}`, "ergebnis");
+          if (e.daten?.navigiert) return { navigiert: true, stufe: 2 };
+          await Zeiger.warte(400);
+        }
         stufe = 2;
       }
       // Stufe 2: auf der Trefferliste
-      if (seite !== "results") return { ergebnis: { fehler: "Die Trefferliste ist nicht offen." } };
+      if (Werkzeuge.seite() !== "results") return { ergebnis: { fehler: "Die Trefferliste ist nicht offen." } };
       kern.sperreAn();
-      // Alte Filter einer frueheren Suche zuerst weg - sichtbar, wie ein
-      // Mensch auch erst "Filter zuruecksetzen" klickt
       const reset = document.getElementById("fReset");
       const aktiv = document.querySelectorAll("#filterPanel input:checked:not([value=''])").length;
       if (reset && aktiv > 0 && (kern.lauf.runde || 0) > 0) { await Zeiger.klicke(reset, { hinweis: "Filter zurücksetzen" }); await Zeiger.warte(250); }
@@ -405,24 +439,19 @@ const Werkzeugkasten = {
         sterne: p.mindestSterne ? [5, 4, 3].filter((s) => s >= p.mindestSterne) : undefined,
       });
       if (gesetzt.text) kern.logZeile(gesetzt.text, "ergebnis");
-      const nach = p.sortierung === "preis" ? "preis-asc" : "rating";
+      const nach = p.sortierung === "preis" ? "preis-asc" : (p.sortierung === "bewertung" ? "rating" : "preis-asc");
       await Werkzeuge.sortieren(nach);
-      const gelesen = await Werkzeuge.ergebnisseLesen(8);
+      const gelesen = darfEmpfehlen ? await Werkzeuge.ergebnisseLesen(8) : { daten: { treffer: [] } };
       kern.sperreAus();
       const seitenIds = (gelesen.daten?.treffer || []).map((t) => t.id);
-      // Reihenfolge nach Passung, aber nur Haeuser, die die Seite zeigt
-      const liste = seitenIds.length
-        ? sortiere(seitenIds.map((id) => getItemById(id)).filter(Boolean))
-        : [];
-      kern.lauf.letzteTreffer = liste.map((h) => h.id);
+      const liste = darfEmpfehlen
+        ? (seitenIds.length ? sortiere(seitenIds.map((id) => getItemById(id)).filter(Boolean)) : [])
+        : imKatalog;
+      kern.lauf.letzteTreffer = darfEmpfehlen ? liste.map((h) => h.id) : [];
       kern.lauf.runde = (kern.lauf.runde || 0) + 1;
       const gesamt = Werkzeuge.zustand().trefferGesamt ?? liste.length;
-      kern.notieren("suche", { weg: "seite", treffer: gesamt, filter: Werkzeugkasten.filterText(p) });
-      return {
-        ergebnis: { weg: "Seite bedient, Trefferliste steht", gesuchtMit: Werkzeugkasten.filterText(p), trefferGesamt: gesamt, treffer: treffer(liste),
-          hinweis: liste.length ? "Waehle zwei bis drei fuer auswahl_vorlegen." : "Nichts gefunden - lockere eine Vorgabe (Strand, Preis, Ausstattung) und such noch einmal, sag der Person, was du lockerst." },
-        log: `Trefferliste gelesen: ${gesamt} Treffer (${Werkzeugkasten.filterText(p)})`,
-      };
+      kern.notieren("suche", { weg: "seite", treffer: gesamt, filter: Werkzeugkasten.filterText(p), empfehlung: darfEmpfehlen });
+      return { ergebnis: antwort(liste, "Seite bedient, Trefferliste steht", gesamt), log: `Trefferliste: ${gesamt} Treffer (${Werkzeugkasten.filterText(p)})${darfEmpfehlen ? "" : " - noch keine Empfehlung, erst besprechen"}` };
     },
 
     async haus_details(a, kern) {
@@ -465,6 +494,11 @@ const Werkzeugkasten = {
     },
 
     async auswahl_vorlegen(a, kern) {
+      const offen = Werkzeugkasten.nochOffen(kern.lauf.profil);
+      if (offen.pflicht.length) {
+        kern.notieren("vorlage_zu_frueh", { offen: offen.pflicht });
+        return { ergebnis: { fehler: "noch nicht", nochZuBesprechen: offen.pflicht, hinweis: "Erst diese Punkte mit der Person klaeren (ein Wert oder ein ausdrueckliches 'egal'), dann vorlegen." } };
+      }
       const ids = (a.ids || []).filter((id) => typeof getItemById === "function" && getItemById(id)).slice(0, 3);
       if (!ids.length) return { ergebnis: { fehler: "Keine gueltigen Haus-ids." } };
       return kern.auswahlVorlegen(ids);
@@ -532,6 +566,11 @@ const Werkzeugkasten = {
       const idHier = new URLSearchParams(location.search).get("id");
       kern.lauf.gewaehlt = a.id;
       if (a.verpflegung) kern.lauf.profil.verpflegung = a.verpflegung;
+      if (a.anreise) kern.lauf.profil.anreise = a.anreise;
+      const flexibel = kern.lauf.profil.flexibel && !(kern.lauf.profil.von && kern.lauf.profil.bis);
+      if (flexibel && !kern.lauf.profil.anreise) {
+        return { ergebnis: { fehler: "Anreisetag fehlt", hinweis: "Die Suche war flexibel im Monat. Frag die Person, an welchem Tag sie anreisen will (im Prototyp ist jeder Tag frei, der Preis im Monat gleich), und ruf dann buchung_vorbereiten mit anreise." } };
+      }
       if (stufe === 1) {
         kern.notieren("zur_buchung", { id: a.id });
         if (seite === "checkout" && idHier === a.id) return this.werkzeuge.buchung_vorbereiten.call(this, a, kern, 3);
@@ -544,7 +583,7 @@ const Werkzeugkasten = {
       if (stufe === 2) {
         if (seite !== "stay") return { ergebnis: { fehler: "Die Hausseite ist nicht offen." } };
         kern.sperreAn();
-        const e = await Werkzeuge.zurBuchung(a.id, kern.lauf.profil.verpflegung || null);
+        const e = await Werkzeuge.zurBuchung(a.id, kern.lauf.profil.verpflegung || null, kern.lauf.profil.anreise || null);
         if (!e.ok) { kern.sperreAus(); return { ergebnis: { fehler: e.text } }; }
         return { navigiert: true, stufe: 3 };
       }
@@ -604,12 +643,68 @@ const Werkzeugkasten = {
   },
 
   /* ==================================================================
+     Was vor einer Empfehlung besprochen sein muss
+     ------------------------------------------------------------------
+     Pflicht: Preis, Bewertung, Strandnaehe - jeweils ein Wert oder ein
+     ausdrueckliches "egal". Soll: Verpflegung, Ausstattung, Kategorie.
+     Die Vorlage bleibt gesperrt, solange Pflichtpunkte fehlen; das Modell
+     entscheidet, wie und wann es sie anspricht.
+     ================================================================== */
+  nochOffen(p) {
+    const pflicht = [];
+    if (!(p.maxPreis || p.budgetGesamt || p.preisEgal)) pflicht.push("Preis oder Budget");
+    if (!(p.mindestbewertung || p.mindestSterne || p.bewertungEgal || (p.kriterien || []).some((k) => k.id === "bewertung"))) pflicht.push("Bewertung oder Sterne");
+    if (!(p.maxStrand != null || p.strandEgal || (p.kriterien || []).some((k) => k.id === "strandnah"))) pflicht.push("Naehe zum Strand");
+    const soll = [];
+    if (!(p.verpflegung || p.verpflegungEgal)) soll.push("Verpflegung");
+    if (!((p.ausstattung || []).length || (p.kriterien || []).some((k) => ["pool", "kinderclub", "familie", "wellness", "ruhe"].includes(k.id)) || p.ausstattungEgal)) soll.push("Ausstattung (Pool, Kinderclub, Wellness, Ruhe)");
+    return { pflicht, soll };
+  },
+
+  // Der Umfang des Angebots fuer die aktuellen Vorgaben: Zahlen statt
+  // Haeuser, solange noch nicht alles besprochen ist
+  umfang(liste, p) {
+    const monat = p.monat || null;
+    const preise = liste.map((h) => this.preis(h, monat));
+    const spanne = (xs) => (xs.length ? { von: Math.min(...xs), bis: Math.max(...xs) } : null);
+    const regionen = {};
+    for (const h of liste) regionen[h.ziel] = (regionen[h.ziel] || 0) + 1;
+    const sterne = {};
+    for (const h of liste) {
+      const s = h.stars ?? 0;
+      (sterne[s] ||= []).push(this.preis(h, monat));
+    }
+    return {
+      haeuser: liste.length,
+      jeRegion: Object.entries(regionen).sort((a, b) => b[1] - a[1]).map(([id, n]) => ({ region: (typeof ZIEL_NACH_ID !== "undefined" && ZIEL_NACH_ID[id]?.name) || id, id, haeuser: n })),
+      preisProNacht: spanne(preise),
+      jeSterne: Object.entries(sterne).sort((a, b) => a[0] - b[0]).map(([s, xs]) => ({ sterne: +s, haeuser: xs.length, preisProNacht: spanne(xs) })),
+      direktAmStrandBis200m: liste.filter((h) => h.distanceToBeach != null && h.distanceToBeach <= 0.2).length,
+      strandBis1km: liste.filter((h) => h.distanceToBeach != null && h.distanceToBeach <= 1).length,
+      gaestenoteAb4_5: liste.filter((h) => (h.rating || 0) >= 4.5).length,
+      mitPool: liste.filter((h) => h.amenities?.includes("pool")).length,
+      mitKinderclub: liste.filter((h) => h.amenities?.includes("kidsClub")).length,
+      mitWellness: liste.filter((h) => h.amenities?.includes("spa")).length,
+      verpflegung: [...new Set(liste.flatMap((h) => (h.boards || []).map((b) => (typeof BOARD_LABELS !== "undefined" && BOARD_LABELS[b.key]) || b.key)))],
+    };
+  },
+
+  /* ==================================================================
      Stand -> Suche
      ================================================================== */
   zeitraum(p) {
     if (p.von && p.bis) return { von: p.von, bis: p.bis };
     if (typeof Politik !== "undefined") return Politik.zeitraum(p.monat, p.naechte || 7);
     return { von: "", bis: "" };
+  },
+
+  // Flexibel im Monat: Monat als YYYY-MM (naechstes Vorkommen) und Dauer
+  flexWahl(p) {
+    if (!p.monat) return null;
+    const heute = new Date();
+    let jahr = heute.getFullYear();
+    if (p.monat < heute.getMonth() + 1) jahr += 1;
+    return { monat: `${jahr}-${String(p.monat).padStart(2, "0")}`, naechte: p.naechte || 7, jahr };
   },
 
   filterAusStand(p) {

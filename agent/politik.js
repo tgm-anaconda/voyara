@@ -1428,9 +1428,14 @@ const Politik = {
     }
     const personen = [];
     if (profil.erwachsene) personen.push(`${profil.erwachsene} Erw.`);
-    if (profil.kinder) personen.push(`${profil.kinder} Kinder`);
+    if (profil.kinder) personen.push(`${profil.kinder} ${profil.kinder === 1 ? "Kind" : "Kinder"}${profil.kinderAlter?.length ? ` (${profil.kinderAlter.join(", ")} J.)` : ""}`);
+    else if (profil.kinder === 0 && profil.erwachsene) personen.push("keine Kinder");
+    if (!personen.length && profil.personen) personen.push(`${profil.personen} Personen`);
     if (personen.length) raus.push({ feld: "Wer", wert: personen.join(" + ") });
     if (profil.zimmer > 1) raus.push({ feld: "Zimmer", wert: String(profil.zimmer) });
+    if (profil.von && profil.bis) raus.push({ feld: "Daten", wert: `${profil.von.slice(8)}.${profil.von.slice(5, 7)}. bis ${profil.bis.slice(8)}.${profil.bis.slice(5, 7)}.` });
+    else if (profil.anreise) raus.push({ feld: "Anreise", wert: `${profil.anreise.slice(8)}.${profil.anreise.slice(5, 7)}.` });
+    else if (profil.flexibel) raus.push({ feld: "Daten", wert: "flexibel" });
     if (profil.naechte) raus.push({ feld: "Dauer", wert: `${profil.naechte} Nächte` });
     if (profil.maxStrand != null) raus.push({ feld: "Strand", wert: profil.maxStrand < 1 ? `bis ${Math.round(profil.maxStrand * 1000)} m` : `bis ${profil.maxStrand} km` });
     if (profil.mindestSterne) raus.push({ feld: "Sterne", wert: `ab ${profil.mindestSterne}` });
@@ -1439,6 +1444,9 @@ const Politik = {
     if (profil.budgetGesamt) raus.push({ feld: "Budget", wert: `${profil.budgetGesamt} € gesamt` });
     else if (profil.maxPreis) raus.push({ feld: "Bis", wert: `${profil.maxPreis} €/Nacht` });
     else if (profil.budget === "niedrig") raus.push({ feld: "Preis", wert: "günstig" });
+    else if (profil.preisEgal) raus.push({ feld: "Preis", wert: "offen" });
+    if (profil.bewertungEgal && !profil.mindestbewertung && !profil.mindestSterne) raus.push({ feld: "Bewertung", wert: "egal" });
+    if (profil.strandEgal && profil.maxStrand == null) raus.push({ feld: "Strand", wert: "egal" });
     for (const k of profil.kriterien || []) {
       const l = this.kriterium(k.id)?.label;
       if (l) raus.push({ feld: "Wunsch", wert: l });

@@ -481,7 +481,7 @@ const Kern = {
       if (name) teile.push(`Monat ${name}`);
     }
     if (p.von && p.bis) teile.push(`${p.von} bis ${p.bis}`);
-    else if (p.flexibel) teile.push("Daten flexibel");
+    else if (p.flexibel) teile.push(`Daten flexibel im Monat${p.anreise ? `, Anreise ${p.anreise}` : " (Anreisetag noch offen)"}`);
     if (p.naechte) teile.push(`${p.naechte} Nächte`);
     if (p.personen != null && p.erwachsene == null) teile.push(`${p.personen} Personen (Aufteilung Erwachsene/Kinder noch offen)`);
     if (p.erwachsene != null) teile.push(`${p.erwachsene} Erwachsene`);
@@ -493,6 +493,8 @@ const Kern = {
     if (p.maxStrand != null) teile.push(`Strand bis ${Math.round(p.maxStrand * 1000)} m`);
     if (p.mindestbewertung) teile.push(`Note ab ${p.mindestbewertung}`);
     if (p.mindestSterne) teile.push(`ab ${p.mindestSterne} Sterne`);
+    const egal = [p.preisEgal && "Preis", p.bewertungEgal && "Bewertung", p.strandEgal && "Strand", p.verpflegungEgal && "Verpflegung", p.ausstattungEgal && "Ausstattung"].filter(Boolean);
+    if (egal.length) teile.push(`egal: ${egal.join(", ")}`);
     if (p.kriterien?.length) teile.push(`Wünsche: ${p.kriterien.map((k) => k.id).join(", ")}`);
     if (p.verpflegung) teile.push(`Verpflegung ${p.verpflegung}`);
     if (p.flug != null) teile.push(p.flug ? `mit Flug${p.flugAb ? ` ab ${p.flugAb}` : ""}${p.flugKlasse ? `, ${p.flugKlasse}` : ""}` : "nur Unterkunft");
@@ -515,6 +517,9 @@ const Kern = {
     if (this.lauf.letzteVorlage?.length) zeilen.push(`Zuletzt vorgelegt: ${this.lauf.letzteVorlage.map((id, i) => `${i + 1}. ${getItemById?.(id)?.name || id} (${id})`).join(", ")}.`);
     else if (this.lauf.letzteTreffer?.length) zeilen.push(`Letztes Suchergebnis (ids): ${this.lauf.letzteTreffer.join(", ")}.`);
     if (this.lauf.gewaehlt) zeilen.push(`Geoeffnetes Haus: ${getItemById?.(this.lauf.gewaehlt)?.name || this.lauf.gewaehlt} (${this.lauf.gewaehlt}).`);
+    const offen = Werkzeugkasten.nochOffen(this.lauf.profil || {});
+    if (offen.pflicht.length) zeilen.push(`Vor einer Empfehlung noch zu besprechen: ${offen.pflicht.join(", ")}.${offen.soll.length ? ` Auch ansprechen: ${offen.soll.join(", ")}.` : ""}`);
+    else if (offen.soll.length && !this.lauf.letzteVorlage?.length) zeilen.push(`Empfehlung moeglich. Falls noch nicht angesprochen: ${offen.soll.join(", ")}.`);
     if (this.lauf.phase === "angehalten") zeilen.push("Die Person hat waehrend deiner Arbeit selbst geklickt; du hast angehalten.");
     zeilen.push("Fuer deine naechste Antwort: hoechstens drei Saetze, genau eine Frage (nie zwei), und wenn du fragst, als letzte Zeile CHIPS: mit zwei bis vier Antworten.");
     return zeilen.join("\n");

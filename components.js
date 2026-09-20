@@ -67,12 +67,15 @@ const Belegung = {
     const erwachsene = Math.max(1, +(p.get("adults") || 2));
     const kinder = Math.max(0, +(p.get("children") || 0));
     const zimmer = Math.max(1, +(p.get("rooms") || 1));
-    return { erwachsene, kinder, zimmer, personen: erwachsene + kinder };
+    // Alter der Kinder, "10,6" - fehlt es, gilt wie in der Maske 6
+    const alter = (p.get("ages") || "").split(",").map((a) => parseInt(a, 10)).filter((a) => !Number.isNaN(a)).slice(0, kinder);
+    while (alter.length < kinder) alter.push(6);
+    return { erwachsene, kinder, zimmer, personen: erwachsene + kinder, alter };
   },
   text() {
     const b = this.get();
     const teile = [`${b.erwachsene} Erwachsene${b.erwachsene === 1 ? "r" : ""}`];
-    if (b.kinder) teile.push(`${b.kinder} Kind${b.kinder === 1 ? "" : "er"}`);
+    if (b.kinder) teile.push(`${b.kinder} Kind${b.kinder === 1 ? "" : "er"}${b.alter?.length ? ` (${b.alter.join(", ")} J.)` : ""}`);
     if (b.zimmer > 1) teile.push(`${b.zimmer} Zimmer`);
     return teile.join(", ");
   },
@@ -81,7 +84,7 @@ const Belegung = {
   anLink(href) {
     const b = this.get();
     const trenner = href.includes("?") ? "&" : "?";
-    return `${href}${trenner}adults=${b.erwachsene}&children=${b.kinder}&rooms=${b.zimmer}`;
+    return `${href}${trenner}adults=${b.erwachsene}&children=${b.kinder}&rooms=${b.zimmer}${b.kinder ? `&ages=${b.alter.join(",")}` : ""}`;
   },
   // Passt die Unterkunft zur Reisegruppe?
   passt(item) {
@@ -113,6 +116,42 @@ const Reisedaten = {
     const p = new URLSearchParams(window.location.search);
     return { von: p.get("from") || "", bis: p.get("to") || "" };
   },
+  /* Flexibel im Monat: statt Anreise und Abreise stehen Monat und Dauer
+     in der Adresse (flex=1&monat=2027-10&nights=14). Die Trefferliste
+     rechnet dann mit dem Monat; ein Datum braucht es erst beim Buchen. */
+  flex() {
+    const p = new URLSearchParams(window.location.search);
+    if (p.get("flex") !== "1") return null;
+    const m = (p.get("monat") || "").match(/^(\d{4})-(\d{1,2})$/);
+    if (!m) return null;
+    const naechte = Math.max(1, +(p.get("nights") || 7));
+    return { jahr: +m[1], monat: +m[2], naechte, schluessel: `${m[1]}-${String(+m[2]).padStart(2, "0")}` };
+  },
+  MONATSNAMEN: ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"],
+  // Die naechsten zwoelf Monate als Auswahl fuer die Maske
+  monateZurWahl() {
+    const heute = new Date();
+    return Array.from({ length: 12 }, (_, i) => {
+      const d = new Date(heute.getFullYear(), heute.getMonth() + 1 + i, 1);
+      return { schluessel: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`, label: `${this.MONATSNAMEN[d.getMonth()]} ${d.getFullYear()}` };
+    });
+  },
+  // Kurztext fuer Ueberschriften: "12. bis 19. Oktober" oder "Oktober, 14 Naechte"
+  text() {
+    const f = this.flex();
+    if (f) return `${this.MONATSNAMEN[f.monat - 1]} ${f.jahr}, ${f.naechte} Nächte, Datum offen`;
+    const { von, bis } = this.roh();
+    if (!von || !bis) return "";
+    const a = new Date(von), b = new Date(bis);
+    return `${a.getDate()}. ${a.getMonth() !== b.getMonth() ? `${this.MONATSNAMEN[a.getMonth()]} ` : ""}bis ${b.getDate()}. ${this.MONATSNAMEN[b.getMonth()]} ${b.getFullYear()}`;
+  },
+  // Reisemonat 1-12, aus festen Daten oder dem flexiblen Monat
+  monat() {
+    const f = this.flex();
+    if (f) return f.monat;
+    const { von } = this.get();
+    return von ? new Date(von).getMonth() + 1 : new Date().getMonth() + 1;
+  },
   // Vorbelegung der Suchmaske: in 30 Tagen, eine Woche lang. Steht hier und
   // nicht in searchbox.js, damit Anzeige und Saisonrechnung denselben Zeitraum
   // benutzen - sonst zeigt das Feld September und der Preis gilt fuer August.
@@ -130,15 +169,19 @@ const Reisedaten = {
   },
   // Anzahl Naechte bzw. Miettage; ohne Datum der uebergebene Standardwert
   naechte(standard = 7) {
+    const f = this.flex();
+    if (f) return f.naechte;
     const { von, bis } = this.get();
     if (!von || !bis) return standard;
     const tage = Math.round((new Date(bis) - new Date(von)) / 86400000);
     return tage > 0 ? tage : standard;
   },
   anLink(href) {
+    const trenner = href.includes("?") ? "&" : "?";
+    const f = this.flex();
+    if (f) return `${href}${trenner}flex=1&monat=${f.schluessel}&nights=${f.naechte}`;
     const { von, bis } = this.roh();
     if (!von || !bis) return href;
-    const trenner = href.includes("?") ? "&" : "?";
     return `${href}${trenner}from=${von}&to=${bis}`;
   },
 };

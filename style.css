@@ -905,6 +905,11 @@ body.agent-collapsed .agent-head .icon-btn { margin-left: 0; transform: rotate(4
 }
 .flight-addon input { accent-color: var(--brand-700); width: 16px; height: 16px; cursor: pointer; }
 
+/* Zeitraum-Modus ueber der Suchmaske: feste Daten oder flexibel im Monat */
+.date-mode { display: flex; gap: 16px; margin: 4px 0 10px; font-size: .85rem; color: var(--ink-700); }
+.date-mode label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.date-mode input { accent-color: var(--brand-700); }
+
 /* Leiste unter der Suchmaske: Abflughafen und Klasse, nur wenn Flug dazu */
 .flight-bar {
   display: grid; grid-template-columns: 1.4fr 1fr 2fr; gap: 10px; align-items: end;

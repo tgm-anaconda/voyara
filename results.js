@@ -103,8 +103,7 @@ function readUrl() {
 // Reisemonat aus dem Anreisedatum. Bestimmt, ob ein Ziel Haupt- oder
 // Nebensaison hat - und damit auch den Preis.
 function reisemonat() {
-  const von = Reisedaten.get().von;
-  return von ? new Date(von).getMonth() + 1 : new Date().getMonth() + 1;
+  return Reisedaten.monat();
 }
 
 // Preis einer Unterkunft im gewaehlten Zeitraum
@@ -347,7 +346,7 @@ function stayResultCard(item) {
         ${preis < item.pricePerNight ? `<div class="price-old">${formatPrice(item.pricePerNight)}</div>`
           : item.oldPrice ? `<div class="price-old">${formatPrice(item.oldPrice)}</div>` : ""}
         <div class="price-main">${formatPrice(preis)}</div>
-        <div class="price-note">pro Nacht inkl. Steuern</div>
+        <div class="price-note">pro Nacht${Reisedaten.flex() ? ` im ${Reisedaten.MONATSNAMEN[Reisedaten.flex().monat - 1]}` : ""} inkl. Steuern</div>
         ${paketZeile(item, preis)}
         <a class="btn btn-primary btn-sm" style="margin-top:8px" href="${hausLink(item.id)}">Details ansehen</a>
       </div>
@@ -463,7 +462,7 @@ function renderResults() {
   document.getElementById("resultsTitle").textContent =
     TYPE_LABELS[state.type] + (gewaehlt ? ` nach ${gewaehlt.name}` : "");
   const belegungText = (state.type === "hotel" || state.type === "apartment")
-    ? ` · ${Belegung.text()}` : "";
+    ? ` · ${Reisedaten.text() ? `${Reisedaten.text()} · ` : ""}${Belegung.text()}` : "";
   document.getElementById("resultsCount").textContent =
     `${filtered.length} von ${pool().length} Ergebnissen${state.q ? ` für „${state.q}“` : ""}${belegungText}`;
 
