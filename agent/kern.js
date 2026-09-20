@@ -685,6 +685,16 @@ const Kern = {
             this.notieren("vorlage_wiederholt");
           }
         }
+        // "Oktober ist notiert." - das Modell bestaetigt gern, was die Person
+        // ohnehin in der Leiste sieht. Der Bestaetigungssatz faellt weg,
+        // wenn danach noch etwas kommt.
+        if (text) {
+          const saetze = text.split(/(?<=[.!?])\s+/);
+          if (saetze.length > 1 && /(notiert|gemerkt|vermerkt|verstanden|^danke|^super|^alles klar|^prima|^perfekt)/i.test(saetze[0]) && !/\?/.test(saetze[0])) {
+            text = saetze.slice(1).join(" ");
+            nachricht.content = text;
+          }
+        }
         if (text && !gleich(text, zuletzt)) this.sagen(text);
         if (!nachricht.tool_calls) {
           // Welches Thema des Fahrplans der Agent damit gefragt hat
