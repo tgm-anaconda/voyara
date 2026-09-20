@@ -485,7 +485,7 @@ const Kern = {
     if (p.naechte) teile.push(`${p.naechte} Nächte`);
     if (p.personen != null && p.erwachsene == null) teile.push(`${p.personen} Personen (Aufteilung Erwachsene/Kinder noch offen)`);
     if (p.erwachsene != null) teile.push(`${p.erwachsene} Erwachsene`);
-    if (p.kinder != null) teile.push(p.kinder ? `${p.kinder} Kinder${p.kinderAlter?.length ? ` (${p.kinderAlter.join(", ")} Jahre)` : ""}` : "keine Kinder");
+    if (p.kinder != null) teile.push(p.kinder ? `${p.kinder} ${p.kinder === 1 ? "Kind" : "Kinder"}${p.kinderAlter?.length ? ` (${p.kinderAlter.join(", ")} Jahre)` : ""}` : "keine Kinder");
     if (p.artGenannt) teile.push(p.typ === "apartment" ? "Ferienwohnung" : "Hotel");
     if (p.zimmer) teile.push(`${p.zimmer} Zimmer`);
     if (p.budgetGesamt) teile.push(`Budget ${p.budgetGesamt} € gesamt (${p.maxPreis ? `bis ${p.maxPreis} €/Nacht` : ""})`);
@@ -518,7 +518,7 @@ const Kern = {
     else if (this.lauf.letzteTreffer?.length) zeilen.push(`Letztes Suchergebnis (ids): ${this.lauf.letzteTreffer.join(", ")}.`);
     if (this.lauf.gewaehlt) zeilen.push(`Geoeffnetes Haus: ${getItemById?.(this.lauf.gewaehlt)?.name || this.lauf.gewaehlt} (${this.lauf.gewaehlt}).`);
     const offen = Werkzeugkasten.nochOffen(this.lauf.profil || {});
-    if (offen.pflicht.length) zeilen.push(`Vor einer Empfehlung noch zu besprechen: ${offen.pflicht.join(", ")}.${offen.soll.length ? ` Auch ansprechen: ${offen.soll.join(", ")}.` : ""}`);
+    if (offen.pflicht.length) zeilen.push(`Vor einer Empfehlung noch zu besprechen: ${offen.pflicht.join(", ")}.${offen.soll.length ? ` Auch ansprechen: ${offen.soll.join(", ")}.` : ""} Frag mit Zahlen aus dem Umfang (suchen liefert ihn, auch ohne Region und vor der Empfehlung) - nicht abstrakt.`);
     else if (offen.soll.length && !this.lauf.letzteVorlage?.length) zeilen.push(`Empfehlung moeglich. Falls noch nicht angesprochen: ${offen.soll.join(", ")}.`);
     if (this.lauf.phase === "angehalten") zeilen.push("Die Person hat waehrend deiner Arbeit selbst geklickt; du hast angehalten.");
     zeilen.push("Fuer deine naechste Antwort: hoechstens drei Saetze, genau eine Frage (nie zwei), und wenn du fragst, als letzte Zeile CHIPS: mit zwei bis vier Antworten.");
@@ -604,14 +604,18 @@ const Kern = {
           nachricht.tool_calls = antwort.tool_calls.map((c) => ({ id: c.id, type: "function", function: { name: c.function.name, arguments: c.function.arguments || "{}" } }));
         }
         let text = antwort.text || "";
-        if (text) {
-          // Zahlen, die nirgends belegt sind: einmal neu schreiben lassen
+        if (text && !nachricht.tool_calls) {
+          // Zwei Leitplanken, je einmal neu schreiben lassen: Zahlen, die
+          // nirgends belegt sind, und mehr als eine Frage in einer Nachricht
           const fremd = Modell.fremdeZahlen(text, this.belege());
-          if (fremd.length && !nachricht.tool_calls) {
-            this.notieren("zahl_ungedeckt", { zahlen: fremd });
+          const fragen = this.fragenZaehlen(text);
+          let hinweis = null;
+          if (fremd.length) { this.notieren("zahl_ungedeckt", { zahlen: fremd }); hinweis = `Deine letzte Antwort enthielt die Zahl ${fremd.join(" und ")}, die in keinem Werkzeugergebnis und keiner Nachricht der Person vorkommt. Schreib die Antwort neu: nur belegte Zahlen, oder lass die Zahl weg. Wenn du die Zahl brauchst, ruf das passende Werkzeug.`; }
+          else if (fragen > 1) { this.notieren("zwei_fragen", { fragen }); hinweis = `Deine letzte Antwort enthielt ${fragen} Fragen. Schreib sie neu mit genau einer Frage - die wichtigste zuerst, die andere kommt spaeter. Chips nur zu dieser einen Frage.`; }
+          if (hinweis) {
             const zweiter = await Modell.agent(
               [...this.gespraechFuerModell(), { role: "assistant", content: text },
-                { role: "system", content: `Deine letzte Antwort enthielt die Zahl ${fremd.join(" und ")}, die in keinem Werkzeugergebnis und keiner Nachricht der Person vorkommt. Schreib die Antwort neu: nur belegte Zahlen, oder lass die Zahl weg. Wenn du die Zahl brauchst, ruf das passende Werkzeug.` }],
+                { role: "system", content: hinweis }],
               Werkzeugkasten.definitionen(), this.standFuerModell());
             if (zweiter) {
               this.kostenMerken(zweiter.verbrauch);
@@ -646,6 +650,12 @@ const Kern = {
     } finally {
       this.zugBeenden();
     }
+  },
+
+  // Saetze, die mit Fragezeichen enden
+  fragenZaehlen(text) {
+    // "Oder ist es egal?" gehoert zur Frage davor
+    return String(text).split(/(?<=[.!?])\s+/).filter((s) => /\?\s*$/.test(s) && !/^(oder|bzw\.?|beziehungsweise|also|und wenn)\b/i.test(s.trim())).length;
   },
 
   // Wenn das Modell keine Antwortvorschlaege mitgibt: passende aus der Lage
