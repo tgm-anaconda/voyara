@@ -135,22 +135,26 @@ const Werkzeuge = {
       }
     }
 
-    // Nach dem Reiterwechsel ist die alte Formularreferenz veraltet
-    const form = this.finde("#sbForm");
-    if (!form) return this.fehlt("Die Suchmaske");
-
-    const feldZiel = this.finde("#sbDest");
-    if (feldZiel && ziel) {
-      await Zeiger.tippe(feldZiel, ziel, { hinweis: "Reiseziel" });
-      getan.push(ziel);
-    }
-
-    // Zeitraum: flexibel im Monat (Schalter, Monat, Dauer) oder feste Daten
+    // Der Schalter "feste Daten / flexibel" baut die Maske ebenfalls neu
+    // auf - und loeschte damit das Reiseziel, wenn es schon eingetippt war.
+    // Deshalb kommt er vor dem Ziel.
     const modus = this.finde(`input[name="sbDateMode"][value="${flex ? "flex" : "fest"}"]`);
     if (modus && !modus.checked) {
       await Zeiger.klicke(modus, { hinweis: flex ? "flexibel im Monat" : "feste Daten" });
       await Zeiger.warte(250);
     }
+
+    // Nach Reiter- oder Moduswechsel ist die alte Formularreferenz veraltet
+    const form = this.finde("#sbForm");
+    if (!form) return this.fehlt("Die Suchmaske");
+
+    const feldZiel = this.finde("#sbDest");
+    if (feldZiel && ziel && feldZiel.value !== ziel) {
+      await Zeiger.tippe(feldZiel, ziel, { hinweis: "Reiseziel" });
+      getan.push(ziel);
+    }
+
+    // Zeitraum: flexibel im Monat (Monat, Dauer) oder feste Daten
     if (flex) {
       const feldMonat = this.finde("#sbMonat");
       if (feldMonat && flex.monat && feldMonat.value !== flex.monat) {
