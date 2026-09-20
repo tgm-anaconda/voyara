@@ -313,6 +313,11 @@ const Werkzeugkasten = {
         if (p.kinder != null && p.erwachsene == null) { p.erwachsene = Math.max(1, p.personen - p.kinder); geaendert.push("erwachsene"); }
         else if (p.erwachsene != null && p.kinder == null) { p.kinder = Math.max(0, p.personen - p.erwachsene); geaendert.push("kinder"); }
       }
+      // "Meine Frau und ich", "zu zweit", "allein": ohne ein Wort zu Kindern
+      // sind keine dabei - das fragt man nicht nach
+      if (p.erwachsene != null && p.kinder == null && a.erwachsene != null
+        && gesagt(/meine frau|mein mann|meine freundin|mein freund|meine partnerin|mein partner|wir beide|zu zweit|allein|alleine|nur ich|paar\b/i)
+        && !gesagt(/kind|sohn|tochter|baby|kids|jährig|jaehrig|familie|enkel/i)) { p.kinder = 0; geaendert.push("kinder"); }
       if (p.erwachsene != null && p.kinder != null) p.personen = p.erwachsene + p.kinder;
       if (p.kinder === 0) p.kinderAlter = [];
       if (p.kinder > 0 && (p.kinderAlter || []).length > p.kinder) p.kinderAlter = p.kinderAlter.slice(0, p.kinder);
@@ -732,6 +737,12 @@ const Werkzeugkasten = {
             hinweis: "Der gewuenschte Tag ist kein Flugtag. Sag der Person, wann die Verbindung fliegt, nenn zwei, drei moegliche Anreisetage und frag, welcher passt. Erst mit ihrem Tag buchung_vorbereiten mit anreise rufen." } };
         }
         if (!flexibel && !pf.anreise) pf.anreise = pf.von;
+        // Ein anderer Flugtag als die genannte Anreise: die Daten ruecken mit
+        if (!flexibel && pf.anreise && pf.anreise !== pf.von) {
+          pf.von = pf.anreise;
+          pf.bis = new Date(new Date(pf.anreise).getTime() + pf.naechte * 86400000).toISOString().slice(0, 10);
+          kern.standAnzeigen();
+        }
       }
       if (flexibel) {
         // Der Anreisetag muss von der Person kommen - das Modell hat ihn
