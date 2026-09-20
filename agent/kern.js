@@ -627,7 +627,7 @@ const Kern = {
         // Ueberblick, die erste Suche, die Suche nach der Beratung - je
         // einmal pro Zug, damit ein Fehlschlag keine Schleife wird.
         const letzte = this.lauf.gespraech[this.lauf.gespraech.length - 1];
-        let pflicht = i === 0 && letzte?.role === "user";
+        let pflicht = i === 0 && letzte?.role === "user" ? "stand_merken" : false;
         if (!pflicht) {
           const z = Werkzeugkasten.zwang(this.lauf.profil || {}, this.lauf);
           if (z && !erzwungen.has(z)) { erzwungen.add(z); pflicht = z; this.notieren("zwang", { werkzeug: z }); }

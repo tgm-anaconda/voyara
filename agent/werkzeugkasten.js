@@ -62,7 +62,8 @@ const Werkzeugkasten = {
           strandEgal: { type: "boolean", description: "true, wenn die Person sagt, dass die Naehe zum Strand egal ist" },
           verpflegungEgal: { type: "boolean", description: "true, wenn Verpflegung egal ist" },
           ausstattungEgal: { type: "boolean", description: "true, wenn die Person auf die Frage nach ihren Wuenschen sagt, dass sie nichts Besonderes braucht" },
-          wuensche: { type: "array", items: { type: "string", enum: ["pool", "strandnah", "kinderclub", "familie", "wellness", "ruhe", "essen", "sauberkeit", "lage", "service", "preis", "bewertung"] }, description: "Was der Person wichtig ist" },
+          wuensche: { type: "array", items: { type: "string", enum: ["pool", "strand", "strandnah", "kinderclub", "familie", "wellness", "ruhe", "essen", "sauberkeit", "lage", "service", "preis", "bewertung"] }, description: "Was der Person wichtig ist (alle bisher genannten, nicht nur die neuen)" },
+          ausstattung: { type: "array", items: { type: "string", enum: ["pool", "spa", "kidsClub", "familyFriendly", "beachfront", "wifi", "parking", "restaurant", "gym", "seaView"] }, description: "Nur, wenn die Person etwas als Bedingung nennt ('muss einen Pool haben', 'direkt am Strand' = beachfront). Ein Wunsch gehoert in wuensche, nicht hierher." },
           verpflegung: { type: "string", enum: ["ohne", "fruehstueck", "halb", "voll", "ai"], description: "Gewuenschte Verpflegung" },
           flug: { type: "boolean", description: "true, wenn ein Flug dazu gewuenscht ist; false, wenn nur die Unterkunft" },
           flugAb: text("Abflughafen, wenn genannt (Hamburg, Stuttgart, Düsseldorf, Hannover, München, Köln, Frankfurt, Berlin - was die Seite anbietet)"),
@@ -81,12 +82,7 @@ const Werkzeugkasten = {
         "Sucht nach den gemerkten Angaben (Ziel, Zeit, Reisende, Art) und den genannten Filtern. Bei Freigabe ab 'suchen' bedient es sichtbar die Seite, sonst den Katalog. Du darfst es jederzeit rufen, auch frueh und ohne Ziel: Solange die Beratung nicht abgeschlossen ist, liefert es die Lage (wie viele Haeuser, wo, Preisspanne, was es gibt) statt einzelner Haeuser. Hat die Person 'top3' gewaehlt, legt es die drei passendsten Haeuser gleich im Chat vor.",
         {
           ziel: text("Region-id (z.B. mallorca), falls sie feststeht und noch nicht gemerkt ist"),
-          ausstattung: { type: "array", items: { type: "string", enum: ["pool", "spa", "kidsClub", "familyFriendly", "beachfront", "wifi", "parking", "restaurant", "gym", "seaView"] }, description: "Ausstattung, die das Haus haben muss. beachfront nur bei 'direkt am Strand'; 'nah am Strand' ist maxStrandMeter 500" },
-          maxPreis: zahl("Hoechstpreis pro Nacht in Euro"),
-          maxStrandMeter: zahl("Hoechstens so viele Meter zum Strand (nah am Strand = 500, direkt = 200)"),
-          mindestbewertung: { type: "number", description: "Mindest-Gaestenote" },
-          mindestSterne: zahl("Mindestens so viele Sterne"),
-          sortierung: { type: "string", enum: ["passung", "preis", "bewertung"], description: "Reihenfolge der Treffer; passung = nach den Wuenschen" },
+          sortierung: { type: "string", enum: ["passung", "preis", "bewertung"], description: "Reihenfolge der Treffer; passung = nach den Wuenschen (Standard)" },
         }),
       f("haus_details",
         "Alles zu einem Haus aus dem Katalog: Preise je Verpflegung und Gesamtpreis fuer die gemerkte Reise, Zimmer, Entfernungen, Ausstattung, was in den Bewertungen gelobt und kritisiert wird. Fuer Nachfragen und Vergleiche.",
@@ -258,6 +254,17 @@ const Werkzeugkasten = {
           if (z) { setze("zielId", z.id); p.zielOffen = false; }
         }
       }
+      // "Offen" und "egal" nur, wenn die Person so etwas gesagt hat - auf
+      // "hi" hatte das Modell sonst Ziel offen und Ueberblick gewuenscht
+      // eingetragen, ohne dass jemand gefragt war
+      const OFFEN = /\b(egal|offen|flexibel|nicht so wichtig|unwichtig|nicht festgelegt|festgelegt|keine ahnung|beides|beide|hauptsache|überrasch|ueberrasch|du entscheidest|such du|schauen|sehen|zeig|gucken|kein(e|en)? (rahmen|grenze|limit|vorstellung|besonderen|besondere)|nichts besonderes|noch nicht|erst ?mal|mal sehen|spielt keine rolle|unentschieden|nicht sicher|vorschl|beraten|überblick|ueberblick|eckdaten|möglichkeiten|moeglichkeiten|angebot|was es gibt|was gibt)/i;
+      const offenGesagt = gesagt(OFFEN);
+      const verworfen = [];
+      for (const f of ["zielOffen", "artEgal", "preisEgal", "ausstattungEgal", "bewertungEgal", "strandEgal", "verpflegungEgal"]) {
+        if (a[f] === true && !offenGesagt) { delete a[f]; verworfen.push(f); }
+      }
+      if (a.einstieg && !offenGesagt) { verworfen.push("einstieg"); delete a.einstieg; }
+      if (verworfen.length) kern.notieren("egal_verworfen", { felder: verworfen });
       if (a.zielOffen !== undefined && !p.zielId) setze("zielOffen", !!a.zielOffen);
       if (a.einstieg) setze("einstieg", a.einstieg);
       setze("monat", a.monat);
@@ -301,13 +308,19 @@ const Werkzeugkasten = {
       setze("anreise", a.anreise);
       for (const f of ["preisEgal", "bewertungEgal", "strandEgal", "verpflegungEgal", "ausstattungEgal"]) if (a[f] !== undefined) setze(f, !!a[f]);
       if (Array.isArray(a.wuensche)) {
-        const ids = a.wuensche.filter((w) => typeof Politik !== "undefined" && Politik.kriterium(w));
+        const ALIAS = { strand: "strandnah", meer: "strandnah", beach: "strandnah", kids: "kinderclub", kinder: "familie", spa: "wellness", bewertungen: "bewertung", essen: "essen" };
+        const ids = [...new Set(a.wuensche.map((w) => ALIAS[String(w).toLowerCase()] || String(w).toLowerCase()))].filter((w) => typeof Politik !== "undefined" && Politik.kriterium(w));
         p.kriterien = ids.map((id) => ({ id, gewicht: 1 }));
         geaendert.push("wuensche");
         for (const id of ids) {
           const k = Politik.kriterium(id);
           if (k?.filter?.maxStrand && p.maxStrand == null) p.maxStrand = k.filter.maxStrand;
         }
+      }
+      if (Array.isArray(a.ausstattung)) {
+        const ERLAUBT = ["pool", "spa", "kidsClub", "familyFriendly", "beachfront", "wifi", "parking", "restaurant", "gym", "seaView"];
+        p.ausstattung = a.ausstattung.filter((x) => ERLAUBT.includes(x));
+        geaendert.push("ausstattung");
       }
       setze("verpflegung", a.verpflegung);
       if (a.flug !== undefined) setze("flug", !!a.flug);
@@ -381,12 +394,9 @@ const Werkzeugkasten = {
     async suchen(a, kern, stufe) {
       const p = kern.lauf.profil;
       // Filter aus dem Aufruf in den Stand uebernehmen
+      // Filter kommen nur aus dem Stand (stand_merken) - was die Person
+      // gesagt hat. Der Aufruf bringt hoechstens Ziel und Sortierung.
       if (a.ziel && typeof ZIEL_NACH_ID !== "undefined" && ZIEL_NACH_ID[String(a.ziel).toLowerCase()]) { p.zielId = String(a.ziel).toLowerCase(); p.zielOffen = false; }
-      if (a.maxPreis) p.maxPreis = a.maxPreis;
-      if (a.maxStrandMeter != null) p.maxStrand = Math.round(a.maxStrandMeter) / 1000;
-      if (a.mindestbewertung) p.mindestbewertung = a.mindestbewertung;
-      if (a.mindestSterne) p.mindestSterne = a.mindestSterne;
-      if (Array.isArray(a.ausstattung)) p.ausstattung = a.ausstattung;
       if (a.sortierung) p.sortierung = a.sortierung;
       if (!p.typ) p.typ = "hotel";
       kern.standAnzeigen();
@@ -863,7 +873,8 @@ const Werkzeugkasten = {
     let frage = naechstes ? this.THEMEN[naechstes]?.frage : null;
     let chips = naechstes ? this.THEMEN[naechstes]?.chips : null;
     if (naechstes === "reisende") {
-      if (p.erwachsene != null && p.kinder == null) { frage = "Ob Kinder mitreisen - und wenn ja, wie viele und wie alt."; chips = "Keine Kinder | Ein Kind | Zwei Kinder"; }
+      if (p.personen != null && p.erwachsene == null && p.kinder == null) { frage = `Wie viele der ${p.personen} Kinder sind, und wie alt - 'keine' ist eine Antwort. Erwachsene nicht fragen, das rechnet die Seite.`; chips = "Keine Kinder | Ein Kind | Zwei Kinder"; }
+      else if (p.erwachsene != null && p.kinder == null) { frage = "Ob Kinder mitreisen - und wenn ja, wie viele und wie alt."; chips = "Keine Kinder | Ein Kind | Zwei Kinder"; }
       else if (p.kinder != null && p.erwachsene == null) { frage = "Wie viele Erwachsene mitreisen."; chips = "Zwei Erwachsene | Ein Erwachsener"; }
     }
     return { fertig, naechstes, frage, chips, phase, suchbereit, eckdatenFertig, gesucht, schluessel, ueberblickOffen,
