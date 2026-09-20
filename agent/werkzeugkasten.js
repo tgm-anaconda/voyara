@@ -323,6 +323,11 @@ const Werkzeugkasten = {
       if (a.maxPreis || a.budgetGesamt) p.preisEgal = false;
       if (a.maxStrandMeter != null) setze("maxStrand", Math.round(a.maxStrandMeter) / 1000);
       setze("mindestbewertung", a.mindestbewertung); setze("mindestSterne", a.mindestSterne);
+      // Der Anreisetag nur, wenn die Person einen Tag genannt hat - das
+      // Modell setzte sonst schon beim "Zur Buchung" den 12. ein
+      if (a.anreise && !gesagt(/\b([1-9]|[12]\d|3[01])\.?\s*(oktober|november|dezember|januar|februar|märz|maerz|april|mai|juni|juli|august|september|\d{1,2}\.)|\b(am|ab dem|ab|vom)\s+([1-9]|[12]\d|3[01])\b|\d{4}-\d{2}-\d{2}/i)) {
+        kern.notieren("anreise_verworfen", { anreise: a.anreise }); delete a.anreise;
+      }
       setze("anreise", a.anreise);
       for (const f of ["preisEgal", "bewertungEgal", "strandEgal", "verpflegungEgal", "ausstattungEgal"]) if (a[f] !== undefined) setze(f, !!a[f]);
       if (Array.isArray(a.wuensche)) {
@@ -736,6 +741,7 @@ const Werkzeugkasten = {
           .some((n) => /\b([1-9]|[12]\d|3[01])\.?\s*(oktober|november|dezember|januar|februar|märz|maerz|april|mai|juni|juli|august|september|\d{1,2}\.)|\b(am|ab dem|ab|vom)\s+([1-9]|[12]\d|3[01])\b|\d{4}-\d{2}-\d{2}/i.test(String(n.content)));
         if (!kern.lauf.profil.anreise || !tagGenannt) {
           kern.lauf.profil.anreise = null;
+          kern.standAnzeigen();
           const tage = flug && monatSchluessel && pf.naechte ? Flug.anreiseTage(flug, monatSchluessel, pf.naechte) : null;
           return { ergebnis: { fehler: "Anreisetag fehlt",
             ...(tage ? { verbindung: `${flug.airline} ab ${flug.from} fliegt ${Flug.tageText(flug, true)}`, moeglicheAnreisetage: tage.slice(0, 8).map((d) => Flug.datumText(d)) } : {}),
