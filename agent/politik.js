@@ -627,7 +627,7 @@ const Politik = {
       const a = this.aufenthaltspreis(item, profil, k.preis);
       const personen = (profil.erwachsene || 0) + (profil.kinder || 0);
       const paket = profil.flug && item.type !== "apartment" && typeof Flug !== "undefined" ? Flug.paket(item, personen || 1, profil.flugKlasse || null) : null;
-      const womit = a.zimmer && a.zimmer.priceDelta ? ` im ${a.zimmer.name}` : "";
+      const womit = a.zimmer && a.zimmer.priceDelta ? ` (${a.zimmer.name})` : "";
       preisText += paket
         ? `, ${naechte} Nächte${womit} mit Flug ab ${paket.flug.from} ${this.euro(a.gesamt + paket.gesamt)}`
         : `, ${naechte} Nächte${womit} ${this.euro(a.gesamt)}`;
@@ -1507,8 +1507,10 @@ const Politik = {
       const l = this.kriterium(k.id)?.label;
       if (l) raus.push({ feld: "Wunsch", wert: l });
     }
+    const wunschAusstattung = new Set((profil.kriterien || []).map((k) => this.kriterium(k.id)?.filter?.ausstattung).filter(Boolean));
     for (const a of profil.ausstattung || []) {
       if (a === "beachfront" && profil.maxStrand != null && profil.maxStrand <= 0.2) continue;
+      if (wunschAusstattung.has(a)) continue;
       raus.push({ feld: "Muss", wert: (typeof AMENITY_LABELS !== "undefined" && AMENITY_LABELS[a]) || a });
     }
     if (profil.flug != null) raus.push({ feld: "Flug", wert: profil.flug ? `ja${profil.flugAb ? `, ab ${profil.flugAb}` : ""}` : "nein" });
