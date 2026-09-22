@@ -534,19 +534,27 @@ const Werkzeugkasten = {
               : "Nenn, was sich an der Lage geaendert hat (Zahlen), dann das naechste Thema.") + (p.naechte ? "" : " Die Dauer ist noch offen; gerechnet ist eine Woche - sag das in einem Halbsatz."),
             ...Werkzeugkasten.fahrplanFuerModell(Werkzeugkasten.fahrplan(p, kern.lauf), p) };
         }
-        // Beratung abgeschlossen: die drei passendsten Haeuser gleich vorlegen
-        kern.lauf.letzteTreffer = liste.map((h) => h.id);
+        /* Beratung abgeschlossen: die drei passendsten Haeuser vorlegen.
+           Ausgewaehlt wird aus allen Haeusern, die die Vorgaben erfuellen -
+           nicht nur aus den acht Karten, die oben auf der Seite stehen. Die
+           Seite sortiert nach Preis; der Wunsch der Person (gutes Essen)
+           steht dort nicht vorn, und so landeten Haeuser mit 57 Prozent in
+           der Vorlage, obwohl es 73 Prozent gab. */
+        const auswahl = darfEmpfehlen ? sortiere(imKatalog.slice()) : liste;
+        kern.lauf.letzteTreffer = auswahl.map((h) => h.id);
         kern.lauf.vorgehenFuer = fp.schluessel + p.vorgehen;
-        if (!liste.length) {
+        if (!auswahl.length) {
           return { ...basis, treffer: [], hinweis: "Nichts gefunden - lockere eine Vorgabe (Strand weiter, Preis hoeher, Ausstattung weglassen), sag der Person, was du lockerst, und such noch einmal." };
         }
         const vs = Werkzeugkasten.vorlageSchluessel(p);
         if (kern.lauf.vorlageFuer === vs && kern.lauf.letzteVorlage?.length) {
-          return { ...basis, treffer: treffer(liste), hinweis: "Diese Haeuser hast du mit denselben Vorgaben schon vorgelegt. Nichts wiederholen - geh auf die Frage der Person ein." };
+          return { ...basis, treffer: treffer(auswahl), hinweis: "Diese Haeuser hast du mit denselben Vorgaben schon vorgelegt. Nichts wiederholen - geh auf die Frage der Person ein." };
         }
         kern.lauf.vorlageFuer = vs;
-        const v = await kern.auswahlVorlegen(liste.slice(0, 3).map((h) => h.id));
-        return { ...basis, weitereTreffer: treffer(liste.slice(3)), ...(v.ergebnis || {}) };
+        const v = await kern.auswahlVorlegen(auswahl.slice(0, 3).map((h) => h.id));
+        // Keine weiteren Haeuser mitschicken: Das Modell zaehlte sie sonst
+        // als Vorschlaege auf, obwohl im Chat drei andere stehen
+        return { ...basis, ...(v.ergebnis || {}) };
       };
 
       // Katalogsuche (immer als Grundlage)
