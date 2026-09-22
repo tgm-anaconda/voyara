@@ -179,11 +179,7 @@ const Pruefstand = {
       // sind gewollt laenger und wiederholen sich der Form nach - sie zaehlen
       // nicht als Stilfehler des Modells
       if (n.links || n.aktionen || /^(Im |Aktuell |Auf |Ich buche jetzt)/.test(t) && /\d/.test(t) && !/\?/.test(t)) continue;
-      const echteFragen = t.split(/(?<=[.!?])\s+/)
-        .filter((x) => /\?\s*$/.test(x))
-        .filter((x) => !/^(oder|bzw|beziehungsweise|also|und wenn|zum beispiel|etwa|z\. ?b)/i.test(x.trim()))
-        .filter((x) => x.trim().split(/\s+/).length > 4);
-      if (echteFragen.length > 1) rest.push({ art: "zwei_fragen", fragen: echteFragen, text: t.slice(0, 160) });
+      if (this.kern.fragenZaehlen(t) > 1) rest.push({ art: "zwei_fragen", text: t.slice(0, 200) });
       if (/!/.test(t)) rest.push({ art: "ausrufezeichen", text: t.slice(0, 160) });
       const verboten = t.match(this.VERBOTEN);
       if (verboten) rest.push({ art: "verbotenes_wort", wort: verboten[0], text: t.slice(0, 160) });

@@ -851,10 +851,21 @@ const Kern = {
     return { id: fp.naechstes, frage: fp.frage };
   },
 
-  // Saetze, die mit Fragezeichen enden
+  /* Saetze, die wirklich eine zweite Frage sind.
+     ------------------------------------------------------------------
+     Nicht mitgezaehlt werden: Nachsaetze ("Oder ist es egal?") und
+     Aufzaehlungen der moeglichen Antworten ("Juni, Juli, August oder
+     egal?", "Pool, Kinderclub, Strand oder etwas anderes?"). Die
+     gehoeren zur Frage davor; sie als zweite Frage zu zaehlen, kostete
+     einen unnoetigen zweiten Modellaufruf und liess die Messung
+     schlechter aussehen, als der Agent war. */
+  FRAGEWORT: /\b(wie|was|wo|wer|wen|wem|worauf|wofür|wofuer|womit|wohin|woran|wobei|wann|welche[rsnm]?|warum|wieso|ob|soll|sollen|möchte|moechte|möchtest|moechtest|möchtet|moechtet|willst|wollt|hast|habt|haben|ist|sind|seid|bist|gibt|kann|kannst|könnt|koennt|darf|brauchst|braucht|passt|interessiert)\b/i,
   fragenZaehlen(text) {
-    // "Oder ist es egal?" gehoert zur Frage davor
-    return String(text).split(/(?<=[.!?])\s+/).filter((s) => /\?\s*$/.test(s) && !/^(oder|bzw\.?|beziehungsweise|also|und wenn)\b/i.test(s.trim())).length;
+    return String(text).split(/(?<=[.!?])\s+/)
+      .filter((s) => /\?\s*$/.test(s))
+      .filter((s) => !/^(oder|bzw\.?|beziehungsweise|also|und wenn|zum beispiel|etwa|z\. ?b\.?)\b/i.test(s.trim()))
+      .filter((s) => this.FRAGEWORT.test(s))
+      .length;
   },
 
   // Wenn das Modell keine Antwortvorschlaege mitgibt: passende aus der Lage
