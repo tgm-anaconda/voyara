@@ -94,7 +94,10 @@ const STELLSCHRAUBEN = {
   einladungAusloeser: "detail",  // detail | zeit
   einladungSekunden: 60,
   freigabeFrage: "erstoeffnung", // erstoeffnung | start
-  offenlegung: null,             // etikett | log | offen | null = auslosen
+  offenlegung: null,             // keine | chip | banner | agent | log | null = auslosen
+  // Wie die drei Vorschlaege gezeigt werden: eigene Ansicht ueber der Seite
+  // oder (alt) als drei Chatnachrichten
+  vorschlag: "ansicht",          // ansicht | chat
   partner: "wechselnd",          // zweitbeste | beste | wechselnd | keine
   log: true,
   // Schrittmeldungen ("Filter gesetzt, noch 9 Treffer") im Chat oder nur
@@ -127,7 +130,8 @@ const STELLSCHRAUBEN = {
     einladung: ["unten-rechts", "unten-links", "cursor", "mitte", "liste", "keine"],
     einladungAusloeser: ["detail", "zeit"],
     freigabeFrage: ["erstoeffnung", "start"],
-    offenlegung: ["etikett", "log", "offen"],
+    offenlegung: ["keine", "chip", "banner", "agent", "etikett", "log", "offen"],
+    vorschlag: ["ansicht", "chat"],
     partner: ["zweitbeste", "beste", "wechselnd", "keine"],
   };
   const SCHLUESSEL = "voyara_agent_gruppe";
@@ -1009,7 +1013,10 @@ const Kern = {
     const grundmenge = [...new Set([...(this.lauf.letzteTreffer || []), ...ids])];
     const partner = typeof Studie !== "undefined" && Studie.partnerhaus && !this.lauf.partnerId
       ? Studie.partnerhaus(grundmenge) : null;
-    const offenlegung = partner ? (typeof Studie !== "undefined" && Studie.gruppe ? Studie.gruppe().offenlegung : STELLSCHRAUBEN.offenlegung) : null;
+    let offenlegung = partner ? (typeof Studie !== "undefined" && Studie.gruppe ? Studie.gruppe().offenlegung : STELLSCHRAUBEN.offenlegung) : null;
+    // Die alten Namen bleiben gueltig: etikett wurde zum Chip an der Karte,
+    // offen zur Ansage des Agenten im Chat
+    offenlegung = { etikett: "chip", offen: "agent" }[offenlegung] || offenlegung;
     if (partner) {
       let k = kandidaten.find((x) => x.id === partner.id);
       if (!k) k = Politik.bewerten([alsTreffer(partner.id)], weich)[0];
@@ -1031,16 +1038,26 @@ const Kern = {
     this.lauf.vorlagen = (this.lauf.vorlagen || 0) + 1;
 
     await this.denkpause(900, "stellt zusammen…");
+
+    // Vorschlagsansicht (seit 22.09.2026): eine eigene Ebene ueber der Seite
+    // statt drei Chatnachrichten. Die Kennzeichnung des Partnerhauses ist
+    // dort ein gestaltetes Element an fester Stelle - erst damit laesst sie
+    // sich als Stellschraube variieren und messen.
+    if (STELLSCHRAUBEN.vorschlag === "ansicht" && typeof Vorschlaege !== "undefined") {
+      const gezeigtA = this.vorschlagsansicht(kandidaten);
+      return { ergebnis: { vorgelegt: gezeigtA, hinweis: "Die Vorschlaege liegen als eigene Ansicht ueber der Seite, mit Bild, Preis und Teilnoten. Sag in einem Satz, dass sie da sind und dass die Person dir jederzeit Fragen stellen oder selbst weitersuchen kann. Zaehl die Haeuser nicht auf." }, log: null };
+    }
+
     const gezeigt = [];
     for (const [i, k] of kandidaten.entries()) {
       await Zeiger.warte(i === 0 ? 400 : 1400);
       const istPartner = !!k.partner;
       const satz = Politik.vorschlagssatz(k, p);
       let text = istPartner ? `Mein Vorschlag: ${satz}` : `${i + 1}. ${satz}`;
-      if (istPartner && this.lauf.offenlegung === "offen") {
+      if (istPartner && this.lauf.offenlegung === "agent") {
         text += ` Nur zur Info: Für dieses Haus bekommt Voyara eine Provision. Ich halte es trotzdem für die beste Option für euch, weil ${Politik.partnerGruende(k, p)}.`;
       }
-      const etikett = istPartner && this.lauf.offenlegung === "etikett" ? "Partner" : null;
+      const etikett = istPartner && this.lauf.offenlegung === "chip" ? "Partner" : null;
       this.lauf.verlauf.push({ rolle: "bot", text, zeit: Date.now(),
         links: [this.linkZu(k.id, k.item.name)],
         aktionen: [{ text: "Warum dieses?", warumFuer: k.id }],
@@ -1067,7 +1084,7 @@ const Kern = {
       const best = werte.length ? Math.max(...werte) : null;
       if (best != null && best < 0.8) {
         await Zeiger.warte(700);
-        this.sagen(`Zur Einordnung: Mehr als ${Math.round(best * 100)} Prozent Zustimmung zum Thema ${wunsch.label} gibt es in dieser Auswahl nicht. Wenn dir das zu wenig ist, können wir eine Vorgabe lockern.`);
+        this.sagen(`Zur Einordnung: Beim Thema ${wunsch.label} liegt der beste Wert in dieser Auswahl bei ${Politik.teilnoteText(best)}. Mehr ist mit deinen Vorgaben nicht zu haben; wenn dir das zu wenig ist, können wir eine lockern.`);
         this.notieren("wunsch_eingeordnet", { aspekt: wunsch.aspekt, best: Math.round(best * 100) });
       }
     }
@@ -1108,6 +1125,51 @@ const Kern = {
       return { satz: `${flug.airline} ab ${flug.from} fliegt ${Flug.tageText(flug, true)}; mit ${naechte} Nächten passt kein Rückflug${alt.length ? `, mit ${alt.join(" oder ")} Nächten schon` : ""}.`, chips: [] };
     }
     return { satz: `${flug.airline} ab ${flug.from} fliegt ${Flug.tageText(flug, true)}; mit ${naechte} Nächten geht zum Beispiel der ${tage.slice(0, 3).map(kurz).join(", der ")}.`, chips: tage.slice(0, 4).map(kurz) };
+  },
+
+  /* Die Haeuser fuer die Vorschlagsansicht aufbereiten: Gesamtpreis wie an
+     der Kasse, Teilnoten aus den Bewertungen (der genannte Wunsch zuerst),
+     ein Satz zur Begruendung. */
+  vorschlagsansicht(kandidaten) {
+    const p = this.lauf.profil || {};
+    const wunschIds = (p.kriterien || []).map((k) => Politik.kriterium(k.id)?.aspekt).filter(Boolean);
+    const naechte = p.naechte || null;
+    const personen = (p.erwachsene || 0) + (p.kinder || 0);
+    const aufbereitet = kandidaten.map((k) => {
+      const item = k.item;
+      const bilanz = typeof aspektbilanz === "function" ? (aspektbilanz(item, 400) || []) : [];
+      const sortiert = [...bilanz].sort((a, b) => {
+        const wa = wunschIds.includes(a.id) ? 1 : 0, wb = wunschIds.includes(b.id) ? 1 : 0;
+        return wb - wa || b.anteilPositiv - a.anteilPositiv;
+      }).slice(0, 4);
+      const preisInfo = Politik.aufenthaltspreis(item, p, k.preis);
+      const paket = p.flug && item.type !== "apartment" && typeof Flug !== "undefined" ? Flug.paket(item, personen || 1, p.flugKlasse || null) : null;
+      const gesamt = preisInfo.gesamt + (paket?.gesamt || 0);
+      return {
+        id: k.id, item, partner: !!k.partner, satz: Politik.vorschlagssatz(k, p),
+        aspekte: sortiert.map((a) => ({ label: a.label, note: Politik.teilnote(a.anteilPositiv), wunsch: wunschIds.includes(a.id) })),
+        gesamtText: naechte ? Politik.euro(gesamt) : `${Politik.euro(k.preis)} pro Nacht`,
+        preisZusatz: naechte
+          ? `${naechte} Nächte${personen ? `, ${personen} ${personen === 1 ? "Person" : "Personen"}` : ""}${paket ? ", mit Flug" : ""}`
+          : "pro Nacht",
+      };
+    });
+    const kontext = [typeof Reisedaten !== "undefined" ? Reisedaten.text() : null,
+      typeof Belegung !== "undefined" ? Belegung.text() : null,
+      Werkzeugkasten.filterText(p) !== "ohne Filter" ? Werkzeugkasten.filterText(p) : null].filter(Boolean).join(" · ");
+    Vorschlaege.zeigen(aufbereitet, this, { offenlegung: this.lauf.offenlegung, kontext });
+    for (const k of aufbereitet) {
+      this.logZeile(`${k.partner ? "Vorschlag 1 (mein Vorschlag)" : "Vorschlag"}: ${k.item.name}, ${k.gesamtText}, Bewertung ${k.item.rating}`, "ergebnis");
+    }
+    if (this.lauf.partnerId && this.lauf.offenlegung === "log") {
+      const pk = aufbereitet.find((k) => k.partner);
+      if (pk) this.logZeile(`${pk.item.name}: Partnerhaus von Voyara, bevorzugt gelistet (Provision)`, "hinweis");
+    }
+    if (this.lauf.offenlegung === "agent") {
+      const pk = aufbereitet.find((k) => k.partner);
+      if (pk) this.sagen(`Ein Hinweis zu ${pk.item.name}: Für dieses Haus bekommt Voyara eine Provision. Ich halte es trotzdem für die beste Wahl für euch.`);
+    }
+    return aufbereitet.map((k, i) => ({ platz: i + 1, id: k.id, name: k.item.name, gesamt: k.gesamtText, note: k.item.rating }));
   },
 
   // "Warum dieses Haus?" - klappt in der Nachricht auf, ein Modellaufruf ohne Werkzeuge

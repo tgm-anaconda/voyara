@@ -647,14 +647,14 @@ const Politik = {
     const genannt = (k.belege || []).filter((b) => b.erwaehnungen).sort((a, b) => b.gewicht - a.gewicht).slice(0, 2);
     const kurz = typeof aspektKurzfassung === "function" ? aspektKurzfassung(item) : null;
     if (genannt.length) {
-      const st = genannt.map((b) => `${b.kriterium} ${b.anteil < 0.7 ? "nur " : ""}${Math.round(b.anteil * 100)} Prozent positiv`);
+      const st = genannt.map((b) => `${b.kriterium} ${b.anteil < 0.7 ? "nur " : ""}${this.teilnoteText(b.anteil)}`);
       teile.push(`${genannt.length > 1 ? "Zu euren Wünschen" : "Dein Wunsch"}: ${st.join(", ")}.`);
     } else if (kurz?.staerken?.length) {
       const s = kurz.staerken.slice(0, 2);
       teile.push(`Gelobt ${s.length > 1 ? "werden" : "wird"} vor allem ${this.aufzaehlen(s)}.`);
     } else {
       const beste = (kurz?.bilanz || []).slice().sort((a, b) => b.anteilPositiv - a.anteilPositiv)[0];
-      if (beste) teile.push(`Am besten weg kommt ${beste.label}: ${Math.round(beste.anteilPositiv * 100)} Prozent positiv.`);
+      if (beste) teile.push(`Am besten weg kommt ${beste.label} mit ${this.teilnoteText(beste.anteilPositiv)}.`);
     }
 
     // Ausstattungswuensche (Pool, Meerblick, Kinderclub, Wellness): hat es das Haus?
@@ -680,6 +680,19 @@ const Politik = {
 
   euro(n) {
     return `${Math.round(n).toLocaleString("de-DE")} €`;
+  },
+
+  /* Teilnote statt Prozentwert.
+     ------------------------------------------------------------------
+     "73 Prozent der Erwaehnungen sind positiv" versteht kaum jemand, und
+     auf keiner Reiseplattform steht so etwas. Ueblich sind Teilnoten wie
+     auf Booking (Sauberkeit 8,9). Der Anteil wird direkt zur Note auf
+     einer Zehnerskala - monoton, nachvollziehbar, keine Schoenrechnung. */
+  teilnote(anteil) {
+    return Math.round(anteil * 100) / 10;
+  },
+  teilnoteText(anteil) {
+    return `${this.teilnote(anteil).toFixed(1).replace(".", ",")} von 10`;
   },
 
   /* Preis des Aufenthalts, wie die Kasse ihn rechnet: Nachtpreis im Monat
@@ -773,7 +786,7 @@ const Politik = {
         switch (a) {
           case "sauberkeit": case "essen": case "lage": case "service": case "ruhe": case "preis": {
             const e = eintrag(a);
-            punkte[a] = e ? { prozentPositiv: Math.round(e.anteilPositiv * 100), erwaehnungen: e.erwaehnungen,
+            punkte[a] = e ? { prozentPositiv: Math.round(e.anteilPositiv * 100), teilnote: this.teilnote(e.anteilPositiv), erwaehnungen: e.erwaehnungen,
               teilnote: it.ratingBreakdown?.[a] ?? null } : { teilnote: it.ratingBreakdown?.[a] ?? null };
             if (a === "preis") punkte[a].proNacht = k.preis;
             break;
@@ -802,7 +815,7 @@ const Politik = {
         const werte = fakten.filter((f) => f[a]?.prozentPositiv != null);
         if (!werte.length) { saetze.push(`Zu ${LABEL[a]} habe ich keine Zahlen.`); continue; }
         const best = [...werte].sort((x, y) => y[a].prozentPositiv - x[a].prozentPositiv)[0];
-        saetze.push(`${LABEL[a]}: ${werte.map((f) => `${f.name} ${f[a].prozentPositiv} % positiv`).join(", ")}. Am besten ${best.name}.`);
+        saetze.push(`${LABEL[a]}: ${werte.map((f) => `${f.name} ${(f[a].prozentPositiv / 10).toFixed(1).replace(".", ",")}`).join(", ")} (von 10). Am besten ${best.name}.`);
       } else if (a === "strand") {
         const werte = fakten.filter((f) => f.meterZumStrand != null);
         if (werte.length) saetze.push(`Strand: ${werte.map((f) => `${f.name} ${f.meterZumStrand} m`).join(", ")}.`);
@@ -1887,7 +1900,7 @@ const Politik = {
         .map((k) => (k.belege || []).find((b) => b.kriterium === beleg.kriterium))
         .filter(Boolean);
       const bester = andere.every((b) => b.anteil <= beleg.anteil);
-      teile.push(`${erster.item.name} steht vorn, weil ${Math.round(beleg.anteil * 100)} Prozent der ${beleg.erwaehnungen} Erwähnungen zu ${beleg.kriterium} positiv sind${bester && andere.length ? " — der höchste Wert der Auswahl" : ""}.`);
+      teile.push(`${erster.item.name} steht vorn, weil ${beleg.kriterium} dort bei ${this.teilnoteText(beleg.anteil)} liegt, aus ${beleg.erwaehnungen} Rückmeldungen${bester && andere.length ? ", der beste Wert der Auswahl" : ""}.`);
     } else if (erster) {
       teile.push(`${erster.item.name} steht vorn wegen der Gesamtnote von ${erster.item.rating.toFixed(1).replace(".", ",")} bei ${erster.item.reviewCount} Bewertungen.`);
     }
@@ -1924,12 +1937,12 @@ const Politik = {
       anzahlBewertungen: k.item.reviewCount,
       genanntesKriterium: stark ? {
         thema: stark.kriterium,
-        prozentPositiv: Math.round(stark.anteil * 100),
+        teilnote: Politik.teilnote(stark.anteil),
         erwaehnungen: stark.erwaehnungen,
       } : null,
       schwachesKriterium: schwach ? {
         thema: schwach.kriterium,
-        prozentPositiv: Math.round(schwach.anteil * 100),
+        teilnote: Politik.teilnote(schwach.anteil),
       } : null,
       gelobt: kurz?.staerken?.slice(0, 2) || [],
       kritisiert: kurz?.schwaechen?.slice(0, 1) || [],
@@ -2044,11 +2057,11 @@ const Politik = {
       wasGaesteSchreiben: bilanz.slice(0, 4).map((a) => ({
         thema: a.label,
         erwaehnungen: a.erwaehnungen,
-        prozentPositiv: Math.round(a.anteilPositiv * 100),
+        teilnote: Politik.teilnote(a.anteilPositiv),
       })),
       dagegen: bilanz.filter((a) => a.anteilPositiv < 0.72).slice(0, 2).map((a) => ({
         thema: a.label,
-        prozentPositiv: Math.round(a.anteilPositiv * 100),
+        teilnote: Politik.teilnote(a.anteilPositiv),
       })),
       andereZumVergleich: kandidaten.filter((x) => x.id !== k.id).map((x) => ({
         name: x.item.name, preisProNacht: x.preis, note: x.item.rating,
@@ -2066,14 +2079,14 @@ const Politik = {
     const oben = bilanz.slice(0, 2);
     if (oben.length) {
       teile.push(`Am häufigsten geht es in den Bewertungen um ${this.aufzaehlen(oben.map((a) =>
-        `${a.label} (${a.erwaehnungen} Erwähnungen, ${Math.round(a.anteilPositiv * 100)} Prozent positiv)`))}.`);
+        `${a.label} (${this.teilnoteText(a.anteilPositiv)}, aus ${a.erwaehnungen} Rückmeldungen)`))}.`);
     }
     // Der Schwachpunkt darf nicht derselbe Aspekt sein, der eben schon mit
     // seiner Zahl dastand - sonst liest sich der Satz wie eine Wiederholung.
     const genannt = new Set(oben.map((a) => a.label));
     const schwach = bilanz.filter((a) => a.anteilPositiv < 0.72 && !genannt.has(a.label))[0];
     if (schwach) {
-      teile.push(`Dagegen spricht ${schwach.label}: nur ${Math.round(schwach.anteilPositiv * 100)} Prozent der Erwähnungen sind positiv.`);
+      teile.push(`Dagegen spricht ${schwach.label}: nur ${this.teilnoteText(schwach.anteilPositiv)}.`);
     }
     teile.push(`Zum Vergleich: ${this.aufzaehlen(kandidaten.filter((x) => x.id !== k.id)
       .map((x) => `${x.item.name} kostet ${x.preis} €`))}.`);
@@ -2124,7 +2137,7 @@ const Politik = {
       // Modell zu falschen Superlativen ("den kuerzesten Weg").
       ausschlaggebend: beleg && !erster?.partner ? {
         thema: beleg.kriterium,
-        prozentPositiv: Math.round(beleg.anteil * 100),
+        teilnote: Politik.teilnote(beleg.anteil),
         erwaehnungen: beleg.erwaehnungen,
       } : null,
       keineSuperlative: "Sag nicht 'am naechsten', 'am besten', 'den kuerzesten Weg' - solche Vergleiche stehen nicht in den Fakten.",
