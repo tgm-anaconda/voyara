@@ -678,7 +678,10 @@ const Kern = {
         this.gespraechPush(nachricht);
         // Denselben Satz nicht zweimal zeigen (das kleine Modell wiederholt
         // nach einem Werkzeug gern, was es davor schon gesagt hat)
-        const zuletzt = [...this.lauf.verlauf].reverse().find((n) => n.rolle === "bot")?.text || "";
+        // Nur innerhalb desselben Zuges vergleichen - hat die Person die Frage
+        // nicht beantwortet, darf sie noch einmal kommen
+        const seitPerson = this.lauf.verlauf.slice(Math.max(0, this.lauf.verlauf.map((n) => n.rolle).lastIndexOf("user")) + 1);
+        const zuletzt = [...seitPerson].reverse().find((n) => n.rolle === "bot")?.text || "";
         const gleich = (x, y) => x && y && x.replace(/\W+/g, "").toLowerCase() === y.replace(/\W+/g, "").toLowerCase();
         // Nach der Lage im selben Zug erzaehlt das Modell sie gern noch einmal -
         // Saetze mit denselben Zahlen fallen weg, die Frage bleibt

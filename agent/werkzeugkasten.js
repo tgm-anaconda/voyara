@@ -308,6 +308,12 @@ const Werkzeugkasten = {
         kern.notieren("naechte_verworfen", { naechte: a.naechte }); delete a.naechte;
       }
       setze("naechte", a.naechte);
+      // Zahlen zu den Reisenden nur, wenn die Person eine genannt hat - aus
+      // "mit den Kindern" wurden sonst zwei Kinder
+      const ZAHL = /\d|\b(ein|eine|einem|einen|zwei|drei|vier|fünf|fuenf|sechs|sieben|acht|zweit|dritt|viert|fünft|fuenft|sechst|kein|keine|ohne|allein|alleine|beide|zwilling|sohn|tochter|frau|mann|freundin|freund|partner|eltern|paar|erwachsene)\b/i;
+      for (const f of ["personenGesamt", "erwachsene", "kinder"]) {
+        if (a[f] != null && p[f === "personenGesamt" ? "personen" : f] == null && !gesagt(ZAHL, 1)) { kern.notieren("reisende_verworfen", { feld: f, wert: a[f] }); delete a[f]; }
+      }
       setze("personen", a.personenGesamt);
       setze("erwachsene", a.erwachsene); setze("kinder", a.kinder);
       if (Array.isArray(a.kinderAlter)) setze("kinderAlter", a.kinderAlter.filter((x) => Number.isInteger(x) && x >= 0 && x < 18).slice(0, 6));
