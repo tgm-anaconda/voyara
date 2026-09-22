@@ -120,7 +120,14 @@ const Vorschlaege = {
     if (el) el.remove();
     document.body.classList.remove("vorschlag-offen");
     if (!still && this.offen && this.daten?.kern) {
-      this.daten.kern.notieren("vorschlagsansicht_zu", { grund, sekunden: Math.round((Date.now() - this.geoeffnet) / 1000), gewaehlt: false });
+      const kern = this.daten.kern;
+      kern.notieren("vorschlagsansicht_zu", { grund, sekunden: Math.round((Date.now() - this.geoeffnet) / 1000), gewaehlt: false });
+      // Die Ansicht ist weg, die Vorschlaege sind es nicht: Der Chat bietet
+      // an, sie wieder zu zeigen, sonst wirkt der Agent, als haette er
+      // seine eigene Empfehlung vergessen.
+      kern.lauf.chips = ["Zeig die Vorschläge nochmal", "Ich schaue selbst weiter"];
+      AgentPanel.setSuggestions?.(kern.lauf.chips);
+      kern.sichern();
     }
     this.offen = false;
   },

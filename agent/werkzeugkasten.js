@@ -548,7 +548,8 @@ const Werkzeugkasten = {
         }
         const vs = Werkzeugkasten.vorlageSchluessel(p);
         if (kern.lauf.vorlageFuer === vs && kern.lauf.letzteVorlage?.length) {
-          return { ...basis, treffer: treffer(auswahl), hinweis: "Diese Haeuser hast du mit denselben Vorgaben schon vorgelegt. Nichts wiederholen - geh auf die Frage der Person ein." };
+          return { ...basis, treffer: treffer(auswahl), bereitsVorgelegt: kern.lauf.letzteVorlage,
+            hinweis: "Diese Haeuser hast du mit denselben Vorgaben schon vorgelegt. Nichts wiederholen - geh auf die Frage der Person ein. Will sie die Vorschlagsansicht wiedersehen, ruf auswahl_vorlegen mit genau diesen ids." };
         }
         kern.lauf.vorlageFuer = vs;
         const v = await kern.auswahlVorlegen(auswahl.slice(0, 3).map((h) => h.id));
@@ -715,6 +716,7 @@ const Werkzeugkasten = {
       const ids = (a.ids || []).filter((id) => typeof getItemById === "function" && getItemById(id)).slice(0, 3);
       if (!ids.length) return { ergebnis: { fehler: "Keine gueltigen Haus-ids." } };
       kern.lauf.vorlageFuer = Werkzeugkasten.vorlageSchluessel(kern.lauf.profil);
+      kern.lauf.vorlagen = Math.max(0, (kern.lauf.vorlagen || 1) - (kern.lauf.letzteVorlage?.join() === ids.join() ? 1 : 0));
       return kern.auswahlVorlegen(ids);
     },
 
