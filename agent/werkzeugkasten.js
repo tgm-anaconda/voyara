@@ -243,6 +243,19 @@ const Werkzeugkasten = {
       const p = kern.lauf.profil;
       const geaendert = [];
       const setze = (feld, wert) => { if (wert !== undefined && wert !== null && wert !== "") { if (p[feld] !== wert) geaendert.push(feld); p[feld] = wert; } };
+      // Das Modell schickt Zahlenfelder gelegentlich als true oder als Text.
+      // Ohne diese Pruefung stand in der Leiste "Wer true Kinder".
+      for (const f of ["monat", "naechte", "personenGesamt", "erwachsene", "kinder", "zimmer", "maxPreis", "budgetGesamt", "maxStrandMeter", "mindestSterne"]) {
+        if (a[f] === undefined || a[f] === null) continue;
+        const n = typeof a[f] === "number" ? a[f] : parseInt(String(a[f]).replace(/[^\d-]/g, ""), 10);
+        if (!Number.isFinite(n) || n < 0) { kern.notieren("wert_verworfen", { feld: f, wert: a[f] }); delete a[f]; }
+        else a[f] = n;
+      }
+      if (a.mindestbewertung != null) {
+        const n = typeof a.mindestbewertung === "number" ? a.mindestbewertung : parseFloat(String(a.mindestbewertung).replace(",", "."));
+        if (!Number.isFinite(n) || n < 0 || n > 5) { kern.notieren("wert_verworfen", { feld: "mindestbewertung", wert: a.mindestbewertung }); delete a.mindestbewertung; }
+        else a.mindestbewertung = n;
+      }
       const gesagt = (muster, letzte = 3) => kern.lauf.gespraech.filter((n) => n.role === "user").slice(-letzte).some((n) => muster.test(String(n.content)));
       if (a.ziel !== undefined) {
         const id = String(a.ziel).toLowerCase().trim();
@@ -385,7 +398,10 @@ const Werkzeugkasten = {
       }
       if (Array.isArray(a.ausstattung)) {
         const ERLAUBT = ["pool", "spa", "kidsClub", "familyFriendly", "beachfront", "wifi", "parking", "restaurant", "gym", "seaView"];
-        p.ausstattung = a.ausstattung.filter((x) => ERLAUBT.includes(x));
+        // "Nicht weit zum Strand" ist nicht "direkt am Strand" - die
+        // schaerfere Bedingung braucht ein klares Wort der Person
+        p.ausstattung = a.ausstattung.filter((x) => ERLAUBT.includes(x))
+          .filter((x) => x !== "beachfront" || gesagt(/direkt am strand|erste reihe|strandlage|am strand liegen|direkt ans meer|direkt am meer/i, 99));
         geaendert.push("ausstattung");
       }
       setze("verpflegung", a.verpflegung);

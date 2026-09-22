@@ -691,14 +691,16 @@ const Politik = {
       teile.push(`${genannt.kriterium}: ${this.teilnoteText(genannt.anteil)}${einordnung && einordnung.id === genannt.kriterium && einordnung.best ? ", der beste Wert in dieser Auswahl" : ""}.`);
     }
     const ausstattung = (profil.kriterien || []).map((x) => this.kriterium(x.id)).filter((kr) => kr?.filter?.ausstattung);
+    const hat = ausstattung.filter((kr) => (item.amenities || []).includes(kr.filter.ausstattung)).map((kr) => kr.label);
     const fehlt = ausstattung.filter((kr) => !(item.amenities || []).includes(kr.filter.ausstattung)).map((kr) => kr.label);
+    if (hat.length) teile.push(`${this.aufzaehlen(hat)} vorhanden.`);
     if (fehlt.length) teile.push(`Ohne ${this.aufzaehlen(fehlt)}.`);
     if (profil.maxStrand != null && item.distanceToBeach != null) {
       teile.push(item.distanceToBeach <= 0.2 ? "Direkt am Strand." : `${item.distanceToBeach < 1 ? `${Math.round(item.distanceToBeach * 1000)} m` : `${item.distanceToBeach} km`} zum Strand.`);
     }
     const kurz = typeof aspektKurzfassung === "function" ? aspektKurzfassung(item) : null;
     const schwaeche = (kurz?.schwaechen || []).find((sw) => !genannt || !String(genannt.kriterium).toLowerCase().startsWith(String(sw).toLowerCase().slice(0, 4)));
-    if (schwaeche) teile.push(`Kritisch sehen Gäste ${this.beiAspekt(schwaeche).replace(/^bei /, "")}.`);
+    if (schwaeche) teile.push(`Kritik gibt es ${this.beiAspekt(schwaeche)}.`);
     if (!teile.length && kurz?.staerken?.length) teile.push(`Gelobt wird vor allem ${this.aufzaehlen(kurz.staerken.slice(0, 2))}.`);
     return teile.join(" ");
   },

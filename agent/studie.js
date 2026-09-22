@@ -426,7 +426,12 @@ const Studie = {
   // ob die Person oder der Agent geklickt hat. Ob der Agent es war,
   // steht im Kern-Protokoll ("gebucht" mit autonom: true).
   buchungBestaetigt({ id, gesamt, naechte, flug = null }) {
-    if (!this.laeuft()) return;
+    // Frueher stand hier eine Phasenpruefung. In einem Testlauf am
+    // 22.09.2026 war die Buchung auf der Seite abgeschlossen, in den
+    // Studiendaten aber nicht - die Hauptmessgroesse fehlte. Warum die
+    // Pruefung griff, liess sich nicht rekonstruieren; da sie nichts
+    // schuetzt (ohne laufenden Durchlauf gibt es ohnehin kein Ziel),
+    // faellt sie weg.
     const d = this.durchlauf();
     if (!d || d.buchung) return;
     // Ob der Agent geklickt hat: Waehrend seines letzten Klicks liegt die
@@ -443,6 +448,18 @@ const Studie = {
     const d = this.durchlauf();
     const a = this.aufgabe();
     if (!d || !a || d.beendet) return;
+    // Zweiter Netzanschluss: Wurde gebucht, aber nichts erfasst, wird die
+    // Buchung hier aus der Seite nachgetragen, statt sie zu verlieren.
+    if (grund === "gebucht" && !d.buchung && typeof Werkzeuge !== "undefined") {
+      const id = new URLSearchParams(location.search).get("id");
+      const z = Werkzeuge.buchungsZusammenfassung?.();
+      const zahl = z?.gesamt ? parseInt(String(z.gesamt).replace(/[^\d]/g, ""), 10) : null;
+      if (id) {
+        d.buchung = { id, gesamt: zahl || 0, naechte: parseInt(new URLSearchParams(location.search).get("nights"), 10) || null,
+          durchAgent: !!document.getElementById("agentSperre"), ohneRueckfrage: null, zeit: Date.now(), flug: null, nachgetragen: true };
+        this.notieren("buchung_nachgetragen", { id, gesamt: d.buchung.gesamt });
+      }
+    }
     d.beendet = Date.now();
     d.grund = grund;
     d.freigabeEnde = this.kern?.lauf?.freigabe || null;
