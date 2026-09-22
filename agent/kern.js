@@ -768,6 +768,7 @@ const Kern = {
     flugAb: /flughafen|abflug|ab welch|von wo|fliegen/i,
     vorgehen: /selbst|drei|filter|raussuch|favorit|vorschl|liste/i,
     preis: /preis|budget|kosten|euro|grenze|ausgeben/i,
+    verpflegung: /verpflegung|inclusive|inklusive|halbpension|vollpension|frühstück|fruehstueck|mahlzeit|all ?in/i,
     wuensche: /wichtig|achte|wert|wünsch|wuensch|vorstell|lieber/i,
   },
   themaVerfehlt(text) {

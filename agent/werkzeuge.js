@@ -303,6 +303,13 @@ const Werkzeuge = {
       }
     }
 
+    for (const b of wunsch.verpflegung || []) {
+      const el = this.finde(`.js-board[value="${b}"]`, panel);
+      if (el && !el.checked && await this.klickeFilterZeile(el, BOARD_LABELS?.[b] || b)) {
+        gesetzt.push(BOARD_LABELS?.[b] || b);
+      }
+    }
+
     if (wunsch.mindestbewertung) {
       const el = this.finde(`.js-rating[value="${wunsch.mindestbewertung}"]`, panel);
       if (el && !el.checked && await this.klickeFilterZeile(el, "Bewertung")) {

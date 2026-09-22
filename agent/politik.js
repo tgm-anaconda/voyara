@@ -627,7 +627,9 @@ const Politik = {
       const a = this.aufenthaltspreis(item, profil, k.preis);
       const personen = (profil.erwachsene || 0) + (profil.kinder || 0);
       const paket = profil.flug && item.type !== "apartment" && typeof Flug !== "undefined" ? Flug.paket(item, personen || 1, profil.flugKlasse || null) : null;
-      const womit = a.zimmer && a.zimmer.priceDelta ? ` (${a.zimmer.name})` : "";
+      const zusatz = [a.zimmer && a.zimmer.priceDelta ? a.zimmer.name : null,
+        profil.verpflegung && a.board && a.board.key === profil.verpflegung && typeof BOARD_LABELS !== "undefined" ? BOARD_LABELS[a.board.key] : null].filter(Boolean);
+      const womit = zusatz.length ? ` (${zusatz.join(", ")})` : "";
       preisText += paket
         ? `, ${naechte} Nächte${womit} mit Flug ab ${paket.flug.from} ${this.euro(a.gesamt + paket.gesamt)}`
         : `, ${naechte} Nächte${womit} ${this.euro(a.gesamt)}`;
@@ -691,7 +693,7 @@ const Politik = {
     const personen = (profil.erwachsene || 0) + (profil.kinder || 0);
     const jeZimmer = personen ? Math.ceil(personen / zimmerZahl) : 0;
     const zimmer = (item.rooms || []).find((r) => (r.maxGuests || 0) >= jeZimmer) || (item.rooms || [])[0] || null;
-    const board = (item.boards || [])[0] || null;
+    const board = (item.boards || []).find((b) => b.key === profil.verpflegung) || (item.boards || [])[0] || null;
     const nacht = preisProNacht + (zimmer?.priceDelta || 0) + (board?.priceDelta || 0);
     return { zimmer, board, gesamt: nacht * naechte * zimmerZahl + 35 * zimmerZahl };
   },

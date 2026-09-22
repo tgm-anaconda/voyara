@@ -481,7 +481,8 @@ const Werkzeugkasten = {
         // Bei einer Richtung (warm, Meer) zaehlt der eingegrenzte Katalog, nicht
         // die Seite - die kennt nur eine Region auf einmal
         const eingegrenzt = !p.zielId && p.zieleErlaubt?.length;
-        const basis = { weg, gesuchtMit: Werkzeugkasten.filterText(p), zeitraum: zeitText, trefferGesamt: eingegrenzt ? liste.length : (gesamt ?? liste.length), lage: umfang };
+        const basis = { weg, gesuchtMit: Werkzeugkasten.filterText(p), zeitraum: zeitText, trefferGesamt: eingegrenzt ? liste.length : (gesamt ?? liste.length), lage: umfang,
+          ...(p.typ !== "apartment" ? { verpflegungsLage: Werkzeugkasten.verpflegungsLage(liste) } : {}) };
         // Als "gesucht" zaehlt nur eine Suche mit den Kerndaten - eine fruehe
         // Katalogsuche fuer eine Frage der Person ("habt ihr was auf Kreta?")
         // darf die Frage "schauen oder klaeren" nicht ueberspringen
@@ -608,6 +609,7 @@ const Werkzeugkasten = {
         maxPreis: p.maxPreis || undefined,
         maxStrand: p.maxStrand != null ? ([0.2, 1, 5].find((s) => s >= p.maxStrand) ?? 5) : undefined,
         ausstattung: filter.ausstattung,
+        verpflegung: p.verpflegung ? [p.verpflegung] : undefined,
         mindestbewertung: p.mindestbewertung || undefined,
         sterne: p.mindestSterne ? [5, 4, 3].filter((s) => s >= p.mindestSterne) : undefined,
       });
@@ -910,6 +912,7 @@ const Werkzeugkasten = {
     flugAb: { frage: "Von welchem Flughafen: Hamburg, Stuttgart, Duesseldorf, Hannover, Muenchen, Koeln, Frankfurt oder Berlin. Klasse nicht fragen - Economy ist gerechnet, sie kann es spaeter aendern.", chips: null },
     vorgehen: { frage: "Ob du die Filter so einstellst und sie selbst durch die Liste schaut (vorgehen selbst), oder ob du ihr drei Haeuser zur Auswahl raussuchst (vorgehen top3). Beides gleichwertig anbieten.", chips: "Ich schaue selbst | Such mir drei raus" },
     preis: { frage: "Ob sie beim Preis schon eine feste Grenze hat (pro Nacht oder gesamt) oder offen ist. Nicht 'wie viel darf es kosten' fragen. Offen heisst preisEgal true. Die Preisspanne aus der Lage darfst du nennen.", chips: "Feste Grenze | Offen" },
+    verpflegung: { frage: "Welche Verpflegung es sein soll: All Inclusive oder Halbpension (oder nur Fruehstueck, oder egal). Nenn dazu, was All Inclusive im Schnitt mehr kostet und wie viele Haeuser es anbieten - die Zahlen stehen in verpflegungsLage. 'Egal' heisst verpflegungEgal true.", chips: "All Inclusive | Halbpension | Nur Frühstück | Egal" },
     wuensche: { frage: "Worauf sie bei der Unterkunft besonders achtet - offen gefragt, mit hoechstens drei Beispielen, die zur Person passen (Paar: Ruhe, Essen, Lage; Familie: Pool, Kinderclub, Strand). Keine Liste aller Moeglichkeiten. Antworten werden Wuensche (wuensche); nur ausdrueckliche Grenzen ('mindestens 4,5', 'direkt am Strand') werden Filter. 'Nichts Besonderes' heisst ausstattungEgal true.", chips: "Sauberkeit | Essen | Lage | Ruhe" },
   },
 
@@ -954,11 +957,13 @@ const Werkzeugkasten = {
       flugAb: !p.flug || !!p.flugAb || p.typ === "apartment",
       vorgehen: !!p.vorgehen,
       preis: !!(p.maxPreis || p.budgetGesamt || p.preisEgal || b.preis),
+      verpflegung: !!(p.verpflegung || p.verpflegungEgal || b.verpflegung || p.typ === "apartment"),
       wuensche: !!((p.kriterien || []).length || p.ausstattungEgal || b.wuensche),
     };
     const KERN = ["zeit", "reisende", "kinderAlter", "ziel", "art"];
     const ECKDATEN = ["dauer", "flug", "flugAb"];
-    const BERATUNG = ["preis", "wuensche"];
+    // Verpflegung nur bei Hotels - eine Ferienwohnung hat keine
+    const BERATUNG = p.typ === "apartment" ? ["preis", "wuensche"] : ["preis", "verpflegung", "wuensche"];
     const kernFertig = KERN.every((t) => fertig[t]);
     const suchbereit = fertig.zeit && fertig.reisende && fertig.kinderAlter;
     const schluessel = this.eckdatenSchluessel(p);
@@ -1003,7 +1008,7 @@ const Werkzeugkasten = {
       else if (p.erwachsene != null && p.kinder == null) { frage = "Ob Kinder mitreisen - und wenn ja, wie viele und wie alt."; chips = "Keine Kinder | Ein Kind | Zwei Kinder"; }
       else if (p.kinder != null && p.erwachsene == null) { frage = "Wie viele Erwachsene mitreisen."; chips = "1 | 2 | 3 | 4 oder mehr"; }
     }
-    const empfehlungBereit = p.vorgehen === "top3" && fertig.preis && fertig.wuensche && fertig.dauer && fertig.flug && fertig.flugAb;
+    const empfehlungBereit = p.vorgehen === "top3" && fertig.preis && fertig.verpflegung && fertig.wuensche && fertig.dauer && fertig.flug && fertig.flugAb;
     return { fertig, naechstes, frage, chips, phase, suchbereit, eckdatenFertig, gesucht, schluessel, empfehlungBereit,
       ueberblickOffen: false, fehlt: [...KERN, ...ECKDATEN].filter((t) => !fertig[t]) };
   },
@@ -1034,6 +1039,7 @@ const Werkzeugkasten = {
     if (!fp.fertig.dauer) pflicht.push("Dauer");
     if (!fp.fertig.flug || !fp.fertig.flugAb) pflicht.push("Flug");
     if (!fp.fertig.preis) pflicht.push("Preis (fest oder offen)");
+    if (!fp.fertig.verpflegung) pflicht.push("Verpflegung");
     if (!fp.fertig.wuensche) pflicht.push("Wuensche");
     return { pflicht, soll: [] };
   },
@@ -1112,6 +1118,25 @@ const Werkzeugkasten = {
     return { monat: `${jahr}-${String(p.monat).padStart(2, "0")}`, naechte: p.naechte || 7, jahr };
   },
 
+  // Was All Inclusive gegenueber Halbpension kostet, aus den Haeusern der
+  // aktuellen Auswahl - der Agent begruendet die Frage mit echten Zahlen
+  verpflegungsLage(liste) {
+    const je = {};
+    for (const h of liste) {
+      if (h.type === "apartment") continue;
+      for (const b of h.boards || []) (je[b.key] ||= []).push(b.priceDelta || 0);
+    }
+    const basis = (je.halb || je.fruehstueck || je.ohne || []);
+    const mittel = (xs) => (xs.length ? Math.round(xs.reduce((a, b) => a + b, 0) / xs.length) : null);
+    const aufpreis = je.ai?.length && basis.length ? mittel(je.ai) - mittel(basis) : null;
+    return {
+      haeuserMitAllInclusive: je.ai?.length || 0,
+      haeuserMitHalbpension: je.halb?.length || 0,
+      haeuserMitFruehstueck: je.fruehstueck?.length || 0,
+      ...(aufpreis != null ? { allInclusiveAufpreisProNachtUndZimmer: aufpreis } : {}),
+    };
+  },
+
   filterAusStand(p) {
     const ausstattung = new Set(p.ausstattung || []);
     for (const { id } of p.kriterien || []) {
@@ -1132,6 +1157,7 @@ const Werkzeugkasten = {
     if (p.mindestSterne) t.push(`ab ${p.mindestSterne} Sterne`);
     const f = this.filterAusStand(p);
     if (f.ausstattung.length) t.push(f.ausstattung.map((x) => (typeof AMENITY_LABELS !== "undefined" && AMENITY_LABELS[x]) || x).join(", "));
+    if (p.verpflegung && typeof BOARD_LABELS !== "undefined") t.push(BOARD_LABELS[p.verpflegung]);
     return t.filter(Boolean).join(", ") || "ohne Filter";
   },
 
@@ -1150,6 +1176,7 @@ const Werkzeugkasten = {
       if (p.maxStrand != null && (h.distanceToBeach ?? 99) > p.maxStrand) return false;
       if (p.mindestbewertung && (h.rating || 0) < p.mindestbewertung) return false;
       if (p.mindestSterne && (h.stars || 0) < p.mindestSterne) return false;
+      if (p.verpflegung && h.type !== "apartment" && !(h.boards || []).some((b) => b.key === p.verpflegung)) return false;
       return true;
     });
   },
