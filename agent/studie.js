@@ -442,7 +442,7 @@ const Studie = {
   aufgabeAbschliessen(grund) {
     const d = this.durchlauf();
     const a = this.aufgabe();
-    if (!d || !a) return;
+    if (!d || !a || d.beendet) return;
     d.beendet = Date.now();
     d.grund = grund;
     d.freigabeEnde = this.kern?.lauf?.freigabe || null;

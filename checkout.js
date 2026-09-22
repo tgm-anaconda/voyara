@@ -122,6 +122,11 @@ function renderStep1() {
     step = 2;
     render();
     window.scrollTo({ top: 0, behavior: "smooth" });
+    // Die Aufgabe ist mit der Buchung zu Ende. Ohne diesen Schritt konnte
+    // man einfach weiterklicken und die Zwischenfragen kamen nie.
+    if (typeof Studie !== "undefined" && Studie.aufgabeAbschliessen) {
+      setTimeout(() => Studie.aufgabeAbschliessen("gebucht"), 2600);
+    }
   });
 }
 
@@ -164,6 +169,11 @@ function renderStep2() {
     }
     render();
     window.scrollTo({ top: 0, behavior: "smooth" });
+    // Die Aufgabe ist mit der Buchung zu Ende. Ohne diesen Schritt konnte
+    // man einfach weiterklicken und die Zwischenfragen kamen nie.
+    if (typeof Studie !== "undefined" && Studie.aufgabeAbschliessen) {
+      setTimeout(() => Studie.aufgabeAbschliessen("gebucht"), 2600);
+    }
   });
 }
 

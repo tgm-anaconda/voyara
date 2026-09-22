@@ -130,7 +130,7 @@ const SearchBox = (() => {
       <div class="field">
         <label for="sbNaechte">Dauer</label>
         <select class="select" id="sbNaechte">
-          ${[3, 4, 5, 7, 10, 14, 21].map((n) => `<option value="${n}" ${n === flexNaechte ? "selected" : ""}>${n} Nächte</option>`).join("")}
+          ${Array.from({ length: 27 }, (_, i) => i + 2).map((n) => `<option value="${n}" ${n === flexNaechte ? "selected" : ""}>${n} Nächte</option>`).join("")}
         </select>
       </div>`
       : `

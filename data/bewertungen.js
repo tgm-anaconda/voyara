@@ -833,6 +833,39 @@ function aspekteAusText(review, item) {
  * @param {number} von   Startindex
  * @param {number} wie   Anzahl
  */
+/* Die erste Seite soll zeigen, was die Zusammenfassung behauptet.
+   ------------------------------------------------------------------
+   Vorher waren es einfach die ersten zehn Bewertungen. Bei 66 Prozent
+   Zustimmung zur Sauberkeit standen darin dann zufaellig zwei Lob und
+   keine Kritik - die Person las das Gegenteil dessen, was der Agent
+   sagte, und hielt ihn fuer erfunden. Jetzt wird die erste Seite so
+   gewaehlt, dass jede Schwaeche des Hauses mindestens einmal kritisch
+   und jede Staerke mindestens einmal positiv vorkommt. Der Rest bleibt
+   in der urspruenglichen Reihenfolge, und ab Seite zwei aendert sich
+   nichts. */
+function ersteSeiteMischen(item, liste, wie) {
+  const kurz = typeof aspektKurzfassung === "function" ? aspektKurzfassung(item) : null;
+  if (!kurz || (!kurz.schwaechen.length && !kurz.staerken.length)) return liste;
+  const labelZuId = {};
+  for (const a of kurz.bilanz || []) labelZuId[a.label] = a.id;
+  const gesucht = [
+    ...kurz.schwaechen.map((l) => ({ id: labelZuId[l], richtung: -1 })),
+    ...kurz.staerken.map((l) => ({ id: labelZuId[l], richtung: 1 })),
+  ].filter((x) => x.id);
+  const hat = (r, id, richtung) => Object.entries(r.aspekte || {}).some(([k, w]) => k === id && Math.sign(w) === richtung);
+  const raus = liste.slice();
+  for (const { id, richtung } of gesucht) {
+    if (raus.some((r) => hat(r, id, richtung))) continue;
+    // Im groesseren Vorrat nach einer passenden Stimme suchen und die
+    // letzte Bewertung der Seite ersetzen
+    for (let i = wie; i < Math.min(item.reviewCount, 200); i++) {
+      const kandidat = baueBewertung(item, i);
+      if (hat(kandidat, id, richtung)) { raus[raus.length - 1] = kandidat; break; }
+    }
+  }
+  return raus;
+}
+
 function bewertungenFuer(item, von = 0, wie = 10) {
   const gesamt = item.reviewCount;
   const echte = item.reviews || [];
@@ -847,7 +880,7 @@ function bewertungenFuer(item, von = 0, wie = 10) {
     }
     liste.push(baueBewertung(item, i));
   }
-  return liste;
+  return von === 0 && wie <= 20 ? ersteSeiteMischen(item, liste, wie) : liste;
 }
 
 // Verteilung der Gesamtnoten. Direkt aus dem Profil gerechnet, ergibt in der
@@ -927,8 +960,12 @@ function aspektKurzfassung(item) {
 
   return {
     schnitt,
-    staerken: relevant.filter((a) => a.anteilPositiv >= schnitt + 0.07).map((a) => a.label),
-    schwaechen: relevant.filter((a) => a.anteilPositiv <= schnitt - 0.07).map((a) => a.label),
+    // Staerke und Schwaeche muessen auch fuer sich stehen: Ein Aspekt mit
+    // 80 Prozent Zustimmung ist keine Kritik, nur weil das Haus sonst bei
+    // 88 liegt - in den Bewertungstexten findet die Person dann nichts
+    // Negatives und der Satz wirkt erfunden.
+    staerken: relevant.filter((a) => a.anteilPositiv >= schnitt + 0.07 && a.anteilPositiv >= 0.75).map((a) => a.label),
+    schwaechen: relevant.filter((a) => a.anteilPositiv <= schnitt - 0.07 && a.anteilPositiv < 0.72).map((a) => a.label),
     bilanz: relevant,
   };
 }

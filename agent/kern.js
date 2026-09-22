@@ -767,6 +767,20 @@ const Kern = {
           }
           this.lauf.lageImZug = null;
         }
+        // Nach einer Vorlage nennt das Modell manchmal ganz andere Haeuser aus
+        // einem frueheren Werkzeugergebnis ("Familienhof Zingst, Rentierhof
+        // Saariselkä ..."), die gar nicht im Chat stehen. Solche Saetze fallen weg.
+        if (text && this.lauf.vorlageImZug && this.lauf.letzteVorlage?.length) {
+          const eigene = this.lauf.letzteVorlage.map((id) => getItemById?.(id)?.name).filter(Boolean);
+          const alle = [...(typeof HOTELS !== "undefined" ? HOTELS : []), ...(typeof APARTMENTS !== "undefined" ? APARTMENTS : [])];
+          const fremde = alle.map((h) => h.name).filter((n) => !eigene.includes(n) && text.includes(n));
+          if (fremde.length) {
+            const saetze = text.split(/(?<=[.!?])\s+/).filter((x) => !fremde.some((n) => x.includes(n)));
+            text = saetze.join(" ").trim() || "Welches möchtest du dir genauer ansehen, oder fehlt dir noch etwas?";
+            nachricht.content = text;
+            this.notieren("fremdes_haus", { namen: fremde.slice(0, 3) });
+          }
+        }
         // Nach einer Vorlage im selben Zug zaehlt das Modell die Haeuser gern
         // noch einmal auf - dann bleibt nur die Frage
         if (text && this.lauf.vorlageImZug && this.lauf.letzteVorlage?.length) {
@@ -1039,6 +1053,23 @@ const Kern = {
       this.logZeile(`${istPartner ? "Vorschlag 1 (mein Vorschlag)" : `Vorschlag ${i + 1}`}: ${k.item.name}, ${k.preis} € pro Nacht, Bewertung ${k.item.rating}`, "ergebnis");
       gezeigt.push({ platz: i + 1, id: k.id, name: k.item.name, preisProNacht: k.preis, note: k.item.rating, gesagt: text });
       this.sichern();
+    }
+    // Wie gut ist der genannte Wunsch in dieser Auswahl ueberhaupt zu haben?
+    // Ohne diese Einordnung liest sich "Essen 73 Prozent positiv" wie ein
+    // guter Wert, obwohl es schlicht das Beste ist, was die Filter zulassen.
+    const wunsch = (p.kriterien || []).map((k) => Politik.kriterium(k.id)).find((k) => k?.aspekt);
+    if (wunsch && typeof aspektbilanz === "function" && (this.lauf.letzteTreffer || []).length > 2) {
+      const werte = this.lauf.letzteTreffer.map((id) => {
+        const item = getItemById?.(id);
+        const e = item ? (aspektbilanz(item, 400) || []).find((x) => x.id === wunsch.aspekt) : null;
+        return e ? e.anteilPositiv : null;
+      }).filter((x) => x != null);
+      const best = werte.length ? Math.max(...werte) : null;
+      if (best != null && best < 0.8) {
+        await Zeiger.warte(700);
+        this.sagen(`Zur Einordnung: Mehr als ${Math.round(best * 100)} Prozent Zustimmung zum Thema ${wunsch.label} gibt es in dieser Auswahl nicht. Wenn dir das zu wenig ist, können wir eine Vorgabe lockern.`);
+        this.notieren("wunsch_eingeordnet", { aspekt: wunsch.aspekt, best: Math.round(best * 100) });
+      }
     }
     if (this.lauf.partnerId && this.lauf.offenlegung === "log") {
       const pk = kandidaten.find((k) => k.partner);

@@ -351,9 +351,11 @@ function renderWidget() {
   const stay = perNight * nights * zimmerAnzahl;
   const cleaning = isApartment ? item.cleaningFee : 35 * zimmerAnzahl;
   const total = stay + cleaning;
-  const nightOptions = isApartment
-    ? [item.minNights, item.minNights + 2, 7, 10, 14].filter((n, i, arr) => n >= item.minNights && arr.indexOf(n) === i)
-    : [3, 5, 7, 10, 14];
+  // Die gesuchte Dauer muss dabei sein, sonst steht im Feld etwas anderes,
+  // als die Person gesucht hat (11 Naechte fielen so auf 7 zurueck)
+  const nightOptions = [...new Set((isApartment
+    ? [item.minNights, item.minNights + 2, 7, 10, 14].filter((n) => n >= item.minNights)
+    : [3, 5, 7, 10, 14]).concat(nights))].sort((a, b) => a - b);
 
   const subtitle = isApartment
     ? `Gesamte Wohnung · ${Belegung.text()}`

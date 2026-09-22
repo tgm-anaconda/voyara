@@ -119,6 +119,7 @@ const Werkzeuge = {
     if (!this.finde("#sbForm")) return this.fehlt("Die Suchmaske");
 
     const getan = [];
+    let abweichung = null;
 
     // Zuerst die Art. Der Reiter baut die Maske neu auf, deshalb muss er vor
     // allen Feldern geklickt werden - sonst tippt der Agent in Felder, die
@@ -163,8 +164,15 @@ const Werkzeuge = {
       }
       const feldNaechte = this.finde("#sbNaechte");
       if (feldNaechte && flex.naechte && +feldNaechte.value !== +flex.naechte) {
-        await Zeiger.setzeWert(feldNaechte, String(flex.naechte), { hinweis: "Dauer" });
-        getan.push(`${flex.naechte} Nächte`);
+        // Ein Auswahlfeld nimmt nur Werte an, die es kennt. Fehlt der
+        // gewuenschte, wird der naechstliegende genommen und gemeldet -
+        // vorher blieb das Feld stumm auf dem alten Wert stehen.
+        const werte = [...feldNaechte.options].map((o) => +o.value);
+        const ziel = werte.includes(+flex.naechte) ? +flex.naechte
+          : werte.sort((a, b) => Math.abs(a - flex.naechte) - Math.abs(b - flex.naechte))[0];
+        await Zeiger.setzeWert(feldNaechte, String(ziel), { hinweis: "Dauer" });
+        getan.push(`${ziel} Nächte`);
+        if (+ziel !== +flex.naechte) abweichung = `Die Maske kennt nur ${werte.sort((a, b) => a - b).join(", ")} Nächte - ich habe ${ziel} eingestellt.`;
       }
     } else {
       const feldVon = this.finde("#sbFrom");
@@ -219,7 +227,7 @@ const Werkzeuge = {
     await Zeiger.warte(400);
     return {
       ok: true,
-      text: `Suche ausgeführt: ${getan.join(" · ") || "unverändert"}`,
+      text: `Suche ausgeführt: ${getan.join(" · ") || "unverändert"}${abweichung ? ` (${abweichung})` : ""}`,
       daten: wechselt ? { navigiert: true } : this.zustand(),
     };
   },
@@ -650,7 +658,11 @@ const Werkzeuge = {
     // Zeitraum aus der Adresse (from/to), nicht aus der Untertitelzeile -
     // dort stehen Zimmer, Verpflegung und Flug
     const zeit = typeof Reisedaten !== "undefined" && Reisedaten.text() ? Reisedaten.text() : zeitraum;
-    const details = String(zeitraum || "").replace(`${zeit} · `, "").replace(/ · /g, ", ");
+    // Die Untertitelzeile beginnt mit demselben Zeitraum - ohne dieses
+    // Abschneiden stand er zweimal in der Ansage
+    let details = String(zeitraum || "");
+    if (zeit && details.startsWith(zeit)) details = details.slice(zeit.length).replace(/^\s*·\s*/, "");
+    details = details.replace(/ · /g, ", ");
     return { titel, zeitraum: zeit, details, gesamt: wert("Gesamtpreis"), name: wert("Name"), mail: wert("E-Mail") };
   },
 };

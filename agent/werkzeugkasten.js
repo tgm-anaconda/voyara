@@ -320,6 +320,12 @@ const Werkzeugkasten = {
       }
       setze("personen", a.personenGesamt);
       setze("erwachsene", a.erwachsene); setze("kinder", a.kinder);
+      // Das Alter der Kinder weiss nur die Person. Aus "mein suesser Bengel"
+      // machte das Modell sonst ein einjaehriges Kind.
+      if (Array.isArray(a.kinderAlter) && !(p.kinderAlter || []).length
+        && !gesagt(/\d|\bjahr|jährig|jaehrig|baby|säugling|saeugling|kleinkind|schulkind|teenager|monate/i, 2)) {
+        kern.notieren("alter_verworfen", { alter: a.kinderAlter }); delete a.kinderAlter;
+      }
       if (Array.isArray(a.kinderAlter)) setze("kinderAlter", a.kinderAlter.filter((x) => Number.isInteger(x) && x >= 0 && x < 18).slice(0, 6));
       // Rechnen tut der Kern, nicht das Modell: "zu viert" und "2 Kinder"
       // ergibt 2 Erwachsene, ohne Nachfrage
