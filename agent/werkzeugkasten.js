@@ -493,7 +493,7 @@ const Werkzeugkasten = {
           return { ...basis, haeuser: "nicht noetig - die Person schaut selbst",
             hinweis: kern.darf("suchen")
               ? "Die Filter stehen auf der Seite. Sag der Person in einem Satz, dass die Liste jetzt so eingestellt ist und sie in Ruhe schauen kann; du bist da, wenn sie etwas wissen will. Keine Frage noetig."
-              : "Du darfst die Seite nicht bedienen. Nenn der Person in einem Satz, welche Filter sie setzen kann (gesuchtMit), damit sie selbst schaut." };
+              : "Du darfst die Seite nicht bedienen, die Liste steht also NICHT bereit. Sag der Person, dass sie oben in der Suchmaske Ziel, Monat und Reisende eintraegt und dann links filtern kann (nenn zwei, drei passende Filter aus gesuchtMit). Du bist da, wenn sie Fragen hat." };
         }
         if (!darfEmpfehlen) {
           // Die Lage sagt der Kern selbst, mit festen Zahlen - das Modell hat
