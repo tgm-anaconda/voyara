@@ -333,7 +333,7 @@ const Werkzeugkasten = {
       setze("mindestbewertung", a.mindestbewertung); setze("mindestSterne", a.mindestSterne);
       // Der Anreisetag nur, wenn die Person einen Tag genannt hat - das
       // Modell setzte sonst schon beim "Zur Buchung" den 12. ein
-      if (a.anreise && !gesagt(/\b([1-9]|[12]\d|3[01])\.?\s*(oktober|november|dezember|januar|februar|märz|maerz|april|mai|juni|juli|august|september|\d{1,2}\.)|\b(am|ab dem|ab|vom)\s+([1-9]|[12]\d|3[01])\b|\d{4}-\d{2}-\d{2}/i)) {
+      if (a.anreise && !gesagt(Werkzeugkasten.TAG)) {
         kern.notieren("anreise_verworfen", { anreise: a.anreise }); delete a.anreise;
       }
       setze("anreise", a.anreise);
@@ -768,7 +768,7 @@ const Werkzeugkasten = {
         // sonst gern selbst gesetzt ("1. Oktober"). Geprueft wird, ob in
         // ihren letzten Nachrichten ueberhaupt ein Tag vorkommt.
         const tagGenannt = kern.lauf.gespraech.filter((n) => n.role === "user").slice(-4)
-          .some((n) => /\b([1-9]|[12]\d|3[01])\.?\s*(oktober|november|dezember|januar|februar|märz|maerz|april|mai|juni|juli|august|september|\d{1,2}\.)|\b(am|ab dem|ab|vom)\s+([1-9]|[12]\d|3[01])\b|\d{4}-\d{2}-\d{2}/i.test(String(n.content)));
+          .some((n) => Werkzeugkasten.TAG.test(String(n.content)));
         if (!kern.lauf.profil.anreise || !tagGenannt) {
           kern.lauf.profil.anreise = null;
           kern.standAnzeigen();
@@ -887,6 +887,10 @@ const Werkzeugkasten = {
     preis: { frage: "Ob sie beim Preis schon eine feste Grenze hat (pro Nacht oder gesamt) oder offen ist. Nicht 'wie viel darf es kosten' fragen. Offen heisst preisEgal true. Die Preisspanne aus der Lage darfst du nennen.", chips: "Feste Grenze | Offen" },
     wuensche: { frage: "Worauf sie bei der Unterkunft besonders achtet - offen gefragt, mit hoechstens drei Beispielen, die zur Person passen (Paar: Ruhe, Essen, Lage; Familie: Pool, Kinderclub, Strand). Keine Liste aller Moeglichkeiten. Antworten werden Wuensche (wuensche); nur ausdrueckliche Grenzen ('mindestens 4,5', 'direkt am Strand') werden Filter. 'Nichts Besonderes' heisst ausstattungEgal true.", chips: "Sauberkeit | Essen | Lage | Ruhe" },
   },
+
+  // Hat die Person einen Tag genannt? "am 5.", "5. Nov.", "5. November",
+  // "vom 12. bis 26.", "2026-11-05" oder nur "5." als ganze Antwort
+  TAG: /\b([1-9]|[12]\d|3[01])\.\s*(jan|feb|mär|maer|apr|mai|jun|jul|aug|sep|okt|nov|dez|\d{1,2}\.)|\b(am|ab dem|ab|vom|den)\s+([1-9]|[12]\d|3[01])\b|\d{4}-\d{2}-\d{2}|^\s*([1-9]|[12]\d|3[01])\.?\s*$/i,
 
   // Schluessel der Eckdaten - aendert er sich, muss neu gesucht werden
   eckdatenSchluessel(p) {

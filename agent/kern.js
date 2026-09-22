@@ -706,9 +706,9 @@ const Kern = {
           if (fp.naechstes && !Werkzeugkasten.THEMEN[fp.naechstes]?.chips) antwort.chips = [];
           // Fragt der Agent nach dem Anreisetag, obwohl ein Flug dabei ist, haengt
           // der Kern die Flugtage an - das Modell fragt sonst ins Blaue
-          if (!this.lauf.anreiseChips?.length && /anreise|anreisetag|welchen tag|welcher tag|datum/i.test(text) && /\?/.test(text)) {
+          if (/anreise|anreisetag|welchen tag|welcher tag|datum/i.test(text) && /\?/.test(text) && !/fliegt|flugtag/i.test(text)) {
             const h = this.flugtageHilfe();
-            if (h) { text = `${text} ${h.satz}`; nachricht.content = text; this.lauf.anreiseChips = h.chips; }
+            if (h) { text = `${text} ${h.satz}`; nachricht.content = text; if (!this.lauf.anreiseChips?.length) this.lauf.anreiseChips = h.chips; }
           }
           // Moegliche Anreisetage (Flugtage) als Chips - konkreter als jede Umschreibung
           if (this.lauf.anreiseChips?.length) { antwort.chips = this.lauf.anreiseChips; this.lauf.anreiseChips = null; }
