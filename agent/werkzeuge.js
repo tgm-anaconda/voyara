@@ -640,7 +640,14 @@ const Werkzeuge = {
       return { ok: true, text: "Die Buchung liegt zur Prüfung bereit.", daten: { vorbereitet: true } };
     }
 
-    await Zeiger.klicke(knopf, { hinweis: "Buchung abschließen" });
+    const geklickt = await Zeiger.klicke(knopf, { hinweis: "Buchung abschließen" });
+    await Zeiger.warte(400);
+    // Erst wenn die Bestaetigung wirklich steht, ist gebucht. Vorher meldete
+    // der Agent Erfolg, auch wenn der Klick gar nicht ausgeloest wurde.
+    const bestaetigt = !document.getElementById("confirmBtn") && /bestätigt|buchungsnummer/i.test(document.getElementById("checkoutMain")?.innerText || "");
+    if (!geklickt || !bestaetigt) {
+      return { ok: false, text: "Der letzte Klick ist nicht durchgegangen. Sag der Person, dass sie den Knopf 'Buchung abschließen' selbst drücken kann.", daten: { gebucht: false } };
+    }
     return { ok: true, text: "Buchung abgeschlossen — simuliert, es wurde nichts gebucht.", daten: { gebucht: true } };
   },
 

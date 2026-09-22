@@ -438,7 +438,11 @@ const Studie = {
     // Sperrflaeche ueber der Seite. Ob er vorher gefragt hat (Stufe
     // "vorbereiten") oder nicht (Stufe "buchen"), steht im Kern-Protokoll
     // und wird beim Abschluss der Aufgabe nachgetragen.
-    const durchAgent = !!document.getElementById("agentSperre");
+    // Die Sperrflaeche liegt waehrend der Agentenarbeit ueber der Seite; sie
+    // ist das eine Indiz. Das Kern-Protokoll ist das andere und zaehlt auch
+    // dann, wenn die Sperre schon aufgehoben war.
+    const durchAgent = !!document.getElementById("agentSperre")
+      || (this.kern?.lauf?.protokoll || []).some((x) => x.ereignis === "gebucht" && Date.now() - x.t < 15000);
     d.buchung = { id, gesamt: Math.round(gesamt), naechte, durchAgent, ohneRueckfrage: null, zeit: Date.now(), flug: flug || null };
     this.notieren("buchung", { id, gesamt: Math.round(gesamt), durchAgent });
     this.sichern();
@@ -455,8 +459,11 @@ const Studie = {
       const z = Werkzeuge.buchungsZusammenfassung?.();
       const zahl = z?.gesamt ? parseInt(String(z.gesamt).replace(/[^\d]/g, ""), 10) : null;
       if (id) {
+        // Wer geklickt hat, weiss das Kern-Protokoll sicherer als die
+        // Sperrflaeche, die zum Zeitpunkt des Nachtragens schon weg ist
+        const eintrag = [...(this.kern?.lauf?.protokoll || [])].reverse().find((x) => x.ereignis === "gebucht");
         d.buchung = { id, gesamt: zahl || 0, naechte: parseInt(new URLSearchParams(location.search).get("nights"), 10) || null,
-          durchAgent: !!document.getElementById("agentSperre"), ohneRueckfrage: null, zeit: Date.now(), flug: null, nachgetragen: true };
+          durchAgent: !!eintrag, ohneRueckfrage: eintrag ? !!eintrag.autonom : null, zeit: Date.now(), flug: null, nachgetragen: true };
         this.notieren("buchung_nachgetragen", { id, gesamt: d.buchung.gesamt });
       }
     }
