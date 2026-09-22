@@ -47,7 +47,7 @@ const Werkzeugkasten = {
           artEgal: { type: "boolean", description: "true, wenn die Person bei Hotel oder Ferienwohnung nicht festgelegt ist" },
           vorgehen: { type: "string", enum: ["top3", "selbst"], description: "top3 = du sollst drei Favoriten nennen; selbst = du stellst die Filter ein und die Person schaut selbst durch die Liste" },
           naechte: zahl("Zahl der Naechte"),
-          personenGesamt: zahl("Nur die Gesamtzahl, wenn die Person sie so nennt ('zu viert', 'vier Leute') - dann erwachsene und kinder leer lassen und nachfragen"),
+          personenGesamt: zahl("Nur die Gesamtzahl, wenn die Person sie so nennt ('zu viert', 'vier Leute') - dann erwachsene und kinder leer lassen und nachfragen. Kosewoerter wie 'mein Bengel', 'unser Spross', 'die Kleine' meinen ein Kind, keinen Erwachsenen; das Alter fragst du."),
           erwachsene: zahl("Zahl der Erwachsenen - nur, wenn die Person sie ausdruecklich nennt"),
           kinder: zahl("Zahl der Kinder (0, wenn ausdruecklich keine) - nur, wenn die Person sie ausdruecklich nennt"),
           kinderAlter: { type: "array", items: { type: "integer" }, description: "Alter der Kinder in Jahren" },
@@ -335,8 +335,20 @@ const Werkzeugkasten = {
       }
       // "Meine Frau und ich", "zu zweit", "allein": ohne ein Wort zu Kindern
       // sind keine dabei - das fragt man nicht nach
+      // Kosewoerter fuer Kinder. "Mein suesser Bengel" wurde sonst erst zu
+      // einem einjaehrigen Kind und dann zu einem dritten Erwachsenen.
+      const KIND_WORT = /kind|sohn|tochter|baby|kids|jährig|jaehrig|familie|enkel|bengel|spross|sprössling|sproessling|racker|zwerg|wurm|nachwuchs|sohnemann|töchterchen|toechterchen|\bjunge\b|\bmädchen\b|\bmaedchen\b|kleine[rn]?\b|kurze[rn]?\b|schatz/i;
+      const kindGesagt = gesagt(KIND_WORT, 2);
+      if (kindGesagt && !(p.kinder > 0) && !(a.kinder > 0)) {
+        // Ein Kind ist im Spiel, aber wie viele und wie alt, weiss nur die
+        // Person - beide Zahlen bleiben offen, der Fahrplan fragt nach
+        if (a.kinder === 0) delete a.kinder;
+        if (a.erwachsene != null && !gesagt(/\d|zwei|drei|vier|fünf|fuenf|erwachsene/i, 1)) delete a.erwachsene;
+        p.kinder = null;
+        kern.notieren("kind_erkannt", {});
+      }
       const paarGesagt = gesagt(/\bmein(e|er|em)?\s+(frau|mann|freundin|freund|partnerin|partner|eltern)\b|wir beide|zu zweit|allein|alleine|nur ich|\bpaar\b|erwachsene/i)
-        && !gesagt(/kind|sohn|tochter|baby|kids|jährig|jaehrig|familie|enkel/i);
+        && !kindGesagt;
       if (p.erwachsene != null && p.kinder == null && a.erwachsene != null && paarGesagt) { p.kinder = 0; geaendert.push("kinder"); }
       if (p.personen != null && p.erwachsene == null && p.kinder == null && a.personenGesamt != null && paarGesagt) { p.erwachsene = p.personen; p.kinder = 0; geaendert.push("erwachsene", "kinder"); }
       if (p.erwachsene != null && p.kinder != null) p.personen = p.erwachsene + p.kinder;
