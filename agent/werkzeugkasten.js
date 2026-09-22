@@ -350,9 +350,13 @@ const Werkzeugkasten = {
       // sind keine dabei - das fragt man nicht nach
       // Kosewoerter fuer Kinder. "Mein suesser Bengel" wurde sonst erst zu
       // einem einjaehrigen Kind und dann zu einem dritten Erwachsenen.
-      const KIND_WORT = /kind|sohn|tochter|baby|kids|jährig|jaehrig|familie|enkel|bengel|spross|sprössling|sproessling|racker|zwerg|wurm|nachwuchs|sohnemann|töchterchen|toechterchen|\bjunge\b|\bmädchen\b|\bmaedchen\b|kleine[rn]?\b|kurze[rn]?\b|schatz/i;
+      // "familienhotel", "familienzimmer", "familienfreundlich" sind
+      // Merkmale des Hauses, keine Aussage ueber Mitreisende - sonst fragte
+      // der Agent nach "kein Familienhotel bitte" wieder nach den Kindern
+      const KIND_WORT = /\bkind|sohn|tochter|baby|kids|jährig|jaehrig|\bfamilie\b|familienurlaub|familienreise|enkel|bengel|spross|sprössling|sproessling|racker|zwerg|wurm|nachwuchs|sohnemann|töchterchen|toechterchen|\bjunge\b|\bmädchen\b|\bmaedchen\b|kleine[rn]?\b|kurze[rn]?\b/i;
       const kindGesagt = gesagt(KIND_WORT, 2);
-      if (kindGesagt && !(p.kinder > 0) && !(a.kinder > 0)) {
+      // Eine schon geklaerte Zahl wird nie wieder aufgemacht
+      if (kindGesagt && p.kinder == null && !(a.kinder > 0)) {
         // Ein Kind ist im Spiel, aber wie viele und wie alt, weiss nur die
         // Person - beide Zahlen bleiben offen, der Fahrplan fragt nach
         if (a.kinder === 0) delete a.kinder;
@@ -370,6 +374,13 @@ const Werkzeugkasten = {
       if (a.typ) { setze("typ", a.typ); p.artGenannt = true; p.artEgal = false; }
       if (a.artEgal !== undefined && !p.artGenannt) { setze("artEgal", !!a.artEgal); if (p.artEgal && !p.typ) p.typ = "hotel"; }
       setze("zimmer", a.zimmer);
+      // "Budget 900 Euro fuers Hotel" meint die Reise, nicht die Nacht. Das
+      // Modell traegt das gern als Nachtpreis ein; ein Nachtpreis oberhalb
+      // des teuersten Hauses ist ohnehin keiner.
+      if (a.maxPreis && !a.budgetGesamt && gesagt(/budget|insgesamt|gesamt|zusammen|für(s| das| die)?\s*(hotel|unterkunft|reise|woche)|komplett|alles in allem|maximal ausgeben/i, 1)) {
+        a.budgetGesamt = a.maxPreis; delete a.maxPreis;
+        kern.notieren("budget_umgedeutet", { wert: a.budgetGesamt });
+      }
       setze("maxPreis", a.maxPreis); setze("budgetGesamt", a.budgetGesamt);
       if (a.maxPreis || a.budgetGesamt) p.preisEgal = false;
       if (a.maxStrandMeter != null) setze("maxStrand", Math.round(a.maxStrandMeter) / 1000);
