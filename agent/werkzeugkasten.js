@@ -834,7 +834,8 @@ const Werkzeugkasten = {
       }
       kern.notieren("buchung_vorbereitet", { id: a.id });
       const z = Werkzeuge.buchungsZusammenfassung();
-      if (!kern.darf("buchen")) kern.notieren("gegenzeichnung_vorgelegt", { id: a.id });
+      if (kern.darf("buchen")) kern.lauf.abschlussFaellig = true;
+      else kern.notieren("gegenzeichnung_vorgelegt", { id: a.id });
       return {
         ergebnis: { vorbereitet: true, zusammenfassung: z,
           hinweis: kern.darf("buchen")
@@ -845,6 +846,7 @@ const Werkzeugkasten = {
     },
 
     async buchung_abschliessen(a, kern) {
+      kern.lauf.abschlussFaellig = false;
       if (Werkzeuge.seite() !== "checkout") return { ergebnis: { fehler: "Es ist keine Buchung vorbereitet. Ruf erst buchung_vorbereiten." } };
       const autonom = kern.darf("buchen");
       if (autonom) {
@@ -1017,6 +1019,9 @@ const Werkzeugkasten = {
   // sich aus ruft: die erste Suche, die Suche nach der Beratung. Null,
   // wenn nichts ansteht.
   zwang(p, lauf = {}) {
+    // Bei Freigabe "buchen" folgt auf die vorbereitete Buchung der Abschluss
+    // im selben Zug. Das Modell kuendigte es sonst an und fragte dann doch.
+    if (lauf.abschlussFaellig) return "buchung_abschliessen";
     const fp = this.fahrplan(p, lauf);
     if (fp.eckdatenFertig && !fp.gesucht && !p.vorgehen) return "suchen";
     if ((fp.phase === "vorschlaege" || fp.phase === "selbst") && lauf.vorgehenFuer !== fp.schluessel + p.vorgehen) return "suchen";

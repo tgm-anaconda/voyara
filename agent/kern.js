@@ -218,6 +218,7 @@ const Kern = {
       vorgehenFuer: null,      // Eckdaten + Vorgehen, fuer die schon gesucht wurde
       vorlageFuer: null,       // Vorgaben, fuer die zuletzt vorgelegt wurde
       ueberblickGezeigt: false,
+      abschlussFaellig: false,
       gewaehlt: null,
       freigabe: null,
       runde: 0,
@@ -540,9 +541,47 @@ const Kern = {
     else if (this.lauf.letzteTreffer?.length) zeilen.push(`Letztes Suchergebnis (ids): ${this.lauf.letzteTreffer.join(", ")}.`);
     if (this.lauf.gewaehlt) zeilen.push(`Geoeffnetes Haus: ${getItemById?.(this.lauf.gewaehlt)?.name || this.lauf.gewaehlt} (${this.lauf.gewaehlt}).`);
     zeilen.push(this.fahrplanText());
+    for (const block of this.regelnJetzt()) zeilen.push(block);
     if (this.lauf.phase === "angehalten") zeilen.push("Die Person hat waehrend deiner Arbeit selbst geklickt; du hast angehalten.");
     zeilen.push("Fuer deine naechste Antwort: hoechstens drei Saetze, genau eine Frage (nie zwei), und wenn du fragst, als letzte Zeile CHIPS: mit zwei bis vier Antworten.");
     return zeilen.join("\n");
+  },
+
+  /* Regeln, die gerade gelten.
+     ------------------------------------------------------------------
+     Bis zum 22.09.2026 stand alles in der festen Rolle: Buchungsregeln,
+     Flugregeln, Vorlageregeln, auch wenn gerade nur der Reisemonat
+     gefragt war. Sechzig Vorgaben auf einmal haelt ein kleines Modell
+     nicht durch. Jetzt bekommt es den festen Kern (Ton, eine Frage,
+     keine erfundenen Zahlen) plus die Bloecke, die zur Lage passen.
+
+     Bewusst grosszuegig: Ein Block kommt schon mit, wenn er gleich
+     gebraucht werden koennte - lieber eine Regel zu viel als eine zu
+     wenig. Die Flugregeln haengen deshalb am Flug im Stand, nicht an
+     der Phase; die Buchungsregeln an der Freigabe, nicht daran, ob
+     gerade ein Haus offen ist. */
+  regelnJetzt() {
+    const p = this.lauf.profil || {};
+    const fp = Werkzeugkasten.fahrplan(p, this.lauf);
+    const seite = Werkzeuge.seite();
+    const bloecke = [];
+
+    // Flug: sobald er im Gespraech ist oder gleich gefragt wird
+    if (p.flug || fp.naechstes === "flug" || fp.naechstes === "flugAb" || (p.flug == null && p.typ !== "apartment")) {
+      bloecke.push("FLUG: Bei Hotels kann die Seite einen Flug dazubuchen (Hin- und Rueckflug fuer alle Reisenden; Abflughaefen Hamburg, Stuttgart, Duesseldorf, Hannover, Muenchen, Koeln, Frankfurt, Berlin; Klassen Economy, Premium Economy, Business, gerechnet ist Economy). Nicht jede Verbindung fliegt taeglich: Mit Flug haengt der Anreisetag von den Flugtagen ab, und nach der Reisedauer muss wieder ein Flugtag sein. Welche Tage gehen, sagen dir die Werkzeuge - erfinde keine. Bei Ferienwohnungen gibt es keinen Flug.");
+    }
+    // Vorlage und Vergleiche: sobald Haeuser im Spiel sind
+    if (this.lauf.letzteVorlage?.length || fp.phase === "vorschlaege" || this.lauf.gewaehlt || seite === "stay") {
+      bloecke.push("VORSCHLAEGE: Die Haeuser stehen mit festen Saetzen im Chat (Preis, Note, Belege). Du wiederholst sie nicht, sondern fragst in einem Satz, welches sie sich ansehen will oder ob etwas fehlt. Nachfragen und Vergleiche beantwortest du mit haus_details, nie mit buchung_vorbereiten. Will sie ein Haus sehen, ruf haus_oeffnen. Neue Vorgaben merkst du und suchst neu; suchen legt dann neu vor. Bei nur einem oder keinem Treffer lockerst du eine Vorgabe, sagst welche, und suchst noch einmal.");
+    }
+    // Buchung: sobald die Freigabe es hergibt
+    if (this.darf("vorbereiten")) {
+      const autonom = this.darf("buchen");
+      bloecke.push(`BUCHEN: In die Buchungsstrecke gehst du nur, wenn die Person ausdruecklich buchen will ("buch das", "nehmen wir"). Vorher braucht es einen Anreisetag von ihr (bei flexibler Suche; mit Flug einen Flugtag) - such ihn nicht selbst aus. ${autonom ? "Du darfst abschliessen: buchung_vorbereiten und dann buchung_abschliessen; die Ansage uebernimmt die Seite." : "Du darfst vorbereiten, nicht abschliessen: leg vor, was gebucht wuerde (Haus, Zeitraum, Gesamtpreis, Name), und frag, ob du abschliessen sollst. Erst nach einem klaren Ja buchung_abschliessen."} Liegt ein Preis ueber dem gemerkten Budget, sagst du das.`);
+    } else if (fp.phase === "vorschlaege" || this.lauf.gewaehlt) {
+      bloecke.push("BUCHEN: Du darfst nicht buchen. Will die Person buchen, sag ihr freundlich, dass sie den Knopf auf der Seite selbst druecken kann oder dir die Freigabe anheben darf.");
+    }
+    return bloecke;
   },
 
   // Der Fahrplan als Vorgabe fuer das Modell: was als Naechstes dran ist
@@ -603,6 +642,9 @@ const Kern = {
     this.lauf.vorlageImZug = false;
     this.lauf.lageImZug = null;
     this.lauf.anreiseChips = null;
+    // Sagt die Person etwas, bevor der Abschluss lief, entscheidet wieder das
+    // Gespraech - nur ein glattes Ja haelt den Abschluss am Leben
+    if (this.lauf.abschlussFaellig && !/^\s*(ja|jap|jo|okay|ok|gern|bitte|mach|klar|passt|genau)\b/i.test(t)) this.lauf.abschlussFaellig = false;
     // Die Antwort auf ein gefragtes Thema zaehlt als besprochen - was die
     // Person dazu gesagt hat, traegt das Modell mit stand_merken ein
     if (this.lauf.gefragt) {
@@ -625,6 +667,23 @@ const Kern = {
   gespraechFuerModell() {
     let liste = this.lauf.gespraech.slice(-this.MAX_GESPRAECH);
     while (liste.length && (liste[0].role === "tool" || (liste[0].role === "assistant" && liste[0].tool_calls))) liste = liste.slice(1);
+    // Werkzeugergebnisse sind lang (acht Haeuser mit Bewertungen, die Lage).
+    // Aeltere werden gekuerzt: Das Modell braucht sie nur noch als Erinnerung,
+    // was es getan hat. Ohne das lief ein langes Gespraech in die
+    // Zeichengrenze des Endpunkts und brach ab ("Da ist etwas schiefgegangen").
+    let tool = 0;
+    liste = liste.map((n, i) => n).reverse().map((n) => {
+      if (n.role !== "tool") return n;
+      tool += 1;
+      const grenze = tool <= 2 ? 4000 : 400;
+      const c = String(n.content || "");
+      return c.length <= grenze ? n : { ...n, content: `${c.slice(0, grenze)} … (gekuerzt)` };
+    }).reverse();
+    // Notbremse: passt es immer noch nicht, fallen die aeltesten Nachrichten weg
+    while (liste.length > 6 && JSON.stringify(liste).length > 45000) {
+      liste = liste.slice(1);
+      while (liste.length && (liste[0].role === "tool" || (liste[0].role === "assistant" && liste[0].tool_calls))) liste = liste.slice(1);
+    }
     return liste;
   },
 

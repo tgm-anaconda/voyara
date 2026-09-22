@@ -73,7 +73,10 @@ const Pruefstand = {
   ROHFEHLER: ["zwei_fragen", "thema_verfehlt", "zahl_ungedeckt", "datum_verworfen",
     "monat_verworfen", "naechte_verworfen", "anreise_verworfen", "reisende_verworfen",
     "egal_verworfen", "richtung_verworfen", "maske_korrigiert", "maske_abweichung",
-    "lage_wiederholt", "vorlage_wiederholt", "vorlage_zu_frueh", "zwang"],
+    "lage_wiederholt", "vorlage_wiederholt", "vorlage_zu_frueh"],
+  // Kein Fehler, aber aufschlussreich: wie oft der Kern ein Werkzeug erzwingen
+  // musste, weil das Modell es nicht von sich aus rief
+  NOTIZ: ["zwang", "gesperrt", "uebernahme", "stopp"],
 
   VERBOTEN: /\b(kriterien|auswertung|transparen|optimal|präferenz|praeferenz|selektion|parameter)\w*/gi,
 
@@ -160,7 +163,11 @@ const Pruefstand = {
     const bot = (lauf.verlauf || []).filter((n) => n.rolle === "bot");
     const prot = lauf.protokoll || [];
     const roh = {};
-    for (const e of prot) if (this.ROHFEHLER.includes(e.ereignis)) roh[e.ereignis] = (roh[e.ereignis] || 0) + 1;
+    const notiz = {};
+    for (const e of prot) {
+      if (this.ROHFEHLER.includes(e.ereignis)) roh[e.ereignis] = (roh[e.ereignis] || 0) + 1;
+      if (this.NOTIZ.includes(e.ereignis)) notiz[e.ereignis] = (notiz[e.ereignis] || 0) + 1;
+    }
 
     const belege = this.kern.belege();
     const rest = [];
@@ -168,13 +175,21 @@ const Pruefstand = {
     for (const n of bot) {
       const t = String(n.text || "");
       if (!t) continue;
-      const fragen = this.kern.fragenZaehlen(t);
-      if (fragen > 1) rest.push({ art: "zwei_fragen", text: t.slice(0, 160) });
+      // Saetze, die der Kern selbst schreibt (Vorlage, Lage, Buchungsansage),
+      // sind gewollt laenger und wiederholen sich der Form nach - sie zaehlen
+      // nicht als Stilfehler des Modells
+      if (n.links || n.aktionen || /^(Im |Aktuell |Auf |Ich buche jetzt)/.test(t) && /\d/.test(t) && !/\?/.test(t)) continue;
+      const echteFragen = t.split(/(?<=[.!?])\s+/)
+        .filter((x) => /\?\s*$/.test(x))
+        .filter((x) => !/^(oder|bzw|beziehungsweise|also|und wenn|zum beispiel|etwa|z\. ?b)/i.test(x.trim()))
+        .filter((x) => x.trim().split(/\s+/).length > 4);
+      if (echteFragen.length > 1) rest.push({ art: "zwei_fragen", fragen: echteFragen, text: t.slice(0, 160) });
       if (/!/.test(t)) rest.push({ art: "ausrufezeichen", text: t.slice(0, 160) });
       const verboten = t.match(this.VERBOTEN);
       if (verboten) rest.push({ art: "verbotenes_wort", wort: verboten[0], text: t.slice(0, 160) });
       const saetze = t.split(/(?<=[.!?])\s+/).filter(Boolean);
       if (saetze.length > 4) rest.push({ art: "zu_lang", saetze: saetze.length, text: t.slice(0, 160) });
+      if (t.length > 420) rest.push({ art: "zu_viele_zeichen", zeichen: t.length, text: t.slice(0, 160) });
       const fremd = typeof Modell !== "undefined" ? Modell.fremdeZahlen(t, belege) : [];
       if (fremd.length) rest.push({ art: "fremde_zahl", zahlen: fremd, text: t.slice(0, 160) });
       // Wiederholung: derselbe Satz in zwei Nachrichten
@@ -192,14 +207,15 @@ const Pruefstand = {
       erwachsene: +(q.get("adults") || 0) === +(p.erwachsene ?? 0),
       kinder: +(q.get("children") || 0) === +(p.kinder ?? 0),
       alter: !p.kinder || (q.get("ages") || "") === (p.kinderAlter || []).join(","),
-      naechte: !p.naechte || +(q.get("nights") || 0) === +p.naechte,
+      naechte: !p.naechte || q.get("flex") !== "1" || +(q.get("nights") || 0) === +p.naechte,
     } : null;
 
     const e = this.ergebnis();
     e.push({
       id: g.id, freigabe: g.freigabe,
       nachrichten: g.texte.length, botNachrichten: bot.length,
-      rohfehler: roh, rohSumme: Object.values(roh).reduce((a, b) => a + b, 0),
+      rohfehler: roh, rohSumme: Object.values(roh).reduce((a, b) => a + b, 0), notiz,
+      protokoll: prot.map((x) => x.ereignis),
       restfehler: rest, restSumme: rest.length,
       maske, seite: Werkzeuge.seite(),
       gebucht: prot.some((x) => x.ereignis === "gebucht"),
@@ -224,13 +240,16 @@ const Pruefstand = {
     for (const x of e) for (const [k, v] of Object.entries(x.rohfehler)) roh[k] = (roh[k] || 0) + v;
     const rest = {};
     for (const x of e) for (const r of x.restfehler) rest[r.art] = (rest[r.art] || 0) + 1;
+    const notiz = {};
+    for (const x of e) for (const [k, v] of Object.entries(x.notiz || {})) notiz[k] = (notiz[k] || 0) + v;
     const botNachrichten = summe((x) => x.botNachrichten);
     return {
       gespraeche: e.length,
       botNachrichten,
       rohfehler: roh, rohSumme: summe((x) => x.rohSumme),
       rohJeNachricht: botNachrichten ? Math.round(summe((x) => x.rohSumme) / botNachrichten * 100) / 100 : 0,
-      restfehler: rest, restSumme: summe((x) => x.restSumme),
+      restfehler: rest, restSumme: summe((x) => x.restSumme), notiz,
+      abbrueche: summe((x) => x.verlauf.filter((t) => /schiefgegangen|nicht erreichbar/.test(t)).length),
       restAnteilProzent: botNachrichten ? Math.round(summe((x) => x.restSumme) / botNachrichten * 1000) / 10 : 0,
       maskeFalsch: e.filter((x) => x.maske && Object.values(x.maske).some((v) => v === false)).map((x) => x.id),
       gebucht: e.filter((x) => x.gebucht).map((x) => x.id),
