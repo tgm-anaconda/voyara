@@ -654,10 +654,14 @@ const Politik = {
     }
 
     // Ausstattungswuensche (Pool, Meerblick, Kinderclub, Wellness): hat es das Haus?
-    const ausstattungsWuensche = (profil.kriterien || []).map((x) => this.kriterium(x.id)).filter((kr) => kr?.filter?.ausstattung);
+    const ausstattungsWuensche = (profil.kriterien || []).map((x) => this.kriterium(x.id)).filter((kr) => kr?.filter?.ausstattung)
+      .map((kr) => ({ key: kr.filter.ausstattung, label: kr.label }));
+    for (const key of profil.ausstattung || []) {
+      if (!ausstattungsWuensche.some((w) => w.key === key)) ausstattungsWuensche.push({ key, label: (typeof AMENITY_LABELS !== "undefined" && AMENITY_LABELS[key]) || key });
+    }
     if (ausstattungsWuensche.length) {
-      const hat = ausstattungsWuensche.filter((kr) => (item.amenities || []).includes(kr.filter.ausstattung)).map((kr) => kr.label);
-      const fehlt = ausstattungsWuensche.filter((kr) => !(item.amenities || []).includes(kr.filter.ausstattung)).map((kr) => kr.label);
+      const hat = ausstattungsWuensche.filter((w) => (item.amenities || []).includes(w.key)).map((w) => w.label);
+      const fehlt = ausstattungsWuensche.filter((w) => !(item.amenities || []).includes(w.key)).map((w) => w.label);
       if (hat.length) teile.push(`${hat.length > 1 ? "Mit" : "Mit"} ${this.aufzaehlen(hat)}.`);
       if (fehlt.length) teile.push(`${fehlt.length > 1 ? "Ohne" : "Kein"} ${this.aufzaehlen(fehlt)}.`);
     }

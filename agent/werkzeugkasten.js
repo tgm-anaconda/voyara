@@ -281,7 +281,9 @@ const Werkzeugkasten = {
       if (a.weiter) { setze("weiter", a.weiter); kern.notieren("weiter", { wahl: a.weiter }); }
       // Ein Monat nur, wenn die Person einen genannt hat (oder eine
       // Jahreszeit) - auf "hauptsache warm" hatte das Modell Oktober gesetzt
-      if (a.monat && !p.monat && !gesagt(/januar|februar|märz|maerz|april|\bmai\b|juni|juli|august|september|oktober|november|dezember|\bjan\b|\bfeb\b|\bokt\b|\bnov\b|\bdez\b|sommer|herbst|winter|frühling|fruehling|frühjahr|fruehjahr|ostern|pfingsten|weihnachten|silvester|ferien|nächsten monat|naechsten monat|\d{1,2}\.\s*\d{1,2}\.|\d{4}-\d{2}/i)) {
+      // Eine Jahreszeit ("im Winter") ist noch kein Monat - dann fragt der
+      // Agent nach dem Monat; "egal" darf er selbst aufloesen
+      if (a.monat && !p.monat && !gesagt(/januar|februar|märz|maerz|april|\bmai\b|juni|juli|august|september|oktober|november|dezember|\bjan\b|\bfeb\b|\bokt\b|\bnov\b|\bdez\b|ostern|pfingsten|weihnachten|silvester|nächsten monat|naechsten monat|\d{1,2}\.\s*\d{1,2}\.|\d{4}-\d{2}|egal|gleich|such du|du entscheid|dein vorschlag|nimm/i)) {
         kern.notieren("monat_verworfen", { monat: a.monat }); delete a.monat;
       }
       setze("monat", a.monat);
@@ -317,7 +319,7 @@ const Werkzeugkasten = {
       }
       // "Meine Frau und ich", "zu zweit", "allein": ohne ein Wort zu Kindern
       // sind keine dabei - das fragt man nicht nach
-      const paarGesagt = gesagt(/meine frau|mein mann|meine freundin|mein freund|meine partnerin|mein partner|wir beide|zu zweit|allein|alleine|nur ich|paar\b|erwachsene/i)
+      const paarGesagt = gesagt(/\bmein(e|er|em)?\s+(frau|mann|freundin|freund|partnerin|partner|eltern)\b|wir beide|zu zweit|allein|alleine|nur ich|\bpaar\b|erwachsene/i)
         && !gesagt(/kind|sohn|tochter|baby|kids|jährig|jaehrig|familie|enkel/i);
       if (p.erwachsene != null && p.kinder == null && a.erwachsene != null && paarGesagt) { p.kinder = 0; geaendert.push("kinder"); }
       if (p.personen != null && p.erwachsene == null && p.kinder == null && a.personenGesamt != null && paarGesagt) { p.erwachsene = p.personen; p.kinder = 0; geaendert.push("erwachsene", "kinder"); }
@@ -874,7 +876,7 @@ const Werkzeugkasten = {
      andere draengt die Person in eine Richtung. Ohne chips: keine Chips,
      auch keine vom Modell. */
   THEMEN: {
-    zeit: { frage: "Wann es ungefaehr losgehen soll - ein Monat reicht. Feste Daten nur, wenn sie welche hat; nicht danach draengen. Ein Monat allein heisst flexibel im Monat.", chips: null },
+    zeit: { frage: "Wann es ungefaehr losgehen soll - ein Monat reicht. Feste Daten nur, wenn sie welche hat; nicht danach draengen. Nennt sie nur eine Jahreszeit ('im Winter'), frag, welcher Monat - 'egal' ist eine Antwort, dann nimmst du den ersten Monat der Jahreszeit und sagst das.", chips: null },
     reisende: { frage: "Mit wem sie reist - kurz, etwa 'Wie viele seid ihr, und sind Kinder dabei?' (bei Kindern gleich das Alter mit aufnehmen).", chips: "1 | 2 | 3 | 4 oder mehr" },
     kinderAlter: { frage: "Wie alt die Kinder sind (die Zahl der Kinder ist bekannt, nur das Alter fehlt).", chips: null },
     ziel: { frage: "Ob es eher in eine warme oder eher in eine kalte Region gehen soll, oder ob sie schon ein Ziel hat. Nichts anpreisen.", chips: "Eher warm | Eher kalt | Ich habe ein Ziel" },
@@ -959,6 +961,13 @@ const Werkzeugkasten = {
     }
     let frage = naechstes ? this.THEMEN[naechstes]?.frage : null;
     let chips = naechstes ? this.THEMEN[naechstes]?.chips : null;
+    // Ohne Freigabe fuer die Seite kann der Agent keine Filter stellen - dann
+    // lautet die Wahl: selbst schauen (mit Filtertipps) oder drei genannt bekommen
+    const darfSeite = typeof FREIGABE_RANG !== "undefined" && lauf.freigabe ? FREIGABE_RANG[lauf.freigabe] >= FREIGABE_RANG.suchen : true;
+    if (naechstes === "vorgehen" && !darfSeite) {
+      frage = "Ob sie selbst durch die Liste schauen will (du darfst die Seite nicht bedienen, sagst ihr aber, welche Filter passen; vorgehen selbst) oder ob du ihr drei Haeuser nennst (vorgehen top3). Beides gleichwertig anbieten.";
+      chips = "Ich schaue selbst | Nenn mir drei";
+    }
     if (naechstes === "reisende") {
       if (p.personen != null && p.erwachsene == null && p.kinder == null) { frage = `Wie viele der ${p.personen} Kinder sind, und wie alt - 'keine' ist eine Antwort. Erwachsene nicht fragen, das rechnet die Seite.`; chips = "Keine Kinder | Ein Kind | Zwei Kinder"; }
       else if (p.erwachsene != null && p.kinder == null) { frage = "Ob Kinder mitreisen - und wenn ja, wie viele und wie alt."; chips = "Keine Kinder | Ein Kind | Zwei Kinder"; }
