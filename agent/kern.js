@@ -428,6 +428,18 @@ const Kern = {
     AgentPanel.freigabeAufbauen(FREIGABE, this.lauf.freigabe, (stufe) => this.freigabeSetzen(stufe));
     document.body.classList.toggle("agent-ohne-freigabe", erstoeffnung && !this.lauf.freigabeGewaehlt);
 
+    // Pruefstand (nur wenn ausdruecklich gestartet): spielt feste Gespraeche
+    // gegen den echten Agenten und zaehlt, wie oft die Leitplanken greifen
+    if (sessionStorage.getItem("voyara_pruefstand")) {
+      if (typeof Pruefstand === "undefined") {
+        const el = document.createElement("script");
+        el.src = "agent/pruefstand.js?v=" + Date.now();
+        el.onload = () => Pruefstand.anbinden(this);
+        document.head.appendChild(el);
+      } else {
+        Pruefstand.anbinden(this);
+      }
+    }
     if (typeof Zugang !== "undefined") Zugang.anbinden(this);
     if (typeof Log !== "undefined") Log.anbinden(this);
     if (erstoeffnung && !this.lauf.freigabeGewaehlt && typeof Zugang !== "undefined" && Zugang.istOffen()) {
