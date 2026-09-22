@@ -1142,7 +1142,11 @@ const Werkzeugkasten = {
       if (filter.ausstattung.some((x) => !(h.amenities || []).includes(x))) return false;
       if (!this.passtGruppe(h, p)) return false;
       const preis = this.preis(h, p.monat);
-      if (p.maxPreis && preis > p.maxPreis) return false;
+      // Ein Gesamtbudget gilt fuer den ganzen Aufenthalt, wie die Kasse ihn
+      // rechnet (Zimmer fuer die Gruppe, Verpflegung, Gebuehr) - sonst lag
+      // ein Vorschlag mit 1.512 Euro im "Budget bis 1.500"
+      if (p.budgetGesamt && p.naechte && typeof Politik !== "undefined" && Politik.aufenthaltspreis(h, p, preis).gesamt > p.budgetGesamt) return false;
+      if (!p.budgetGesamt && p.maxPreis && preis > p.maxPreis) return false;
       if (p.maxStrand != null && (h.distanceToBeach ?? 99) > p.maxStrand) return false;
       if (p.mindestbewertung && (h.rating || 0) < p.mindestbewertung) return false;
       if (p.mindestSterne && (h.stars || 0) < p.mindestSterne) return false;

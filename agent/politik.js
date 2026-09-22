@@ -622,18 +622,20 @@ const Politik = {
     const zimmer = Math.max(1, profil.zimmer || 1);
     let preisText = `${k.preis} € pro Nacht`;
     if (naechte) {
-      const gebuehr = item.type === "apartment" ? (item.cleaningFee || 0) : 35 * zimmer;
-      const aufenthalt = k.preis * naechte * zimmer + gebuehr;
+      // Dieselbe Rechnung wie Hausseite und Kasse: das Zimmer, in das die
+      // Gruppe passt (mit Aufpreis), die erste Verpflegung, Gebuehr je Zimmer
+      const a = this.aufenthaltspreis(item, profil, k.preis);
       const personen = (profil.erwachsene || 0) + (profil.kinder || 0);
       const paket = profil.flug && item.type !== "apartment" && typeof Flug !== "undefined" ? Flug.paket(item, personen || 1, profil.flugKlasse || null) : null;
+      const womit = a.zimmer && a.zimmer.priceDelta ? ` im ${a.zimmer.name}` : "";
       preisText += paket
-        ? `, ${naechte} Nächte mit Flug ab ${paket.flug.from} ${this.euro(aufenthalt + paket.gesamt)}`
-        : `, ${naechte} Nächte ${this.euro(aufenthalt)}`;
+        ? `, ${naechte} Nächte${womit} mit Flug ab ${paket.flug.from} ${this.euro(a.gesamt + paket.gesamt)}`
+        : `, ${naechte} Nächte${womit} ${this.euro(a.gesamt)}`;
     }
     teile.push(`${item.name} in ${item.location}, ${preisText}, ${note} aus ${item.reviewCount} Bewertungen.`);
 
     // Strandnaehe, wenn sie der Person wichtig ist
-    const strandWichtig = profil.maxStrand != null || (profil.kriterien || []).some((x) => x.id === "strandnah");
+    const strandWichtig = profil.maxStrand != null || (profil.kriterien || []).some((x) => x.id === "strandnah") || (profil.ausstattung || []).includes("beachfront");
     if (strandWichtig && item.distanceToBeach != null) {
       teile.push(item.distanceToBeach <= 0.2 ? "Direkt am Strand." : `${item.distanceToBeach < 1 ? `${Math.round(item.distanceToBeach * 1000)} m` : `${item.distanceToBeach} km`} zum Strand.`);
     }
@@ -657,6 +659,8 @@ const Politik = {
     const ausstattungsWuensche = (profil.kriterien || []).map((x) => this.kriterium(x.id)).filter((kr) => kr?.filter?.ausstattung)
       .map((kr) => ({ key: kr.filter.ausstattung, label: kr.label }));
     for (const key of profil.ausstattung || []) {
+      // Strandlage steht schon oben als Entfernung
+      if (key === "beachfront" && item.distanceToBeach != null) continue;
       if (!ausstattungsWuensche.some((w) => w.key === key)) ausstattungsWuensche.push({ key, label: (typeof AMENITY_LABELS !== "undefined" && AMENITY_LABELS[key]) || key });
     }
     if (ausstattungsWuensche.length) {
@@ -674,6 +678,22 @@ const Politik = {
 
   euro(n) {
     return `${Math.round(n).toLocaleString("de-DE")} €`;
+  },
+
+  /* Preis des Aufenthalts, wie die Kasse ihn rechnet: Nachtpreis im Monat
+     plus Aufpreis des Zimmers, in das die Gruppe passt, plus die erste
+     Verpflegung, mal Naechte mal Zimmer, plus Gebuehr je Zimmer (Hotel 35,
+     Wohnung Endreinigung). Liefert auch das gewaehlte Zimmer. */
+  aufenthaltspreis(item, profil, preisProNacht) {
+    const naechte = profil.naechte || 7;
+    const zimmerZahl = Math.max(1, profil.zimmer || 1);
+    if (item.type === "apartment") return { zimmer: null, board: null, gesamt: preisProNacht * naechte + (item.cleaningFee || 0) };
+    const personen = (profil.erwachsene || 0) + (profil.kinder || 0);
+    const jeZimmer = personen ? Math.ceil(personen / zimmerZahl) : 0;
+    const zimmer = (item.rooms || []).find((r) => (r.maxGuests || 0) >= jeZimmer) || (item.rooms || [])[0] || null;
+    const board = (item.boards || [])[0] || null;
+    const nacht = preisProNacht + (zimmer?.priceDelta || 0) + (board?.priceDelta || 0);
+    return { zimmer, board, gesamt: nacht * naechte * zimmerZahl + 35 * zimmerZahl };
   },
 
   /* Begruendung fuer den Partnervorschlag in der offenen Bedingung.
@@ -1486,6 +1506,10 @@ const Politik = {
     for (const k of profil.kriterien || []) {
       const l = this.kriterium(k.id)?.label;
       if (l) raus.push({ feld: "Wunsch", wert: l });
+    }
+    for (const a of profil.ausstattung || []) {
+      if (a === "beachfront" && profil.maxStrand != null && profil.maxStrand <= 0.2) continue;
+      raus.push({ feld: "Muss", wert: (typeof AMENITY_LABELS !== "undefined" && AMENITY_LABELS[a]) || a });
     }
     if (profil.flug != null) raus.push({ feld: "Flug", wert: profil.flug ? `ja${profil.flugAb ? `, ab ${profil.flugAb}` : ""}` : "nein" });
     return raus.filter((x) => x.wert);
