@@ -491,7 +491,9 @@ const Werkzeugkasten = {
           if (fp.suchbereit && kern.lauf.lageFuer !== fp.schluessel && liste.length) {
             kern.lauf.lageFuer = fp.schluessel;
             await kern.denkpause(600, "fasst zusammen…");
-            kern.sagen(Werkzeugkasten.lageSatz(liste, p, umfang));
+            const lage = Werkzeugkasten.lageSatz(liste, p, umfang);
+            kern.sagen(lage);
+            kern.lauf.lageImZug = lage;
             kern.notieren("lage_gesagt", { haeuser: liste.length });
             return { ...basis, haeuser: "noch nicht - erst die Beratung",
               hinweis: "Die Lage steht schon im Chat (nicht wiederholen, keine Zahlen noch einmal). Hoechstens ein Satz aus deinem Wissen zu Klima oder Charakter der Regionen, dann das naechste Thema.",
@@ -978,6 +980,13 @@ const Werkzeugkasten = {
     if (naechstes === "vorgehen" && !darfSeite) {
       frage = "Ob sie selbst durch die Liste schauen will (du darfst die Seite nicht bedienen, sagst ihr aber, welche Filter passen; vorgehen selbst) oder ob du ihr drei Haeuser nennst (vorgehen top3). Beides gleichwertig anbieten.";
       chips = "Ich schaue selbst | Nenn mir drei";
+    }
+    // Jahreszeit genannt, Monat offen: die drei Monate zur Wahl, keinen vorschlagen
+    if (naechstes === "zeit") {
+      const gesagt = (lauf.gespraech || []).filter((n) => n.role === "user").map((n) => String(n.content).toLowerCase()).join(" ");
+      const JAHRESZEIT = { sommer: "Juni | Juli | August", herbst: "September | Oktober | November", winter: "Dezember | Januar | Februar", "frühling": "März | April | Mai", fruehling: "März | April | Mai", "frühjahr": "März | April | Mai" };
+      const jz = Object.keys(JAHRESZEIT).find((k) => gesagt.includes(k));
+      if (jz) { frage = `Sie hat "${jz}" gesagt - frag, welcher Monat: ${JAHRESZEIT[jz].replace(/ \| /g, ", ")}? Keinen davon vorschlagen oder als "richtig?" unterstellen; "egal" ist eine Antwort (dann nimmst du den ersten und sagst das).`; chips = `${JAHRESZEIT[jz]} | Egal`; }
     }
     if (naechstes === "reisende") {
       if (p.personen != null && p.erwachsene == null && p.kinder == null) { frage = `Wie viele der ${p.personen} Kinder sind, und wie alt - 'keine' ist eine Antwort. Erwachsene nicht fragen, das rechnet die Seite.`; chips = "Keine Kinder | Ein Kind | Zwei Kinder"; }

@@ -585,6 +585,12 @@ const Kern = {
     }
     this.sagen(t, "user");
     this.gespraechPush({ role: "user", content: t });
+    // Merker des vorigen Zuges (Lage, Vorlage, Anreise-Chips) gelten nicht mehr.
+    // Nicht am Anfang von zug() zuruecksetzen: die Suche wechselt die Seite,
+    // und der Zug laeuft nach dem Laden weiter
+    this.lauf.vorlageImZug = false;
+    this.lauf.lageImZug = null;
+    this.lauf.anreiseChips = null;
     // Die Antwort auf ein gefragtes Thema zaehlt als besprochen - was die
     // Person dazu gesagt hat, traegt das Modell mit stand_merken ein
     if (this.lauf.gefragt) {
@@ -618,8 +624,6 @@ const Kern = {
     AgentPanel.status("denkt nach…");
     try {
       const erzwungen = new Set();
-      this.lauf.vorlageImZug = false;
-      this.lauf.anreiseChips = null;
       for (let i = 0; i < this.MAX_ZUEGE; i++) {
         if (typeof Modell === "undefined" || !Modell.verfuegbar()) {
           this.sagen("Ich bin gerade nicht erreichbar. Du kannst auf der Seite selbst weitersuchen, ich melde mich, sobald es wieder geht.");
@@ -676,6 +680,19 @@ const Kern = {
         // nach einem Werkzeug gern, was es davor schon gesagt hat)
         const zuletzt = [...this.lauf.verlauf].reverse().find((n) => n.rolle === "bot")?.text || "";
         const gleich = (x, y) => x && y && x.replace(/\W+/g, "").toLowerCase() === y.replace(/\W+/g, "").toLowerCase();
+        // Nach der Lage im selben Zug erzaehlt das Modell sie gern noch einmal -
+        // Saetze mit denselben Zahlen fallen weg, die Frage bleibt
+        if (text && this.lauf.lageImZug) {
+          const zahlen = new Set((this.lauf.lageImZug.match(/\d+/g) || []).filter((z) => +z >= 5));
+          const saetze = text.split(/(?<=[.!?])\s+/);
+          const rest = saetze.filter((x) => !(x.match(/\d+/g) || []).some((z) => zahlen.has(z)));
+          if (rest.length !== saetze.length) {
+            text = rest.length ? rest.join(" ") : "Möchtest du die Filter so einstellen und selbst schauen, oder soll ich dir drei Häuser raussuchen?";
+            nachricht.content = text;
+            this.notieren("lage_wiederholt");
+          }
+          this.lauf.lageImZug = null;
+        }
         // Nach einer Vorlage im selben Zug zaehlt das Modell die Haeuser gern
         // noch einmal auf - dann bleibt nur die Frage
         if (text && this.lauf.vorlageImZug && this.lauf.letzteVorlage?.length) {
@@ -705,7 +722,8 @@ const Kern = {
           if (fp.naechstes && /\?/.test(text)) { this.lauf.gefragt = fp.naechstes; this.notieren("thema_gefragt", { thema: fp.naechstes, phase: fp.phase }); }
           // Chips nur, wo das Thema welche vorsieht - das Modell haengt sonst
           // an jede Frage Vorschlaege, die die Person in eine Richtung draengen
-          if (fp.naechstes && !Werkzeugkasten.THEMEN[fp.naechstes]?.chips) antwort.chips = [];
+          if (fp.naechstes && !fp.chips) antwort.chips = [];
+          else if (fp.naechstes && fp.chips && !(antwort.chips || []).length) antwort.chips = fp.chips.split("|").map((x) => x.trim());
           // Fragt der Agent nach dem Anreisetag, obwohl ein Flug dabei ist, haengt
           // der Kern die Flugtage an - das Modell fragt sonst ins Blaue
           if (/anreise|anreisetag|welchen tag|welcher tag|datum/i.test(text) && /\?/.test(text) && !/fliegt|flugtag/i.test(text)) {
@@ -774,7 +792,7 @@ const Kern = {
       return [...this.lauf.letzteVorlage.map((id, i) => `${i + 1}. ${(getItemById?.(id)?.name || id).split(" ").slice(0, 2).join(" ")}`), "Etwas anderes"];
     }
     if (w === "haus_oeffnen" || (seite === "stay" && this.lauf.gewaehlt)) return ["Auf den Merkzettel", "Zur Buchung", "Zurück zur Auswahl"];
-    if (this.lauf.gefragt && Werkzeugkasten.THEMEN[this.lauf.gefragt]?.chips) return Werkzeugkasten.THEMEN[this.lauf.gefragt].chips.split("|").map((x) => x.trim());
+    if (this.lauf.gefragt) { const fp = Werkzeugkasten.fahrplan(this.lauf.profil || {}, this.lauf); if (fp.chips) return fp.chips.split("|").map((x) => x.trim()); }
     return [];
   },
 
