@@ -1135,6 +1135,18 @@ const Kern = {
     const wunschIds = (p.kriterien || []).map((k) => Politik.kriterium(k.id)?.aspekt).filter(Boolean);
     const naechte = p.naechte || null;
     const personen = (p.erwachsene || 0) + (p.kinder || 0);
+    // Bester Wert des genannten Wunsches in der Auswahl - damit auf der
+    // Karte stehen kann, dass mehr nicht zu haben ist
+    const wunsch = (p.kriterien || []).map((k) => Politik.kriterium(k.id)).find((k) => k?.aspekt);
+    let einordnung = null;
+    if (wunsch && typeof aspektbilanz === "function") {
+      const werte = (this.lauf.letzteTreffer || []).map((id) => {
+        const item = getItemById?.(id);
+        const e = item ? (aspektbilanz(item, 400) || []).find((x) => x.id === wunsch.aspekt) : null;
+        return e ? e.anteilPositiv : null;
+      }).filter((x) => x != null);
+      if (werte.length) einordnung = { id: wunsch.label, best: Math.max(...werte) };
+    }
     const aufbereitet = kandidaten.map((k) => {
       const item = k.item;
       const bilanz = typeof aspektbilanz === "function" ? (aspektbilanz(item, 400) || []) : [];
@@ -1145,8 +1157,11 @@ const Kern = {
       const preisInfo = Politik.aufenthaltspreis(item, p, k.preis);
       const paket = p.flug && item.type !== "apartment" && typeof Flug !== "undefined" ? Flug.paket(item, personen || 1, p.flugKlasse || null) : null;
       const gesamt = preisInfo.gesamt + (paket?.gesamt || 0);
+      // "der beste Wert der Auswahl" nur bei dem Haus, das ihn wirklich hat
+      const istBest = einordnung && wunsch && bilanz.some((a) => a.id === wunsch.aspekt && Math.abs(a.anteilPositiv - einordnung.best) < 0.005);
+      const eigeneEinordnung = einordnung ? { id: einordnung.id, best: !!istBest } : null;
       return {
-        id: k.id, item, partner: !!k.partner, satz: Politik.vorschlagssatz(k, p),
+        id: k.id, item, partner: !!k.partner, satz: Politik.kartensatz(k, p, eigeneEinordnung),
         aspekte: sortiert.map((a) => ({ label: a.label, note: Politik.teilnote(a.anteilPositiv), wunsch: wunschIds.includes(a.id) })),
         gesamtText: naechte ? Politik.euro(gesamt) : `${Politik.euro(k.preis)} pro Nacht`,
         preisZusatz: naechte

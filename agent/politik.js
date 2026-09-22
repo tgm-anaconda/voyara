@@ -678,6 +678,31 @@ const Politik = {
     return teile.join(" ");
   },
 
+  /* Kurzer Satz fuer die Vorschlagskarte.
+     ------------------------------------------------------------------
+     Auf der Karte stehen Name, Ort, Preis und Noten schon als eigene
+     Felder. Der Satz darf sie nicht wiederholen, sondern beantwortet
+     nur: Warum dieses Haus, und was spricht dagegen? */
+  kartensatz(k, profil, einordnung = null) {
+    const item = k.item;
+    const teile = [];
+    const genannt = (k.belege || []).filter((b) => b.erwaehnungen).sort((a, b) => b.gewicht - a.gewicht)[0];
+    if (genannt) {
+      teile.push(`${genannt.kriterium}: ${this.teilnoteText(genannt.anteil)}${einordnung && einordnung.id === genannt.kriterium && einordnung.best ? ", der beste Wert in dieser Auswahl" : ""}.`);
+    }
+    const ausstattung = (profil.kriterien || []).map((x) => this.kriterium(x.id)).filter((kr) => kr?.filter?.ausstattung);
+    const fehlt = ausstattung.filter((kr) => !(item.amenities || []).includes(kr.filter.ausstattung)).map((kr) => kr.label);
+    if (fehlt.length) teile.push(`Ohne ${this.aufzaehlen(fehlt)}.`);
+    if (profil.maxStrand != null && item.distanceToBeach != null) {
+      teile.push(item.distanceToBeach <= 0.2 ? "Direkt am Strand." : `${item.distanceToBeach < 1 ? `${Math.round(item.distanceToBeach * 1000)} m` : `${item.distanceToBeach} km`} zum Strand.`);
+    }
+    const kurz = typeof aspektKurzfassung === "function" ? aspektKurzfassung(item) : null;
+    const schwaeche = (kurz?.schwaechen || []).find((sw) => !genannt || !String(genannt.kriterium).toLowerCase().startsWith(String(sw).toLowerCase().slice(0, 4)));
+    if (schwaeche) teile.push(`Kritisch sehen Gäste ${this.beiAspekt(schwaeche).replace(/^bei /, "")}.`);
+    if (!teile.length && kurz?.staerken?.length) teile.push(`Gelobt wird vor allem ${this.aufzaehlen(kurz.staerken.slice(0, 2))}.`);
+    return teile.join(" ");
+  },
+
   euro(n) {
     return `${Math.round(n).toLocaleString("de-DE")} €`;
   },
