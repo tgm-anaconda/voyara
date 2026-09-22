@@ -267,6 +267,10 @@ const Werkzeugkasten = {
       // hatte das Modell sonst "schauen" eingetragen
       if (a.weiter && !gesagt(/schau|seh(en)?\b|zeig|guck|los\b|klär|klaer|erst ?mal|eckdaten|angaben|weiter|noch (ein paar|mehr|etwas|was)|nur zu|gern|ja\b|nein\b|ok\b|passt/i, 1)) { verworfen.push("weiter"); delete a.weiter; }
       if (a.vorgehen && !gesagt(/selbst|selber|filter|drei|top|raussuch|such mir|vorschl|favorit|liste|schau|zeig|empfehl|wähl|waehl|aussuch/i, 1)) { verworfen.push("vorgehen"); delete a.vorgehen; }
+      // Die Wahl "selbst oder drei" gibt es erst nach der Lage; vorher ist
+      // "erst mal schauen" die Antwort auf "schauen oder klaeren" (weiter)
+      if (a.vorgehen && !kern.lauf.gesuchtMit) { verworfen.push("vorgehen (vor der Lage)"); delete a.vorgehen; }
+      if (a.weiter && kern.lauf.gesuchtMit) { delete a.weiter; }
       if (verworfen.length) kern.notieren("egal_verworfen", { felder: verworfen });
       if (a.zielOffen !== undefined && !p.zielId) setze("zielOffen", !!a.zielOffen);
       // Reiseart ("hauptsache warm", "ans Meer"): nur mit passendem Wort der
@@ -458,7 +462,7 @@ const Werkzeugkasten = {
       const zeitraum = Werkzeugkasten.zeitraum(p);
       const filter = Werkzeugkasten.filterAusStand(p);
       const darfEmpfehlen = fp.empfehlungBereit;
-      const selbst = p.vorgehen === "selbst" && fp.fertig.preis && fp.fertig.wuensche;
+      const selbst = p.vorgehen === "selbst";
       const treffer = (liste) => liste.slice(0, 8).map((h) => Werkzeugkasten.kompakt(h, p));
       const sortiere = (liste) => {
         const nach = p.sortierung || "passung";
