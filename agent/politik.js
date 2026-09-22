@@ -612,37 +612,53 @@ const Politik = {
   vorschlagssatz(k, profil) {
     const teile = [];
     const note = k.item.rating.toFixed(1).replace(".", ",");
-    teile.push(`${k.item.name} in ${k.item.location}, ${k.preis} € pro Nacht, ${note} aus ${k.item.reviewCount} Bewertungen.`);
+    const item = k.item;
+    // Preis: pro Nacht, und wenn die Dauer bekannt ist, was der Aufenthalt
+    // kostet - mit Flug das Paket. Sonst vergleicht die Person Nachtpreise,
+    // waehrend die Kacheln Paketpreise zeigen.
+    const naechte = profil.naechte || null;
+    const zimmer = Math.max(1, profil.zimmer || 1);
+    let preisText = `${k.preis} € pro Nacht`;
+    if (naechte) {
+      const gebuehr = item.type === "apartment" ? (item.cleaningFee || 0) : 35 * zimmer;
+      const aufenthalt = k.preis * naechte * zimmer + gebuehr;
+      const personen = (profil.erwachsene || 0) + (profil.kinder || 0);
+      const paket = profil.flug && item.type !== "apartment" && typeof Flug !== "undefined" ? Flug.paket(item, personen || 1, profil.flugKlasse || null) : null;
+      preisText += paket
+        ? `, ${naechte} Nächte mit Flug ab ${paket.flug.from} ${this.euro(aufenthalt + paket.gesamt)}`
+        : `, ${naechte} Nächte ${this.euro(aufenthalt)}`;
+    }
+    teile.push(`${item.name} in ${item.location}, ${preisText}, ${note} aus ${item.reviewCount} Bewertungen.`);
 
-    // Das genannte Kriterium zuerst - sonst haette die Nachfrage keinen Effekt
-    const stark = k.belege.filter((b) => b.anteil >= 0.8).sort((a, b) => b.gewicht - a.gewicht)[0];
-    const schwach = k.belege.filter((b) => b.anteil < 0.7).sort((a, b) => a.anteil - b.anteil)[0];
-
-    if (stark) {
-      teile.push(`${stark.kriterium} hattest du genannt: ${Math.round(stark.anteil * 100)} Prozent der ${stark.erwaehnungen} Erwähnungen sind positiv.`);
+    // Strandnaehe, wenn sie der Person wichtig ist
+    const strandWichtig = profil.maxStrand != null || (profil.kriterien || []).some((x) => x.id === "strandnah");
+    if (strandWichtig && item.distanceToBeach != null) {
+      teile.push(item.distanceToBeach <= 0.2 ? "Direkt am Strand." : `${item.distanceToBeach < 1 ? `${Math.round(item.distanceToBeach * 1000)} m` : `${item.distanceToBeach} km`} zum Strand.`);
     }
 
-    // Jeder Vorschlag braucht mindestens einen Grund, warum er ueberhaupt
-    // vorgeschlagen wird. Stand hier nur Kritik, las sich die Empfehlung wie
-    // eine Warnung.
-    const kurz = typeof aspektKurzfassung === "function" ? aspektKurzfassung(k.item) : null;
-    if (!stark) {
-      if (kurz?.staerken?.length) {
-        const s = kurz.staerken.slice(0, 2);
-        teile.push(`Gelobt ${s.length > 1 ? "werden" : "wird"} vor allem ${this.aufzaehlen(s)}.`);
-      } else {
-        // Auch ohne ausgewiesene Staerke gibt es den bestbewerteten Aspekt
-        const beste = (kurz?.bilanz || []).slice().sort((a, b) => b.anteilPositiv - a.anteilPositiv)[0];
-        if (beste) teile.push(`Am besten weg kommt ${beste.label}: ${Math.round(beste.anteilPositiv * 100)} Prozent positiv.`);
-      }
+    // Die genannten Wuensche zuerst, alle mit Zahl - sonst haette die
+    // Nachfrage keinen Effekt, und "gutes Essen" bliebe unbeantwortet
+    const genannt = (k.belege || []).filter((b) => b.erwaehnungen).sort((a, b) => b.gewicht - a.gewicht).slice(0, 2);
+    const kurz = typeof aspektKurzfassung === "function" ? aspektKurzfassung(item) : null;
+    if (genannt.length) {
+      const st = genannt.map((b) => `${b.kriterium} ${b.anteil < 0.7 ? "nur " : ""}${Math.round(b.anteil * 100)} Prozent positiv`);
+      teile.push(`${genannt.length > 1 ? "Zu euren Wünschen" : "Dein Wunsch"}: ${st.join(", ")}.`);
+    } else if (kurz?.staerken?.length) {
+      const s = kurz.staerken.slice(0, 2);
+      teile.push(`Gelobt ${s.length > 1 ? "werden" : "wird"} vor allem ${this.aufzaehlen(s)}.`);
+    } else {
+      const beste = (kurz?.bilanz || []).slice().sort((a, b) => b.anteilPositiv - a.anteilPositiv)[0];
+      if (beste) teile.push(`Am besten weg kommt ${beste.label}: ${Math.round(beste.anteilPositiv * 100)} Prozent positiv.`);
     }
 
-    if (schwach) {
-      teile.push(`${this.beiAspekt(schwach.kriterium).charAt(0).toUpperCase()}${this.beiAspekt(schwach.kriterium).slice(1)} ist es dünner: nur ${Math.round(schwach.anteil * 100)} Prozent positiv.`);
-    } else if (kurz?.schwaechen?.length) {
-      teile.push(`Kritik gibt es ${this.beiAspekt(kurz.schwaechen[0])}.`);
-    }
+    // Kritik nur, wenn sie nicht schon in den Wuenschen steht
+    const schwaeche = (kurz?.schwaechen || []).find((sw) => !genannt.some((b) => String(b.kriterium).toLowerCase().startsWith(String(sw).toLowerCase().slice(0, 4))));
+    if (schwaeche) teile.push(`Kritik gibt es ${this.beiAspekt(schwaeche)}.`);
     return teile.join(" ");
+  },
+
+  euro(n) {
+    return `${Math.round(n).toLocaleString("de-DE")} €`;
   },
 
   /* Begruendung fuer den Partnervorschlag in der offenen Bedingung.

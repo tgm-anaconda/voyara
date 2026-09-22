@@ -619,6 +619,7 @@ const Kern = {
     try {
       const erzwungen = new Set();
       this.lauf.vorlageImZug = false;
+      this.lauf.anreiseChips = null;
       for (let i = 0; i < this.MAX_ZUEGE; i++) {
         if (typeof Modell === "undefined" || !Modell.verfuegbar()) {
           this.sagen("Ich bin gerade nicht erreichbar. Du kannst auf der Seite selbst weitersuchen, ich melde mich, sobald es wieder geht.");
@@ -703,6 +704,8 @@ const Kern = {
           // Chips nur, wo das Thema welche vorsieht - das Modell haengt sonst
           // an jede Frage Vorschlaege, die die Person in eine Richtung draengen
           if (fp.naechstes && !Werkzeugkasten.THEMEN[fp.naechstes]?.chips) antwort.chips = [];
+          // Moegliche Anreisetage (Flugtage) als Chips - konkreter als jede Umschreibung
+          if (this.lauf.anreiseChips?.length) { antwort.chips = this.lauf.anreiseChips; this.lauf.anreiseChips = null; }
           this.lauf.chips = (antwort.chips || []).length ? antwort.chips : this.ersatzChips();
           AgentPanel.setSuggestions(this.lauf.chips);
           break;

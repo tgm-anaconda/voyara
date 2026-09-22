@@ -178,14 +178,15 @@ const Aufgaben = {
      sonst vergleicht die Auswertung zwei verschiedene Zahlen. */
   gesamtpreis(h, aufgabe) {
     if (!h) return null;
+    const basis = typeof preisImMonat === "function" ? preisImMonat(h, aufgabe.monat) : h.pricePerNight;
     if (h.type === "apartment") {
-      return h.pricePerNight * aufgabe.naechte + (h.cleaningFee || 0);
+      return basis * aufgabe.naechte + (h.cleaningFee || 0);
     }
     const zimmer = aufgabe.zimmerWahl(h);
     if (!zimmer) return null;
     const board = h.boards?.find((b) => b.key === aufgabe.verpflegung)
       || h.boards?.find((b) => b.key === "ohne") || h.boards?.[0];
-    const nacht = h.pricePerNight + zimmer.priceDelta + (board?.priceDelta || 0);
+    const nacht = basis + zimmer.priceDelta + (board?.priceDelta || 0);
     return nacht * aufgabe.naechte * aufgabe.zimmer + 35 * aufgabe.zimmer;
   },
 

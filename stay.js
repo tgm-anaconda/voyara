@@ -119,7 +119,9 @@ function renderAmenities() {
     </div>`;
 }
 
-const roomPrice = (i) => item.pricePerNight + item.rooms[i].priceDelta;
+// Nachtpreis im Reisemonat (Saison), wie in der Trefferliste
+const basisPreis = () => preisImMonat(item, Reisedaten.monat());
+const roomPrice = (i) => basisPreis() + item.rooms[i].priceDelta;
 const boardPrice = (i) => item.boards[i].priceDelta;
 
 // Wie viele Personen muessen je Zimmer unterkommen?
@@ -150,7 +152,7 @@ function renderRooms() {
             <div class="room-feats">${item.highlights.map((f) => `<span class="tag">${f}</span>`).join("")}</div>
           </div>
           <div class="room-pick">
-            <div class="room-price">${formatPrice(item.pricePerNight)}<small>pro Nacht</small></div>
+            <div class="room-price">${formatPrice(basisPreis())}<small>pro Nacht</small></div>
           </div>
         </div>
       </div>
@@ -345,7 +347,7 @@ function renderWidget() {
   const b = Belegung.get();
   // Bei Hotels wird je gebuchtem Zimmer berechnet, eine Wohnung wird ganz gebucht
   const zimmerAnzahl = isApartment ? 1 : b.zimmer;
-  const perNight = isApartment ? item.pricePerNight : roomPrice(selectedRoom) + boardPrice(selectedBoard);
+  const perNight = isApartment ? basisPreis() : roomPrice(selectedRoom) + boardPrice(selectedBoard);
   const stay = perNight * nights * zimmerAnzahl;
   const cleaning = isApartment ? item.cleaningFee : 35 * zimmerAnzahl;
   const total = stay + cleaning;

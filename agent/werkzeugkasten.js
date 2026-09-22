@@ -181,9 +181,7 @@ const Werkzeugkasten = {
 
   // Preis pro Nacht im Reisemonat (Saisonfaktor wie auf der Seite)
   preis(item, monat) {
-    const ziel = typeof ZIEL_NACH_ID !== "undefined" ? ZIEL_NACH_ID[item.ziel] : null;
-    if (!ziel || !monat || typeof saisonFaktor !== "function") return item.pricePerNight;
-    return Math.round(item.pricePerNight * saisonFaktor(ziel, monat));
+    return typeof preisImMonat === "function" ? preisImMonat(item, monat) : item.pricePerNight;
   },
 
   // Passt das Haus zur Gruppe (Zimmergroesse bzw. Hoechstbelegung)?
@@ -264,7 +262,11 @@ const Werkzeugkasten = {
       for (const f of ["zielOffen", "artEgal", "preisEgal", "ausstattungEgal", "bewertungEgal", "strandEgal", "verpflegungEgal"]) {
         if (a[f] === true && !offenGesagt) { delete a[f]; verworfen.push(f); }
       }
-      if (a.weiter && !gesagt(/schau|seh|zeig|guck|los|klär|klaer|erst|noch|mehr|weiter|frag|eckdaten|angaben|ja|nein|ok/i)) { verworfen.push("weiter"); delete a.weiter; }
+      // Antworten auf die Frage "schauen oder klaeren" und "selbst oder drei"
+      // zaehlen nur, wenn die letzte Nachricht so etwas sagt - auf "Hotel"
+      // hatte das Modell sonst "schauen" eingetragen
+      if (a.weiter && !gesagt(/schau|seh(en)?\b|zeig|guck|los\b|klär|klaer|erst ?mal|eckdaten|angaben|weiter|noch (ein paar|mehr|etwas|was)|nur zu|gern|ja\b|nein\b|ok\b|passt/i, 1)) { verworfen.push("weiter"); delete a.weiter; }
+      if (a.vorgehen && !gesagt(/selbst|selber|filter|drei|top|raussuch|such mir|vorschl|favorit|liste|schau|zeig|empfehl|wähl|waehl|aussuch/i, 1)) { verworfen.push("vorgehen"); delete a.vorgehen; }
       if (verworfen.length) kern.notieren("egal_verworfen", { felder: verworfen });
       if (a.zielOffen !== undefined && !p.zielId) setze("zielOffen", !!a.zielOffen);
       // Reiseart ("hauptsache warm", "ans Meer"): nur mit passendem Wort der
@@ -371,7 +373,14 @@ const Werkzeugkasten = {
       kern.standAnzeigen();
       kern.notieren("stand", { felder: geaendert });
       const fp = Werkzeugkasten.fahrplan(p, kern.lauf);
-      return { ergebnis: { gemerkt: geaendert.length ? geaendert : "nichts Neues", stand: kern.standKurz(), ...Werkzeugkasten.fahrplanFuerModell(fp, p) } };
+      // Eine Frage der Person geht vor: erst antworten, dann das Thema. Fragt
+      // sie nach dem Angebot ("habt ihr was auf Kreta?"), liefert suchen die
+      // Lage auch ohne die restlichen Eckdaten.
+      const letzte = [...kern.lauf.gespraech].reverse().find((n) => n.role === "user")?.content || "";
+      const frage = /\?\s*$|^(habt|gibt|wie|was|wo|wann|welche|ist|sind|kann|könnt|koennt|hat)\b/i.test(String(letzte).trim()) ? String(letzte).trim() : null;
+      return { ergebnis: { gemerkt: geaendert.length ? geaendert : "nichts Neues", stand: kern.standKurz(),
+        ...(frage ? { zuerst: `Die Person hat gefragt: "${frage}". Beantworte das zuerst - geht es um das Angebot der Seite (Haeuser, Regionen, Preise), ruf suchen oder regionen_zaehlen und antworte mit Zahlen; geht es um Klima oder Reisetipps, aus deinem Wissen. Dann erst das Thema.` } : {}),
+        ...Werkzeugkasten.fahrplanFuerModell(fp, p) } };
     },
 
     async regionen_zaehlen(a, kern) {
@@ -615,18 +624,23 @@ const Werkzeugkasten = {
       const preise = item.type === "apartment"
         ? { proNacht, ...(naechte ? { gesamtInklEndreinigung: proNacht * naechte + gebuehr } : {}) }
         : { zimmer: passend ? `${passend.name} (bis ${passend.maxGuests} Personen${zimmerAufpreis ? `, +${zimmerAufpreis} € je Nacht` : ""})` : null,
-            jeVerpflegung: (item.boards || []).map((b) => ({
-            verpflegung: (typeof BOARD_LABELS !== "undefined" && BOARD_LABELS[b.key]) || b.key,
-            proNachtUndZimmer: proNacht + zimmerAufpreis + (b.priceDelta || 0),
-            ...(naechte ? { gesamtInklGebuehr: (proNacht + zimmerAufpreis + (b.priceDelta || 0)) * naechte * zimmer + gebuehr } : {}),
-          })), weitereZimmer: (item.rooms || []).filter((r) => r !== passend).map((r) => ({ name: r.name, bisPersonen: r.maxGuests, aufpreisProNacht: r.priceDelta })) };
+            jeVerpflegung: (item.boards || []).map((b) => {
+            const gesamt = naechte ? (proNacht + zimmerAufpreis + (b.priceDelta || 0)) * naechte * zimmer + gebuehr : null;
+            const flugGesamt = p.flug && typeof Flug !== "undefined" ? (Flug.paket(item, personen || 1, p.flugKlasse || null)?.gesamt ?? null) : null;
+            return {
+              verpflegung: (typeof BOARD_LABELS !== "undefined" && BOARD_LABELS[b.key]) || b.key,
+              proNachtUndZimmer: proNacht + zimmerAufpreis + (b.priceDelta || 0),
+              ...(gesamt != null ? { unterkunftGesamt: gesamt } : {}),
+              ...(gesamt != null && flugGesamt != null ? { flugGesamt, gesamtMitFlug: gesamt + flugGesamt } : {}),
+            };
+          }), weitereZimmer: (item.rooms || []).filter((r) => r !== passend).map((r) => ({ name: r.name, bisPersonen: r.maxGuests, aufpreisProNacht: r.priceDelta })) };
       const kurz = typeof aspektKurzfassung === "function" ? aspektKurzfassung(item) : null;
       kern.notieren("haus_genannt", { id: item.id, absicht: "details" });
       return {
         ergebnis: {
           ...k, beschreibung: item.shortDescription, highlights: (item.highlights || []).slice(0, 4),
           kmZumZentrum: item.distanceToCenter ?? null, kmZumFlughafen: item.distanceToAirport ?? null,
-          preise: { hinweis: naechte ? `fuer ${naechte} Naechte, ${zimmer} Zimmer, ${personen || "?"} Personen - Preise nur so nennen, nicht rechnen` : "Naechte unbekannt, daher kein Gesamtpreis", ...preise },
+          preise: { hinweis: naechte ? `fuer ${naechte} Naechte, ${zimmer} Zimmer, ${personen || "?"} Personen. Nenn die Zahlen genau so - nicht rechnen, nicht mischen: je Verpflegung steht der Gesamtpreis (unterkunftGesamt) und mit Flug (gesamtMitFlug).` : "Naechte unbekannt, daher kein Gesamtpreis", ...preise },
           ...(p.budgetGesamt ? { budgetGesamt: p.budgetGesamt } : {}),
           bewertungen: kurz ? { anzahl: item.reviewCount, jeAspekt: (kurz.bilanz || []).slice(0, 6).map((x) => ({ aspekt: x.label, prozentPositiv: Math.round(x.anteilPositiv * 100), erwaehnungen: x.erwaehnungen })) } : null,
           haeltGemerkteVorgabenEin: typeof Politik !== "undefined" ? Politik.erfuellt(item, proNacht, p) : null,
@@ -733,6 +747,7 @@ const Werkzeugkasten = {
         const gewuenscht = pf.anreise || (!flexibel ? pf.von : null);
         if (gewuenscht && !tage.includes(gewuenscht)) {
           pf.anreise = null;
+          kern.lauf.anreiseChips = tage.slice(0, 4).map((d) => `${new Date(d).getDate()}. ${["Jan.", "Feb.", "März", "April", "Mai", "Juni", "Juli", "Aug.", "Sept.", "Okt.", "Nov.", "Dez."][new Date(d).getMonth()]}`);
           return { ergebnis: { fehler: "Kein Flugtag", gewuenscht: Flug.datumText(gewuenscht), verbindung, moeglicheAnreisetage: tage.slice(0, 8).map((d) => Flug.datumText(d)),
             hinweis: "Der gewuenschte Tag ist kein Flugtag. Sag der Person, wann die Verbindung fliegt, nenn zwei, drei moegliche Anreisetage und frag, welcher passt. Erst mit ihrem Tag buchung_vorbereiten mit anreise rufen." } };
         }
@@ -754,6 +769,7 @@ const Werkzeugkasten = {
           kern.lauf.profil.anreise = null;
           kern.standAnzeigen();
           const tage = flug && monatSchluessel && pf.naechte ? Flug.anreiseTage(flug, monatSchluessel, pf.naechte) : null;
+          if (tage) kern.lauf.anreiseChips = tage.slice(0, 4).map((d) => `${new Date(d).getDate()}. ${["Jan.", "Feb.", "März", "April", "Mai", "Juni", "Juli", "Aug.", "Sept.", "Okt.", "Nov.", "Dez."][new Date(d).getMonth()]}`);
           return { ergebnis: { fehler: "Anreisetag fehlt",
             ...(tage ? { verbindung: `${flug.airline} ab ${flug.from} fliegt ${Flug.tageText(flug, true)}`, moeglicheAnreisetage: tage.slice(0, 8).map((d) => Flug.datumText(d)) } : {}),
             hinweis: tage
@@ -805,7 +821,7 @@ const Werkzeugkasten = {
         // vor dem Klick steht und nennt, was gebucht wird
         const z = Werkzeuge.buchungsZusammenfassung();
         kern.sagen(z
-          ? `Ich buche jetzt ${z.titel}, ${z.zeitraum}, ${z.gesamt} insgesamt, auf den Namen ${z.name}. Sag Stopp, wenn du das nicht willst.`
+          ? `Ich buche jetzt ${z.titel}, ${z.zeitraum}${z.details ? `, ${z.details}` : ""}, ${z.gesamt} insgesamt, auf den Namen ${z.name}. Sag Stopp, wenn du das nicht willst.`
           : "Ich schließe die Buchung jetzt ab. Sag Stopp, wenn du das nicht willst.");
         AgentPanel.setSuggestions(["Stopp"]);
         AgentPanel.status("bucht gleich… (Stopp?)");
@@ -865,7 +881,7 @@ const Werkzeugkasten = {
     flugAb: { frage: "Von welchem Flughafen: Hamburg, Stuttgart, Duesseldorf, Hannover, Muenchen, Koeln, Frankfurt oder Berlin. Klasse nicht fragen - Economy ist gerechnet, sie kann es spaeter aendern.", chips: null },
     vorgehen: { frage: "Ob du die Filter so einstellst und sie selbst durch die Liste schaut (vorgehen selbst), oder ob du ihr drei Haeuser zur Auswahl raussuchst (vorgehen top3). Beides gleichwertig anbieten.", chips: "Ich schaue selbst | Such mir drei raus" },
     preis: { frage: "Ob sie beim Preis schon eine feste Grenze hat (pro Nacht oder gesamt) oder offen ist. Nicht 'wie viel darf es kosten' fragen. Offen heisst preisEgal true. Die Preisspanne aus der Lage darfst du nennen.", chips: "Feste Grenze | Offen" },
-    wuensche: { frage: "Worauf sie bei der Unterkunft besonders achtet - offen gefragt (Sauberkeit, Essen, Lage, Ruhe, Strand, Pool, Kinderclub, Bewertungen). Antworten werden Wuensche (wuensche); nur ausdrueckliche Grenzen ('mindestens 4,5', 'direkt am Strand') werden Filter. 'Nichts Besonderes' heisst ausstattungEgal true.", chips: "Sauberkeit | Essen | Lage | Ruhe" },
+    wuensche: { frage: "Worauf sie bei der Unterkunft besonders achtet - offen gefragt, mit hoechstens drei Beispielen, die zur Person passen (Paar: Ruhe, Essen, Lage; Familie: Pool, Kinderclub, Strand). Keine Liste aller Moeglichkeiten. Antworten werden Wuensche (wuensche); nur ausdrueckliche Grenzen ('mindestens 4,5', 'direkt am Strand') werden Filter. 'Nichts Besonderes' heisst ausstattungEgal true.", chips: "Sauberkeit | Essen | Lage | Ruhe" },
   },
 
   // Schluessel der Eckdaten - aendert er sich, muss neu gesucht werden

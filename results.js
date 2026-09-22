@@ -108,9 +108,7 @@ function reisemonat() {
 
 // Preis einer Unterkunft im gewaehlten Zeitraum
 function saisonpreis(item) {
-  const ziel = typeof ZIEL_NACH_ID !== "undefined" ? ZIEL_NACH_ID[item.ziel] : null;
-  if (!ziel) return item.pricePerNight;
-  return Math.round(item.pricePerNight * saisonFaktor(ziel, reisemonat()));
+  return preisImMonat(item, reisemonat());
 }
 
 /* ---------- Filter-Logik ---------- */

@@ -640,7 +640,11 @@ const Werkzeuge = {
     const kv = [...block.querySelectorAll(".kv")].map((k) => [k.querySelector("span")?.textContent.trim(), k.querySelector("strong")?.textContent.trim()]);
     const wert = (label) => kv.find(([l]) => l === label)?.[1] || null;
     if (!titel) return null;
-    return { titel, zeitraum, gesamt: wert("Gesamtpreis"), name: wert("Name"), mail: wert("E-Mail") };
+    // Zeitraum aus der Adresse (from/to), nicht aus der Untertitelzeile -
+    // dort stehen Zimmer, Verpflegung und Flug
+    const zeit = typeof Reisedaten !== "undefined" && Reisedaten.text() ? Reisedaten.text() : zeitraum;
+    const details = String(zeitraum || "").replace(`${zeit} · `, "").replace(/ · /g, ", ");
+    return { titel, zeitraum: zeit, details, gesamt: wert("Gesamtpreis"), name: wert("Name"), mail: wert("E-Mail") };
   },
 };
 

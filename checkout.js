@@ -39,9 +39,11 @@ function priceLines() {
   }
   const b = Belegung.get();
   const zimmerAnzahl = entry.type === "apartment" ? 1 : b.zimmer;
+  // Nachtpreis im Reisemonat (Saison), dieselbe Formel wie Liste und Hausseite
+  const basis = preisImMonat(entry, Reisedaten.monat());
   const perNight = entry.type === "apartment"
-    ? entry.pricePerNight
-    : entry.pricePerNight + entry.rooms[roomIdx].priceDelta + entry.boards[boardIdx].priceDelta;
+    ? basis
+    : basis + entry.rooms[roomIdx].priceDelta + entry.boards[boardIdx].priceDelta;
   const base = perNight * nights * zimmerAnzahl;
   const cleaning = (entry.type === "apartment" ? entry.cleaningFee : 35) * zimmerAnzahl;
   // Flug dazu (nur Hotels): gewaehlte Verbindung, Hin- und Rueckflug, alle Reisenden
@@ -70,9 +72,10 @@ function subtitle() {
     const personen = Belegung.get().personen;
     return `${entry.from} → ${entry.to} · ${entry.depart}–${entry.arrive} · ${entry.stops === 0 ? "Direktflug" : entry.stops + " Stopp"} · ${personen} ${personen === 1 ? "Person" : "Personen"}`;
   }
-  if (entry.type === "apartment") return `Gesamte Wohnung · ${Belegung.text()}`;
+  const zeit = typeof Reisedaten !== "undefined" && Reisedaten.text() ? `${Reisedaten.text()} · ` : "";
+  if (entry.type === "apartment") return `${zeit}Gesamte Wohnung · ${Belegung.text()}`;
   const f = flugDazu();
-  return `${entry.rooms[roomIdx].name} · ${BOARD_LABELS[entry.boards[boardIdx].key]} · ${Belegung.text()}${f ? ` · mit Flug: ${f.text}` : ""}`;
+  return `${zeit}${entry.rooms[roomIdx].name} · ${BOARD_LABELS[entry.boards[boardIdx].key]} · ${Belegung.text()}${f ? ` · mit Flug: ${f.text}` : ""}`;
 }
 
 function renderSteps() {

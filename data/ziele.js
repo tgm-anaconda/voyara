@@ -170,6 +170,16 @@ function saisonFaktor(ziel, monat) {
   return 0.68;
 }
 
+// Preis pro Nacht eines Hauses im Reisemonat. Eine Formel fuer alle
+// Seiten: Trefferliste, Hausseite, Kasse, Agent und Auswertung - vorher
+// rechnete die Liste mit Saison, Hausseite und Kasse ohne, und dieselbe
+// Reise kostete je nach Seite etwas anderes.
+function preisImMonat(item, monat) {
+  const ziel = typeof ZIEL_NACH_ID !== "undefined" ? ZIEL_NACH_ID[item.ziel] : null;
+  if (!ziel || !monat) return item.pricePerNight;
+  return Math.round(item.pricePerNight * saisonFaktor(ziel, monat));
+}
+
 const MONATSNAMEN = ["Januar", "Februar", "März", "April", "Mai", "Juni",
   "Juli", "August", "September", "Oktober", "November", "Dezember"];
 
