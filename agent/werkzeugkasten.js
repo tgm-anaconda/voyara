@@ -486,6 +486,17 @@ const Werkzeugkasten = {
               : "Du darfst die Seite nicht bedienen. Nenn der Person in einem Satz, welche Filter sie setzen kann (gesuchtMit), damit sie selbst schaut." };
         }
         if (!darfEmpfehlen) {
+          // Die Lage sagt der Kern selbst, mit festen Zahlen - das Modell hat
+          // sie sonst uebersprungen oder halb erzaehlt. Einmal je Eckdatenstand.
+          if (fp.suchbereit && kern.lauf.lageFuer !== fp.schluessel && liste.length) {
+            kern.lauf.lageFuer = fp.schluessel;
+            await kern.denkpause(600, "fasst zusammen…");
+            kern.sagen(Werkzeugkasten.lageSatz(liste, p, umfang));
+            kern.notieren("lage_gesagt", { haeuser: liste.length });
+            return { ...basis, haeuser: "noch nicht - erst die Beratung",
+              hinweis: "Die Lage steht schon im Chat (nicht wiederholen, keine Zahlen noch einmal). Hoechstens ein Satz aus deinem Wissen zu Klima oder Charakter der Regionen, dann das naechste Thema.",
+              ...Werkzeugkasten.fahrplanFuerModell(Werkzeugkasten.fahrplan(p, kern.lauf), p) };
+          }
           return { ...basis, haeuser: "noch nicht - erst die Beratung",
             hinweis: (fp.phase === "suche" || !fp.gesucht
               ? "Schildere die Lage in zwei, drei Saetzen: wie viele Haeuser, in welchen Regionen (mit Zahlen), Preisspanne pro Nacht - dein Wissen zu Klima und Art der Regionen darfst du dazunehmen. Dann das naechste Thema."
@@ -1006,6 +1017,31 @@ const Werkzeugkasten = {
     if (!fp.fertig.preis) pflicht.push("Preis (fest oder offen)");
     if (!fp.fertig.wuensche) pflicht.push("Wuensche");
     return { pflicht, soll: [] };
+  },
+
+  // Die Lage als fester Satz: Regionen mit Zahlen, Preisspanne, was es gibt
+  lageSatz(liste, p, umfang) {
+    const monat = p.monat ? Object.keys(Politik.MONATE).find((m) => Politik.MONATE[m] === p.monat && m.length > 3) : null;
+    const monatText = monat ? `Im ${monat.charAt(0).toUpperCase() + monat.slice(1)}` : "Aktuell";
+    const art = p.typ === "apartment" ? "Ferienwohnungen" : "Hotels";
+    const wo = p.zielId ? `auf ${ZIEL_NACH_ID?.[p.zielId]?.name || p.zielId}` : (p.richtung === "warm" ? "in den warmen Regionen" : p.richtung === "kalt" ? "in den kalten Regionen" : "");
+    const regionen = umfang.jeRegion || [];
+    const teile = [];
+    if (p.zielId || regionen.length <= 1) {
+      teile.push(`${monatText} gibt es ${liste.length} ${art} ${wo}`.trim() + ".");
+    } else {
+      const top = regionen.slice(0, 3).map((r) => `${r.region} (${r.haeuser})`);
+      teile.push(`${monatText} gibt es ${liste.length} ${art}${wo ? ` ${wo}` : ""} in ${regionen.length} Regionen, die meisten ${top.length > 1 ? `${top.slice(0, -1).join(", ")} und ${top[top.length - 1]}` : top[0]}.`);
+    }
+    if (umfang.preisProNacht) teile.push(`Pro Nacht kosten sie ${umfang.preisProNacht.von} bis ${umfang.preisProNacht.bis} €${p.naechte ? "" : ", gerechnet mit einer Woche"}.`);
+    const merkmale = [];
+    if (umfang.direktAmStrandBis200m) merkmale.push(`${umfang.direktAmStrandBis200m} liegen direkt am Strand`);
+    if (umfang.mitPool) merkmale.push(`${umfang.mitPool} haben einen Pool`);
+    if (p.kinder > 0 && umfang.mitKinderclub) merkmale.push(`${umfang.mitKinderclub} einen Kinderclub`);
+    if (!(p.kinder > 0) && umfang.mitWellness) merkmale.push(`${umfang.mitWellness} Wellness`);
+    if (umfang.gaestenoteAb4_5) merkmale.push(`${umfang.gaestenoteAb4_5} sind mit 4,5 oder besser bewertet`);
+    if (merkmale.length) teile.push(`${merkmale.slice(0, 3).join(", ")}.`);
+    return teile.join(" ");
   },
 
   // Der Umfang des Angebots fuer die aktuellen Vorgaben: Zahlen statt

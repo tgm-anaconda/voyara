@@ -542,7 +542,7 @@ const Kern = {
     if (fp.phase === "eckdaten") return `FAHRPLAN: Eckdaten. Naechstes Thema, genau eines: ${fp.naechstes}. ${fp.frage}${chipsHinweis} Nicht mehr fragen, was im Stand steht (${bekannt}). Geht die Person auf etwas anderes ein oder fragt sie etwas, antworte darauf zuerst - und stell dann diese Frage. Du darfst jederzeit suchen, wenn du fuer eine Antwort Zahlen brauchst.`;
     if (fp.phase === "suche") return fp.empfehlungBereit
       ? `FAHRPLAN: Die Eckdaten haben sich geaendert. Ruf suchen - es legt die passenden Haeuser neu vor.`
-      : `FAHRPLAN: Alle Eckdaten sind da. Ruf suchen und schildere danach die Lage (Regionen mit Zahlen, Preisspanne) - keine Haeuser.`;
+      : `FAHRPLAN: Alle Eckdaten sind da. Ruf suchen - die Lage (Zahlen) sagt danach die Seite selbst; du ergaenzt hoechstens einen Satz aus deinem Wissen und fragst das naechste Thema.`;
     if (fp.phase === "beratung") return `FAHRPLAN: Beratung, die Lage ist bekannt. Naechstes Thema, genau eines: ${fp.naechstes}. ${fp.frage}${chipsHinweis}`;
     if (fp.phase === "selbst") return `FAHRPLAN: Die Person schaut selbst durch die Liste. ${this.lauf.vorgehenFuer ? "Antworte nur, wenn sie etwas fragt oder will; keine Vorschlaege von dir, keine Frage hinterher." : "Ruf suchen (stellt die Filter) und sag ihr, dass die Liste steht."}`;
     // vorschlaege
@@ -651,9 +651,11 @@ const Kern = {
           // nirgends belegt sind, und mehr als eine Frage in einer Nachricht
           const fremd = Modell.fremdeZahlen(text, this.belege());
           const fragen = this.fragenZaehlen(text);
+          const thema = this.themaVerfehlt(text);
           let hinweis = null;
           if (fremd.length) { this.notieren("zahl_ungedeckt", { zahlen: fremd }); hinweis = `Deine letzte Antwort enthielt die Zahl ${fremd.join(" und ")}, die in keinem Werkzeugergebnis und keiner Nachricht der Person vorkommt. Schreib die Antwort neu: nur belegte Zahlen, oder lass die Zahl weg. Wenn du die Zahl brauchst, ruf das passende Werkzeug.`; }
           else if (fragen > 1) { this.notieren("zwei_fragen", { fragen }); hinweis = `Deine letzte Antwort enthielt ${fragen} Fragen. Schreib sie neu mit genau einer Frage - die wichtigste zuerst, die andere kommt spaeter. Chips nur zu dieser einen Frage.`; }
+          else if (thema) { this.notieren("thema_verfehlt", { thema: thema.id }); hinweis = `Deine Frage passt nicht zum Thema, das laut FAHRPLAN dran ist: ${thema.id}. ${thema.frage} Schreib die Antwort neu - erst die Antwort auf das, was die Person gesagt oder gefragt hat, dann genau diese eine Frage.`; }
           if (hinweis) {
             const zweiter = await Modell.agent(
               [...this.gespraechFuerModell(), { role: "assistant", content: text },
@@ -728,6 +730,32 @@ const Kern = {
     } finally {
       this.zugBeenden();
     }
+  },
+
+  /* Fragt das Modell etwas anderes als das Thema des Fahrplans? Grob an
+     Schluesselwoertern erkannt - nur in der Eckdaten- und Beratungsphase,
+     und nur, wenn ueberhaupt eine Frage im Text steht. */
+  THEMA_WOERTER: {
+    zeit: /wann|monat|zeitpunkt|losgehen|reisezeit|jahreszeit|termin|zeitraum|daten/i,
+    reisende: /\bwer\b|personen|wie viele|kinder|erwachsene|zu zweit|allein|mitreis|reist/i,
+    kinderAlter: /\balt\b|alter|jahre|jährig/i,
+    ziel: /warm|kalt|ziel|wohin|region|richtung|land|insel/i,
+    art: /hotel|ferienwohnung|unterkunft/i,
+    weiter: /schauen|sehen|klären|klaeren|eckdaten|angaben|weiter/i,
+    dauer: /lange|nächte|naechte|tage|dauer|woche/i,
+    flug: /flug/i,
+    flugAb: /flughafen|abflug|ab welch|von wo|fliegen/i,
+    vorgehen: /selbst|drei|filter|raussuch|favorit|vorschl|liste/i,
+    preis: /preis|budget|kosten|euro|grenze|ausgeben/i,
+    wuensche: /wichtig|achte|wert|wünsch|wuensch|vorstell|lieber/i,
+  },
+  themaVerfehlt(text) {
+    if (!/\?/.test(text)) return null;
+    const fp = Werkzeugkasten.fahrplan(this.lauf.profil || {}, this.lauf);
+    if (!fp.naechstes || !(fp.phase === "eckdaten" || fp.phase === "beratung")) return null;
+    const re = this.THEMA_WOERTER[fp.naechstes];
+    if (!re || re.test(text)) return null;
+    return { id: fp.naechstes, frage: fp.frage };
   },
 
   // Saetze, die mit Fragezeichen enden
