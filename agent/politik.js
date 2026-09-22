@@ -248,6 +248,8 @@ const Politik = {
       woerter: ["famili", "kinderfreundlich", "mit kindern", "mit kind", "spielplatz", "zum spielen", "was zum spielen", "beschäftigung für die kinder", "beschaeftigung fuer die kinder", "kinder brauchen", "für die kinder", "fuer die kinder", "die kleinen"] },
     { id: "kinderclub", label: "Kinderclub", filter: { ausstattung: "kidsClub" },
       woerter: ["kinderclub", "kids club", "kidsclub", "kinderbetreuung", "miniclub", "kinderanimation", "kinderprogramm"] },
+    { id: "meerblick", label: "Meerblick", filter: { ausstattung: "seaView" },
+      woerter: ["meerblick", "meeresblick", "blick aufs meer", "blick auf das meer", "blick aufs wasser", "sea view", "seaview"] },
     { id: "strandnah", label: "Strandnähe", filter: { maxStrand: 1 },
       woerter: ["strand", "am meer", "meernah", "ans wasser", "direkt am wasser", "küste", "kueste"] },
     { id: "bewertung", label: "gute Bewertungen", filter: { mindestbewertung: 4.5 },
@@ -649,6 +651,15 @@ const Politik = {
     } else {
       const beste = (kurz?.bilanz || []).slice().sort((a, b) => b.anteilPositiv - a.anteilPositiv)[0];
       if (beste) teile.push(`Am besten weg kommt ${beste.label}: ${Math.round(beste.anteilPositiv * 100)} Prozent positiv.`);
+    }
+
+    // Ausstattungswuensche (Pool, Meerblick, Kinderclub, Wellness): hat es das Haus?
+    const ausstattungsWuensche = (profil.kriterien || []).map((x) => this.kriterium(x.id)).filter((kr) => kr?.filter?.ausstattung);
+    if (ausstattungsWuensche.length) {
+      const hat = ausstattungsWuensche.filter((kr) => (item.amenities || []).includes(kr.filter.ausstattung)).map((kr) => kr.label);
+      const fehlt = ausstattungsWuensche.filter((kr) => !(item.amenities || []).includes(kr.filter.ausstattung)).map((kr) => kr.label);
+      if (hat.length) teile.push(`${hat.length > 1 ? "Mit" : "Mit"} ${this.aufzaehlen(hat)}.`);
+      if (fehlt.length) teile.push(`${fehlt.length > 1 ? "Ohne" : "Kein"} ${this.aufzaehlen(fehlt)}.`);
     }
 
     // Kritik nur, wenn sie nicht schon in den Wuenschen steht

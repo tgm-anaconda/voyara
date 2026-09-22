@@ -63,7 +63,7 @@ const Werkzeugkasten = {
           strandEgal: { type: "boolean", description: "true, wenn die Person sagt, dass die Naehe zum Strand egal ist" },
           verpflegungEgal: { type: "boolean", description: "true, wenn Verpflegung egal ist" },
           ausstattungEgal: { type: "boolean", description: "true, wenn die Person auf die Frage nach ihren Wuenschen sagt, dass sie nichts Besonderes braucht" },
-          wuensche: { type: "array", items: { type: "string", enum: ["pool", "strand", "strandnah", "kinderclub", "familie", "wellness", "ruhe", "essen", "sauberkeit", "lage", "service", "preis", "bewertung"] }, description: "Was der Person wichtig ist (alle bisher genannten, nicht nur die neuen)" },
+          wuensche: { type: "array", items: { type: "string", enum: ["pool", "strand", "strandnah", "meerblick", "kinderclub", "familie", "wellness", "ruhe", "essen", "sauberkeit", "lage", "service", "preis", "bewertung"] }, description: "Was der Person wichtig ist (alle bisher genannten, nicht nur die neuen)" },
           ausstattung: { type: "array", items: { type: "string", enum: ["pool", "spa", "kidsClub", "familyFriendly", "beachfront", "wifi", "parking", "restaurant", "gym", "seaView"] }, description: "Nur, wenn die Person etwas als Bedingung nennt ('muss einen Pool haben', 'direkt am Strand' = beachfront). Ein Wunsch gehoert in wuensche, nicht hierher." },
           verpflegung: { type: "string", enum: ["ohne", "fruehstueck", "halb", "voll", "ai"], description: "Gewuenschte Verpflegung" },
           flug: { type: "boolean", description: "true, wenn ein Flug dazu gewuenscht ist; false, wenn nur die Unterkunft" },
@@ -317,9 +317,10 @@ const Werkzeugkasten = {
       }
       // "Meine Frau und ich", "zu zweit", "allein": ohne ein Wort zu Kindern
       // sind keine dabei - das fragt man nicht nach
-      if (p.erwachsene != null && p.kinder == null && a.erwachsene != null
-        && gesagt(/meine frau|mein mann|meine freundin|mein freund|meine partnerin|mein partner|wir beide|zu zweit|allein|alleine|nur ich|paar\b/i)
-        && !gesagt(/kind|sohn|tochter|baby|kids|jährig|jaehrig|familie|enkel/i)) { p.kinder = 0; geaendert.push("kinder"); }
+      const paarGesagt = gesagt(/meine frau|mein mann|meine freundin|mein freund|meine partnerin|mein partner|wir beide|zu zweit|allein|alleine|nur ich|paar\b|erwachsene/i)
+        && !gesagt(/kind|sohn|tochter|baby|kids|jährig|jaehrig|familie|enkel/i);
+      if (p.erwachsene != null && p.kinder == null && a.erwachsene != null && paarGesagt) { p.kinder = 0; geaendert.push("kinder"); }
+      if (p.personen != null && p.erwachsene == null && p.kinder == null && a.personenGesamt != null && paarGesagt) { p.erwachsene = p.personen; p.kinder = 0; geaendert.push("erwachsene", "kinder"); }
       if (p.erwachsene != null && p.kinder != null) p.personen = p.erwachsene + p.kinder;
       if (p.kinder === 0) p.kinderAlter = [];
       if (p.kinder > 0 && (p.kinderAlter || []).length > p.kinder) p.kinderAlter = p.kinderAlter.slice(0, p.kinder);
@@ -469,7 +470,10 @@ const Werkzeugkasten = {
         // die Seite - die kennt nur eine Region auf einmal
         const eingegrenzt = !p.zielId && p.zieleErlaubt?.length;
         const basis = { weg, gesuchtMit: Werkzeugkasten.filterText(p), zeitraum: zeitText, trefferGesamt: eingegrenzt ? liste.length : (gesamt ?? liste.length), lage: umfang };
-        kern.lauf.gesuchtMit = fp.schluessel;
+        // Als "gesucht" zaehlt nur eine Suche mit den Kerndaten - eine fruehe
+        // Katalogsuche fuer eine Frage der Person ("habt ihr was auf Kreta?")
+        // darf die Frage "schauen oder klaeren" nicht ueberspringen
+        if (fp.suchbereit) kern.lauf.gesuchtMit = fp.schluessel;
         if (selbst) {
           kern.lauf.vorgehenFuer = fp.schluessel + p.vorgehen;
           kern.lauf.letzteTreffer = liste.map((h) => h.id);

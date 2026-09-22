@@ -704,6 +704,12 @@ const Kern = {
           // Chips nur, wo das Thema welche vorsieht - das Modell haengt sonst
           // an jede Frage Vorschlaege, die die Person in eine Richtung draengen
           if (fp.naechstes && !Werkzeugkasten.THEMEN[fp.naechstes]?.chips) antwort.chips = [];
+          // Fragt der Agent nach dem Anreisetag, obwohl ein Flug dabei ist, haengt
+          // der Kern die Flugtage an - das Modell fragt sonst ins Blaue
+          if (!this.lauf.anreiseChips?.length && /anreise|anreisetag|welchen tag|welcher tag|datum/i.test(text) && /\?/.test(text)) {
+            const h = this.flugtageHilfe();
+            if (h) { text = `${text} ${h.satz}`; nachricht.content = text; this.lauf.anreiseChips = h.chips; }
+          }
           // Moegliche Anreisetage (Flugtage) als Chips - konkreter als jede Umschreibung
           if (this.lauf.anreiseChips?.length) { antwort.chips = this.lauf.anreiseChips; this.lauf.anreiseChips = null; }
           this.lauf.chips = (antwort.chips || []).length ? antwort.chips : this.ersatzChips();
@@ -910,6 +916,35 @@ const Kern = {
       ergebnis: { vorgelegt: gezeigt, hinweis: "Die Haeuser stehen jetzt im Chat. Wiederhole nichts davon. Ein Satz: welches soll sie sich ansehen, oder fehlt etwas?" },
       log: null,
     };
+  },
+
+  /* Flugtage fuer das Haus, um das es gerade geht: das geoeffnete, das in
+     der letzten Nachricht der Person genannte ("das dritte", Name) oder das
+     erste der Vorlage. Liefert Satz und Chips oder null (kein Flug). */
+  flugtageHilfe() {
+    const p = this.lauf.profil || {};
+    if (!p.flug || !p.monat || typeof Flug === "undefined" || typeof getItemById !== "function") return null;
+    const letzte = [...this.lauf.gespraech].reverse().find((n) => n.role === "user")?.content || "";
+    const vorlage = this.lauf.letzteVorlage || [];
+    let id = null;
+    const ord = { erste: 0, erstes: 0, "1": 0, zweite: 1, zweites: 1, "2": 1, dritte: 2, drittes: 2, "3": 2 };
+    for (const [w, i] of Object.entries(ord)) if (new RegExp(`\\b(das|dem|die|den|nummer|nr\\.?)\\s*${w}\\b`, "i").test(letzte) && vorlage[i]) id = vorlage[i];
+    if (!id) id = vorlage.find((v) => { const n = getItemById(v)?.name || ""; return n && letzte.toLowerCase().includes(n.split(" ")[0].toLowerCase()); }) || null;
+    if (!id) id = this.lauf.gewaehlt || vorlage[0] || null;
+    const item = id ? getItemById(id) : null;
+    if (!item || item.type === "apartment") return null;
+    const flug = Flug.wahl(item.ziel);
+    if (!flug) return null;
+    const monat = p.von ? p.von.slice(0, 7) : Werkzeugkasten.flexWahl(p)?.monat;
+    const naechte = p.naechte || 7;
+    const tage = Flug.anreiseTage(flug, monat, naechte);
+    const MON = ["Jan.", "Feb.", "März", "April", "Mai", "Juni", "Juli", "Aug.", "Sept.", "Okt.", "Nov.", "Dez."];
+    const kurz = (d) => `${new Date(d).getDate()}. ${MON[new Date(d).getMonth()]}`;
+    if (!tage.length) {
+      const alt = Flug.naechteAlternativen(flug, monat, naechte);
+      return { satz: `${flug.airline} ab ${flug.from} fliegt ${Flug.tageText(flug, true)}; mit ${naechte} Nächten passt kein Rückflug${alt.length ? `, mit ${alt.join(" oder ")} Nächten schon` : ""}.`, chips: [] };
+    }
+    return { satz: `${flug.airline} ab ${flug.from} fliegt ${Flug.tageText(flug, true)}; mit ${naechte} Nächten geht zum Beispiel der ${tage.slice(0, 3).map(kurz).join(", der ")}.`, chips: tage.slice(0, 4).map(kurz) };
   },
 
   // "Warum dieses Haus?" - klappt in der Nachricht auf, ein Modellaufruf ohne Werkzeuge
