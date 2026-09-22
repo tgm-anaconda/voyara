@@ -904,7 +904,7 @@ const Werkzeugkasten = {
      auch keine vom Modell. */
   THEMEN: {
     zeit: { frage: "Wann es ungefaehr losgehen soll - ein Monat reicht. Feste Daten nur, wenn sie welche hat; nicht danach draengen. Nennt sie nur eine Jahreszeit ('im Winter'), frag, welcher Monat - 'egal' ist eine Antwort, dann nimmst du den ersten Monat der Jahreszeit und sagst das.", chips: null },
-    reisende: { frage: "Mit wem sie reist - kurz, etwa 'Wie viele seid ihr, und sind Kinder dabei?' (bei Kindern gleich das Alter mit aufnehmen).", chips: "1 | 2 | 3 | 4 oder mehr" },
+    reisende: { frage: "Mit wem sie reist - in einem Fragesatz, etwa 'Wie viele seid ihr, und sind Kinder dabei?' (bei Kindern gleich das Alter mit aufnehmen). Nicht zwei Fragesaetze daraus machen.", chips: "1 | 2 | 3 | 4 oder mehr" },
     kinderAlter: { frage: "Wie alt die Kinder sind (die Zahl der Kinder ist bekannt, nur das Alter fehlt).", chips: null },
     ziel: { frage: "Ob es eher in eine warme oder eher in eine kalte Region gehen soll, oder ob sie schon ein Ziel hat. Nichts anpreisen.", chips: "Eher warm | Eher kalt | Ich habe ein Ziel" },
     art: { frage: "Ob sie eher ins Hotel oder in eine Ferienwohnung will, oder ob das noch offen ist (artEgal true - dann faengst du bei Hotels an).", chips: "Hotel | Ferienwohnung | Noch offen" },
