@@ -456,6 +456,31 @@ const Werkzeugkasten = {
       if ((a.flug !== undefined || a.flugAb || a.flugKlasse) && typeof Flug !== "undefined") {
         Flug.set({ mit: !!p.flug, ab: Flug.code(p.flugAb), klasse: p.flugKlasse || "economy" });
       }
+      /* Zahl und Art aus dem Satz.
+         ----------------------------------------------------------------
+         "Such mir bitte 5 raus" und "hotel mit fruehstueck" trug das
+         Modell nicht ein: Es legte die Verpflegung an und fragte danach,
+         ob es ein Hotel sein soll - und legte drei statt fuenf Haeuser
+         vor. Beides steht so klar im Satz, dass es nicht vom Modell
+         abhaengen muss. */
+      {
+        const letzteNachricht = (kern.lauf.gespraech || []).filter((n) => n.role === "user").slice(-1).map((n) => String(n.content)).join(" ");
+        const WORTZAHL = { zwei: 2, drei: 3, vier: 4, "fünf": 5, fuenf: 5, sechs: 6 };
+        // Die Zahl muss zum Vorschlag gehoeren, nicht zu Naechten oder
+        // Reisenden ("4 Naechte, zeig mir mal die Hotels" sind keine vier
+        // Vorschlaege) - deshalb steht sie direkt davor oder direkt hinter
+        // der Aufforderung.
+        const m = letzteNachricht.match(/\b(\d|zwei|drei|vier|fünf|fuenf|sechs)\s+(?:(?:der|die|besten|beste|passende[nr]?|gute[nr]?)\s+){0,2}(?:vorschl\w*|h[äa]user|hotels|wohnungen|st[üu]ck|raus\w*)|\b(?:such|zeig|nenn|schlag)\w*\s+(?:(?:mir|uns|bitte|mal|die|besten)\s+){0,3}(\d|zwei|drei|vier|fünf|fuenf|sechs)\b/i);
+        if (m && a.anzahlVorschlaege == null) {
+          const roh = (m[1] || m[2] || "").toLowerCase();
+          const n = WORTZAHL[roh] ?? parseInt(roh, 10);
+          if (Number.isFinite(n) && n >= 2 && n <= 6) a.anzahlVorschlaege = n;
+        }
+        if (!a.typ && !p.artGenannt) {
+          if (/\bhotels?\b/i.test(letzteNachricht)) a.typ = "hotel";
+          else if (/ferienwohnung|ferienhaus|fewo|apartment|appartement/i.test(letzteNachricht)) a.typ = "apartment";
+        }
+      }
       if (a.anzahlVorschlaege != null) {
         const n = Math.max(2, Math.min(6, a.anzahlVorschlaege));
         if (n !== p.anzahlVorschlaege) { setze("anzahlVorschlaege", n); kern.notieren("anzahl_vorschlaege", { anzahl: n }); }
