@@ -740,15 +740,7 @@ const Werkzeugkasten = {
       const reset = document.getElementById("fReset");
       const aktiv = document.querySelectorAll("#filterPanel input:checked:not([value=''])").length;
       if (reset && aktiv > 0 && (kern.lauf.runde || 0) > 0) { await Zeiger.klicke(reset, { hinweis: "Filter zurücksetzen" }); await Zeiger.warte(250); }
-      const gesetzt = await Werkzeuge.filterSetzen({
-        zielId: p.zielId || undefined,
-        maxPreis: p.maxPreis || undefined,
-        maxStrand: p.maxStrand != null ? ([0.2, 1, 5].find((s) => s >= p.maxStrand) ?? 5) : undefined,
-        ausstattung: filter.ausstattung,
-        verpflegung: p.verpflegung ? [p.verpflegung] : undefined,
-        mindestbewertung: p.mindestbewertung || undefined,
-        sterne: p.mindestSterne ? [5, 4, 3].filter((s) => s >= p.mindestSterne) : undefined,
-      });
+      const gesetzt = await Werkzeuge.filterSetzen(Werkzeugkasten.filterWerte(p));
       if (gesetzt.text) kern.logZeile(gesetzt.text, "ergebnis");
       const nach = p.sortierung === "preis" ? "preis-asc" : (p.sortierung === "bewertung" ? "rating" : "preis-asc");
       await Werkzeuge.sortieren(nach);
@@ -1009,6 +1001,15 @@ const Werkzeugkasten = {
         return { navigiert: true, stufe: 3 };
       }
 
+      // Die Liste hat neu geladen und steht wieder unfiltriert da. Wer die
+      // Ansicht schliesst und selbst schaut, soll die Filter vorfinden, die
+      // der Agent gesetzt hatte - sonst stehen dort wieder alle 184 Haeuser.
+      if (Werkzeuge.seite() === "results" && !Zeiger.abbruch) {
+        kern.sperreAn();
+        const wieder = await Werkzeuge.filterSetzen(Werkzeugkasten.filterWerte(p));
+        await Werkzeuge.sortieren(p.sortierung === "bewertung" ? "rating" : "preis-asc");
+        if (wieder.text) kern.logZeile(`Filter wieder gesetzt: ${wieder.text}`, "ergebnis");
+      }
       kern.sperreAus();
       kern.notieren("rundgang_fertig", { haeuser: (r.gesehen || []).length });
       return vorlegen();
@@ -1455,6 +1456,21 @@ const Werkzeugkasten = {
   // Flexibel im Monat: Monat als YYYY-MM (naechstes Vorkommen) und Dauer
   // Die Maske bietet die zwoelf Monate ab dem naechsten an - der laufende
   // Monat ist keiner mehr (im September "im September" heisst naechstes Jahr)
+  // Die Filterwerte fuer die Seite - an zwei Stellen gebraucht: beim Suchen
+  // und nach dem Rundgang, wenn die Liste neu geladen wurde
+  filterWerte(p) {
+    const filter = this.filterAusStand(p);
+    return {
+      zielId: p.zielId || undefined,
+      maxPreis: p.maxPreis || undefined,
+      maxStrand: p.maxStrand != null ? ([0.2, 1, 5].find((s) => s >= p.maxStrand) ?? 5) : undefined,
+      ausstattung: filter.ausstattung,
+      verpflegung: p.verpflegung ? [p.verpflegung] : undefined,
+      mindestbewertung: p.mindestbewertung || undefined,
+      sterne: p.mindestSterne ? [5, 4, 3].filter((s) => s >= p.mindestSterne) : undefined,
+    };
+  },
+
   flexWahl(p) {
     if (!p.monat) return null;
     const heute = new Date();
