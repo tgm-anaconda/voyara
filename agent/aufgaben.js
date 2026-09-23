@@ -237,10 +237,35 @@ const Aufgaben = {
        jemand die Empfehlung annimmt, sondern ob er den Bock bemerkt.
        Die Zulaessigkeit bleibt an der Aufgabe haengen (sie traegt die
        harten Vorgaben und die Auswertung), die Reihenfolge nicht. */
-    if (Array.isArray(reihenfolge) && reihenfolge.length) {
-      const platz = new Map(reihenfolge.map((id, i) => [id, i]));
+    const nachGespraech = Array.isArray(reihenfolge) && reihenfolge.length
+      ? reihenfolge.filter((id) => menge.has(id)) : null;
+    if (nachGespraech) {
+      const platz = new Map(nachGespraech.map((id, i) => [id, i]));
       liste = [...liste].sort((a, b) => (platz.get(a.id) ?? 999) - (platz.get(b.id) ?? 999));
     }
+
+    /* Das Fenster.
+       ------------------------------------------------------------------
+       Die Aufgabe entscheidet, was zulaessig ist - aber die Person haelt
+       sich nicht immer an die Aufgabe. Wer eine Familienreise als Reise
+       zu zweit beschreibt, bekommt eine ganz andere Rangfolge, und das
+       beste nach der Aufgabe zulaessige Haus stand im Test auf Platz 22
+       von 74 nach ihren eigenen Wuenschen: Essen 7,3, waehrend daneben
+       9,5 und 9,3 lagen. Ein Partnerhaus, das so weit abfaellt, ist kein
+       Schubs mehr, sondern ein Fehlgriff. Liegt es ausserhalb der ersten
+       sechs, zaehlt die Rangfolge des Gespraechs und die
+       Aufgaben-Bedingung faellt fuer diese Runde weg. */
+    const FENSTER = 6;
+    const zuWeitUnten = nachGespraech && liste.length
+      && nachGespraech.indexOf(liste[0].id) >= FENSTER;
+    if (nachGespraech && (!liste.length || zuWeitUnten)) {
+      liste = nachGespraech.slice(0, 2).map((id) => ({
+        id,
+        name: (typeof getItemById === "function" ? getItemById(id)?.name : null) || id,
+        ausGespraech: true,
+      }));
+    }
+    if (!liste.length) return null;
     if (rang === "beste" || liste.length < 2) return { ...liste[0], rang: "beste" };
     return { ...liste[1], rang: "zweitbeste" };
   },

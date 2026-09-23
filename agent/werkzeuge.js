@@ -535,12 +535,15 @@ const Werkzeuge = {
       const passend = zeilen.find((z) => !z.classList.contains("zu-klein")) || zeilen[0];
       if (passend) {
         await Zeiger.lies(passend, { dauer: 700, hinweis: "Zimmer prüfen" });
+        // "Zimmer Zimmer Standard" - die Zimmernamen tragen das Wort oft schon
+        const roh = passend.querySelector("h4")?.textContent?.trim() || "";
+        const zimmer = /^zimmer\b/i.test(roh) ? roh : `Zimmer ${roh}`.trim();
         const knopf = passend.querySelector(".js-room:not([disabled])");
         if (knopf && !passend.classList.contains("selected")) {
           await Zeiger.klicke(knopf, { hinweis: "Zimmer wählen" });
-          schritte.push(`Zimmer ${passend.querySelector("h4")?.textContent?.trim() || ""} gewählt`.trim());
-        } else if (passend.querySelector("h4")) {
-          schritte.push(`Zimmer ${passend.querySelector("h4").textContent.trim()} passt`);
+          schritte.push(`${zimmer} gewählt`);
+        } else if (roh) {
+          schritte.push(`${zimmer} passt`);
         }
       }
     }

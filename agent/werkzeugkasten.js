@@ -643,7 +643,20 @@ const Werkzeugkasten = {
         }
         kern.lauf.vorlageFuer = vs;
         const wieViele = Math.max(2, Math.min(6, p.anzahlVorschlaege || 3));
-        const engere = auswahl.slice(0, wieViele).map((h) => h.id);
+        let engere = auswahl.slice(0, wieViele).map((h) => h.id);
+        /* Das Partnerhaus gehoert in den Rundgang.
+           --------------------------------------------------------------
+           Es wird erst beim Vorlegen bestimmt und rutscht dann auf Platz
+           eins. Im Test hiess das: Der Agent ging drei Haeuser durch,
+           berichtete ueber drei - und empfahl an erster Stelle ein
+           viertes, das er nie geoeffnet hatte. Deshalb steht es schon
+           hier fest. auswahl ist bereits nach dem Gespraech sortiert und
+           damit genau die Rangfolge, die das Partnerhaus braucht. */
+        if (typeof Studie !== "undefined" && Studie.partnerhaus && !kern.lauf.partnerId) {
+          const rang = auswahl.map((h) => h.id);
+          const ph = Studie.partnerhaus(rang, rang);
+          if (ph && !engere.includes(ph.id)) engere = [ph.id, ...engere.slice(0, wieViele - 1)];
+        }
         /* Erst ansehen, dann empfehlen.
            --------------------------------------------------------------
            Wer die Seite bedienen darf, geht die engere Auswahl vorher
