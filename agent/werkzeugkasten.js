@@ -381,12 +381,29 @@ const Werkzeugkasten = {
       if (a.typ) { setze("typ", a.typ); p.artGenannt = true; p.artEgal = false; }
       if (a.artEgal !== undefined && !p.artGenannt) { setze("artEgal", !!a.artEgal); if (p.artEgal && !p.typ) p.typ = "hotel"; }
       setze("zimmer", a.zimmer);
-      // "Budget 900 Euro fuers Hotel" meint die Reise, nicht die Nacht. Das
-      // Modell traegt das gern als Nachtpreis ein; ein Nachtpreis oberhalb
-      // des teuersten Hauses ist ohnehin keiner.
-      if (a.maxPreis && !a.budgetGesamt && gesagt(/budget|insgesamt|gesamt|zusammen|für(s| das| die)?\s*(hotel|unterkunft|reise|woche)|komplett|alles in allem|maximal ausgeben/i, 1)) {
-        a.budgetGesamt = a.maxPreis; delete a.maxPreis;
-        kern.notieren("budget_umgedeutet", { wert: a.budgetGesamt });
+      // Geld gilt so, wie die Person es gesagt hat.
+      // ------------------------------------------------------------------
+      // "Insgesamt maximal 900 Euro fuers Hotel" wurde vom Modell in 225
+      // Euro pro Nacht umgerechnet; die Umdeutung machte daraus ein
+      // Gesamtbudget von 225, der Filter landete bei 48 Euro und es blieb
+      // ein einziges Haus uebrig. Gerechnet wird deshalb nicht mehr: Der
+      // Betrag aus der Nachricht zaehlt, und die Worte entscheiden, ob er
+      // fuer die Nacht oder fuer den ganzen Aufenthalt gilt.
+      const GESAMT_WORT = /insgesamt|gesamt|zusammen|komplett|alles in allem|maximal ausgeben|für(s| das| die)?\s*(hotel|unterkunft|reise|woche|wochenende)/i;
+      if (a.maxPreis || a.budgetGesamt) {
+        const letzteTexte = (kern.lauf.gespraech || []).filter((n) => n.role === "user").slice(-1).map((n) => String(n.content)).join(" ");
+        const genannt = (letzteTexte.match(/(\d{1,3}(?:[.\s]\d{3})+|\d+)\s*(?:€|euro|eur\b)/gi) || [])
+          .map((x) => parseInt(x.replace(/[^\d]/g, ""), 10)).filter((n) => n > 0);
+        const wert = genannt.length ? genannt[genannt.length - 1] : null;
+        const proNachtGesagt = /pro nacht|je nacht|die nacht|nachtpreis|pro übernachtung|pro uebernachtung/i.test(letzteTexte);
+        if (wert && GESAMT_WORT.test(letzteTexte) && !proNachtGesagt) {
+          if (a.budgetGesamt !== wert || a.maxPreis) kern.notieren("budget_umgedeutet", { gesagt: wert, modell: a.budgetGesamt || a.maxPreis });
+          a.budgetGesamt = wert; delete a.maxPreis;
+        } else if (wert && a.maxPreis && a.maxPreis !== wert && !a.budgetGesamt) {
+          // Das Modell hat gerechnet, wo nichts zu rechnen war
+          kern.notieren("preis_korrigiert", { gesagt: wert, modell: a.maxPreis });
+          a.maxPreis = wert;
+        }
       }
       setze("maxPreis", a.maxPreis); setze("budgetGesamt", a.budgetGesamt);
       if (a.maxPreis || a.budgetGesamt) p.preisEgal = false;
