@@ -110,9 +110,9 @@ const Vorschlaege = {
     // Wer sich das erste Haus ansieht, hat sich noch nicht entschieden.
     if (k) { k.lauf.gewaehlt = id; k.vorschlaegeMerken?.(); k.sichern(); }
     const item = typeof getItemById === "function" ? getItemById(id) : null;
-    let href = `stay.html?id=${encodeURIComponent(id)}`;
-    if (typeof Belegung !== "undefined") href = Belegung.anLink(href);
-    if (typeof Reisedaten !== "undefined") href = Reisedaten.anLink(href);
+    // Ueber den Kern, damit Monat und Dauer aus dem Stand mitkommen, auch
+    // wenn die Adresse der Liste sie gerade nicht mehr traegt
+    let href = k ? k.linkZu(id, "").href : `stay.html?id=${encodeURIComponent(id)}`;
     if (typeof Flug !== "undefined") href = Flug.anLink(href);
     if (item) location.href = href;
   },

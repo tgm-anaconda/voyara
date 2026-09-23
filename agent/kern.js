@@ -493,10 +493,25 @@ const Kern = {
     this.sichern();
   },
 
+  /* Der Link auf eine Hausseite - mit der gesuchten Reise daran.
+     ------------------------------------------------------------------
+     Reisedaten.anLink liest aus der Adresse der aktuellen Seite. Steht
+     die Suche dort nicht mehr (etwa weil man ueber den Brotkrumenpfad
+     zur Liste zurueckgekommen ist), fehlten Monat und Dauer: Die Karte
+     sagte "507 Euro, 4 Naechte", die Hausseite rechnete mit sieben und
+     zeigte 1.225 Euro. Deshalb springt der Stand ein. */
   linkZu(id, text) {
     let href = `stay.html?id=${encodeURIComponent(id)}`;
     if (typeof Belegung !== "undefined") href = Belegung.anLink(href);
     if (typeof Reisedaten !== "undefined") href = Reisedaten.anLink(href);
+    const p = this.lauf.profil || {};
+    if (!/[?&](from|flex)=/.test(href)) {
+      if (p.von && p.bis) href += `&from=${p.von}&to=${p.bis}`;
+      else if (typeof Werkzeugkasten !== "undefined") {
+        const f = Werkzeugkasten.flexWahl(p);
+        if (f) href += `&flex=1&monat=${f.monat}&nights=${f.naechte}`;
+      }
+    }
     return { text, href };
   },
 

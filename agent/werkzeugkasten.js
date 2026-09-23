@@ -976,6 +976,12 @@ const Werkzeugkasten = {
       if (stufe === 1) {
         kern.notieren("rundgang_start", { ids: r.ids });
         kern.logZeile(`Sehe mir ${r.ids.length} Häuser der Reihe nach an`, "schritt");
+        // Die Adresse der Liste festhalten. Der Brotkrumenpfad auf der
+        // Hausseite fuehrt zu "results.html?type=hotel" - ohne Monat,
+        // Dauer und Reisende. Danach stand die Liste auf 184 von 184
+        // Treffern und die Vorschlagslinks rechneten mit sieben Naechten.
+        r.zurueck = location.href;
+        kern.sichern();
         await hin(r.ids[0]);
         return { navigiert: true, stufe: 2 };
       }
@@ -998,7 +1004,8 @@ const Werkzeugkasten = {
         if (Zeiger.abbruch) { kern.notieren("rundgang_abgebrochen", { bei: r.i }); return vorlegen(); }
         if (r.i < r.ids.length) { await hin(r.ids[r.i]); return { navigiert: true, stufe: 2 }; }
         kern.sperreAn();
-        await Werkzeuge.zurueckZurListe();
+        if (r.zurueck) { await Zeiger.warte(250); location.href = r.zurueck; }
+        else await Werkzeuge.zurueckZurListe();
         return { navigiert: true, stufe: 3 };
       }
 
