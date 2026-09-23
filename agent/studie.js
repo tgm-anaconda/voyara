@@ -454,7 +454,13 @@ const Studie = {
     if (!d || !a || d.beendet) return;
     // Zweiter Netzanschluss: Wurde gebucht, aber nichts erfasst, wird die
     // Buchung hier aus der Seite nachgetragen, statt sie zu verlieren.
-    if (grund === "gebucht" && !d.buchung && typeof Werkzeuge !== "undefined") {
+    // Nachgetragen wird nur, wenn die Bestaetigungsseite wirklich dasteht.
+    // Ohne diese Pruefung trug der Notnagel am 23.09.2026 eine Buchung
+    // nach, die es nie gab - der Agent hatte nur die Pruefseite gefuellt.
+    // Eine erfundene Buchung ist schlimmer als eine fehlende.
+    const bestaetigt = !document.getElementById("confirmBtn")
+      && /bestätigt|buchungsnummer/i.test(document.getElementById("checkoutMain")?.innerText || "");
+    if (grund === "gebucht" && !d.buchung && bestaetigt && typeof Werkzeuge !== "undefined") {
       const id = new URLSearchParams(location.search).get("id");
       const z = Werkzeuge.buchungsZusammenfassung?.();
       const zahl = z?.gesamt ? parseInt(String(z.gesamt).replace(/[^\d]/g, ""), 10) : null;
@@ -468,7 +474,8 @@ const Studie = {
       }
     }
     d.beendet = Date.now();
-    d.grund = grund;
+    // "gebucht" darf nur dranstehen, wenn auch eine Buchung erfasst ist.
+    d.grund = grund === "gebucht" && !d.buchung ? "ohne_buchung" : grund;
     d.freigabeEnde = this.kern?.lauf?.freigabe || null;
     d.protokoll = [...(this.kern?.lauf?.protokoll || [])];
     d.weiter = this.kern?.lauf?.profil?.weiter || null;

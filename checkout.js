@@ -122,11 +122,13 @@ function renderStep1() {
     step = 2;
     render();
     window.scrollTo({ top: 0, behavior: "smooth" });
-    // Die Aufgabe ist mit der Buchung zu Ende. Ohne diesen Schritt konnte
-    // man einfach weiterklicken und die Zwischenfragen kamen nie.
-    if (typeof Studie !== "undefined" && Studie.aufgabeAbschliessen) {
-      setTimeout(() => Studie.aufgabeAbschliessen("gebucht"), 2600);
-    }
+    // Hier endet die Aufgabe ausdruecklich NICHT. Schritt 2 ist die
+    // Pruefseite - gebucht ist noch nichts. Bis zum 23.09.2026 stand an
+    // dieser Stelle derselbe Abschluss wie nach der Bestaetigung. Damit
+    // sprangen bei der Freigabe "Buchung vorbereiten" die Zwischenfragen
+    // an, sobald der Agent die Gastdaten eingetragen hatte: Die Person
+    // kam nie dazu, selbst zu bestaetigen, und in den Daten stand
+    // trotzdem "gebucht". Genau die Hauptmessgroesse war damit falsch.
   });
 }
 

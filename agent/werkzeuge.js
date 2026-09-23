@@ -455,8 +455,25 @@ const Werkzeuge = {
         const el = liste[i];
         const autor = el.querySelector(".review-who strong")?.textContent?.trim() || "";
         const note = el.querySelector(".review-rating")?.textContent?.trim() || "";
+        const titel = el.querySelector("h4")?.textContent?.trim() || "";
+        const text = el.querySelector("p")?.textContent?.trim() || "";
         await Zeiger.lies(el, { dauer: 760, hinweis: `Bewertung ${i + 1} von ${wie}${autor ? `: ${autor}` : ""}` });
-        gelesen.push({ autor, note });
+        gelesen.push({ autor, note, titel, text });
+      }
+    }
+
+    // Ohne Bewertungskasten auf der Seite (Trefferliste, Startseite) kommen
+    // die Stimmen aus denselben Daten, aus denen die Seite sie baut. Ohne
+    // sie erfand das Modell den Inhalt: Auf "was sagen die Gaeste konkret
+    // zum Essen" kam "sie schaetzen Qualitaet und Vielfalt" - ein Satz, den
+    // keine Bewertung hergibt. Jetzt steht echter Wortlaut im Ergebnis.
+    if (!gelesen.length && typeof bewertungenFuer === "function") {
+      const suche = String(aspekt || "").toLowerCase();
+      const vorrat = bewertungenFuer(item, 0, 20);
+      const passt = (r) => !suche || Object.keys(r.aspekte || {})
+        .some((a) => ((typeof ASPEKT_NACH_ID !== "undefined" && ASPEKT_NACH_ID[a]?.label) || a).toLowerCase().includes(suche));
+      for (const r of vorrat.filter(passt).slice(0, anzahl)) {
+        gelesen.push({ autor: r.author, note: String(r.rating), titel: r.title, text: r.text });
       }
     }
 
@@ -486,7 +503,7 @@ const Werkzeuge = {
       daten: {
         id: item.id, name: item.name, note: item.rating, anzahl: item.reviewCount,
         gelobt: k.staerken, kritisiert: k.schwaechen, bilanz,
-        sichtbarGelesen: gelesen.length, einzelne: gelesen,
+        sichtbarGelesen: panel ? gelesen.length : 0, stimmen: gelesen,
       },
     };
   },

@@ -758,6 +758,20 @@ const Kern = {
             }
           }
         }
+        // Kommt der Text zusammen mit einem Werkzeugaufruf, greift die
+        // Leitplanke oben nicht - das Werkzeug muss ja laufen. Genau so kam
+        // "Wie viele seid ihr insgesamt? Sind Kinder dabei, und wenn ja, wie
+        // alt sind sie?" durch. Hier wird nicht neu gefragt, sondern die
+        // zweite Frage faellt weg; sie ist ohnehin als naechstes Thema dran.
+        if (text && nachricht.tool_calls && this.fragenZaehlen(text) > 1) {
+          const saetze = text.split(/(?<=[.!?])\s+/);
+          const bis = saetze.findIndex((x) => /\?\s*$/.test(x) && this.FRAGEWORT.test(x));
+          if (bis >= 0) {
+            text = saetze.slice(0, bis + 1).join(" ").trim();
+            nachricht.content = text;
+            this.notieren("zwei_fragen_gekuerzt", {});
+          }
+        }
         this.gespraechPush(nachricht);
         // Denselben Satz nicht zweimal zeigen (das kleine Modell wiederholt
         // nach einem Werkzeug gern, was es davor schon gesagt hat)
@@ -903,7 +917,10 @@ const Kern = {
     if (w === "auswahl_vorlegen" && this.lauf.letzteVorlage?.length) {
       return [...this.lauf.letzteVorlage.map((id, i) => `${i + 1}. ${(getItemById?.(id)?.name || id).split(" ").slice(0, 2).join(" ")}`), "Etwas anderes"];
     }
-    if (w === "haus_oeffnen" || (seite === "stay" && this.lauf.gewaehlt)) return ["Auf den Merkzettel", "Zur Buchung", "Zurück zur Auswahl"];
+    // Nur direkt nach dem Oeffnen. Vorher galten diese drei Vorschlaege auf
+    // der ganzen Hausseite - auch unter der Frage "Welchen Tag moechtest du
+    // als Anreisetag?", wo "Zur Buchung" als Antwort keinen Sinn ergibt.
+    if (w === "haus_oeffnen") return ["Auf den Merkzettel", "Zur Buchung", "Zurück zur Auswahl"];
     if (this.lauf.gefragt) { const fp = Werkzeugkasten.fahrplan(this.lauf.profil || {}, this.lauf); if (fp.chips) return fp.chips.split("|").map((x) => x.trim()); }
     return [];
   },

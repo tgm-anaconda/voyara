@@ -804,6 +804,7 @@ const Werkzeugkasten = {
         ergebnis: { geoeffnet: item.name, id: item.id, bewertungenAusgewertet: d.anzahl ?? item.reviewCount,
           gelobt: d.gelobt || [], kritisiert: d.kritisiert || [],
           jeAspekt: (d.bilanz || []).slice(0, 6).map((x) => ({ aspekt: x.aspekt || x.label, teilnoteVon10: Politik.teilnote(x.anteilPositiv ?? 0), rueckmeldungen: x.erwaehnungen })),
+          stimmen: (d.stimmen || []).slice(0, 4).map((x) => ({ gast: x.autor, note: x.note, titel: x.titel, text: x.text })),
           hinweis: "Die Person sieht die Seite jetzt. Fass in zwei, drei Saetzen zusammen, was fuer sie wichtig ist, und frag, ob du vormerken, buchen (je nach Freigabe) oder zurueck sollst." },
         log: `${item.name} geöffnet, ${d.anzahl ?? item.reviewCount} Bewertungen gelesen`,
       };
@@ -818,7 +819,7 @@ const Werkzeugkasten = {
        auf der Hausseite durch die Bewertungen selbst, auf der
        Trefferliste ueber die Karte des Hauses - und merkt sich, welche
        Haeuser der Agent wirklich gelesen hat. */
-    async bewertungen_lesen(a, kern) {
+    async bewertungen_lesen(a, kern, stufe) {
       const item = typeof getItemById === "function" ? getItemById(a.id) : null;
       if (!item) return { ergebnis: { fehler: `${a.id} kenne ich nicht.` } };
       const aspekt = String(a.aspekt || "").trim();
@@ -826,12 +827,25 @@ const Werkzeugkasten = {
       const aufDerHausseite = seite === "stay" && new URLSearchParams(location.search).get("id") === a.id;
       const darfBedienen = kern.darf("suchen");
 
+      // Bewertungen stehen auf der Hausseite. Wer darf, geht auch hin -
+      // sonst faehrt der Zeiger nur ueber eine Trefferkarte, auf der gar
+      // keine Bewertung steht, und das Lesen bleibt eine Behauptung.
+      if (stufe === 1 && darfBedienen && !aufDerHausseite) {
+        kern.lauf.gewaehlt = a.id;
+        kern.sperreAn();
+        const e = await Werkzeuge.unterkunftOeffnen(a.id);
+        if (!e.ok) {
+          await Zeiger.warte(300);
+          location.href = kern.linkZu(a.id, item.name).href;
+        }
+        return { navigiert: true, stufe: 2 };
+      }
+
       kern.sperreAn();
-      if (darfBedienen && !aufDerHausseite && seite === "results") await Werkzeuge.bewertungenSichten([a.id]);
       const b = await Werkzeuge.bewertungenLesen(a.id, { aspekt });
       kern.sperreAus();
       const d = b.daten || {};
-      const wo = aufDerHausseite ? "hausseite" : (darfBedienen && seite === "results" ? "trefferliste" : "katalog");
+      const wo = d.sichtbarGelesen ? "hausseite" : "katalog";
 
       kern.lauf.gelesen = kern.lauf.gelesen || {};
       kern.lauf.gelesen[a.id] = wo;
@@ -845,7 +859,8 @@ const Werkzeugkasten = {
           gelobt: d.gelobt || [], kritisiert: d.kritisiert || [],
           jeAspekt: (d.bilanz || []).slice(0, 6).map((x) => ({ aspekt: x.aspekt || x.label,
             teilnoteVon10: Politik.teilnote(x.anteilPositiv ?? 0), rueckmeldungen: x.erwaehnungen })),
-          hinweis: "Teilnoten als 'x von 10' nennen, nie als Prozent. Sag nur, was hier steht.",
+          stimmen: (d.stimmen || []).slice(0, 4).map((x) => ({ gast: x.autor, note: x.note, titel: x.titel, text: x.text })),
+          hinweis: "Teilnoten als 'x von 10' nennen, nie als Prozent. Wird es konkret, gib wieder, was in stimmen steht - erfinde keine Inhalte, die dort nicht vorkommen.",
         },
         log: `${item.name}: ${(d.anzahl ?? item.reviewCount).toLocaleString("de-DE")} Bewertungen ausgewertet${d.sichtbarGelesen ? `, ${d.sichtbarGelesen} im Wortlaut gelesen` : ""}`,
       };
@@ -1134,6 +1149,17 @@ const Werkzeugkasten = {
       const jz = Object.keys(JAHRESZEIT).find((k) => gesagt.includes(k));
       if (jz) { frage = `Sie hat "${jz}" gesagt - frag, welcher Monat: ${JAHRESZEIT[jz].replace(/ \| /g, ", ")}? Keinen davon vorschlagen oder als "richtig?" unterstellen; "egal" ist eine Antwort (dann nimmst du den ersten und sagst das).`; chips = `${JAHRESZEIT[jz]} | Egal`; }
     }
+    // "Ein langes Wochenende" ist eine Dauerangabe. Ohne diesen Zweig fragte
+    // der Agent danach trotzdem "Eine Woche, zehn Tage oder etwas anderes?"
+    // und die Person musste sich wiederholen. Eine Zahl wird nicht geraten -
+    // drei oder vier Naechte sagt sie selbst.
+    if (naechstes === "dauer") {
+      const gesagt = (lauf.gespraech || []).filter((n) => n.role === "user").map((n) => String(n.content).toLowerCase()).join(" ");
+      if (/wochenende/.test(gesagt)) {
+        frage = "Sie hat von einem Wochenende gesprochen - frag, ob zwei, drei oder vier Naechte gemeint sind. Nicht allgemein nach der Dauer fragen, das hat sie schon gesagt.";
+        chips = "2 Nächte | 3 Nächte | 4 Nächte";
+      }
+    }
     if (naechstes === "reisende") {
       if (p.personen != null && p.erwachsene == null && p.kinder == null) { frage = `Wie viele der ${p.personen} Kinder sind, und wie alt - 'keine' ist eine Antwort. Erwachsene nicht fragen, das rechnet die Seite.`; chips = "Keine Kinder | Ein Kind | Zwei Kinder"; }
       else if (p.erwachsene != null && p.kinder == null) { frage = "Ob Kinder mitreisen - und wenn ja, wie viele und wie alt."; chips = "Keine Kinder | Ein Kind | Zwei Kinder"; }
@@ -1196,14 +1222,17 @@ const Werkzeugkasten = {
     const monat = p.monat ? Object.keys(Politik.MONATE).find((m) => Politik.MONATE[m] === p.monat && m.length > 3) : null;
     const monatText = monat ? `Im ${monat.charAt(0).toUpperCase() + monat.slice(1)}` : "Aktuell";
     const art = p.typ === "apartment" ? "Ferienwohnungen" : "Hotels";
-    const wo = p.zielId ? `auf ${ZIEL_NACH_ID?.[p.zielId]?.name || p.zielId}` : (p.richtung === "warm" ? "in den warmen Regionen" : p.richtung === "kalt" ? "in den kalten Regionen" : "");
+    // "in den warmen Regionen in 8 Regionen" stand so auf der Seite - die
+    // Himmelsrichtung gehoert vor das Wort Regionen, nicht davor und danach.
+    const warmKalt = p.richtung === "warm" ? "warmen " : p.richtung === "kalt" ? "kalten " : "";
+    const wo = p.zielId ? `auf ${ZIEL_NACH_ID?.[p.zielId]?.name || p.zielId}` : (warmKalt ? `in den ${warmKalt}Regionen` : "");
     const regionen = umfang.jeRegion || [];
     const teile = [];
     if (p.zielId || regionen.length <= 1) {
       teile.push(`${monatText} gibt es ${liste.length} ${art} ${wo}`.trim() + ".");
     } else {
       const top = regionen.slice(0, 3).map((r) => `${r.region} (${r.haeuser})`);
-      teile.push(`${monatText} gibt es ${liste.length} ${art}${wo ? ` ${wo}` : ""} in ${regionen.length} Regionen, die meisten ${top.length > 1 ? `${top.slice(0, -1).join(", ")} und ${top[top.length - 1]}` : top[0]}.`);
+      teile.push(`${monatText} gibt es ${liste.length} ${art} in ${regionen.length} ${warmKalt}Regionen, die meisten ${top.length > 1 ? `${top.slice(0, -1).join(", ")} und ${top[top.length - 1]}` : top[0]}.`);
     }
     if (umfang.preisProNacht) teile.push(`Pro Nacht kosten sie ${umfang.preisProNacht.von} bis ${umfang.preisProNacht.bis} €${p.naechte ? "" : ", gerechnet mit einer Woche"}.`);
     const merkmale = [];
@@ -1298,7 +1327,10 @@ const Werkzeugkasten = {
     if (p.zielId && typeof ZIEL_NACH_ID !== "undefined") t.push(ZIEL_NACH_ID[p.zielId]?.name);
     else if (p.richtung && typeof Politik !== "undefined") t.push((Politik.THEMEN || []).find((x) => x.id === p.richtung)?.label || p.richtung);
     if (p.typ === "apartment") t.push("Ferienwohnung");
-    if (p.maxPreis) t.push(`bis ${p.maxPreis} €/Nacht`);
+    // Wer 900 Euro fuer die Unterkunft gesagt hat, will in der Ueberschrift
+    // seine Zahl wiederfinden und nicht die daraus gerechneten 216 pro Nacht.
+    if (p.budgetGesamt) t.push(`bis ${p.budgetGesamt} € gesamt`);
+    else if (p.maxPreis) t.push(`bis ${p.maxPreis} €/Nacht`);
     if (p.maxStrand != null) t.push(`Strand bis ${p.maxStrand < 1 ? `${Math.round(p.maxStrand * 1000)} m` : `${p.maxStrand} km`}`);
     if (p.mindestbewertung) t.push(`Note ab ${String(p.mindestbewertung).replace(".", ",")}`);
     if (p.mindestSterne) t.push(`ab ${p.mindestSterne} Sterne`);
