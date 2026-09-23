@@ -969,6 +969,15 @@ const AgentPanel = {
     erk.addEventListener("error", (e) => {
       Kern?.notieren?.("sprache_fehler", { art: e.error });
       aus("fehler");
+      // Ohne Rueckmeldung sieht es aus, als waere nichts passiert
+      const fuss = document.querySelector(".agent-foot");
+      if (!fuss) return;
+      const alt2 = fuss.dataset.alt || fuss.textContent;
+      fuss.dataset.alt = alt2;
+      fuss.textContent = e.error === "not-allowed"
+        ? "Für die Spracheingabe braucht der Browser Zugriff auf das Mikrofon."
+        : "Die Spracherkennung hat gerade nicht geklappt. Tippen geht immer.";
+      setTimeout(() => { fuss.textContent = alt2; }, 6000);
     });
     erk.addEventListener("end", () => { if (laeuft) aus("ende"); });
 
