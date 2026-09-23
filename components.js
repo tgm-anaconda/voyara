@@ -23,6 +23,7 @@ const ICONS = {
   mountain: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 19 6.5-11 4 6 2.5-3.5L21 19Z"/></svg>',
   sun: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4"/></svg>',
   close: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>',
+  mic: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4M9 22h6"/></svg>',
   send: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7Z"/></svg>',
   users: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.4"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M17 5.2a3.4 3.4 0 0 1 0 6.6M18.5 20a6.5 6.5 0 0 0-3-5.5"/></svg>',
   luggage: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="7" width="14" height="14" rx="2"/><path d="M9 7V4h6v3M9 21v1M15 21v1"/></svg>',
@@ -499,6 +500,7 @@ function renderAgentRail() {
 
   <form class="agent-input" id="agentForm">
     <input class="input" type="text" id="agentInput" placeholder="Nachricht schreiben…" autocomplete="off" />
+    <button type="button" class="agent-mikro" id="agentMikro" aria-label="Sprechen statt tippen" hidden>${ICONS.mic}</button>
     <button type="submit" class="btn btn-primary" aria-label="Senden">${ICONS.send}</button>
   </form>
   <p class="agent-foot">Suchen, filtern und vormerken. Du kannst jederzeit selbst weiterklicken.</p>
@@ -536,6 +538,8 @@ const AgentPanel = {
       this.handleUserInput(text);
       input.value = "";
     });
+
+    this.spracheAnbinden();
 
     // Am Rechner klappt der Knopf die Spalte schmal, auf dem Handy oeffnet
     // und schliesst er das Panel. Zwei Gesten, ein Knopf - deshalb hier die
@@ -912,6 +916,78 @@ const AgentPanel = {
   },
   // Die eigentliche Arbeit macht agent/kern.js. Fehlt der Agentencode - etwa
   // weil eine Seite ihn nicht einbindet - bleibt das Panel eine Anzeige.
+  /* Sprechen statt tippen.
+     ------------------------------------------------------------------
+     Die Spracherkennung des Browsers (Web Speech API), kein eigener
+     Dienst und keine zusaetzlichen Kosten. Das Gesprochene landet im
+     Eingabefeld, abgeschickt wird es wie getippter Text - die Person
+     sieht vorher, was verstanden wurde, und kann es aendern. Gibt es die
+     Schnittstelle nicht (Firefox), bleibt der Knopf verborgen; getippt
+     werden kann immer.
+
+     Gemessen wird, ob und wie oft sie genutzt wird: Eine Sprachsteuerung
+     anzubieten ist eine Gestaltungsentscheidung wie jede andere, und ob
+     Leute mit einem Kaufagenten wirklich sprechen wollen, ist bisher
+     eine Behauptung. */
+  sprache: null,
+  spracheAnbinden() {
+    const knopf = document.getElementById("agentMikro");
+    const feld = document.getElementById("agentInput");
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!knopf || !feld || !SR) return;
+    knopf.hidden = false;
+
+    const erk = new SR();
+    erk.lang = "de-DE";
+    erk.continuous = true;
+    erk.interimResults = true;
+    let laeuft = false;
+    let start = 0;
+    let vorher = "";
+
+    const aus = (grund) => {
+      if (!laeuft) return;
+      laeuft = false;
+      knopf.classList.remove("hoert");
+      knopf.setAttribute("aria-label", "Sprechen statt tippen");
+      try { erk.stop(); } catch { /* egal */ }
+      const sekunden = Math.round((Date.now() - start) / 1000);
+      const text = feld.value.trim();
+      Kern?.notieren?.("sprache_ende", { grund, sekunden, zeichen: text.length });
+    };
+
+    erk.addEventListener("result", (e) => {
+      let fertig = "";
+      let vorlaeufig = "";
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const t = e.results[i][0].transcript;
+        if (e.results[i].isFinal) fertig += t; else vorlaeufig += t;
+      }
+      if (fertig) vorher = `${vorher}${vorher && !/\s$/.test(vorher) ? " " : ""}${fertig.trim()}`;
+      feld.value = (vorher + (vorlaeufig ? ` ${vorlaeufig.trim()}` : "")).trim();
+    });
+    erk.addEventListener("error", (e) => {
+      Kern?.notieren?.("sprache_fehler", { art: e.error });
+      aus("fehler");
+    });
+    erk.addEventListener("end", () => { if (laeuft) aus("ende"); });
+
+    knopf.addEventListener("click", () => {
+      if (laeuft) { aus("knopf"); feld.focus(); return; }
+      vorher = feld.value.trim();
+      start = Date.now();
+      laeuft = true;
+      knopf.classList.add("hoert");
+      knopf.setAttribute("aria-label", "Aufnahme beenden");
+      Kern?.notieren?.("sprache_start", {});
+      try { erk.start(); } catch { aus("start_fehlgeschlagen"); }
+    });
+
+    // Abschicken beendet die Aufnahme, sonst laeuft sie in die naechste
+    // Nachricht hinein
+    document.getElementById("agentForm")?.addEventListener("submit", () => aus("gesendet"));
+  },
+
   handleUserInput(text) {
     this.setSuggestions([]);
     if (typeof Kern !== "undefined") {

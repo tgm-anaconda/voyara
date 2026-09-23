@@ -288,6 +288,17 @@ img, svg { max-width: 100%; }
 .agent-input .input::placeholder { color: rgba(255,255,255,.45); }
 .agent-input .input:focus { background: rgba(255,255,255,.16); border-color: var(--brand-500); box-shadow: none; }
 .agent-input .btn { padding: 10px 13px; }
+/* Sprechen statt tippen. Der Knopf ist nur da, wo der Browser die
+   Spracherkennung kann; waehrend der Aufnahme pulsiert er rot. */
+.agent-mikro {
+  border: 1px solid rgba(255,255,255,.2); background: rgba(255,255,255,.10); color: #fff;
+  border-radius: 10px; padding: 10px 12px; cursor: pointer; display: grid; place-items: center;
+  transition: background .15s ease, color .15s ease;
+}
+.agent-mikro:hover { background: rgba(255,255,255,.18); }
+.agent-mikro.hoert { background: #c0392b; border-color: #c0392b; animation: mikro-puls 1.3s ease-in-out infinite; }
+@keyframes mikro-puls { 0%, 100% { box-shadow: 0 0 0 0 rgba(192,57,43,.55); } 50% { box-shadow: 0 0 0 7px rgba(192,57,43,0); } }
+@media (prefers-reduced-motion: reduce) { .agent-mikro.hoert { animation: none; } }
 .agent-foot { font-size: .7rem; color: rgba(255,255,255,.42); padding: 0 16px 13px; margin: 0; background: var(--chat-head); }
 
 /* Eingeklappter Zustand */
@@ -2078,6 +2089,14 @@ body.agent-ohne-freigabe #agentEckdaten { display: none !important; }
   padding: 8px 10px; margin-bottom: 10px; font-weight: 700; font-size: .84rem; display: grid; gap: 2px;
 }
 .vorschlag-banner span { font-weight: 400; font-size: .78rem; }
+.vorschlag-banner-kopf { display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: .84rem; }
+.vorschlag-info {
+  width: 17px; height: 17px; border-radius: 50%; border: 1px solid #c98a2e; background: transparent;
+  color: #7a4b00; font-size: .7rem; font-weight: 700; line-height: 1; cursor: pointer; padding: 0;
+  display: inline-grid; place-items: center; font-family: Georgia, serif;
+}
+.vorschlag-info:hover, .vorschlag-info.offen { background: #c98a2e; color: #fff; }
+.vorschlag-infotext { margin: 8px 0 0; font-weight: 400; font-size: .76rem; line-height: 1.45; border-top: 1px solid #f0c98a; padding-top: 8px; }
 .vorschlag-text { padding: 14px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
 .vorschlag-text h3 { margin: 0; font-size: 1.02rem; line-height: 1.25; }
 .vorschlag-ort { margin: 0; color: var(--ink-500); font-size: .82rem; }

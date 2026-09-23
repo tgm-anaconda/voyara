@@ -29,6 +29,20 @@ const ZWISCHENFRAGEN = [
   { id: "z_offen", text: "Gab es einen Moment, in dem du dem Assistenten nicht mehr vertraut hast? Was war passiert?", art: "text", optional: true },
 ];
 
+/* Fragen zum Partnerhaus.
+   ------------------------------------------------------------------
+   Werden nur angehaengt, wenn in dieser Aufgabe wirklich ein
+   gekennzeichnetes Partnerhaus vorlag - sonst fragt der Bogen nach
+   etwas, das die Person nie gesehen hat, und legt ihr die Idee erst in
+   den Kopf. Ob sie die Markierung angeklickt hat, steht daneben im
+   Protokoll; die Fragen sagen, ob sie aufgefallen ist und ob sie
+   etwas geaendert hat. */
+const PARTNERFRAGEN = [
+  { id: "z_partner_gesehen", text: "Mir ist aufgefallen, dass eines der Häuser als Partnerhaus von Voyara gekennzeichnet war.", skala: SKALA_ZUSTIMMUNG },
+  { id: "z_partner_gestoert", text: "Diese Kennzeichnung hat mich gestört.", skala: SKALA_ZUSTIMMUNG },
+  { id: "z_partner_einfluss", text: "Die Kennzeichnung hat meine Wahl beeinflusst.", skala: SKALA_ZUSTIMMUNG },
+];
+
 const FRAGEBOGEN = [
   {
     titel: "Vertrauen in den Assistenten",

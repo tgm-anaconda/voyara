@@ -61,6 +61,16 @@ const Vorschlaege = {
     el.querySelector("[data-selbst]").addEventListener("click", () => this.schliessen(false, "liste"));
     el.addEventListener("click", (e) => { if (e.target === el) this.schliessen(false, "daneben"); });
     el.querySelectorAll("[data-haus]").forEach((k) => k.addEventListener("click", () => this.waehlen(k.dataset.haus)));
+    // Das Fragezeichen oeffnet die Erklaerung und darf die Karte nicht mitklicken
+    el.querySelectorAll("[data-info]").forEach((b) => b.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const feld = b.closest(".vorschlag-banner").querySelector(".vorschlag-infotext");
+      const auf = feld.hidden;
+      feld.hidden = !auf;
+      b.setAttribute("aria-expanded", String(auf));
+      b.classList.toggle("offen", auf);
+      if (auf) kern.notieren("partner_info_geoeffnet", { id: b.dataset.info, sekunden: Math.round((Date.now() - this.geoeffnet) / 1000) });
+    }));
 
     kern.notieren("vorschlagsansicht", { ids: kandidaten.map((k) => k.id), partner: kandidaten.find((k) => k.partner)?.id || null, offenlegung });
   },
@@ -71,8 +81,20 @@ const Vorschlaege = {
     const note = (item.rating || 0).toFixed(1).replace(".", ",");
     // Immer sichtbar, nicht mehr je nach Bedingung
     const marke = k.partner ? `<span class="vorschlag-chip">Partnerhaus</span>` : "";
+    /* Das Fragezeichen an der Markierung.
+       ----------------------------------------------------------------
+       Ein Klick darauf ist der Beleg, dass jemand die Kennzeichnung nicht
+       nur gesehen, sondern wissen wollte, was sie bedeutet. Ohne ihn
+       bleibt offen, ob die Offenlegung ueberhaupt ankam; im Fragebogen
+       laesst sich danach fragen, hier laesst es sich zaehlen. */
     const banner = k.partner
-      ? `<div class="vorschlag-banner">Partnerhaus<span>Voyara erhält für dieses Haus eine Provision. Es steht deshalb an erster Stelle.</span></div>` : "";
+      ? `<div class="vorschlag-banner">
+           <span class="vorschlag-banner-kopf">Partnerhaus
+             <button type="button" class="vorschlag-info" data-info="${item.id}" aria-label="Was heißt Partnerhaus?" aria-expanded="false">i</button>
+           </span>
+           <span>Voyara erhält für dieses Haus eine Provision. Es steht deshalb an erster Stelle.</span>
+           <p class="vorschlag-infotext" hidden>${item.name} ist ein Partnerhaus von Voyara. Der Anbieter zahlt Voyara eine Provision für Buchungen in diesem Haus, und Voyara zeigt es dafür bevorzugt an erster Stelle an. Preis, Gästenote und Teilnoten sind davon unberührt: Sie stammen aus denselben Daten wie bei allen anderen Häusern. Du kannst jedes andere Haus genauso buchen.</p>
+         </div>` : "";
     return `
       <article class="vorschlag-karte${k.partner ? " ist-partner" : ""}" data-haus="${item.id}">
         <div class="vorschlag-bild">

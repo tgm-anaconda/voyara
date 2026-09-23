@@ -424,7 +424,32 @@ const Werkzeugkasten = {
       if (a.anreise && !gesagt(Werkzeugkasten.TAG)) {
         kern.notieren("anreise_verworfen", { anreise: a.anreise }); delete a.anreise;
       }
+      // Monat und Jahr kommen aus der Suche, nicht vom Modell - aus "16. Okt."
+      // wurde sonst gern der 16. des laufenden Monats.
+      if (a.anreise) {
+        const fw = Werkzeugkasten.flexWahl(p);
+        const tag = parseInt(String(a.anreise).slice(-2), 10);
+        if (fw && tag >= 1 && tag <= 31) a.anreise = `${fw.monat}-${String(tag).padStart(2, "0")}`;
+      }
       setze("anreise", a.anreise);
+      /* Aus dem genannten Tag werden feste Reisedaten.
+         ----------------------------------------------------------------
+         Bis zum 23.09.2026 blieb die Suche flexibel im Monat, auch wenn
+         der Anreisetag feststand. Wer dann eine Empfehlung anklickte,
+         stand auf der Hausseite vor einem gesperrten Buchungsknopf: "Im
+         ganzen Monat frei, fuer die Buchung brauchen wir den Tag." Der
+         Tag war laengst gesagt, nur nicht in der Suche. Jetzt traegt ihn
+         die Maske, und alles dahinter rechnet mit echten Daten. */
+      if (p.anreise && p.naechte && !(p.von && p.bis)) {
+        const ab = new Date(p.anreise);
+        if (!Number.isNaN(ab.getTime())) {
+          p.von = p.anreise;
+          p.bis = new Date(ab.getTime() + p.naechte * 86400000).toISOString().slice(0, 10);
+          p.flexibel = false;
+          geaendert.push("von", "bis");
+          kern.notieren("zeitraum_aus_anreise", { von: p.von, bis: p.bis });
+        }
+      }
       for (const f of ["preisEgal", "bewertungEgal", "strandEgal", "verpflegungEgal", "ausstattungEgal"]) if (a[f] !== undefined) setze(f, !!a[f]);
       if (Array.isArray(a.wuensche)) {
         const ALIAS = { strand: "strandnah", meer: "strandnah", beach: "strandnah", kids: "kinderclub", kinder: "familie", spa: "wellness", bewertungen: "bewertung", essen: "essen" };
@@ -1243,6 +1268,7 @@ const Werkzeugkasten = {
     dauer: { frage: "Wie lange, ungefaehr ('eine Woche' = 7 Naechte, '10 Tage' = 10 Naechte).", chips: null },
     flug: { frage: "Ob ein Flug dazu soll oder nur die Unterkunft. Sag in einem Halbsatz dazu, dass mit Flug der Anreisetag von den Flugtagen der Verbindung abhaengt.", chips: "Mit Flug | Nur die Unterkunft" },
     flugAb: { frage: "Von welchem Flughafen: Hamburg, Stuttgart, Duesseldorf, Hannover, Muenchen, Koeln, Frankfurt oder Berlin. Klasse nicht fragen - Economy ist gerechnet, sie kann es spaeter aendern.", chips: null },
+    anreise: { frage: "An welchem Tag sie anreisen will. Der Monat und die Dauer stehen fest, der Tag fehlt - nenn zwei, drei moegliche Termine aus den Chips und frag, welcher passt. Keinen selbst aussuchen.", chips: null },
     vorgehen: { frage: "Ob du die Filter so einstellst und sie selbst durch die Liste schaut (vorgehen selbst), oder ob du ihr Haeuser zur Auswahl raussuchst (vorgehen top3) - und wenn ja, wie viele; drei sind ueblich, zwei bis sechs gehen. Beides gleichwertig anbieten, die Zahl im selben Satz.", chips: "Ich schaue selbst | Such mir drei raus | Lieber fünf" },
     preis: { frage: "Ob sie beim Preis schon eine feste Grenze hat (pro Nacht oder gesamt) oder offen ist. Nicht 'wie viel darf es kosten' fragen. Offen heisst preisEgal true. Die Preisspanne aus der Lage darfst du nennen.", chips: "Feste Grenze | Offen" },
     verpflegung: { frage: "Welche Verpflegung es sein soll: All Inclusive oder Halbpension (oder nur Fruehstueck, oder egal). Nenn dazu, was All Inclusive im Schnitt mehr kostet und wie viele Haeuser es anbieten - die Zahlen stehen in verpflegungsLage. 'Egal' heisst verpflegungEgal true.", chips: "All Inclusive | Halbpension | Nur Frühstück | Egal" },
@@ -1298,11 +1324,18 @@ const Werkzeugkasten = {
       preis: !!(p.maxPreis || p.budgetGesamt || p.preisEgal || b.preis),
       verpflegung: !!(p.verpflegung || p.verpflegungEgal || b.verpflegung || p.typ === "apartment"),
       wuensche: !!((p.kriterien || []).length || p.ausstattungEgal || b.wuensche),
+      /* Der Anreisetag. Mit festen Daten aus der Suche ist er da, sonst
+         muss die Person ihn nennen - ohne ihn laesst die Seite nicht
+         buchen, und der Knopf auf der Hausseite bleibt gesperrt.
+         Mit Flug wird er hier nicht gefragt: Welche Tage gehen, haengt an
+         der Verbindung und damit am Haus, das noch nicht feststeht. Dort
+         fragt die Buchungsstrecke danach, mit den echten Flugtagen. */
+      anreise: !!p.anreise || !!(p.von && p.bis) || !!p.flug,
     };
     const KERN = ["zeit", "reisende", "kinderAlter", "ziel", "art"];
     const ECKDATEN = ["dauer", "flug", "flugAb"];
     // Verpflegung nur bei Hotels - eine Ferienwohnung hat keine
-    const BERATUNG = p.typ === "apartment" ? ["preis", "wuensche"] : ["preis", "verpflegung", "wuensche"];
+    const BERATUNG = (p.typ === "apartment" ? ["preis", "wuensche"] : ["preis", "verpflegung", "wuensche"]).concat("anreise");
     const kernFertig = KERN.every((t) => fertig[t]);
     const suchbereit = fertig.zeit && fertig.reisende && fertig.kinderAlter;
     const schluessel = this.eckdatenSchluessel(p);
@@ -1366,12 +1399,35 @@ const Werkzeugkasten = {
         chips = "2 Nächte | 3 Nächte | 4 Nächte";
       }
     }
+    /* Die moeglichen Anreisetage als Chips.
+       ------------------------------------------------------------------
+       Im Prototyp ist jeder Tag des Monats frei und der Preis gleich -
+       vier ueber den Monat verteilte Termine machen die Frage trotzdem
+       beantwortbar, statt sie wie ein leeres Datumsfeld wirken zu lassen. */
+    if (naechstes === "anreise") {
+      const f = this.flexWahl(p);
+      const naechte = p.naechte || 7;
+      if (f) {
+        const [jahr, monat] = f.monat.split("-").map(Number);
+        const letzter = new Date(jahr, monat, 0).getDate();
+        const spielraum = Math.max(1, letzter - naechte);
+        const tage = [1, Math.round(spielraum / 3), Math.round((spielraum * 2) / 3), spielraum]
+          .map((t) => Math.min(letzter, Math.max(1, t)))
+          .filter((t, i, alle) => alle.indexOf(t) === i)
+          .map((t) => `${f.monat}-${String(t).padStart(2, "0")}`);
+        const MON = ["Jan.", "Feb.", "März", "April", "Mai", "Juni", "Juli", "Aug.", "Sept.", "Okt.", "Nov.", "Dez."];
+        const text = (d) => { const x = new Date(d); return `${x.getDate()}. ${MON[x.getMonth()]}`; };
+        frage = `An welchem Tag sie anreisen will. Sag ihr, dass im ${MON[monat - 1].replace(".", "")} jeder Tag frei ist und der Preis gleich bleibt, nenn ${tage.slice(0, 3).map(text).join(", ")} als Beispiele und frag, welcher Tag passt. Keinen selbst aussuchen.`;
+        chips = tage.map(text).join(" | ");
+      }
+    }
     if (naechstes === "reisende") {
       if (p.personen != null && p.erwachsene == null && p.kinder == null) { frage = `Wie viele der ${p.personen} Kinder sind, und wie alt - 'keine' ist eine Antwort. Erwachsene nicht fragen, das rechnet die Seite.`; chips = "Keine Kinder | Ein Kind | Zwei Kinder"; }
       else if (p.erwachsene != null && p.kinder == null) { frage = "Ob Kinder mitreisen - und wenn ja, wie viele und wie alt."; chips = "Keine Kinder | Ein Kind | Zwei Kinder"; }
       else if (p.kinder != null && p.erwachsene == null) { frage = "Wie viele Erwachsene mitreisen."; chips = "1 | 2 | 3 | 4 oder mehr"; }
     }
-    const empfehlungBereit = p.vorgehen === "top3" && fertig.preis && fertig.verpflegung && fertig.wuensche && fertig.dauer && fertig.flug && fertig.flugAb;
+    const empfehlungBereit = p.vorgehen === "top3" && fertig.preis && fertig.verpflegung && fertig.wuensche
+      && fertig.dauer && fertig.flug && fertig.flugAb && fertig.anreise;
     return { fertig, naechstes, frage, chips, phase, suchbereit, eckdatenFertig, gesucht, schluessel, empfehlungBereit,
       ueberblickOffen: false, fehlt: [...KERN, ...ECKDATEN].filter((t) => !fertig[t]) };
   },

@@ -503,6 +503,10 @@ const Studie = {
     const ergebnis = d?.buchung
       ? `Du hast <strong>${d.bewertung?.gebuchtName || "eine Unterkunft"}</strong> gebucht.`
       : `Du hast diese Aufgabe ohne Buchung beendet.`;
+    // Die Fragen zum Partnerhaus nur, wenn in dieser Aufgabe eines vorlag
+    const partnerGezeigt = (d?.protokoll || []).some((e) => e.ereignis === "partner_vorgelegt");
+    const fragen = partnerGezeigt && typeof PARTNERFRAGEN !== "undefined"
+      ? [...ZWISCHENFRAGEN, ...PARTNERFRAGEN] : ZWISCHENFRAGEN;
 
     const el = this.blatt("fragen", `
       <p class="einstieg-etikett">Aufgabe ${nummer} von 2 · Kurze Fragen</p>
@@ -510,7 +514,7 @@ const Studie = {
       <p class="einstieg-vorspann">${ergebnis} Ein paar Fragen dazu, dann geht es weiter.
         <span class="fb-entwurf">Entwurf</span></p>
       <form id="zwischenForm" class="fb-form" novalidate>
-        ${Fragebogen.html(ZWISCHENFRAGEN)}
+        ${Fragebogen.html(fragen)}
         <p class="konto-fehler" hidden>Bitte beantworte alle Fragen mit Skala.</p>
       </form>
       <div class="einstieg-fuss">
@@ -520,7 +524,7 @@ const Studie = {
     el.querySelector("#zwischenForm").addEventListener("submit", (e) => {
       e.preventDefault();
       const form = e.target;
-      const { antworten, fehlend } = Fragebogen.lesen(form, ZWISCHENFRAGEN);
+      const { antworten, fehlend } = Fragebogen.lesen(form, fragen);
       if (fehlend.length) { Fragebogen.markieren(form, fehlend); form.querySelector(".konto-fehler").hidden = false; return; }
       d.zwischenfragen = antworten;
       this.sichern();
@@ -835,6 +839,10 @@ const Studie = {
         [p + "rundgangAbgebrochen"]: zaehle(protokoll, "rundgang_abgebrochen"),
         [p + "bewertungenGelesen"]: zaehle(protokoll, "bewertungen_gelesen"),
         [p + "vorschlaegeErneut"]: zaehle(protokoll, "vorschlaege_erneut"),
+        [p + "partnerInfoGeoeffnet"]: zaehle(protokoll, "partner_info_geoeffnet"),
+        [p + "spracheGenutzt"]: zaehle(protokoll, "sprache_start"),
+        [p + "spracheSekunden"]: protokoll.filter((e) => e.ereignis === "sprache_ende").reduce((s2, e) => s2 + (e.sekunden || 0), 0),
+        [p + "partnerInfoSekunden"]: z(protokoll.find((e) => e.ereignis === "partner_info_geoeffnet")?.sekunden),
         [p + "themaZweimalGefragt"]: protokoll.filter((e) => e.ereignis === "thema_gefragt" && (e.mal || 1) > 1).length,
         [p + "einfuegen"]: einfuegen.length,
         [p + "einfuegenAusAufgabeMax"]: einfuegen.length ? Math.max(...einfuegen.map((e) => e.ausAufgabe)) : "",
