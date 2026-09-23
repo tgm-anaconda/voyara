@@ -289,7 +289,11 @@ const Werkzeugkasten = {
       if (a.vorgehen && !gesagt(/selbst|selber|filter|drei|top|raussuch|such mir|vorschl|favorit|liste|schau|zeig|empfehl|wähl|waehl|aussuch/i, 1)) { verworfen.push("vorgehen"); delete a.vorgehen; }
       // Die Wahl "selbst oder drei" gibt es erst nach der Lage; vorher ist
       // "erst mal schauen" die Antwort auf "schauen oder klaeren" (weiter)
-      if (a.vorgehen && !kern.lauf.gesuchtMit) { verworfen.push("vorgehen (vor der Lage)"); delete a.vorgehen; }
+      // Wer gleich im ersten Satz "such mir drei raus" schreibt, hat die
+      // Frage schon beantwortet. Vor der Lage gilt sie noch nicht (die
+      // Person soll erst wissen, was es gibt), sie wird aber gemerkt -
+      // sonst wird sie danach gefragt, was sie laengst gesagt hat.
+      if (a.vorgehen && !kern.lauf.gesuchtMit) { kern.lauf.vorgehenFrueh = a.vorgehen; verworfen.push("vorgehen (vor der Lage)"); delete a.vorgehen; }
       if (a.weiter && kern.lauf.gesuchtMit) { delete a.weiter; }
       if (verworfen.length) kern.notieren("egal_verworfen", { felder: verworfen });
       if (a.zielOffen !== undefined && !p.zielId) setze("zielOffen", !!a.zielOffen);
@@ -1108,13 +1112,19 @@ const Werkzeugkasten = {
   fahrplan(p, lauf = {}) {
     const b = lauf.besprochen || {};
     const kinderAlterOk = p.kinder == null || p.kinder === 0 || (p.kinderAlter || []).length >= p.kinder;
+    // Stehen Dauer und Flug schon fest, gibt es nichts mehr zu klaeren. Die
+    // Frage "schon mal schauen oder noch Eckdaten klaeren?" waere dann eine
+    // Warteschleife - sie kam im Test, nachdem die Person alles in einem
+    // Satz gesagt hatte.
+    const alleEckdaten = !!p.naechte && (p.flug != null || p.typ === "apartment")
+      && (!p.flug || !!p.flugAb || p.typ === "apartment");
     const fertig = {
       zeit: !!p.monat || !!(p.von && p.bis),
       reisende: p.erwachsene != null && p.kinder != null,
       kinderAlter: kinderAlterOk,
       ziel: !!p.zielId || !!p.zielOffen || !!p.richtung,
       art: !!p.artGenannt || !!p.artEgal,
-      weiter: !!p.weiter || !!b.weiter,
+      weiter: !!p.weiter || !!b.weiter || alleEckdaten,
       dauer: !!p.naechte,
       flug: p.flug != null || p.typ === "apartment",
       flugAb: !p.flug || !!p.flugAb || p.typ === "apartment",
@@ -1131,7 +1141,9 @@ const Werkzeugkasten = {
     const suchbereit = fertig.zeit && fertig.reisende && fertig.kinderAlter;
     const schluessel = this.eckdatenSchluessel(p);
     const gesucht = lauf.gesuchtMit === schluessel;
-    const weiter = p.weiter || (b.weiter ? "schauen" : null);
+    // Der vor der Lage geaeusserte Wunsch gilt, sobald die Lage steht.
+    if (!p.vorgehen && lauf.vorgehenFrueh && gesucht) { p.vorgehen = lauf.vorgehenFrueh; fertig.vorgehen = true; }
+    const weiter = p.weiter || (b.weiter ? "schauen" : null) || (alleEckdaten ? "schauen" : null);
     // Bereit fuer die erste Suche: Kern da und entweder "schauen" gesagt oder
     // die restlichen Eckdaten geklaert
     const eckdatenFertig = kernFertig && (weiter === "schauen" || (weiter === "klaeren" && ECKDATEN.every((t) => fertig[t])));
