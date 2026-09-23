@@ -659,7 +659,7 @@ const Werkzeugkasten = {
           kern.lauf.rundgang = { ids: engere, i: 0, gesehen: [] };
           kern.sichern();
           return { ...basis, treffer: treffer(auswahl).slice(0, wieViele),
-            hinweis: `Sag in einem Satz, dass du dir die ${engere.length} Haeuser jetzt der Reihe nach ansiehst - Bewertungen, Zimmer, Verpflegung - und dich gleich meldest. Keine Frage, keine Namen, keine Zahlen. Danach ruf haeuser_ansehen.` };
+            hinweis: `Ruf jetzt haeuser_ansehen. Schreib nichts dazu - der Rundgang sagt selbst an, was er tut, und meldet sich nach jedem Haus. Doppelte Ansagen stoeren.` };
         }
         const v = await kern.auswahlVorlegen(engere);
         // Keine weiteren Haeuser mitschicken: Das Modell zaehlte sie sonst
@@ -968,6 +968,9 @@ const Werkzeugkasten = {
       if (stufe === 1) {
         kern.notieren("rundgang_start", { ids: r.ids });
         kern.logZeile(`Sehe mir ${r.ids.length} Häuser der Reihe nach an`, "schritt");
+        // Die Ansage kommt vom Kern, nicht vom Modell - sie soll stimmen
+        // und immer da sein, auch wenn das Modell gerade nichts schreibt.
+        kern.sagen(`Ich sehe mir die ${r.ids.length} Häuser jetzt der Reihe nach an: Bewertungen, Zimmer, Verpflegung. Nach jedem sage ich dir Bescheid.`);
         // Die Adresse der Liste festhalten. Der Brotkrumenpfad auf der
         // Hausseite fuehrt zu "results.html?type=hotel" - ohne Monat,
         // Dauer und Reisende. Danach stand die Liste auf 184 von 184
@@ -991,6 +994,28 @@ const Werkzeugkasten = {
         if (e.text) kern.logZeile(e.text, "ergebnis");
         (kern.lauf.gelesen ||= {})[id] = "hausseite";
         (r.gesehen ||= []).push({ id, schritte: e.daten?.schritte || [], stimmen: (e.daten?.stimmen || []).slice(0, 2) });
+
+        /* Nach jedem Haus eine Zeile im Chat.
+           --------------------------------------------------------------
+           Der Rundgang dauert bei fuenf Haeusern gut 45 Sekunden. Ohne
+           Zwischenstand sieht die Person nur, dass sich Seiten oeffnen,
+           und weiss nicht, wo der Agent steht. Die Saetze kommen aus den
+           Daten, nicht vom Modell: Was er getan hat, soll genau so
+           dastehen, wie es passiert ist. */
+        const nr = r.i + 1;
+        const name = getItemById(id)?.name || id;
+        const teil = wunsch ? (e.daten?.bilanz || []).find((b) => (b.aspekt || b.label) === wunsch.label) : null;
+        const naechstes = r.ids[r.i + 1];
+        const weiter = naechstes
+          ? `Weiter mit ${getItemById(naechstes)?.name || naechstes}.`
+          : "Das war das letzte, ich stelle die Auswahl zusammen.";
+        kern.sagen([
+          `${nr} von ${r.ids.length}: ${name} angesehen.`,
+          (e.daten?.schritte || []).length ? `${(e.daten.schritte || []).join(", ")}.` : null,
+          teil ? `${wunsch.label}: ${Politik.teilnoteText(teil.anteilPositiv)}.` : null,
+          weiter,
+        ].filter(Boolean).join(" "));
+
         r.i += 1;
         kern.sichern();
         if (Zeiger.abbruch) { kern.notieren("rundgang_abgebrochen", { bei: r.i }); return vorlegen(); }
