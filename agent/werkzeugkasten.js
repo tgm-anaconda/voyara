@@ -1373,6 +1373,14 @@ const Werkzeugkasten = {
     return this.katalog(p).filter((h) => {
       if (p.zielId && h.ziel !== p.zielId) return false;
       if (!p.zielId && p.zieleErlaubt?.length && !p.zieleErlaubt.includes(h.ziel)) return false;
+      // Regionen ausserhalb ihrer Saison fallen weg. Im Test lag "Lanta
+      // Family Bay" auf Platz drei der Vorschlaege - Koh Lanta hat im
+      // August Monsun, die Liste schrieb "Ausserhalb der Saison" an die
+      // Karte, der Agent sagte nichts dazu. Wer die Region selbst nennt,
+      // bekommt sie weiter.
+      if (!p.zielId && p.monat && typeof saisonPassung === "function"
+        && typeof ZIEL_NACH_ID !== "undefined" && ZIEL_NACH_ID[h.ziel]
+        && saisonPassung(ZIEL_NACH_ID[h.ziel], p.monat) < 0.5) return false;
       if (filter.ausstattung.some((x) => !(h.amenities || []).includes(x))) return false;
       if (!this.passtGruppe(h, p)) return false;
       const preis = this.preis(h, p.monat);
