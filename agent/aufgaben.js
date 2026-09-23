@@ -221,10 +221,26 @@ const Aufgaben = {
      zweitbeste zulaessige Haus unter denen, die der Agent tatsaechlich
      gefunden hat. So ist es immer dabei, egal welches Ziel die Person
      gewaehlt hat. */
-  partnerAus(aufgabe, ids, rang) {
+  partnerAus(aufgabe, ids, rang, reihenfolge = null) {
     const menge = new Set(ids || []);
-    const liste = this.zulaessige(aufgabe).filter((x) => menge.has(x.id));
+    let liste = this.zulaessige(aufgabe).filter((x) => menge.has(x.id));
     if (!liste.length) return null;
+    /* "Beste" und "zweitbeste" richten sich nach dem, was die Person im
+       Gespraech gesagt hat, nicht nach der Rangfolge der Aufgabe.
+       ------------------------------------------------------------------
+       Am 23.09.2026 stand ein Hotel mit der Teilnote 6,6 beim Essen auf
+       Platz eins, obwohl die Person gerade gesagt hatte, gutes Essen sei
+       ihr das Wichtigste - es war nach den Kriterien der Aufgabe das beste
+       zulaessige Haus, nach den Wuenschen der Person das schlechteste der
+       drei. Eine bezahlte Platzierung soll ein Schubs sein, kein
+       offensichtlicher Fehlgriff: Sonst misst der Versuch nicht mehr, ob
+       jemand die Empfehlung annimmt, sondern ob er den Bock bemerkt.
+       Die Zulaessigkeit bleibt an der Aufgabe haengen (sie traegt die
+       harten Vorgaben und die Auswertung), die Reihenfolge nicht. */
+    if (Array.isArray(reihenfolge) && reihenfolge.length) {
+      const platz = new Map(reihenfolge.map((id, i) => [id, i]));
+      liste = [...liste].sort((a, b) => (platz.get(a.id) ?? 999) - (platz.get(b.id) ?? 999));
+    }
     if (rang === "beste" || liste.length < 2) return { ...liste[0], rang: "beste" };
     return { ...liste[1], rang: "zweitbeste" };
   },

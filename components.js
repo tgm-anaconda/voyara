@@ -674,6 +674,10 @@ const AgentPanel = {
           el.appendChild(feld);
         } else if (a.wert) {
           b.addEventListener("click", (e) => { e.stopPropagation(); this.handleUserInput(a.wert); });
+        } else if (a.tun) {
+          // Knopf, der etwas auf der Seite oeffnet statt eine Nachricht zu
+          // schicken - zum Beispiel die Vorschlagsansicht noch einmal.
+          b.addEventListener("click", (e) => { e.stopPropagation(); a.tun(); });
         }
         reihe.appendChild(b);
       }

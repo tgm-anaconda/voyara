@@ -119,13 +119,13 @@ const Studie = {
   // Das Partnerhaus der laufenden Aufgabe, bezogen auf das, was der Agent
   // gerade gefunden hat (ids): das beste oder zweitbeste zulaessige Haus
   // darunter. Ohne ids: ueber den ganzen Katalog.
-  partnerhaus(ids = null) {
+  partnerhaus(ids = null, reihenfolge = null) {
     const a = this.aufgabe();
     if (!a || typeof Aufgaben === "undefined") return null;
     const g = this.gruppe();
     if (g.partnerBesteIn === "ohne") return null;
     const beste = g.partnerBesteIn === "beide" || g.partnerBesteIn === a.id;
-    if (ids) return Aufgaben.partnerAus(a, ids, beste ? "beste" : "zweitbeste");
+    if (ids) return Aufgaben.partnerAus(a, ids, beste ? "beste" : "zweitbeste", reihenfolge);
     const zulaessige = Aufgaben.zulaessige(a);
     if (zulaessige.length < 2) return null;
     const wahl = beste ? zulaessige[0] : zulaessige[1];
@@ -827,6 +827,15 @@ const Studie = {
         [p + "selbstGesucht"]: zaehle(protokoll, "selbst_gesucht"),
         [p + "maskeKorrigiert"]: zaehle(protokoll, "maske_korrigiert"),
         [p + "datumVerworfen"]: zaehle(protokoll, "datum_verworfen"),
+        // Vorschlaege (23.09.2026): wie viele die Person haben wollte,
+        // ob der Agent die Haeuser vorher sichtbar durchgegangen ist und
+        // ob die Auswahl noch einmal geoeffnet wurde
+        [p + "anzahlVorschlaege"]: z([...protokoll].reverse().find((e) => e.ereignis === "anzahl_vorschlaege")?.anzahl),
+        [p + "rundgangHaeuser"]: z([...protokoll].reverse().find((e) => e.ereignis === "rundgang_fertig")?.haeuser),
+        [p + "rundgangAbgebrochen"]: zaehle(protokoll, "rundgang_abgebrochen"),
+        [p + "bewertungenGelesen"]: zaehle(protokoll, "bewertungen_gelesen"),
+        [p + "vorschlaegeErneut"]: zaehle(protokoll, "vorschlaege_erneut"),
+        [p + "themaZweimalGefragt"]: protokoll.filter((e) => e.ereignis === "thema_gefragt" && (e.mal || 1) > 1).length,
         [p + "einfuegen"]: einfuegen.length,
         [p + "einfuegenAusAufgabeMax"]: einfuegen.length ? Math.max(...einfuegen.map((e) => e.ausAufgabe)) : "",
         [p + "detailsGeoeffnet"]: details.length,

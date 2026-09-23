@@ -508,6 +508,59 @@ const Werkzeuge = {
     };
   },
 
+  /* Ein Haus wirklich ansehen - so, wie ein Mensch es taete.
+     ------------------------------------------------------------------
+     Der Agent hatte bis zum 23.09.2026 keinen Grund, eine Hausseite zu
+     oeffnen, bevor er sie vorschlaegt: Alles, was er wissen muss, steht
+     im Katalog. Fuer die teilnehmende Person ist genau das der
+     Unterschied zwischen "er hat nachgesehen" und "er behauptet etwas".
+     Dieser Schritt kostet Zeit und bringt technisch nichts - er ist der
+     Gegenstand der Untersuchung.
+
+     Der Reihe nach: Notenkasten, einzelne Bewertungen (bevorzugt die
+     zum genannten Wunsch), das Zimmer, das zur Gruppe passt, und die
+     gewuenschte Verpflegung. Zimmer und Verpflegung werden wirklich
+     gesetzt, nicht nur betrachtet - sie gelten spaeter in der Kasse. */
+  async hausPruefen(id, { aspekt = "", verpflegung = null, personenProZimmer = 0 } = {}) {
+    const item = typeof getItemById === "function" ? getItemById(id) : null;
+    if (!item) return { ok: false, text: `${id} kenne ich nicht.` };
+    const schritte = [];
+
+    const b = await this.bewertungenLesen(id, { aspekt, anzahl: 3 });
+    if (b.daten?.sichtbarGelesen) schritte.push(`${b.daten.sichtbarGelesen} Bewertungen gelesen`);
+
+    // Zimmer: das erste, in das die Gruppe passt
+    if (!Zeiger.abbruch) {
+      const zeilen = [...document.querySelectorAll(".room-row")];
+      const passend = zeilen.find((z) => !z.classList.contains("zu-klein")) || zeilen[0];
+      if (passend) {
+        await Zeiger.lies(passend, { dauer: 700, hinweis: "Zimmer prüfen" });
+        const knopf = passend.querySelector(".js-room:not([disabled])");
+        if (knopf && !passend.classList.contains("selected")) {
+          await Zeiger.klicke(knopf, { hinweis: "Zimmer wählen" });
+          schritte.push(`Zimmer ${passend.querySelector("h4")?.textContent?.trim() || ""} gewählt`.trim());
+        } else if (passend.querySelector("h4")) {
+          schritte.push(`Zimmer ${passend.querySelector("h4").textContent.trim()} passt`);
+        }
+      }
+    }
+
+    // Verpflegung, wenn eine gewuenscht ist
+    if (!Zeiger.abbruch && verpflegung && typeof BOARD_LABELS !== "undefined") {
+      const label = BOARD_LABELS[verpflegung];
+      const chip = [...document.querySelectorAll(".js-board")].find((x) => x.textContent.trim().startsWith(label));
+      if (chip && !chip.classList.contains("active")) {
+        await Zeiger.klicke(chip, { hinweis: label });
+        schritte.push(`${label} eingestellt`);
+      } else if (!chip) {
+        schritte.push(`${label} gibt es hier nicht`);
+      }
+    }
+
+    return { ok: true, text: `${item.name}: ${schritte.join(", ") || "angesehen"}.`,
+      daten: { id, name: item.name, schritte, stimmen: b.daten?.stimmen || [], bilanz: b.daten?.bilanz || [] } };
+  },
+
   /* Bewertungen mehrerer Treffer sichten, ohne die Liste zu verlassen.
      ------------------------------------------------------------------
      Das ist der Schritt, den ein Mensch nicht macht: fuenf Haeuser

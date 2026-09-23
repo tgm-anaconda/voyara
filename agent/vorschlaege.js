@@ -7,16 +7,16 @@
    Position zu aendern - und niemand weiss, ob sie gelesen wurde.
 
    Jetzt legt sich eine eigene Ansicht ueber die Seite: fuer alle
-   gleich aufgebaut, drei Karten nebeneinander, mit Bild, Gesamtpreis,
+   gleich aufgebaut, die Karten nebeneinander, mit Bild, Gesamtpreis,
    Teilnoten aus den Bewertungen und einem Satz, warum das Haus passt.
-   Die Kennzeichnung des Partnerhauses ist ein gestaltetes Element an
-   fester Stelle und damit die Stellschraube des Versuchs:
 
-     keine    nichts (Kontrolle)
-     chip     kleiner Chip "Partner" an der Karte
-     banner   grosse Markierung "Bezahlte Platzierung" plus Erklaerung
-     agent    die Karte bleibt neutral, der Agent sagt es im Chat
-     log      nur im Agenten-Log, ganz unten (alte Bedingung)
+   Die Kennzeichnung des Partnerhauses steht seit dem 23.09.2026 immer
+   hier, gross und an fester Stelle. Vorher konnte sie je nach Bedingung
+   auch nur im Chat oder nur im Agenten-Log auftauchen - dann sah die
+   Ansicht aus wie eine neutrale Empfehlung, und was gemessen wurde, war
+   vor allem, ob jemand das Log aufmacht. `offenlegung` entscheidet jetzt
+   nur noch, ob es zusaetzlich gesagt (agent) oder protokolliert (log)
+   wird; sichtbar ist es in jedem Fall.
 
    Gemessen wird, welche Karte geklickt wird, wie lange die Ansicht
    offen ist, ob jemand ohne Wahl schliesst und ob er danach selbst
@@ -42,7 +42,7 @@ const Vorschlaege = {
         <div class="vorschlag-kopf">
           <div>
             <p class="vorschlag-marke">Reise-Assistent</p>
-            <h2>${kandidaten.length === 3 ? "Deine drei Vorschläge" : `Deine ${kandidaten.length} Vorschläge`}</h2>
+            <h2>Deine ${["", "", "zwei", "drei", "vier", "fünf", "sechs"][kandidaten.length] || kandidaten.length} Vorschläge</h2>
             ${kontext ? `<p class="vorschlag-kontext">${kontext}</p>` : ""}
           </div>
           <button type="button" class="vorschlag-zu" aria-label="Schließen">✕</button>
@@ -69,10 +69,10 @@ const Vorschlaege = {
     const item = k.item;
     const bild = typeof titelbildVon === "function" ? titelbildVon(item.id) : null;
     const note = (item.rating || 0).toFixed(1).replace(".", ",");
-    const partner = k.partner && offenlegung;
-    const marke = partner === "chip" ? `<span class="vorschlag-chip">Partner</span>` : "";
-    const banner = partner === "banner"
-      ? `<div class="vorschlag-banner">Bezahlte Platzierung<span>Voyara erhält für dieses Haus eine Provision.</span></div>` : "";
+    // Immer sichtbar, nicht mehr je nach Bedingung
+    const marke = k.partner ? `<span class="vorschlag-chip">Partnerhaus</span>` : "";
+    const banner = k.partner
+      ? `<div class="vorschlag-banner">Partnerhaus<span>Voyara erhält für dieses Haus eine Provision. Es steht deshalb an erster Stelle.</span></div>` : "";
     return `
       <article class="vorschlag-karte${k.partner ? " ist-partner" : ""}" data-haus="${item.id}">
         <div class="vorschlag-bild">
@@ -106,7 +106,9 @@ const Vorschlaege = {
     const pos = kand.findIndex((x) => x.id === id);
     k?.notieren("vorschlag_geklickt", { id, position: pos + 1, partner: !!kand[pos]?.partner, sekunden: Math.round((Date.now() - this.geoeffnet) / 1000) });
     this.schliessen(true);
-    if (k) { k.lauf.gewaehlt = id; k.sichern(); }
+    // Vor dem Wechsel auf die Hausseite bleibt ein Knopf im Chat stehen:
+    // Wer sich das erste Haus ansieht, hat sich noch nicht entschieden.
+    if (k) { k.lauf.gewaehlt = id; k.vorschlaegeMerken?.(); k.sichern(); }
     const item = typeof getItemById === "function" ? getItemById(id) : null;
     let href = `stay.html?id=${encodeURIComponent(id)}`;
     if (typeof Belegung !== "undefined") href = Belegung.anLink(href);
@@ -127,6 +129,7 @@ const Vorschlaege = {
       // seine eigene Empfehlung vergessen.
       kern.lauf.chips = ["Zeig die Vorschläge nochmal", "Ich schaue selbst weiter"];
       AgentPanel.setSuggestions?.(kern.lauf.chips);
+      kern.vorschlaegeMerken?.();
       kern.sichern();
     }
     this.offen = false;

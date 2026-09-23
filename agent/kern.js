@@ -99,6 +99,11 @@ const STELLSCHRAUBEN = {
   // oder (alt) als drei Chatnachrichten
   vorschlag: "ansicht",          // ansicht | chat
   partner: "wechselnd",          // zweitbeste | beste | wechselnd | keine
+  // Sieht der Agent sich die engere Auswahl vorher sichtbar an (Haus
+  // oeffnen, Bewertungen lesen, Zimmer und Verpflegung setzen)? Kostet
+  // acht bis zehn Sekunden je Haus und ist der Kern der Fragestellung:
+  // ob nachvollziehbare Arbeit das Vertrauen in die Empfehlung aendert.
+  rundgang: true,                // true | false
   log: true,
   // Schrittmeldungen ("Filter gesetzt, noch 9 Treffer") im Chat oder nur
   // im Log. Mit Log: nur im Log. Der Chat sagt beim Start einmal, wo man
@@ -154,7 +159,7 @@ const STELLSCHRAUBEN = {
     const v = parseInt(p.get("einladungSekunden"), 10);
     if (!Number.isNaN(v) && v >= 5 && v <= 600) { gruppe.einladungSekunden = v; neu = true; }
   }
-  for (const feld of ["eingangsfrage", "freigabeRegler", "log", "prozessImChat"]) {
+  for (const feld of ["eingangsfrage", "freigabeRegler", "log", "prozessImChat", "rundgang"]) {
     const v = p.get(feld);
     if (v === "0" || v === "1") { gruppe[feld] = v === "1"; neu = true; }
   }
@@ -221,6 +226,10 @@ const Kern = {
       gesuchtMit: null,        // Eckdaten-Schluessel der letzten Suche
       vorgehenFuer: null,      // Eckdaten + Vorgehen, fuer die schon gesucht wurde
       vorlageFuer: null,       // Vorgaben, fuer die zuletzt vorgelegt wurde
+      rundgang: null,          // laufender Rundgang durch die engere Auswahl
+      rundgangFuer: null,      // Vorgaben, fuer die schon ein Rundgang lief
+      gelesen: {},             // Haeuser, deren Bewertungen gelesen wurden
+      gefragtWie: {},          // wie oft ein Thema schon gefragt wurde
       ueberblickGezeigt: false,
       abschlussFaellig: false,
       gewaehlt: null,
@@ -404,7 +413,8 @@ const Kern = {
     if (kasten) kasten.innerHTML = "";
     for (const n of this.lauf.verlauf) {
       const aktionen = (n.aktionen || []).map((a) => a.warumFuer
-        ? { text: a.text, ausklappen: () => this.warumText(a.warumFuer) } : a);
+        ? { text: a.text, ausklappen: () => this.warumText(a.warumFuer) }
+        : (a.vorschlaegeZeigen ? { text: a.text, tun: () => this.vorschlaegeNochmal("verlauf") } : a));
       AgentPanel.say(n.text, n.rolle, { still: true, links: n.links, aktionen, etikett: n.etikett || null });
     }
 
@@ -646,6 +656,14 @@ const Kern = {
       this.freigabeFragen();
       return;
     }
+    // "Zeig die Vorschlaege nochmal" oeffnet die Ansicht direkt, statt das
+    // Modell darum zu bitten - es hat die Karten gar nicht in der Hand.
+    if (/^(zeig|zeige)\b.*(vorschl|auswahl)|vorschl[aä]ge (nochmal|noch einmal|wieder)/i.test(t) && (this.lauf.letzteVorlage || []).length) {
+      this.sagen(t, "user");
+      this.gespraechPush({ role: "user", content: t });
+      this.vorschlaegeNochmal("chip");
+      return;
+    }
     this.sagen(t, "user");
     this.gespraechPush({ role: "user", content: t });
     // Merker des vorigen Zuges (Lage, Vorlage, Anreise-Chips) gelten nicht mehr.
@@ -833,7 +851,15 @@ const Kern = {
         if (!nachricht.tool_calls) {
           // Welches Thema des Fahrplans der Agent damit gefragt hat
           const fp = Werkzeugkasten.fahrplan(this.lauf.profil || {}, this.lauf);
-          if (fp.naechstes && /\?/.test(text)) { this.lauf.gefragt = fp.naechstes; this.notieren("thema_gefragt", { thema: fp.naechstes, phase: fp.phase }); }
+          if (fp.naechstes && /\?/.test(text)) {
+            this.lauf.gefragt = fp.naechstes;
+            // Wie oft dasselbe Thema schon gefragt wurde. Beim zweiten Mal
+            // formuliert der Fahrplan anders - eine woertlich wiederholte
+            // Frage wirkt, als haette der Agent nicht zugehoert.
+            this.lauf.gefragtWie = this.lauf.gefragtWie || {};
+            this.lauf.gefragtWie[fp.naechstes] = (this.lauf.gefragtWie[fp.naechstes] || 0) + 1;
+            this.notieren("thema_gefragt", { thema: fp.naechstes, phase: fp.phase, mal: this.lauf.gefragtWie[fp.naechstes] });
+          }
           // Chips nur, wo das Thema welche vorsieht - das Modell haengt sonst
           // an jede Frage Vorschlaege, die die Person in eine Richtung draengen
           if (fp.naechstes && !fp.chips) antwort.chips = [];
@@ -1036,8 +1062,12 @@ const Kern = {
     // Partnerhaus: aus dem ganzen letzten Suchergebnis, nicht nur aus der
     // Wahl des Modells - zulaessig muss es sein, sonst kommt es nicht.
     const grundmenge = [...new Set([...(this.lauf.letzteTreffer || []), ...ids])];
+    // Nach welcher Reihenfolge das Partnerhaus gewaehlt wird: nach der, die
+    // sich aus dem Gespraech ergibt. Sonst kann das "beste" Haus der Aufgabe
+    // genau das sein, das den ausgesprochenen Wunsch verfehlt.
+    const rangliste = Politik.bewerten(grundmenge.map(alsTreffer), weich).map((k) => k.id);
     const partner = typeof Studie !== "undefined" && Studie.partnerhaus && !this.lauf.partnerId
-      ? Studie.partnerhaus(grundmenge) : null;
+      ? Studie.partnerhaus(grundmenge, rangliste) : null;
     let offenlegung = partner ? (typeof Studie !== "undefined" && Studie.gruppe ? Studie.gruppe().offenlegung : STELLSCHRAUBEN.offenlegung) : null;
     // Die alten Namen bleiben gueltig: etikett wurde zum Chip an der Karte,
     // offen zur Ansage des Agenten im Chat
@@ -1047,7 +1077,8 @@ const Kern = {
       if (!k) k = Politik.bewerten([alsTreffer(partner.id)], weich)[0];
       if (k) {
         k.partner = true;
-        kandidaten = [k, ...kandidaten.filter((x) => x.id !== partner.id)].slice(0, 3);
+        const wieViele = Math.max(2, Math.min(6, p.anzahlVorschlaege || ids.length || 3));
+        kandidaten = [k, ...kandidaten.filter((x) => x.id !== partner.id)].slice(0, wieViele);
         this.lauf.partnerId = partner.id;
         this.lauf.offenlegung = offenlegung;
         this.notieren("partner_vorgelegt", { id: partner.id, rang: partner.rang, offenlegung, position: 1, zulaessigeImErgebnis: grundmenge.length });
@@ -1210,6 +1241,38 @@ const Kern = {
       if (pk) this.sagen(`Ein Hinweis zu ${pk.item.name}: Für dieses Haus bekommt Voyara eine Provision. Ich halte es trotzdem für die beste Wahl für euch.`);
     }
     return aufbereitet.map((k, i) => ({ platz: i + 1, id: k.id, name: k.item.name, gesamt: k.gesamtText, note: k.item.rating }));
+  },
+
+  /* Die Vorschlaege noch einmal zeigen.
+     ------------------------------------------------------------------
+     Wer auf "Ansehen" klickt, landet auf der Hausseite - und die Ansicht
+     mit den anderen Vorschlaegen war weg, ohne Weg zurueck. Die Auswahl
+     bleibt jetzt erreichbar, bis wirklich entschieden ist: ueber einen
+     Knopf in der Nachricht, der auch nach einem Seitenwechsel noch da
+     ist, und ueber den Antwortvorschlag im Chat. */
+  vorschlaegeNochmal(ueber = "knopf") {
+    const ids = this.lauf.letzteVorlage || [];
+    if (!ids.length || typeof Vorschlaege === "undefined") return;
+    this.kandidatenAuffrischen();
+    const p = this.lauf.profil || {};
+    const weich = { kriterien: p.kriterien || [], budget: p.budget || null };
+    const kandidaten = Politik.bewerten(ids.map((id) => ({ id, preis: Werkzeugkasten.preis(getItemById(id), p.monat) })), weich);
+    kandidaten.sort((x, y) => ids.indexOf(x.id) - ids.indexOf(y.id));
+    for (const k of kandidaten) if (k.id === this.lauf.partnerId) k.partner = true;
+    this.notieren("vorschlaege_erneut", { ueber, ids });
+    this.vorschlagsansicht(kandidaten);
+  },
+
+  // Der Knopf, der die Auswahl erreichbar haelt. Steht im Verlauf, damit er
+  // einen Seitenwechsel ueberlebt.
+  vorschlaegeMerken() {
+    const text = "Deine Auswahl bleibt hier stehen, bis du dich entschieden hast.";
+    const aktion = { text: "Die Vorschläge ansehen", vorschlaegeZeigen: true };
+    const letzte = this.lauf.verlauf[this.lauf.verlauf.length - 1];
+    if (letzte?.aktionen?.some((a) => a.vorschlaegeZeigen)) return;
+    this.lauf.verlauf.push({ rolle: "bot", text, zeit: Date.now(), aktionen: [aktion] });
+    AgentPanel.say(text, "bot", { aktionen: [{ text: aktion.text, tun: () => this.vorschlaegeNochmal("knopf") }] });
+    this.sichern();
   },
 
   // "Warum dieses Haus?" - klappt in der Nachricht auf, ein Modellaufruf ohne Werkzeuge

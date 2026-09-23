@@ -45,7 +45,8 @@ const Werkzeugkasten = {
           richtung: { type: "string", enum: ["warm", "kalt", "strand", "berge", "ski", "norden", "stadt", "wintersonne", "fern"], description: "Richtung statt Ziel, wenn die Person so etwas sagt ('eher warm', 'kalt', 'ans Meer', 'in die Berge') - die Suche beschraenkt sich dann auf passende Regionen" },
           weiter: { type: "string", enum: ["schauen", "klaeren"], description: "Antwort auf die Frage, ob du mit dem Bekannten schon mal schauen sollst (schauen) oder erst noch Eckdaten geklaert werden (klaeren)" },
           artEgal: { type: "boolean", description: "true, wenn die Person bei Hotel oder Ferienwohnung nicht festgelegt ist" },
-          vorgehen: { type: "string", enum: ["top3", "selbst"], description: "top3 = du sollst drei Favoriten nennen; selbst = du stellst die Filter ein und die Person schaut selbst durch die Liste" },
+          vorgehen: { type: "string", enum: ["top3", "selbst"], description: "top3 = du sollst ihr Favoriten raussuchen; selbst = du stellst die Filter ein und die Person schaut selbst durch die Liste" },
+          anzahlVorschlaege: zahl("Wie viele Haeuser sie vorgelegt haben will, wenn sie eine Zahl nennt (2 bis 6). Ohne Angabe leer lassen."),
           naechte: zahl("Zahl der Naechte"),
           personenGesamt: zahl("Nur die Gesamtzahl, wenn die Person sie so nennt ('zu viert', 'vier Leute') - dann erwachsene und kinder leer lassen und nachfragen. Kosewoerter wie 'mein Bengel', 'unser Spross', 'die Kleine' meinen ein Kind, keinen Erwachsenen; das Alter fragst du."),
           erwachsene: zahl("Zahl der Erwachsenen - nur, wenn die Person sie ausdruecklich nennt"),
@@ -89,13 +90,16 @@ const Werkzeugkasten = {
         "Alles zu einem Haus aus dem Katalog: Preise je Verpflegung und Gesamtpreis fuer die gemerkte Reise, Zimmer, Entfernungen, Ausstattung, was in den Bewertungen gelobt und kritisiert wird. Fuer Nachfragen und Vergleiche.",
         { id: text("Haus-id aus einem Suchergebnis, z.B. h13") }, ["id"]),
       f("auswahl_vorlegen",
-        "Zeigt der Person zwei bis drei Haeuser aus dem letzten Suchergebnis als Vorschlaege im Chat, mit festen Saetzen (Preis, Note, was gelobt und kritisiert wird). Danach fragst du nur noch in einem Satz, welches sie sich ansehen will.",
+        "Zeigt der Person die Haeuser aus dem letzten Suchergebnis als Vorschlaege, mit festen Saetzen (Preis, Note, was gelobt und kritisiert wird). Wie viele es sind, steht im Stand (anzahlVorschlaege, Standard drei). Danach fragst du nur noch in einem Satz, welches sie sich ansehen will.",
         {
-          ids: { type: "array", items: { type: "string" }, description: "Zwei bis drei Haus-ids aus dem letzten Suchergebnis, das beste zuerst" },
+          ids: { type: "array", items: { type: "string" }, description: "Haus-ids aus dem letzten Suchergebnis, das beste zuerst - so viele, wie die Person wollte (Standard drei)" },
         }, ["ids"]),
       f("haus_oeffnen",
         "Oeffnet die Seite eines Hauses (Freigabe ab 'suchen') und liest dort die Bewertungen. Nutze es, wenn die Person ein Haus genauer sehen will.",
         { id: text("Haus-id") }, ["id"]),
+      f("haeuser_ansehen",
+        "Geht die engere Auswahl der Reihe nach durch: oeffnet jedes Haus, liest dort die Bewertungen, waehlt Zimmer und Verpflegung und kommt zur Liste zurueck. Danach legt es die Vorschlaege vor. Ruf es nicht von dir aus - der Fahrplan verlangt es, wenn es soweit ist.",
+        {}),
       f("bewertungen_lesen",
         "Liest die Gaestebewertungen eines Hauses sichtbar durch und liefert Teilnoten je Aspekt (von 10), Lob und Kritik. Pflicht, bevor du etwas ueber Bewertungen sagst - Teilnoten, was Gaeste loben oder bemaengeln, wie gut Essen, Lage, Sauberkeit, Service oder Ruhe sind. Ausnahme: Du hast dieses Haus in diesem Gespraech schon gelesen.",
         {
@@ -127,6 +131,7 @@ const Werkzeugkasten = {
   // Welche Stufe ein Werkzeug mindestens braucht
   BRAUCHT: {
     haus_oeffnen: "suchen", zurueck_zur_liste: "suchen", merken: "suchen",
+    haeuser_ansehen: "suchen",
     buchung_vorbereiten: "vorbereiten", buchung_abschliessen: "vorbereiten",
   },
 
@@ -142,6 +147,7 @@ const Werkzeugkasten = {
       case "auswahl_vorlegen": return `Lege ${a.ids?.length || 0} Vorschläge vor`;
       case "haus_oeffnen": return `Öffne ${haus(a.id)}`;
       case "bewertungen_lesen": return `Lese die Bewertungen von ${haus(a.id)}${a.aspekt ? ` zum Thema ${a.aspekt}` : ""}`;
+      case "haeuser_ansehen": return "Sehe mir die Häuser der Reihe nach an";
       case "zurueck_zur_liste": return "Gehe zurück zur Trefferliste";
       case "merken": return `Setze ${haus(a.id)} auf den Merkzettel`;
       case "buchung_vorbereiten": return `Bereite die Buchung für ${haus(a.id)} vor`;
@@ -450,7 +456,11 @@ const Werkzeugkasten = {
       if ((a.flug !== undefined || a.flugAb || a.flugKlasse) && typeof Flug !== "undefined") {
         Flug.set({ mit: !!p.flug, ab: Flug.code(p.flugAb), klasse: p.flugKlasse || "economy" });
       }
-      if (a.vorgehen) { setze("vorgehen", a.vorgehen); kern.notieren("vorgehen", { wahl: a.vorgehen, freigabe: kern.freigabe() }); }
+      if (a.anzahlVorschlaege != null) {
+        const n = Math.max(2, Math.min(6, a.anzahlVorschlaege));
+        if (n !== p.anzahlVorschlaege) { setze("anzahlVorschlaege", n); kern.notieren("anzahl_vorschlaege", { anzahl: n }); }
+      }
+      if (a.vorgehen) { setze("vorgehen", a.vorgehen); kern.notieren("vorgehen", { wahl: a.vorgehen, freigabe: kern.freigabe(), anzahl: p.anzahlVorschlaege || 3 }); }
       // Budget fuer die ganze Reise in einen Preis pro Nacht umrechnen,
       // wie auf der Seite gerechnet wird (Servicegebuehr 35 Euro)
       if (p.budgetGesamt && p.naechte && !a.maxPreis) {
@@ -607,7 +617,26 @@ const Werkzeugkasten = {
             hinweis: "Diese Haeuser hast du mit denselben Vorgaben schon vorgelegt. Nichts wiederholen - geh auf die Frage der Person ein. Will sie die Vorschlagsansicht wiedersehen, ruf auswahl_vorlegen mit genau diesen ids." };
         }
         kern.lauf.vorlageFuer = vs;
-        const v = await kern.auswahlVorlegen(auswahl.slice(0, 3).map((h) => h.id));
+        const wieViele = Math.max(2, Math.min(6, p.anzahlVorschlaege || 3));
+        const engere = auswahl.slice(0, wieViele).map((h) => h.id);
+        /* Erst ansehen, dann empfehlen.
+           --------------------------------------------------------------
+           Wer die Seite bedienen darf, geht die engere Auswahl vorher
+           durch: Haus oeffnen, Bewertungen lesen, Zimmer und Verpflegung
+           setzen, zurueck. Das dauert, und genau das ist der Punkt - eine
+           Empfehlung, deren Zustandekommen man nicht sieht, ist von einer
+           Behauptung nicht zu unterscheiden. Der Rundgang laeuft ueber
+           mehrere Seitenwechsel, deshalb uebernimmt ihn ein eigenes
+           Werkzeug (haeuser_ansehen), das der Fahrplan gleich erzwingt. */
+        const aufDerListe = typeof Werkzeuge !== "undefined" && Werkzeuge.seite() === "results";
+        if (kern.darf("suchen") && aufDerListe && STELLSCHRAUBEN.rundgang !== false && kern.lauf.rundgangFuer !== vs) {
+          kern.lauf.rundgangFuer = vs;
+          kern.lauf.rundgang = { ids: engere, i: 0, gesehen: [] };
+          kern.sichern();
+          return { ...basis, treffer: treffer(auswahl).slice(0, wieViele),
+            hinweis: `Sag in einem Satz, dass du dir die ${engere.length} Haeuser jetzt der Reihe nach ansiehst - Bewertungen, Zimmer, Verpflegung - und dich gleich meldest. Keine Frage, keine Namen, keine Zahlen. Danach ruf haeuser_ansehen.` };
+        }
+        const v = await kern.auswahlVorlegen(engere);
         // Keine weiteren Haeuser mitschicken: Das Modell zaehlte sie sonst
         // als Vorschlaege auf, obwohl im Chat drei andere stehen
         return { ...basis, ...(v.ergebnis || {}) };
@@ -790,7 +819,8 @@ const Werkzeugkasten = {
         kern.notieren("vorlage_zu_frueh", { offen: offen.pflicht });
         return { ergebnis: { fehler: "noch nicht", nochZuBesprechen: offen.pflicht, hinweis: "Erst die Beratung zu Ende fuehren (Preis fest oder offen, Wuensche, Top 3 oder selbst schauen), dann vorlegen." } };
       }
-      const ids = (a.ids || []).filter((id) => typeof getItemById === "function" && getItemById(id)).slice(0, 3);
+      const wieViele = Math.max(2, Math.min(6, kern.lauf.profil?.anzahlVorschlaege || 3));
+      const ids = (a.ids || []).filter((id) => typeof getItemById === "function" && getItemById(id)).slice(0, wieViele);
       if (!ids.length) return { ergebnis: { fehler: "Keine gueltigen Haus-ids." } };
       kern.lauf.vorlageFuer = Werkzeugkasten.vorlageSchluessel(kern.lauf.profil);
       kern.lauf.vorlagen = Math.max(0, (kern.lauf.vorlagen || 1) - (kern.lauf.letzteVorlage?.join() === ids.join() ? 1 : 0));
@@ -885,6 +915,71 @@ const Werkzeugkasten = {
         },
         log: `${item.name}: ${(d.anzahl ?? item.reviewCount).toLocaleString("de-DE")} Bewertungen ausgewertet${d.sichtbarGelesen ? `, ${d.sichtbarGelesen} im Wortlaut gelesen` : ""}`,
       };
+    },
+
+    /* Der Rundgang.
+       ----------------------------------------------------------------
+       Ueber mehrere Seitenwechsel hinweg: Haus oeffnen, ansehen,
+       naechstes Haus, am Ende zurueck zur Liste und vorlegen. Der Stand
+       steht in lauf.rundgang, die Stufe im ausstehenden Werkzeugaufruf -
+       so ueberlebt der Rundgang jedes Neuladen der Seite.
+
+       Dauert je Haus acht bis zehn Sekunden. Das ist Absicht: Die Person
+       soll sehen, woher die Empfehlung kommt. Wer selbst klickt, bricht
+       ab (Zeiger.abbruch), dann wird sofort vorgelegt. */
+    async haeuser_ansehen(a, kern, stufe) {
+      const r = kern.lauf.rundgang;
+      if (!r || !r.ids?.length) return { ergebnis: { fehler: "Gerade steht kein Rundgang an." } };
+      const p = kern.lauf.profil || {};
+
+      const vorlegen = async () => {
+        kern.lauf.rundgang = null;
+        const v = await kern.auswahlVorlegen(r.ids);
+        return { ergebnis: v.ergebnis ?? v, log: v.log ?? null };
+      };
+      const hin = async (id) => {
+        kern.sperreAn();
+        const e = await Werkzeuge.unterkunftOeffnen(id);
+        if (!e.ok) {
+          await Zeiger.warte(250);
+          location.href = kern.linkZu(id, getItemById(id)?.name || id).href;
+        }
+      };
+
+      if (Zeiger.abbruch) { kern.notieren("rundgang_abgebrochen", { bei: r.i }); return vorlegen(); }
+
+      if (stufe === 1) {
+        kern.notieren("rundgang_start", { ids: r.ids });
+        kern.logZeile(`Sehe mir ${r.ids.length} Häuser der Reihe nach an`, "schritt");
+        await hin(r.ids[0]);
+        return { navigiert: true, stufe: 2 };
+      }
+
+      if (stufe === 2) {
+        const id = r.ids[r.i];
+        const wunsch = (p.kriterien || []).map((k) => Politik.kriterium(k.id)).find((k) => k?.aspekt);
+        kern.sperreAn();
+        const e = await Werkzeuge.hausPruefen(id, {
+          aspekt: wunsch?.label || "",
+          verpflegung: p.verpflegung || null,
+          personenProZimmer: Math.ceil(((p.erwachsene || 0) + (p.kinder || 0)) / Math.max(1, p.zimmer || 1)),
+        });
+        kern.sperreAus();
+        if (e.text) kern.logZeile(e.text, "ergebnis");
+        (kern.lauf.gelesen ||= {})[id] = "hausseite";
+        (r.gesehen ||= []).push({ id, schritte: e.daten?.schritte || [], stimmen: (e.daten?.stimmen || []).slice(0, 2) });
+        r.i += 1;
+        kern.sichern();
+        if (Zeiger.abbruch) { kern.notieren("rundgang_abgebrochen", { bei: r.i }); return vorlegen(); }
+        if (r.i < r.ids.length) { await hin(r.ids[r.i]); return { navigiert: true, stufe: 2 }; }
+        kern.sperreAn();
+        await Werkzeuge.zurueckZurListe();
+        return { navigiert: true, stufe: 3 };
+      }
+
+      kern.sperreAus();
+      kern.notieren("rundgang_fertig", { haeuser: (r.gesehen || []).length });
+      return vorlegen();
     },
 
     async zurueck_zur_liste(a, kern, stufe) {
@@ -1077,7 +1172,7 @@ const Werkzeugkasten = {
     dauer: { frage: "Wie lange, ungefaehr ('eine Woche' = 7 Naechte, '10 Tage' = 10 Naechte).", chips: null },
     flug: { frage: "Ob ein Flug dazu soll oder nur die Unterkunft. Sag in einem Halbsatz dazu, dass mit Flug der Anreisetag von den Flugtagen der Verbindung abhaengt.", chips: "Mit Flug | Nur die Unterkunft" },
     flugAb: { frage: "Von welchem Flughafen: Hamburg, Stuttgart, Duesseldorf, Hannover, Muenchen, Koeln, Frankfurt oder Berlin. Klasse nicht fragen - Economy ist gerechnet, sie kann es spaeter aendern.", chips: null },
-    vorgehen: { frage: "Ob du die Filter so einstellst und sie selbst durch die Liste schaut (vorgehen selbst), oder ob du ihr drei Haeuser zur Auswahl raussuchst (vorgehen top3). Beides gleichwertig anbieten.", chips: "Ich schaue selbst | Such mir drei raus" },
+    vorgehen: { frage: "Ob du die Filter so einstellst und sie selbst durch die Liste schaut (vorgehen selbst), oder ob du ihr Haeuser zur Auswahl raussuchst (vorgehen top3) - und wenn ja, wie viele; drei sind ueblich, zwei bis sechs gehen. Beides gleichwertig anbieten, die Zahl im selben Satz.", chips: "Ich schaue selbst | Such mir drei raus | Lieber fünf" },
     preis: { frage: "Ob sie beim Preis schon eine feste Grenze hat (pro Nacht oder gesamt) oder offen ist. Nicht 'wie viel darf es kosten' fragen. Offen heisst preisEgal true. Die Preisspanne aus der Lage darfst du nennen.", chips: "Feste Grenze | Offen" },
     verpflegung: { frage: "Welche Verpflegung es sein soll: All Inclusive oder Halbpension (oder nur Fruehstueck, oder egal). Nenn dazu, was All Inclusive im Schnitt mehr kostet und wie viele Haeuser es anbieten - die Zahlen stehen in verpflegungsLage. 'Egal' heisst verpflegungEgal true.", chips: "All Inclusive | Halbpension | Nur Frühstück | Egal" },
     wuensche: { frage: "Worauf sie bei der Unterkunft besonders achtet - offen gefragt, mit hoechstens drei Beispielen, die zur Person passen (Paar: Ruhe, Essen, Lage; Familie: Pool, Kinderclub, Strand). Keine Liste aller Moeglichkeiten. Antworten werden Wuensche (wuensche); nur ausdrueckliche Grenzen ('mindestens 4,5', 'direkt am Strand') werden Filter. 'Nichts Besonderes' heisst ausstattungEgal true.", chips: "Sauberkeit | Essen | Lage | Ruhe" },
@@ -1164,6 +1259,17 @@ const Werkzeugkasten = {
     }
     let frage = naechstes ? this.THEMEN[naechstes]?.frage : null;
     let chips = naechstes ? this.THEMEN[naechstes]?.chips : null;
+    /* Dieselbe Frage zum zweiten Mal.
+       ------------------------------------------------------------------
+       Wenn die Person auf eine Frage nicht antwortet, sondern etwas
+       einwirft ("uebrigens, mir ist gutes Essen sehr wichtig"), steht das
+       Thema danach immer noch offen. Das Modell stellte dann woertlich
+       dieselbe Frage, direkt unter der Antwort auf den Einwurf - als
+       haette es nicht zugehoert. Beim zweiten Mal wird erst nachgefasst,
+       ob noch etwas offen ist, und die Frage danach angehaengt. */
+    if (naechstes && (lauf.gefragtWie?.[naechstes] || 0) >= 1) {
+      frage = `Sie hat auf diese Frage noch nicht geantwortet, sondern etwas anderes gesagt. Geh zuerst darauf ein, frag dann, ob damit alles gesagt ist oder noch etwas fehlt, und haeng die offene Frage in demselben Satz an: ${frage}`;
+    }
     // Ohne Freigabe fuer die Seite kann der Agent keine Filter stellen - dann
     // lautet die Wahl: selbst schauen (mit Filtertipps) oder drei genannt bekommen
     const darfSeite = typeof FREIGABE_RANG !== "undefined" && lauf.freigabe ? FREIGABE_RANG[lauf.freigabe] >= FREIGABE_RANG.suchen : true;
@@ -1206,6 +1312,8 @@ const Werkzeugkasten = {
     // Bei Freigabe "buchen" folgt auf die vorbereitete Buchung der Abschluss
     // im selben Zug. Das Modell kuendigte es sonst an und fragte dann doch.
     if (lauf.abschlussFaellig) return "buchung_abschliessen";
+    // Der Rundgang laeuft: erst ansehen, dann vorlegen
+    if (lauf.rundgang?.ids?.length) return "haeuser_ansehen";
 
     // Fragt die Person nach Bewertungen zu einem Haus, das der Agent in
     // diesem Gespraech noch nicht gelesen hat, wird das Lesen erzwungen.
