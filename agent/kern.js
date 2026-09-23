@@ -818,7 +818,11 @@ const Kern = {
         if (text && this.lauf.lageImZug) {
           const zahlen = new Set((this.lauf.lageImZug.match(/\d+/g) || []).filter((z) => +z >= 5));
           const saetze = text.split(/(?<=[.!?])\s+/);
-          const rest = saetze.filter((x) => !(x.match(/\d+/g) || []).some((z) => zahlen.has(z)));
+          // Fragen bleiben stehen, auch wenn Zahlen darin vorkommen. Sonst
+          // frass dieser Filter die Frage nach dem Anreisetag ("am 1., 6.
+          // oder 11. Oktober?"), weil 6 und 11 auch in der Lage standen -
+          // uebrig blieb "oder 11.?".
+          const rest = saetze.filter((x) => /\?/.test(x) || !(x.match(/\d+/g) || []).some((z) => zahlen.has(z)));
           if (rest.length !== saetze.length) {
             text = rest.length ? rest.join(" ") : "Möchtest du die Filter so einstellen und selbst schauen, oder soll ich dir drei Häuser raussuchen?";
             nachricht.content = text;
