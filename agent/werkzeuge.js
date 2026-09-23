@@ -402,15 +402,63 @@ const Werkzeuge = {
   // Hier zahlt sich data/bewertungen.js aus: Der Agent kann sagen, was ein
   // Mensch erst nach langem Lesen saehe. Ohne dieses Werkzeug ist der Agent
   // nur eine schnellere Suchmaske.
-  async bewertungenLesen(id) {
+  /* Bewertungen sichtbar durchgehen.
+     ------------------------------------------------------------------
+     Bis zum 23.09.2026 suchte diese Stelle "#reviewList". So heisst der
+     Kasten auf der Hausseite nicht - er heisst ".review-list" und liegt
+     in "#reviewPanel". Der Selektor griff also nie: Der Agent sagte,
+     was die Gaeste loben und kritisieren, waehrend die Seite
+     stillstand. Genau das ist der Punkt, an dem ein Werkzeug-Agent
+     unglaubwuerdig wird - er behauptet Arbeit, die man nicht sieht.
+
+     Jetzt faehrt er zuerst den Notenkasten an, geht dann einzelne
+     Bewertungen durch (bevorzugt die, die den gefragten Aspekt
+     erwaehnen) und laedt notfalls nach. Das dauert sechs bis zehn
+     Sekunden. Die Bilanz zieht er weiter aus den Daten und nicht aus
+     dem DOM - gelesen wird trotzdem, und zwar sichtbar. */
+  async bewertungenLesen(id, { aspekt = "", anzahl = 4 } = {}) {
     const item = typeof getItemById === "function" ? getItemById(id) : null;
     if (!item) return { ok: false, text: `${id} kenne ich nicht.` };
     if (typeof aspektKurzfassung !== "function") return this.fehlt("Die Bewertungsauswertung");
 
-    const bereich = this.finde("#reviewList")?.closest("section, .card")
-      || this.finde("#reviewList")
-      || this.finde(".reviews, [data-bereich='bewertungen']");
-    if (bereich) await Zeiger.lies(bereich, { dauer: 1400, hinweis: "lese Bewertungen" });
+    const gelesen = [];
+    const panel = this.finde("#reviewPanel");
+    if (panel) {
+      const kopf = this.finde(".review-summary", panel);
+      if (kopf) await Zeiger.lies(kopf, { dauer: 1000, hinweis: `Gesamtnote und Teilnoten` });
+
+      // Bewertungen, die den gefragten Aspekt ueberhaupt erwaehnen. Die
+      // Marker unter jeder Bewertung tragen das Label ("+ Essen"), danach
+      // laesst sich filtern, ohne den Text zu durchsuchen.
+      const suche = String(aspekt || "").toLowerCase();
+      const auswahl = () => {
+        const alle = [...panel.querySelectorAll(".review-item")];
+        if (!suche) return alle;
+        const treffer = alle.filter((el) => [...el.querySelectorAll(".aspekt-marker .marker")]
+          .some((m) => m.textContent.toLowerCase().includes(suche)));
+        return treffer.length ? treffer : alle;
+      };
+
+      let liste = auswahl();
+      // Steht zu dem Aspekt auf der ersten Seite kaum etwas, wird
+      // nachgeladen - so wuerde ein Mensch es auch machen.
+      const mehr = this.finde("#mehrReviews", panel);
+      if (suche && liste.length < 2 && mehr) {
+        await Zeiger.klicke(mehr, { hinweis: "lädt weitere Bewertungen" });
+        await Zeiger.warte(450);
+        liste = auswahl();
+      }
+
+      const wie = Math.min(anzahl, liste.length);
+      for (let i = 0; i < wie; i++) {
+        if (Zeiger.abbruch) break;
+        const el = liste[i];
+        const autor = el.querySelector(".review-who strong")?.textContent?.trim() || "";
+        const note = el.querySelector(".review-rating")?.textContent?.trim() || "";
+        await Zeiger.lies(el, { dauer: 760, hinweis: `Bewertung ${i + 1} von ${wie}${autor ? `: ${autor}` : ""}` });
+        gelesen.push({ autor, note });
+      }
+    }
 
     const k = aspektKurzfassung(item);
     const bilanz = (k.bilanz || []).map((a) => ({
@@ -438,6 +486,7 @@ const Werkzeuge = {
       daten: {
         id: item.id, name: item.name, note: item.rating, anzahl: item.reviewCount,
         gelobt: k.staerken, kritisiert: k.schwaechen, bilanz,
+        sichtbarGelesen: gelesen.length, einzelne: gelesen,
       },
     };
   },
@@ -450,9 +499,15 @@ const Werkzeuge = {
      nachdenkt - und zieht die Bilanz aus den Daten, nicht aus dem DOM.
      Ohne die sichtbare Bewegung waere der Schritt fuer die teilnehmende
      Person eine Blackbox, und genau das soll er nicht sein. */
-  async bewertungenSichten(anzahl = 5) {
+  async bewertungenSichten(was = 5) {
     if (typeof aspektbilanz !== "function") return this.fehlt("Die Bewertungsauswertung");
-    const karten = [...document.querySelectorAll(".result-card")].slice(0, anzahl);
+    // Entweder die ersten n Karten (vor der Auswahl) oder genau die
+    // Haeuser, ueber die der Agent gleich etwas sagen will.
+    const ids = Array.isArray(was) ? was : null;
+    const alle = [...document.querySelectorAll(".result-card")];
+    const karten = ids
+      ? ids.map((id) => alle.find((k) => this.kartenDaten(k)?.id === id)).filter(Boolean)
+      : alle.slice(0, was);
     if (!karten.length) return { ok: true, text: "Nichts zu sichten.", daten: { gesichtet: [] } };
 
     const gesichtet = [];

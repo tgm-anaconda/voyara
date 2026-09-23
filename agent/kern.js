@@ -578,6 +578,14 @@ const Kern = {
     if (this.lauf.letzteVorlage?.length || fp.phase === "vorschlaege" || this.lauf.gewaehlt || seite === "stay") {
       bloecke.push("VORSCHLAEGE: Die Haeuser stehen mit festen Saetzen im Chat (Preis, Note, Belege). Du wiederholst sie nicht, sondern fragst in einem Satz, welches sie sich ansehen will oder ob etwas fehlt. Nachfragen und Vergleiche beantwortest du mit haus_details, nie mit buchung_vorbereiten. Will sie ein Haus sehen, ruf haus_oeffnen. Neue Vorgaben merkst du und suchst neu; suchen legt dann neu vor. Bei nur einem oder keinem Treffer lockerst du eine Vorgabe, sagst welche, und suchst noch einmal.");
     }
+    // Bewertungen: sobald Haeuser im Spiel sind. Der Block haengt bewusst
+    // an derselben Bedingung wie VORSCHLAEGE - sobald ein Haus genannt
+    // werden kann, kann auch ueber seine Bewertungen geredet werden.
+    if (this.lauf.letzteVorlage?.length || fp.phase === "vorschlaege" || this.lauf.gewaehlt || seite === "stay") {
+      const gelesen = Object.keys(this.lauf.gelesen || {})
+        .map((id) => (typeof getItemById === "function" ? getItemById(id)?.name : null) || id);
+      bloecke.push(`BEWERTUNGEN: Was Gaeste loben oder kritisieren, Teilnoten und einzelne Aspekte (Essen, Lage, Sauberkeit, Service, Ruhe) sagst du erst, nachdem du bewertungen_lesen fuer genau dieses Haus gerufen hast - auch wenn du die Zahlen aus einem frueheren Ergebnis zu kennen glaubst. Das Lesen ist auf der Seite sichtbar und dauert einen Moment; kuendige es in einem halben Satz an ("ich schau mir die Bewertungen an"). Teilnoten immer als "x von 10", nie als Prozent. ${gelesen.length ? `Gelesen hast du bisher: ${gelesen.join(", ")}.` : "Gelesen hast du bisher noch keines."}`);
+    }
     // Buchung: sobald die Freigabe es hergibt
     if (this.darf("vorbereiten")) {
       const autonom = this.darf("buchen");

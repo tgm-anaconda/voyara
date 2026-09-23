@@ -96,6 +96,12 @@ const Werkzeugkasten = {
       f("haus_oeffnen",
         "Oeffnet die Seite eines Hauses (Freigabe ab 'suchen') und liest dort die Bewertungen. Nutze es, wenn die Person ein Haus genauer sehen will.",
         { id: text("Haus-id") }, ["id"]),
+      f("bewertungen_lesen",
+        "Liest die Gaestebewertungen eines Hauses sichtbar durch und liefert Teilnoten je Aspekt (von 10), Lob und Kritik. Pflicht, bevor du etwas ueber Bewertungen sagst - Teilnoten, was Gaeste loben oder bemaengeln, wie gut Essen, Lage, Sauberkeit, Service oder Ruhe sind. Ausnahme: Du hast dieses Haus in diesem Gespraech schon gelesen.",
+        {
+          id: text("Haus-id"),
+          aspekt: text("Worum es der Person geht, als Wort: Essen, Lage, Sauberkeit, Service, Ausstattung, Ruhe, Pool, Preis-Leistung. Leer lassen, wenn es um den Gesamteindruck geht."),
+        }, ["id"]),
       f("zurueck_zur_liste",
         "Geht von einer Hausseite zurueck zur Trefferliste (Freigabe ab 'suchen').",
         {}),
@@ -135,6 +141,7 @@ const Werkzeugkasten = {
       case "haus_details": return `Sehe mir ${haus(a.id)} genauer an`;
       case "auswahl_vorlegen": return `Lege ${a.ids?.length || 0} Vorschläge vor`;
       case "haus_oeffnen": return `Öffne ${haus(a.id)}`;
+      case "bewertungen_lesen": return `Lese die Bewertungen von ${haus(a.id)}${a.aspekt ? ` zum Thema ${a.aspekt}` : ""}`;
       case "zurueck_zur_liste": return "Gehe zurück zur Trefferliste";
       case "merken": return `Setze ${haus(a.id)} auf den Merkzettel`;
       case "buchung_vorbereiten": return `Bereite die Buchung für ${haus(a.id)} vor`;
@@ -683,6 +690,24 @@ const Werkzeugkasten = {
       // Zeigt die Seite (acht gelesene Karten) zu wenige passende, nimmt der
       // Agent den Rest aus dem Katalog dazu - dieselben Haeuser, nur weiter unten
       if (darfEmpfehlen && liste.length < 3) liste = sortiere([...new Map([...liste, ...imKatalog].map((h) => [h.id, h])).values()]);
+
+      // Bevor drei Haeuser mit Bewertungssaetzen vorgelegt werden, sieht der
+      // Agent die Kandidaten sichtbar durch. Vorher stand in der Vorlage
+      // "gelobt wird das Essen", ohne dass sich auf der Seite etwas bewegt
+      // hatte - fuer die Person nicht von einer Behauptung zu unterscheiden.
+      if (darfEmpfehlen && liste.length) {
+        kern.sperreAn();
+        const sicht = await Werkzeuge.bewertungenSichten(liste.slice(0, 5).map((h) => h.id));
+        kern.sperreAus();
+        const gesichtet = sicht.daten?.gesichtet || [];
+        if (gesichtet.length) {
+          kern.lauf.gelesen = kern.lauf.gelesen || {};
+          for (const id of gesichtet) kern.lauf.gelesen[id] = kern.lauf.gelesen[id] || "trefferliste";
+          kern.notieren("bewertungen_gesichtet", { ids: gesichtet });
+          kern.logZeile(sicht.text, "ergebnis");
+        }
+      }
+
       kern.lauf.runde = (kern.lauf.runde || 0) + 1;
       const gesamt = Werkzeuge.zustand().trefferGesamt ?? liste.length;
       kern.notieren("suche", { weg: "seite", treffer: gesamt, filter: Werkzeugkasten.filterText(p), empfehlung: darfEmpfehlen, selbst });
@@ -727,7 +752,11 @@ const Werkzeugkasten = {
           kmZumZentrum: item.distanceToCenter ?? null, kmZumFlughafen: item.distanceToAirport ?? null,
           preise: { hinweis: naechte ? `fuer ${naechte} Naechte, ${zimmer} Zimmer, ${personen || "?"} Personen. Nenn die Zahlen genau so - nicht rechnen, nicht mischen: je Verpflegung steht der Gesamtpreis (unterkunftGesamt) und mit Flug (gesamtMitFlug).` : "Naechte unbekannt, daher kein Gesamtpreis", ...preise },
           ...(p.budgetGesamt ? { budgetGesamt: p.budgetGesamt } : {}),
-          bewertungen: kurz ? { anzahl: item.reviewCount, jeAspekt: (kurz.bilanz || []).slice(0, 6).map((x) => ({ aspekt: x.label, teilnoteVon10: Politik.teilnote(x.anteilPositiv), rueckmeldungen: x.erwaehnungen })) } : null,
+          // Die Teilnoten stehen hier bewusst nicht mehr drin. Sonst
+          // konnte das Modell ueber Bewertungen reden, ohne sie gelesen zu
+          // haben - der Schritt, der auf der Seite sichtbar sein soll.
+          bewertungen: kurz ? { anzahl: item.reviewCount, gesamtnote: item.rating,
+            hinweis: "Fuer Teilnoten, Lob und Kritik ruf bewertungen_lesen - erst dann darfst du dazu etwas sagen." } : null,
           haeltGemerkteVorgabenEin: typeof Politik !== "undefined" ? Politik.erfuellt(item, proNacht, p) : null,
         },
         log: `${item.name} nachgeschlagen`,
@@ -768,12 +797,57 @@ const Werkzeugkasten = {
       const b = await Werkzeuge.bewertungenLesen(a.id);
       kern.sperreAus();
       const d = b.daten || {};
+      kern.lauf.gelesen = kern.lauf.gelesen || {};
+      kern.lauf.gelesen[a.id] = "hausseite";
+      kern.notieren("bewertungen_gelesen", { id: a.id, wo: "hausseite", aspekt: null, einzelne: d.sichtbarGelesen || 0 });
       return {
         ergebnis: { geoeffnet: item.name, id: item.id, bewertungenAusgewertet: d.anzahl ?? item.reviewCount,
           gelobt: d.gelobt || [], kritisiert: d.kritisiert || [],
           jeAspekt: (d.bilanz || []).slice(0, 6).map((x) => ({ aspekt: x.aspekt || x.label, teilnoteVon10: Politik.teilnote(x.anteilPositiv ?? 0), rueckmeldungen: x.erwaehnungen })),
           hinweis: "Die Person sieht die Seite jetzt. Fass in zwei, drei Saetzen zusammen, was fuer sie wichtig ist, und frag, ob du vormerken, buchen (je nach Freigabe) oder zurueck sollst." },
         log: `${item.name} geöffnet, ${d.anzahl ?? item.reviewCount} Bewertungen gelesen`,
+      };
+    },
+
+    /* Bewertungen lesen - und zwar sichtbar.
+       ----------------------------------------------------------------
+       Der Agent hat bisher ueber Bewertungen gesprochen, ohne dass sich
+       die Seite bewegte: Die Zahlen lagen im Katalog, also war das
+       Lesen technisch ueberfluessig. Fuer die Person sah es aus wie
+       eine Behauptung. Dieses Werkzeug macht den Schritt sichtbar -
+       auf der Hausseite durch die Bewertungen selbst, auf der
+       Trefferliste ueber die Karte des Hauses - und merkt sich, welche
+       Haeuser der Agent wirklich gelesen hat. */
+    async bewertungen_lesen(a, kern) {
+      const item = typeof getItemById === "function" ? getItemById(a.id) : null;
+      if (!item) return { ergebnis: { fehler: `${a.id} kenne ich nicht.` } };
+      const aspekt = String(a.aspekt || "").trim();
+      const seite = Werkzeuge.seite();
+      const aufDerHausseite = seite === "stay" && new URLSearchParams(location.search).get("id") === a.id;
+      const darfBedienen = kern.darf("suchen");
+
+      kern.sperreAn();
+      if (darfBedienen && !aufDerHausseite && seite === "results") await Werkzeuge.bewertungenSichten([a.id]);
+      const b = await Werkzeuge.bewertungenLesen(a.id, { aspekt });
+      kern.sperreAus();
+      const d = b.daten || {};
+      const wo = aufDerHausseite ? "hausseite" : (darfBedienen && seite === "results" ? "trefferliste" : "katalog");
+
+      kern.lauf.gelesen = kern.lauf.gelesen || {};
+      kern.lauf.gelesen[a.id] = wo;
+      kern.notieren("bewertungen_gelesen", { id: a.id, wo, aspekt: aspekt || null, einzelne: d.sichtbarGelesen || 0 });
+
+      return {
+        ergebnis: {
+          haus: item.name, id: item.id, gesamtnote: item.rating,
+          bewertungenAusgewertet: d.anzahl ?? item.reviewCount,
+          ...(d.sichtbarGelesen ? { einzelneGelesen: d.sichtbarGelesen } : {}),
+          gelobt: d.gelobt || [], kritisiert: d.kritisiert || [],
+          jeAspekt: (d.bilanz || []).slice(0, 6).map((x) => ({ aspekt: x.aspekt || x.label,
+            teilnoteVon10: Politik.teilnote(x.anteilPositiv ?? 0), rueckmeldungen: x.erwaehnungen })),
+          hinweis: "Teilnoten als 'x von 10' nennen, nie als Prozent. Sag nur, was hier steht.",
+        },
+        log: `${item.name}: ${(d.anzahl ?? item.reviewCount).toLocaleString("de-DE")} Bewertungen ausgewertet${d.sichtbarGelesen ? `, ${d.sichtbarGelesen} im Wortlaut gelesen` : ""}`,
       };
     },
 
@@ -1077,6 +1151,19 @@ const Werkzeugkasten = {
     // Bei Freigabe "buchen" folgt auf die vorbereitete Buchung der Abschluss
     // im selben Zug. Das Modell kuendigte es sonst an und fragte dann doch.
     if (lauf.abschlussFaellig) return "buchung_abschliessen";
+
+    // Fragt die Person nach Bewertungen zu einem Haus, das der Agent in
+    // diesem Gespraech noch nicht gelesen hat, wird das Lesen erzwungen.
+    // Sonst antwortet das Modell aus einem alten Werkzeugergebnis, und
+    // die Person sieht nur einen Satz ohne Arbeit dahinter.
+    const haus = lauf.gewaehlt || (lauf.letzteVorlage || [])[0] || null;
+    if (haus && !(lauf.gelesen || {})[haus]) {
+      const letzte = [...(lauf.gespraech || [])].reverse().find((n) => n.role === "user");
+      if (letzte && /bewert|rezension|gäste|gaeste|erfahrung|was sagen|wie ist das essen|teilnote|kritik|gelobt|beschwer/i.test(String(letzte.content || ""))) {
+        return "bewertungen_lesen";
+      }
+    }
+
     const fp = this.fahrplan(p, lauf);
     if (fp.eckdatenFertig && !fp.gesucht && !p.vorgehen) return "suchen";
     if ((fp.phase === "vorschlaege" || fp.phase === "selbst") && lauf.vorgehenFuer !== fp.schluessel + p.vorgehen) return "suchen";
