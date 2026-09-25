@@ -1001,10 +1001,33 @@ const Kern = {
             antwort.chips = ["Ich schaue selbst weiter", "Fang noch mal von vorn an"];
           }
         }
+        /* Der Kern setzt die Nachricht zusammen.
+           ----------------------------------------------------------------
+           Modellteil: der Anschluss an das, was die Person gesagt hat.
+           Kernteil: die Frage des Fahrplans. Fragezeichen aus dem
+           Modellteil fliegen raus - stellt es doch eine eigene Frage,
+           stuenden zwei in der Nachricht. Fehlt die Aufnahme dessen, was
+           gerade neu hereinkam, traegt der Kern sie nach.
+
+           Damit sind vier Fehlerklassen ausgeschlossen statt gebeten:
+           zwei Fragen, woertliche Wiederholung, Frage ueber die Frage,
+           falsches Thema. */
+        let fpJetzt = null;
+        if (!nachricht.tool_calls) {
+          fpJetzt = Werkzeugkasten.fahrplan(this.lauf.profil || {}, this.lauf);
+          if (fpJetzt.satz) {
+            let vorspann = String(text || "").split(/(?<=[.!?])\s+/)
+              .filter((x) => x.trim() && !/\?/.test(x)).slice(0, 2).join(" ").trim();
+            const nachtrag = Werkzeugkasten.aufnahmeSatz(this, vorspann);
+            if (nachtrag) vorspann = `${nachtrag} ${vorspann}`.trim();
+            text = [vorspann, fpJetzt.satz].filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
+            nachricht.content = text;
+          }
+        }
         if (text && !gleich(text, zuletzt)) this.sagen(text, "bot", null, { vomModell: true });
         if (!nachricht.tool_calls) {
           // Welches Thema des Fahrplans der Agent damit gefragt hat
-          const fp = Werkzeugkasten.fahrplan(this.lauf.profil || {}, this.lauf);
+          const fp = fpJetzt || Werkzeugkasten.fahrplan(this.lauf.profil || {}, this.lauf);
           // Themen, auf die zweimal keine Antwort kam: der Kern nimmt das
           // Naheliegende an und geht weiter. Fuer die Auswertung zaehlt,
           // wie oft das noetig war.
@@ -1031,7 +1054,9 @@ const Kern = {
           }
           // Chips nur, wo das Thema welche vorsieht - das Modell haengt sonst
           // an jede Frage Vorschlaege, die die Person in eine Richtung draengen
-          if (fp.naechstes && !fp.chips) antwort.chips = [];
+          // Schreibt der Kern die Frage, gehoeren ihm auch die Chips
+          if (fp.satz) antwort.chips = fp.chips ? fp.chips.split("|").map((x) => x.trim()) : [];
+          else if (fp.naechstes && !fp.chips) antwort.chips = [];
           else if (fp.naechstes && fp.chips && !(antwort.chips || []).length) antwort.chips = fp.chips.split("|").map((x) => x.trim());
           // Fragt der Agent nach dem Anreisetag, obwohl ein Flug dabei ist, haengt
           // der Kern die Flugtage an - das Modell fragt sonst ins Blaue

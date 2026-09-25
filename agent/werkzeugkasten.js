@@ -593,6 +593,9 @@ const Werkzeugkasten = {
         p.maxPreis = Math.floor((p.budgetGesamt - 35 * Math.max(1, p.zimmer || 1)) / (p.naechte * Math.max(1, p.zimmer || 1)));
       }
       kern.standAnzeigen();
+      // Was gerade neu hereinkam - der Kern prueft danach, ob das Modell
+      // es auch aufgenommen hat
+      kern.lauf.zuletztGemerkt = geaendert;
       kern.notieren("stand", { felder: geaendert });
       const fp = Werkzeugkasten.fahrplan(p, kern.lauf);
       // Eine Frage der Person geht vor: erst antworten, dann das Thema. Fragt
@@ -692,6 +695,8 @@ const Werkzeugkasten = {
         const eingegrenzt = !p.zielId && p.zieleErlaubt?.length;
         const basis = { weg, gesuchtMit: Werkzeugkasten.filterText(p), zeitraum: zeitText, trefferGesamt: eingegrenzt ? liste.length : (gesamt ?? liste.length), lage: umfang,
           ...(p.typ !== "apartment" ? { verpflegungsLage: Werkzeugkasten.verpflegungsLage(liste) } : {}) };
+        // Der Kern braucht den Aufpreis fuer seine Verpflegungsfrage
+        if (p.typ !== "apartment") kern.lauf.verpflegungsLage = basis.verpflegungsLage;
         // Als "gesucht" zaehlt nur eine Suche mit den Kerndaten - eine fruehe
         // Katalogsuche fuer eine Frage der Person ("habt ihr was auf Kreta?")
         // darf die Frage "schauen oder klaeren" nicht ueberspringen
@@ -1428,26 +1433,190 @@ const Werkzeugkasten = {
      Antworten offensichtlich sind (Zahlen, warm/kalt, ja/nein) - alles
      andere draengt die Person in eine Richtung. Ohne chips: keine Chips,
      auch keine vom Modell. */
+  /* Die Fragen des Fahrplans - vom Kern geschrieben, nicht vom Modell.
+     ==================================================================
+     Bis zum 25.09.2026 stand hier nur eine Arbeitsanweisung in Prosa
+     ("Frag, ob ein Flug dazu soll"), und das Modell formulierte daraus
+     die Frage. Das ging meistens gut und manchmal daneben: dieselbe
+     Frage zweimal woertlich, zwei Fragen in einer Nachricht, eine Frage
+     ueber die Frage ("soll ich fragen, ob ihr ein Hotel wollt?"). Im
+     Pruefstand war die woertlich wiederholte Frage der haeufigste grobe
+     Fehler ueberhaupt.
+
+     Jetzt schreibt der Kern den Fragesatz. Das Modell schreibt nur noch
+     den Anschluss an das, was die Person gerade gesagt hat - ohne Frage.
+     Der Kern setzt beides zusammen. Damit sind vier Fehlerklassen nicht
+     mehr moeglich, sondern ausgeschlossen.
+
+     satz     die Frage. Erster Eintrag beim ersten Mal, zweiter beim
+              zweiten Anlauf - eine woertliche Wiederholung kann es also
+              nicht geben. Funktion, wo die Frage vom Stand abhaengt.
+     frage    bleibt als Anweisung fuer das Modell, wenn es doch einmal
+              selbst formulieren muss (Sonderfaelle, Rueckfragen).
+     chips    Antwortvorschlaege. */
   THEMEN: {
-    zeit: { frage: "Wann es ungefaehr losgehen soll - ein Monat reicht. Feste Daten nur, wenn sie welche hat; nicht danach draengen. Nennt sie nur eine Jahreszeit ('im Winter'), frag, welcher Monat - 'egal' ist eine Antwort, dann nimmst du den ersten Monat der Jahreszeit und sagst das.", chips: null },
-    reisende: { frage: "Mit wem sie reist - in einem Fragesatz, etwa 'Wie viele seid ihr, und sind Kinder dabei?' (bei Kindern gleich das Alter mit aufnehmen). Nicht zwei Fragesaetze daraus machen.", chips: "1 | 2 | 3 | 4 oder mehr" },
-    kinderAlter: { frage: "Wie alt die Kinder sind (die Zahl der Kinder ist bekannt, nur das Alter fehlt).", chips: null },
-    ziel: { frage: "Ob es eher in eine warme oder eher in eine kalte Region gehen soll, oder ob sie schon ein Ziel hat. Nichts anpreisen.", chips: "Eher warm | Eher kalt | Ich habe ein Ziel" },
-    art: { frage: "Ob sie eher ins Hotel oder in eine Ferienwohnung will, oder ob das noch offen ist (artEgal true - dann faengst du bei Hotels an).", chips: "Hotel | Ferienwohnung | Noch offen" },
+    zeit: {
+      satz: ["Wann soll es denn ungefähr losgehen? Ein Monat reicht mir erst mal.",
+        "Hast du schon eine Vorstellung, wann es losgehen soll?"],
+      frage: "Wann es ungefaehr losgehen soll - ein Monat reicht. Feste Daten nur, wenn sie welche hat; nicht danach draengen. Nennt sie nur eine Jahreszeit ('im Winter'), frag, welcher Monat - 'egal' ist eine Antwort, dann nimmst du den ersten Monat der Jahreszeit und sagst das.", chips: null },
+
+    reisende: {
+      satz: ["Wie viele seid ihr, und sind Kinder dabei?",
+        "Sag mir noch kurz, wie viele ihr seid und ob Kinder mitkommen."],
+      frage: "Mit wem sie reist - in einem Fragesatz. Nicht zwei Fragesaetze daraus machen.", chips: "1 | 2 | 3 | 4 oder mehr" },
+
+    kinderAlter: {
+      satz: ["Wie alt sind die Kinder?", "Und wie alt sind die Kinder?"],
+      frage: "Wie alt die Kinder sind (die Zahl der Kinder ist bekannt, nur das Alter fehlt).", chips: null },
+
+    ziel: {
+      satz: ["Soll es eher in eine warme oder eher in eine kalte Gegend gehen, oder hast du schon ein Ziel im Kopf?",
+        "Habt ihr schon ein Ziel, oder eher Richtung warm oder kalt?"],
+      frage: "Ob es eher warm oder eher kalt werden soll, oder ob sie schon ein Ziel hat. Nichts anpreisen.", chips: "Eher warm | Eher kalt | Ich habe ein Ziel" },
+
+    art: {
+      satz: ["Und übernachten: eher ein Hotel oder lieber eine Ferienwohnung?",
+        "Hotel oder Ferienwohnung - oder ist dir das offen?"],
+      frage: "Ob sie eher ins Hotel oder in eine Ferienwohnung will, oder ob das offen ist (artEgal true).", chips: "Hotel | Ferienwohnung | Noch offen" },
+
     /* "Soll ich schon mal suchen" beschrieb das Falsche: Der Agent sucht
        an dieser Stelle keine Haeuser aus, er richtet die Liste ein und die
-       Person geht selbst hinein. Genau so soll die Frage klingen. */
-    weiter: { frage: "Ob du ihr die Filter gleich so setzen sollst, dass sie selbst durch die Liste gehen kann (weiter schauen), oder ob ihr vorher noch ein paar Eckdaten klaert, etwa Dauer und Flug (weiter klaeren). Bei 'schauen' suchst du keine Haeuser aus - du stellst die Liste ein, sie schaut.", chips: "Filter setzen, ich schaue | Noch ein paar Eckdaten" },
-    dauer: { frage: "Wie lange, ungefaehr ('eine Woche' = 7 Naechte, '10 Tage' = 10 Naechte).", chips: null },
-    flug: { frage: "Ob ein Flug dazu soll oder nur die Unterkunft. Sag in einem Halbsatz dazu, dass mit Flug der Anreisetag von den Flugtagen der Verbindung abhaengt.", chips: "Mit Flug | Nur die Unterkunft" },
-    flugAb: { frage: "Von welchem Flughafen: Hamburg, Stuttgart, Duesseldorf, Hannover, Muenchen, Koeln, Frankfurt oder Berlin. Klasse nicht fragen - Economy ist gerechnet, sie kann es spaeter aendern.", chips: null },
-    anreise: { frage: "An welchem Tag sie anreisen will. Der Monat und die Dauer stehen fest, der Tag fehlt - nenn zwei, drei moegliche Termine aus den Chips und frag, welcher passt. Keinen selbst aussuchen.", chips: null },
-    beratung: { frage: "Ob ihr noch ein paar Eckdaten klaert - Preis, Verpflegung, worauf es ihr ankommt (beratung klaeren) - oder ob du ihr mit dem, was du hast, gleich eine erste Auswahl zeigst (beratung auswahl). Beides gleichwertig anbieten.", chips: "Noch ein paar Eckdaten | Erstmal eine Auswahl" },
-    vorgehen: { frage: "Ob du die Filter so einstellst und sie selbst durch die Liste schaut (vorgehen selbst), oder ob du ihr Haeuser zur Auswahl raussuchst (vorgehen top3) - und wenn ja, wie viele; drei sind ueblich, zwei bis sechs gehen. Beides gleichwertig anbieten, die Zahl im selben Satz.", chips: "Ich schaue selbst | Such mir drei raus | Lieber fünf" },
-    preis: { frage: "Ob sie beim Preis schon eine feste Grenze hat (pro Nacht oder gesamt) oder offen ist. Nicht 'wie viel darf es kosten' fragen. Offen heisst preisEgal true. Die Preisspanne aus der Lage darfst du nennen.", chips: "Feste Grenze | Offen" },
-    verpflegung: { frage: "Welche Verpflegung es sein soll: All Inclusive oder Halbpension (oder nur Fruehstueck, oder egal). Nenn dazu, was All Inclusive im Schnitt mehr kostet und wie viele Haeuser es anbieten - die Zahlen stehen in verpflegungsLage. 'Egal' heisst verpflegungEgal true.", chips: "All Inclusive | Halbpension | Nur Frühstück | Egal" },
-    wuensche: { frage: "Worauf sie bei der Unterkunft besonders achtet - offen gefragt, mit hoechstens drei Beispielen, die zur Person passen (Paar: Ruhe, Essen, Lage; Familie: Pool, Kinderclub, Strand). Keine Liste aller Moeglichkeiten. Antworten werden Wuensche (wuensche); nur ausdrueckliche Grenzen ('mindestens 4,5', 'direkt am Strand') werden Filter. 'Nichts Besonderes' heisst ausstattungEgal true.", chips: "Sauberkeit | Essen | Lage | Ruhe" },
+       Person geht selbst hinein. Genau so klingt die Frage jetzt. */
+    weiter: {
+      satz: ["Soll ich die Filter gleich so setzen, dass du selbst durch die Liste gehen kannst? Oder klären wir vorher noch ein paar Eckdaten wie Dauer und Flug?",
+        "Willst du selbst in der Liste stöbern, oder besprechen wir vorher noch ein paar Eckdaten?"],
+      frage: "Ob du ihr die Filter gleich so setzen sollst, dass sie selbst durch die Liste gehen kann (weiter schauen), oder ob ihr vorher noch ein paar Eckdaten klaert (weiter klaeren).", chips: "Filter setzen, ich schaue | Noch ein paar Eckdaten" },
+
+    dauer: {
+      satz: ["Wie lange soll die Reise werden?", "Habt ihr eine Vorstellung, wie viele Nächte es werden sollen?"],
+      frage: "Wie lange, ungefaehr ('eine Woche' = 7 Naechte).", chips: null },
+
+    flug: {
+      satz: ["Soll ein Flug dazu, oder nur die Unterkunft? Mit Flug hängt der Anreisetag von den Flugtagen der Verbindung ab.",
+        "Bucht ihr den Flug selbst, oder soll ich ihn mitsuchen?"],
+      frage: "Ob ein Flug dazu soll oder nur die Unterkunft.", chips: "Mit Flug | Nur die Unterkunft" },
+
+    flugAb: {
+      satz: ["Von welchem Flughafen soll es losgehen? Hamburg, Stuttgart, Düsseldorf, Hannover, München, Köln, Frankfurt oder Berlin.",
+        "Und ab welchem Flughafen?"],
+      frage: "Von welchem Flughafen. Klasse nicht fragen - Economy ist gerechnet.", chips: null },
+
+    anreise: {
+      satz: (p, wk) => {
+        const t = wk.anreiseTage(p);
+        if (!t.length) return "An welchem Tag wollt ihr anreisen?";
+        return `Im ${t.monat} ist jeder Tag frei und der Preis bleibt gleich. Passt euch der ${t[0]}, der ${t[1]} oder der ${t[2]}?`;
+      },
+      nochmal: "Welcher Anreisetag soll es sein? Du kannst mir auch einfach ein Datum nennen.",
+      frage: "An welchem Tag sie anreisen will.", chips: null },
+
+    beratung: {
+      satz: ["Wollen wir noch ein paar Eckdaten besprechen - Preis, Verpflegung, worauf es dir ankommt? Oder soll ich dir mit dem, was ich habe, gleich eine erste Auswahl zeigen?",
+        "Sollen wir noch etwas klären, oder zeige ich dir gleich eine Auswahl?"],
+      frage: "Ob ihr noch Eckdaten klaert (beratung klaeren) oder ob du gleich eine Auswahl zeigst (beratung auswahl).", chips: "Noch ein paar Eckdaten | Erstmal eine Auswahl" },
+
+    vorgehen: {
+      satz: ["Soll ich dir Häuser raussuchen, oder schaust du lieber selbst durch die Liste? Wenn ich raussuche: drei sind üblich, es dürfen auch mehr sein.",
+        "Was ist dir lieber - ich suche dir welche raus, oder du schaust selbst?"],
+      frage: "Ob du die Filter stellst und sie selbst schaut (vorgehen selbst) oder ob du Haeuser raussuchst (vorgehen top3) - und wenn ja, wie viele.", chips: "Ich schaue selbst | Such mir drei raus | Lieber fünf" },
+
+    preis: {
+      satz: ["Hast du beim Preis eine feste Grenze, oder bist du da offen?",
+        "Gibt es eine Obergrenze, die ich einhalten soll?"],
+      frage: "Ob sie beim Preis eine feste Grenze hat (pro Nacht oder gesamt) oder offen ist. Offen heisst preisEgal true.", chips: "Feste Grenze | Offen" },
+
+    verpflegung: {
+      satz: (p, wk, lauf) => {
+        const z = lauf?.verpflegungsLage;
+        const a = z?.allInclusiveAufpreisProNachtUndZimmer;
+        const auf = a > 0 ? ` All Inclusive kostet im Schnitt ${a} € pro Nacht und Zimmer mehr.` : "";
+        return `Welche Verpflegung soll es sein - All Inclusive, Halbpension, nur Frühstück, oder ist dir das egal?${auf}`;
+      },
+      nochmal: "Und bei der Verpflegung: All Inclusive, Halbpension, Frühstück oder egal?",
+      frage: "Welche Verpflegung. 'Egal' heisst verpflegungEgal true.", chips: "All Inclusive | Halbpension | Nur Frühstück | Egal" },
+
+    wuensche: {
+      satz: (p) => (p.kinder > 0
+        ? "Worauf achtet ihr bei der Unterkunft besonders? Zum Beispiel Pool, Kinderclub oder die Nähe zum Strand."
+        : "Worauf achtest du bei der Unterkunft besonders? Zum Beispiel Ruhe, gutes Essen oder die Lage."),
+      nochmal: "Gibt es noch etwas, worauf ich bei der Unterkunft achten soll?",
+      frage: "Worauf sie bei der Unterkunft achtet - offen gefragt, hoechstens drei Beispiele.", chips: "Sauberkeit | Essen | Lage | Ruhe" },
   },
+
+  /* Wie der Kern ein neu aufgenommenes Feld ausspricht.
+     ------------------------------------------------------------------
+     Gebraucht fuer den Fall, den der Nutzer am 24.09.2026 gemeldet hat:
+     Mitten in einer Frage wirft die Person etwas ein ("uebrigens mir ist
+     Essen sehr wichtig"), der Agent nimmt es auf - und sagt kein Wort
+     dazu. Wenn das Modell die Aufnahme vergisst, setzt der Kern sie
+     davor. thema: zu welchem Thema das Feld gehoert; eine Antwort auf die
+     gestellte Frage braucht keine eigene Bestaetigung. */
+  FELDWORT: {
+    wuensche: { thema: "wuensche", wort: (p) => (p.kriterien || []).map((k) => (typeof Politik !== "undefined" ? Politik.kriterium(k.id)?.label : null)).filter(Boolean).slice(-2).join(" und ") },
+    budgetGesamt: { thema: "preis", wort: (p) => `höchstens ${p.budgetGesamt} € insgesamt` },
+    maxPreis: { thema: "preis", wort: (p) => `höchstens ${p.maxPreis} € pro Nacht` },
+    verpflegung: { thema: "verpflegung", wort: (p) => (typeof BOARD_LABELS !== "undefined" ? BOARD_LABELS[p.verpflegung] : p.verpflegung) },
+    maxStrand: { thema: "wuensche", wort: (p) => `höchstens ${p.maxStrand < 1 ? `${Math.round(p.maxStrand * 1000)} Meter` : `${p.maxStrand} km`} zum Strand` },
+    mindestbewertung: { thema: "wuensche", wort: (p) => `mindestens ${String(p.mindestbewertung).replace(".", ",")} als Note` },
+    naechte: { thema: "dauer", wort: (p) => `${p.naechte} Nächte` },
+    monat: { thema: "zeit", wort: (p) => (typeof Politik !== "undefined" ? Object.keys(Politik.MONATE).find((m) => Politik.MONATE[m] === p.monat && m.length > 3)?.replace(/^./, (c) => c.toUpperCase()) : null) },
+    anreise: { thema: "anreise", wort: (p) => { const d = new Date(p.anreise); return Number.isNaN(d.getTime()) ? null : `Anreise am ${d.getDate()}.`; } },
+  },
+
+  /* Der Satz, mit dem der Kern eine vergessene Aufnahme nachtraegt.
+     Null, wenn nichts nachzutragen ist. */
+  aufnahmeSatz(kern, schonGesagt) {
+    const felder = kern.lauf.zuletztGemerkt || [];
+    const p = kern.lauf.profil || {};
+    const gefragt = kern.lauf.gefragt || null;
+    const teile = [];
+    for (const f of [...new Set(felder)]) {
+      const e = this.FELDWORT[f];
+      if (!e) continue;
+      // Eine Antwort auf die gestellte Frage braucht keine Bestaetigung -
+      // die steht in der Leiste, und "Oktober ist notiert" nervt
+      if (e.thema && e.thema === gefragt) continue;
+      const wort = e.wort(p);
+      if (!wort) continue;
+      // Das Modell hat es schon gesagt
+      if (schonGesagt && new RegExp(wort.split(" ").filter((w) => w.length > 3)[0] || wort, "i").test(schonGesagt)) continue;
+      teile.push(wort);
+    }
+    if (!teile.length) return null;
+    return `${teile.slice(0, 2).join(", ")} merke ich mir.`.replace(/^./, (c) => c.toUpperCase());
+  },
+
+  // Die moeglichen Anreisetage als Text - gebraucht fuer die Frage und
+  // fuer die Chips
+  anreiseTage(p) {
+    const f = this.flexWahl(p);
+    if (!f) return [];
+    const naechte = p.naechte || 7;
+    const [jahr, monat] = f.monat.split("-").map(Number);
+    const letzter = new Date(jahr, monat, 0).getDate();
+    const spielraum = Math.max(1, letzter - naechte);
+    const MON = ["Jan.", "Feb.", "März", "April", "Mai", "Juni", "Juli", "Aug.", "Sept.", "Okt.", "Nov.", "Dez."];
+    const MONLANG = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
+    const tage = [1, Math.round(spielraum / 3), Math.round((spielraum * 2) / 3), spielraum]
+      .map((t) => Math.min(letzter, Math.max(1, t)))
+      .filter((t, i, alle) => alle.indexOf(t) === i)
+      .map((t) => `${t}. ${MON[monat - 1]}`);
+    tage.monat = MONLANG[monat - 1];
+    tage.iso = f.monat;
+    return tage;
+  },
+
+  // Den fertigen Fragesatz eines Themas holen: beim zweiten Anlauf eine
+  // andere Fassung, damit sich nie etwas woertlich wiederholt
+  themenSatz(thema, p, lauf = {}) {
+    const t = this.THEMEN[thema];
+    if (!t) return null;
+    const mal = lauf.gefragtWie?.[thema] || 0;
+    if (typeof t.satz === "function") return (mal >= 1 && t.nochmal) ? t.nochmal : t.satz(p, this, lauf);
+    if (Array.isArray(t.satz)) return t.satz[Math.min(mal, t.satz.length - 1)];
+    return t.satz || null;
+  },
+
 
   // Hat die Person einen Tag genannt? "am 5.", "5. Nov.", "5. November",
   // "vom 12. bis 26.", "2026-11-05" oder nur "5." als ganze Antwort
@@ -1605,6 +1774,8 @@ const Werkzeugkasten = {
     }
     let frage = naechstes ? this.THEMEN[naechstes]?.frage : null;
     let chips = naechstes ? this.THEMEN[naechstes]?.chips : null;
+    // Der fertige Fragesatz. Die Sonderfaelle darunter duerfen ihn ersetzen.
+    let satz = naechstes ? this.themenSatz(naechstes, p, lauf) : null;
     /* Dieselbe Frage zum zweiten Mal.
        ------------------------------------------------------------------
        Wenn die Person auf eine Frage nicht antwortet, sondern etwas
@@ -1625,7 +1796,12 @@ const Werkzeugkasten = {
       const gesagt = (lauf.gespraech || []).filter((n) => n.role === "user").map((n) => String(n.content).toLowerCase()).join(" ");
       const JAHRESZEIT = { sommer: "Juni | Juli | August", herbst: "September | Oktober | November", winter: "Dezember | Januar | Februar", "frühling": "März | April | Mai", fruehling: "März | April | Mai", "frühjahr": "März | April | Mai" };
       const jz = Object.keys(JAHRESZEIT).find((k) => gesagt.includes(k));
-      if (jz) { frage = `Sie hat "${jz}" gesagt - frag, welcher Monat: ${JAHRESZEIT[jz].replace(/ \| /g, ", ")}? Keinen davon vorschlagen oder als "richtig?" unterstellen; "egal" ist eine Antwort (dann nimmst du den ersten und sagst das).`; chips = `${JAHRESZEIT[jz]} | Egal`; }
+      if (jz) {
+        const m = JAHRESZEIT[jz].split(" | ");
+        satz = `Du hast ${jz.charAt(0).toUpperCase() + jz.slice(1)} gesagt - welcher Monat soll es sein, ${m[0]}, ${m[1]} oder ${m[2]}? Egal ist auch eine Antwort.`;
+        frage = `Sie hat "${jz}" gesagt - frag, welcher Monat. "egal" ist eine Antwort.`;
+        chips = `${JAHRESZEIT[jz]} | Egal`;
+      }
     }
     // "Ein langes Wochenende" ist eine Dauerangabe. Ohne diesen Zweig fragte
     // der Agent danach trotzdem "Eine Woche, zehn Tage oder etwas anderes?"
@@ -1634,7 +1810,8 @@ const Werkzeugkasten = {
     if (naechstes === "dauer") {
       const gesagt = (lauf.gespraech || []).filter((n) => n.role === "user").map((n) => String(n.content).toLowerCase()).join(" ");
       if (/wochenende/.test(gesagt)) {
-        frage = "Sie hat von einem Wochenende gesprochen - frag, ob zwei, drei oder vier Naechte gemeint sind. Nicht allgemein nach der Dauer fragen, das hat sie schon gesagt.";
+        satz = "Ein langes Wochenende - sollen es zwei, drei oder vier Nächte werden?";
+        frage = "Sie hat von einem Wochenende gesprochen - frag, ob zwei, drei oder vier Naechte gemeint sind.";
         chips = "2 Nächte | 3 Nächte | 4 Nächte";
       }
     }
@@ -1643,27 +1820,27 @@ const Werkzeugkasten = {
        Im Prototyp ist jeder Tag des Monats frei und der Preis gleich -
        vier ueber den Monat verteilte Termine machen die Frage trotzdem
        beantwortbar, statt sie wie ein leeres Datumsfeld wirken zu lassen. */
+    /* Die moeglichen Anreisetage als Chips.
+       ------------------------------------------------------------------
+       Im Prototyp ist jeder Tag des Monats frei und der Preis gleich -
+       vier ueber den Monat verteilte Termine machen die Frage trotzdem
+       beantwortbar, statt sie wie ein leeres Datumsfeld wirken zu lassen.
+       Der Fragesatz selbst steht bei THEMEN.anreise. */
     if (naechstes === "anreise") {
-      const f = this.flexWahl(p);
-      const naechte = p.naechte || 7;
-      if (f) {
-        const [jahr, monat] = f.monat.split("-").map(Number);
-        const letzter = new Date(jahr, monat, 0).getDate();
-        const spielraum = Math.max(1, letzter - naechte);
-        const tage = [1, Math.round(spielraum / 3), Math.round((spielraum * 2) / 3), spielraum]
-          .map((t) => Math.min(letzter, Math.max(1, t)))
-          .filter((t, i, alle) => alle.indexOf(t) === i)
-          .map((t) => `${f.monat}-${String(t).padStart(2, "0")}`);
-        const MON = ["Jan.", "Feb.", "März", "April", "Mai", "Juni", "Juli", "Aug.", "Sept.", "Okt.", "Nov.", "Dez."];
-        const text = (d) => { const x = new Date(d); return `${x.getDate()}. ${MON[x.getMonth()]}`; };
-        frage = `An welchem Tag sie anreisen will. Sag ihr, dass im ${MON[monat - 1].replace(".", "")} jeder Tag frei ist und der Preis gleich bleibt, nenn ${tage.slice(0, 3).map(text).join(", ")} als Beispiele und frag, welcher Tag passt. Keinen selbst aussuchen.`;
-        chips = tage.map(text).join(" | ");
-      }
+      const t = this.anreiseTage(p);
+      if (t.length) chips = t.join(" | ");
     }
     if (naechstes === "reisende") {
-      if (p.personen != null && p.erwachsene == null && p.kinder == null) { frage = `Wie viele der ${p.personen} Kinder sind, und wie alt - 'keine' ist eine Antwort. Erwachsene nicht fragen, das rechnet die Seite.`; chips = "Keine Kinder | Ein Kind | Zwei Kinder"; }
-      else if (p.erwachsene != null && p.kinder == null) { frage = "Ob Kinder mitreisen - und wenn ja, wie viele und wie alt."; chips = "Keine Kinder | Ein Kind | Zwei Kinder"; }
-      else if (p.kinder != null && p.erwachsene == null) { frage = "Wie viele Erwachsene mitreisen."; chips = "1 | 2 | 3 | 4 oder mehr"; }
+      if (p.personen != null && p.erwachsene == null && p.kinder == null) {
+        satz = `Sind von den ${p.personen} Kinder dabei? Wenn ja, wie viele und wie alt?`;
+        chips = "Keine Kinder | Ein Kind | Zwei Kinder";
+      } else if (p.erwachsene != null && p.kinder == null) {
+        satz = "Sind Kinder dabei? Wenn ja, wie viele und wie alt?";
+        chips = "Keine Kinder | Ein Kind | Zwei Kinder";
+      } else if (p.kinder != null && p.erwachsene == null) {
+        satz = "Und wie viele Erwachsene reisen mit?";
+        chips = "1 | 2 | 3 | 4 oder mehr";
+      }
     }
     /* Dieselbe Frage zum zweiten Mal.
        ------------------------------------------------------------------
@@ -1694,7 +1871,7 @@ const Werkzeugkasten = {
     }
     const empfehlungBereit = p.vorgehen === "top3" && BERATUNG.every((t) => fertig[t])
       && fertig.dauer && fertig.flug && fertig.flugAb;
-    return { fertig, naechstes, frage, chips, phase, suchbereit, eckdatenFertig, gesucht, schluessel, empfehlungBereit,
+    return { fertig, naechstes, frage, satz, chips, phase, suchbereit, eckdatenFertig, gesucht, schluessel, empfehlungBereit,
       angenommen, ueberblickOffen: false, fehlt: [...KERN, ...ECKDATEN].filter((t) => !fertig[t]) };
   },
 
@@ -1731,6 +1908,16 @@ const Werkzeugkasten = {
 
   // Der Fahrplan als Teil eines Werkzeugergebnisses (stand_merken, suchen)
   fahrplanFuerModell(fp, p) {
+    /* Die Frage stellt der Chat, nicht das Modell.
+       ------------------------------------------------------------------
+       Das Modell schreibt nur noch den Anschluss an das, was die Person
+       gerade gesagt hat. Der Kern haengt seine Frage an. So kann es keine
+       zweite Frage geben, keine woertliche Wiederholung und keine Frage
+       ueber die Frage. */
+    if (fp.naechstes && fp.satz) return {
+      alsNaechstes: `Die naechste Frage stellt der Chat selbst - du musst sie NICHT schreiben. Sie lautet: "${fp.satz}" Wiederhole sie nicht, kuendige sie nicht an und stell keine eigene Frage; kein Fragezeichen in deiner Antwort. Schreib nur, was du zu dem sagen willst, was die Person zuletzt gesagt hat: hoechstens zwei kurze Saetze. Hat sie etwas Neues genannt, nimm es ausdruecklich auf ("Gutes Essen merke ich mir."). Gibt es dazu nichts zu sagen, schreib gar nichts.`,
+      nochOffen: fp.fehlt,
+    };
     if (fp.naechstes) return { alsNaechstes: `Frag genau ein Thema: ${fp.naechstes}. ${fp.frage}`, ...(fp.chips ? { chipsBeispiel: fp.chips } : { chips: "keine - die Frage ist offen" }), nochOffen: fp.fehlt };
     if (fp.phase === "suche") return { alsNaechstes: "Ruf suchen und schildere danach die Lage." };
     if (fp.phase === "selbst") return { alsNaechstes: "Die Person will selbst schauen. Ruf suchen (stellt die Filter), dann sag ihr, dass die Liste steht und du da bist." };
