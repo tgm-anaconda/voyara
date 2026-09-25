@@ -716,6 +716,10 @@ const Studie = {
 
   async senden(punkt) {
     if (!this.daten) return;
+    // Probelauf: der Pruefstand spielt Aufgaben nach, damit Partnerhaus,
+    // Vorschlagsansicht und Buchungsweg wirklich durchlaufen werden. In die
+    // Erhebungstabelle darf davon nichts.
+    if (this.probelauf) { this.daten.gesendet[punkt] = { ok: true, versuche: 0, probelauf: true }; return; }
     this.daten.gesendet[punkt] = this.daten.gesendet[punkt] || { ok: false, versuche: 0 };
     this.sichern();
     const koerper = { art: "daten", teilnehmerId: this.daten.teilnehmerId, punkt, spalten: this.auswertung(punkt), json: this.daten };

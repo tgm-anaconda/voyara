@@ -492,9 +492,14 @@ const Kern = {
   /* ==================================================================
      Sprechen und Stand
      ================================================================== */
-  sagen(text, rolle = "bot", links = null) {
+  sagen(text, rolle = "bot", links = null, extra = null) {
     const n = { rolle, text, zeit: Date.now() };
     if (links && links.length) n.links = links;
+    // Wer den Satz geschrieben hat. Saetze des Kerns (Lage, Buchungsansage,
+    // Rundgangsmeldung) sind gewollt lang und stehen mit festen Zahlen da;
+    // Saetze des Modells sind die, die danebengehen koennen. Der Pruefstand
+    // bewertet nur die zweiten.
+    if (extra) Object.assign(n, extra);
     this.lauf.verlauf.push(n);
     AgentPanel.say(text, rolle, { links });
     this.sichern();
@@ -873,7 +878,7 @@ const Kern = {
             nachricht.content = text;
           }
         }
-        if (text && !gleich(text, zuletzt)) this.sagen(text);
+        if (text && !gleich(text, zuletzt)) this.sagen(text, "bot", null, { vomModell: true });
         if (!nachricht.tool_calls) {
           // Welches Thema des Fahrplans der Agent damit gefragt hat
           const fp = Werkzeugkasten.fahrplan(this.lauf.profil || {}, this.lauf);

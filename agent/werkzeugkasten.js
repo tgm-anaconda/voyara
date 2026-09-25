@@ -1606,11 +1606,28 @@ const Werkzeugkasten = {
        Vorher hing "2 einen Kinderclub" am "haben" des Pool-Glieds. Faellt
        das weg, weil es in Lappland keine Pools gibt, stand da "2 einen
        Kinderclub, 7 sind mit 4,5 oder besser bewertet". */
+    /* Nur Merkmale, die jemand genannt hat.
+       ------------------------------------------------------------------
+       Die Lage zaehlte frueher auf, was der Katalog hergibt: Pool,
+       Kinderclub, Wellness. Damit stand ein Thema im Raum, das im
+       Gespraech nie vorkam - und das Modell ordnete es im naechsten Satz
+       auch noch ein ("Kinderclubs sind eher selten"). Das liest sich, als
+       haette der Agent eine eigene Meinung zu etwas, wonach niemand
+       gefragt hat. Genannt heisst: als Wunsch, als Filter oder im
+       Klartext. Sonst bleiben Strandnaehe und Gaestenote - beides sagt
+       etwas ueber die Auswahl, ohne ein Thema zu setzen. */
+    const gesagt = [...(p.wuensche || []), ...(p.kriterien || []), p.ausstattung || ""].join(" ").toLowerCase();
+    const genannt = (re) => re.test(gesagt);
     const merkmale = [];
-    if (umfang.direktAmStrandBis200m) merkmale.push(`${umfang.direktAmStrandBis200m} liegen direkt am Strand`);
-    if (umfang.mitPool) merkmale.push(`${umfang.mitPool} haben einen Pool`);
-    if (p.kinder > 0 && umfang.mitKinderclub) merkmale.push(`${umfang.mitKinderclub} haben einen Kinderclub`);
-    if (!(p.kinder > 0) && umfang.mitWellness) merkmale.push(`${umfang.mitWellness} haben Wellness`);
+    const strandGenannt = p.maxStrand != null || genannt(/strand|meer|beach/);
+    if (umfang.direktAmStrandBis200m && (strandGenannt || !genannt(/pool|kinderclub|familie|wellness/))) {
+      merkmale.push(`${umfang.direktAmStrandBis200m} liegen direkt am Strand`);
+    }
+    if (umfang.mitPool && genannt(/pool/)) merkmale.push(`${umfang.mitPool} haben einen Pool`);
+    if (umfang.mitKinderclub && genannt(/kinderclub|kids|familie|betreuung|animation/)) {
+      merkmale.push(`${umfang.mitKinderclub} haben einen Kinderclub`);
+    }
+    if (umfang.mitWellness && genannt(/wellness|spa|sauna/)) merkmale.push(`${umfang.mitWellness} haben Wellness`);
     if (umfang.gaestenoteAb4_5) merkmale.push(`${umfang.gaestenoteAb4_5} sind mit 4,5 oder besser bewertet`);
     // "10 haben einen Pool, 10 haben einen Kinderclub" - beim zweiten Mal
     // reicht die Zahl, solange das Verb dasselbe ist
