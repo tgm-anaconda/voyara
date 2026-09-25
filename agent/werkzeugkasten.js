@@ -1211,17 +1211,42 @@ const Werkzeugkasten = {
               : "Die Suche war flexibel im Monat, und die Person hat noch keinen Tag genannt. Frag sie, an welchem Tag sie anreisen will (im Prototyp ist jeder Tag frei, der Preis im Monat gleich). Erst mit ihrem Tag buchung_vorbereiten mit anreise rufen - keinen Tag selbst waehlen." } };
         }
       }
+      /* Die Seite muss zu dem Haus gehoeren, um das es geht.
+         ----------------------------------------------------------------
+         Am 25.09.2026 bereitete der Agent zweimal die Buchung eines Hauses
+         vor, das gar nicht vorgeschlagen war: Im Log stand die richtige
+         id, in der Kasse stand ein anderes Hotel. Der Grund war eine
+         fehlende Pruefung - Stufe 2 klickte den Buchungsknopf der
+         Hausseite, die gerade offen war, ohne zu vergleichen, welches Haus
+         das ist. Auf jeder Stufe wird jetzt abgeglichen. Welches Haus
+         gebucht wird, ist die Hauptmessgroesse; hier darf nichts
+         verrutschen. */
       if (stufe === 1) {
         kern.notieren("zur_buchung", { id: a.id });
         if (seite === "checkout" && idHier === a.id) return this.werkzeuge.buchung_vorbereiten.call(this, a, kern, 3);
         if (seite === "stay" && idHier === a.id) return this.werkzeuge.buchung_vorbereiten.call(this, a, kern, 2);
+        kern.lauf.buchungUmweg = false;
         kern.sperreAn();
-        const e = await Werkzeuge.unterkunftOeffnen(a.id);
+        // Sichtbar klicken nur, wo die Karte wirklich liegt - auf einer
+        // fremden Hausseite oder in der Kasse gibt es sie nicht
+        const e = seite === "results" ? await Werkzeuge.unterkunftOeffnen(a.id) : { ok: false };
         if (!e.ok) { await Zeiger.warte(300); location.href = kern.linkZu(a.id, item.name).href; }
         return { navigiert: true, stufe: 2 };
       }
       if (stufe === 2) {
-        if (seite !== "stay") return { ergebnis: { fehler: "Die Hausseite ist nicht offen." } };
+        if (seite !== "stay" || idHier !== a.id) {
+          kern.notieren("falsche_hausseite", { erwartet: a.id, ist: idHier || seite });
+          if (kern.lauf.buchungUmweg) {
+            kern.sperreAus();
+            return { ergebnis: { fehler: `Die Seite von ${item.name} laesst sich gerade nicht oeffnen.`,
+              hinweis: "Sag der Person, dass da etwas klemmt, und biete an, dass sie das Haus selbst aus der Liste oeffnet." } };
+          }
+          kern.lauf.buchungUmweg = true;
+          await Zeiger.warte(200);
+          location.href = kern.linkZu(a.id, item.name).href;
+          return { navigiert: true, stufe: 2 };
+        }
+        kern.lauf.buchungUmweg = false;
         kern.sperreAn();
         const e = await Werkzeuge.zurBuchung(a.id, kern.lauf.profil.verpflegung || null, kern.lauf.profil.anreise || null);
         if (!e.ok) { kern.sperreAus(); return { ergebnis: { fehler: e.text } }; }
@@ -1229,6 +1254,14 @@ const Werkzeugkasten = {
       }
       // Stufe 3: Buchungsstrecke
       if (seite !== "checkout") return { ergebnis: { fehler: "Die Buchungsstrecke ist nicht offen." } };
+      if (idHier !== a.id) {
+        const falsch = typeof getItemById === "function" ? getItemById(idHier)?.name : null;
+        kern.notieren("falsche_buchungsseite", { erwartet: a.id, ist: idHier });
+        kern.sperreAus();
+        return { ergebnis: { fehler: `In der Buchungsstrecke steht ${falsch || idHier}, nicht ${item.name}.`,
+          hinweis: "Nichts vorlegen und nichts behaupten. Sag der Person, dass da etwas schiefgelaufen ist, und ruf buchung_vorbereiten mit der richtigen id noch einmal." },
+          log: `Abgebrochen: in der Kasse stand ${falsch || idHier} statt ${item.name}` };
+      }
       kern.sperreAn();
       const vor = await Werkzeuge.buchungAbschliessen({ nurVorbereiten: true });
       kern.sperreAus();
