@@ -1014,6 +1014,32 @@ const Kern = {
     ];
   },
 
+  /* Die Argumente eines Werkzeugaufrufs lesen - auch kaputte.
+     ------------------------------------------------------------------
+     Am 25.09.2026 blieb das Modell mitten in einem stand_merken haengen
+     und wiederholte "preisEgal":false, bis das Token-Budget aufgebraucht
+     war. Die Zeichenkette brach mitten im naechsten Schluessel ab, JSON
+     liess sich nicht lesen, und der ganze Aufruf fiel auf ein leeres
+     Objekt zurueck: Monat, Dauer, Reisende, Kinder samt Alter, Pool,
+     Strandentfernung, Preis - alles weg, obwohl es sauber dastand. Der
+     Agent fragte danach nach dem Reisemonat, den die Person gerade
+     genannt hatte.
+
+     Statt alles zu verwerfen, werden jetzt alle vollstaendigen Paare
+     gerettet. Doppelte Schluessel fallen dabei von selbst zusammen, der
+     abgeschnittene Rest bleibt liegen. Im Protokoll steht, dass es
+     passiert ist - wie oft das vorkommt, gehoert zur Messung. */
+  argumenteLesen(roh, werkzeug = "") {
+    const text = String(roh || "{}");
+    try { return JSON.parse(text); } catch { /* unten weiter */ }
+    const paare = [...text.matchAll(/"([A-Za-z_][A-Za-z0-9_]*)"\s*:\s*("(?:[^"\\]|\\.)*"|-?\d+(?:\.\d+)?|true|false|null|\[[^\]]*\])/g)];
+    const raus = {};
+    for (const m of paare) { try { raus[m[1]] = JSON.parse(m[2]); } catch { /* Paar ueberspringen */ } }
+    this.notieren("argumente_repariert", { werkzeug, felder: Object.keys(raus), zeichen: text.length });
+    console.warn("Werkzeugargumente waren kaputt, gerettet:", Object.keys(raus));
+    return raus;
+  },
+
   /* Werkzeugaufrufe des aktuellen Zuges der Reihe nach ausfuehren.
      Liefert false, wenn die Seite gleich neu laedt. */
   async werkzeugeAusfuehren() {
@@ -1022,7 +1048,7 @@ const Kern = {
     while (a.i < a.calls.length) {
       const call = a.calls[a.i];
       let args = {};
-      try { args = JSON.parse(call.function.arguments || "{}"); } catch { args = {}; }
+      args = this.argumenteLesen(call.function.arguments, call.function.name);
       if (a.stufe === 1) {
         const zeile = Werkzeugkasten.logText(call.function.name, args);
         if (zeile) this.logZeile(zeile, "schritt");
