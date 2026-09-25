@@ -155,7 +155,7 @@ const Pruefstand = {
     "wert_verworfen", "zwei_fragen_gekuerzt",
     // seit 25.09.: Griffe daneben, die den Ausgang der Erhebung treffen
     "fremdes_haus", "haus_korrigiert", "argumente_repariert",
-    "falsche_hausseite", "falsche_buchungsseite", "partner_ohne_marke"],
+    "falsche_hausseite", "falsche_buchungsseite", "partner_ohne_marke", "festgefahren"],
   // Kein Fehler, aber aufschlussreich: wie oft der Kern ein Werkzeug erzwingen
   // musste, weil das Modell es nicht von sich aus rief
   NOTIZ: ["zwang", "gesperrt", "uebernahme", "stopp", "thema_uebersprungen"],
@@ -419,6 +419,9 @@ const Pruefstand = {
     // Ab dem dritten Anlauf ist auch eine neue Formulierung keine Entschuldigung
     for (const z of zweimal.filter((x) => (x.mal || 1) >= 3)) rest.push({ art: "frage_dreimal", thema: z.thema });
 
+    // Der Kern musste die Notbremse ziehen: fuer die Person sichtbar
+    for (const f of prot.filter((x) => x.ereignis === "festgefahren")) rest.push({ art: "festgefahren", text: f.text });
+
     // Was auf dem Bildschirm auffiel
     const sicht = (this.stand()?.sicht || []).filter((x) => x.gespraech === g.id);
     for (const x of sicht) rest.push(x);
@@ -548,7 +551,7 @@ const Pruefstand = {
     const SCHWER = ["gebucht_nicht_vorgeschlagen", "buchung_verletzt_vorgaben", "partner_ohne_marke",
       "partner_ohne_wort", "partner_fehlt_in_vorlage", "platz1_gegen_wunsch", "haus_nicht_angesehen",
       "frage_woertlich_wiederholt", "frage_dreimal", "unmotiviertes_thema", "anzahl_vorschlaege_falsch", "fremde_zahl",
-      "nicht_gebucht", "karte_ohne_bild", "karte_ohne_preis", "zwei_fragen", "gesiezt"];
+      "nicht_gebucht", "festgefahren", "karte_ohne_bild", "karte_ohne_preis", "zwei_fragen", "gesiezt"];
     const schwer = {};
     for (const x of e) for (const r of x.restfehler) if (SCHWER.includes(r.art)) schwer[r.art] = (schwer[r.art] || 0) + 1;
     const schwerSumme = Object.values(schwer).reduce((a, b) => a + b, 0);

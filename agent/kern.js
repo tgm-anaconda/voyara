@@ -880,6 +880,31 @@ const Kern = {
             nachricht.content = text;
           }
         }
+        /* Das Netz unter allen Sackgassen.
+           ----------------------------------------------------------------
+           Der Pruefstand vom 25.09.2026 fand denselben Bauplan an drei
+           Stellen: eine Frage, die nicht beantwortet wird; ein leeres
+           Suchergebnis, das nicht kleiner wird; eine Buchung, der etwas
+           fehlt. Jedes Mal stand dieselbe Nachricht drei-, vier-, achtmal
+           im Chat. Jede einzelne Stelle ist repariert - aber es wird
+           weitere geben, die ich noch nicht kenne.
+
+           Deshalb hier eine Bremse, die nichts ueber den Grund wissen
+           muss: Sagt das Modell zum dritten Mal fast dasselbe, sagt der
+           Kern stattdessen, dass es nicht weitergeht, und gibt ab. Das
+           ist auch die ehrlichere Nachricht - ein Agent, der dreimal
+           dasselbe fragt, hat die Frage nicht gestellt, sondern nur
+           wiederholt. */
+        if (text && !nachricht.tool_calls) {
+          const vorige = [...this.lauf.verlauf].reverse()
+            .filter((n) => n.rolle === "bot" && n.vomModell && n.text).slice(0, 2).map((n) => n.text);
+          if (vorige.length === 2 && vorige.every((v) => this.aehnlich(v, text) >= 0.8)) {
+            this.notieren("festgefahren", { text: text.slice(0, 160) });
+            text = "Ich komme hier gerade nicht weiter und wiederhole mich. Sag mir in einem Satz, was ich als Nächstes tun soll, oder schau selbst in der Liste weiter - ich bin da, wenn du etwas wissen willst.";
+            nachricht.content = text;
+            antwort.chips = ["Ich schaue selbst weiter", "Fang noch mal von vorn an"];
+          }
+        }
         if (text && !gleich(text, zuletzt)) this.sagen(text, "bot", null, { vomModell: true });
         if (!nachricht.tool_calls) {
           // Welches Thema des Fahrplans der Agent damit gefragt hat
@@ -1341,6 +1366,16 @@ const Kern = {
      bleibt jetzt erreichbar, bis wirklich entschieden ist: ueber einen
      Knopf in der Nachricht, der auch nach einem Seitenwechsel noch da
      ist, und ueber den Antwortvorschlag im Chat. */
+  /* Wie aehnlich sind zwei Nachrichten? Anteil gemeinsamer Woerter,
+     bezogen auf die kuerzere. 1 heisst woertlich gleich. */
+  aehnlich(a, b) {
+    const wort = (x) => String(x).toLowerCase().replace(/[^a-zäöüß ]/g, " ").split(/\s+/).filter((w) => w.length > 3);
+    const A = wort(a); const B = new Set(wort(b));
+    if (A.length < 4 || B.size < 4) return 0;
+    const treffer = A.filter((w) => B.has(w)).length;
+    return Math.round((treffer / Math.min(A.length, B.size)) * 100) / 100;
+  },
+
   vorschlaegeNochmal(ueber = "knopf") {
     const ids = this.lauf.letzteVorlage || [];
     if (!ids.length || typeof Vorschlaege === "undefined") return;
