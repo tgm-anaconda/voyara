@@ -547,6 +547,12 @@ const Werkzeugkasten = {
           if (/\bhotels?\b/i.test(letzteNachricht)) a.typ = "hotel";
           else if (/ferienwohnung|ferienhaus|fewo|apartment|appartement/i.test(letzteNachricht)) a.typ = "apartment";
         }
+        // "ohne Flug" stand im Satz, kam aber nicht im Stand an - der Agent
+        // fragte danach noch einmal nach dem Flug.
+        if (a.flug === undefined && p.flug == null) {
+          if (/ohne flug|kein flug|nicht fliegen|mit dem auto|fahren wir|selbst anreisen|eigene anreise/i.test(letzteNachricht)) a.flug = false;
+          else if (/mit flug|flug dazu|fliegen wir|wir fliegen|flug mitbuchen/i.test(letzteNachricht)) a.flug = true;
+        }
       }
       if (a.anzahlVorschlaege != null) {
         const n = Math.max(2, Math.min(6, a.anzahlVorschlaege));
@@ -1606,7 +1612,14 @@ const Werkzeugkasten = {
     if (p.kinder > 0 && umfang.mitKinderclub) merkmale.push(`${umfang.mitKinderclub} haben einen Kinderclub`);
     if (!(p.kinder > 0) && umfang.mitWellness) merkmale.push(`${umfang.mitWellness} haben Wellness`);
     if (umfang.gaestenoteAb4_5) merkmale.push(`${umfang.gaestenoteAb4_5} sind mit 4,5 oder besser bewertet`);
-    if (merkmale.length) teile.push(`${merkmale.slice(0, 3).join(", ")}.`);
+    // "10 haben einen Pool, 10 haben einen Kinderclub" - beim zweiten Mal
+    // reicht die Zahl, solange das Verb dasselbe ist
+    const gekuerzt = merkmale.slice(0, 3).map((m, i, alle) => {
+      if (i === 0) return m;
+      const verb = (x) => x.replace(/^\d+\s+/, "").split(" ")[0];
+      return verb(m) === verb(alle[i - 1]) ? m.replace(/^(\d+)\s+\w+\s+/, "$1 ") : m;
+    });
+    if (merkmale.length) teile.push(`${gekuerzt.join(", ")}.`);
     return teile.join(" ");
   },
 
