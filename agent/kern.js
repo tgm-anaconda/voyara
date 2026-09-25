@@ -869,6 +869,34 @@ const Kern = {
             this.notieren("fremdes_haus", { namen: fremde.slice(0, 3) });
           }
         }
+        /* Keine Aussage ueber das Angebot ohne Recherche dahinter.
+           ----------------------------------------------------------------
+           Regel des Nutzers vom 25.09.2026: Der Agent darf nicht raten und
+           nicht auf Daten zurueckgreifen, die er nicht selbst nachgesehen
+           hat. Fuer Zahlen steht das schon (fremdeZahlen gegen belege);
+           fuer Aussagen OHNE Zahl stand es nicht. "In Lappland gibt es nur
+           wenige Hotels" ist dieselbe Erfindung wie eine falsche Zahl, nur
+           ohne Ziffer - und sie kam, bevor der Agent ein einziges Mal
+           nachgesehen hatte.
+
+           Solange fuer den aktuellen Stand keine Suche gelaufen ist, faellt
+           jeder Satz weg, der Menge oder Verfuegbarkeit des Angebots
+           behauptet. Fragen bleiben stehen, und Allgemeinwissen ueber Klima
+           und Charakter der Ziele ist nicht betroffen - das ist kein Wissen
+           ueber diese Seite. */
+        if (text && !this.lauf.gesuchtMit) {
+          const KATALOG = /\b(hotels?|h(ä|ae)user|ferienwohnungen?|unterk(ü|ue)nfte?|angebot|auswahl|objekte?|zimmer)\b/i;
+          const MENGE = /\b(viele|wenige|kaum|einige|zahlreiche|reichlich|begrenzt|knapp|gross|groß|klein|breit|eingeschr(ä|ae)nkt|ueberschaubar|übersichtlich|genug|ausreichend)\w*\b|\bes gibt\b|\bwir haben\b|\bstehen zur verf(ü|ue)gung\b/i;
+          const saetze = text.split(/(?<=[.!?])\s+/);
+          const rest = saetze.filter((x) => /\?\s*$/.test(x) || !(KATALOG.test(x) && MENGE.test(x)));
+          if (rest.length !== saetze.length) {
+            const weg = saetze.filter((x) => !rest.includes(x));
+            this.notieren("behauptung_ohne_recherche", { satz: weg[0]?.slice(0, 160) });
+            text = rest.join(" ").trim();
+            nachricht.content = text;
+          }
+        }
+
         /* Eigenschaften, die niemand genannt hat.
            ----------------------------------------------------------------
            "Ich habe dir drei passende Hotels mit Familienzimmern und

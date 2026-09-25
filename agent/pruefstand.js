@@ -158,7 +158,7 @@ const Pruefstand = {
     "falsche_hausseite", "falsche_buchungsseite", "partner_ohne_marke", "festgefahren"],
   // Kein Fehler, aber aufschlussreich: wie oft der Kern ein Werkzeug erzwingen
   // musste, weil das Modell es nicht von sich aus rief
-  NOTIZ: ["zwang", "gesperrt", "uebernahme", "stopp", "thema_uebersprungen", "selbst_gelockert", "eigenschaft_ungedeckt"],
+  NOTIZ: ["zwang", "gesperrt", "uebernahme", "stopp", "thema_uebersprungen", "selbst_gelockert", "eigenschaft_ungedeckt", "behauptung_ohne_recherche", "recherche_angesagt"],
 
   VERBOTEN: /\b(kriterien|auswertung|transparen|optimal|präferenz|praeferenz|selektion|parameter)\w*/gi,
 
@@ -391,8 +391,11 @@ const Pruefstand = {
       const verboten = t.match(this.VERBOTEN);
       if (verboten) rest.push({ art: "verbotenes_wort", wort: verboten[0], text: t.slice(0, 160) });
       const saetze = t.split(/(?<=[.!?])\s+/).filter(Boolean);
-      if (saetze.length > 4) rest.push({ art: "zu_lang", saetze: saetze.length, text: t.slice(0, 160) });
-      if (t.length > 420) rest.push({ art: "zu_viele_zeichen", zeichen: t.length, text: t.slice(0, 160) });
+      /* Die Laengenregel ist am 25.09.2026 gefallen. Der Nutzer: "So
+         wichtig ist es nicht, dass die Chatnachrichten nicht zu lang
+         werden." Sie kostete an anderer Stelle Qualitaet, weil das Modell
+         Saetze abbrach, statt sie zu Ende zu denken. Gezaehlt wird jetzt
+         nur, was jemandem wirklich auffaellt. */
       const fremd = typeof Modell !== "undefined" ? Modell.fremdeZahlen(t, belege) : [];
       if (fremd.length) rest.push({ art: "fremde_zahl", zahlen: fremd, text: t.slice(0, 160) });
       // Siezen: die Seite duzt durchgehend

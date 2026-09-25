@@ -824,6 +824,32 @@ const Werkzeugkasten = {
         return { ergebnis: e, log: `Im Katalog gesucht: ${logUmfang()}` };
       }
 
+      /* Angesagt, bevor es passiert.
+         ----------------------------------------------------------------
+         Der Nutzer am 25.09.2026: "Lappland und Oktober, hoert sich gut
+         an, es koennte sein, dass wir hier nicht viele Hotels haben, lass
+         mich schon mal, ich schaue schon mal nach, wie viele Hotels wir
+         ueberhaupt im Angebot haben." Der Satz muss VOR der Arbeit stehen,
+         sonst sieht man nur das Ergebnis und nicht, dass gearbeitet wurde.
+
+         Die Ansage kann nur der Kern machen: Das Modell weiss an dieser
+         Stelle noch nicht, was herauskommt, es wuerde also entweder etwas
+         behaupten oder die Ansage weglassen. Der Kern weiss, dass jetzt
+         eine Suche kommt und mit welchen Vorgaben - und er behauptet
+         nichts ueber das Ergebnis. Nur, dass er nachsieht.
+
+         Genauso gebaut wie die Ansage des Rundgangs. */
+      if (stufe === 1 && !kern.lauf.gesuchtMit && !kern.lauf.rechercheAngesagt) {
+        kern.lauf.rechercheAngesagt = true;
+        const wohin = p.zielId && typeof ZIEL_NACH_ID !== "undefined" ? `in ${ZIEL_NACH_ID[p.zielId]?.name}`
+          : p.richtung === "warm" ? "in den warmen Regionen" : p.richtung === "kalt" ? "in den kalten Regionen" : "";
+        const wann = p.monat && typeof Politik !== "undefined"
+          ? `im ${Object.keys(Politik.MONATE).find((m) => Politik.MONATE[m] === p.monat && m.length > 3)?.replace(/^./, (c) => c.toUpperCase())}` : "";
+        const art = p.typ === "apartment" ? "Ferienwohnungen" : "Häuser";
+        kern.sagen(`Ich sehe erst mal nach, wie viele ${art} es ${[wohin, wann].filter(Boolean).join(" ")} überhaupt gibt und was frei ist.`.replace(/\s+/g, " "));
+        kern.notieren("recherche_angesagt", { ziel: p.zielId || p.richtung || null, monat: p.monat || null });
+      }
+
       // Seite bedienen
       const zielName = p.zielId && typeof ZIEL_NACH_ID !== "undefined" ? ZIEL_NACH_ID[p.zielId]?.name : "";
       const passtJetzt = () => {
@@ -1408,7 +1434,10 @@ const Werkzeugkasten = {
     kinderAlter: { frage: "Wie alt die Kinder sind (die Zahl der Kinder ist bekannt, nur das Alter fehlt).", chips: null },
     ziel: { frage: "Ob es eher in eine warme oder eher in eine kalte Region gehen soll, oder ob sie schon ein Ziel hat. Nichts anpreisen.", chips: "Eher warm | Eher kalt | Ich habe ein Ziel" },
     art: { frage: "Ob sie eher ins Hotel oder in eine Ferienwohnung will, oder ob das noch offen ist (artEgal true - dann faengst du bei Hotels an).", chips: "Hotel | Ferienwohnung | Noch offen" },
-    weiter: { frage: "Ob du mit dem, was ihr bisher habt, schon mal schauen sollst, was es gibt (weiter schauen), oder ob ihr erst noch ein paar Eckdaten klaert, etwa Dauer und Flug (weiter klaeren).", chips: "Erst mal schauen | Noch ein paar Eckdaten" },
+    /* "Soll ich schon mal suchen" beschrieb das Falsche: Der Agent sucht
+       an dieser Stelle keine Haeuser aus, er richtet die Liste ein und die
+       Person geht selbst hinein. Genau so soll die Frage klingen. */
+    weiter: { frage: "Ob du ihr die Filter gleich so setzen sollst, dass sie selbst durch die Liste gehen kann (weiter schauen), oder ob ihr vorher noch ein paar Eckdaten klaert, etwa Dauer und Flug (weiter klaeren). Bei 'schauen' suchst du keine Haeuser aus - du stellst die Liste ein, sie schaut.", chips: "Filter setzen, ich schaue | Noch ein paar Eckdaten" },
     dauer: { frage: "Wie lange, ungefaehr ('eine Woche' = 7 Naechte, '10 Tage' = 10 Naechte).", chips: null },
     flug: { frage: "Ob ein Flug dazu soll oder nur die Unterkunft. Sag in einem Halbsatz dazu, dass mit Flug der Anreisetag von den Flugtagen der Verbindung abhaengt.", chips: "Mit Flug | Nur die Unterkunft" },
     flugAb: { frage: "Von welchem Flughafen: Hamburg, Stuttgart, Duesseldorf, Hannover, Muenchen, Koeln, Frankfurt oder Berlin. Klasse nicht fragen - Economy ist gerechnet, sie kann es spaeter aendern.", chips: null },
@@ -1538,7 +1567,20 @@ const Werkzeugkasten = {
     let naechstes = null;
     let phase = "eckdaten";
     if (!kernFertig) naechstes = KERN.find((t) => !fertig[t]);
-    else if (!lauf.gesuchtMit && !fertig.weiter) naechstes = "weiter";
+    /* Erst nachsehen, dann weiterfragen.
+       ------------------------------------------------------------------
+       Bis zum 25.09.2026 kam nach den Eckdaten sofort die Frage "schon mal
+       schauen oder erst klaeren?" - und der Agent hatte zu diesem
+       Zeitpunkt noch nie auf die Seite gesehen. Er redete ueber ein
+       Angebot, das er nicht kannte. Wunsch des Nutzers: "Lappland und
+       Oktober, hoert sich gut an, ich schaue schon mal nach, wie viele
+       Hotels wir ueberhaupt haben."
+
+       Sobald Monat, Reisende und Richtung stehen, wird also gesucht -
+       sichtbar auf der Seite - und erst die Lage danach traegt die Frage.
+       Die Personenzahl ist dafuer da: Sie steht in KERN und damit vorher. */
+    else if (!lauf.gesuchtMit) phase = "suche";
+    else if (!fertig.weiter) naechstes = "weiter";
     else if (!lauf.gesuchtMit && weiter === "klaeren" && !ECKDATEN.every((t) => fertig[t])) naechstes = ECKDATEN.find((t) => !fertig[t]);
     // Vor der Wahl des Vorgehens wird bei geaenderten Eckdaten neu gesucht
     // (die Lage soll stimmen); danach erst wieder zur Vorlage bzw. Liste -
@@ -1679,6 +1721,9 @@ const Werkzeugkasten = {
     }
 
     const fp = this.fahrplan(p, lauf);
+    // Die erste Suche, sobald der Kern der Eckdaten steht - nicht erst,
+    // wenn alles geklaert ist
+    if (fp.suchbereit && !lauf.gesuchtMit) return "suchen";
     if (fp.eckdatenFertig && !fp.gesucht && !p.vorgehen) return "suchen";
     if ((fp.phase === "vorschlaege" || fp.phase === "selbst") && lauf.vorgehenFuer !== fp.schluessel + p.vorgehen) return "suchen";
     return null;
