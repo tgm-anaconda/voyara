@@ -224,7 +224,11 @@ const Aufgaben = {
   partnerAus(aufgabe, ids, rang, reihenfolge = null) {
     const menge = new Set(ids || []);
     let liste = this.zulaessige(aufgabe).filter((x) => menge.has(x.id));
-    if (!liste.length) return null;
+    // Kein frueher Ausstieg mehr, wenn nichts zulaessig ist: Weiter unten
+    // springt die Rangfolge des Gespraechs ein. Sonst verschwand das
+    // Partnerhaus in jedem Lauf, in dem die Person etwas ganz anderes
+    // suchte als die Aufgabe (Lappland statt Mittelmeer) - und mit ihm
+    // die Bedingung, um die es in der Erhebung geht.
     /* "Beste" und "zweitbeste" richten sich nach dem, was die Person im
        Gespraech gesagt hat, nicht nach der Rangfolge der Aufgabe.
        ------------------------------------------------------------------

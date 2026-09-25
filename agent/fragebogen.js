@@ -81,7 +81,7 @@ const FRAGEBOGEN = [
     hinweis: "Zwei Fragen dazu, wie die Studie bei dir angekommen ist.",
     fragen: [
       { id: "m_freigabe", text: "Welche Freigabe war bei dir zuletzt eingestellt?", art: "wahl",
-        optionen: ["Nur vorschlagen", "Suchen und filtern", "Buchung vorbereiten", "Auch buchen", "Weiß ich nicht mehr", "Ich habe den Assistenten nicht genutzt"] },
+        optionen: ["Suchen und filtern", "Buchung vorbereiten", "Auch buchen", "Weiß ich nicht mehr", "Ich habe den Assistenten nicht genutzt"] },
       { id: "m_geaendert", text: "Hast du die Freigabe während der Studie geändert?", art: "wahl",
         optionen: ["Ja", "Nein", "Weiß ich nicht mehr"] },
     ],

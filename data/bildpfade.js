@@ -65,7 +65,7 @@ const BILDER = {
   "h146": ["img/hotels/h146-krabi-river-lodge/2.jpg", "img/hotels/h146-krabi-river-lodge/1.jpg", "img/hotels/h146-krabi-river-lodge/3.jpg", "img/hotels/h146-krabi-river-lodge/4.jpg", "img/hotels/h146-krabi-river-lodge/5.jpg"],
   "h147": ["img/hotels/h147-lanta-family-bay/2.jpg", "img/hotels/h147-lanta-family-bay/1.jpg", "img/hotels/h147-lanta-family-bay/3.jpg", "img/hotels/h147-lanta-family-bay/4.jpg", "img/hotels/h147-lanta-family-bay/5.jpg"],
   "h148": ["img/hotels/h148-emerald-pool-villas/2.jpg", "img/hotels/h148-emerald-pool-villas/1.jpg", "img/hotels/h148-emerald-pool-villas/3.jpg", "img/hotels/h148-emerald-pool-villas/4.jpg", "img/hotels/h148-emerald-pool-villas/5.jpg"],
-  "h149": ["img/hotels/h149-nordlys-lodge/2.jpg", "img/hotels/h149-nordlys-lodge/1.jpg", "img/hotels/h149-nordlys-lodge/3.jpg", "img/hotels/h149-nordlys-lodge/4.jpg", "img/hotels/h149-nordlys-lodge/5.jpg"],
+  "h149": ["img/hotels/h149-nordlys-lodge/1.jpg", "img/hotels/h149-nordlys-lodge/4.jpg", "img/hotels/h149-nordlys-lodge/3.jpg", "img/hotels/h149-nordlys-lodge/5.jpg"],
   "h15": ["img/hotels/h15-nauta-port-d-andratx/2.jpg", "img/hotels/h15-nauta-port-d-andratx/1.jpg", "img/hotels/h15-nauta-port-d-andratx/3.jpg", "img/hotels/h15-nauta-port-d-andratx/4.jpg", "img/hotels/h15-nauta-port-d-andratx/5.jpg"],
   "h150": ["img/hotels/h150-taiga-cabins/2.jpg", "img/hotels/h150-taiga-cabins/1.jpg", "img/hotels/h150-taiga-cabins/3.jpg", "img/hotels/h150-taiga-cabins/4.jpg", "img/hotels/h150-taiga-cabins/5.jpg"],
   "h151": ["img/hotels/h151-polaris-glass-resort/2.jpg", "img/hotels/h151-polaris-glass-resort/1.jpg", "img/hotels/h151-polaris-glass-resort/3.jpg", "img/hotels/h151-polaris-glass-resort/4.jpg", "img/hotels/h151-polaris-glass-resort/5.jpg"],

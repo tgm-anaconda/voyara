@@ -46,7 +46,7 @@ const Pruefstand = {
       "Wir sind zu dritt, mein Sohn ist 8, wollen im August eine Woche nach Mallorca, nur Unterkunft",
       "Hotel", "erst mal schauen", "hm, doch lieber eine Ferienwohnung",
       "Such mir drei raus", "Preis ist offen", "ein Pool wäre toll"] },
-    { id: "kalt_selbst", freigabe: "vorschlagen", texte: [
+    { id: "kalt_selbst", freigabe: "suchen", texte: [
       "Ich will mal richtig Winter erleben, mit Schnee", "im Januar", "mit meiner Freundin",
       "keine Kinder", "Ferienwohnung", "erst mal schauen", "ich schaue selbst",
       "was kostet die günstigste in Lappland?"] },

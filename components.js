@@ -945,6 +945,26 @@ const AgentPanel = {
     let start = 0;
     let vorher = "";
 
+    // Kurze Zeile unter dem Eingabefeld - fuer den Hinweis vor der
+    // Mikrofonfrage und fuer Fehler.
+    const fussHinweis = (text) => {
+      const fuss = document.querySelector(".agent-foot");
+      if (!fuss) return;
+      const alt2 = fuss.dataset.alt || fuss.textContent;
+      fuss.dataset.alt = alt2;
+      fuss.textContent = text;
+      setTimeout(() => { fuss.textContent = alt2; }, 6000);
+    };
+
+    // Beim ersten Mal fragt der Browser nach dem Mikrofon. Ohne Vorwarnung
+    // erscheint das Fenster aus dem Nichts, und wer es wegklickt, weiss
+    // nicht, warum der Knopf danach nichts tut. Steht die Erlaubnis schon,
+    // bleibt der Hinweis weg - er waere dann schlicht falsch.
+    let mussFragen = true;
+    navigator.permissions?.query?.({ name: "microphone" })
+      .then((p2) => { mussFragen = p2.state === "prompt"; })
+      .catch(() => { /* Safari kennt die Abfrage nicht - dann eben mit Hinweis */ });
+
     const aus = (grund) => {
       if (!laeuft) return;
       laeuft = false;
@@ -970,19 +990,18 @@ const AgentPanel = {
       Kern?.notieren?.("sprache_fehler", { art: e.error });
       aus("fehler");
       // Ohne Rueckmeldung sieht es aus, als waere nichts passiert
-      const fuss = document.querySelector(".agent-foot");
-      if (!fuss) return;
-      const alt2 = fuss.dataset.alt || fuss.textContent;
-      fuss.dataset.alt = alt2;
-      fuss.textContent = e.error === "not-allowed"
-        ? "Für die Spracheingabe braucht der Browser Zugriff auf das Mikrofon."
-        : "Die Spracherkennung hat gerade nicht geklappt. Tippen geht immer.";
-      setTimeout(() => { fuss.textContent = alt2; }, 6000);
+      fussHinweis(e.error === "not-allowed"
+        ? "Für die Spracheingabe braucht der Browser Zugriff auf das Mikrofon. In den Browsereinstellungen lässt sich das für diese Seite erlauben."
+        : "Die Spracherkennung hat gerade nicht geklappt. Tippen geht immer.");
     });
     erk.addEventListener("end", () => { if (laeuft) aus("ende"); });
 
     knopf.addEventListener("click", () => {
       if (laeuft) { aus("knopf"); feld.focus(); return; }
+      if (mussFragen) {
+        mussFragen = false;
+        fussHinweis("Dein Browser fragt gleich nach dem Mikrofon. Die Erkennung läuft über den Browser, nicht über Voyara.");
+      }
       vorher = feld.value.trim();
       start = Date.now();
       laeuft = true;

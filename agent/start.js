@@ -320,7 +320,6 @@ const Startbildschirm = {
      In der schmalen Karte muss es kurz sein, gleich lang bleibt es
      trotzdem - eine ausfuehrlichere Zeile waere eine Empfehlung. */
   KURZ: {
-    vorschlagen: "Er schlägt vor, du klickst selbst.",
     suchen:      "Er sucht und filtert, du entscheidest.",
     vorbereiten: "Er legt die Buchung bereit, du bestätigst.",
     buchen:      "Er bucht in deinem Rahmen selbst.",
@@ -330,7 +329,6 @@ const Startbildschirm = {
      der Assistent tut und was bei der Person bleibt - denn genau dieser
      zweite Teil ist es, den man abwaegt. */
   ERKLAERUNG: {
-    vorschlagen: "Er nennt dir passende Häuser und begründet seine Auswahl. Suchen, filtern und klicken machst du selbst.",
     suchen:      "Er sucht und setzt die Filter für dich. Welches Haus es wird und ob gebucht wird, entscheidest du.",
     vorbereiten: "Er sucht, vergleicht und legt die Buchung ausgefüllt bereit. Den letzten Schritt bestätigst du.",
     buchen:      "Er sucht, vergleicht und schließt die Buchung im Rahmen deiner Vorgaben selbst ab. Du siehst danach das Ergebnis.",

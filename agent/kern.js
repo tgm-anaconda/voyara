@@ -32,9 +32,16 @@
 
    Die Stufen bauen aufeinander auf. Jede schliesst die darunter ein.
    ================================================================== */
+/* Die Freigabestufen.
+   ------------------------------------------------------------------
+   "Nur vorschlagen" ist am 25.09.2026 weggefallen. Auf dieser Stufe
+   durfte der Agent die Seite nicht bedienen: kein Filter, keine Liste,
+   kein Rundgang - er redete nur. Damit fehlte genau das, worum es in
+   der Erhebung geht (sichtbare Arbeit, Uebergabe von Kontrolle), und
+   der Zeiger stand nutzlos in der Ecke. Die unterste Stufe ist jetzt
+   "Suchen und filtern": Er arbeitet auf der Seite, entschieden wird
+   weiterhin von der Person. */
 const FREIGABE = [
-  { id: "vorschlagen", rang: 0, kurz: "Nur vorschlagen",
-    lang: "Nur vorschlagen, klicken mache ich selbst" },
   { id: "suchen", rang: 1, kurz: "Suchen und filtern",
     lang: "Suchen und filtern darf er, entscheiden ich" },
   { id: "vorbereiten", rang: 2, kurz: "Buchung vorbereiten",
@@ -271,9 +278,9 @@ const Kern = {
      ================================================================== */
   startFreigabe() {
     const s = STELLSCHRAUBEN.freigabeStart;
-    if (s === "niedrig") return { stufe: "vorschlagen", gewuerfelt: false };
+    if (s === "niedrig") return { stufe: "suchen", gewuerfelt: false };
     if (s === "hoch") return { stufe: "buchen", gewuerfelt: false };
-    return { stufe: Math.random() < 0.5 ? "vorschlagen" : "buchen", gewuerfelt: true };
+    return { stufe: Math.random() < 0.5 ? "suchen" : "buchen", gewuerfelt: true };
   },
 
   freigabeStartSetzen(stufe, messung = {}) {

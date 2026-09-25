@@ -45,6 +45,7 @@ const Werkzeugkasten = {
           richtung: { type: "string", enum: ["warm", "kalt", "strand", "berge", "ski", "norden", "stadt", "wintersonne", "fern"], description: "Richtung statt Ziel, wenn die Person so etwas sagt ('eher warm', 'kalt', 'ans Meer', 'in die Berge') - die Suche beschraenkt sich dann auf passende Regionen" },
           weiter: { type: "string", enum: ["schauen", "klaeren"], description: "Antwort auf die Frage, ob du mit dem Bekannten schon mal schauen sollst (schauen) oder erst noch Eckdaten geklaert werden (klaeren)" },
           artEgal: { type: "boolean", description: "true, wenn die Person bei Hotel oder Ferienwohnung nicht festgelegt ist" },
+          beratung: { type: "string", enum: ["klaeren", "auswahl"], description: "Nach der Lage: klaeren = sie will noch Eckdaten besprechen (Preis, Verpflegung, Wuensche); auswahl = sie will mit dem Bisherigen gleich eine erste Auswahl sehen" },
           vorgehen: { type: "string", enum: ["top3", "selbst"], description: "top3 = du sollst ihr Favoriten raussuchen; selbst = du stellst die Filter ein und die Person schaut selbst durch die Liste" },
           anzahlVorschlaege: zahl("Wie viele Haeuser sie vorgelegt haben will, wenn sie eine Zahl nennt (2 bis 6). Ohne Angabe leer lassen."),
           naechte: zahl("Zahl der Naechte"),
@@ -124,7 +125,7 @@ const Werkzeugkasten = {
         {}),
       f("freigabe_aendern",
         "Setzt die Freigabestufe, wenn die Person im Gespraech sagt, dass du mehr (oder weniger) darfst.",
-        { stufe: { type: "string", enum: ["vorschlagen", "suchen", "vorbereiten", "buchen"] } }, ["stufe"]),
+        { stufe: { type: "string", enum: ["suchen", "vorbereiten", "buchen"] } }, ["stufe"]),
     ];
   },
 
@@ -510,6 +511,7 @@ const Werkzeugkasten = {
         const n = Math.max(2, Math.min(6, a.anzahlVorschlaege));
         if (n !== p.anzahlVorschlaege) { setze("anzahlVorschlaege", n); kern.notieren("anzahl_vorschlaege", { anzahl: n }); }
       }
+      if (a.beratung) { setze("beratung", a.beratung); kern.notieren("beratung", { wahl: a.beratung }); }
       if (a.vorgehen) { setze("vorgehen", a.vorgehen); kern.notieren("vorgehen", { wahl: a.vorgehen, freigabe: kern.freigabe(), anzahl: p.anzahlVorschlaege || 3 }); }
       // Budget fuer die ganze Reise in einen Preis pro Nacht umrechnen,
       // wie auf der Seite gerechnet wird (Servicegebuehr 35 Euro)
@@ -640,7 +642,11 @@ const Werkzeugkasten = {
             kern.lauf.lageImZug = lage;
             kern.notieren("lage_gesagt", { haeuser: liste.length });
             return { ...basis, haeuser: "noch nicht - erst die Beratung",
-              hinweis: "Die Lage steht schon im Chat (nicht wiederholen, keine Zahlen noch einmal). Hoechstens ein Satz aus deinem Wissen zu Klima oder Charakter der Regionen, dann das naechste Thema.",
+              // Kein Kommentar zu den Zahlen der Lage. Das Modell haengte
+              // sonst Bewertungen an ("Kinderclubs sind eher selten"),
+              // obwohl niemand nach Kinderclubs gefragt hatte - das liest
+              // sich, als haette der Agent eine eigene Meinung dazu.
+              hinweis: `Die Lage steht schon im Chat: nicht wiederholen, keine Zahlen noch einmal, und die Zahlen auch nicht bewerten oder einordnen. ${p.zielId ? "Das Ziel steht fest - kein Satz ueber Regionen." : "Hoechstens ein Satz aus deinem Wissen zu Klima oder Charakter der Regionen."} Dann das naechste Thema.`,
               ...Werkzeugkasten.fahrplanFuerModell(Werkzeugkasten.fahrplan(p, kern.lauf), p) };
           }
           return { ...basis, haeuser: "noch nicht - erst die Beratung",
@@ -1269,6 +1275,7 @@ const Werkzeugkasten = {
     flug: { frage: "Ob ein Flug dazu soll oder nur die Unterkunft. Sag in einem Halbsatz dazu, dass mit Flug der Anreisetag von den Flugtagen der Verbindung abhaengt.", chips: "Mit Flug | Nur die Unterkunft" },
     flugAb: { frage: "Von welchem Flughafen: Hamburg, Stuttgart, Duesseldorf, Hannover, Muenchen, Koeln, Frankfurt oder Berlin. Klasse nicht fragen - Economy ist gerechnet, sie kann es spaeter aendern.", chips: null },
     anreise: { frage: "An welchem Tag sie anreisen will. Der Monat und die Dauer stehen fest, der Tag fehlt - nenn zwei, drei moegliche Termine aus den Chips und frag, welcher passt. Keinen selbst aussuchen.", chips: null },
+    beratung: { frage: "Ob ihr noch ein paar Eckdaten klaert - Preis, Verpflegung, worauf es ihr ankommt (beratung klaeren) - oder ob du ihr mit dem, was du hast, gleich eine erste Auswahl zeigst (beratung auswahl). Beides gleichwertig anbieten.", chips: "Noch ein paar Eckdaten | Erstmal eine Auswahl" },
     vorgehen: { frage: "Ob du die Filter so einstellst und sie selbst durch die Liste schaut (vorgehen selbst), oder ob du ihr Haeuser zur Auswahl raussuchst (vorgehen top3) - und wenn ja, wie viele; drei sind ueblich, zwei bis sechs gehen. Beides gleichwertig anbieten, die Zahl im selben Satz.", chips: "Ich schaue selbst | Such mir drei raus | Lieber fünf" },
     preis: { frage: "Ob sie beim Preis schon eine feste Grenze hat (pro Nacht oder gesamt) oder offen ist. Nicht 'wie viel darf es kosten' fragen. Offen heisst preisEgal true. Die Preisspanne aus der Lage darfst du nennen.", chips: "Feste Grenze | Offen" },
     verpflegung: { frage: "Welche Verpflegung es sein soll: All Inclusive oder Halbpension (oder nur Fruehstueck, oder egal). Nenn dazu, was All Inclusive im Schnitt mehr kostet und wie viele Haeuser es anbieten - die Zahlen stehen in verpflegungsLage. 'Egal' heisst verpflegungEgal true.", chips: "All Inclusive | Halbpension | Nur Frühstück | Egal" },
@@ -1321,6 +1328,7 @@ const Werkzeugkasten = {
       flug: p.flug != null || p.typ === "apartment",
       flugAb: !p.flug || !!p.flugAb || p.typ === "apartment",
       vorgehen: !!p.vorgehen,
+      beratung: !!p.beratung || !!b.beratung,
       preis: !!(p.maxPreis || p.budgetGesamt || p.preisEgal || b.preis),
       verpflegung: !!(p.verpflegung || p.verpflegungEgal || b.verpflegung || p.typ === "apartment"),
       wuensche: !!((p.kriterien || []).length || p.ausstattungEgal || b.wuensche),
@@ -1335,7 +1343,10 @@ const Werkzeugkasten = {
     const KERN = ["zeit", "reisende", "kinderAlter", "ziel", "art"];
     const ECKDATEN = ["dauer", "flug", "flugAb"];
     // Verpflegung nur bei Hotels - eine Ferienwohnung hat keine
-    const BERATUNG = (p.typ === "apartment" ? ["preis", "wuensche"] : ["preis", "verpflegung", "wuensche"]).concat("anreise");
+    // Wer gleich eine Auswahl sehen will, bekommt sie - der Anreisetag
+    // bleibt trotzdem, ohne ihn laesst die Seite nicht buchen.
+    const BESPRECHEN = p.typ === "apartment" ? ["preis", "wuensche"] : ["preis", "verpflegung", "wuensche"];
+    const BERATUNG = (p.beratung === "auswahl" ? [] : BESPRECHEN).concat("anreise");
     const kernFertig = KERN.every((t) => fertig[t]);
     const suchbereit = fertig.zeit && fertig.reisende && fertig.kinderAlter;
     const schluessel = this.eckdatenSchluessel(p);
@@ -1354,12 +1365,23 @@ const Werkzeugkasten = {
     // Vor der Wahl des Vorgehens wird bei geaenderten Eckdaten neu gesucht
     // (die Lage soll stimmen); danach erst wieder zur Vorlage bzw. Liste -
     // sonst liefe mitten in der Beratung nach jeder Antwort die Maske
-    else if (!gesucht && !fertig.vorgehen) phase = "suche";
-    else if (!fertig.vorgehen) { naechstes = "vorgehen"; phase = "beratung"; }
-    else if (p.vorgehen === "selbst") phase = "selbst";
+    else if (!gesucht && !fertig.beratung) phase = "suche";
+    /* Nach der Lage kommt nicht die Frage nach dem Vorgehen.
+       ------------------------------------------------------------------
+       Bis zum 25.09.2026 stand dort "selbst schauen oder soll ich dir drei
+       raussuchen?" - und danach fragte der Agent doch noch Preis,
+       Verpflegung und Wuensche ab. Die Person hatte also ueber das
+       Vorgehen zu entscheiden, bevor klar war, worum es geht. Jetzt steht
+       dort die passende Frage: noch ein paar Eckdaten klaeren oder gleich
+       eine erste Auswahl sehen. Wie ausgewaehlt wird (selbst oder durch
+       den Agenten), kommt zum Schluss, wenn alles besprochen ist. */
+    else if (!fertig.beratung) { naechstes = "beratung"; phase = "beratung"; }
     else {
-      naechstes = [...ECKDATEN, ...BERATUNG].find((t) => !fertig[t]) || null;
-      phase = naechstes ? "beratung" : "vorschlaege";
+      const offen = [...ECKDATEN, ...BERATUNG].find((t) => !fertig[t]) || null;
+      if (offen) { naechstes = offen; phase = "beratung"; }
+      else if (!fertig.vorgehen) { naechstes = "vorgehen"; phase = "beratung"; }
+      else if (p.vorgehen === "selbst") phase = "selbst";
+      else phase = "vorschlaege";
     }
     let frage = naechstes ? this.THEMEN[naechstes]?.frage : null;
     let chips = naechstes ? this.THEMEN[naechstes]?.chips : null;
@@ -1426,8 +1448,8 @@ const Werkzeugkasten = {
       else if (p.erwachsene != null && p.kinder == null) { frage = "Ob Kinder mitreisen - und wenn ja, wie viele und wie alt."; chips = "Keine Kinder | Ein Kind | Zwei Kinder"; }
       else if (p.kinder != null && p.erwachsene == null) { frage = "Wie viele Erwachsene mitreisen."; chips = "1 | 2 | 3 | 4 oder mehr"; }
     }
-    const empfehlungBereit = p.vorgehen === "top3" && fertig.preis && fertig.verpflegung && fertig.wuensche
-      && fertig.dauer && fertig.flug && fertig.flugAb && fertig.anreise;
+    const empfehlungBereit = p.vorgehen === "top3" && BERATUNG.every((t) => fertig[t])
+      && fertig.dauer && fertig.flug && fertig.flugAb;
     return { fertig, naechstes, frage, chips, phase, suchbereit, eckdatenFertig, gesucht, schluessel, empfehlungBereit,
       ueberblickOffen: false, fehlt: [...KERN, ...ECKDATEN].filter((t) => !fertig[t]) };
   },
