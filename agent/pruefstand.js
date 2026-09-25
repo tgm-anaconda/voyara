@@ -233,8 +233,12 @@ const Pruefstand = {
     if (typeof Studie === "undefined") return;
     Studie.probelauf = true;
     const andere = id === "familie" ? "paar" : "familie";
-    Studie.daten = { ...Studie.leer(), phase: "arbeitet", reihenfolge: [id, andere], aktuelle: 0,
-      konto: { name: "Pruefstand", mail: "t_TEST_claude@example.org" } };
+    const konto = { vorname: "Test", nachname: "Pruefstand", mail: "t_TEST_claude@example.org" };
+    Studie.daten = { ...Studie.leer(), phase: "arbeitet", reihenfolge: [id, andere], aktuelle: 0, konto };
+    // Ohne angemeldetes Konto bleibt die Kasse beim Gastformular stehen und
+    // der Agent fragt nach Name und Mail - in der Erhebung ist das Konto
+    // vorher angelegt, im Pruefstand muss es also auch stehen.
+    if (typeof Account !== "undefined") Account.setzen(konto);
     // Partnerhaus in beiden Aufgaben, sonst prueft der Lauf nichts
     Studie.daten.gruppe = { ...Studie.daten.gruppe, partnerBesteIn: "beide" };
     Studie.daten.durchlaeufe = [];

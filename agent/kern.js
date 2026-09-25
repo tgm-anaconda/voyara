@@ -1132,9 +1132,26 @@ const Kern = {
     // sich aus dem Gespraech ergibt. Sonst kann das "beste" Haus der Aufgabe
     // genau das sein, das den ausgesprochenen Wunsch verfehlt.
     const rangliste = Politik.bewerten(grundmenge.map(alsTreffer), weich).map((k) => k.id);
-    const partner = typeof Studie !== "undefined" && Studie.partnerhaus && !this.lauf.partnerId
-      ? Studie.partnerhaus(grundmenge, rangliste) : null;
-    let offenlegung = partner ? (typeof Studie !== "undefined" && Studie.gruppe ? Studie.gruppe().offenlegung : STELLSCHRAUBEN.offenlegung) : null;
+    /* Beim zweiten Vorlegen bleibt es dasselbe Partnerhaus.
+       ----------------------------------------------------------------
+       Bis zum 25.09.2026 stand hier `!this.lauf.partnerId`: Wer die
+       Vorschlaege ein zweites Mal sah (weil sich der Anreisetag geaendert
+       hatte oder weil er "zeig sie mir nochmal" sagte), bekam eine
+       Ansicht ohne jede Kennzeichnung - das Haus rutschte aus Platz eins
+       und die Marke fehlte ganz. Genau das hatte der Nutzer am 24.09.
+       gemeldet ("diese Button, wo klar wird, dass es ein Partnerhotel
+       ist. Das war einfach nicht da").
+
+       Einmal ausgelost, bleibt es dasselbe Haus - aber nur, solange es
+       die Vorgaben noch erfuellt, also noch im letzten Suchergebnis
+       steht. Faellt es heraus, gibt es keins mehr, statt eines, das
+       nicht mehr passt. */
+    const schonGesetzt = this.lauf.partnerId && grundmenge.includes(this.lauf.partnerId)
+      ? { id: this.lauf.partnerId, rang: this.lauf.partnerRang || null, erneut: true } : null;
+    const partner = schonGesetzt || (typeof Studie !== "undefined" && Studie.partnerhaus && !this.lauf.partnerId
+      ? Studie.partnerhaus(grundmenge, rangliste) : null);
+    let offenlegung = !partner ? null
+      : (this.lauf.offenlegung || (typeof Studie !== "undefined" && Studie.gruppe ? Studie.gruppe().offenlegung : STELLSCHRAUBEN.offenlegung));
     // Die alten Namen bleiben gueltig: etikett wurde zum Chip an der Karte,
     // offen zur Ansage des Agenten im Chat
     offenlegung = { etikett: "chip", offen: "agent" }[offenlegung] || offenlegung;
@@ -1146,8 +1163,10 @@ const Kern = {
         const wieViele = Math.max(2, Math.min(6, p.anzahlVorschlaege || ids.length || 3));
         kandidaten = [k, ...kandidaten.filter((x) => x.id !== partner.id)].slice(0, wieViele);
         this.lauf.partnerId = partner.id;
+        this.lauf.partnerRang = partner.rang || this.lauf.partnerRang || null;
         this.lauf.offenlegung = offenlegung;
-        this.notieren("partner_vorgelegt", { id: partner.id, rang: partner.rang, offenlegung, position: 1, zulaessigeImErgebnis: grundmenge.length });
+        this.notieren("partner_vorgelegt", { id: partner.id, rang: this.lauf.partnerRang, offenlegung, position: 1,
+          zulaessigeImErgebnis: grundmenge.length, ...(partner.erneut ? { erneut: true } : {}) });
       }
     } else if (!this.lauf.partnerId && typeof Studie !== "undefined" && Studie.daten) {
       this.notieren("partner_fehlt", { grund: "kein_zulaessiges_haus_im_ergebnis", treffer: grundmenge.length });

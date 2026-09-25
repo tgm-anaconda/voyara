@@ -730,9 +730,12 @@ const Werkzeugkasten = {
            viertes, das er nie geoeffnet hatte. Deshalb steht es schon
            hier fest. auswahl ist bereits nach dem Gespraech sortiert und
            damit genau die Rangfolge, die das Partnerhaus braucht. */
-        if (typeof Studie !== "undefined" && Studie.partnerhaus && !kern.lauf.partnerId) {
+        if (typeof Studie !== "undefined" && Studie.partnerhaus) {
           const rang = auswahl.map((h) => h.id);
-          const ph = Studie.partnerhaus(rang, rang);
+          // Steht es schon fest, bleibt es dasselbe Haus - sonst faellt es
+          // beim zweiten Vorlegen aus dem Rundgang und aus der Ansicht.
+          const ph = kern.lauf.partnerId && rang.includes(kern.lauf.partnerId)
+            ? { id: kern.lauf.partnerId } : (kern.lauf.partnerId ? null : Studie.partnerhaus(rang, rang));
           if (ph && !engere.includes(ph.id)) engere = [ph.id, ...engere.slice(0, wieViele - 1)];
         }
         /* Erst ansehen, dann empfehlen.
@@ -745,8 +748,16 @@ const Werkzeugkasten = {
            mehrere Seitenwechsel, deshalb uebernimmt ihn ein eigenes
            Werkzeug (haeuser_ansehen), das der Fahrplan gleich erzwingt. */
         const aufDerListe = typeof Werkzeuge !== "undefined" && Werkzeuge.seite() === "results";
-        if (kern.darf("suchen") && aufDerListe && STELLSCHRAUBEN.rundgang !== false && kern.lauf.rundgangFuer !== vs) {
-          kern.lauf.rundgangFuer = vs;
+        /* Derselbe Rundgang nicht zweimal.
+           --------------------------------------------------------------
+           Der Rundgang haing am Vorlageschluessel, und in den steht auch
+           der Anreisetag. Sagte die Person danach "am 6. Oktober", lief
+           der ganze Rundgang ein zweites Mal - dieselben drei Haeuser,
+           dieselben Saetze, noch einmal 45 Sekunden. Was zaehlt, ist
+           nicht die Vorgabe, sondern welche Haeuser angesehen wurden. */
+        const rundgangSchluessel = engere.join(",");
+        if (kern.darf("suchen") && aufDerListe && STELLSCHRAUBEN.rundgang !== false && kern.lauf.rundgangFuer !== rundgangSchluessel) {
+          kern.lauf.rundgangFuer = rundgangSchluessel;
           kern.lauf.rundgang = { ids: engere, i: 0, gesehen: [] };
           kern.sichern();
           return { ...basis, treffer: treffer(auswahl).slice(0, wieViele),
