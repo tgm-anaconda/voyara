@@ -685,7 +685,9 @@ const Kern = {
     }
     // "Zeig die Vorschlaege nochmal" oeffnet die Ansicht direkt, statt das
     // Modell darum zu bitten - es hat die Karten gar nicht in der Hand.
-    if (/^(zeig|zeige)\b.*(vorschl|auswahl)|vorschl[aä]ge (nochmal|noch einmal|wieder)/i.test(t) && (this.lauf.letzteVorlage || []).length) {
+    const willSehen = (/(vorschl[aä]ge?|auswahl)\b/i.test(t) || /\bdie (drei|vier|fünf|fuenf|sechs)\b/i.test(t))
+      && /(nochmal|noch einmal|wieder|zeig|sehen|ansehen|anschauen|zurück|zurueck|wo sind)/i.test(t);
+    if (willSehen && (this.lauf.letzteVorlage || []).length) {
       this.sagen(t, "user");
       this.gespraechPush({ role: "user", content: t });
       this.vorschlaegeNochmal("chip");
@@ -898,7 +900,11 @@ const Kern = {
             // Frage wirkt, als haette der Agent nicht zugehoert.
             this.lauf.gefragtWie = this.lauf.gefragtWie || {};
             this.lauf.gefragtWie[fp.naechstes] = (this.lauf.gefragtWie[fp.naechstes] || 0) + 1;
-            this.notieren("thema_gefragt", { thema: fp.naechstes, phase: fp.phase, mal: this.lauf.gefragtWie[fp.naechstes] });
+            // Der Fragesatz selbst wird mitgeschrieben: Beim zweiten Anlauf
+            // muss er anders klingen, und das laesst sich nur nachpruefen,
+            // wenn beide Fassungen dastehen.
+            const fragesatz = (text.split(/(?<=[.!?])\s+/).filter((x) => /\?/.test(x)).pop() || text).slice(0, 220);
+            this.notieren("thema_gefragt", { thema: fp.naechstes, phase: fp.phase, mal: this.lauf.gefragtWie[fp.naechstes], frage: fragesatz });
           }
           // Chips nur, wo das Thema welche vorsieht - das Modell haengt sonst
           // an jede Frage Vorschlaege, die die Person in eine Richtung draengen
@@ -1186,7 +1192,7 @@ const Kern = {
     // sich als Stellschraube variieren und messen.
     if (STELLSCHRAUBEN.vorschlag === "ansicht" && typeof Vorschlaege !== "undefined") {
       const gezeigtA = this.vorschlagsansicht(kandidaten);
-      return { ergebnis: { vorgelegt: gezeigtA, hinweis: "Die Vorschlaege liegen als eigene Ansicht ueber der Seite, mit Bild, Preis und Teilnoten. Sag in einem Satz, dass sie da sind und dass die Person dir jederzeit Fragen stellen oder selbst weitersuchen kann. Zaehl die Haeuser nicht auf." }, log: null };
+      return { ergebnis: { vorgelegt: gezeigtA, hinweis: "Die Vorschlaege liegen als eigene Ansicht VOR der Person, mit Bild, Preis und Teilnoten - nicht in der Trefferliste. Sag in einem Satz, dass sie da sind, und frag, welches sie sich ansehen moechte. Das Wort 'Liste' passt hier nicht. Zaehl die Haeuser nicht auf, wiederhole keine Zahlen, und frag nicht offen 'Was moechtest du?'." }, log: null };
     }
 
     const gezeigt = [];

@@ -72,7 +72,18 @@ const Vorschlaege = {
       if (auf) kern.notieren("partner_info_geoeffnet", { id: b.dataset.info, sekunden: Math.round((Date.now() - this.geoeffnet) / 1000) });
     }));
 
-    kern.notieren("vorschlagsansicht", { ids: kandidaten.map((k) => k.id), partner: kandidaten.find((k) => k.partner)?.id || null, offenlegung });
+    /* Die Ansicht prueft sich selbst.
+       ----------------------------------------------------------------
+       Ein Partnerhaus ohne sichtbare Kennzeichnung waere ein stiller
+       Ausfall der Manipulation: Im Protokoll stuende, dass es vorgelegt
+       wurde, auf dem Bildschirm waere nichts davon zu sehen, und in der
+       Auswertung liesse sich das nicht mehr unterscheiden. Deshalb steht
+       hier, was wirklich im Dokument steht. */
+    const partnerId = kandidaten.find((k) => k.partner)?.id || null;
+    const marke = !!el.querySelector(".vorschlag-karte.ist-partner") && /Partnerhaus/.test(el.textContent || "");
+    kern.notieren("vorschlagsansicht", { ids: kandidaten.map((k) => k.id), partner: partnerId, offenlegung,
+      karten: kandidaten.length, marke: partnerId ? marke : null });
+    if (partnerId && !marke) kern.notieren("partner_ohne_marke", { id: partnerId });
   },
 
   karte(k, i, offenlegung) {

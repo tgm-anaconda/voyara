@@ -482,7 +482,13 @@ const Werkzeugkasten = {
          ganzen Monat frei, fuer die Buchung brauchen wir den Tag." Der
          Tag war laengst gesagt, nur nicht in der Suche. Jetzt traegt ihn
          die Maske, und alles dahinter rechnet mit echten Daten. */
-      if (p.anreise && p.naechte && !(p.von && p.bis)) {
+      /* Auch wenn schon Daten stehen: Nennt die Person spaeter einen
+         anderen Tag, muss der gelten. Bis zum 25.09.2026 stand hier
+         `!(p.von && p.bis)`, und weil der Kern nach zwei vergeblichen
+         Anlaeufen selbst einen Tag annimmt, wurde dann der 1. gebucht,
+         obwohl "am 8. August" im Chat stand. Eine Annahme darf eine
+         Aussage nie schlagen. */
+      if (p.anreise && p.naechte && (!(p.von && p.bis) || p.von !== p.anreise)) {
         const ab = new Date(p.anreise);
         if (!Number.isNaN(ab.getTime())) {
           p.von = p.anreise;
@@ -592,7 +598,7 @@ const Werkzeugkasten = {
       kern.lauf.ueberblickGezeigt = true;
       kern.notieren("vorabsuche", { regionen: regionen.map((r) => `${r.id}:${r.haeuser}`), gesamt, weg: "katalog" });
       return {
-        ergebnis: { hinweis: "Haeuser, die im Zeitraum fuer die Gruppe buchbar sind - noch ohne Wuensche wie Pool oder Strand. Schildere die Lage in drei Saetzen (Regionen mit Zahlen, dein Wissen zu Klima und Art der Ziele darfst du dazunehmen), dann das naechste Thema.", insgesamt: gesamt, regionen,
+        ergebnis: { hinweis: "Haeuser, die im Zeitraum fuer die Gruppe buchbar sind - noch ohne Wuensche wie Pool oder Strand. Schildere die Lage in drei Saetzen (Regionen mit Zahlen, dein Wissen zu Klima und Art der Ziele darfst du dazunehmen), dann das naechste Thema. Sag nichts ueber Verpflegung, Ausstattung oder Wuensche (Pool, Kinderclub, All Inclusive, Wellness), solange die Person davon nicht selbst gesprochen hat - sonst steht ein Thema im Raum, das niemand aufgemacht hat.", insgesamt: gesamt, regionen,
           ...Werkzeugkasten.fahrplanFuerModell(Werkzeugkasten.fahrplan(p, kern.lauf), p) },
         log: `Im Katalog nachgesehen: ${gesamt} Häuser in ${regionen.length} Regionen (${regionen.slice(0, 4).map((r) => `${r.name} ${r.haeuser}`).join(", ")})`,
       };
@@ -698,7 +704,7 @@ const Werkzeugkasten = {
           }
           return { ...basis, haeuser: "noch nicht - erst die Beratung",
             hinweis: (fp.phase === "suche" || !fp.gesucht
-              ? "Schildere die Lage in zwei, drei Saetzen: wie viele Haeuser, in welchen Regionen (mit Zahlen), Preisspanne pro Nacht - dein Wissen zu Klima und Art der Regionen darfst du dazunehmen. Dann das naechste Thema."
+              ? "Schildere die Lage in zwei, drei Saetzen: wie viele Haeuser, in welchen Regionen (mit Zahlen), Preisspanne pro Nacht - dein Wissen zu Klima und Art der Regionen darfst du dazunehmen. Dann das naechste Thema. Sag nichts ueber Verpflegung, Ausstattung oder Wuensche (Pool, Kinderclub, All Inclusive, Wellness), solange die Person davon nicht selbst gesprochen hat - sonst steht ein Thema im Raum, das niemand aufgemacht hat."
               : "Nenn, was sich an der Lage geaendert hat (Zahlen), dann das naechste Thema.") + (p.naechte ? "" : " Die Dauer ist noch offen; gerechnet ist eine Woche - sag das in einem Halbsatz."),
             ...Werkzeugkasten.fahrplanFuerModell(Werkzeugkasten.fahrplan(p, kern.lauf), p) };
         }
@@ -1072,7 +1078,10 @@ const Werkzeugkasten = {
         kern.logZeile(`Sehe mir ${r.ids.length} Häuser der Reihe nach an`, "schritt");
         // Die Ansage kommt vom Kern, nicht vom Modell - sie soll stimmen
         // und immer da sein, auch wenn das Modell gerade nichts schreibt.
-        kern.sagen(`Ich sehe mir die ${r.ids.length} Häuser jetzt der Reihe nach an: Bewertungen, Zimmer, Verpflegung. Nach jedem sage ich dir Bescheid.`);
+        // "die 1 Häuser" stand so im Chat, als nur ein Haus uebrigblieb
+        kern.sagen(r.ids.length === 1
+          ? `Ich sehe mir das Haus jetzt an: Bewertungen, Zimmer, Verpflegung.`
+          : `Ich sehe mir die ${r.ids.length} Häuser jetzt der Reihe nach an: Bewertungen, Zimmer, Verpflegung. Nach jedem sage ich dir Bescheid.`);
         // Die Adresse der Liste festhalten. Der Brotkrumenpfad auf der
         // Hausseite fuehrt zu "results.html?type=hotel" - ohne Monat,
         // Dauer und Reisende. Danach stand die Liste auf 184 von 184

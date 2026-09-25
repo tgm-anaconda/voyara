@@ -155,7 +155,7 @@ const Pruefstand = {
     "wert_verworfen", "zwei_fragen_gekuerzt",
     // seit 25.09.: Griffe daneben, die den Ausgang der Erhebung treffen
     "fremdes_haus", "haus_korrigiert", "argumente_repariert",
-    "falsche_hausseite", "falsche_buchungsseite"],
+    "falsche_hausseite", "falsche_buchungsseite", "partner_ohne_marke"],
   // Kein Fehler, aber aufschlussreich: wie oft der Kern ein Werkzeug erzwingen
   // musste, weil das Modell es nicht von sich aus rief
   NOTIZ: ["zwang", "gesperrt", "uebernahme", "stopp", "thema_uebersprungen"],
@@ -347,7 +347,15 @@ const Pruefstand = {
     // Buchungsansage, Rundgangsmeldung) sind gewollt lang und tragen
     // feste Zahlen - sie als Stilfehler zu zaehlen, verwaessert die Quote.
     const modell = bot.filter((n) => n.vomModell);
-    const nutzerText = alle.filter((n) => n.rolle === "user").map((n) => n.text || "").join(" \n ");
+    /* Was die Person bis zu einer bestimmten Nachricht gesagt hatte.
+       Der ganze Verlauf taugt dafuer nicht: Wenn sie den Pool erst drei
+       Zuege spaeter nennt, war er beim Agenten trotzdem unmotiviert. */
+    const bisHier = new Map();
+    let bisher = "";
+    for (const n of alle) {
+      if (n.rolle === "user") bisher += " \n " + (n.text || "");
+      else bisHier.set(n, bisher);
+    }
     const prot = lauf.protokoll || [];
     const roh = {};
     const notiz = {};
@@ -357,8 +365,20 @@ const Pruefstand = {
     }
     // Dasselbe Thema zweimal gefragt: fuer die Person der deutlichste
     // Hinweis, dass ihr nicht zugehoert wurde
-    const zweimal = prot.filter((e) => e.ereignis === "thema_gefragt" && (e.mal || 1) > 1);
+    const gefragt = prot.filter((e) => e.ereignis === "thema_gefragt");
+    const zweimal = gefragt.filter((e) => (e.mal || 1) > 1);
     if (zweimal.length) roh.thema_zweimal = zweimal.length;
+    /* Ein zweiter Anlauf ist erlaubt - er muss nur anders klingen.
+       Der Nutzer hatte genau das verlangt: nicht "wieder genau die
+       gleiche Frage", sondern nachfassen, ob noch etwas offen ist. Als
+       Fehler zaehlt deshalb nicht das zweite Fragen, sondern das
+       woertliche Wiederholen. */
+    const woertlich = [];
+    for (const e of zweimal) {
+      const vorher = gefragt.filter((x) => x.thema === e.thema && (x.mal || 1) < (e.mal || 1)).pop();
+      if (!vorher?.frage || !e.frage) continue;
+      if (this.aehnlich(vorher.frage, e.frage) >= 0.8) woertlich.push({ thema: e.thema, frage: e.frage.slice(0, 160) });
+    }
 
     const belege = this.kern.belege();
     const rest = [];
@@ -380,7 +400,7 @@ const Pruefstand = {
       // Ein Thema anschneiden, das im Gespraech nie vorkam
       for (const th of this.THEMEN) {
         if (!th.bot.test(t)) continue;
-        if (th.nutzer.test(nutzerText)) continue;
+        if (th.nutzer.test(bisHier.get(n) || "")) continue;
         if ((p.wuensche || []).some((w) => th.nutzer.test(String(w)))) continue;
         if ((p.kriterien || []).some((w) => th.nutzer.test(String(w)))) continue;
         // In einer Frage darf der Agent Beispiele nennen ("Pool, Strand, Ruhe?")
@@ -395,7 +415,9 @@ const Pruefstand = {
         if (norm.length > 25) gesehen.push(norm);
       }
     }
-    for (const z of zweimal) rest.push({ art: "frage_wiederholt", thema: z.thema });
+    for (const w of woertlich) rest.push({ art: "frage_woertlich_wiederholt", thema: w.thema, text: w.frage });
+    // Ab dem dritten Anlauf ist auch eine neue Formulierung keine Entschuldigung
+    for (const z of zweimal.filter((x) => (x.mal || 1) >= 3)) rest.push({ art: "frage_dreimal", thema: z.thema });
 
     // Was auf dem Bildschirm auffiel
     const sicht = (this.stand()?.sicht || []).filter((x) => x.gespraech === g.id);
@@ -493,6 +515,16 @@ const Pruefstand = {
     return funde;
   },
 
+  /* Wie aehnlich sind zwei Fragen? Anteil gemeinsamer Woerter, bezogen
+     auf die kuerzere. 1 heisst woertlich gleich. */
+  aehnlich(a, b) {
+    const wort = (x) => String(x).toLowerCase().replace(/[^a-zäöüß ]/g, " ").split(/\s+/).filter((w) => w.length > 2);
+    const A = wort(a); const B = new Set(wort(b));
+    if (!A.length || !B.size) return 0;
+    const treffer = A.filter((w) => B.has(w)).length;
+    return Math.round(treffer / Math.min(A.length, B.size) * 100) / 100;
+  },
+
   fertig() {
     sessionStorage.removeItem(this.SCHLUESSEL);
     this.aufgabeRaeumen();
@@ -515,7 +547,7 @@ const Pruefstand = {
     // Restfehler ist einer (ein Ausrufezeichen faellt niemandem auf)
     const SCHWER = ["gebucht_nicht_vorgeschlagen", "buchung_verletzt_vorgaben", "partner_ohne_marke",
       "partner_ohne_wort", "partner_fehlt_in_vorlage", "platz1_gegen_wunsch", "haus_nicht_angesehen",
-      "frage_wiederholt", "unmotiviertes_thema", "anzahl_vorschlaege_falsch", "fremde_zahl",
+      "frage_woertlich_wiederholt", "frage_dreimal", "unmotiviertes_thema", "anzahl_vorschlaege_falsch", "fremde_zahl",
       "nicht_gebucht", "karte_ohne_bild", "karte_ohne_preis", "zwei_fragen", "gesiezt"];
     const schwer = {};
     for (const x of e) for (const r of x.restfehler) if (SCHWER.includes(r.art)) schwer[r.art] = (schwer[r.art] || 0) + 1;
