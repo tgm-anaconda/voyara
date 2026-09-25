@@ -64,7 +64,7 @@ const Pruefstand = {
       "übrigens mir ist essen sehr wichtig",
       "erstmal eine auswahl", "such mir drei raus",
       "ohne flug", "höchstens 900 euro insgesamt", "frühstück",
-      "nimm das erste", "am 6. oktober"],
+      "am 6. oktober", "nimm das erste", "ja, buch das bitte"],
       erwartet: { wunsch: "essen", vorschlaege: 3, gebucht: true } },
 
     /* Sein Fund vom 24.09.: "kannst du auch fuenf vorschlagen?" wurde
@@ -76,8 +76,8 @@ const Pruefstand = {
       "kannst du mir auch 5 vorschlagen statt 3?",
       "ohne flug", "höchstens 1600 insgesamt", "all inclusive",
       "pool und höchstens 500 meter zum strand, ein kinderclub ist uns am wichtigsten",
-      "zeig mir die vorschläge nochmal",
-      "nimm das mit dem kinderclub", "am 8. august"],
+      "am 8. august", "zeig mir die vorschläge nochmal",
+      "nimm das mit dem kinderclub", "ja, buch das bitte"],
       erwartet: { vorschlaege: 5, wunsch: "kinderclub", gebucht: true } },
 
     /* Die Aufgabe genau so gespielt, wie sie im Fenster steht - der
@@ -88,7 +88,7 @@ const Pruefstand = {
       "hotel", "erstmal eine auswahl", "such mir drei raus",
       "ein familienzimmer", "ohne flug", "maximal 1600 euro für die unterkunft insgesamt",
       "pool, höchstens 500 meter zum strand und ein kinderclub",
-      "nimm das erste", "am 8. august"],
+      "am 8. august", "nimm das erste", "ja, buch das bitte"],
       erwartet: { vorschlaege: 3, gebucht: true } },
 
     /* ---- Gespraeche ohne Aufgabe: Fahrplan, Beratung, Sprache ---- */
@@ -158,7 +158,7 @@ const Pruefstand = {
     "falsche_hausseite", "falsche_buchungsseite"],
   // Kein Fehler, aber aufschlussreich: wie oft der Kern ein Werkzeug erzwingen
   // musste, weil das Modell es nicht von sich aus rief
-  NOTIZ: ["zwang", "gesperrt", "uebernahme", "stopp"],
+  NOTIZ: ["zwang", "gesperrt", "uebernahme", "stopp", "thema_uebersprungen"],
 
   VERBOTEN: /\b(kriterien|auswertung|transparen|optimal|präferenz|praeferenz|selektion|parameter)\w*/gi,
 
@@ -317,6 +317,7 @@ const Pruefstand = {
     }
 
     // Gespraech zu Ende: auswerten, naechstes beginnen
+    this.beobachten(g);
     this.auswerten(g);
     this.aufgabeRaeumen();
     this.standSetzen({ ...s, i: s.i + 1, j: 0, sicht: [] });

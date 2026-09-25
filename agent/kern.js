@@ -882,6 +882,15 @@ const Kern = {
         if (!nachricht.tool_calls) {
           // Welches Thema des Fahrplans der Agent damit gefragt hat
           const fp = Werkzeugkasten.fahrplan(this.lauf.profil || {}, this.lauf);
+          // Themen, auf die zweimal keine Antwort kam: der Kern nimmt das
+          // Naheliegende an und geht weiter. Fuer die Auswertung zaehlt,
+          // wie oft das noetig war.
+          this.lauf.uebersprungenNotiert = this.lauf.uebersprungenNotiert || {};
+          for (const t of Object.keys(this.lauf.uebersprungen || {})) {
+            if (this.lauf.uebersprungenNotiert[t]) continue;
+            this.lauf.uebersprungenNotiert[t] = true;
+            this.notieren("thema_uebersprungen", { thema: t });
+          }
           if (fp.naechstes && /\?/.test(text)) {
             this.lauf.gefragt = fp.naechstes;
             // Wie oft dasselbe Thema schon gefragt wurde. Beim zweiten Mal

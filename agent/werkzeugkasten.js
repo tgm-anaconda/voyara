@@ -1420,6 +1420,46 @@ const Werkzeugkasten = {
          fragt die Buchungsstrecke danach, mit den echten Flugtagen. */
       anreise: !!p.anreise || !!(p.von && p.bis) || !!p.flug,
     };
+    /* Eine Frage wird hoechstens zweimal gestellt.
+       ------------------------------------------------------------------
+       Im Pruefstand vom 25.09.2026 stand dieselbe Frage bis zu achtmal
+       hintereinander im Chat, woertlich gleich. Die Person hatte jedes
+       Mal geantwortet - nur eben zu einem anderen Thema ("maximal 1600
+       Euro", "Pool und Kinderclub", "nimm das erste"), und das offene
+       Thema blieb offen. Der Agent wirkte dadurch taub, und das Gespraech
+       kam nicht bis zur Buchung.
+
+       Jetzt gilt: Wer zweimal nicht antwortet, will nicht antworten.
+       Der Kern nimmt dann das Naheliegende an, sagt es im naechsten Satz
+       und geht weiter. Keine Annahme ist endgueltig - die Person kann
+       jederzeit widersprechen, und der Stand in der Leiste zeigt, was
+       angenommen wurde. */
+    const ANNAHME = {
+      weiter: { setzen: (x) => { x.weiter = "schauen"; } },
+      beratung: { setzen: (x) => { x.beratung = "auswahl"; } },
+      vorgehen: { setzen: (x) => { x.vorgehen = "top3"; } },
+      ziel: { setzen: (x) => { x.zielOffen = true; } },
+      art: { setzen: (x) => { x.typ = x.typ || "hotel"; x.artGenannt = true; }, satz: "dass du bei den Hotels schaust" },
+      dauer: { setzen: (x) => { x.naechte = 7; }, satz: "dass du mit einer Woche rechnest" },
+      flug: { setzen: (x) => { x.flug = false; }, satz: "dass du ohne Flug suchst, nur die Unterkunft" },
+      flugAb: { setzen: (x) => { x.flug = false; }, satz: "dass du den Flug weglaesst" },
+      preis: { setzen: (x) => { x.preisEgal = true; }, satz: "dass du dich beim Preis nicht festlegst" },
+      verpflegung: { setzen: (x) => { x.verpflegungEgal = true; }, satz: "dass du die Verpflegung offen laesst" },
+      wuensche: { setzen: (x) => { x.ausstattungEgal = true; }, satz: "dass du keine besondere Ausstattung voraussetzt" },
+      anreise: { setzen: (x, wk) => {
+        const f = wk.flexWahl(x);
+        if (f) x.anreise = `${f.monat}-01`;
+      }, satz: "welchen Anreisetag du genommen hast und dass sie ihn jederzeit aendern kann" },
+    };
+    const angenommen = [];
+    for (const [t, a] of Object.entries(ANNAHME)) {
+      if (fertig[t] || (lauf.gefragtWie?.[t] || 0) < 2) continue;
+      a.setzen(p, this);
+      fertig[t] = true;
+      (lauf.uebersprungen ||= {})[t] = true;
+      if (a.satz) angenommen.push(a.satz);
+    }
+
     const KERN = ["zeit", "reisende", "kinderAlter", "ziel", "art"];
     const ECKDATEN = ["dauer", "flug", "flugAb"];
     // Verpflegung nur bei Hotels - eine Ferienwohnung hat keine
@@ -1473,9 +1513,6 @@ const Werkzeugkasten = {
        dieselbe Frage, direkt unter der Antwort auf den Einwurf - als
        haette es nicht zugehoert. Beim zweiten Mal wird erst nachgefasst,
        ob noch etwas offen ist, und die Frage danach angehaengt. */
-    if (naechstes && (lauf.gefragtWie?.[naechstes] || 0) >= 1) {
-      frage = `Sie hat auf diese Frage noch nicht geantwortet, sondern etwas anderes gesagt. Geh zuerst darauf ein, frag dann, ob damit alles gesagt ist oder noch etwas fehlt, und haeng die offene Frage in demselben Satz an: ${frage}`;
-    }
     // Ohne Freigabe fuer die Seite kann der Agent keine Filter stellen - dann
     // lautet die Wahl: selbst schauen (mit Filtertipps) oder drei genannt bekommen
     const darfSeite = typeof FREIGABE_RANG !== "undefined" && lauf.freigabe ? FREIGABE_RANG[lauf.freigabe] >= FREIGABE_RANG.suchen : true;
@@ -1528,10 +1565,37 @@ const Werkzeugkasten = {
       else if (p.erwachsene != null && p.kinder == null) { frage = "Ob Kinder mitreisen - und wenn ja, wie viele und wie alt."; chips = "Keine Kinder | Ein Kind | Zwei Kinder"; }
       else if (p.kinder != null && p.erwachsene == null) { frage = "Wie viele Erwachsene mitreisen."; chips = "1 | 2 | 3 | 4 oder mehr"; }
     }
+    /* Dieselbe Frage zum zweiten Mal.
+       ------------------------------------------------------------------
+       Wenn die Person auf eine Frage nicht antwortet, sondern etwas
+       einwirft ("uebrigens, mir ist gutes Essen sehr wichtig"), steht das
+       Thema danach immer noch offen. Das Modell stellte dann woertlich
+       dieselbe Frage, direkt unter der Antwort auf den Einwurf - als
+       haette es nicht zugehoert.
+
+       Dieser Block stand bis zum 25.09.2026 weiter oben und wurde von den
+       Sonderfaellen darunter (anreise, zeit, dauer, reisende) wieder
+       ueberschrieben. Genau dort trat der Fehler auf: Die Anreisefrage kam
+       viermal Wort fuer Wort gleich. Er gehoert ans Ende, nach allen
+       Sonderfaellen.
+
+       Die frueherere Formulierung liess das Modell ausserdem fragen, ob es
+       fragen soll ("Moechtest du noch etwas sagen, oder soll ich fragen,
+       ob ihr ein Hotel wollt?"). Deshalb steht jetzt ausdruecklich da,
+       dass die Frage anders klingen muss und keine Metafrage sein darf. */
+    if (naechstes && (lauf.gefragtWie?.[naechstes] || 0) >= 1) {
+      frage = `Sie ist auf diese Frage nicht eingegangen, sondern hat etwas anderes gesagt. Geh in einem Satz darauf ein und stell die Frage dann ANDERS als beim ersten Mal - anderer Satzbau, andere Beispiele, nicht woertlich gleich. Frag nicht, ob du fragen sollst, und sag nicht, dass du schon gefragt hast. Worum es geht: ${frage}`;
+    }
+    // Was der Kern angenommen hat, weil zweimal keine Antwort kam, wird
+    // gesagt - nicht stillschweigend gesetzt.
+    if (angenommen.length) {
+      const sag = `Sag zuerst in einem kurzen Halbsatz, ${angenommen.slice(0, 2).join(" und ")}. Das ist eine Annahme, keine Ansage: Sie kann jederzeit widersprechen.`;
+      frage = frage ? `${sag} Dann: ${frage}` : sag;
+    }
     const empfehlungBereit = p.vorgehen === "top3" && BERATUNG.every((t) => fertig[t])
       && fertig.dauer && fertig.flug && fertig.flugAb;
     return { fertig, naechstes, frage, chips, phase, suchbereit, eckdatenFertig, gesucht, schluessel, empfehlungBereit,
-      ueberblickOffen: false, fehlt: [...KERN, ...ECKDATEN].filter((t) => !fertig[t]) };
+      angenommen, ueberblickOffen: false, fehlt: [...KERN, ...ECKDATEN].filter((t) => !fertig[t]) };
   },
 
   // Welches Werkzeug der Kern erzwingt, wenn das Modell es nicht von
