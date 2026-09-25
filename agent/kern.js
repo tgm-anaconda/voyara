@@ -885,15 +885,38 @@ const Kern = {
            und Charakter der Ziele ist nicht betroffen - das ist kein Wissen
            ueber diese Seite. */
         if (text && !this.lauf.gesuchtMit) {
-          const KATALOG = /\b(hotels?|h(ä|ae)user|ferienwohnungen?|unterk(ü|ue)nfte?|angebot|auswahl|objekte?|zimmer)\b/i;
-          const MENGE = /\b(viele|wenige|kaum|einige|zahlreiche|reichlich|begrenzt|knapp|gross|groß|klein|breit|eingeschr(ä|ae)nkt|ueberschaubar|übersichtlich|genug|ausreichend)\w*\b|\bes gibt\b|\bwir haben\b|\bstehen zur verf(ü|ue)gung\b/i;
           const saetze = text.split(/(?<=[.!?])\s+/);
-          const rest = saetze.filter((x) => /\?\s*$/.test(x) || !(KATALOG.test(x) && MENGE.test(x)));
+          const rest = saetze.filter((x) => /\?\s*$/.test(x) || !Kern.UEBER_DIE_SEITE.test(x));
           if (rest.length !== saetze.length) {
             const weg = saetze.filter((x) => !rest.includes(x));
             this.notieren("behauptung_ohne_recherche", { satz: weg[0]?.slice(0, 160) });
             text = rest.join(" ").trim();
             nachricht.content = text;
+          }
+        }
+
+        /* Wie ein Haus ist, steht in seinen Bewertungen - und die muss man
+           gelesen haben.
+           ----------------------------------------------------------------
+           "Das Hotel ist sehr gepflegt und das Essen wird gelobt" ueber ein
+           Haus, dessen Bewertungen der Agent nie geoeffnet hat, ist eine
+           Behauptung im Gewand eines Befunds. Der Rundgang liest die
+           Bewertungen der engeren Auswahl (lauf.gelesen); wird ein anderes
+           Haus gelobt oder getadelt, faellt der Satz weg. */
+        if (text) {
+          const gelesen = this.lauf.gelesen || {};
+          const bekannt = [...(this.lauf.letzteVorlage || []), ...Object.keys(gelesen), this.lauf.gewaehlt]
+            .filter(Boolean).map((id) => ({ id, name: getItemById?.(id)?.name })).filter((x) => x.name);
+          const ungelesen = bekannt.filter((x) => !gelesen[x.id] && text.includes(x.name));
+          if (ungelesen.length) {
+            const saetze = text.split(/(?<=[.!?])\s+/);
+            const rest = saetze.filter((x) => /\?\s*$/.test(x)
+              || !ungelesen.some((u) => x.includes(u.name)) || !Kern.URTEIL.test(x));
+            if (rest.length !== saetze.length) {
+              this.notieren("urteil_ohne_bewertungen", { haeuser: ungelesen.map((u) => u.id).slice(0, 3) });
+              text = rest.join(" ").trim();
+              nachricht.content = text;
+            }
           }
         }
 
@@ -1441,6 +1464,32 @@ const Kern = {
      bleibt jetzt erreichbar, bis wirklich entschieden ist: ueber einen
      Knopf in der Nachricht, der auch nach einem Seitenwechsel noch da
      ist, und ueber den Antwortvorschlag im Chat. */
+  /* Aussagen, die man nur durch Nachsehen auf der Seite treffen kann.
+     ------------------------------------------------------------------
+     Regel des Nutzers vom 25.09.2026: "Alles das, was man eigentlich
+     durch eine Recherche auf der Seite herausfinden muesste, das darf er
+     nicht sagen." Wissen ueber Klima und Charakter der Ziele bleibt
+     ausdruecklich erlaubt - das gehoert dem Modell, nicht der Seite.
+
+     Drei Sorten fallen darunter: wie viel es gibt, was es kostet, und wie
+     die Haeuser sind. Alle drei ohne Ziffer, denn Zahlen fangen schon
+     fremdeZahlen und die Belege ab. */
+  UEBER_DIE_SEITE: new RegExp([
+    // wie viel es gibt
+    "(hotels?|h(ä|ae)user|ferienwohnungen?|unterk(ü|ue)nfte?|angebot|auswahl|objekte?|zimmer)[^.!?]{0,60}"
+      + "(viele|wenige|kaum|einige|zahlreiche|reichlich|begrenzt|knapp|gross|groß|klein|breit|eingeschr(ä|ae)nkt|ueberschaubar|übersichtlich|genug|ausreichend|frei|verf(ü|ue)gbar|ausgebucht)",
+    "(viele|wenige|kaum|einige|zahlreiche|genug|ausreichend|begrenzt)[^.!?]{0,40}"
+      + "(hotels?|h(ä|ae)user|ferienwohnungen?|unterk(ü|ue)nfte?|objekte?|zimmer)",
+    "\\bes gibt\\b[^.!?]{0,40}(hotels?|h(ä|ae)user|ferienwohnungen?|unterk(ü|ue)nfte?|auswahl)",
+    // was es kostet
+    "(preise?|kostet|kosten|preisniveau|preislich)[^.!?]{0,50}"
+      + "(g(ü|ue)nstig|teuer|preiswert|moderat|bezahlbar|hochpreisig|niedrig|hoch|fair|schnäppchen|erschwinglich)",
+    "(g(ü|ue)nstig|teuer|preiswert|moderat|bezahlbar|hochpreisig|erschwinglich)[^.!?]{0,40}(hotels?|h(ä|ae)user|ferienwohnungen?|unterk(ü|ue)nfte?|region|dort|da)",
+  ].join("|"), "i"),
+
+  // Ein Urteil ueber ein Haus - erlaubt nur, wenn die Bewertungen gelesen sind
+  URTEIL: /\b(gut|sehr gut|bestens|hervorragend|ausgezeichnet|beliebt|gelobt|empfehlenswert|gepflegt|sauber|freundlich|lecker|schwach|m(ä|ae)ssig|mittelm(ä|ae)ssig|kritisiert|bem(ä|ae)ngelt|(ü|ue)berzeugt|punktet|(ü|ue)berzeugend|top|klasse|stark)\w*\b/i,
+
   /* Wie aehnlich sind zwei Nachrichten? Anteil gemeinsamer Woerter,
      bezogen auf die kuerzere. 1 heisst woertlich gleich. */
   aehnlich(a, b) {

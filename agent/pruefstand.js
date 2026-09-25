@@ -158,7 +158,7 @@ const Pruefstand = {
     "falsche_hausseite", "falsche_buchungsseite", "partner_ohne_marke", "festgefahren"],
   // Kein Fehler, aber aufschlussreich: wie oft der Kern ein Werkzeug erzwingen
   // musste, weil das Modell es nicht von sich aus rief
-  NOTIZ: ["zwang", "gesperrt", "uebernahme", "stopp", "thema_uebersprungen", "selbst_gelockert", "eigenschaft_ungedeckt", "behauptung_ohne_recherche", "recherche_angesagt"],
+  NOTIZ: ["zwang", "gesperrt", "uebernahme", "stopp", "thema_uebersprungen", "selbst_gelockert", "eigenschaft_ungedeckt", "behauptung_ohne_recherche", "urteil_ohne_bewertungen", "recherche_angesagt"],
 
   VERBOTEN: /\b(kriterien|auswertung|transparen|optimal|präferenz|praeferenz|selektion|parameter)\w*/gi,
 
