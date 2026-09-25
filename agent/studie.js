@@ -841,6 +841,7 @@ const Studie = {
         [p + "vorschlaegeErneut"]: zaehle(protokoll, "vorschlaege_erneut"),
         [p + "partnerInfoGeoeffnet"]: zaehle(protokoll, "partner_info_geoeffnet"),
         [p + "argumenteRepariert"]: zaehle(protokoll, "argumente_repariert"),
+        [p + "hausKorrigiert"]: zaehle(protokoll, "haus_korrigiert"),
         [p + "spracheGenutzt"]: zaehle(protokoll, "sprache_start"),
         [p + "spracheSekunden"]: protokoll.filter((e) => e.ereignis === "sprache_ende").reduce((s2, e) => s2 + (e.sekunden || 0), 0),
         [p + "partnerInfoSekunden"]: z(protokoll.find((e) => e.ereignis === "partner_info_geoeffnet")?.sekunden),

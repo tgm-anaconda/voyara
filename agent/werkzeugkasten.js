@@ -166,8 +166,49 @@ const Werkzeugkasten = {
      oder, wenn die Seite gleich neu laedt,
        { navigiert: true, stufe: <naechste Stufe> }.
      ================================================================== */
+  /* "Nimm das erste" muss das erste sein.
+     ------------------------------------------------------------------
+     Am 25.09.2026 lagen drei Vorschlaege im Chat, die Person schrieb
+     "nimm das erste, bereite die Buchung vor" - und der Agent bereitete
+     die Buchung fuer ein Haus vor, das in der Vorlage gar nicht vorkam.
+     Das Modell hatte sich eine id aus einem frueheren Werkzeugergebnis
+     gegriffen. Bei einer Ordnungszahl oder einem Namen aus der Vorlage
+     entscheidet deshalb nicht mehr das Modell, sondern die Vorlage.
+     Nennt die Person ein Haus, das dort nicht steht, bleibt es bei ihrer
+     Wahl - sie darf sich auch anders entscheiden. */
+  ORDNUNG: {
+    erste: 0, erstes: 0, erster: 0, ersten: 0, "1": 0,
+    zweite: 1, zweites: 1, zweiter: 1, zweiten: 1, "2": 1,
+    dritte: 2, drittes: 2, dritter: 2, dritten: 2, "3": 2,
+    vierte: 3, viertes: 3, vierter: 3, vierten: 3, "4": 3,
+    "fünfte": 4, "fünftes": 4, "fünfter": 4, "fünften": 4, fuenfte: 4, "5": 4,
+    sechste: 5, sechstes: 5, sechster: 5, sechsten: 5, "6": 5,
+  },
+  hausAusVorlage(kern) {
+    const vorlage = kern.lauf.letzteVorlage || [];
+    if (!vorlage.length) return null;
+    const letzte = [...(kern.lauf.gespraech || [])].reverse().find((n) => n.role === "user")?.content || "";
+    const text = String(letzte).toLowerCase();
+    // Erst der Name - er ist eindeutiger als eine Ordnungszahl
+    for (const id of vorlage) {
+      const name = (typeof getItemById === "function" ? getItemById(id)?.name : null) || "";
+      if (name && text.includes(name.toLowerCase())) return id;
+    }
+    const m = text.match(/\b(?:das|die|der|den|nummer|nr\.?|vorschlag)\s*(erste[nsr]?|zweite[nsr]?|dritte[nsr]?|vierte[nsr]?|fünfte[nsr]?|fuenfte|sechste[nsr]?|[1-6])\b/);
+    if (!m) return null;
+    const i = this.ORDNUNG[m[1]];
+    return i != null && vorlage[i] ? vorlage[i] : null;
+  },
+
   async ausfuehren(name, args, kern, stufe = 1) {
     const a = args || {};
+    if (a.id && stufe === 1 && ["haus_oeffnen", "haus_details", "merken", "buchung_vorbereiten", "bewertungen_lesen"].includes(name)) {
+      const gemeint = this.hausAusVorlage(kern);
+      if (gemeint && gemeint !== a.id) {
+        kern.notieren("haus_korrigiert", { werkzeug: name, modell: a.id, gemeint });
+        a.id = gemeint;
+      }
+    }
     if (this.BRAUCHT[name] && !kern.darf(this.BRAUCHT[name])) {
       kern.notieren("gesperrt", { wollte: name, freigabe: kern.freigabe() });
       const f = FREIGABE.find((x) => x.id === kern.freigabe());
