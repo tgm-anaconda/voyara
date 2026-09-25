@@ -690,7 +690,7 @@ const Werkzeugkasten = {
           if (fp.suchbereit && kern.lauf.lageFuer !== fp.schluessel && liste.length) {
             kern.lauf.lageFuer = fp.schluessel;
             await kern.denkpause(600, "fasst zusammen…");
-            const lage = Werkzeugkasten.lageSatz(liste, p, umfang);
+            const lage = Werkzeugkasten.lageSatz(liste, p, umfang, gesamt ?? null);
             kern.sagen(lage);
             kern.lauf.lageImZug = lage;
             kern.notieren("lage_gesagt", { haeuser: liste.length });
@@ -718,8 +718,14 @@ const Werkzeugkasten = {
         kern.lauf.letzteTreffer = auswahl.map((h) => h.id);
         kern.lauf.vorgehenFuer = fp.schluessel + p.vorgehen;
         if (!auswahl.length) {
-          return { ...basis, treffer: [], hinweis: "Nichts gefunden - lockere eine Vorgabe (Strand weiter, Preis hoeher, Ausstattung weglassen), sag der Person, was du lockerst, und such noch einmal." };
+          return { ...basis, treffer: [], gelockert,
+            hinweis: gelockert.length
+              ? `Auch nach dem Lockern (${gelockert.join(", ")}) ist nichts da. Sag das in einem Satz, nenn den Preis als den Punkt, an dem es haengt, und frag, ob das Budget hoeher darf. Frag genau einmal, nicht noch einmal dasselbe.`
+              : "Nichts gefunden. Sag der Person in einem Satz, woran es haengt, und frag, welche Vorgabe weicher werden darf. Frag genau einmal." };
         }
+        const sagLockerung = gelockert.length
+          ? `Mit den urspruenglichen Vorgaben war nichts frei. Sag in einem Satz, dass du ${gelockert.join(" und ")} gelockert hast, damit ueberhaupt etwas da ist - als Ansage, nicht als Frage. `
+          : "";
         const vs = Werkzeugkasten.vorlageSchluessel(p);
         if (kern.lauf.vorlageFuer === vs && kern.lauf.letzteVorlage?.length) {
           return { ...basis, treffer: treffer(auswahl), bereitsVorgelegt: kern.lauf.letzteVorlage,
@@ -767,7 +773,7 @@ const Werkzeugkasten = {
           kern.lauf.rundgang = { ids: engere, i: 0, gesehen: [] };
           kern.sichern();
           return { ...basis, treffer: treffer(auswahl).slice(0, wieViele),
-            hinweis: `Ruf jetzt haeuser_ansehen. Schreib nichts dazu - der Rundgang sagt selbst an, was er tut, und meldet sich nach jedem Haus. Doppelte Ansagen stoeren.` };
+            hinweis: `${sagLockerung}Ruf jetzt haeuser_ansehen. Schreib nichts dazu - der Rundgang sagt selbst an, was er tut, und meldet sich nach jedem Haus. Doppelte Ansagen stoeren.` };
         }
         const v = await kern.auswahlVorlegen(engere);
         // Keine weiteren Haeuser mitschicken: Das Modell zaehlte sie sonst
@@ -776,7 +782,18 @@ const Werkzeugkasten = {
       };
 
       // Katalogsuche (immer als Grundlage)
-      const imKatalog = sortiere(Werkzeugkasten.katalogTreffer(p, filter));
+      let imKatalog = sortiere(Werkzeugkasten.katalogTreffer(p, filter));
+      // Leeres Ergebnis: einmal selbst lockern, statt die Person in einer
+      // Sackgasse stehen zu lassen (siehe LOCKERN)
+      let gelockert = [];
+      if (!imKatalog.length && darfEmpfehlen) {
+        const nochmal = () => (imKatalog = sortiere(Werkzeugkasten.katalogTreffer(p, Werkzeugkasten.filterAusStand(p))));
+        gelockert = Werkzeugkasten.lockernBis(p, nochmal);
+        if (gelockert.length) {
+          kern.standAnzeigen();
+          kern.notieren("selbst_gelockert", { schritte: gelockert, treffer: imKatalog.length });
+        }
+      }
       const logUmfang = () => `${imKatalog.length} Haeuser (${Werkzeugkasten.filterText(p)})`;
 
       if (!kern.darf("suchen") || !fp.suchbereit) {
@@ -1668,7 +1685,7 @@ const Werkzeugkasten = {
   },
 
   // Die Lage als fester Satz: Regionen mit Zahlen, Preisspanne, was es gibt
-  lageSatz(liste, p, umfang) {
+  lageSatz(liste, p, umfang, aufDerSeite = null) {
     const monat = p.monat ? Object.keys(Politik.MONATE).find((m) => Politik.MONATE[m] === p.monat && m.length > 3) : null;
     const monatText = monat ? `Im ${monat.charAt(0).toUpperCase() + monat.slice(1)}` : "Aktuell";
     const art = p.typ === "apartment" ? "Ferienwohnungen" : "Hotels";
@@ -1678,11 +1695,25 @@ const Werkzeugkasten = {
     const wo = p.zielId ? `auf ${ZIEL_NACH_ID?.[p.zielId]?.name || p.zielId}` : (warmKalt ? `in den ${warmKalt}Regionen` : "");
     const regionen = umfang.jeRegion || [];
     const teile = [];
-    if (p.zielId || regionen.length <= 1) {
+    /* Die Zahl im Chat und die Zahl auf der Seite muessen zusammenpassen.
+       ------------------------------------------------------------------
+       Der Agent zaehlt die Haeuser in den passenden Regionen (112), die
+       Liste daneben zeigt alle des Monats (184) - die Maske kann immer nur
+       eine Region filtern, "alle warmen" laesst sich dort nicht
+       ausdruecken. Wer beides sieht, haelt eine der beiden Zahlen fuer
+       falsch. Jetzt stehen beide da, und es ist klar, welche welche ist. */
+    const mehrAufDerSeite = aufDerSeite != null && aufDerSeite > liste.length;
+    const top = regionen.slice(0, 3).map((r) => `${r.region} (${r.haeuser})`);
+    const topText = top.length > 1 ? `${top.slice(0, -1).join(", ")} und ${top[top.length - 1]}` : top[0];
+    if (mehrAufDerSeite) {
+      teile.push(`${monatText} stehen ${aufDerSeite} ${art} in der Liste.`);
+      teile.push(regionen.length <= 1
+        ? `${liste.length} davon passen zu euch${wo ? ` ${wo}` : ""}.`
+        : `${liste.length} davon liegen in ${regionen.length} ${warmKalt}Regionen, die meisten ${topText}.`);
+    } else if (p.zielId || regionen.length <= 1) {
       teile.push(`${monatText} gibt es ${liste.length} ${art} ${wo}`.trim() + ".");
     } else {
-      const top = regionen.slice(0, 3).map((r) => `${r.region} (${r.haeuser})`);
-      teile.push(`${monatText} gibt es ${liste.length} ${art} in ${regionen.length} ${warmKalt}Regionen, die meisten ${top.length > 1 ? `${top.slice(0, -1).join(", ")} und ${top[top.length - 1]}` : top[0]}.`);
+      teile.push(`${monatText} gibt es ${liste.length} ${art} in ${regionen.length} ${warmKalt}Regionen, die meisten ${topText}.`);
     }
     if (umfang.preisProNacht) teile.push(`Pro Nacht kosten sie ${umfang.preisProNacht.von} bis ${umfang.preisProNacht.bis} €${p.naechte ? "" : ", gerechnet mit einer Woche"}.`);
     /* Jedes Glied traegt sein eigenes Verb.
@@ -1814,6 +1845,59 @@ const Werkzeugkasten = {
       if (k?.filter?.ausstattung) ausstattung.add(k.filter.ausstattung);
     }
     return { ausstattung: [...ausstattung] };
+  },
+
+  /* Nichts gefunden: der Kern lockert selbst.
+     ------------------------------------------------------------------
+     Im Pruefstand vom 25.09.2026 stand viermal hintereinander "leider
+     keine Hotels gefunden. Soll ich den Strandradius erweitern oder das
+     Budget erhoehen?" - die Person antwortete jedes Mal etwas anderes,
+     und der Agent blieb stehen. Derselbe Loop wie bei den Fragen: eine
+     Sackgasse ohne Ausgang.
+
+     Jetzt lockert der Kern der Reihe nach selbst und sagt, was er
+     gelockert hat. Die Reihenfolge geht vom Unwichtigsten zum
+     Wichtigsten. Das Budget bleibt aussen vor: Es ist in den Aufgaben
+     eine harte Vorgabe, und ein Agent, der es unaufgefordert erhoeht,
+     wuerde genau den Fehler machen, den die Erhebung messen will.
+     Bleibt es leer, sagt er das und fragt - einmal. */
+  LOCKERN: [
+    { id: "sterne", tun: (p) => { if (!p.mindestSterne) return null; delete p.mindestSterne; return "die Mindestzahl an Sternen"; } },
+    { id: "bewertung", tun: (p) => { if (!p.mindestbewertung) return null; delete p.mindestbewertung; return "die Mindestbewertung"; } },
+    { id: "strand", tun: (p) => {
+      if (p.maxStrand == null || p.maxStrand >= 5) return null;
+      const naechste = [1, 5].find((x) => x > p.maxStrand);
+      const alt = p.maxStrand; p.maxStrand = naechste;
+      return `die Strandnaehe von ${alt < 1 ? `${Math.round(alt * 1000)} Metern` : `${alt} km`} auf ${naechste} km`;
+    } },
+    { id: "verpflegung", tun: (p) => {
+      if (!p.verpflegung) return null;
+      const alt = typeof BOARD_LABELS !== "undefined" ? BOARD_LABELS[p.verpflegung] : p.verpflegung;
+      delete p.verpflegung; p.verpflegungEgal = true;
+      return `die Vorgabe ${alt}`;
+    } },
+    { id: "ausstattung", tun: (p) => {
+      const mit = (p.kriterien || []).filter((k) => typeof Politik !== "undefined" && Politik.kriterium(k.id)?.filter?.ausstattung);
+      if (mit.length < 2) return null;
+      // Das zuletzt genannte zaehlt am wenigsten - das wichtigste nennt
+      // die Person zuerst oder sagt es ausdruecklich
+      const weg = mit[mit.length - 1];
+      p.kriterien = (p.kriterien || []).filter((k) => k.id !== weg.id);
+      return `den Punkt ${Politik.kriterium(weg.id)?.label || weg.id}`;
+    } },
+  ],
+
+  // Solange lockern, bis etwas da ist. Gibt zurueck, was gelockert wurde.
+  lockernBis(p, suchen, maxSchritte = 3) {
+    const gelockert = [];
+    for (const schritt of this.LOCKERN) {
+      if (gelockert.length >= maxSchritte) break;
+      const satz = schritt.tun(p);
+      if (!satz) continue;
+      gelockert.push(satz);
+      if (suchen().length) break;
+    }
+    return gelockert;
   },
 
   filterText(p) {
