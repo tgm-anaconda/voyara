@@ -956,15 +956,6 @@ const AgentPanel = {
       setTimeout(() => { fuss.textContent = alt2; }, 6000);
     };
 
-    // Beim ersten Mal fragt der Browser nach dem Mikrofon. Ohne Vorwarnung
-    // erscheint das Fenster aus dem Nichts, und wer es wegklickt, weiss
-    // nicht, warum der Knopf danach nichts tut. Steht die Erlaubnis schon,
-    // bleibt der Hinweis weg - er waere dann schlicht falsch.
-    let mussFragen = true;
-    navigator.permissions?.query?.({ name: "microphone" })
-      .then((p2) => { mussFragen = p2.state === "prompt"; })
-      .catch(() => { /* Safari kennt die Abfrage nicht - dann eben mit Hinweis */ });
-
     const aus = (grund) => {
       if (!laeuft) return;
       laeuft = false;
@@ -998,10 +989,15 @@ const AgentPanel = {
 
     knopf.addEventListener("click", () => {
       if (laeuft) { aus("knopf"); feld.focus(); return; }
-      if (mussFragen) {
-        mussFragen = false;
-        fussHinweis("Dein Browser fragt gleich nach dem Mikrofon. Die Erkennung läuft über den Browser, nicht über Voyara.");
-      }
+      /* Kein Hinweis vor der Mikrofonfrage.
+         --------------------------------------------------------------
+         Er stand hier einen Tag lang ("Dein Browser fragt gleich nach dem
+         Mikrofon"). Gemessen werden soll aber, ob jemand die
+         Spracheingabe von sich aus nutzt - wer vorher aufgefordert wird,
+         sein Mikrofon freizugeben, beantwortet eine andere Frage. Nach
+         einer Ablehnung kommt weiter eine Rueckmeldung: Die gehoert nicht
+         zur Messung, sondern verhindert einen Knopf, der stumm nichts
+         tut. */
       vorher = feld.value.trim();
       start = Date.now();
       laeuft = true;
