@@ -21,6 +21,27 @@
    den Schritt selbst machen oder die Freigabe anheben kann.
    ================================================================== */
 
+/* Eigenschaften, die das Modell gern erfindet, und wie sich am Haus
+   pruefen laesst, ob sie stimmen. Gebraucht vom Kern, um Saetze wie
+   "drei Hotels mit Meerblick" zu streichen, wenn weder die Person davon
+   gesprochen hat noch die Haeuser es hergeben. */
+const AUSSTATTUNG_WORT = {
+  "meerblick": (h) => (h.amenities || []).includes("seaView"),
+  "kinderclub|kids ?club": (h) => (h.amenities || []).includes("kidsClub"),
+  "\\bpool\\b": (h) => (h.amenities || []).includes("pool"),
+  "wellness|\\bspa\\b|sauna": (h) => (h.amenities || []).includes("spa"),
+  "all ?inclusive": (h) => (h.boards || []).some((b) => b.key === "ai"),
+  "halbpension": (h) => (h.boards || []).some((b) => b.key === "halb"),
+  "vollpension": (h) => (h.boards || []).some((b) => b.key === "voll"),
+  "direkt am strand|strandlage": (h) => (h.amenities || []).includes("beachfront") || (h.distanceToBeach != null && h.distanceToBeach <= 0.2),
+  "klimaanlage": (h) => (h.amenities || []).includes("aircon"),
+  "haustier": (h) => (h.amenities || []).includes("petsAllowed"),
+  "fitness|gym": (h) => (h.amenities || []).includes("gym"),
+  "dachterrasse": (h) => (h.amenities || []).includes("terrace"),
+  "fahrradverleih": (h) => (h.amenities || []).includes("bikeRental"),
+  "adults ?only": (h) => (h.amenities || []).includes("adultsOnly"),
+};
+
 const Werkzeugkasten = {
   /* ==================================================================
      Beschreibungen fuer das Modell

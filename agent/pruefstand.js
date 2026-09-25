@@ -158,7 +158,7 @@ const Pruefstand = {
     "falsche_hausseite", "falsche_buchungsseite", "partner_ohne_marke", "festgefahren"],
   // Kein Fehler, aber aufschlussreich: wie oft der Kern ein Werkzeug erzwingen
   // musste, weil das Modell es nicht von sich aus rief
-  NOTIZ: ["zwang", "gesperrt", "uebernahme", "stopp", "thema_uebersprungen"],
+  NOTIZ: ["zwang", "gesperrt", "uebernahme", "stopp", "thema_uebersprungen", "selbst_gelockert", "eigenschaft_ungedeckt"],
 
   VERBOTEN: /\b(kriterien|auswertung|transparen|optimal|präferenz|praeferenz|selektion|parameter)\w*/gi,
 
@@ -419,6 +419,13 @@ const Pruefstand = {
     // Ab dem dritten Anlauf ist auch eine neue Formulierung keine Entschuldigung
     for (const z of zweimal.filter((x) => (x.mal || 1) >= 3)) rest.push({ art: "frage_dreimal", thema: z.thema });
 
+    /* Der Agent war nicht erreichbar. Fuer die Person der groebste
+       Fehler ueberhaupt - sie sieht einen Assistenten, der nicht
+       antwortet - und fuer die Erhebung der Verlust der Sitzung. */
+    for (const f of prot.filter((x) => x.ereignis === "modell_fehler" || x.ereignis === "modell_weg")) {
+      rest.push({ art: f.ereignis, status: f.status, dauerhaft: f.dauerhaft });
+    }
+
     // Der Kern musste die Notbremse ziehen: fuer die Person sichtbar
     for (const f of prot.filter((x) => x.ereignis === "festgefahren")) rest.push({ art: "festgefahren", text: f.text });
 
@@ -445,6 +452,10 @@ const Pruefstand = {
       nachrichten: g.texte.length, botNachrichten: bot.length, modellNachrichten: modell.length,
       rohfehler: roh, rohSumme: Object.values(roh).reduce((a, b) => a + b, 0), notiz,
       protokoll: prot.map((x) => x.ereignis),
+      // Die Ereignisse, an denen die Hauptmessgroesse haengt, vollstaendig -
+      // ohne sie laesst sich hinterher nicht klaeren, warum das Partnerhaus
+      // in der zweiten Ansicht fehlte
+      schluesselereignisse: prot.filter((x) => /partner|shortlist|vorschlagsansicht|rundgang|gebucht|festgefahren|gelockert/.test(x.ereignis)),
       restfehler: rest, restSumme: rest.length,
       maske, seite: Werkzeuge.seite(),
       gebucht: prot.some((x) => x.ereignis === "gebucht"),
@@ -523,7 +534,9 @@ const Pruefstand = {
   aehnlich(a, b) {
     const wort = (x) => String(x).toLowerCase().replace(/[^a-zäöüß ]/g, " ").split(/\s+/).filter((w) => w.length > 2);
     const A = wort(a); const B = new Set(wort(b));
-    if (!A.length || !B.size) return 0;
+    // Zu kurze Reste sagen nichts: "Oktober?" gegen "August?" sah frueher
+    // aus wie eine woertliche Wiederholung, war aber nur ein Satzrest.
+    if (A.length < 5 || B.size < 5) return 0;
     const treffer = A.filter((w) => B.has(w)).length;
     return Math.round(treffer / Math.min(A.length, B.size) * 100) / 100;
   },
@@ -551,7 +564,7 @@ const Pruefstand = {
     const SCHWER = ["gebucht_nicht_vorgeschlagen", "buchung_verletzt_vorgaben", "partner_ohne_marke",
       "partner_ohne_wort", "partner_fehlt_in_vorlage", "platz1_gegen_wunsch", "haus_nicht_angesehen",
       "frage_woertlich_wiederholt", "frage_dreimal", "unmotiviertes_thema", "anzahl_vorschlaege_falsch", "fremde_zahl",
-      "nicht_gebucht", "festgefahren", "karte_ohne_bild", "karte_ohne_preis", "zwei_fragen", "gesiezt"];
+      "nicht_gebucht", "festgefahren", "modell_fehler", "modell_weg", "karte_ohne_bild", "karte_ohne_preis", "zwei_fragen", "gesiezt"];
     const schwer = {};
     for (const x of e) for (const r of x.restfehler) if (SCHWER.includes(r.art)) schwer[r.art] = (schwer[r.art] || 0) + 1;
     const schwerSumme = Object.values(schwer).reduce((a, b) => a + b, 0);

@@ -756,7 +756,13 @@ const Kern = {
       const erzwungen = new Set();
       for (let i = 0; i < this.MAX_ZUEGE; i++) {
         if (typeof Modell === "undefined" || !Modell.verfuegbar()) {
-          this.sagen("Ich bin gerade nicht erreichbar. Du kannst auf der Seite selbst weitersuchen, ich melde mich, sobald es wieder geht.");
+          // Ohne Schluessel oder ohne Function hilft kein Warten; bei
+          // Ueberlastung schon. Die Person soll wissen, welcher Fall vorliegt.
+          const dauerhaft = typeof Modell === "undefined" || Modell.aus;
+          this.notieren("modell_weg", { status: typeof Modell !== "undefined" ? Modell.letzterStatus : null, dauerhaft });
+          this.sagen(dauerhaft
+            ? "Ich bin gerade nicht erreichbar. Du kannst auf der Seite selbst weitersuchen."
+            : `Ich bin kurz überlastet. Versuch es in etwa ${Modell.erholungSekunden()} Sekunden noch einmal, oder schau so lange selbst in der Liste.`);
           break;
         }
         // Erster Zug nach einer Nachricht der Person: ein Werkzeug ist Pflicht
@@ -771,7 +777,12 @@ const Kern = {
         }
         const antwort = await Modell.agent(this.gespraechFuerModell(), Werkzeugkasten.definitionen(), this.standFuerModell(), pflicht);
         if (!antwort) {
+          // Der Browser hat schon zweimal wiederholt, der Server auch einmal.
+          // Kommt hier nichts an, ist es kein Sekundenkram mehr.
+          this.notieren("modell_fehler", { status: typeof Modell !== "undefined" ? Modell.letzterStatus : null, zug: i });
           this.sagen("Da ist gerade etwas schiefgegangen. Sag es mir bitte noch einmal.");
+          this.lauf.chips = ["Noch einmal versuchen", "Ich schaue selbst weiter"];
+          AgentPanel.setSuggestions?.(this.lauf.chips);
           break;
         }
         this.kostenMerken(antwort.verbrauch);
@@ -858,6 +869,40 @@ const Kern = {
             this.notieren("fremdes_haus", { namen: fremde.slice(0, 3) });
           }
         }
+        /* Eigenschaften, die niemand genannt hat.
+           ----------------------------------------------------------------
+           "Ich habe dir drei passende Hotels mit Familienzimmern und
+           Meerblick herausgesucht" - Meerblick kam weder von der Person
+           noch aus den Daten. Derselbe Griff wie bei einer erfundenen
+           Zahl, nur mit einem Wort statt einer Ziffer. Die Bitte im
+           Werkzeughinweis hat nicht gereicht; hier faellt der Satz weg.
+
+           Erlaubt ist eine Eigenschaft, wenn die Person sie genannt hat,
+           wenn sie als Wunsch oder Filter im Stand steht, oder wenn jedes
+           Haus, ueber das gerade gesprochen wird, sie wirklich hat. */
+        if (text && typeof AUSSTATTUNG_WORT !== "undefined") {
+          const p2 = this.lauf.profil || {};
+          const gesagt = this.lauf.gespraech.filter((n) => n.role === "user").map((n) => String(n.content)).join(" ").toLowerCase()
+            + " " + [...(p2.wuensche || []), ...(p2.kriterien || []).map((k) => k.id), ...(p2.ausstattung || [])].join(" ").toLowerCase();
+          const haeuser = (this.lauf.letzteVorlage || []).map((id) => getItemById?.(id)).filter(Boolean);
+          const offen = [];
+          for (const [wort, pruefen] of Object.entries(AUSSTATTUNG_WORT)) {
+            const re = new RegExp(wort, "i");
+            if (!re.test(text)) continue;
+            if (re.test(gesagt)) continue;
+            if (haeuser.length && haeuser.every((h) => pruefen(h))) continue;
+            offen.push(re);
+          }
+          if (offen.length) {
+            const saetze = text.split(/(?<=[.!?])\s+/);
+            const rest = saetze.filter((x) => /\?\s*$/.test(x) || !offen.some((re) => re.test(x)));
+            if (rest.length && rest.length !== saetze.length) {
+              text = rest.join(" ");
+              nachricht.content = text;
+              this.notieren("eigenschaft_ungedeckt", { woerter: offen.map((r) => r.source).slice(0, 3) });
+            }
+          }
+        }
         // Nach einer Vorlage im selben Zug zaehlt das Modell die Haeuser gern
         // noch einmal auf - dann bleibt nur die Frage
         if (text && this.lauf.vorlageImZug && this.lauf.letzteVorlage?.length) {
@@ -928,7 +973,9 @@ const Kern = {
             // Der Fragesatz selbst wird mitgeschrieben: Beim zweiten Anlauf
             // muss er anders klingen, und das laesst sich nur nachpruefen,
             // wenn beide Fassungen dastehen.
-            const fragesatz = (text.split(/(?<=[.!?])\s+/).filter((x) => /\?/.test(x)).pop() || text).slice(0, 220);
+            // Nicht am Punkt trennen: "am 1. Okt., 9. Okt. oder 18. Okt.?" zerfiel
+            // dabei zu "Okt.?" - und zwei solche Reste sahen immer gleich aus.
+            const fragesatz = String(text).replace(/\s+/g, " ").trim().slice(0, 220);
             this.notieren("thema_gefragt", { thema: fp.naechstes, phase: fp.phase, mal: this.lauf.gefragtWie[fp.naechstes], frage: fragesatz });
           }
           // Chips nur, wo das Thema welche vorsieht - das Modell haengt sonst

@@ -88,8 +88,9 @@ async function openai(koerper) {
     });
     if (!antwort.ok) {
       // Den Fehlertext von OpenAI nicht durchreichen - er kann Kontodaten
-      // enthalten. Nur den Statuscode.
-      return { ok: false, status: antwort.status };
+      // enthalten. Nur den Statuscode und, bei 429, wie lange zu warten ist.
+      return { ok: false, status: antwort.status,
+        wartenMs: Math.min(8000, Math.round(parseFloat(antwort.headers.get("retry-after") || "0") * 1000)) || null };
     }
     return { ok: true, daten: await antwort.json() };
   } catch (e) {
@@ -162,7 +163,20 @@ export default async function handler(req, res) {
     koerper.parallel_tool_calls = false;
   }
 
-  const e = await openai(koerper);
+  /* Ein zweiter Versuch, bevor der Browser einen Fehler sieht.
+     ------------------------------------------------------------------
+     Im Pruefstand vom 25.09.2026 scheiterte jede vierte Nachricht, und
+     drei Fehlschlaege hintereinander schalteten den Agenten fuer den Rest
+     der Sitzung ab. Die meisten dieser Fehlschlaege sind Sekundenkram:
+     ein 429, ein 500, eine Zeitgrenze. Ein Wiederholungsversuch an dieser
+     Stelle kostet nichts und faengt sie weg, bevor irgendjemand
+     "Da ist gerade etwas schiefgegangen" liest. */
+  const VORUEBERGEHEND = [408, 409, 429, 500, 502, 503, 504];
+  let e = await openai(koerper);
+  if (!e.ok && VORUEBERGEHEND.includes(e.status)) {
+    await new Promise((r) => setTimeout(r, e.wartenMs || 900));
+    e = await openai(koerper);
+  }
   if (!e.ok) return fehler(res, e.status || 502, "Modell nicht erreichbar.");
 
   const wahl = e.daten.choices?.[0];
