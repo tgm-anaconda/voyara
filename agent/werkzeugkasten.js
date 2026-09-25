@@ -1521,11 +1521,16 @@ const Werkzeugkasten = {
       teile.push(`${monatText} gibt es ${liste.length} ${art} in ${regionen.length} ${warmKalt}Regionen, die meisten ${top.length > 1 ? `${top.slice(0, -1).join(", ")} und ${top[top.length - 1]}` : top[0]}.`);
     }
     if (umfang.preisProNacht) teile.push(`Pro Nacht kosten sie ${umfang.preisProNacht.von} bis ${umfang.preisProNacht.bis} €${p.naechte ? "" : ", gerechnet mit einer Woche"}.`);
+    /* Jedes Glied traegt sein eigenes Verb.
+       ------------------------------------------------------------------
+       Vorher hing "2 einen Kinderclub" am "haben" des Pool-Glieds. Faellt
+       das weg, weil es in Lappland keine Pools gibt, stand da "2 einen
+       Kinderclub, 7 sind mit 4,5 oder besser bewertet". */
     const merkmale = [];
     if (umfang.direktAmStrandBis200m) merkmale.push(`${umfang.direktAmStrandBis200m} liegen direkt am Strand`);
     if (umfang.mitPool) merkmale.push(`${umfang.mitPool} haben einen Pool`);
-    if (p.kinder > 0 && umfang.mitKinderclub) merkmale.push(`${umfang.mitKinderclub} einen Kinderclub`);
-    if (!(p.kinder > 0) && umfang.mitWellness) merkmale.push(`${umfang.mitWellness} Wellness`);
+    if (p.kinder > 0 && umfang.mitKinderclub) merkmale.push(`${umfang.mitKinderclub} haben einen Kinderclub`);
+    if (!(p.kinder > 0) && umfang.mitWellness) merkmale.push(`${umfang.mitWellness} haben Wellness`);
     if (umfang.gaestenoteAb4_5) merkmale.push(`${umfang.gaestenoteAb4_5} sind mit 4,5 oder besser bewertet`);
     if (merkmale.length) teile.push(`${merkmale.slice(0, 3).join(", ")}.`);
     return teile.join(" ");
