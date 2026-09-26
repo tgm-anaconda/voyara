@@ -2048,6 +2048,11 @@ body.agent-ohne-freigabe #agentEckdaten { display: none !important; }
   opacity: 0; transition: opacity .22s ease;
 }
 .vorschlag-schirm.da { opacity: 1; }
+/* Steht die Schublade offen, legt sich die Vorschlagsansicht nicht darueber:
+   Die Person soll weiterfragen koennen, waehrend die Vorschlaege stehen. Auf
+   schmalen Fenstern bleibt dafuer kein Platz, dort nimmt sie die volle Breite. */
+body.agent-open .vorschlag-schirm { left: 380px; }
+@media (max-width: 1180px) { body.agent-open .vorschlag-schirm { left: 0; } }
 .vorschlag-fenster {
   background: var(--bg, #fff); border-radius: 18px; max-width: 1080px; width: 100%;
   max-height: 92vh; overflow-y: auto; box-shadow: 0 24px 60px rgba(0, 0, 0, .28);

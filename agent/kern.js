@@ -1016,8 +1016,19 @@ const Kern = {
         if (!nachricht.tool_calls) {
           fpJetzt = Werkzeugkasten.fahrplan(this.lauf.profil || {}, this.lauf);
           if (fpJetzt.satz) {
+            /* Das Modell bekommt den Fragesatz des Kerns zu sehen, damit es
+               ihn nicht noch einmal stellt - und schreibt ihn gelegentlich
+               trotzdem in seinen Vorspann. Dann stand der Satz zweimal da:
+               "Du kannst mir auch einfach ein Datum nennen. Welcher
+               Anreisetag soll es sein? Du kannst mir auch einfach ein Datum
+               nennen." Saetze, die in der Frage des Kerns schon vorkommen,
+               fallen weg. */
+            const norm = (x) => String(x).toLowerCase().replace(/[^a-zäöüß0-9]/g, "");
+            const frageNorm = norm(fpJetzt.satz);
             let vorspann = String(text || "").split(/(?<=[.!?])\s+/)
-              .filter((x) => x.trim() && !/\?/.test(x)).slice(0, 2).join(" ").trim();
+              .filter((x) => x.trim() && !/\?/.test(x))
+              .filter((x) => { const n = norm(x); return n.length > 8 && !frageNorm.includes(n); })
+              .slice(0, 2).join(" ").trim();
             const nachtrag = Werkzeugkasten.aufnahmeSatz(this, vorspann);
             if (nachtrag) vorspann = `${nachtrag} ${vorspann}`.trim();
             text = [vorspann, fpJetzt.satz].filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
