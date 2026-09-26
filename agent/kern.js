@@ -1453,13 +1453,42 @@ const Kern = {
       }).filter((x) => x != null);
       if (werte.length) einordnung = { id: wunsch.label, best: Math.max(...werte) };
     }
+    /* Alle Karten zeigen dieselben Zeilen.
+       ------------------------------------------------------------------
+       Bis zum 26.09.2026 suchte sich jede Karte ihre vier staerksten
+       Aspekte selbst. Nebeneinander standen dann drei Haeuser mit drei
+       verschiedenen Zeilenpaaren - Karte 1 mit Service, Sauberkeit,
+       Ausstattung, Ruhe, Karte 2 mit Service, Essen, Sauberkeit, Ruhe.
+       Damit war die Ansicht genau das nicht, wofuer sie da ist: eine
+       Gegenueberstellung. Man kann nur vergleichen, was in allen Karten
+       an derselben Stelle steht.
+
+       Genommen werden die Aspekte, die ALLE Haeuser der Vorlage haben.
+       Zuerst die, die die Person genannt hat, dann die mit den meisten
+       Rueckmeldungen. Hat ein Haus einen genannten Aspekt nicht, faellt
+       er fuer alle weg - sonst waere die Zeile bei einem Haus leer und
+       der Vergleich wieder schief. */
+    const bilanzen = new Map(kandidaten.map((k) => [k.id,
+      (typeof aspektbilanz === "function" ? (aspektbilanz(k.item, 400) || []) : [])]));
+    const gemeinsam = (() => {
+      const listen = [...bilanzen.values()];
+      if (!listen.length) return [];
+      const inAllen = listen[0].filter((a) => listen.every((l) => l.some((x) => x.id === a.id)));
+      const erwaehnungen = (id) => listen.reduce((n, l) => n + (l.find((x) => x.id === id)?.erwaehnungen || 0), 0);
+      return inAllen.sort((a, b) => {
+        const wa = wunschIds.includes(a.id) ? 1 : 0, wb = wunschIds.includes(b.id) ? 1 : 0;
+        return wb - wa || erwaehnungen(b.id) - erwaehnungen(a.id);
+      }).slice(0, 4).map((a) => a.id);
+    })();
     const aufbereitet = kandidaten.map((k) => {
       const item = k.item;
-      const bilanz = typeof aspektbilanz === "function" ? (aspektbilanz(item, 400) || []) : [];
-      const sortiert = [...bilanz].sort((a, b) => {
-        const wa = wunschIds.includes(a.id) ? 1 : 0, wb = wunschIds.includes(b.id) ? 1 : 0;
-        return wb - wa || b.anteilPositiv - a.anteilPositiv;
-      }).slice(0, 4);
+      const bilanz = bilanzen.get(k.id) || [];
+      const sortiert = gemeinsam.length
+        ? gemeinsam.map((id) => bilanz.find((a) => a.id === id)).filter(Boolean)
+        : [...bilanz].sort((a, b) => {
+          const wa = wunschIds.includes(a.id) ? 1 : 0, wb = wunschIds.includes(b.id) ? 1 : 0;
+          return wb - wa || b.anteilPositiv - a.anteilPositiv;
+        }).slice(0, 4);
       const preisInfo = Politik.aufenthaltspreis(item, p, k.preis);
       const paket = p.flug && item.type !== "apartment" && typeof Flug !== "undefined" ? Flug.paket(item, personen || 1, p.flugKlasse || null) : null;
       const gesamt = preisInfo.gesamt + (paket?.gesamt || 0);
