@@ -205,7 +205,14 @@ const Vorschlaege = {
       // Die Ansicht ist weg, die Vorschlaege sind es nicht: Der Chat bietet
       // an, sie wieder zu zeigen, sonst wirkt der Agent, als haette er
       // seine eigene Empfehlung vergessen.
-      kern.lauf.chips = ["Zeig die Vorschläge nochmal", "Ich schaue selbst weiter"];
+      /* Kein Schnipsel fuer etwas, das schon als Link dasteht.
+         ----------------------------------------------------------------
+         "Zeig die Vorschlaege nochmal" stand hier, obwohl im Chat
+         darueber ein Knopf genau dafuer liegt. Der Nutzer am 27.09.2026:
+         "Das macht keinen Sinn, wenn es diesen Link gibt." Ein Schnipsel
+         ist dafuer da, etwas anzubieten, worauf man sonst nicht kommt -
+         hier also: die Auswahl verwerfen oder sie erklaert bekommen. */
+      kern.lauf.chips = ["Such mir andere raus", "Worin unterscheiden sie sich?", "Ich schaue selbst weiter"];
       AgentPanel.setSuggestions?.(kern.lauf.chips);
       kern.vorschlaegeMerken?.();
       kern.sichern();

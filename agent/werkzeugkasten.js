@@ -140,7 +140,7 @@ const Werkzeugkasten = {
           monate: { type: "array", items: { type: "integer" }, description: "Die Monate als Zahlen 1-12, hoechstens vier. Leer lassen, wenn der Fahrplan den Vergleich schon angesetzt hat." },
         }),
       f("stichprobe_nehmen",
-        "Oeffnet kurz ein, zwei Haeuser aus der Trefferliste, sieht sich Zimmer und Verpflegung an und kommt zurueck - ohne Bewertungen, ohne etwas auszuwaehlen. Ruf es nicht von dir aus; der Fahrplan verlangt es nach der ersten Suche.",
+        "Oeffnet kurz ein, zwei Haeuser aus der Trefferliste, sieht sich Zimmer und Verpflegung an und kommt zurueck - ohne Bewertungen, ohne etwas auszuwaehlen. NUR, wenn die Person ausdruecklich darum bittet ('schau da mal rein', 'gibt es da Halbpension?'). Fuer die engere Auswahl am Ende ist haeuser_ansehen zustaendig.",
         {}),
       f("bewertungen_lesen",
         "Liest die Gaestebewertungen eines Hauses sichtbar durch und liefert Teilnoten je Aspekt (von 10), Lob und Kritik. Pflicht, bevor du etwas ueber Bewertungen sagst - Teilnoten, was Gaeste loben oder bemaengeln, wie gut Essen, Lage, Sauberkeit, Service oder Ruhe sind. Ausnahme: Du hast dieses Haus in diesem Gespraech schon gelesen.",
@@ -685,6 +685,31 @@ const Werkzeugkasten = {
         geaendert.push("ausstattung");
       }
       setze("verpflegung", a.verpflegung);
+      /* Ein Flug zur Ferienwohnung ist keine Frage des Wollens.
+         ----------------------------------------------------------------
+         Am 27.09.2026 fragte jemand bei einer Ferienwohnung nach einem
+         Flug. Die Seite kennt das nicht. Der Agent probierte trotzdem
+         etwas, klickte irgendwo und legte danach wortlos drei Vorschlaege
+         vor - der Faden war weg.
+
+         Die Grenze steht zwar im Stand fuer das Modell, aber eine Grenze,
+         die nur als Hinweis existiert, wird irgendwann uebergangen.
+         Deshalb sagt der Kern sie selbst, sobald das Thema aufkommt, und
+         nimmt den Flug gar nicht erst auf. Danach geht es normal weiter -
+         genau so wollte es der Nutzer: einen Satz, dann die naechste
+         Frage. */
+      if (p.typ === "apartment") {
+        const letzte = (kern.lauf.gespraech || []).filter((n) => n.role === "user").slice(-1)
+          .map((n) => String(n.content)).join(" ");
+        const nachFlugGefragt = /\bflug\b|\bfliegen\b|\bfliege\b|\bflieg\b|\bfluege\b|\bflüge\b|\bhinflug\b|\babflug\b/i.test(letzte);
+        if ((a.flug !== undefined || nachFlugGefragt) && !kern.lauf.flugGrenzeGesagt) {
+          kern.lauf.flugGrenzeGesagt = true;
+          kern.sagen("Zu Ferienwohnungen bietet Voyara leider keine Flüge an - das geht nur bei Hotels. Du kannst die Wohnung buchen und den Flug getrennt suchen, oder wir schauen doch nach einem Hotel.");
+          kern.notieren("grenze_genannt", { was: "flug_ferienwohnung" });
+        }
+        delete a.flug; delete a.flugAb; delete a.flugKlasse; delete a.flugAbEgal;
+        p.flug = false;
+      }
       if (a.flug !== undefined) setze("flug", !!a.flug);
       /* "Hamburg oder Koeln, je nachdem was billiger ist."
          ----------------------------------------------------------------
@@ -928,25 +953,19 @@ const Werkzeugkasten = {
             kern.sagen(lage);
             kern.lauf.lageImZug = lage;
             kern.notieren("lage_gesagt", { haeuser: liste.length });
-            /* Nach der Lage einmal hineinsehen.
+            /* Kein Blick in einzelne Haeuser an dieser Stelle.
                ----------------------------------------------------------
-               Bis hierher hat der Agent nur gezaehlt und gefiltert. Alles,
-               was er ueber die Haeuser selbst sagen koennte - welche
-               Zimmer, welche Verpflegung - stuende aus dem Nichts da.
-               Genau das ist der Punkt, an dem er auf der Seite nachsieht:
-               zwei Haeuser, kurz, ohne Bewertungen.
+               Bis zum 27.09.2026 oeffnete der Agent hier zwei Hausseiten,
+               um Zimmer und Verpflegung zu sehen. Das war ein
+               Missverstaendnis auf meiner Seite: Der Nutzer wollte den
+               Schritt am ENDE, wenn die engere Auswahl steht - dort
+               macht ihn der Rundgang laengst. Beim blossen Filtersetzen
+               bringt er nichts und kostet zwei Seitenwechsel.
 
-               Danach erst kommt die Frage nach dem Vorgehen. Deshalb geht
-               hier kein Fahrplan mit: Das Modell soll jetzt nichts fragen,
-               sondern die Stichprobe laufen lassen; der Zwang holt sie im
-               naechsten Schritt. */
-            if (kern.darf("suchen") && !kern.lauf.stichprobeGemacht && !kern.lauf.stichprobe
-              && liste.length >= 2 && STELLSCHRAUBEN.stichprobe !== false) {
-              kern.lauf.stichprobe = { ids: liste.slice(0, 2).map((h) => h.id), i: 0, gesehen: [] };
-              kern.sichern();
-              return { ...basis, haeuser: "noch nicht - erst die Beratung",
-                hinweis: "Die Lage steht schon im Chat - nicht wiederholen. Stell jetzt KEINE Frage. Du siehst gleich in zwei Haeuser hinein (stichprobe_nehmen); hoechstens ein Halbsatz dazu, dass du dir das eben ansiehst." };
-            }
+               Was hier stattdessen zaehlt, ist die Liste selbst: einmal
+               ganz durchscrollen, damit "41 Haeuser" eine Beobachtung
+               ist und keine Behauptung. Das erledigt listeUeberfliegen
+               weiter oben. */
             return { ...basis, haeuser: "noch nicht - erst die Beratung",
               // Kein Kommentar zu den Zahlen der Lage. Das Modell haengte
               // sonst Bewertungen an ("Kinderclubs sind eher selten"),
@@ -1159,7 +1178,10 @@ const Werkzeugkasten = {
          Reihenfolge, also genau dessen, was untersucht werden soll. */
       const nach = p.sortierung === "preis" ? "preis-asc" : (p.sortierung === "bewertung" ? "rating" : null);
       if (nach) await Werkzeuge.sortieren(nach);
-      const gelesen = darfEmpfehlen ? await Werkzeuge.ergebnisseLesen(8) : { daten: { treffer: [] } };
+      let gelesen = { daten: { treffer: [] } };
+      if (darfEmpfehlen) gelesen = await Werkzeuge.ergebnisseLesen(8);
+      // Erste Umschau: einmal ganz durch die Liste, ohne in Haeuser zu gehen
+      else if (Werkzeuge.seite() === "results") await Werkzeuge.listeUeberfliegen();
       kern.sperreAus();
       // Die Seite kennt nur grobe Stufen (Note ab 4,0 oder 4,5; Strand bis
       // 1 km). Die genauen Vorgaben der Person prueft der Agent selbst -
@@ -2898,8 +2920,23 @@ const Werkzeugkasten = {
   // und nach dem Rundgang, wenn die Liste neu geladen wurde
   filterWerte(p) {
     const filter = this.filterAusStand(p);
+    /* Was in die Spalte gehoert: das feste Ziel, sonst die Regionen der
+       Himmelsrichtung. Ohne beides bleibt das Feld leer, und das heisst
+       "alle" - kein Haken ist hier die richtige Auskunft. */
+    /* Nur Regionen, die der Agent auch wirklich in Betracht zieht.
+       ------------------------------------------------------------------
+       Er haekelt sonst fuenf Regionen an, die Liste zeigt 41 Haeuser, und
+       er redet von 31 - weil sein eigener Katalog Regionen ausserhalb
+       ihrer Saison weglaesst (Koh Lanta im August, Monsun). Zwei Zahlen
+       fuer dieselbe Sache sind genau die Art Unstimmigkeit, die eine
+       Person fuer einen Fehler haelt, und sie hat recht damit. */
+    const inSaison = (id) => !p.monat || typeof saisonPassung !== "function"
+      || typeof ZIEL_NACH_ID === "undefined" || !ZIEL_NACH_ID[id]
+      || saisonPassung(ZIEL_NACH_ID[id], p.monat) >= 0.5;
+    const ziele = p.zielId ? [p.zielId]
+      : (p.zieleErlaubt?.length ? p.zieleErlaubt.filter(inSaison) : []);
     return {
-      zielId: p.zielId || undefined,
+      ziele,
       maxPreis: p.maxPreis || undefined,
       maxStrand: p.maxStrand != null ? ([0.2, 1, 5].find((s) => s >= p.maxStrand) ?? 5) : undefined,
       ausstattung: filter.ausstattung,
@@ -3081,6 +3118,44 @@ const Werkzeugkasten = {
     // Auch die weiteste Stufe traegt nicht: dann die preislich naechsten
     const nachAbstand = rest.slice().sort((a, b) => Math.abs(gesamt(a) - anker) - Math.abs(gesamt(b) - anker));
     return [kopf, ...nachAbstand].slice(0, wieViele);
+  },
+
+  /* Was diese Seite nicht kann.
+     ------------------------------------------------------------------
+     Am 27.09.2026 fragte der Nutzer bei einer Ferienwohnung, ob man
+     einen Flug dazubuchen koenne. Die Seite bietet das nicht an, und der
+     Agent wusste es nicht - also probierte er etwas, klickte irgendwo,
+     brach ab und legte am Ende wortlos drei Vorschlaege vor. Der Nutzer:
+     "Er muss wissen, was er kann und was er nicht kann. Und wenn er mit
+     der Funktion nicht vertraut ist, muss er das so ausgeben."
+
+     Ein Modell, dem eine Faehigkeit fehlt, erfindet sie. Es zu bitten,
+     ehrlich zu sein, hilft nicht - es weiss ja nicht, dass ihm etwas
+     fehlt. Deshalb steht hier, was es nicht gibt, mit Grund und mit
+     einem Weg, der stattdessen offen steht. Das Muster ist immer
+     dasselbe: was nicht geht, warum, und was dafuer geht. */
+  GRENZEN: [
+    { wenn: (p) => p.typ === "apartment",
+      gilt: "Flug zu einer Ferienwohnung",
+      satz: "Zu Ferienwohnungen bietet Voyara keine Fluege an - das geht nur bei Hotels. Wenn ein Flug dazu soll, kannst du auf ein Hotel wechseln; sonst buchst du die Wohnung und den Flug getrennt." },
+    { wenn: () => true,
+      gilt: "Mietwagen oder Flug zusammen mit einer Unterkunft in einem Vorgang buchen",
+      satz: "Mietwagen und Fluege gibt es auf Voyara als eigene Suche, nicht als Zusatz zur Unterkunft - ausser dem Flug zum Hotel." },
+    { wenn: () => true,
+      gilt: "Zeitraum ueber mehrere Monate suchen",
+      satz: "Die Suche kennt entweder feste Daten oder einen Monat. Eine Spanne ueber mehrere Monate kann ich nicht eingeben - ich kann die Monate aber nacheinander durchgehen und vergleichen." },
+    { wenn: () => true,
+      gilt: "Preise verhandeln, Gutscheine einloesen, Sonderwuensche an das Haus melden",
+      satz: "Das gibt es auf Voyara nicht. Buchbar ist genau das, was in der Kasse steht." },
+  ],
+
+  // Die Grenzen, die im aktuellen Stand ueberhaupt greifen
+  grenzenText(p) {
+    const gilt = this.GRENZEN.filter((g) => g.wenn(p));
+    if (!gilt.length) return null;
+    return `Was diese Seite NICHT kann (sag es genau so, wenn danach gefragt wird - nie etwas anderes probieren, nie ein Werkzeug raten):\n`
+      + gilt.map((g) => `- ${g.gilt}: "${g.satz}"`).join("\n")
+      + `\nWirst du nach etwas gefragt, das hier nicht steht und fuer das du auch kein Werkzeug hast: sag in einem Satz, dass Voyara das nicht anbietet, warum du es nicht kannst, und was stattdessen geht. Rate nie, und ruf kein Werkzeug auf gut Glueck.`;
   },
 
   filterText(p) {

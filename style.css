@@ -2135,6 +2135,20 @@ body.agent-open .vorschlag-schirm { left: 380px; }
 .vorschlag-kopf-rechts { display: flex; align-items: center; gap: 10px; }
 .vorschlag-hinweis { margin: 0; color: var(--ink-500); font-size: .8rem; }
 body.vorschlag-offen { overflow: hidden; }
+
+/* Bewertungen, die der Agent sich im Einzelnen angesehen hat.
+   ------------------------------------------------------------------
+   Er scrollt schnell durch alle und bleibt bei einigen stehen. Ohne
+   Markierung ist die Pause vor einer Textwand bedeutungslos - mit ihr
+   sieht man, worauf sich sein Satz danach stuetzt. Sie bleibt stehen,
+   nicht nur waehrend er liest. */
+.review-item.agent-liest {
+  position: relative;
+  background: rgba(15, 110, 92, .05);
+  box-shadow: inset 3px 0 0 var(--brand-700, #0f6e5c);
+  border-radius: 8px;
+  transition: background .3s ease, box-shadow .3s ease;
+}
 @media (max-width: 900px) {
   .vorschlag-karten { grid-template-columns: 1fr; }
   .vorschlag-bild { aspect-ratio: 16 / 7; }

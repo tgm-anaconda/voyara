@@ -32,7 +32,20 @@ const SORT_OPTIONS = {
 const state = {
   type: "hotel",
   q: "",
-  ziel: "",
+  ziel: "",                 // Mietwagen und Fluege: genau ein Ziel
+  /* Unterkuenfte: mehrere Ziele auf einmal.
+     ------------------------------------------------------------------
+     Bis zum 27.09.2026 war das Reiseziel eine Reihe von Radioknoepfen -
+     entweder alle oder genau eines. Der Agent konnte "eher warm" deshalb
+     nicht in die Spalte uebersetzen: Er sagte "alle warmen Regionen sind
+     ausgewaehlt", und links stand weiter "Alle Ziele". Der Nutzer am
+     27.09.: "Da muss dann quasi auch eine Aktion sein, die er machen
+     kann."
+
+     Mit Haken statt Punkten laesst sich eine Himmelsrichtung abbilden.
+     Nebenbei faellt damit die Kruecke weg, dass der Agent zwei Zahlen
+     nennen musste - die Treffer der Seite und die, die wirklich passen. */
+  ziele: new Set(),
   priceMax: 999,
   stars: new Set(),
   categories: new Set(),
@@ -105,10 +118,20 @@ function readUrl() {
   // Flug dazu: aus der Adresse, sonst aus dem gemerkten Zustand
   state.withFlight = typeof Flug !== "undefined" ? Flug.get().mit : p.get("flight") === "1";
   state.ziel = p.get("ziel") || "";
+  // Mehrere Ziele kommen als Liste: ?ziele=tirol,island
+  const zieleRoh = (p.get("ziele") || "").split(",").map((x) => x.trim()).filter(Boolean);
+  state.ziele = new Set(zieleRoh.length ? zieleRoh : (state.ziel ? [state.ziel] : []));
 }
 
 // Reisemonat aus dem Anreisedatum. Bestimmt, ob ein Ziel Haupt- oder
 // Nebensaison hat - und damit auch den Preis.
+// Genau ein gewaehltes Ziel - fuer Ueberschrift und Flugpreis. Bei mehreren
+// (oder keinem) gibt es kein "nach X", und der Flugpreis haengt am Ziel.
+function einzigesZiel() {
+  if (state.type === "car" || state.type === "flight") return state.ziel || "";
+  return state.ziele.size === 1 ? [...state.ziele][0] : "";
+}
+
 function reisemonat() {
   return Reisedaten.monat();
 }
@@ -149,7 +172,7 @@ function matches(item) {
   const ziel = typeof ZIEL_NACH_ID !== "undefined" ? ZIEL_NACH_ID[item.ziel] : null;
   const suchtext = `${item.name} ${item.location} ${item.region} ${ziel ? ziel.name + " " + ziel.land : ""}`.toLowerCase();
   if (q && !suchtext.includes(q)) return false;
-  if (state.ziel && item.ziel !== state.ziel) return false;
+  if (state.ziele.size && !state.ziele.has(item.ziel)) return false;
   // Reisegruppe muss hineinpassen - vorher wurde die Personenzahl ignoriert
   if (!Belegung.passt(item)) return false;
   if (saisonpreis(item) > state.priceMax) return false;
@@ -221,12 +244,12 @@ function renderFilters() {
     const monat = reisemonat();
     const zieleImBestand = ZIELE.filter((z) => countIn((h) => h.ziel === z.id));
     if (zieleImBestand.length > 1) {
+      // Kein Haken heisst: alle Ziele. Ein eigener Knopf dafuer waere eine
+      // vierte Moeglichkeit neben an, aus und halb - und muesste erklaert werden.
       html += group("Reiseziel",
-        [{ id: "", name: "Alle Ziele" }, ...zieleImBestand]
-          .map((z) => radioRow("fZiel", "js-ziel", z.id, z.id
-            ? `${z.name}${saisonPassung(z, monat) === 1 ? " ·&nbsp;Saison" : ""}`
-            : z.name,
-            z.id ? countIn((h) => h.ziel === z.id) : pool().length, state.ziel === z.id)).join(""));
+        zieleImBestand.map((z) => checkRow("js-ziel", z.id,
+          `${z.name}${saisonPassung(z, monat) === 1 ? " ·&nbsp;Saison" : ""}`,
+          countIn((h) => h.ziel === z.id), state.ziele.has(z.id))).join(""));
     }
 
     html += group("Gästebewertung",
@@ -300,6 +323,7 @@ function renderFilters() {
   const bindSet = (cls, target) => panel.querySelectorAll(cls).forEach((el) =>
     el.addEventListener("change", () => { el.checked ? target.add(el.value) : target.delete(el.value); renderResults(); }));
 
+  bindSet(".js-ziel", state.ziele);
   bindSet(".js-star", state.stars);
   bindSet(".js-cat", state.categories);
   bindSet(".js-amen", state.amenities);
@@ -311,7 +335,7 @@ function renderFilters() {
   panel.querySelectorAll(".js-rating").forEach((el) => el.addEventListener("change", () => { state.minRating = +el.value; renderResults(); }));
   panel.querySelectorAll(".js-beach").forEach((el) => el.addEventListener("change", () => { state.maxBeach = el.value === "" ? null : +el.value; renderResults(); }));
   panel.querySelectorAll(".js-bed").forEach((el) => el.addEventListener("change", () => { state.minBedrooms = +el.value; renderResults(); }));
-  panel.querySelectorAll(".js-ziel").forEach((el) => el.addEventListener("change", () => { state.ziel = el.value; renderResults(); }));
+
   panel.querySelector(".js-direct")?.addEventListener("change", (e) => { state.directOnly = e.target.checked; renderResults(); });
   panel.querySelector(".js-cancel")?.addEventListener("change", (e) => { state.freeCancel = e.target.checked; renderResults(); });
   panel.querySelector(".js-deals")?.addEventListener("change", (e) => { state.onlyDeals = e.target.checked; renderResults(); });
@@ -321,7 +345,7 @@ function renderFilters() {
     state.carCategories.clear(); state.transmissions.clear(); state.airlines.clear();
     state.minRating = 0; state.maxBeach = null; state.minBedrooms = 0;
     state.directOnly = false; state.freeCancel = false; state.onlyDeals = false;
-    state.ziel = "";
+    state.ziel = ""; state.ziele.clear();
     state.priceMax = priceBounds().max;
     renderFilters(); renderResults();
   });
@@ -458,13 +482,15 @@ function renderFlightAddon() {
   const s = Flug.get();
   const ab = s.ab ? (Flug.flughaefen().find((h) => h.code === s.ab)?.name || s.ab) : "dem günstigsten Flughafen";
   const b = Belegung.get();
-  const ziel = state.ziel && typeof ZIEL_NACH_ID !== "undefined" ? ZIEL_NACH_ID[state.ziel] : null;
+  // Ein konkreter Flugpreis nur, wenn genau ein Ziel gefiltert ist
+  const zielId = einzigesZiel();
+  const ziel = zielId && typeof ZIEL_NACH_ID !== "undefined" ? ZIEL_NACH_ID[zielId] : null;
   const flug = ziel ? Flug.wahl(ziel.id) : null;
   box.innerHTML = `
   <div class="addon-panel">
     <div class="addon-head">
       <div>${ICONS.plane}<strong>Mit Flug ab ${ab}</strong> · ${Flug.KLASSEN[s.klasse].label} · Hin- und Rückflug für ${b.personen} ${b.personen === 1 ? "Person" : "Personen"}${flug ? ` · ab ${formatPrice(Flug.preisProPerson(flug))} pro Person nach ${ziel.name}` : ""}</div>
-      <a class="section-link" href="results.html?type=flight${state.ziel ? `&ziel=${state.ziel}` : ""}">Alle Flüge ansehen →</a>
+      <a class="section-link" href="results.html?type=flight${zielId ? `&ziel=${zielId}` : ""}">Alle Flüge ansehen →</a>
     </div>
   </div>`;
 }
@@ -475,7 +501,8 @@ function renderResults() {
   const list = document.getElementById("resultList");
 
   // Ueberschrift folgt dem gewaehlten Ziel, nicht mehr fest Mallorca
-  const gewaehlt = state.ziel && typeof ZIEL_NACH_ID !== "undefined" ? ZIEL_NACH_ID[state.ziel] : null;
+  const einzeln = einzigesZiel();
+  const gewaehlt = einzeln && typeof ZIEL_NACH_ID !== "undefined" ? ZIEL_NACH_ID[einzeln] : null;
   document.getElementById("resultsTitle").textContent =
     TYPE_LABELS[state.type] + (gewaehlt ? ` nach ${gewaehlt.name}` : "");
   const belegungText = (state.type === "hotel" || state.type === "apartment")

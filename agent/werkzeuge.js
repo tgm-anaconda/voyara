@@ -323,11 +323,27 @@ const Werkzeuge = {
       }
     }
 
-    if (wunsch.zielId !== undefined) {
-      const el = this.finde(`.js-ziel[value="${wunsch.zielId}"]`, panel);
-      if (el && !el.checked && await this.klickeFilterZeile(el, "Reiseziel")) {
-        gesetzt.push(ZIEL_NACH_ID?.[wunsch.zielId]?.name || "Reiseziel");
+    /* Mehrere Regionen auf einmal.
+       ----------------------------------------------------------------
+       Der Nutzer am 27.09.2026: Auf "ich moechte eine warme Region" sagte
+       der Agent, alle warmen seien ausgewaehlt - links stand weiter
+       "Alle Ziele". Er konnte es gar nicht: Das Feld liess nur eine
+       Region zu. Jetzt sind es Haken, und "eher warm" ist eine Handlung,
+       die man sieht.
+
+       Ueberzaehlige Haken werden abgewaehlt. Ohne das bliebe nach einem
+       Wechsel von "warm" zu "kalt" beides stehen, und die Liste zeigte
+       Lappland neben Mallorca. */
+    if (wunsch.ziele !== undefined) {
+      const soll = new Set(wunsch.ziele || []);
+      const namen = [];
+      for (const el of [...panel.querySelectorAll(".js-ziel")]) {
+        const gewollt = soll.has(el.value);
+        if (el.checked === gewollt) continue;
+        const name = ZIEL_NACH_ID?.[el.value]?.name || el.value;
+        if (await this.klickeFilterZeile(el, name) && gewollt) namen.push(name);
       }
+      if (namen.length) gesetzt.push(namen.length > 3 ? `${namen.length} Regionen` : namen.join(", "));
     }
 
     for (const b of wunsch.verpflegung || []) {
@@ -422,6 +438,47 @@ const Werkzeuge = {
     return { ok: true, text: `${treffer.length} Angebote verglichen.`, daten: { treffer, gescrollt } };
   },
 
+  /* Einmal ganz durch die Liste.
+     ------------------------------------------------------------------
+     Der Nutzer am 27.09.2026: "Wenn er schon mal guckt, wie viele Hotels
+     es gibt, dann sollte er auf jeden Fall einmal komplett runterscrollen
+     - das macht er aktuell noch nicht."
+
+     Das ist der Unterschied zwischen "ich habe 41 Haeuser gefunden" als
+     Behauptung und als Beobachtung. Gescrollt wird schnell, mit einem
+     Zaehler daneben: Niemand liest 41 Karten einzeln, und so tut der
+     Agent auch nicht so. In die einzelnen Haeuser geht er hier noch
+     nicht - das kommt spaeter, wenn die engere Auswahl steht. */
+  async listeUeberfliegen() {
+    const liste = this.finde("#resultList");
+    if (!liste) return this.fehlt("Die Trefferliste");
+    const karten = [...liste.querySelectorAll(".result-card")];
+    if (!karten.length) return { ok: true, text: "Keine Treffer zum Durchsehen.", daten: { karten: 0, gescrollt: false } };
+
+    const kasten = liste.getBoundingClientRect();
+    const von = window.scrollY + kasten.top - 120;
+    const bis = Math.max(von, window.scrollY + kasten.bottom - window.innerHeight + 80);
+    const startY = window.scrollY;
+    let weiteste = startY;
+    const schritte = 18;
+    for (let i = 1; i <= schritte; i++) {
+      if (Zeiger.abbruch) break;
+      window.scrollTo({ top: von + ((bis - von) * i) / schritte, behavior: "auto" });
+      weiteste = Math.max(weiteste, window.scrollY);
+      Zeiger.beschrifte?.(`${Math.round((karten.length * i) / schritte)} von ${karten.length} Häusern`);
+      await Zeiger.warte(90);
+    }
+    const gescrollt = Math.abs(weiteste - startY) > 8;
+    // Dieselbe Selbstpruefung wie bei den Bewertungen
+    if (!gescrollt && karten.length > 6 && typeof Kern !== "undefined") {
+      Kern.notieren?.("scroll_ohne_wirkung", { wo: "trefferliste_ueberflogen", karten: karten.length });
+    }
+    window.scrollTo({ top: von, behavior: "auto" });
+    Zeiger.beschrifte?.("");
+    await Zeiger.warte(200);
+    return { ok: true, text: `${karten.length} Häuser durchgesehen.`, daten: { karten: karten.length, gescrollt } };
+  },
+
   async unterkunftOeffnen(id) {
     const knopf = this.finde(`a.btn-primary[href*="id=${id}"]`)
       || this.finde(`a.hotel-name[href*="id=${id}"]`);
@@ -472,60 +529,67 @@ const Werkzeuge = {
 
       /* Der schnelle Gang durch die Bewertungen.
          ----------------------------------------------------------------
-         Nutzer am 27.09.2026: "Es waere cooler, wenn es irgendwie so
-         aussieht, als wuerde er ganz schnell ganz viele Bewertungen
-         scannen." Ueberall sonst arbeitet der Agent langsam und
-         nachvollziehbar - hier schaltet er um, weil kein Mensch 1.132
-         Bewertungen einzeln liest und die Bilanz genau daher kommt.
+         Zwei Rueckmeldungen des Nutzers, die zusammengehoeren. Erst:
+         "Es waere cooler, wenn es aussieht, als wuerde er ganz schnell
+         ganz viele Bewertungen scannen." Dann, am 27.09.2026: "Er
+         scrollt nicht ansatzweise 200 Kommentare runter, es ist viel zu
+         langsam, man nimmt selbst wahr, dass es gar nicht so viele
+         sind."
 
-         Die Zahl ist echt: aspektbilanz rechnet ueber so viele Datensaetze,
-         wie hier hochgezaehlt werden. Das ist die einzige Stelle, an der
-         eine Zahl Eindruck macht - sie darf deshalb nicht erfunden sein. */
-      const menge = Math.min(item.reviewCount || 0, 800);
+         Er hat beide Male dasselbe gemeint. Der Zaehler lief bis 398,
+         waehrend zehn Karten im Dokument standen - jeder, der hinsieht,
+         merkt das. Die Loesung ist nicht, den Zaehler zu verstecken,
+         sondern die Bewertungen wirklich zu laden: Der Agent klickt
+         "Weitere Bewertungen laden", bis vierzig bis fuenfzig Stimmen da
+         sind, und geht dann schnell durch. Der Zaehler zaehlt danach,
+         was tatsaechlich unter dem Zeiger durchlaeuft.
+
+         Die 398 bleiben trotzdem richtig - aber als das, was sie sind:
+         eine Auswertung ueber alle Datensaetze, nicht ein Lesevorgang.
+         Das steht im Ergebnissatz, nicht am Zeiger. */
+      const nachladen = async (male) => {
+        for (let i = 0; i < male; i++) {
+          if (Zeiger.abbruch) break;
+          const knopf = this.finde("#mehrReviews", panel);
+          if (!knopf) break;
+          await Zeiger.klicke(knopf, { hinweis: "mehr Bewertungen" });
+          await Zeiger.warte(160);
+        }
+      };
+      await nachladen(3);
+
       const liste0 = panel.querySelector(".review-list");
-      if (menge > 20 && liste0) {
-        /* Gescrollt wird das Fenster, nicht das Panel.
-           --------------------------------------------------------------
-           Hier stand panel.scrollTop - das Panel ist aber kein
-           Scrollbereich, sondern ein gewoehnlicher Block. Die Zahl lief
-           also hoch, waehrend sich auf dem Bildschirm nichts bewegte:
-           genau der Eindruck, den der Nutzer am 27.09.2026 beschrieben
-           hat ("er hat da so von 800 bis 1000 hochgezaehlt, aber die
-           Bewertungen hat er ueberhaupt nicht durchgescrollt"). */
+      const karten0 = panel.querySelectorAll(".review-item").length;
+      if (karten0 > 6 && liste0) {
         const kasten = liste0.getBoundingClientRect();
         const von = window.scrollY + kasten.top - 120;
-        const bis = window.scrollY + kasten.bottom - window.innerHeight + 80;
-        const schritte = 16;
+        const bis = Math.max(von, window.scrollY + kasten.bottom - window.innerHeight + 80);
+        const schritte = 26;
         const startY = window.scrollY;
         let weiteste = startY;
         for (let i = 1; i <= schritte; i++) {
           if (Zeiger.abbruch) break;
           window.scrollTo({ top: von + ((bis - von) * i) / schritte, behavior: "auto" });
           weiteste = Math.max(weiteste, window.scrollY);
-          const bisher = Math.round((menge * i) / schritte);
-          Zeiger.beschrifte?.(`${bisher.toLocaleString("de-DE")} von ${menge.toLocaleString("de-DE")} Bewertungen`);
-          await Zeiger.warte(80);
+          Zeiger.beschrifte?.(`${Math.round((karten0 * i) / schritte)} von ${karten0} Bewertungen`);
+          await Zeiger.warte(38);
         }
-        durchgesehen = menge;
         /* Der Schritt prueft sich selbst.
            --------------------------------------------------------------
            Eine hochlaufende Zahl neben einer Seite, die stillsteht, ist
            schlimmer als gar keine Geste: Sie behauptet Arbeit, die nicht
            stattfindet, und genau das hat der Nutzer zweimal gemeldet.
-           Der Fehler war beide Male still - im Protokoll stand, dass 398
-           Bewertungen durchgesehen wurden.
-
-           Deshalb steht jetzt im Protokoll, ob sich die Seite dabei
-           wirklich bewegt hat. Faellt die Geste aus, ist das danach
-           nachweisbar, statt nur von jemandem bemerkt zu werden, der
-           zufaellig zusieht. */
+           Der Fehler war beide Male still. */
         gescrollt = Math.abs(weiteste - startY) > 8;
         if (!gescrollt && typeof Kern !== "undefined") {
-          Kern.notieren?.("scroll_ohne_wirkung", { wo: "bewertungen", id, von: Math.round(von), bis: Math.round(bis), startY: Math.round(startY) });
+          Kern.notieren?.("scroll_ohne_wirkung", { wo: "bewertungen", id, karten: karten0 });
         }
         window.scrollTo({ top: von, behavior: "auto" });
-        await Zeiger.warte(200);
+        Zeiger.beschrifte?.("");
+        await Zeiger.warte(180);
       }
+      // Ausgewertet wird ueber alle Datensaetze, nicht ueber die geladenen
+      durchgesehen = Math.min(item.reviewCount || 0, 800);
 
       // Bewertungen, die den gefragten Aspekt ueberhaupt erwaehnen. Die
       // Marker unter jeder Bewertung tragen das Label ("+ Essen"), danach
@@ -549,10 +613,48 @@ const Werkzeuge = {
         liste = auswahl();
       }
 
-      const wie = Math.min(anzahl, liste.length);
+      /* Welche Bewertungen er sich herausgreift.
+         ----------------------------------------------------------------
+         Der Nutzer am 27.09.2026: "Das duerfen dann auch nicht die ersten
+         vier sein, logischerweise. Da muss er schnell scrollen, dann bei
+         einem anhalten, das detaillierter angucken, dann weiterscrollen."
+
+         Bis dahin nahm der Agent stumpf die ersten vier - direkt nachdem
+         er scheinbar durch vierhundert gescrollt war. Das entwertete die
+         ganze Geste: Wer oben anfaengt, haette nicht scrollen muessen.
+
+         Jetzt sind es Stimmen aus der ganzen Liste, ueber die Laenge
+         verteilt, und der Inhalt entscheidet mit: eine, die den Wunsch
+         lobt, eine mit Kritik, dann der Rest nach Abstand. Genau die
+         Mischung, aus der sich hinterher ein brauchbarer Satz schreiben
+         laesst - Lob allein liest sich wie Werbung. */
+      const lobt = (el) => [...el.querySelectorAll(".aspekt-marker .marker.plus")]
+        .some((m) => !suche || m.textContent.toLowerCase().includes(suche));
+      const bemaengelt = (el) => el.querySelector(".aspekt-marker .marker.minus");
+      const verteilt = (n) => {
+        // Nicht von vorn: ab einem Fuenftel der Liste, gleichmaessig verteilt
+        const start = Math.max(1, Math.floor(liste.length * 0.2));
+        const schritt = Math.max(1, Math.floor((liste.length - start) / Math.max(1, n)));
+        const raus = [];
+        for (let i = start; i < liste.length && raus.length < n; i += schritt) raus.push(liste[i]);
+        return raus;
+      };
+      const gewaehlt = [];
+      const nimm = (el) => { if (el && !gewaehlt.includes(el)) gewaehlt.push(el); };
+      nimm(liste.slice(1).find(lobt));
+      nimm(liste.slice(1).find(bemaengelt));
+      for (const el of verteilt(anzahl)) nimm(el);
+      // In der Reihenfolge der Seite durchgehen, nicht in der Reihenfolge
+      // der Auswahl - sonst springt der Zeiger hoch und runter
+      const reihenfolge = liste.filter((el) => gewaehlt.includes(el)).slice(0, anzahl);
+
+      const wie = reihenfolge.length;
       for (let i = 0; i < wie; i++) {
         if (Zeiger.abbruch) break;
-        const el = liste[i];
+        const el = reihenfolge[i];
+        // Markiert, damit sichtbar ist, WELCHE Stimmen er sich ansieht -
+        // sonst bleibt eine Pause vor einer Textwand ohne Bedeutung.
+        el.classList.add("agent-liest");
         const autor = el.querySelector(".review-who strong")?.textContent?.trim() || "";
         const note = el.querySelector(".review-rating")?.textContent?.trim() || "";
         const titel = el.querySelector("h4")?.textContent?.trim() || "";
@@ -560,6 +662,9 @@ const Werkzeuge = {
         await Zeiger.lies(el, { dauer: 760, hinweis: `Bewertung ${i + 1} von ${wie}${autor ? `: ${autor}` : ""}` });
         gelesen.push({ autor, note, titel, text });
       }
+      // Die Markierungen bleiben stehen, bis der Agent die Seite verlaesst:
+      // Wer danach hinsieht, soll nachvollziehen koennen, worauf sich sein
+      // Satz stuetzt. Beim naechsten Haus faengt es ohnehin von vorn an.
     }
 
     // Ohne Bewertungskasten auf der Seite (Trefferliste, Startseite) kommen

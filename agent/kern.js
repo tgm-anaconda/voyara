@@ -96,8 +96,18 @@ const STELLSCHRAUBEN = {
                   zweitbeste | beste | wechselnd (eine Aufgabe die beste,
                   die andere die zweitbeste, ausgelost) | keine.
      log          Agenten-Log oben rechts im Kopf der Seite. */
-  zugang: "schublade",           // schublade | seitenleiste
-  einladung: "unten-rechts",     // unten-rechts | cursor | mitte | liste | keine
+  /* Entscheidung des Nutzers vom 27.09.2026 nach eigenen Testlaeufen:
+     Der Agent steht von Anfang an offen in der Spalte, kein
+     zugeklappter Reiter und keine Einladung, die aufspringt. "Da habe
+     ich mich aktiv dagegen entschieden."
+
+     Damit faellt eine Frage weg, die das Projekt eine Weile mitgefuehrt
+     hat - ob Menschen den Agenten ueberhaupt oeffnen. Sie war
+     interessant, aber sie kostete jede Sitzung, in der niemand ihn
+     fand: Wer den Agenten nie oeffnet, liefert zur Kennzeichnung des
+     Partnerhauses keinen einzigen Messwert. */
+  zugang: "seitenleiste",        // schublade | seitenleiste
+  einladung: "keine",            // unten-rechts | cursor | mitte | liste | keine
   einladungAusloeser: "detail",  // detail | zeit
   einladungSekunden: 60,
   freigabeFrage: "erstoeffnung", // erstoeffnung | start
@@ -210,10 +220,11 @@ const STELLSCHRAUBEN = {
     } else {
       document.body.classList.remove("agent-schublade");
     }
-    // Die Seiten tragen die Schubladen-Klasse schon im HTML, damit die
-    // Spalte nicht vor dem ersten Zeichnen als Leiste erscheint. Bis
-    // hierher sind Uebergaenge aus ("agent-lautlos") - sonst schnellte
-    // die geschlossene Schublade beim Laden sichtbar aus dem Bild.
+    /* Seit dem 27.09.2026 ist die offene Spalte der Normalfall, und die
+       Seiten tragen die Schubladen-Klasse nicht mehr im HTML - sie kommt
+       oben dazu, wenn die Stellschraube sie verlangt. Bis hierher sind
+       Uebergaenge aus ("agent-lautlos"), sonst schnellte die Spalte beim
+       Laden sichtbar ins Bild. */
     requestAnimationFrame(() => requestAnimationFrame(() => document.body.classList.remove("agent-lautlos")));
   }
 })();
@@ -618,6 +629,10 @@ const Kern = {
     else if (this.lauf.letzteTreffer?.length) zeilen.push(`Letztes Suchergebnis (ids): ${this.lauf.letzteTreffer.join(", ")}.`);
     if (this.lauf.gewaehlt) zeilen.push(`Geoeffnetes Haus: ${getItemById?.(this.lauf.gewaehlt)?.name || this.lauf.gewaehlt} (${this.lauf.gewaehlt}).`);
     zeilen.push(this.fahrplanText());
+    // Was die Seite nicht kann - damit das Modell eine Grenze nennen kann,
+    // statt sie zu umgehen
+    const grenzen = Werkzeugkasten.grenzenText(this.lauf.profil || {});
+    if (grenzen) zeilen.push(grenzen);
     for (const block of this.regelnJetzt()) zeilen.push(block);
     if (this.lauf.phase === "angehalten") zeilen.push("Die Person hat waehrend deiner Arbeit selbst geklickt; du hast angehalten.");
     zeilen.push("Fuer deine naechste Antwort: hoechstens drei Saetze, genau eine Frage (nie zwei), und wenn du fragst, als letzte Zeile CHIPS: mit zwei bis vier Antworten.");
