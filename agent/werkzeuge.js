@@ -337,6 +337,14 @@ const Werkzeuge = {
       }
     }
 
+    // Nur reduzierte Haeuser. Der Schalter steht seit dem 27.09.2026 in
+    // der Spalte; vorher gab es den Angebotsfilter nur ueber die Adresse,
+    // und der Agent konnte den Wunsch deshalb nicht erfuellen.
+    if (wunsch.nurAngebote) {
+      const el = this.finde(".js-deals", panel);
+      if (el && !el.checked && await this.klickeFilterZeile(el, "nur Angebote")) gesetzt.push("nur reduzierte Häuser");
+    }
+
     if (wunsch.mindestbewertung) {
       const el = this.finde(`.js-rating[value="${wunsch.mindestbewertung}"]`, panel);
       if (el && !el.checked && await this.klickeFilterZeile(el, "Bewertung")) {
@@ -629,6 +637,51 @@ const Werkzeuge = {
     return { ok: true, text: `${item.name}: ${schritte.join(", ") || "angesehen"}.`,
       daten: { id, name: item.name, schritte, zimmer: gewaehltesZimmer, durchgesehen: b.daten?.durchgesehen || null,
         stimmen: b.daten?.stimmen || [], bilanz: b.daten?.bilanz || [] } };
+  },
+
+  /* Kurz hineinschauen, ohne etwas anzufassen.
+     ------------------------------------------------------------------
+     Wunsch des Nutzers vom 27.09.2026: Der Agent soll waehrend der
+     Suche "nicht nur scrollen innerhalb des Bereichs, sondern vielleicht
+     auch mal in ein, zwei Hotels reingehen. Einfach nur kurz einmal die
+     Seite angucken, dann wieder raus. Er muss ja noch nicht direkt die
+     Bewertung ansehen, aber dass er sich anguckt, okay, gibt es
+     ueberhaupt eine Halbpension und so."
+
+     Das ist der Unterschied zwischen einer Aussage aus dem Katalog und
+     einer, die jemand nachgesehen hat. Deshalb wird hier nichts
+     geklickt und nichts gewaehlt: Zimmer und Verpflegung werden
+     angefahren und gelesen, die Seite bleibt, wie sie war. Was der
+     Agent hier sieht, darf er danach sagen - vor dem Rundgang hat er
+     dazu nichts in der Hand. Bewertungen bleiben aussen vor; die sind
+     Sache des Rundgangs und dauern zehnmal so lange. */
+  async hausUeberfliegen(id) {
+    const item = typeof getItemById === "function" ? getItemById(id) : null;
+    if (!item) return { ok: false, text: `${id} kenne ich nicht.` };
+    const schritte = [];
+
+    const zimmerZeilen = [...document.querySelectorAll(".room-row")];
+    if (zimmerZeilen.length && !Zeiger.abbruch) {
+      await Zeiger.lies(zimmerZeilen[0], { dauer: 600, hinweis: "Zimmer ansehen" });
+      const namen = zimmerZeilen.map((z) => z.querySelector("h4")?.textContent?.trim()).filter(Boolean);
+      const zuKlein = zimmerZeilen.filter((z) => z.classList.contains("zu-klein")).length;
+      schritte.push(namen.length === 1
+        ? `${namen[0]}`
+        : `${namen.length} Zimmerarten${zuKlein ? `, davon ${zuKlein} zu klein für die Gruppe` : ""}`);
+    }
+
+    const chips = [...document.querySelectorAll(".js-board")];
+    if (chips.length && !Zeiger.abbruch) {
+      await Zeiger.lies(chips[0].closest(".board-options") || chips[0], { dauer: 700, hinweis: "Verpflegung ansehen" });
+      // Der Text des Knopfes traegt Bezeichnung und Aufpreis in zwei Zeilen
+      const verpflegung = chips.map((c) => (c.textContent || "").trim().split("\n")[0].trim()).filter(Boolean);
+      schritte.push(`Verpflegung: ${verpflegung.join(", ")}`);
+    }
+
+    return { ok: true, text: `${item.name}: ${schritte.join(" · ") || "angesehen"}.`,
+      daten: { id, name: item.name, schritte,
+        verpflegung: (item.boards || []).map((b) => b.key),
+        zimmer: (item.rooms || []).map((r) => r.name) } };
   },
 
   /* Bewertungen mehrerer Treffer sichten, ohne die Liste zu verlassen.

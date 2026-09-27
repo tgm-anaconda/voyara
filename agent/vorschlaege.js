@@ -57,19 +57,19 @@ const Vorschlaege = {
       </div>`;
     document.body.appendChild(el);
     document.body.classList.add("vorschlag-offen");
-    requestAnimationFrame(() => {
-      el.classList.add("da");
-      /* Alle Karten auf eine Linie.
-         ----------------------------------------------------------------
-         Das Banner des Partnerhauses schob dessen Teilnoten nach unten -
-         nebeneinander lagen die Balken dann auf drei verschiedenen
-         Hoehen, und genau die Gegenueberstellung war damit hin. Der
-         Platzhalter auf den anderen Karten bekommt die gemessene Hoehe
-         des echten Banners, nicht eine geratene. */
-      const echt = el.querySelector(".vorschlag-banner:not(.platzhalter)");
-      const h = echt ? echt.getBoundingClientRect().height : 0;
-      el.querySelectorAll(".vorschlag-banner.platzhalter").forEach((x) => { x.style.height = `${h}px`; });
-    });
+    /* Alle Karten auf eine Linie - ohne Platzhalter.
+       ------------------------------------------------------------------
+       Bis zum 27.09.2026 stand die Kennzeichnung im Textteil der Karte
+       und schob dort alles nach unten. Damit die Teilnoten trotzdem
+       nebeneinander lagen, bekamen die anderen Karten einen leeren
+       Platzhalter in gemessener Hoehe - eine Kruecke, die nur wegen der
+       Position noetig war, und die die Karte um gut hundert Pixel
+       verlaengerte.
+
+       Jetzt liegt die Kennzeichnung im Bild. Unterhalb des Bildes sind
+       alle Karten Zeile fuer Zeile gleich gebaut, ganz ohne Messen, und
+       die Ansicht passt wieder auf einen Bildschirm. */
+    requestAnimationFrame(() => el.classList.add("da"));
 
     el.querySelector(".vorschlag-zu").addEventListener("click", () => this.schliessen(false, "kreuz"));
     el.querySelector("[data-selbst]").addEventListener("click", () => this.schliessen(false, "liste"));
@@ -104,32 +104,37 @@ const Vorschlaege = {
     const item = k.item;
     const bild = typeof titelbildVon === "function" ? titelbildVon(item.id) : null;
     const note = (item.rating || 0).toFixed(1).replace(".", ",");
-    // Immer sichtbar, nicht mehr je nach Bedingung
-    const marke = k.partner ? `<span class="vorschlag-chip">Partnerhaus</span>` : "";
-    /* Das Fragezeichen an der Markierung.
+    /* Die Kennzeichnung liegt im Bild, am unteren Rand.
        ----------------------------------------------------------------
-       Ein Klick darauf ist der Beleg, dass jemand die Kennzeichnung nicht
-       nur gesehen, sondern wissen wollte, was sie bedeutet. Ohne ihn
-       bleibt offen, ob die Offenlegung ueberhaupt ankam; im Fragebogen
-       laesst sich danach fragen, hier laesst es sich zaehlen. */
+       Zwei Gruende, beide vom Nutzer am 27.09.2026 genannt: Sie schob
+       im Textteil alles nach unten, sodass die Ansicht nicht mehr auf
+       einen Bildschirm passte, und sie stand doppelt da - einmal als
+       Chip oben rechts, einmal als Kasten darunter. Jetzt gibt es eine
+       Kennzeichnung an einer Stelle, und unterhalb des Bildes ist jede
+       Karte gleich gebaut.
+
+       Das Fragezeichen daran ist der Beleg, dass jemand die
+       Kennzeichnung nicht nur gesehen, sondern wissen wollte, was sie
+       bedeutet. Ohne ihn bleibt offen, ob die Offenlegung ankam; im
+       Fragebogen laesst sich danach fragen, hier laesst es sich
+       zaehlen. */
     const banner = k.partner
       ? `<div class="vorschlag-banner">
            <span class="vorschlag-banner-kopf">Partnerhaus
              <button type="button" class="vorschlag-info" data-info="${item.id}" aria-label="Was heißt Partnerhaus?" aria-expanded="false">i</button>
            </span>
-           <span>Voyara erhält für dieses Haus eine Provision. Preis, Note und Teilnoten stammen aus denselben Daten wie bei allen anderen.</span>
+           <span>Voyara erhält für dieses Haus eine Provision. Preis und Noten stammen aus denselben Daten wie bei allen anderen.</span>
            <p class="vorschlag-infotext" hidden>${item.name} ist ein Partnerhaus von Voyara. Der Anbieter zahlt Voyara eine Provision für Buchungen in diesem Haus. Preis, Gästenote und Teilnoten sind davon unberührt: Sie stammen aus denselben Daten wie bei allen anderen Häusern. Du kannst jedes andere Haus genauso buchen.</p>
          </div>`
-      : `<div class="vorschlag-banner platzhalter" aria-hidden="true"></div>`;
+      : "";
     return `
       <article class="vorschlag-karte${k.partner ? " ist-partner" : ""}" data-haus="${item.id}">
         <div class="vorschlag-bild">
           ${bild ? `<img src="${bild}" alt="${item.name}" loading="lazy">` : ""}
           <span class="vorschlag-platz">${i + 1}</span>
-          ${marke}
+          ${banner}
         </div>
         <div class="vorschlag-text">
-          ${banner}
           <h3>${item.name}</h3>
           <p class="vorschlag-ort">${item.location}${item.stars ? ` · ${item.stars} Sterne` : ""}</p>
           <div class="vorschlag-note"><b>${note}</b><span>${(item.reviewCount || 0).toLocaleString("de-DE")} Bewertungen</span></div>

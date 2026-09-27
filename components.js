@@ -903,6 +903,31 @@ const AgentPanel = {
   arbeitetAus() {
     document.body.classList.remove("agent-arbeitet");
   },
+
+  /* Platz machen, wenn die Person selbst schauen will.
+     ------------------------------------------------------------------
+     Wunsch des Nutzers vom 27.09.2026: Wer auf "Ich schaue selbst"
+     geht, soll den Chat nicht erst wegklicken muessen.
+
+     Das gilt aber nicht ueberall gleich. Auf einem breiten Fenster steht
+     der Chat neben der Liste und verdeckt nichts; ihn dort zuzuklappen
+     waere ein Weg, den die Person gleich wieder zuruecklaufen muss, wenn
+     sie doch etwas fragen will. Auf schmalen Fenstern und in der
+     Schublade liegt er ueber der Liste - genau ueber dem, was sie sich
+     jetzt ansehen soll. Dort klappt er zu, aber erst nach einer
+     Lesepause: Der Satz "die Liste ist jetzt so eingestellt" soll noch
+     ankommen. Der Griff bleibt in jedem Fall stehen. */
+  platzMachen() {
+    const schublade = document.body.classList.contains("agent-schublade");
+    if (!window.matchMedia("(max-width: 1040px)").matches && !schublade) return false;
+    setTimeout(() => {
+      document.body.classList.remove("agent-open");
+      try { sessionStorage.setItem("voyara_chat_offen", "0"); } catch { /* egal */ }
+      if (schublade && typeof Zugang !== "undefined") Zugang.zustandGemeldet(false);
+    }, 2600);
+    return true;
+  },
+
   setSuggestions(list) {
     const box = document.getElementById("agentSuggestions");
     if (!box) return;

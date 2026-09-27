@@ -91,6 +91,7 @@ const Werkzeugkasten = {
           maxStrandMeter: zahl("Hoechstens so viele Meter zum Strand"),
           mindestbewertung: { type: "number", description: "Mindest-Gaestenote, z.B. 4.5 (nur wenn die Person das sagt)" },
           mindestSterne: zahl("Mindestens so viele Hotelsterne (nur wenn die Person das sagt)"),
+          nurAngebote: { type: "boolean", description: "true, wenn die Person nur Haeuser sehen will, die gerade reduziert sind ('nur was im Angebot ist', 'nur reduziert', 'gibt es Schnaeppchen', 'nur Sonderangebote'). Die Seite hat dafuer einen Schalter in der Filterspalte."},
           preisEgal: { type: "boolean", description: "true, wenn die Person sagt, dass der Preis keine Rolle spielt oder sie keinen Rahmen nennen will" },
           bewertungEgal: { type: "boolean", description: "true, wenn die Person sagt, dass Bewertung oder Sterne ihr egal sind" },
           strandEgal: { type: "boolean", description: "true, wenn die Person sagt, dass die Naehe zum Strand egal ist" },
@@ -133,6 +134,9 @@ const Werkzeugkasten = {
       f("haeuser_ansehen",
         "Geht die engere Auswahl der Reihe nach durch: oeffnet jedes Haus, liest dort die Bewertungen, waehlt Zimmer und Verpflegung und kommt zur Liste zurueck. Danach legt es die Vorschlaege vor. Ruf es nicht von dir aus - der Fahrplan verlangt es, wenn es soweit ist.",
         {}),
+      f("stichprobe_nehmen",
+        "Oeffnet kurz ein, zwei Haeuser aus der Trefferliste, sieht sich Zimmer und Verpflegung an und kommt zurueck - ohne Bewertungen, ohne etwas auszuwaehlen. Ruf es nicht von dir aus; der Fahrplan verlangt es nach der ersten Suche.",
+        {}),
       f("bewertungen_lesen",
         "Liest die Gaestebewertungen eines Hauses sichtbar durch und liefert Teilnoten je Aspekt (von 10), Lob und Kritik. Pflicht, bevor du etwas ueber Bewertungen sagst - Teilnoten, was Gaeste loben oder bemaengeln, wie gut Essen, Lage, Sauberkeit, Service oder Ruhe sind. Ausnahme: Du hast dieses Haus in diesem Gespraech schon gelesen.",
         {
@@ -164,7 +168,7 @@ const Werkzeugkasten = {
   // Welche Stufe ein Werkzeug mindestens braucht
   BRAUCHT: {
     haus_oeffnen: "suchen", zurueck_zur_liste: "suchen", merken: "suchen",
-    haeuser_ansehen: "suchen",
+    haeuser_ansehen: "suchen", stichprobe_nehmen: "suchen",
     buchung_vorbereiten: "vorbereiten", buchung_abschliessen: "vorbereiten",
   },
 
@@ -256,7 +260,7 @@ const Werkzeugkasten = {
       const fpJetzt = this.fahrplan(kern.lauf.profil || {}, kern.lauf);
       const letzte = [...(kern.lauf.gespraech || [])].reverse().find((n) => n.role === "user")?.content || "";
       const fragtSelbst = /\?/.test(String(letzte)) || /^(habt|gibt|wie viele|was|welche|zeig)/i.test(String(letzte).trim());
-      if (fpJetzt.naechstes && !fragtSelbst && !kern.lauf.rundgang) {
+      if (fpJetzt.naechstes && !fragtSelbst && !kern.lauf.rundgang && !kern.lauf.stichprobe) {
         kern.notieren("suche_zu_frueh", { offen: fpJetzt.naechstes });
         return { ergebnis: { nichtGesucht: `Erst das offene Thema klaeren: ${fpJetzt.naechstes}.`,
           hinweis: "Such jetzt noch nicht - es fehlt noch eine Angabe, und mit halben Vorgaben ist das Ergebnis im naechsten Zug wieder hinfaellig. Stell die offene Frage.",
@@ -422,7 +426,7 @@ const Werkzeugkasten = {
       // zaehlen nur, wenn die letzte Nachricht so etwas sagt - auf "Hotel"
       // hatte das Modell sonst "schauen" eingetragen
       if (a.weiter && !gesagt(/schau|seh(en)?\b|zeig|guck|los\b|klär|klaer|erst ?mal|eckdaten|angaben|weiter|noch (ein paar|mehr|etwas|was)|nur zu|gern|ja\b|nein\b|ok\b|passt/i, 1)) { verworfen.push("weiter"); delete a.weiter; }
-      if (a.vorgehen && !gesagt(/selbst|selber|filter|drei|top|raussuch|such mir|vorschl|favorit|liste|schau|zeig|empfehl|wähl|waehl|aussuch/i, 1)) { verworfen.push("vorgehen"); delete a.vorgehen; }
+      if (a.vorgehen && !gesagt(/selbst|selber|filter|drei|top|raussuch|\bsuch|\bsuchst\b|für mich|fuer mich|übernimm|uebernimm|vorschl|favorit|liste|schau|zeig|empfehl|wähl|waehl|aussuch/i, 1)) { verworfen.push("vorgehen"); delete a.vorgehen; }
       // Die Wahl "selbst oder drei" gibt es erst nach der Lage; vorher ist
       // "erst mal schauen" die Antwort auf "schauen oder klaeren" (weiter)
       // Wer gleich im ersten Satz "such mir drei raus" schreibt, hat die
@@ -451,6 +455,29 @@ const Werkzeugkasten = {
         kern.notieren("monat_verworfen", { monat: a.monat }); delete a.monat;
       }
       setze("monat", a.monat);
+      /* "Im Sommer." - "Juni, Juli oder August?" - "Egal."
+         ----------------------------------------------------------------
+         Am 27.09.2026 gemeldet: Danach fragte der Agent noch einmal. Das
+         Modell sollte den ersten Monat der Jahreszeit nehmen, tat es
+         nicht zuverlaessig, und selbst wenn - der erste Monat ist eine
+         willkuerliche Wahl ohne Begruendung.
+
+         Die Entscheidung gehoert jetzt dem Kern, nicht dem Modell: Er
+         rechnet die drei Monate durch, nimmt den besten und sagt, woran
+         es lag. Damit ist die Frage in jedem Fall erledigt, und die
+         Person weiss, worauf sie widersprechen koennte. */
+      if (!p.monat && !a.monat && !a.von) {
+        const jz = Werkzeugkasten.jahreszeitGenannt(kern.lauf);
+        const abgegeben = gesagt(/egal|gleich|such du|suchst du|du entscheid|dein vorschlag|nimm du|nimm einfach|weißt du|weisst du|was (du )?meinst|keine ahnung|weiß nicht|weiss nicht|wie du meinst|aussuchen|überlass|ueberlass/i, 1);
+        if (jz && abgegeben) {
+          const w = Werkzeugkasten.monatWaehlen(p, jz.monate);
+          if (w) {
+            setze("monat", w.monat);
+            Werkzeugkasten.ableiten(kern.lauf, "monat", w.satz);
+            kern.notieren("monat_abgeleitet", { jahreszeit: jz.name, monat: w.monat, haeuser: w.anzahl, schnitt: w.schnitt });
+          }
+        }
+      }
       // Feste Daten nur, wenn die Person einen Tag genannt hat. Aus "im
       // Oktober" machte das Modell sonst einen Zeitraum - und die Maske
       // zeigte Daten, die nie jemand gesagt hat.
@@ -587,6 +614,8 @@ const Werkzeugkasten = {
         }
       }
       for (const f of ["preisEgal", "bewertungEgal", "strandEgal", "verpflegungEgal", "ausstattungEgal"]) if (a[f] !== undefined) setze(f, !!a[f]);
+      // Nur reduzierte Haeuser - ein Wunsch wie jeder andere, kein "egal"
+      if (a.nurAngebote !== undefined) { if (p.nurAngebote !== !!a.nurAngebote) geaendert.push("nurAngebote"); p.nurAngebote = !!a.nurAngebote; }
       if (Array.isArray(a.wuensche)) {
         const ALIAS = { strand: "strandnah", meer: "strandnah", beach: "strandnah", kids: "kinderclub", kinder: "familie", spa: "wellness", bewertungen: "bewertung", essen: "essen" };
         // Ein Wunsch zaehlt nur, wenn die Person ein passendes Wort gesagt
@@ -766,14 +795,14 @@ const Werkzeugkasten = {
       // der Kern sucht den guenstigsten aus und laesst es ansagen
       if (p.flug && p.flugAbEgal && !p.flugAb) {
         const ziele = p.zielId ? [p.zielId] : (p.zieleErlaubt || []);
-        const ab = Werkzeugkasten.guenstigsterFlughafen(ziele);
-        if (ab) {
-          p.flugAb = ab;
+        const w = Werkzeugkasten.guenstigsterFlughafen(ziele);
+        if (w) {
+          p.flugAb = w.ab;
           p.vonPerson = p.vonPerson || {};
-          kern.lauf.flughafenGewaehlt = ab;
+          kern.lauf.flughafenGewaehlt = w;
           kern.standAnzeigen();
-          kern.notieren("flughafen_gewaehlt", { ab, grund: "guenstigste Verbindung" });
-          if (typeof Flug !== "undefined") Flug.set({ mit: true, ab: Flug.code(ab), klasse: p.flugKlasse || "economy" });
+          kern.notieren("flughafen_gewaehlt", { ab: w.ab, preis: w.preis, zweiter: w.zweiter, aufpreis: w.aufpreis });
+          if (typeof Flug !== "undefined") Flug.set({ mit: true, ab: Flug.code(w.ab), klasse: p.flugKlasse || "economy" });
         }
       }
       const fp = Werkzeugkasten.fahrplan(p, kern.lauf);
@@ -797,10 +826,11 @@ const Werkzeugkasten = {
 
       // Was das Modell zurueckbekommt
       const antwort = async (liste, weg, gesamt) => {
-        const flughafenSatz = kern.lauf.flughafenGewaehlt
-          ? `Sag in einem Halbsatz, dass du ab ${kern.lauf.flughafenGewaehlt} rechnest, weil das die guenstigste Verbindung ist, und dass sie das aendern kann. `
+        const fh = kern.lauf.flughafenGewaehlt;
+        const flughafenSatz = fh
+          ? `Sag in einem Halbsatz, dass du ab ${fh.ab} rechnest${fh.zweiter && fh.aufpreis > 0 ? `, weil der Hinflug dort ab ${fh.preis} € losgeht und ab ${fh.zweiter} ${fh.aufpreis} € mehr kostet` : ", weil das die guenstigste Verbindung ist"}, und dass sie das aendern kann. `
           : "";
-        if (kern.lauf.flughafenGewaehlt) kern.lauf.flughafenGewaehlt = null;
+        if (fh) kern.lauf.flughafenGewaehlt = null;
         const umfang = Werkzeugkasten.umfang(liste, p);
         // Bei einer Richtung (warm, Meer) zaehlt der eingegrenzte Katalog, nicht
         // die Seite - die kennt nur eine Region auf einmal
@@ -817,6 +847,10 @@ const Werkzeugkasten = {
           kern.lauf.vorgehenFuer = fp.schluessel + p.vorgehen;
           kern.lauf.letzteTreffer = liste.map((h) => h.id);
           kern.notieren("selbst_gesucht", { treffer: liste.length, filter: Werkzeugkasten.filterText(p), freigabe: kern.freigabe() });
+          // Auf schmalen Fenstern liegt der Chat ueber der Liste - er
+          // klappt nach dem Satz zu, damit die Person sieht, worauf er
+          // sie gerade verweist.
+          if (kern.darf("suchen")) kern.lauf.platzMachen = true;
           return { ...basis, haeuser: "nicht noetig - die Person schaut selbst",
             hinweis: kern.darf("suchen")
               ? "Die Filter stehen auf der Seite. Sag der Person in einem Satz, dass die Liste jetzt so eingestellt ist und sie in Ruhe schauen kann; du bist da, wenn sie etwas wissen will. Keine Frage noetig."
@@ -832,6 +866,25 @@ const Werkzeugkasten = {
             kern.sagen(lage);
             kern.lauf.lageImZug = lage;
             kern.notieren("lage_gesagt", { haeuser: liste.length });
+            /* Nach der Lage einmal hineinsehen.
+               ----------------------------------------------------------
+               Bis hierher hat der Agent nur gezaehlt und gefiltert. Alles,
+               was er ueber die Haeuser selbst sagen koennte - welche
+               Zimmer, welche Verpflegung - stuende aus dem Nichts da.
+               Genau das ist der Punkt, an dem er auf der Seite nachsieht:
+               zwei Haeuser, kurz, ohne Bewertungen.
+
+               Danach erst kommt die Frage nach dem Vorgehen. Deshalb geht
+               hier kein Fahrplan mit: Das Modell soll jetzt nichts fragen,
+               sondern die Stichprobe laufen lassen; der Zwang holt sie im
+               naechsten Schritt. */
+            if (kern.darf("suchen") && !kern.lauf.stichprobeGemacht && !kern.lauf.stichprobe
+              && liste.length >= 2 && STELLSCHRAUBEN.stichprobe !== false) {
+              kern.lauf.stichprobe = { ids: liste.slice(0, 2).map((h) => h.id), i: 0, gesehen: [] };
+              kern.sichern();
+              return { ...basis, haeuser: "noch nicht - erst die Beratung",
+                hinweis: "Die Lage steht schon im Chat - nicht wiederholen. Stell jetzt KEINE Frage. Du siehst gleich in zwei Haeuser hinein (stichprobe_nehmen); hoechstens ein Halbsatz dazu, dass du dir das eben ansiehst." };
+            }
             return { ...basis, haeuser: "noch nicht - erst die Beratung",
               // Kein Kommentar zu den Zahlen der Lage. Das Modell haengte
               // sonst Bewertungen an ("Kinderclubs sind eher selten"),
@@ -1233,6 +1286,104 @@ const Werkzeugkasten = {
         },
         log: `${item.name}: ${(d.anzahl ?? item.reviewCount).toLocaleString("de-DE")} Bewertungen ausgewertet${d.sichtbarGelesen ? `, ${d.sichtbarGelesen} im Wortlaut gelesen` : ""}`,
       };
+    },
+
+    /* Die Stichprobe.
+       ----------------------------------------------------------------
+       Wunsch des Nutzers vom 27.09.2026: Der Agent soll nach der ersten
+       Suche "nicht nur scrollen innerhalb des Bereichs, sondern
+       vielleicht auch mal in ein, zwei Hotels reingehen, sich die Seite
+       angucken, dann wieder raus - gibt es ueberhaupt eine Halbpension
+       und so."
+
+       Sie ist der kleine Bruder des Rundgangs und teilt dessen Aufbau:
+       ueber Seitenwechsel hinweg, Stand in lauf.stichprobe, Stufe im
+       ausstehenden Aufruf. Zwei Unterschiede, beide gewollt. Erstens
+       werden keine Bewertungen gelesen - das dauert je Haus acht
+       Sekunden und ist Sache des Rundgangs, hier geht es nur um einen
+       Blick. Zweitens wird nichts ausgewaehlt: Die Person hat noch gar
+       nicht gesagt, was sie will, und ein Agent, der auf einer Seite
+       Haken setzt, die er gleich wieder verlaesst, hinterlaesst einen
+       Zustand, den niemand bestellt hat.
+
+       Zwei Haeuser, nicht mehr. Jedes kostet einen Seitenwechsel, und
+       die Stichprobe steht zwischen der Lage und der ersten Frage - was
+       hier an Zeit dazukommt, wartet die Person voll ab. */
+    async stichprobe_nehmen(a, kern, stufe) {
+      const r = kern.lauf.stichprobe;
+      if (!r || !r.ids?.length) return { ergebnis: { fehler: "Gerade steht keine Stichprobe an." } };
+      const p = kern.lauf.profil || {};
+
+      const fertig = () => {
+        const gesehen = r.gesehen || [];
+        kern.lauf.stichprobe = null;
+        kern.lauf.stichprobeGemacht = true;
+        kern.sichern();
+        kern.notieren("stichprobe_fertig", { haeuser: gesehen.map((x) => x.id) });
+        return { ergebnis: {
+          angesehen: gesehen,
+          hinweis: gesehen.length
+            ? "Du warst gerade in diesen Haeusern und hast Zimmer und Verpflegung gesehen. Im Chat steht schon, was du dort gefunden hast - wiederhol es nicht. Stell jetzt die naechste Frage."
+            : "Die Stichprobe hat nichts ergeben. Mach einfach weiter.",
+          ...Werkzeugkasten.fahrplanFuerModell(Werkzeugkasten.fahrplan(p, kern.lauf), p, kern.lauf) } };
+      };
+
+      const hin = async (id) => {
+        kern.sperreAn();
+        const e = await Werkzeuge.unterkunftOeffnen(id);
+        if (!e.ok) {
+          await Zeiger.warte(250);
+          location.href = kern.linkZu(id, getItemById(id)?.name || id).href;
+        }
+      };
+
+      // Wer selbst klickt, hat das Wort - dann bricht die Stichprobe ab
+      if (Zeiger.abbruch) { kern.notieren("stichprobe_abgebrochen", { bei: r.i }); kern.lauf.stichprobe = null; kern.lauf.stichprobeGemacht = true; return fertig(); }
+
+      if (stufe === 1) {
+        kern.notieren("stichprobe_start", { ids: r.ids });
+        kern.logZeile(`Schaue kurz in ${r.ids.length === 1 ? "ein Haus" : `${r.ids.length} Häuser`} hinein`, "schritt");
+        const namen = r.ids.map((id) => getItemById(id)?.name || id);
+        kern.sagen(r.ids.length === 1
+          ? `Ich schaue mir ${namen[0]} eben kurz an, damit ich weiß, was die Häuser hier überhaupt anbieten.`
+          : `Ich schaue eben kurz in zwei Häuser hinein - ${namen.join(" und ")} - damit ich weiß, was es hier an Zimmern und Verpflegung gibt.`);
+        r.zurueck = location.href;
+        kern.sichern();
+        await hin(r.ids[0]);
+        return { navigiert: true, stufe: 2 };
+      }
+
+      if (stufe === 2) {
+        const id = r.ids[r.i];
+        kern.sperreAn();
+        const e = await Werkzeuge.hausUeberfliegen(id);
+        kern.sperreAus();
+        if (e.text) kern.logZeile(e.text, "ergebnis");
+        (r.gesehen ||= []).push({ id, name: e.daten?.name || id, schritte: e.daten?.schritte || [], verpflegung: e.daten?.verpflegung || [] });
+        // Was er gesehen hat, sagt der Kern - aus den Daten der Seite,
+        // nicht aus dem Katalog und nicht aus dem Modell.
+        if ((e.daten?.schritte || []).length) kern.sagen(`${e.daten.name}: ${e.daten.schritte.join(" · ")}.`);
+        r.i += 1;
+        kern.sichern();
+        if (Zeiger.abbruch) { kern.notieren("stichprobe_abgebrochen", { bei: r.i }); kern.lauf.stichprobe = null; kern.lauf.stichprobeGemacht = true; return fertig(); }
+        if (r.i < r.ids.length) { await hin(r.ids[r.i]); return { navigiert: true, stufe: 2 }; }
+        kern.sperreAn();
+        if (r.zurueck) { await Zeiger.warte(250); location.href = r.zurueck; }
+        else await Werkzeuge.zurueckZurListe();
+        return { navigiert: true, stufe: 3 };
+      }
+
+      // Zurueck auf der Liste: Die Filter sind beim Neuladen weg und
+      // muessen wieder stehen - sonst sieht die Person nach dem Ausflug
+      // wieder alle Haeuser des Katalogs.
+      if (Werkzeuge.seite() === "results" && !Zeiger.abbruch) {
+        kern.sperreAn();
+        const wieder = await Werkzeuge.filterSetzen(Werkzeugkasten.filterWerte(p));
+        if (p.sortierung) await Werkzeuge.sortieren(p.sortierung === "bewertung" ? "rating" : "preis-asc");
+        if (wieder.text) kern.logZeile(`Filter wieder gesetzt: ${wieder.text}`, "ergebnis");
+      }
+      kern.sperreAus();
+      return fertig();
     },
 
     /* Der Rundgang.
@@ -1672,14 +1823,29 @@ const Werkzeugkasten = {
 
     vorgehen: {
 
-      erklaerung: "Wenn ich raussuche, gehe ich die Häuser einzeln durch, lese Bewertungen und stelle dir eine kleine Auswahl zusammen. Wenn du selbst schaust, stelle ich nur die Filter ein und halte mich raus.",      /* Fassung des Nutzers vom 27.09.2026. Sie benennt, was in jedem
-         Zweig passiert - meine alte tat das nicht, und die Person wusste
-         nicht, worueber sie eigentlich entscheidet. Die Eckdaten lassen
-         sich nicht filtern; sie sind das, was der Agent fuer die genaue
-         Auswahl braucht. Genau das steht jetzt da. */
-      satz: ["Soll ich schon mal die Filter setzen und du schaust selbst, welches Hotel dich anspricht? Oder gehen wir noch ein paar Eckdaten durch, und ich sehe mir die Häuser dann im Einzelnen an - drei bis sechs, so viele du möchtest.",
-        "Was ist dir lieber - ich stelle nur die Filter und du stöberst selbst, oder wir klären noch ein paar Punkte und ich gehe die Häuser einzeln durch?"],
-      frage: "Ob du die Filter stellst und sie selbst schaut (vorgehen selbst) oder ob du Haeuser raussuchst (vorgehen top3) - und wenn ja, wie viele.", chips: "Ich schaue selbst | Such mir drei raus | Lieber fünf oder sechs" },
+      erklaerung: "Die Filter habe ich schon gesetzt, die Liste steht also. Wenn ich für dich raussuche, gehe ich die Häuser einzeln durch, lese die Bewertungen und stelle dir eine kleine Auswahl zusammen. Wenn du selbst schaust, halte ich mich raus und bin da, wenn du etwas wissen willst.",
+      /* Drei Fragen in einer waren zwei zu viel.
+         ----------------------------------------------------------------
+         Bis zum 27.09.2026 stand hier "Soll ich schon mal die Filter
+         setzen und du schaust selbst? Oder gehen wir noch ein paar
+         Eckdaten durch - drei bis sechs, so viele du moechtest." Das sind
+         drei Entscheidungen auf einmal: ob gefiltert wird, wer aussucht,
+         und wie viele. Der Nutzer: "Das sind so viele Fragen in einer
+         Anfrage."
+
+         Die erste davon ist gar keine. Filter setzen kostet nichts, macht
+         nichts kaputt und hilft in beiden Faellen - der Agent tut es
+         einfach und sagt es. Die dritte kommt spaeter oder gar nicht;
+         ohne Angabe sind es drei, und wer eine Zahl nennt, bekommt sie.
+         Bleibt eine Frage: Wer sucht aus?
+
+         Dass der Agent komplett raussuchen kann, steht ausdruecklich da.
+         Sonst waere "selbst schauen" keine Wahl, sondern der einzige
+         erkennbare Weg - und in der Studie liefe eine Bedingung gegen
+         eine Faehigkeit, von der niemand wusste. */
+      satz: ["Die Filter stehen jetzt so auf der Seite. Möchtest du selbst durch die Liste gehen? Oder wir klären noch ein paar Eckdaten, dann gehe ich die Häuser einzeln durch und lege dir eine Auswahl vor.",
+        "Die Liste ist eingestellt. Schaust du selbst, oder klären wir noch ein paar Punkte und ich suche dir die Häuser raus?"],
+      frage: "Die Filter stehen schon - frag NICHT, ob du sie setzen sollst. Es geht nur darum, ob sie selbst durch die Liste geht (vorgehen selbst) oder ob du die Haeuser fuer sie raussuchst (vorgehen top3). Frag nicht nach einer Anzahl; ohne Angabe sind es drei.", chips: "Ich schaue selbst | Such du für mich raus" },
 
     preis: {
 
@@ -1755,6 +1921,110 @@ const Werkzeugkasten = {
      oder Koeln, je nachdem was billiger ist"): Das Verstehen kommt vom
      Modell (flugAbEgal), die Entscheidung trifft der Kern anhand der
      echten Flugpreise. */
+  /* ==================================================================
+     Abgeleitete Entscheidungen
+     ------------------------------------------------------------------
+     Wunsch des Nutzers vom 27.09.2026: "Wenn eine Transferleistung des
+     Bots notwendig ist - nimm den billigsten Flughafen, nimm den Monat
+     mit den meisten Angeboten - dann ist meistens auch eine Erklaerung
+     notwendig. Warum wird jetzt Duesseldorf ausgewaehlt?"
+
+     Genau das ist der Unterschied zwischen einem Agenten und einem
+     Formular mit Standardwerten. Ein Formular setzt still etwas ein;
+     ein Agent entscheidet und sagt, woran er sich dabei gehalten hat.
+     Ohne den Grund kann die Person nicht widersprechen - sie weiss ja
+     nicht, worauf sie antworten wuerde.
+
+     Jede solche Entscheidung landet hier, mit fertigem Satz und Zahl.
+     Der Kern stellt ihn vor seine naechste Frage; gesagt wird er also
+     in jedem Fall, auch wenn das Modell ihn vergisst.
+     ================================================================== */
+  ableiten(lauf, feld, satz) {
+    (lauf.abgeleitet ||= []).push({ feld, satz });
+  },
+
+  JAHRESZEITEN: {
+    sommer: [6, 7, 8], herbst: [9, 10, 11], winter: [12, 1, 2],
+    "frühling": [3, 4, 5], fruehling: [3, 4, 5], "frühjahr": [3, 4, 5], fruehjahr: [3, 4, 5],
+  },
+
+  // Welche Jahreszeit die Person im Gespraech genannt hat
+  jahreszeitGenannt(lauf) {
+    const gesagt = (lauf.gespraech || []).filter((n) => n.role === "user").map((n) => String(n.content).toLowerCase()).join(" ");
+    const name = Object.keys(this.JAHRESZEITEN).find((k) => gesagt.includes(k));
+    return name ? { name, monate: this.JAHRESZEITEN[name] } : null;
+  },
+
+  /* Welcher Monat einer Jahreszeit, wenn es der Person gleich ist.
+     ------------------------------------------------------------------
+     Bis zum 27.09.2026 nahm der Agent stumpf den ersten Monat der
+     Jahreszeit. Das ist ein Wuerfelwurf mit Ansage: Die Person hat die
+     Entscheidung abgegeben, und der Agent trifft sie, ohne hinzusehen.
+
+     Jetzt rechnet der Kern die Monate durch - wie viele Haeuser in
+     jedem in Frage kommen und was sie im Schnitt pro Nacht kosten -
+     und gibt den Grund gleich mit. Es entscheidet die Zahl der Haeuser;
+     liegen sie nah beieinander (bis ein Zehntel Unterschied), gibt der
+     Preis den Ausschlag. */
+  monatWaehlen(p, monate) {
+    const bewertet = (monate || []).map((m) => {
+      const probe = { ...p, monat: m };
+      const treffer = this.katalogTreffer(probe, this.filterAusStand(probe));
+      const preise = treffer.map((h) => this.preis(h, m));
+      return { monat: m, anzahl: treffer.length,
+        schnitt: preise.length ? Math.round(preise.reduce((a, b) => a + b, 0) / preise.length) : null };
+    });
+    if (!bewertet.length || !Math.max(...bewertet.map((x) => x.anzahl))) return null;
+    const name = (m) => (typeof MONATSNAMEN !== "undefined" ? MONATSNAMEN[m - 1] : `Monat ${m}`);
+    /* Erst den Grund, dann den Monat - nicht umgekehrt.
+       ------------------------------------------------------------------
+       Der erste Entwurf waehlte nach Preis und suchte sich danach eine
+       Begruendung. Dabei kam "ich nehme Juli, den naechstgelegenen"
+       heraus, obwohl Juni frueher liegt: Juli war einen Euro billiger.
+       Eine Begruendung, die auf die Wahl nicht passt, ist schlimmer als
+       keine. Jetzt entscheidet das Kriterium, das wirklich etwas hergibt,
+       und wenn keines etwas hergibt, faellt die Wahl auf den ersten Monat
+       der Jahreszeit - und genau das steht dann auch da. */
+    const meisteM = bewertet.reduce((a, b) => (b.anzahl > a.anzahl ? b : a));
+    const wenigsteM = bewertet.reduce((a, b) => (b.anzahl < a.anzahl ? b : a));
+    const mitPreis = bewertet.filter((x) => x.schnitt != null);
+    const billigsteM = mitPreis.length ? mitPreis.reduce((a, b) => (b.schnitt < a.schnitt ? b : a)) : null;
+    const teuersteM = mitPreis.length ? mitPreis.reduce((a, b) => (b.schnitt > a.schnitt ? b : a)) : null;
+    const wahl = wenigsteM.anzahl && meisteM.anzahl >= wenigsteM.anzahl * 1.25 ? meisteM
+      : (billigsteM && teuersteM && teuersteM.schnitt >= billigsteM.schnitt * 1.08 ? billigsteM
+        : bewertet[0]);
+    const wenigste = wenigsteM;
+    const teuerste = teuersteM;
+    /* Ein Grund wird nur genannt, wenn es einen gibt.
+       ------------------------------------------------------------------
+       Der erste Entwurf schrieb immer eine Begruendung hin, auch bei
+       182 gegen 183 Euro. Das ist schlimmer als gar keine: Es sieht nach
+       Recherche aus und ist Rauschen - und wer nachrechnet, glaubt dem
+       Agenten danach auch die Zahlen nicht mehr, die etwas bedeuten.
+
+       Im Katalog liegen die Monate einer Jahreszeit meist gleichauf, weil
+       eine Region in der ganzen Jahreszeit Saison hat. Es gibt aber
+       Ausnahmen, und bei denen lohnt der Hinweis: In Lappland kostet die
+       Nacht im September 173 Euro und im November 254. Genau dann, und
+       nur dann, steht die Zahl da. Sonst sagt der Agent, dass sich die
+       Monate nicht unterscheiden - das ist auch eine Auskunft. */
+    let satz;
+    if (wenigste.monat !== wahl.monat && wenigste.anzahl && wahl.anzahl >= wenigste.anzahl * 1.25) {
+      satz = `Dann nehme ich ${name(wahl.monat)}: Da kommen ${wahl.anzahl} Häuser in Frage, im ${name(wenigste.monat)} nur ${wenigste.anzahl}.`;
+    } else if (teuerste && teuerste.monat !== wahl.monat && wahl.schnitt != null && teuerste.schnitt >= wahl.schnitt * 1.08) {
+      satz = `Dann nehme ich ${name(wahl.monat)}: Da liegt die Nacht im Schnitt bei ${wahl.schnitt} €, im ${name(teuerste.monat)} bei ${teuerste.schnitt} €.`;
+    } else {
+      satz = `Ich habe die drei Monate verglichen - bei Auswahl und Preis unterscheiden sie sich kaum. Ich nehme ${name(wahl.monat)}, den nächstgelegenen.`;
+    }
+    return { ...wahl, satz: `${satz} Sag Bescheid, wenn dir ein anderer lieber ist.` };
+  },
+
+  /* Der guenstigste Abflughafen - mit der Zahl, an der es haengt.
+     ------------------------------------------------------------------
+     "Hamburg oder Koeln, je nachdem was billiger ist" ist eine
+     abgegebene Entscheidung. Bis zum 27.09.2026 sagte der Agent nur,
+     dass er die guenstigste Verbindung genommen habe; woran sich das
+     festmacht, blieb offen - und damit auch, ob die Person das so will. */
   guenstigsterFlughafen(zieleIds = []) {
     if (typeof FLIGHTS === "undefined") return null;
     const ziele = (zieleIds || []).filter(Boolean);
@@ -1764,7 +2034,10 @@ const Werkzeugkasten = {
     const je = {};
     for (const f of passend) je[f.from] = Math.min(je[f.from] ?? Infinity, f.price || Infinity);
     const sortiert = Object.entries(je).sort((a, b) => a[1] - b[1]);
-    return sortiert.length ? sortiert[0][0] : null;
+    if (!sortiert.length) return null;
+    const [ab, preis] = sortiert[0];
+    const zweiter = sortiert[1] || null;
+    return { ab, preis, zweiter: zweiter ? zweiter[0] : null, aufpreis: zweiter ? zweiter[1] - preis : 0 };
   },
 
   // Die moeglichen Anreisetage als Text - gebraucht fuer die Frage und
@@ -2009,16 +2282,14 @@ const Werkzeugkasten = {
     }
     // Jahreszeit genannt, Monat offen: die drei Monate zur Wahl, keinen vorschlagen
     if (naechstes === "zeit") {
-      const gesagt = (lauf.gespraech || []).filter((n) => n.role === "user").map((n) => String(n.content).toLowerCase()).join(" ");
-      const JAHRESZEIT = { sommer: "Juni | Juli | August", herbst: "September | Oktober | November", winter: "Dezember | Januar | Februar", "frühling": "März | April | Mai", fruehling: "März | April | Mai", "frühjahr": "März | April | Mai" };
-      const jz = Object.keys(JAHRESZEIT).find((k) => gesagt.includes(k));
+      const jz = this.jahreszeitGenannt(lauf);
       if (jz) {
-        const m = JAHRESZEIT[jz].split(" | ");
+        const m = jz.monate.map((x) => (typeof MONATSNAMEN !== "undefined" ? MONATSNAMEN[x - 1] : String(x)));
         satz = (lauf.gefragtWie?.zeit || 0) >= 1
-          ? `Welcher der drei Monate passt euch am besten - ${m[0]}, ${m[1]} oder ${m[2]}? Wenn es egal ist, nehme ich ${m[0]}.`
-          : `Du hast ${jz.charAt(0).toUpperCase() + jz.slice(1)} gesagt - welcher Monat soll es sein, ${m[0]}, ${m[1]} oder ${m[2]}? Egal ist auch eine Antwort.`;
-        frage = `Sie hat "${jz}" gesagt - frag, welcher Monat. "egal" ist eine Antwort.`;
-        chips = `${JAHRESZEIT[jz]} | Egal`;
+          ? `Welcher der drei Monate passt euch am besten - ${m[0]}, ${m[1]} oder ${m[2]}? Wenn es dir gleich ist, suche ich den passendsten aus.`
+          : `Du hast ${jz.name.charAt(0).toUpperCase() + jz.name.slice(1)} gesagt - welcher Monat soll es sein, ${m[0]}, ${m[1]} oder ${m[2]}? Wenn es dir egal ist, schaue ich nach, in welchem am meisten frei ist.`;
+        frage = `Sie hat "${jz.name}" gesagt - frag, welcher Monat. Sagt sie "egal" oder gibt sie dir die Wahl, waehlt der Kern den Monat selbst aus und begruendet ihn; du musst dann nichts mehr fragen.`;
+        chips = `${m.join(" | ")} | Such du aus`;
       }
     }
     // "Ein langes Wochenende" ist eine Dauerangabe. Ohne diesen Zweig fragte
@@ -2087,9 +2358,22 @@ const Werkzeugkasten = {
       const sag = `Sag zuerst in einem kurzen Halbsatz, ${angenommen.slice(0, 2).join(" und ")}. Das ist eine Annahme, keine Ansage: Sie kann jederzeit widersprechen.`;
       frage = frage ? `${sag} Dann: ${frage}` : sag;
     }
+    /* Was der Kern selbst entschieden hat, steht vor der naechsten Frage.
+       ------------------------------------------------------------------
+       Der Satz kommt fertig aus `ableiten` - mit der Zahl, an der die
+       Entscheidung haengt. Er steht hier und nicht in der Anweisung ans
+       Modell, weil eine Begruendung, die manchmal ausfaellt, schlimmer
+       ist als keine: Dann sieht die Person eine Festlegung, die sie nie
+       getroffen hat, und findet nirgends, woher sie kommt.
+
+       Geleert wird die Liste im Kern, wenn der Satz wirklich im Chat
+       steht - nicht hier, denn fahrplan() wird mehrmals je Zug gerufen. */
+    const vorsatz = (lauf.abgeleitet || []).map((x) => x.satz).join(" ") || null;
     const empfehlungBereit = p.vorgehen === "top3" && BERATUNG.every((t) => fertig[t])
       && fertig.dauer && fertig.flug && fertig.flugAb;
-    return { fertig, naechstes, frage, satz, erklaerung, chips, phase, suchbereit, eckdatenFertig, gesucht, schluessel, empfehlungBereit,
+    // Ohne eigenen Fragesatz des Kerns muss das Modell die Begruendung tragen
+    if (vorsatz && !satz) frage = `Sag zuerst genau das, sinngemaess: "${vorsatz}"${frage ? ` Dann: ${frage}` : ""}`;
+    return { fertig, naechstes, frage, satz, vorsatz, erklaerung, chips, phase, suchbereit, eckdatenFertig, gesucht, schluessel, empfehlungBereit,
       angenommen, ueberblickOffen: false, fehlt: [...KERN, ...ECKDATEN].filter((t) => !fertig[t]) };
   },
 
@@ -2102,6 +2386,8 @@ const Werkzeugkasten = {
     if (lauf.abschlussFaellig) return "buchung_abschliessen";
     // Der Rundgang laeuft: erst ansehen, dann vorlegen
     if (lauf.rundgang?.ids?.length) return "haeuser_ansehen";
+    // Die Stichprobe nach der ersten Suche laeuft
+    if (lauf.stichprobe?.ids?.length) return "stichprobe_nehmen";
 
     // Fragt die Person nach Bewertungen zu einem Haus, das der Agent in
     // diesem Gespraech noch nicht gelesen hat, wird das Lesen erzwungen.
@@ -2303,6 +2589,7 @@ const Werkzeugkasten = {
       verpflegung: p.verpflegung ? [p.verpflegung] : undefined,
       mindestbewertung: p.mindestbewertung || undefined,
       sterne: p.mindestSterne ? [5, 4, 3].filter((s) => s >= p.mindestSterne) : undefined,
+      nurAngebote: p.nurAngebote || undefined,
     };
   },
 
@@ -2380,6 +2667,15 @@ const Werkzeugkasten = {
       p.kriterien = (p.kriterien || []).filter((k) => k.id !== weg.id);
       return `den Punkt ${Politik.kriterium(weg.id)?.label || weg.id}`;
     } },
+    /* Die Angebotsgrenze faellt als letzte.
+       ----------------------------------------------------------------
+       Nur fuenfzehn Haeuser im ganzen Katalog sind reduziert. Wer "nur
+       was im Angebot ist" mit einer Region und einem Budget kombiniert,
+       landet leicht bei null Treffern - dann ist es ehrlicher, die
+       Grenze zu lockern und es zu sagen, als eine leere Liste zu zeigen.
+       Sie steht am Ende, weil sie ein ausgesprochener Wunsch ist und
+       nicht vor den abgeleiteten Punkten weichen soll. */
+    { id: "angebote", tun: (p) => { if (!p.nurAngebote) return null; delete p.nurAngebote; return "die Vorgabe, dass es reduziert sein soll"; } },
   ],
 
   // Solange lockern, bis etwas da ist. Gibt zurueck, was gelockert wurde.
@@ -2407,6 +2703,7 @@ const Werkzeugkasten = {
     if (p.maxStrand != null) t.push(`Strand bis ${p.maxStrand < 1 ? `${Math.round(p.maxStrand * 1000)} m` : `${p.maxStrand} km`}`);
     if (p.mindestbewertung) t.push(`Note ab ${String(p.mindestbewertung).replace(".", ",")}`);
     if (p.mindestSterne) t.push(`ab ${p.mindestSterne} Sterne`);
+    if (p.nurAngebote) t.push("nur Angebote");
     const f = this.filterAusStand(p);
     if (f.ausstattung.length) t.push(f.ausstattung.map((x) => (typeof AMENITY_LABELS !== "undefined" && AMENITY_LABELS[x]) || x).join(", "));
     if (p.verpflegung && typeof BOARD_LABELS !== "undefined") t.push(BOARD_LABELS[p.verpflegung]);
@@ -2436,6 +2733,9 @@ const Werkzeugkasten = {
       if (p.maxStrand != null && (h.distanceToBeach ?? 99) > p.maxStrand) return false;
       if (p.mindestbewertung && (h.rating || 0) < p.mindestbewertung) return false;
       if (p.mindestSterne && (h.stars || 0) < p.mindestSterne) return false;
+      // "Nur was im Angebot ist": reduziert heisst, es steht ein alter
+      // Preis daran - dasselbe Merkmal, nach dem die Liste filtert.
+      if (p.nurAngebote && !h.oldPrice) return false;
       if (p.verpflegung && h.type !== "apartment" && !(h.boards || []).some((b) => b.key === p.verpflegung)) return false;
       return true;
     });

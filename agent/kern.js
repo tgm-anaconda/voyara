@@ -111,6 +111,11 @@ const STELLSCHRAUBEN = {
   // acht bis zehn Sekunden je Haus und ist der Kern der Fragestellung:
   // ob nachvollziehbare Arbeit das Vertrauen in die Empfehlung aendert.
   rundgang: true,                // true | false
+  // Sieht der Agent nach der ersten Suche kurz in ein, zwei Haeuser
+  // hinein (Zimmer, Verpflegung, keine Bewertungen)? Kostet zwei
+  // Seitenwechsel und macht aus "184 Haeuser gefunden" eine Aussage,
+  // die er auf der Seite nachgesehen hat.
+  stichprobe: true,              // true | false
   log: true,
   // Schrittmeldungen ("Filter gesetzt, noch 9 Treffer") im Chat oder nur
   // im Log. Mit Log: nur im Log. Der Chat sagt beim Start einmal, wo man
@@ -235,6 +240,9 @@ const Kern = {
       vorlageFuer: null,       // Vorgaben, fuer die zuletzt vorgelegt wurde
       rundgang: null,          // laufender Rundgang durch die engere Auswahl
       rundgangFuer: null,      // Vorgaben, fuer die schon ein Rundgang lief
+      stichprobe: null,        // laufender kurzer Blick in ein, zwei Haeuser
+      stichprobeGemacht: false,// einmal je Gespraech, nach der ersten Suche
+      abgeleitet: [],          // eigene Entscheidungen des Kerns, die noch erklaert werden muessen
       gelesen: {},             // Haeuser, deren Bewertungen gelesen wurden
       gefragtWie: {},          // wie oft ein Thema schon gefragt wurde
       ueberblickGezeigt: false,
@@ -1056,20 +1064,27 @@ const Kern = {
                nennen." Saetze, die in der Frage des Kerns schon vorkommen,
                fallen weg. */
             const norm = (x) => String(x).toLowerCase().replace(/[^a-zäöüß0-9]/g, "");
-            const frageNorm = norm(fpJetzt.satz);
+            const frageNorm = norm(`${fpJetzt.vorsatz || ""} ${fpJetzt.satz}`);
             let vorspann = String(text || "").split(/(?<=[.!?])\s+/)
               .filter((x) => x.trim() && !/\?/.test(x))
               .filter((x) => { const n = norm(x); return n.length > 8 && !frageNorm.includes(n); })
               .slice(0, 2).join(" ").trim();
             const nachtrag = Werkzeugkasten.aufnahmeSatz(this, vorspann);
             if (nachtrag) vorspann = `${nachtrag} ${vorspann}`.trim();
-            text = [vorspann, fpJetzt.satz].filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
+            /* Die Begruendung einer eigenen Entscheidung steht vor der Frage.
+               ------------------------------------------------------------
+               Sie kommt fertig aus dem Fahrplan, damit sie nicht davon
+               abhaengt, ob das Modell sie uebernimmt. Geleert wird die
+               Liste erst hier: An dieser Stelle steht fest, dass der Satz
+               auch wirklich im Chat landet. */
+            text = [vorspann, fpJetzt.vorsatz, fpJetzt.satz].filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
+            if (fpJetzt.vorsatz) { this.lauf.abgeleitet = []; this.notieren("ableitung_gesagt", { satz: fpJetzt.vorsatz }); }
             nachricht.content = text;
             // Welcher Teil vom Kern stammt. Die Pruefungen beurteilen nur
             // den Teil des Modells - sonst zaehlt jede Kern-Frage als
             // dessen Fehler (die Verpflegungsfrage nennt All Inclusive,
             // und der Pruefstand meldete ein "unmotiviertes Thema").
-            kernSatzImZug = fpJetzt.satz;
+            kernSatzImZug = [fpJetzt.vorsatz, fpJetzt.satz].filter(Boolean).join(" ");
           }
         }
         if (text && !gleich(text, zuletzt)) this.sagen(text, "bot", null, { vomModell: true, ...(kernSatzImZug ? { kernSatz: kernSatzImZug } : {}) });
@@ -1200,6 +1215,16 @@ const Kern = {
     AgentPanel.arbeitetAus();
     AgentPanel.status(this.lauf.phase === "angehalten" ? "angehalten · du hast übernommen" : "online");
     AgentPanel.oeffnen?.();
+    // Wer selbst durch die Liste gehen will, soll sie auch sehen
+    if (this.lauf.platzMachen) { this.lauf.platzMachen = false; AgentPanel.platzMachen?.(); }
+    /* Eine Begruendung gilt fuer einen Zug.
+       ------------------------------------------------------------------
+       Normalerweise leert die Zusammensetzung der Nachricht die Liste,
+       sobald der Satz wirklich im Chat steht. Ging der Zug einen anderen
+       Weg - die Person hat dazwischengefragt, das Modell hat frei
+       geantwortet -, bleibt sie sonst stehen und der Agent begruendet im
+       naechsten Zug eine Entscheidung, ueber die laengst geredet wurde. */
+    if (this.lauf.abgeleitet?.length) this.lauf.abgeleitet = [];
     this.sichern();
     setTimeout(() => { if (!this.laeuft) Zeiger.verbergen(); }, 900);
     // Nachricht, die waehrend der Arbeit kam

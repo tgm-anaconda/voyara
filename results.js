@@ -226,6 +226,17 @@ function renderFilters() {
       [{ v: 4.5, l: "Hervorragend ab 4,5" }, { v: 4.0, l: "Sehr gut ab 4,0" }, { v: 3.5, l: "Gut ab 3,5" }, { v: 0, l: "Alle Bewertungen" }]
         .map((o) => radioRow("fRating", "js-rating", o.v, o.l, countIn((h) => h.rating >= o.v), state.minRating === o.v)).join(""));
 
+    /* "Ich haette gern ein Hotel, das im Angebot ist."
+       ----------------------------------------------------------------
+       Am 27.09.2026 gemeldet: Der Agent verstand den Satz nicht. Er
+       konnte ihn auch nicht verstehen - den Angebotsfilter gab es nur
+       ueber die Adresse (?deals=1), nicht als Schalter in der Spalte.
+       Damit fehlte ihm das Werkzeug, nicht das Verstaendnis. Jetzt steht
+       er hier, sichtbar, und der Agent kann ihn klicken wie jeden
+       anderen. */
+    html += group("Preisnachlass",
+      `<label class="check-row"><input type="checkbox" class="js-deals" ${state.onlyDeals ? "checked" : ""}/><span>Nur reduzierte Häuser</span><span class="count">${countIn((h) => h.oldPrice)}</span></label>`);
+
     html += group("Entfernung zum Strand",
       [{ v: 0.2, l: "Direkt am Strand" }, { v: 1, l: "Bis 1 km" }, { v: 5, l: "Bis 5 km" }, { v: null, l: "Egal" }]
         .map((o) => radioRow("fBeach", "js-beach", o.v === null ? "" : o.v, o.l,
@@ -296,6 +307,7 @@ function renderFilters() {
   panel.querySelectorAll(".js-ziel").forEach((el) => el.addEventListener("change", () => { state.ziel = el.value; renderResults(); }));
   panel.querySelector(".js-direct")?.addEventListener("change", (e) => { state.directOnly = e.target.checked; renderResults(); });
   panel.querySelector(".js-cancel")?.addEventListener("change", (e) => { state.freeCancel = e.target.checked; renderResults(); });
+  panel.querySelector(".js-deals")?.addEventListener("change", (e) => { state.onlyDeals = e.target.checked; renderResults(); });
 
   panel.querySelector("#fReset").addEventListener("click", () => {
     state.stars.clear(); state.categories.clear(); state.amenities.clear(); state.boards.clear();
