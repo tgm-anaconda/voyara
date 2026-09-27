@@ -158,7 +158,7 @@ const Pruefstand = {
     "falsche_hausseite", "falsche_buchungsseite", "partner_ohne_marke", "festgefahren"],
   // Kein Fehler, aber aufschlussreich: wie oft der Kern ein Werkzeug erzwingen
   // musste, weil das Modell es nicht von sich aus rief
-  NOTIZ: ["zwang", "gesperrt", "uebernahme", "stopp", "thema_uebersprungen", "selbst_gelockert", "eigenschaft_ungedeckt", "behauptung_ohne_recherche", "urteil_ohne_bewertungen", "recherche_angesagt"],
+  NOTIZ: ["zwang", "freier_zug", "werkzeug_auf_ebene2", "flughafen_gewaehlt", "gesperrt", "uebernahme", "stopp", "thema_uebersprungen", "selbst_gelockert", "eigenschaft_ungedeckt", "behauptung_ohne_recherche", "urteil_ohne_bewertungen", "recherche_angesagt"],
 
   VERBOTEN: /\b(kriterien|auswertung|transparen|optimal|präferenz|praeferenz|selektion|parameter)\w*/gi,
 
@@ -419,6 +419,21 @@ const Pruefstand = {
       }
     }
     for (const w of woertlich) rest.push({ art: "frage_woertlich_wiederholt", thema: w.thema, text: w.frage });
+    /* Zwei verschiedene Fragen, die dasselbe wollen.
+       ------------------------------------------------------------------
+       Am 27.09.2026 stand im Chat "Filter setzen oder Eckdaten klaeren?"
+       und direkt danach "Eckdaten besprechen oder gleich eine Auswahl?".
+       Zwei Themen, zwei Formulierungen - fuer die Person dieselbe Frage
+       zweimal. Der Pruefstand sah nichts, weil er nur auf woertliche
+       Wiederholung desselben Themas prueft. Jetzt wird auch verglichen,
+       was unmittelbar nacheinander gefragt wurde. */
+    for (let i = 1; i < gefragt.length; i++) {
+      const vor = gefragt[i - 1], jetzt = gefragt[i];
+      if (!vor.frage || !jetzt.frage || vor.thema === jetzt.thema) continue;
+      if (this.aehnlich(vor.frage, jetzt.frage) >= 0.55) {
+        rest.push({ art: "zwei_fragen_dasselbe", thema: `${vor.thema} -> ${jetzt.thema}`, text: String(jetzt.frage).slice(0, 160) });
+      }
+    }
     // Ab dem dritten Anlauf ist auch eine neue Formulierung keine Entschuldigung
     for (const z of zweimal.filter((x) => (x.mal || 1) >= 3)) rest.push({ art: "frage_dreimal", thema: z.thema });
 
@@ -566,7 +581,7 @@ const Pruefstand = {
     // Restfehler ist einer (ein Ausrufezeichen faellt niemandem auf)
     const SCHWER = ["gebucht_nicht_vorgeschlagen", "buchung_verletzt_vorgaben", "partner_ohne_marke",
       "partner_ohne_wort", "partner_fehlt_in_vorlage", "platz1_gegen_wunsch", "haus_nicht_angesehen",
-      "frage_woertlich_wiederholt", "frage_dreimal", "unmotiviertes_thema", "anzahl_vorschlaege_falsch", "fremde_zahl",
+      "frage_woertlich_wiederholt", "zwei_fragen_dasselbe", "frage_dreimal", "unmotiviertes_thema", "anzahl_vorschlaege_falsch", "fremde_zahl",
       "nicht_gebucht", "festgefahren", "modell_fehler", "modell_weg", "karte_ohne_bild", "karte_ohne_preis", "zwei_fragen", "gesiezt"];
     const schwer = {};
     for (const x of e) for (const r of x.restfehler) if (SCHWER.includes(r.art)) schwer[r.art] = (schwer[r.art] || 0) + 1;
