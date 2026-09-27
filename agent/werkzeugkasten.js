@@ -860,6 +860,9 @@ const Werkzeugkasten = {
         // Katalogsuche fuer eine Frage der Person ("habt ihr was auf Kreta?")
         // darf die Frage "schauen oder klaeren" nicht ueberspringen
         if (fp.suchbereit) kern.lauf.gesuchtMit = fp.schluessel;
+        // Womit die Spalte gerade gefuellt ist - daran haengt, ob der
+        // Agent sagen darf, dass die Filter stehen
+        if (fp.suchbereit) kern.lauf.gefiltertMit = Werkzeugkasten.filterSchluessel(p);
         if (selbst) {
           kern.lauf.vorgehenFuer = fp.schluessel + p.vorgehen;
           kern.lauf.letzteTreffer = liste.map((h) => h.id);
@@ -2106,8 +2109,25 @@ const Werkzeugkasten = {
   // Schluessel der Vorgaben fuer eine Vorlage - gleiche Vorgaben, keine
   // zweite Vorlage derselben Haeuser
   vorlageSchluessel(p) {
-    return this.eckdatenSchluessel(p) + JSON.stringify([p.maxPreis || null, p.maxStrand ?? null, p.mindestbewertung || null, p.mindestSterne || null,
-      (p.kriterien || []).map((k) => k.id), p.ausstattung || [], p.verpflegung || null, p.sortierung || null]);
+    return this.eckdatenSchluessel(p) + this.filterSchluessel(p) + JSON.stringify([p.sortierung || null]);
+  },
+
+  /* Was in der Filterspalte steht.
+     ------------------------------------------------------------------
+     Am 27.09.2026 sagte jemand "am liebsten eins, das gerade im
+     Angebot ist". Der Agent nahm es auf, schrieb es in seine
+     Filterliste - und sagte im selben Zug "die Filter stehen jetzt so
+     auf der Seite", waehrend der Angebotsschalter aus war und 184
+     Haeuser dastanden.
+
+     Der Grund: Ob neu gesucht wird, entschied allein der
+     Eckdatenschluessel (Ziel, Zeit, Gruppe, Flug). Ein neuer Filter kam
+     darin nicht vor, also galt die alte Suche weiter. Jetzt gibt es
+     einen zweiten Schluessel fuer genau die Felder, die in der Spalte
+     landen - aendert sich einer, stimmt die Seite nicht mehr. */
+  filterSchluessel(p) {
+    return JSON.stringify([p.maxPreis || null, p.maxStrand ?? null, p.mindestbewertung || null, p.mindestSterne || null,
+      (p.kriterien || []).map((k) => k.id), p.ausstattung || [], p.verpflegung || null, p.nurAngebote || false, p.zielId || null]);
   },
 
   /* Der Fahrplan (Fassung 3, 20.09.2026 nachts, nach dem dritten Gespraech
@@ -2255,6 +2275,12 @@ const Werkzeugkasten = {
        bekommt die Eckdaten der Reihe nach gestellt - ohne vorher gefragt
        zu werden, ob er gefragt werden moechte. Niemand im Reisebuero
        fragt, ob man Fragen beantworten will. */
+    /* Bevor er sagt, dass die Filter stehen, muessen sie stehen.
+       ------------------------------------------------------------------
+       Nennt die Person zwischen Lage und Vorgehensfrage noch einen
+       Filter ("am liebsten eins im Angebot"), ist die Spalte veraltet.
+       Dann wird erst gesucht und danach gefragt. */
+    else if (lauf.gefiltertMit && lauf.gefiltertMit !== this.filterSchluessel(p)) phase = "suche";
     else if (!fertig.vorgehen) { naechstes = "vorgehen"; phase = "beratung"; }
     // Vor der Wahl des Vorgehens wird bei geaenderten Eckdaten neu gesucht
     // (die Lage soll stimmen); danach erst wieder zur Vorlage bzw. Liste -
@@ -2420,6 +2446,9 @@ const Werkzeugkasten = {
     // Die erste Suche, sobald der Kern der Eckdaten steht - nicht erst,
     // wenn alles geklaert ist
     if (fp.suchbereit && !lauf.gesuchtMit) return "suchen";
+    // Der Fahrplan verlangt eine Suche (erste Umschau, geaenderte Filter,
+    // Ende der Beratung) - dann wird gesucht, nicht geredet
+    if (fp.phase === "suche") return "suchen";
     if (fp.eckdatenFertig && !fp.gesucht && !p.vorgehen) return "suchen";
     if ((fp.phase === "vorschlaege" || fp.phase === "selbst") && lauf.vorgehenFuer !== fp.schluessel + p.vorgehen) return "suchen";
     return null;

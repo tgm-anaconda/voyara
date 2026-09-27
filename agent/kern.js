@@ -1068,9 +1068,30 @@ const Kern = {
             // (etwa die Begruendung einer eigenen Entscheidung), faellt
             // aus dem Vorspann des Modells - sonst steht es zweimal da.
             const frageNorm = norm(`${(this.lauf.abgeleitet || []).map((x) => x.satz).join(" ")} ${fpJetzt.satz}`);
+            /* Auch die Umschreibung faellt weg, nicht nur die Kopie.
+               ------------------------------------------------------------
+               Am 27.09.2026 stand im Chat: "Die Filter sind gesetzt, ich
+               kann dir die Haeuser raussuchen oder du schaust selbst durch
+               die Liste." - und direkt dahinter die Frage des Kerns, die
+               dasselbe sagt. Der Vergleich Zeichen fuer Zeichen findet das
+               nicht: Es ist kein Zitat, sondern eine Paraphrase.
+
+               Deshalb zusaetzlich ein Vergleich ueber die Woerter. Teilt
+               ein Satz des Vorspanns die Haelfte seiner Inhaltswoerter mit
+               der Frage des Kerns, sagt er nichts Eigenes mehr. Kurze
+               Saetze ("Alles klar.", "Juni merke ich mir.") bleiben: Unter
+               vier Inhaltswoertern ist der Anteil kein Mass. */
+            const woerter = (x) => new Set(String(x).toLowerCase().match(/[a-zäöüß]{5,}/g) || []);
+            const kernWoerter = woerter(fpJetzt.satz);
+            const sagtDasselbe = (x) => {
+              const w = [...woerter(x)];
+              if (w.length < 4) return false;
+              return w.filter((y) => kernWoerter.has(y)).length / w.length >= 0.5;
+            };
             let vorspann = String(text || "").split(/(?<=[.!?])\s+/)
               .filter((x) => x.trim() && !/\?/.test(x))
               .filter((x) => { const n = norm(x); return n.length > 8 && !frageNorm.includes(n); })
+              .filter((x) => !sagtDasselbe(x))
               .slice(0, 2).join(" ").trim();
             const nachtrag = Werkzeugkasten.aufnahmeSatz(this, vorspann);
             if (nachtrag) vorspann = `${nachtrag} ${vorspann}`.trim();
