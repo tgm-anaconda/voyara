@@ -641,8 +641,13 @@ const Werkzeuge = {
       };
       const gewaehlt = [];
       const nimm = (el) => { if (el && !gewaehlt.includes(el)) gewaehlt.push(el); };
-      nimm(liste.slice(1).find(lobt));
-      nimm(liste.slice(1).find(bemaengelt));
+      // Auch die inhaltlich gewaehlten Stimmen kommen aus der Tiefe der
+      // Liste. Sonst landete der Agent doch wieder bei Platz zwei und drei,
+      // nur auf Umwegen - und der Nutzer hat genau das beanstandet.
+      const abTiefe = Math.max(1, Math.floor(liste.length * 0.25));
+      const tief = liste.slice(abTiefe);
+      nimm(tief.find(lobt) || liste.slice(1).find(lobt));
+      nimm(tief.find(bemaengelt) || liste.slice(1).find(bemaengelt));
       for (const el of verteilt(anzahl)) nimm(el);
       // In der Reihenfolge der Seite durchgehen, nicht in der Reihenfolge
       // der Auswahl - sonst springt der Zeiger hoch und runter
