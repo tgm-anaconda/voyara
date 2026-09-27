@@ -1064,27 +1064,23 @@ const Kern = {
                nennen." Saetze, die in der Frage des Kerns schon vorkommen,
                fallen weg. */
             const norm = (x) => String(x).toLowerCase().replace(/[^a-zäöüß0-9]/g, "");
-            const frageNorm = norm(`${fpJetzt.vorsatz || ""} ${fpJetzt.satz}`);
+            // Auch das, was der Kern in diesem Zug schon selbst gesagt hat
+            // (etwa die Begruendung einer eigenen Entscheidung), faellt
+            // aus dem Vorspann des Modells - sonst steht es zweimal da.
+            const frageNorm = norm(`${(this.lauf.abgeleitet || []).map((x) => x.satz).join(" ")} ${fpJetzt.satz}`);
             let vorspann = String(text || "").split(/(?<=[.!?])\s+/)
               .filter((x) => x.trim() && !/\?/.test(x))
               .filter((x) => { const n = norm(x); return n.length > 8 && !frageNorm.includes(n); })
               .slice(0, 2).join(" ").trim();
             const nachtrag = Werkzeugkasten.aufnahmeSatz(this, vorspann);
             if (nachtrag) vorspann = `${nachtrag} ${vorspann}`.trim();
-            /* Die Begruendung einer eigenen Entscheidung steht vor der Frage.
-               ------------------------------------------------------------
-               Sie kommt fertig aus dem Fahrplan, damit sie nicht davon
-               abhaengt, ob das Modell sie uebernimmt. Geleert wird die
-               Liste erst hier: An dieser Stelle steht fest, dass der Satz
-               auch wirklich im Chat landet. */
-            text = [vorspann, fpJetzt.vorsatz, fpJetzt.satz].filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
-            if (fpJetzt.vorsatz) { this.lauf.abgeleitet = []; this.notieren("ableitung_gesagt", { satz: fpJetzt.vorsatz }); }
+            text = [vorspann, fpJetzt.satz].filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
             nachricht.content = text;
             // Welcher Teil vom Kern stammt. Die Pruefungen beurteilen nur
             // den Teil des Modells - sonst zaehlt jede Kern-Frage als
             // dessen Fehler (die Verpflegungsfrage nennt All Inclusive,
             // und der Pruefstand meldete ein "unmotiviertes Thema").
-            kernSatzImZug = [fpJetzt.vorsatz, fpJetzt.satz].filter(Boolean).join(" ");
+            kernSatzImZug = fpJetzt.satz;
           }
         }
         if (text && !gleich(text, zuletzt)) this.sagen(text, "bot", null, { vomModell: true, ...(kernSatzImZug ? { kernSatz: kernSatzImZug } : {}) });
@@ -1223,8 +1219,13 @@ const Kern = {
        sobald der Satz wirklich im Chat steht. Ging der Zug einen anderen
        Weg - die Person hat dazwischengefragt, das Modell hat frei
        geantwortet -, bleibt sie sonst stehen und der Agent begruendet im
-       naechsten Zug eine Entscheidung, ueber die laengst geredet wurde. */
-    if (this.lauf.abgeleitet?.length) this.lauf.abgeleitet = [];
+       naechsten Zug eine Entscheidung, ueber die laengst geredet wurde.
+
+       Nicht waehrend eines Seitenwechsels: Laeuft eine Werkzeugkette
+       ueber mehrere Seiten (Stichprobe, Rundgang), kommt zugBeenden bei
+       jedem Laden vorbei, obwohl der Zug weitergeht. Wer hier leert,
+       wirft die Begruendung weg, bevor sie jemand gelesen hat. */
+    if (this.lauf.abgeleitet?.length && !this.lauf.ausstehend) this.lauf.abgeleitet = [];
     this.sichern();
     setTimeout(() => { if (!this.laeuft) Zeiger.verbergen(); }, 900);
     // Nachricht, die waehrend der Arbeit kam

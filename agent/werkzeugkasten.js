@@ -466,14 +466,31 @@ const Werkzeugkasten = {
          rechnet die drei Monate durch, nimmt den besten und sagt, woran
          es lag. Damit ist die Frage in jedem Fall erledigt, und die
          Person weiss, worauf sie widersprechen koennte. */
-      if (!p.monat && !a.monat && !a.von) {
+      if (!a.von && !p.von) {
         const jz = Werkzeugkasten.jahreszeitGenannt(kern.lauf);
+        /* Der Kern entscheidet auch dann, wenn das Modell schon geraten hat.
+           --------------------------------------------------------------
+           Im ersten Anlauf stand hier `!a.monat`, und die Regel lief nie:
+           Das Modell hatte auf "Egal" laengst Juli eingetragen. Im Chat
+           stand dann "im Juli" - ohne ein Wort dazu, woher der Juli kam.
+           Genau der Fall, den der Nutzer gemeldet hat.
+
+           Wer die Wahl abgibt, bekommt sie also vom Kern getroffen, nicht
+           vom Modell: mit gerechnetem Ergebnis und mit Begruendung. Hat
+           die Person selbst einen Monat genannt, bleibt der stehen - dann
+           greift die Regel nicht. */
+        const monatGenannt = gesagt(/januar|februar|märz|maerz|april|\bmai\b|juni|juli|august|september|oktober|november|dezember|\bjan\b|\bfeb\b|\bokt\b|\bnov\b|\bdez\b|ostern|pfingsten|weihnachten|silvester/i, 1);
         const abgegeben = gesagt(/egal|gleich|such du|suchst du|du entscheid|dein vorschlag|nimm du|nimm einfach|weißt du|weisst du|was (du )?meinst|keine ahnung|weiß nicht|weiss nicht|wie du meinst|aussuchen|überlass|ueberlass/i, 1);
-        if (jz && abgegeben) {
+        if (jz && abgegeben && !monatGenannt && !p.vonPerson?.monat) {
           const w = Werkzeugkasten.monatWaehlen(p, jz.monate);
+          // Nicht ueber setze(): Der Monat kommt vom Kern, nicht von der
+          // Person - in vonPerson hat er nichts zu suchen.
+          if (w && p.monat !== w.monat) {
+            p.monat = w.monat;
+            kern.standAnzeigen();
+          }
           if (w) {
-            setze("monat", w.monat);
-            Werkzeugkasten.ableiten(kern.lauf, "monat", w.satz);
+            Werkzeugkasten.ableiten(kern, "monat", w.satz);
             kern.notieren("monat_abgeleitet", { jahreszeit: jz.name, monat: w.monat, haeuser: w.anzahl, schnitt: w.schnitt });
           }
         }
@@ -1771,7 +1788,7 @@ const Werkzeugkasten = {
 
     art: {
 
-      erklaerung: "Im Hotel gibt es Service und Verpflegung, in einer Ferienwohnung mehr Platz und eine Küche. Danach richtet sich, wo ich suche.",      satz: ["Und übernachten: eher ein Hotel oder lieber eine Ferienwohnung?",
+      erklaerung: "Im Hotel gibt es Service und Verpflegung, in einer Ferienwohnung mehr Platz und eine Küche. Danach richtet sich, wo ich suche.",      satz: ["Soll es ein Hotel werden oder lieber eine Ferienwohnung?",
         "Hotel oder Ferienwohnung - oder ist dir das offen?"],
       frage: "Ob sie eher ins Hotel oder in eine Ferienwohnung will, oder ob das offen ist (artEgal true).", chips: "Hotel | Ferienwohnung | Noch offen" },
 
@@ -1935,12 +1952,16 @@ const Werkzeugkasten = {
      Ohne den Grund kann die Person nicht widersprechen - sie weiss ja
      nicht, worauf sie antworten wuerde.
 
-     Jede solche Entscheidung landet hier, mit fertigem Satz und Zahl.
-     Der Kern stellt ihn vor seine naechste Frage; gesagt wird er also
-     in jedem Fall, auch wenn das Modell ihn vergisst.
+     Der Satz wird an Ort und Stelle gesagt, vom Kern selbst - wie die
+     Lage nach der Suche. Zwei Gruende: Er steht dann da, auch wenn das
+     Modell ihn vergisst, und er steht an der richtigen Stelle. Ein
+     Durchreichen ans Modell oder an die naechste Frage haette ihn hinter
+     alles geschoben, was in diesem Zug sonst noch passiert - "ich nehme
+     Juni" nach "im Juli stehen 184 Hotels" liest sich wie ein Fehler.
      ================================================================== */
-  ableiten(lauf, feld, satz) {
-    (lauf.abgeleitet ||= []).push({ feld, satz });
+  ableiten(kern, feld, satz) {
+    (kern.lauf.abgeleitet ||= []).push({ feld, satz });
+    kern.sagen(satz);
   },
 
   JAHRESZEITEN: {
@@ -2358,21 +2379,15 @@ const Werkzeugkasten = {
       const sag = `Sag zuerst in einem kurzen Halbsatz, ${angenommen.slice(0, 2).join(" und ")}. Das ist eine Annahme, keine Ansage: Sie kann jederzeit widersprechen.`;
       frage = frage ? `${sag} Dann: ${frage}` : sag;
     }
-    /* Was der Kern selbst entschieden hat, steht vor der naechsten Frage.
+    /* Was der Kern selbst entschieden hat, hat er schon gesagt.
        ------------------------------------------------------------------
-       Der Satz kommt fertig aus `ableiten` - mit der Zahl, an der die
-       Entscheidung haengt. Er steht hier und nicht in der Anweisung ans
-       Modell, weil eine Begruendung, die manchmal ausfaellt, schlimmer
-       ist als keine: Dann sieht die Person eine Festlegung, die sie nie
-       getroffen hat, und findet nirgends, woher sie kommt.
-
-       Geleert wird die Liste im Kern, wenn der Satz wirklich im Chat
-       steht - nicht hier, denn fahrplan() wird mehrmals je Zug gerufen. */
+       `ableiten` schreibt den Satz sofort in den Chat. Hier steht er nur
+       noch als Erinnerung fuer das Modell, damit es ihn nicht in eigenen
+       Worten wiederholt - so wie die Lage nach der Suche. */
     const vorsatz = (lauf.abgeleitet || []).map((x) => x.satz).join(" ") || null;
     const empfehlungBereit = p.vorgehen === "top3" && BERATUNG.every((t) => fertig[t])
       && fertig.dauer && fertig.flug && fertig.flugAb;
-    // Ohne eigenen Fragesatz des Kerns muss das Modell die Begruendung tragen
-    if (vorsatz && !satz) frage = `Sag zuerst genau das, sinngemaess: "${vorsatz}"${frage ? ` Dann: ${frage}` : ""}`;
+    if (vorsatz) frage = `Das steht schon im Chat, du hast es gerade gesagt: "${vorsatz}" - nicht wiederholen und nicht umformulieren.${frage ? ` Dann: ${frage}` : ""}`;
     return { fertig, naechstes, frage, satz, vorsatz, erklaerung, chips, phase, suchbereit, eckdatenFertig, gesucht, schluessel, empfehlungBereit,
       angenommen, ueberblickOffen: false, fehlt: [...KERN, ...ECKDATEN].filter((t) => !fertig[t]) };
   },
