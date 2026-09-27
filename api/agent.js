@@ -87,9 +87,16 @@ async function openai(koerper) {
       signal: abbruch.signal,
     });
     if (!antwort.ok) {
-      // Den Fehlertext von OpenAI nicht durchreichen - er kann Kontodaten
-      // enthalten. Nur den Statuscode und, bei 429, wie lange zu warten ist.
-      return { ok: false, status: antwort.status,
+      /* Den Fehlertext von OpenAI nicht durchreichen - er kann Kontodaten
+         enthalten. Durchgereicht wird nur der Code, und der ist ein fester
+         Bezeichner ohne Kontobezug ("rate_limit_exceeded",
+         "insufficient_quota", "model_not_found"). Ohne ihn liess sich am
+         27.09.2026 nicht unterscheiden, ob der Agent kurz ueberlastet war
+         oder ob das Guthaben aufgebraucht ist - das eine geht von selbst
+         vorbei, das andere nie. */
+      let code = null;
+      try { code = String((await antwort.json())?.error?.code || "").slice(0, 60) || null; } catch { /* egal */ }
+      return { ok: false, status: antwort.status, code,
         wartenMs: Math.min(8000, Math.round(parseFloat(antwort.headers.get("retry-after") || "0") * 1000)) || null };
     }
     return { ok: true, daten: await antwort.json() };
@@ -177,7 +184,13 @@ export default async function handler(req, res) {
     await new Promise((r) => setTimeout(r, e.wartenMs || 900));
     e = await openai(koerper);
   }
-  if (!e.ok) return fehler(res, e.status || 502, "Modell nicht erreichbar.");
+  if (!e.ok) {
+    // Aufgebrauchtes Guthaben ist dauerhaft - Warten hilft nicht, und der
+    // Browser soll gar nicht erst wiederholen.
+    const dauerhaft = e.code === "insufficient_quota" || e.code === "billing_hard_limit_reached";
+    res.status(dauerhaft ? 503 : (e.status || 502)).json({ ok: false, fehler: "Modell nicht erreichbar.", grund: e.code || null });
+    return;
+  }
 
   const wahl = e.daten.choices?.[0];
   const m = wahl?.message || {};
