@@ -1018,6 +1018,7 @@ const Kern = {
            zwei Fragen, woertliche Wiederholung, Frage ueber die Frage,
            falsches Thema. */
         let fpJetzt = null;
+        let kernSatzImZug = null;
         if (!nachricht.tool_calls) {
           fpJetzt = Werkzeugkasten.fahrplan(this.lauf.profil || {}, this.lauf);
           /* Zwei Ebenen.
@@ -1034,7 +1035,9 @@ const Kern = {
              aus dem Vorspann geschnitten. Alles, was nicht ins Schema
              passte, wurde damit unterdrueckt - genau das machte den
              Agenten starr. */
-          const freierZug = (this.lauf.nachrichtArt || "antwort") !== "antwort";
+          // Anweisungen fuehrt der Agent aus, statt darueber zu reden -
+          // dafuer braucht es keine freie Ebene.
+          const freierZug = ["frage", "einwand", "unklar", "sonstiges"].includes(this.lauf.nachrichtArt);
           if (freierZug && fpJetzt.satz) {
             this.notieren("freier_zug", { art: this.lauf.nachrichtArt, offen: fpJetzt.naechstes });
           }
@@ -1056,9 +1059,14 @@ const Kern = {
             if (nachtrag) vorspann = `${nachtrag} ${vorspann}`.trim();
             text = [vorspann, fpJetzt.satz].filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
             nachricht.content = text;
+            // Welcher Teil vom Kern stammt. Die Pruefungen beurteilen nur
+            // den Teil des Modells - sonst zaehlt jede Kern-Frage als
+            // dessen Fehler (die Verpflegungsfrage nennt All Inclusive,
+            // und der Pruefstand meldete ein "unmotiviertes Thema").
+            kernSatzImZug = fpJetzt.satz;
           }
         }
-        if (text && !gleich(text, zuletzt)) this.sagen(text, "bot", null, { vomModell: true });
+        if (text && !gleich(text, zuletzt)) this.sagen(text, "bot", null, { vomModell: true, ...(kernSatzImZug ? { kernSatz: kernSatzImZug } : {}) });
         if (!nachricht.tool_calls) {
           // Welches Thema des Fahrplans der Agent damit gefragt hat
           const fp = fpJetzt || Werkzeugkasten.fahrplan(this.lauf.profil || {}, this.lauf);
@@ -1089,7 +1097,7 @@ const Kern = {
           // Chips nur, wo das Thema welche vorsieht - das Modell haengt sonst
           // an jede Frage Vorschlaege, die die Person in eine Richtung draengen
           // Schreibt der Kern die Frage, gehoeren ihm auch die Chips
-          if (fp.satz && (this.lauf.nachrichtArt || "antwort") === "antwort") antwort.chips = fp.chips ? fp.chips.split("|").map((x) => x.trim()) : [];
+          if (fp.satz && !freierZug) antwort.chips = fp.chips ? fp.chips.split("|").map((x) => x.trim()) : [];
           else if (fp.naechstes && !fp.chips) antwort.chips = [];
           else if (fp.naechstes && fp.chips && !(antwort.chips || []).length) antwort.chips = fp.chips.split("|").map((x) => x.trim());
           // Fragt der Agent nach dem Anreisetag, obwohl ein Flug dabei ist, haengt

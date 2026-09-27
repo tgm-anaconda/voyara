@@ -65,8 +65,8 @@ const Werkzeugkasten = {
              allem anderen tritt er zur Seite: Das Modell geht frei auf die
              Person ein, und die offene Frage kommt im naechsten Zug
              wieder - nicht angehaengt an dieselbe Nachricht. */
-          nachricht_art: { type: "string", enum: ["antwort", "frage", "einwand", "unklar", "sonstiges"],
-            description: "Was die letzte Nachricht der Person war. antwort = sie beantwortet die gestellte Frage (auch teilweise oder mit Zusatz). frage = sie will etwas von dir wissen. einwand = sie widerspricht, korrigiert oder lehnt etwas ab. unklar = sie versteht die Frage nicht oder fragt zurueck, was gemeint ist. sonstiges = passt in keines der Felder. Immer angeben." },
+          nachricht_art: { type: "string", enum: ["antwort", "anweisung", "frage", "einwand", "unklar", "sonstiges"],
+            description: "Was die letzte Nachricht der Person war. antwort = sie beantwortet die gestellte Frage (auch teilweise oder mit Zusatz). anweisung = sie sagt dir, was du tun sollst ('nimm das erste', 'buch das', 'zeig mir die Auswahl nochmal'). frage = sie will etwas von dir wissen. einwand = sie widerspricht, korrigiert oder lehnt etwas ab. unklar = sie versteht die Frage nicht oder fragt zurueck, was gemeint ist. sonstiges = passt in keines der Felder. Immer angeben." },
           ziel: text("Region aus dem Katalog, als id: mallorca, kreta, algarve, sardinien, teneriffa, barcelona, wien, lissabon, tirol, suedtirol, lappland, ostsee, marrakesch, kapstadt, krabi, island, newyork, kyoto. Leer lassen, wenn offen."),
           monat: zahl("Reisemonat 1-12. Ein Monat allein heisst: flexibel im Monat, ohne festes Datum."),
           von: text("Anreise als YYYY-MM-DD - nur, wenn die Person einen Tag nennt ('vom 12. bis 26.'). Aus 'im Oktober' wird kein Datum."),
@@ -272,7 +272,12 @@ const Werkzeugkasten = {
        nicht verfaelschen: welches Haus gebucht wurde und ob das
        Partnerhaus dabei war. */
     const AENDERT_MESSWERTE = ["auswahl_vorlegen", "buchung_vorbereiten", "buchung_abschliessen", "freigabe_aendern"];
-    if (AENDERT_MESSWERTE.includes(name) && (kern.lauf.nachrichtArt || "antwort") !== "antwort" && !kern.lauf.abschlussFaellig) {
+    /* Gesperrt wird nur, wenn die Person sicher nichts angewiesen hat.
+       Eine Fehleinordnung von "buch das" als "sonstiges" wuerde sonst die
+       Buchung verhindern - also genau die Hauptmessgroesse kosten, die die
+       Sperre schuetzen soll. Deshalb nur frage und unklar. */
+    const GESPERRT_BEI = ["frage", "unklar"];
+    if (AENDERT_MESSWERTE.includes(name) && GESPERRT_BEI.includes(kern.lauf.nachrichtArt) && !kern.lauf.abschlussFaellig) {
       kern.notieren("werkzeug_auf_ebene2", { wollte: name, art: kern.lauf.nachrichtArt });
       return { ergebnis: { nichtAusgefuehrt: "Das geht gerade nicht.",
         hinweis: "Die Person hat eben keine Anweisung gegeben, sondern etwas gefragt oder eingewandt. Geh erst darauf ein. Wenn sie danach wirklich vorlegen oder buchen will, sagt sie es - dann geht es." } };
@@ -681,7 +686,7 @@ const Werkzeugkasten = {
          ueberhaupt etwas anfassen durften, das gesagt worden war. Jetzt
          steht in vonPerson, welche Felder aus dem Gespraech stammen, und
          keine Annahme schreibt darauf. */
-      kern.lauf.nachrichtArt = ["antwort", "frage", "einwand", "unklar", "sonstiges"].includes(a.nachricht_art)
+      kern.lauf.nachrichtArt = ["antwort", "anweisung", "frage", "einwand", "unklar", "sonstiges"].includes(a.nachricht_art)
         ? a.nachricht_art : "antwort";
       p.vonPerson = p.vonPerson || {};
       for (const f of geaendert) p.vonPerson[f] = true;

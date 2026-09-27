@@ -384,7 +384,14 @@ const Pruefstand = {
     const rest = [];
     const gesehen = [];
     for (const n of modell) {
-      const t = String(n.text || "");
+      /* Nur der Teil, den das Modell geschrieben hat.
+         ----------------------------------------------------------------
+         Seit der Kern die Fragen schreibt, steht in einer Nachricht
+         beides. Wurde alles als Modelltext geprueft, meldete der
+         Pruefstand die Verpflegungsfrage des Kerns als "unmotiviertes
+         Thema" (sie nennt All Inclusive) und jede zweite Frage als
+         Wiederholung. Der Kern-Satz wird deshalb abgezogen. */
+      const t = String(n.text || "").replace(n.kernSatz || "", "").replace(/\s+/g, " ").trim();
       if (!t) continue;
       if (this.kern.fragenZaehlen(t) > 1) rest.push({ art: "zwei_fragen", text: t.slice(0, 200) });
       if (/!/.test(t)) rest.push({ art: "ausrufezeichen", text: t.slice(0, 160) });
