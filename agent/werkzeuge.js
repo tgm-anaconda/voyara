@@ -449,7 +449,7 @@ const Werkzeuge = {
     const panel = this.finde("#reviewPanel");
     if (panel) {
       const kopf = this.finde(".review-summary", panel);
-      if (kopf) await Zeiger.lies(kopf, { dauer: 1000, hinweis: `Gesamtnote und Teilnoten` });
+      if (kopf) await Zeiger.lies(kopf, { dauer: 700, hinweis: `Gesamtnote` });
 
       /* Der schnelle Gang durch die Bewertungen.
          ----------------------------------------------------------------
@@ -463,19 +463,30 @@ const Werkzeuge = {
          wie hier hochgezaehlt werden. Das ist die einzige Stelle, an der
          eine Zahl Eindruck macht - sie darf deshalb nicht erfunden sein. */
       const menge = Math.min(item.reviewCount || 0, 800);
-      if (menge > 20) {
-        const hoehe = panel.scrollHeight - panel.clientHeight;
-        const schritte = 14;
+      const liste0 = panel.querySelector(".review-list");
+      if (menge > 20 && liste0) {
+        /* Gescrollt wird das Fenster, nicht das Panel.
+           --------------------------------------------------------------
+           Hier stand panel.scrollTop - das Panel ist aber kein
+           Scrollbereich, sondern ein gewoehnlicher Block. Die Zahl lief
+           also hoch, waehrend sich auf dem Bildschirm nichts bewegte:
+           genau der Eindruck, den der Nutzer am 27.09.2026 beschrieben
+           hat ("er hat da so von 800 bis 1000 hochgezaehlt, aber die
+           Bewertungen hat er ueberhaupt nicht durchgescrollt"). */
+        const kasten = liste0.getBoundingClientRect();
+        const von = window.scrollY + kasten.top - 120;
+        const bis = window.scrollY + kasten.bottom - window.innerHeight + 80;
+        const schritte = 16;
         for (let i = 1; i <= schritte; i++) {
           if (Zeiger.abbruch) break;
-          panel.scrollTop = Math.round((hoehe * i) / schritte);
+          window.scrollTo({ top: von + ((bis - von) * i) / schritte, behavior: "auto" });
           const bisher = Math.round((menge * i) / schritte);
           Zeiger.beschrifte?.(`${bisher.toLocaleString("de-DE")} von ${menge.toLocaleString("de-DE")} Bewertungen`);
-          await Zeiger.warte(70);
+          await Zeiger.warte(80);
         }
-        panel.scrollTop = 0;
         durchgesehen = menge;
-        await Zeiger.warte(180);
+        window.scrollTo({ top: von, behavior: "auto" });
+        await Zeiger.warte(200);
       }
 
       // Bewertungen, die den gefragten Aspekt ueberhaupt erwaehnen. Die

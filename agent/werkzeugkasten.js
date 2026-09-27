@@ -2014,7 +2014,9 @@ const Werkzeugkasten = {
       const jz = Object.keys(JAHRESZEIT).find((k) => gesagt.includes(k));
       if (jz) {
         const m = JAHRESZEIT[jz].split(" | ");
-        satz = `Du hast ${jz.charAt(0).toUpperCase() + jz.slice(1)} gesagt - welcher Monat soll es sein, ${m[0]}, ${m[1]} oder ${m[2]}? Egal ist auch eine Antwort.`;
+        satz = (lauf.gefragtWie?.zeit || 0) >= 1
+          ? `Welcher der drei Monate passt euch am besten - ${m[0]}, ${m[1]} oder ${m[2]}? Wenn es egal ist, nehme ich ${m[0]}.`
+          : `Du hast ${jz.charAt(0).toUpperCase() + jz.slice(1)} gesagt - welcher Monat soll es sein, ${m[0]}, ${m[1]} oder ${m[2]}? Egal ist auch eine Antwort.`;
         frage = `Sie hat "${jz}" gesagt - frag, welcher Monat. "egal" ist eine Antwort.`;
         chips = `${JAHRESZEIT[jz]} | Egal`;
       }
@@ -2145,6 +2147,16 @@ const Werkzeugkasten = {
       };
       return {
         alsNaechstes: `Die naechste Frage stellt der Chat selbst - du musst sie NICHT schreiben. Sie lautet: "${fp.satz}" Wiederhole sie nicht, kuendige sie nicht an und stell keine eigene Frage; kein Fragezeichen in deiner Antwort. Schreib nur, was du zu dem sagen willst, was die Person zuletzt gesagt hat: hoechstens zwei kurze Saetze. Hat sie etwas Neues genannt, nimm es ausdruecklich auf ("Gutes Essen merke ich mir."). Gibt es dazu nichts zu sagen, schreib gar nichts.`,
+        /* Der Fragetext des Fahrplans geht weiter mit, auch wenn der Chat
+           die Frage selbst stellt.
+           --------------------------------------------------------------
+           Beim Umbau am 27.09.2026 ist er weggefallen - und damit die
+           BEDEUTUNG der Frage. In ihm steht, was eine Antwort ueberhaupt
+           heisst: dass "egal" beim Monat den ersten der Jahreszeit meint,
+           dass "offen" preisEgal setzt, dass Wuensche keine Filter sind.
+           Ohne ihn wusste das Modell nicht, was es mit "Egal" anfangen
+           soll - die Monatsfrage kam ein zweites Mal. */
+        wasDuAufnimmst: fp.frage,
         nochOffen: fp.fehlt,
       };
     }

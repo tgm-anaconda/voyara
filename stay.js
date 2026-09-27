@@ -312,14 +312,12 @@ function renderReviews() {
         <div class="review-score-label">${ratingLabel(item.rating)}</div>
         <p>${gesamt.toLocaleString("de-DE")} Bewertungen</p>
       </div>
-      <div class="breakdown">
-        ${Object.entries(item.ratingBreakdown).map(([k, v]) => `
-          <div class="breakdown-row">
-            <span>${BREAKDOWN_LABELS[k] || k}</span>
-            <span class="breakdown-bar"><i style="width:${(v / 5) * 100}%"></i></span>
-            <span class="breakdown-val">${v.toFixed(1).replace(".", ",")}</span>
-          </div>`).join("")}
-      </div>
+      <!-- Die Teilnoten je Kategorie standen hier als Balkenliste. Sie
+           sind am 27.09.2026 ausgebaut: Die Gegenueberstellung nach
+           Kategorien soll nur an einer Stelle entstehen, naemlich beim
+           Agenten. Gesamtnote und Zahl der Bewertungen bleiben, ebenso
+           die Verteilung und alle Bewertungstexte - was ein Mensch
+           daraus zieht, muss er selbst lesen. -->
     </div>
 
     <div class="verteilung">${balken}</div>
