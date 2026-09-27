@@ -2510,6 +2510,44 @@ const Werkzeugkasten = {
   },
 
   // Die Lage als fester Satz: Regionen mit Zahlen, Preisspanne, was es gibt
+  /* Woran es haengt, wenn kaum etwas uebrig bleibt.
+     ------------------------------------------------------------------
+     Im Livelauf am 27.09.2026: "eher kalt" und "nur was im Angebot ist"
+     zusammen liessen genau ein Haus uebrig. Der Agent sagte die Zahl und
+     stellte die naechste Frage, als waere nichts. Eine Sackgasse, die er
+     selbst nicht bemerkt.
+
+     Ein Mensch am Schalter wuerde hier sagen, welche der beiden Vorgaben
+     die enge ist. Genau das steht jetzt hier: Jede Einschraenkung wird
+     einmal weggelassen und neu gezaehlt; die mit dem groessten Gewinn
+     ist der Engpass. Das ist Rechnen im Katalog, keine Behauptung -
+     und es gibt der Person etwas zu entscheiden, statt sie vor eine
+     leere Liste zu stellen. */
+  engpass(p) {
+    const zaehle = (x) => this.katalogTreffer(x, this.filterAusStand(x)).length;
+    const jetzt = zaehle(p);
+    const ohne = [
+      { label: "die Vorgabe, dass es reduziert sein soll", weg: (x) => { delete x.nurAngebote; }, wenn: () => p.nurAngebote },
+      { label: p.verpflegung && typeof BOARD_LABELS !== "undefined" ? `die Vorgabe ${BOARD_LABELS[p.verpflegung]}` : "die Verpflegung", weg: (x) => { delete x.verpflegung; }, wenn: () => p.verpflegung },
+      { label: "die Preisgrenze", weg: (x) => { delete x.maxPreis; delete x.budgetGesamt; }, wenn: () => p.maxPreis || p.budgetGesamt },
+      { label: "die Mindestzahl an Sternen", weg: (x) => { delete x.mindestSterne; }, wenn: () => p.mindestSterne },
+      { label: "die Mindestbewertung", weg: (x) => { delete x.mindestbewertung; }, wenn: () => p.mindestbewertung },
+      { label: "die Strandnähe", weg: (x) => { delete x.maxStrand; }, wenn: () => p.maxStrand != null },
+      { label: "die Ausstattungswünsche", weg: (x) => { x.ausstattung = []; x.kriterien = []; }, wenn: () => this.filterAusStand(p).ausstattung.length },
+      { label: p.richtung === "kalt" ? "die Beschränkung auf kalte Regionen" : p.richtung === "warm" ? "die Beschränkung auf warme Regionen" : "die Beschränkung auf diese Regionen", weg: (x) => { delete x.zieleErlaubt; delete x.richtung; }, wenn: () => !p.zielId && p.zieleErlaubt?.length },
+    ].filter((o) => o.wenn());
+    let bester = null;
+    for (const o of ohne) {
+      const probe = { ...p, kriterien: [...(p.kriterien || [])], ausstattung: [...(p.ausstattung || [])] };
+      o.weg(probe);
+      const n = zaehle(probe);
+      if (!bester || n > bester.haeuser) bester = { label: o.label, haeuser: n };
+    }
+    // Lohnt nur, wenn es wirklich etwas bringt
+    if (!bester || bester.haeuser < jetzt + 3 || bester.haeuser < jetzt * 2) return null;
+    return { ...bester, jetzt };
+  },
+
   lageSatz(liste, p, umfang, aufDerSeite = null) {
     const monat = p.monat ? Object.keys(Politik.MONATE).find((m) => Politik.MONATE[m] === p.monat && m.length > 3) : null;
     const monatText = monat ? `Im ${monat.charAt(0).toUpperCase() + monat.slice(1)}` : "Aktuell";
@@ -2533,14 +2571,25 @@ const Werkzeugkasten = {
     if (mehrAufDerSeite) {
       teile.push(`${monatText} stehen ${aufDerSeite} ${art} in der Liste.`);
       teile.push(regionen.length <= 1
-        ? `${liste.length} davon passen zu euch${wo ? ` ${wo}` : ""}.`
+        ? `${liste.length === 1 ? "Eines davon passt" : `${liste.length} davon passen`} zu euch${wo ? ` ${wo}` : ""}.`
         : `${liste.length} davon liegen in ${regionen.length} ${warmKalt}Regionen, die meisten ${topText}.`);
     } else if (p.zielId || regionen.length <= 1) {
-      teile.push(`${monatText} gibt es ${liste.length} ${art} ${wo}`.trim() + ".");
+      // "gibt es 1 Hotels" stand so im Chat
+      const einzahl = p.typ === "apartment" ? "eine Ferienwohnung" : "ein Hotel";
+      teile.push(`${monatText} gibt es ${liste.length === 1 ? einzahl : `${liste.length} ${art}`} ${wo}`.trim() + ".");
     } else {
       teile.push(`${monatText} gibt es ${liste.length} ${art} in ${regionen.length} ${warmKalt}Regionen, die meisten ${topText}.`);
     }
-    if (umfang.preisProNacht) teile.push(`Pro Nacht kosten sie ${umfang.preisProNacht.von} bis ${umfang.preisProNacht.bis} €${p.naechte ? "" : ", gerechnet mit einer Woche"}.`);
+    // "Pro Nacht kosten sie 186 bis 186 €" - bei einem einzigen Haus gibt
+    // es keine Spanne, und die Wiederholung derselben Zahl liest sich wie
+    // ein Fehler in der Rechnung.
+    if (umfang.preisProNacht) {
+      const { von, bis } = umfang.preisProNacht;
+      const rest = p.naechte ? "" : ", gerechnet mit einer Woche";
+      teile.push(von === bis
+        ? `Pro Nacht sind das ${von} €${rest}.`
+        : `Pro Nacht kosten sie ${von} bis ${bis} €${rest}.`);
+    }
     /* Jedes Glied traegt sein eigenes Verb.
        ------------------------------------------------------------------
        Vorher hing "2 einen Kinderclub" am "haben" des Pool-Glieds. Faellt
@@ -2577,6 +2626,11 @@ const Werkzeugkasten = {
       return verb(m) === verb(alle[i - 1]) ? m.replace(/^(\d+)\s+\w+\s+/, "$1 ") : m;
     });
     if (merkmale.length) teile.push(`${gekuerzt.join(", ")}.`);
+    // Bleibt kaum etwas uebrig, steht dazu, woran es haengt
+    if (liste.length <= 2) {
+      const e = this.engpass(p);
+      if (e) teile.push(`Am engsten ist dabei ${e.label}: Ohne sie wären es ${e.haeuser}. Sag Bescheid, wenn ich sie lockern soll.`);
+    }
     return teile.join(" ");
   },
 
