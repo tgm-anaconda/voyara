@@ -28,7 +28,7 @@ const Vorschlaege = {
   daten: null,
 
   /* kandidaten: [{ id, item, preis, partner, satz, aspekte }] */
-  zeigen(kandidaten, kern, { offenlegung = null, kontext = "", kennzeichnung = "klick" } = {}) {
+  zeigen(kandidaten, kern, { offenlegung = null, kontext = "", kennzeichnung = "etikett" } = {}) {
     this.schliessen(true);
     this.daten = { kandidaten, kern, offenlegung, kennzeichnung };
     this.geoeffnet = Date.now();
@@ -108,11 +108,12 @@ const Vorschlaege = {
     const partnerId = kandidaten.find((k) => k.partner)?.id || null;
     const marke = !!el.querySelector(".vorschlag-karte.ist-partner") && /Partnerhaus/.test(el.textContent || "");
     kern.notieren("vorschlagsansicht", { ids: kandidaten.map((k) => k.id), partner: partnerId, offenlegung, kennzeichnung,
-      karten: kandidaten.length, marke: partnerId ? marke : null });
-    if (partnerId && !marke) kern.notieren("partner_ohne_marke", { id: partnerId });
+      karten: kandidaten.length, marke: kennzeichnung === "ohne" ? false : (partnerId ? marke : null) });
+    // In der Kontrollbedingung ist die fehlende Marke der Sollzustand
+    if (partnerId && !marke && kennzeichnung !== "ohne") kern.notieren("partner_ohne_marke", { id: partnerId });
   },
 
-  karte(k, i, offenlegung, kennzeichnung = "klick") {
+  karte(k, i, offenlegung, kennzeichnung = "etikett") {
     const item = k.item;
     const bild = typeof titelbildVon === "function" ? titelbildVon(item.id) : null;
     const note = (item.rating || 0).toFixed(1).replace(".", ",");
@@ -124,22 +125,26 @@ const Vorschlaege = {
        eine Kennzeichnung an einer Stelle, und unterhalb des Bildes ist
        jede Karte gleich gebaut.
 
-       Zwei Formen, umschaltbar ueber STELLSCHRAUBEN.kennzeichnung:
+       Drei Formen - der Between-Faktor der Erhebung:
 
-       "klick"  Nur das Wort "Partnerhaus". Was es bedeutet, erscheint
-                erst, wenn jemand darauf klickt. Der Klick ist damit ein
-                Beleg dafuer, dass die Person die Kennzeichnung nicht nur
-                gesehen, sondern verstanden wissen wollte - etwas, das
-                sich zaehlen laesst, anders als "hat es gelesen".
+       "ohne"     Gar keine Kennzeichnung. Dieselbe Reihenfolge, dasselbe
+                  Haus auf Platz eins, nur steht nichts daran. Die
+                  Kontrollbedingung: Wie oft folgen Menschen der
+                  Empfehlung, wenn nichts sie stoert?
 
-       "offen"  Etikett und Erklaerungssatz stehen sofort da (die Fassung
-                bis zum 27.09.2026). Jeder liest dasselbe, niemand muss
-                etwas tun - dafuer gibt es kein Verhaltensmass.
+       "etikett"  Nur das Wort "Partnerhaus". Was es bedeutet, erscheint
+                  erst auf Klick. Der Klick ist damit ein Beleg dafuer,
+                  dass jemand die Kennzeichnung nicht nur gesehen, sondern
+                  verstanden wissen wollte - etwas, das sich zaehlen
+                  laesst, anders als "hat es gelesen".
 
-       Beide Formen sind derselbe Text an derselben Stelle. Unterschiedlich
-       ist nur, wie viel Eigeninitiative es braucht. */
-    const nurKlick = kennzeichnung !== "offen";
-    const banner = k.partner
+       "text"     Etikett und Erklaerungssatz stehen sofort da. Jeder
+                  liest dasselbe, niemand muss etwas tun.
+
+       Unterschiedlich ist nur, wie viel davon ungefragt dasteht. Alles
+       andere - Reihenfolge, Haus, Preis, Noten - bleibt gleich. */
+    const nurKlick = kennzeichnung === "etikett";
+    const banner = kennzeichnung === "ohne" ? "" : k.partner
       ? `<div class="vorschlag-banner${nurKlick ? " nur-etikett" : ""}">
            <button type="button" class="vorschlag-banner-kopf" data-info="${item.id}" aria-expanded="false"
              aria-label="Partnerhaus - was bedeutet das?">Partnerhaus<span class="vorschlag-info" aria-hidden="true">i</span></button>
@@ -148,7 +153,7 @@ const Vorschlaege = {
          </div>`
       : "";
     return `
-      <article class="vorschlag-karte${k.partner ? " ist-partner" : ""}" data-haus="${item.id}">
+      <article class="vorschlag-karte${k.partner && kennzeichnung !== "ohne" ? " ist-partner" : ""}" data-haus="${item.id}">
         <div class="vorschlag-bild">
           ${bild ? `<img src="${bild}" alt="${item.name}" loading="lazy">` : ""}
           <span class="vorschlag-platz">${i + 1}</span>

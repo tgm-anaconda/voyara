@@ -91,21 +91,45 @@ const Studie = {
 
   /* Gruppenzuweisung
      ------------------------------------------------------------------
-     Der Between-Faktor der Erhebung ist die Offenlegung des Partnerhauses
-     (etikett | log | offen), je Person einmal ausgelost - es sei denn,
-     die Adresse legt sie fest (?offenlegung=log fuer Tests und Links).
-     Dazu wird ausgelost, in welcher der beiden Aufgaben das Partnerhaus
-     die beste Option ist; in der anderen ist es die zweitbeste. */
+     Der Between-Faktor ist seit dem 27.09.2026 die KENNZEICHNUNG des
+     Hauses auf Platz eins, in drei Stufen, je Person einmal ausgelost:
+
+       ohne     Platz eins traegt keine Kennzeichnung. Die Reihenfolge
+                ist dieselbe wie ueberall, das Haus dasselbe - nur steht
+                nichts daran. Das ist die Kontrollbedingung: Wie oft
+                folgen Menschen der Empfehlung des Agenten, wenn nichts
+                sie stoert?
+       etikett  Nur das Wort "Partnerhaus". Was es bedeutet, erscheint
+                erst auf Klick. Misst, ob schon das Etikett reicht.
+       text     Etikett plus Erklaerungssatz, sofort sichtbar. Misst, ob
+                die Erklaerung den Effekt verstaerkt.
+
+     Der Aufbau steht und faellt damit, dass Platz eins in allen drei
+     Stufen dasselbe Haus ist, naemlich das objektiv bestpassende. Nur
+     dann laesst sich eine Verschiebung auf Platz zwei der Kennzeichnung
+     zuschreiben und sonst nichts - denn sonst spraeche nichts fuer Platz
+     zwei. Deshalb steht `partner` fest auf "beste".
+
+     Die alte Variable `offenlegung` (chip | log | agent) ist damit
+     abgeloest. Sie bleibt als Schalter fuer Tests erhalten, wird aber
+     nicht mehr ausgelost: Ihre Stufe "agent" haette die Provision
+     zusaetzlich im Chat genannt - dann waere in der Stufe "etikett" die
+     Erklaerung doch angekommen, und der Klick haette nichts mehr
+     gemessen. */
   auslosen(reihenfolge) {
     const s = typeof STELLSCHRAUBEN !== "undefined" ? STELLSCHRAUBEN : {};
-    const stufen = ["etikett", "log", "offen"];
-    const offenlegung = stufen.includes(s.offenlegung) ? s.offenlegung : stufen[Math.floor(Math.random() * stufen.length)];
+    const stufen = ["ohne", "etikett", "text"];
+    const kennzeichnung = stufen.includes(s.kennzeichnung)
+      ? s.kennzeichnung : stufen[Math.floor(Math.random() * stufen.length)];
+    // Nur noch fuer Tests und alte Links; im Normalfall "log" (still)
+    const ALT = ["chip", "log", "agent", "etikett", "offen", "keine"];
+    const offenlegung = ALT.includes(s.offenlegung) ? s.offenlegung : "log";
     let partnerBesteIn = null;
     if (s.partner === "beste") partnerBesteIn = "beide";
     else if (s.partner === "zweitbeste") partnerBesteIn = "keine";
     else if (s.partner === "keine") partnerBesteIn = "ohne";
     else partnerBesteIn = reihenfolge[Math.floor(Math.random() * 2)];
-    return { offenlegung, partnerBesteIn, einladung: s.einladung || null, ausgelost: Date.now() };
+    return { kennzeichnung, offenlegung, partnerBesteIn, einladung: s.einladung || null, ausgelost: Date.now() };
   },
 
   gruppe() {

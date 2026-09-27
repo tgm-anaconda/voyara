@@ -113,13 +113,13 @@ const STELLSCHRAUBEN = {
      Kennzeichnung auffaellt und was sie mit dem Vertrauen macht, nicht,
      ob sie vor einem Nachteil schuetzt. */
   partner: "beste",              // zweitbeste | beste | wechselnd | keine
-  /* Wie die Kennzeichnung auftritt (Vorschlag des Nutzers, 27.09.2026).
+  /* Der Between-Faktor der Erhebung (Aufbau des Nutzers, 27.09.2026).
      ------------------------------------------------------------------
-     klick = nur das Wort "Partnerhaus"; was es bedeutet, erscheint erst
-             auf Klick. Der Klick ist damit ein zaehlbarer Beleg dafuer,
-             dass jemand die Kennzeichnung verstehen wollte.
-     offen = Etikett und Erklaerungssatz stehen sofort da. */
-  kennzeichnung: "klick",        // klick | offen
+     ohne    = Platz eins ohne Kennzeichnung (Kontrollgruppe)
+     etikett = nur das Wort "Partnerhaus", Erklaerung auf Klick
+     text    = Etikett plus Erklaerungssatz, sofort sichtbar
+     zufall  = je Person ausgelost (Normalfall der Erhebung) */
+  kennzeichnung: "zufall",       // zufall | ohne | etikett | text
   // Sieht der Agent sich die engere Auswahl vorher sichtbar an (Haus
   // oeffnen, Bewertungen lesen, Zimmer und Verpflegung setzen)? Kostet
   // acht bis zehn Sekunden je Haus und ist der Kern der Fragestellung:
@@ -168,6 +168,7 @@ const STELLSCHRAUBEN = {
     offenlegung: ["keine", "chip", "banner", "agent", "etikett", "log", "offen"],
     vorschlag: ["ansicht", "chat"],
     partner: ["zweitbeste", "beste", "wechselnd", "keine"],
+    kennzeichnung: ["zufall", "ohne", "etikett", "text"],
   };
   const SCHLUESSEL = "voyara_agent_gruppe";
   let gruppe = {};
@@ -260,6 +261,7 @@ const Kern = {
       rundgangFuer: null,      // Vorgaben, fuer die schon ein Rundgang lief
       monatsvergleich: null,   // angesetzter Vergleich mehrerer Monate in der Liste
       zwangFrei: null,         // Werkzeug, das in diesem Zug noch einmal erzwungen werden darf
+      kennzeichnung: null,     // Stufe des Between-Faktors fuer diese Sitzung
       stichprobe: null,        // laufender kurzer Blick in ein, zwei Haeuser
       stichprobeGemacht: false,// einmal je Gespraech, nach der ersten Suche
       abgeleitet: [],          // eigene Entscheidungen des Kerns, die noch erklaert werden muessen
@@ -1570,6 +1572,22 @@ const Kern = {
   /* Die Haeuser fuer die Vorschlagsansicht aufbereiten: Gesamtpreis wie an
      der Kasse, Teilnoten aus den Bewertungen (der genannte Wunsch zuerst),
      ein Satz zur Begruendung. */
+  /* Welche Kennzeichnungsform diese Person sieht.
+     ------------------------------------------------------------------
+     Aus der Auslosung, sonst aus der Stellschraube. Einmal bestimmt,
+     bleibt sie fuer die Sitzung: Wer die Ansicht zweimal oeffnet, darf
+     nicht zwei verschiedene Bedingungen sehen. */
+  kennzeichnung() {
+    if (this.lauf.kennzeichnung) return this.lauf.kennzeichnung;
+    const feste = ["ohne", "etikett", "text"];
+    let stufe = feste.includes(STELLSCHRAUBEN.kennzeichnung) ? STELLSCHRAUBEN.kennzeichnung : null;
+    if (!stufe && typeof Studie !== "undefined" && Studie.daten && Studie.gruppe) {
+      stufe = Studie.gruppe().kennzeichnung || null;
+    }
+    this.lauf.kennzeichnung = feste.includes(stufe) ? stufe : "etikett";
+    return this.lauf.kennzeichnung;
+  },
+
   vorschlagsansicht(kandidaten) {
     const p = this.lauf.profil || {};
     const wunschIds = (p.kriterien || []).map((k) => Politik.kriterium(k.id)?.aspekt).filter(Boolean);
@@ -1657,7 +1675,7 @@ const Kern = {
       typeof Belegung !== "undefined" ? Belegung.text() : null,
       Werkzeugkasten.filterText(p) !== "ohne Filter" ? Werkzeugkasten.filterText(p) : null,
       spanneText].filter(Boolean).join(" · ");
-    const kennzeichnung = STELLSCHRAUBEN.kennzeichnung === "offen" ? "offen" : "klick";
+    const kennzeichnung = this.kennzeichnung();
     Vorschlaege.zeigen(aufbereitet, this, { offenlegung: this.lauf.offenlegung, kontext, kennzeichnung });
     for (const k of aufbereitet) {
       this.logZeile(`${k.partner ? "Vorschlag 1 (mein Vorschlag)" : "Vorschlag"}: ${k.item.name}, ${k.gesamtText}, Bewertung ${k.item.rating}`, "ergebnis");
@@ -1673,7 +1691,7 @@ const Kern = {
        heikel: Wer die Ansicht dreimal aufmacht, bekommt die Offenlegung
        dreimal - die Manipulation dosiert sich dann selbst, und die
        Gruppen sind nicht mehr vergleichbar. */
-    if (this.lauf.offenlegung === "agent" && !this.lauf.offenlegungGesagt) {
+    if (this.lauf.offenlegung === "agent" && kennzeichnung === "text" && !this.lauf.offenlegungGesagt) {
       const pk = aufbereitet.find((k) => k.partner);
       if (pk) {
         this.lauf.offenlegungGesagt = true;

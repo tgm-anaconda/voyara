@@ -3032,22 +3032,55 @@ const Werkzeugkasten = {
      denen, die preislich in der Naehe liegen. Gibt es nicht genug davon,
      kommt die urspruengliche Rangfolge zum Zug - lieber drei Haeuser mit
      ungleichen Preisen als zwei. */
-  preisNaheAuswahl(liste, p, wieViele, spanne = 0.15) {
+  preisNaheAuswahl(liste, p, wieViele) {
     if (!Array.isArray(liste) || liste.length <= wieViele) return liste.slice(0, wieViele);
+    /* Gerechnet wird der Preis, der auf der Karte steht.
+       ------------------------------------------------------------------
+       Also Unterkunft UND Flug. Zwei Haeuser mit demselben Zimmerpreis
+       koennen sich um achthundert Euro unterscheiden, wenn eines in
+       Lappland liegt und eines auf Mallorca. Wer hier nur die Unterkunft
+       vergleicht, stellt eine Auswahl zusammen, die auf dem Bildschirm
+       alles andere als vergleichbar aussieht. */
+    const personen = (p.erwachsene || 0) + (p.kinder || 0);
     const gesamt = (h) => {
       const proNacht = this.preis(h, p.monat);
+      let summe = proNacht;
       if (typeof Politik !== "undefined" && Politik.aufenthaltspreis && p.naechte) {
-        return Politik.aufenthaltspreis(h, p, proNacht).gesamt;
+        summe = Politik.aufenthaltspreis(h, p, proNacht).gesamt;
       }
-      return proNacht;
+      if (p.flug && h.type !== "apartment" && typeof Flug !== "undefined") {
+        summe += Flug.paket(h, personen || 1, p.flugKlasse || null)?.gesamt || 0;
+      }
+      return summe;
     };
     const kopf = liste[0];
     const anker = gesamt(kopf);
     if (!anker) return liste.slice(0, wieViele);
     const rest = liste.slice(1);
-    const nah = rest.filter((h) => Math.abs(gesamt(h) - anker) <= anker * spanne);
-    const fern = rest.filter((h) => !nah.includes(h));
-    return [kopf, ...nah, ...fern].slice(0, wieViele);
+    /* So eng wie moeglich, so weit wie noetig.
+       ------------------------------------------------------------------
+       Der Nutzer am 27.09.2026: "Ein Hotel, was zweitausend Euro kostet,
+       ist aehnlich bewertet wie eines fuer viertausendfuenfhundert. Das
+       fuehrt zwangslaeufig dazu, dass man das billigere nimmt - und damit
+       waere der Effekt des Partnerhauses komplett eliminiert."
+
+       Er hat recht, und es ist die Achillesferse des ganzen Versuchs: Ein
+       Preisunterschied von hundert Prozent schlaegt jede Kennzeichnung.
+       Die erste Fassung nahm eine feste Spanne von fuenfzehn Prozent und
+       fiel auf die Rangfolge zurueck, wenn nicht genug dabei war - der
+       Rueckfall brachte dann genau die Ausreisser wieder herein.
+
+       Jetzt wird die Spanne schrittweise geoeffnet, bis genug Haeuser
+       drin sind, und nicht weiter. Meist reichen acht Prozent; wo es
+       eng wird, dreissig. Genommen wird immer die engste Stufe, die
+       ueberhaupt traegt. */
+    for (const spanne of [0.08, 0.15, 0.22, 0.30, 0.45]) {
+      const nah = rest.filter((h) => Math.abs(gesamt(h) - anker) <= anker * spanne);
+      if (nah.length >= wieViele - 1) return [kopf, ...nah].slice(0, wieViele);
+    }
+    // Auch die weiteste Stufe traegt nicht: dann die preislich naechsten
+    const nachAbstand = rest.slice().sort((a, b) => Math.abs(gesamt(a) - anker) - Math.abs(gesamt(b) - anker));
+    return [kopf, ...nachAbstand].slice(0, wieViele);
   },
 
   filterText(p) {
