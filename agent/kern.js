@@ -1025,6 +1025,9 @@ const Kern = {
            falsches Thema. */
         let fpJetzt = null;
         let kernSatzImZug = null;
+        // Gilt fuer beide Bloecke unten: den, der die Nachricht
+        // zusammensetzt, und den, der die Chips setzt.
+        const freierZug = ["frage", "einwand", "unklar", "sonstiges"].includes(this.lauf.nachrichtArt);
         if (!nachricht.tool_calls) {
           fpJetzt = Werkzeugkasten.fahrplan(this.lauf.profil || {}, this.lauf);
           /* Zwei Ebenen.
@@ -1041,9 +1044,6 @@ const Kern = {
              aus dem Vorspann geschnitten. Alles, was nicht ins Schema
              passte, wurde damit unterdrueckt - genau das machte den
              Agenten starr. */
-          // Anweisungen fuehrt der Agent aus, statt darueber zu reden -
-          // dafuer braucht es keine freie Ebene.
-          const freierZug = ["frage", "einwand", "unklar", "sonstiges"].includes(this.lauf.nachrichtArt);
           if (freierZug && fpJetzt.satz) {
             this.notieren("freier_zug", { art: this.lauf.nachrichtArt, offen: fpJetzt.naechstes });
           }
