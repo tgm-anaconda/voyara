@@ -497,6 +497,19 @@ const Kern = {
     AgentPanel.freigabeAufbauen(FREIGABE, this.lauf.freigabe, (stufe) => this.freigabeSetzen(stufe));
     document.body.classList.toggle("agent-ohne-freigabe", erstoeffnung && !this.lauf.freigabeGewaehlt);
 
+    /* Die Kernpruefung: ?kernpruefung=1 an jede Adresse.
+       ------------------------------------------------------------------
+       Sie geht den Fahrplan durch rund dreissigtausend erfundene Staende
+       und haelt jeden Satz gegen feste Regeln. Kostet keinen Modellaufruf
+       und laeuft in Sekunden; das Ergebnis steht in der Konsole. Geladen
+       wird sie nur auf Zuruf - fuer Teilnehmende waere es totes Gewicht. */
+    if (new URLSearchParams(location.search).get("kernpruefung")) {
+      const el = document.createElement("script");
+      el.src = "agent/kernpruefung.js?v=" + Date.now();
+      el.onload = () => Kernpruefung.lauf();
+      document.head.appendChild(el);
+    }
+
     // Pruefstand (nur wenn ausdruecklich gestartet): spielt feste Gespraeche
     // gegen den echten Agenten und zaehlt, wie oft die Leitplanken greifen
     if (sessionStorage.getItem("voyara_pruefstand")) {

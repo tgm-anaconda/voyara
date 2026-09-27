@@ -546,7 +546,19 @@ const Werkzeugkasten = {
            mindestens zur Haelfte ab. */
         const naechste4 = () => Array.from({ length: 4 }, (_, i) => ((new Date().getMonth() + 1 + i) % 12) + 1);
         const kandidatenMonate = jz ? jz.monate : naechste4();
-        if (abgegeben && !monatGenannt && !p.vonPerson?.monat) {
+        /* "Gerne im Sommer" ist eine Angabe, keine Abgabe.
+           --------------------------------------------------------------
+           Am 28.09.2026 setzte der Kern darauf sofort Juni und fragte nie
+           nach dem Monat. Ursache war das Feld monatUeberlassen, das ich
+           tags zuvor eingebaut hatte: Das Modell setzte es schon bei der
+           Nennung der Jahreszeit, und der Kern entschied daraufhin.
+
+           Wer eine Jahreszeit nennt, hat gerade etwas gesagt - und
+           bekommt die Frage nach dem Monat. Erst die ANTWORT darauf kann
+           eine Abgabe sein. Deshalb zaehlt die Abgabe nur, wenn die
+           Jahreszeit nicht in derselben Nachricht steht. */
+        const jahreszeitJetztGenannt = gesagt(/sommer|winter|herbst|frühling|fruehling|frühjahr|fruehjahr/i, 1);
+        if (abgegeben && !jahreszeitJetztGenannt && !monatGenannt && !p.vonPerson?.monat) {
           /* Sichtbar vergleichen, wenn er die Seite bedienen darf.
              ------------------------------------------------------------
              Der Kern koennte das Ergebnis in einer Millisekunde aus dem
@@ -617,6 +629,18 @@ const Werkzeugkasten = {
       if (p.personen != null) {
         if (p.kinder != null && p.erwachsene == null) { p.erwachsene = Math.max(1, p.personen - p.kinder); geaendert.push("erwachsene"); }
         else if (p.erwachsene != null && p.kinder == null) { p.kinder = Math.max(0, p.personen - p.erwachsene); geaendert.push("kinder"); }
+        /* Wer allein reist, reist ohne Kinder.
+           --------------------------------------------------------------
+           Am 28.09.2026 antwortete jemand auf "Wie viele seid ihr?" mit
+           "1" und bekam zurueck: "Du reist also allein. Sind von den 1
+           Kinder dabei?" - mit den Vorschlaegen "Ein Kind" und "Zwei
+           Kinder". Das ist keine Ungeschicklichkeit im Satzbau, sondern
+           eine Frage, die es nicht geben kann: Bei einer Person ist die
+           Aufteilung bereits entschieden. Ein Kind bucht keine Reise. */
+        else if (p.personen === 1 && p.erwachsene == null && p.kinder == null) {
+          p.erwachsene = 1; p.kinder = 0;
+          geaendert.push("erwachsene", "kinder");
+        }
       }
       // "Meine Frau und ich", "zu zweit", "allein": ohne ein Wort zu Kindern
       // sind keine dabei - das fragt man nicht nach
@@ -2047,8 +2071,17 @@ const Werkzeugkasten = {
 
     reisende: {
 
-      erklaerung: "Die Zahl der Reisenden entscheidet, welche Zimmer überhaupt in Frage kommen - und bei Kindern oft auch den Preis.",      satz: ["Wie viele seid ihr, und sind Kinder dabei?",
-        "Sag mir noch kurz, wie viele ihr seid und ob Kinder mitkommen."],
+      erklaerung: "Die Zahl der Reisenden entscheidet, welche Zimmer überhaupt in Frage kommen - und bei Kindern oft auch den Preis.",
+      /* Die zweite Fassung war ein Aufforderungssatz ohne Fragezeichen.
+         ----------------------------------------------------------------
+         Gefunden von der Kernpruefung am 28.09.2026, und der Schaden lag
+         nicht im Ton: Der Kern zaehlt ein Thema nur dann als gefragt,
+         wenn im Text ein Fragezeichen steht. Ohne eines waere diese Frage
+         nie als gestellt gezaehlt worden - also waere auch nie die dritte
+         Fassung gekommen und nie die Annahme nach zwei Anlaeufen. Eine
+         fehlende Interpunktion haette eine Endlosschleife tragen koennen. */
+      satz: ["Wie viele seid ihr, und sind Kinder dabei?",
+        "Wie viele seid ihr denn, und kommen Kinder mit?"],
       frage: "Mit wem sie reist - in einem Fragesatz. Nicht zwei Fragesaetze daraus machen.", chips: "1 | 2 | 3 | 4 oder mehr" },
 
     kinderAlter: {
@@ -2072,7 +2105,8 @@ const Werkzeugkasten = {
        an dieser Stelle keine Haeuser aus, er richtet die Liste ein und die
        Person geht selbst hinein. Genau so klingt die Frage jetzt. */
     weiter: {
-      satz: ["Soll ich die Filter gleich so setzen, dass du selbst durch die Liste gehen kannst? Oder klären wir vorher noch ein paar Eckdaten wie Dauer und Flug?",
+      // Eine Frage je Satz - die beiden Zweige gehoeren in einen Fragesatz
+      satz: ["Soll ich die Filter gleich so setzen, dass du selbst durch die Liste gehst, oder klären wir vorher noch ein paar Eckdaten wie Dauer und Flug?",
         "Willst du selbst in der Liste stöbern, oder besprechen wir vorher noch ein paar Eckdaten?"],
       frage: "Ob du ihr die Filter gleich so setzen sollst, dass sie selbst durch die Liste gehen kann (weiter schauen), oder ob ihr vorher noch ein paar Eckdaten klaert (weiter klaeren).", chips: "Filter setzen, ich schaue | Noch ein paar Eckdaten" },
 
@@ -2110,7 +2144,7 @@ const Werkzeugkasten = {
       frage: "An welchem Tag sie anreisen will.", chips: null },
 
     beratung: {
-      satz: ["Wollen wir noch ein paar Eckdaten besprechen - Preis, Verpflegung, worauf es dir ankommt? Oder soll ich dir mit dem, was ich habe, gleich eine erste Auswahl zeigen?",
+      satz: ["Wollen wir noch ein paar Eckdaten besprechen - Preis, Verpflegung, worauf es dir ankommt -, oder soll ich dir mit dem, was ich habe, gleich eine erste Auswahl zeigen?",
         "Sollen wir noch etwas klären, oder zeige ich dir gleich eine Auswahl?"],
       frage: "Ob ihr noch Eckdaten klaert (beratung klaeren) oder ob du gleich eine Auswahl zeigst (beratung auswahl).", chips: "Noch ein paar Eckdaten | Erstmal eine Auswahl" },
 
@@ -2455,7 +2489,37 @@ const Werkzeugkasten = {
      "selbst schauen oder drei raussuchen?" (vorgehen). Bei top3 folgen
      dauer, flug, flugAb (falls offen), preis, wuensche - dann die Vorlage.
      Bei selbst stehen die Filter, Ruhe. */
+  /* Der Stand wird glattgezogen, bevor daraus etwas folgt.
+     ------------------------------------------------------------------
+     Am 28.09.2026 baute der Kern die Frage "Sind von den 1 Kinder
+     dabei?" - aus einem Stand, den es nicht geben kann: eine Person,
+     Aufteilung unbekannt. Der Fehler war nicht der Satz, sondern der
+     Stand. Ich hatte ihn in stand_merken repariert, aber der Fahrplan
+     bekommt seinen Stand auch aus dem Speicher einer alten Sitzung oder
+     aus einem Werkzeug - und rechnete dort weiter mit dem Widerspruch.
+
+     Deshalb steht die Rechnung jetzt hier, am Eingang: Was sich aus dem
+     Stand zwingend ergibt, wird eingetragen, bevor eine Frage daraus
+     wird. Das ist kein Verstehen und gehoert deshalb nicht zum Modell -
+     es ist Arithmetik, und die ist in beiden Richtungen eindeutig. */
+  stimmigMachen(p) {
+    if (!p) return p;
+    const e = p.erwachsene, k = p.kinder, ges = p.personen;
+    // Zwei von dreien ergeben den dritten
+    if (ges != null && k != null && e == null) p.erwachsene = Math.max(1, ges - k);
+    else if (ges != null && e != null && k == null) p.kinder = Math.max(0, ges - e);
+    else if (e != null && k != null && ges == null) p.personen = e + k;
+    // Eine Person reist ohne Mitreisende - da ist nichts aufzuteilen
+    if (p.personen === 1 && (p.erwachsene == null || p.kinder == null)) { p.erwachsene = 1; p.kinder = 0; }
+    if (p.kinder === 0) p.kinderAlter = [];
+    if (p.kinder > 0 && (p.kinderAlter || []).length > p.kinder) p.kinderAlter = p.kinderAlter.slice(0, p.kinder);
+    // Zur Ferienwohnung gibt es keinen Flug - die Seite kennt das nicht
+    if (p.typ === "apartment") { p.flug = false; delete p.flugAb; delete p.flugKlasse; }
+    return p;
+  },
+
   fahrplan(p, lauf = {}) {
+    this.stimmigMachen(p);
     const b = lauf.besprochen || {};
     const kinderAlterOk = p.kinder == null || p.kinder === 0 || (p.kinderAlter || []).length >= p.kinder;
     // Stehen Dauer und Flug schon fest, gibt es nichts mehr zu klaeren. Die
@@ -2701,14 +2765,29 @@ const Werkzeugkasten = {
       if (t.length) chips = t.join(" | ");
     }
     if (naechstes === "reisende") {
+      // Mehr Kinder als Reisende kann es nicht geben - die Vorschlaege
+      // richten sich nach der Gruppe, nicht nach einer festen Liste
+      const kindChips = (hoechstens) => ["Keine Kinder", "Ein Kind", "Zwei Kinder"]
+        .slice(0, Math.max(1, Math.min(3, (hoechstens ?? 2) + 1))).join(" | ");
+      /* Ein Fragezeichen je Satz - auch hier.
+         ----------------------------------------------------------------
+         "Sind Kinder dabei? Wenn ja, wie viele und wie alt?" sind zwei
+         Fragen, und dieselbe Regel, die das Modell einhalten muss, gilt
+         fuer den Kern. Die Pruefung vom 28.09.2026 hat es in 96.000
+         Staenden gefunden. */
+      const zweiter = (lauf.gefragtWie?.reisende || 0) >= 1;
       if (p.personen != null && p.erwachsene == null && p.kinder == null) {
-        satz = `Sind von den ${p.personen} Kinder dabei? Wenn ja, wie viele und wie alt?`;
-        chips = "Keine Kinder | Ein Kind | Zwei Kinder";
+        satz = zweiter
+          ? `Wie teilt sich das bei euch ${p.personen} auf - nur Erwachsene, oder sind Kinder dabei (mit Alter)?`
+          : `Sind von den ${p.personen} Kinder dabei - und wenn ja, wie viele und wie alt?`;
+        chips = kindChips(p.personen - 1);
       } else if (p.erwachsene != null && p.kinder == null) {
-        satz = "Sind Kinder dabei? Wenn ja, wie viele und wie alt?";
-        chips = "Keine Kinder | Ein Kind | Zwei Kinder";
+        satz = zweiter
+          ? "Kommen Kinder mit, und wenn ja, wie alt sind sie?"
+          : "Sind Kinder dabei - und wenn ja, wie viele und wie alt?";
+        chips = kindChips(null);
       } else if (p.kinder != null && p.erwachsene == null) {
-        satz = "Und wie viele Erwachsene reisen mit?";
+        satz = zweiter ? "Und wie viele Erwachsene sind dabei?" : "Und wie viele Erwachsene reisen mit?";
         chips = "1 | 2 | 3 | 4 oder mehr";
       }
     }

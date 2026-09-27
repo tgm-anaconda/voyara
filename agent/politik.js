@@ -1520,15 +1520,16 @@ const Politik = {
     }
     if (profil.artGenannt) raus.push({ feld: "Art", wert: profil.typ === "apartment" ? "Ferienwohnung" : "Hotel" });
     else if (profil.artEgal) raus.push({ feld: "Art", wert: "offen, Hotels zuerst" });
-    if (profil.monat) {
-      const name = Object.keys(this.MONATE).find((m) => this.MONATE[m] === profil.monat && m.length > 3);
-      if (name) raus.push({ feld: "Zeit", wert: name.charAt(0).toUpperCase() + name.slice(1) });
+    // Dieselbe Falle wie anderswo: "Mai" hat drei Buchstaben und fiel
+    // durch die Laengenpruefung, die Kurzformen aussortieren sollte
+    if (profil.monat && typeof MONATSNAMEN !== "undefined") {
+      raus.push({ feld: "Zeit", wert: MONATSNAMEN[profil.monat - 1] });
     }
     const personen = [];
     if (profil.erwachsene) personen.push(`${profil.erwachsene} Erw.`);
     if (profil.kinder) personen.push(`${profil.kinder} ${profil.kinder === 1 ? "Kind" : "Kinder"}${profil.kinderAlter?.length ? ` (${profil.kinderAlter.join(", ")} J.)` : ""}`);
     else if (profil.kinder === 0 && profil.erwachsene) personen.push("keine Kinder");
-    if (!personen.length && profil.personen) personen.push(`${profil.personen} Personen`);
+    if (!personen.length && profil.personen) personen.push(`${profil.personen} ${profil.personen === 1 ? "Person" : "Personen"}`);
     if (personen.length) raus.push({ feld: "Wer", wert: personen.join(" + ") });
     if (profil.zimmer > 1) raus.push({ feld: "Zimmer", wert: String(profil.zimmer) });
     if (profil.von && profil.bis) raus.push({ feld: "Daten", wert: `${profil.von.slice(8)}.${profil.von.slice(5, 7)}. bis ${profil.bis.slice(8)}.${profil.bis.slice(5, 7)}.` });
