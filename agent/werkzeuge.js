@@ -237,6 +237,25 @@ const Werkzeuge = {
   async belegungSetzen(erwachsene, kinder, kinderAlter = null) {
     const ausloeser = this.finde("#sbGuests");
     if (!ausloeser) return false;
+
+    /* Steht es schon so da, wird nichts angefasst.
+       ----------------------------------------------------------------
+       Der Agent klappte bei jeder Suche das Reisendenfeld auf und drueckte
+       "uebernehmen", auch wenn sich an der Belegung nichts geaendert hatte.
+       Fuer die Person sah es aus wie ein Zucken ohne Grund, und es lenkte
+       von dem ab, was er wirklich tat. Die Werte stehen im Dokument, auch
+       wenn der Aufklapper zu ist - man kann sie also lesen, ohne ihn zu
+       oeffnen. */
+    const zeilenJetzt = [...document.querySelectorAll("#sbRooms .stepper-row")];
+    const wert = (i) => { const z = zeilenJetzt[i]; return z ? +z.querySelector(".stepper-value")?.textContent.trim() : null; };
+    const alterJetzt = [...document.querySelectorAll("#sbRooms .js-age")].map((f) => +f.value);
+    const passtSchon = zeilenJetzt.length
+      && (erwachsene == null || wert(0) === +erwachsene)
+      && (kinder == null || wert(1) === +kinder)
+      && (!Array.isArray(kinderAlter) || !kinderAlter.length
+        || kinderAlter.every((a, i) => alterJetzt[i] === +a));
+    if (passtSchon) return true;
+
     await Zeiger.klicke(ausloeser, { hinweis: "Reisende" });
     await Zeiger.warte(220);
 
@@ -357,6 +376,10 @@ const Werkzeuge = {
     if (!auswahl) return this.fehlt("Die Sortierung");
     const option = [...auswahl.options].find((o) => o.value === nach);
     if (!option) return { ok: false, text: `Sortierung "${nach}" gibt es hier nicht.` };
+    // Steht die Sortierung schon so, wird sie nicht noch einmal gesetzt -
+    // sonst blinkt bei jeder Suche kurz eine Auswahl auf, die niemand
+    // geaendert hat.
+    if (auswahl.value === nach) return { ok: true, text: `Sortierung steht schon auf: ${option.textContent}`, daten: this.zustand() };
 
     await Zeiger.setzeWert(auswahl, nach, { hinweis: "sortieren" });
     await Zeiger.warte(300);

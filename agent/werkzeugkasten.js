@@ -230,6 +230,28 @@ const Werkzeugkasten = {
         a.id = gemeint;
       }
     }
+    /* Zusammengehoerende Fragen werden zu Ende gestellt, bevor gesucht wird.
+       ------------------------------------------------------------------
+       Am 27.09.2026: Der Agent fragt "mit Flug oder ohne?", bekommt "mit
+       Flug" - und sucht sofort, obwohl noch kein Abflughafen feststeht.
+       Die Suche lief also mit einer halben Vorgabe, und die Person sah
+       Ergebnisse, die schon im naechsten Zug wieder hinfaellig waren.
+
+       Die erste Umschau bleibt erlaubt (da gibt es noch nichts zu
+       vervollstaendigen); danach wird nicht mehr gesucht, solange der
+       Fahrplan eine offene Frage hat. Eine Frage der Person geht weiter
+       vor - fragt sie nach dem Angebot, darf gesucht werden. */
+    if (name === "suchen" && stufe === 1 && kern.lauf.gesuchtMit) {
+      const fpJetzt = this.fahrplan(kern.lauf.profil || {}, kern.lauf);
+      const letzte = [...(kern.lauf.gespraech || [])].reverse().find((n) => n.role === "user")?.content || "";
+      const fragtSelbst = /\?/.test(String(letzte)) || /^(habt|gibt|wie viele|was|welche|zeig)/i.test(String(letzte).trim());
+      if (fpJetzt.naechstes && !fragtSelbst && !kern.lauf.rundgang) {
+        kern.notieren("suche_zu_frueh", { offen: fpJetzt.naechstes });
+        return { ergebnis: { nichtGesucht: `Erst das offene Thema klaeren: ${fpJetzt.naechstes}.`,
+          hinweis: "Such jetzt noch nicht - es fehlt noch eine Angabe, und mit halben Vorgaben ist das Ergebnis im naechsten Zug wieder hinfaellig. Stell die offene Frage.",
+          ...this.fahrplanFuerModell(fpJetzt, kern.lauf.profil || {}) } };
+      }
+    }
     if (this.BRAUCHT[name] && !kern.darf(this.BRAUCHT[name])) {
       kern.notieren("gesperrt", { wollte: name, freigabe: kern.freigabe() });
       const f = FREIGABE.find((x) => x.id === kern.freigabe());
