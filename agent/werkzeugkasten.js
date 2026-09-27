@@ -1160,8 +1160,7 @@ const Werkzeugkasten = {
         kern.lauf.rechercheAngesagt = true;
         const wohin = p.zielId && typeof ZIEL_NACH_ID !== "undefined" ? `in ${ZIEL_NACH_ID[p.zielId]?.name}`
           : p.richtung === "warm" ? "in den warmen Regionen" : p.richtung === "kalt" ? "in den kalten Regionen" : "";
-        const wann = p.monat && typeof Politik !== "undefined"
-          ? `im ${Object.keys(Politik.MONATE).find((m) => Politik.MONATE[m] === p.monat && m.length > 3)?.replace(/^./, (c) => c.toUpperCase())}` : "";
+        const wann = p.monat && typeof MONATSNAMEN !== "undefined" ? `im ${MONATSNAMEN[p.monat - 1]}` : "";
         const art = p.typ === "apartment" ? "Ferienwohnungen" : "Häuser";
         kern.sagen(`Ich sehe erst mal nach, wie viele ${art} es ${[wohin, wann].filter(Boolean).join(" ")} überhaupt gibt und was frei ist.`.replace(/\s+/g, " "));
         kern.notieren("recherche_angesagt", { ziel: p.zielId || p.richtung || null, monat: p.monat || null });
@@ -1459,7 +1458,14 @@ const Werkzeugkasten = {
        wie in der Lage. */
     async monate_vergleichen(a, kern) {
       const p = kern.lauf.profil || {};
-      const roh = (a?.monate?.length ? a.monate : kern.lauf.monatsvergleich?.monate) || [];
+      /* Der Fahrplan bestimmt, welche Monate verglichen werden.
+         ----------------------------------------------------------------
+         Das Modell gab am 27.09.2026 von sich aus "Mai, Juni, Juli,
+         August" mit, obwohl die Person "Sommer" gesagt hatte - Mai
+         gehoert nicht dazu. Steht ein Vergleich an, gilt die Liste des
+         Kerns; die des Modells zaehlt nur, wenn niemand sonst eine hat
+         (also wenn die Person von sich aus nach einem Vergleich fragt). */
+      const roh = (kern.lauf.monatsvergleich?.monate?.length ? kern.lauf.monatsvergleich.monate : a?.monate) || [];
       const monate = [...new Set(roh.map(Number).filter((m) => Number.isInteger(m) && m >= 1 && m <= 12))].slice(0, 4);
       const aufgeben = (grund) => { kern.lauf.monatsvergleich = null; kern.sichern(); return grund; };
       if (monate.length < 2) return { ergebnis: aufgeben({ fehler: "Zum Vergleichen brauche ich mindestens zwei Monate." }) };
@@ -2176,7 +2182,8 @@ const Werkzeugkasten = {
     maxStrand: { thema: "wuensche", wort: (p) => `höchstens ${p.maxStrand < 1 ? `${Math.round(p.maxStrand * 1000)} Meter` : `${p.maxStrand} km`} zum Strand` },
     mindestbewertung: { thema: "wuensche", wort: (p) => `mindestens ${String(p.mindestbewertung).replace(".", ",")} als Note` },
     naechte: { thema: "dauer", wort: (p) => `${p.naechte} Nächte` },
-    monat: { thema: "zeit", wort: (p) => (typeof Politik !== "undefined" ? Object.keys(Politik.MONATE).find((m) => Politik.MONATE[m] === p.monat && m.length > 3)?.replace(/^./, (c) => c.toUpperCase()) : null) },
+    // Dieselbe Falle wie in lageSatz: "Mai" hat drei Buchstaben
+    monat: { thema: "zeit", wort: (p) => (typeof MONATSNAMEN !== "undefined" && p.monat ? MONATSNAMEN[p.monat - 1] : null) },
     anreise: { thema: "anreise", wort: (p) => { const d = new Date(p.anreise); return Number.isNaN(d.getTime()) ? null : `Anreise am ${d.getDate()}.`; } },
   },
 
@@ -2883,8 +2890,13 @@ const Werkzeugkasten = {
   },
 
   lageSatz(liste, p, umfang, aufDerSeite = null) {
-    const monat = p.monat ? Object.keys(Politik.MONATE).find((m) => Politik.MONATE[m] === p.monat && m.length > 3) : null;
-    const monatText = monat ? `Im ${monat.charAt(0).toUpperCase() + monat.slice(1)}` : "Aktuell";
+    /* Der Monatsname kam aus einer Rueckwaertssuche in Politik.MONATE,
+       die Kurzformen ueber die Laenge aussortierte ("okt" gegen
+       "oktober"). Bei Mai griff das gegen den Monat selbst: drei
+       Buchstaben, also aussortiert - und im Chat stand "Aktuell gibt es
+       78 Hotels" statt "Im Mai". */
+    const monat = p.monat && typeof MONATSNAMEN !== "undefined" ? MONATSNAMEN[p.monat - 1] : null;
+    const monatText = monat ? `Im ${monat}` : "Aktuell";
     const art = p.typ === "apartment" ? "Ferienwohnungen" : "Hotels";
     // "in den warmen Regionen in 8 Regionen" stand so auf der Seite - die
     // Himmelsrichtung gehoert vor das Wort Regionen, nicht davor und danach.
