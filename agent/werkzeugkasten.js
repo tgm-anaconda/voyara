@@ -57,6 +57,16 @@ const Werkzeugkasten = {
       f("stand_merken",
         "Merkt sich, was du ueber die Reise erfahren hast. Ruf es, sobald etwas Neues feststeht (auch mehrere Felder auf einmal). Nur Felder setzen, die die Person wirklich genannt hat.",
         {
+          /* Was die letzte Nachricht der Person ueberhaupt war.
+             ----------------------------------------------------------
+             Das Verstehen gehoert dem Modell, das Handeln dem Kern - und
+             diese Einordnung ist die Bruecke dazwischen. Bei "antwort"
+             fuehrt der Fahrplan weiter und stellt die naechste Frage. Bei
+             allem anderen tritt er zur Seite: Das Modell geht frei auf die
+             Person ein, und die offene Frage kommt im naechsten Zug
+             wieder - nicht angehaengt an dieselbe Nachricht. */
+          nachricht_art: { type: "string", enum: ["antwort", "frage", "einwand", "unklar", "sonstiges"],
+            description: "Was die letzte Nachricht der Person war. antwort = sie beantwortet die gestellte Frage (auch teilweise oder mit Zusatz). frage = sie will etwas von dir wissen. einwand = sie widerspricht, korrigiert oder lehnt etwas ab. unklar = sie versteht die Frage nicht oder fragt zurueck, was gemeint ist. sonstiges = passt in keines der Felder. Immer angeben." },
           ziel: text("Region aus dem Katalog, als id: mallorca, kreta, algarve, sardinien, teneriffa, barcelona, wien, lissabon, tirol, suedtirol, lappland, ostsee, marrakesch, kapstadt, krabi, island, newyork, kyoto. Leer lassen, wenn offen."),
           monat: zahl("Reisemonat 1-12. Ein Monat allein heisst: flexibel im Monat, ohne festes Datum."),
           von: text("Anreise als YYYY-MM-DD - nur, wenn die Person einen Tag nennt ('vom 12. bis 26.'). Aus 'im Oktober' wird kein Datum."),
@@ -90,6 +100,7 @@ const Werkzeugkasten = {
           ausstattung: { type: "array", items: { type: "string", enum: ["pool", "spa", "kidsClub", "familyFriendly", "beachfront", "wifi", "parking", "restaurant", "gym", "seaView"] }, description: "Nur, wenn die Person etwas als Bedingung nennt ('muss einen Pool haben', 'direkt am Strand' = beachfront). Ein Wunsch gehoert in wuensche, nicht hierher." },
           verpflegung: { type: "string", enum: ["ohne", "fruehstueck", "halb", "voll", "ai"], description: "Gewuenschte Verpflegung" },
           flug: { type: "boolean", description: "true, wenn ein Flug dazu gewuenscht ist; false, wenn nur die Unterkunft" },
+          flugAbEgal: { type: "boolean", description: "true, wenn der Person der Abflughafen gleich ist oder sie mehrere nennt, ohne sich zu entscheiden ('Hamburg oder Koeln', 'was billiger ist', 'egal'). Dann sucht der Agent die guenstigste Verbindung aus und sagt, welche er genommen hat." },
           flugAb: text("Abflughafen, wenn genannt (Hamburg, Stuttgart, Düsseldorf, Hannover, München, Köln, Frankfurt, Berlin - was die Seite anbietet)"),
           flugKlasse: { type: "string", enum: ["economy", "premium", "business"], description: "Flugklasse, wenn genannt" },
         }),
@@ -249,8 +260,22 @@ const Werkzeugkasten = {
         kern.notieren("suche_zu_frueh", { offen: fpJetzt.naechstes });
         return { ergebnis: { nichtGesucht: `Erst das offene Thema klaeren: ${fpJetzt.naechstes}.`,
           hinweis: "Such jetzt noch nicht - es fehlt noch eine Angabe, und mit halben Vorgaben ist das Ergebnis im naechsten Zug wieder hinfaellig. Stell die offene Frage.",
-          ...this.fahrplanFuerModell(fpJetzt, kern.lauf.profil || {}) } };
+          ...this.fahrplanFuerModell(fpJetzt, kern.lauf.profil || {}, kern.lauf) } };
       }
+    }
+    /* Auf Ebene 2 fasst das Modell nichts an, was gemessen wird.
+       ------------------------------------------------------------------
+       Fuehrt das Modell den Zug (die Person hat gefragt oder
+       widersprochen), darf es nachschlagen, rechnen und suchen - aber
+       nicht vorlegen, buchen oder die Freigabe aendern. Ein Fehlgriff
+       macht das Gespraech dann holprig, aber er kann die Hauptmessgroesse
+       nicht verfaelschen: welches Haus gebucht wurde und ob das
+       Partnerhaus dabei war. */
+    const AENDERT_MESSWERTE = ["auswahl_vorlegen", "buchung_vorbereiten", "buchung_abschliessen", "freigabe_aendern"];
+    if (AENDERT_MESSWERTE.includes(name) && (kern.lauf.nachrichtArt || "antwort") !== "antwort" && !kern.lauf.abschlussFaellig) {
+      kern.notieren("werkzeug_auf_ebene2", { wollte: name, art: kern.lauf.nachrichtArt });
+      return { ergebnis: { nichtAusgefuehrt: "Das geht gerade nicht.",
+        hinweis: "Die Person hat eben keine Anweisung gegeben, sondern etwas gefragt oder eingewandt. Geh erst darauf ein. Wenn sie danach wirklich vorlegen oder buchen will, sagt sie es - dann geht es." } };
     }
     if (this.BRAUCHT[name] && !kern.darf(this.BRAUCHT[name])) {
       kern.notieren("gesperrt", { wollte: name, freigabe: kern.freigabe() });
@@ -292,9 +317,23 @@ const Werkzeugkasten = {
     return Math.max(...item.rooms.map((r) => r.maxGuests || 0)) * zimmer >= personen;
   },
 
-  kompakt(item, profil) {
+  /* Was der Agent ueber ein Haus wissen darf, haengt daran, was er
+     angesehen hat.
+     ------------------------------------------------------------------
+     Bis zum 27.09.2026 standen "gelobt" und "kritisiert" in JEDEM
+     Suchergebnis - aus den Bewertungen gerechnet, ohne dass der Agent das
+     Haus je geoeffnet hatte. Er konnte also sagen "gelobt wird das
+     Essen" fuer ein Haus, das er nie angesehen hat. Das ist dieselbe
+     Erfindung wie eine falsche Zahl, nur aus echten Daten gespeist.
+
+     Was auf den Karten der Trefferliste steht - Name, Preis, Gesamtnote,
+     Sterne, Strandentfernung, Ausstattungssymbole - darf er immer
+     nennen; das sieht ein Mensch dort auch. Alles aus den Bewertungen
+     erst, wenn er die Bewertungen gelesen hat (lauf.gelesen). */
+  kompakt(item, profil, gelesen = null) {
     const monat = profil.monat || null;
-    const kurz = typeof aspektKurzfassung === "function" ? aspektKurzfassung(item) : null;
+    const darfBewertung = !gelesen || !!gelesen[item.id];
+    const kurz = darfBewertung && typeof aspektKurzfassung === "function" ? aspektKurzfassung(item) : null;
     return {
       id: item.id, name: item.name, ort: item.location, region: item.region || null,
       art: item.type === "apartment" ? "Ferienwohnung" : (typeof CATEGORY_LABELS !== "undefined" ? CATEGORY_LABELS[item.category] : item.category) || "Hotel",
@@ -303,8 +342,9 @@ const Werkzeugkasten = {
       note: item.rating, bewertungen: item.reviewCount,
       meterZumStrand: item.distanceToBeach != null ? Math.round(item.distanceToBeach * 1000) : null,
       ausstattung: (item.amenities || []).slice(0, 8),
-      gelobt: kurz?.staerken?.slice(0, 2) || [],
-      kritisiert: kurz?.schwaechen?.slice(0, 1) || [],
+      ...(darfBewertung
+        ? { gelobt: kurz?.staerken?.slice(0, 2) || [], kritisiert: kurz?.schwaechen?.slice(0, 1) || [] }
+        : { bewertungenNochNichtGelesen: "Was Gaeste loben oder bemaengeln, weisst du erst, wenn du die Bewertungen dieses Hauses gelesen hast." }),
       ...this.flugTeil(item, profil),
     };
   },
@@ -567,26 +607,17 @@ const Werkzeugkasten = {
       }
       setze("verpflegung", a.verpflegung);
       if (a.flug !== undefined) setze("flug", !!a.flug);
-      /* Zwei Flughaefen in einer Antwort sind keine Antwort.
+      /* "Hamburg oder Koeln, je nachdem was billiger ist."
          ----------------------------------------------------------------
-         Auf "Von welchem Flughafen?" kam "Koeln oder Hamburg". Das Modell
-         trug Koeln ein und suchte weiter - die Person hatte sich aber
-         nicht entschieden, und niemand fragte nach. Stehen zwei bekannte
-         Flughaefen in der Nachricht, wird keiner uebernommen; der Kern
-         fragt, welcher es sein soll. */
-      if (a.flugAb && typeof Flug !== "undefined") {
-        const letzteNachricht = String([...(kern.lauf.gespraech || [])].reverse().find((n) => n.role === "user")?.content || "");
-        const genannte = (Flug.flughaefen ? Flug.flughaefen() : []).map((h) => h.name)
-          .filter((stadt) => stadt && new RegExp(`\\b${String(stadt).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`, "i").test(letzteNachricht));
-        if (genannte.length > 1) {
-          kern.notieren("flughafen_mehrdeutig", { genannt: genannte.slice(0, 3) });
-          p.flugAbAuswahl = genannte.slice(0, 3);
-          delete a.flugAb;
-        } else if (genannte.length === 1) {
-          delete p.flugAbAuswahl;
-        }
-      }
+         Bis zum 27.09.2026 stand hier ein Muster, das Staedtenamen zaehlte.
+         Das versteht nichts: Es haette bei diesem Satz zurueckgefragt,
+         welcher denn - obwohl die Person die Entscheidung gerade an den
+         Agenten abgegeben hat. Das Verstehen gehoert dem Modell (Feld
+         flugAbEgal), die Entscheidung dem Kern: Er nimmt die guenstigste
+         Verbindung und sagt, welche. */
+      if (a.flugAbEgal) { p.flugAbEgal = true; delete a.flugAb; }
       setze("flugAb", a.flugAb); setze("flugKlasse", a.flugKlasse);
+      if (a.flugAb) p.flugAbEgal = false;
       if (a.flugAb && typeof Flug !== "undefined" && !Flug.code(a.flugAb)) { p.flugAb = null; geaendert.push("flugAb unbekannt"); }
       if ((a.flug !== undefined || a.flugAb || a.flugKlasse) && typeof Flug !== "undefined") {
         Flug.set({ mit: !!p.flug, ab: Flug.code(p.flugAb), klasse: p.flugKlasse || "economy" });
@@ -650,6 +681,8 @@ const Werkzeugkasten = {
          ueberhaupt etwas anfassen durften, das gesagt worden war. Jetzt
          steht in vonPerson, welche Felder aus dem Gespraech stammen, und
          keine Annahme schreibt darauf. */
+      kern.lauf.nachrichtArt = ["antwort", "frage", "einwand", "unklar", "sonstiges"].includes(a.nachricht_art)
+        ? a.nachricht_art : "antwort";
       p.vonPerson = p.vonPerson || {};
       for (const f of geaendert) p.vonPerson[f] = true;
       kern.notieren("stand", { felder: geaendert });
@@ -661,7 +694,7 @@ const Werkzeugkasten = {
       const frage = /\?\s*$|^(habt|gibt|wie|was|wo|wann|welche|ist|sind|kann|könnt|koennt|hat)\b/i.test(String(letzte).trim()) ? String(letzte).trim() : null;
       return { ergebnis: { gemerkt: geaendert.length ? geaendert : "nichts Neues", stand: kern.standKurz(),
         ...(frage ? { zuerst: `Die Person hat gefragt: "${frage}". Beantworte das zuerst - geht es um das Angebot der Seite (Haeuser, Regionen, Preise), ruf suchen oder regionen_zaehlen und antworte mit Zahlen; geht es um Klima oder Reisetipps, aus deinem Wissen. Dann erst das Thema.` } : {}),
-        ...Werkzeugkasten.fahrplanFuerModell(fp, p) } };
+        ...Werkzeugkasten.fahrplanFuerModell(fp, p, kern.lauf) } };
     },
 
     async regionen_zaehlen(a, kern) {
@@ -679,7 +712,7 @@ const Werkzeugkasten = {
       kern.notieren("vorabsuche", { regionen: regionen.map((r) => `${r.id}:${r.haeuser}`), gesamt, weg: "katalog" });
       return {
         ergebnis: { hinweis: "Haeuser, die im Zeitraum fuer die Gruppe buchbar sind - noch ohne Wuensche wie Pool oder Strand. Schildere die Lage in drei Saetzen (Regionen mit Zahlen, dein Wissen zu Klima und Art der Ziele darfst du dazunehmen), dann das naechste Thema. Sag nichts ueber Verpflegung, Ausstattung oder Wuensche (Pool, Kinderclub, All Inclusive, Wellness), solange die Person davon nicht selbst gesprochen hat - sonst steht ein Thema im Raum, das niemand aufgemacht hat.", insgesamt: gesamt, regionen,
-          ...Werkzeugkasten.fahrplanFuerModell(Werkzeugkasten.fahrplan(p, kern.lauf), p) },
+          ...Werkzeugkasten.fahrplanFuerModell(Werkzeugkasten.fahrplan(p, kern.lauf), p, kern.lauf) },
         log: `Im Katalog nachgesehen: ${gesamt} Häuser in ${regionen.length} Regionen (${regionen.slice(0, 4).map((r) => `${r.name} ${r.haeuser}`).join(", ")})`,
       };
     },
@@ -724,6 +757,20 @@ const Werkzeugkasten = {
       if (!p.typ) p.typ = "hotel";
       kern.standAnzeigen();
 
+      // Kein Flughafen genannt, aber Flug gewuenscht und egal welcher:
+      // der Kern sucht den guenstigsten aus und laesst es ansagen
+      if (p.flug && p.flugAbEgal && !p.flugAb) {
+        const ziele = p.zielId ? [p.zielId] : (p.zieleErlaubt || []);
+        const ab = Werkzeugkasten.guenstigsterFlughafen(ziele);
+        if (ab) {
+          p.flugAb = ab;
+          p.vonPerson = p.vonPerson || {};
+          kern.lauf.flughafenGewaehlt = ab;
+          kern.standAnzeigen();
+          kern.notieren("flughafen_gewaehlt", { ab, grund: "guenstigste Verbindung" });
+          if (typeof Flug !== "undefined") Flug.set({ mit: true, ab: Flug.code(ab), klasse: p.flugKlasse || "economy" });
+        }
+      }
       const fp = Werkzeugkasten.fahrplan(p, kern.lauf);
       const fest = !!(p.von && p.bis);
       const flex = fest ? null : Werkzeugkasten.flexWahl(p);
@@ -731,7 +778,7 @@ const Werkzeugkasten = {
       const filter = Werkzeugkasten.filterAusStand(p);
       const darfEmpfehlen = fp.empfehlungBereit;
       const selbst = p.vorgehen === "selbst";
-      const treffer = (liste) => liste.slice(0, 8).map((h) => Werkzeugkasten.kompakt(h, p));
+      const treffer = (liste) => liste.slice(0, 8).map((h) => Werkzeugkasten.kompakt(h, p, kern.lauf.gelesen || {}));
       const sortiere = (liste) => {
         const nach = p.sortierung || "passung";
         if (nach === "preis") return liste.sort((x, y) => Werkzeugkasten.preis(x, p.monat) - Werkzeugkasten.preis(y, p.monat));
@@ -745,6 +792,10 @@ const Werkzeugkasten = {
 
       // Was das Modell zurueckbekommt
       const antwort = async (liste, weg, gesamt) => {
+        const flughafenSatz = kern.lauf.flughafenGewaehlt
+          ? `Sag in einem Halbsatz, dass du ab ${kern.lauf.flughafenGewaehlt} rechnest, weil das die guenstigste Verbindung ist, und dass sie das aendern kann. `
+          : "";
+        if (kern.lauf.flughafenGewaehlt) kern.lauf.flughafenGewaehlt = null;
         const umfang = Werkzeugkasten.umfang(liste, p);
         // Bei einer Richtung (warm, Meer) zaehlt der eingegrenzte Katalog, nicht
         // die Seite - die kennt nur eine Region auf einmal
@@ -781,14 +832,14 @@ const Werkzeugkasten = {
               // sonst Bewertungen an ("Kinderclubs sind eher selten"),
               // obwohl niemand nach Kinderclubs gefragt hatte - das liest
               // sich, als haette der Agent eine eigene Meinung dazu.
-              hinweis: `Die Lage steht schon im Chat: nicht wiederholen, keine Zahlen noch einmal, und die Zahlen auch nicht bewerten oder einordnen. ${p.zielId ? "Das Ziel steht fest - kein Satz ueber Regionen." : "Hoechstens ein Satz aus deinem Wissen zu Klima oder Charakter der Regionen."} Dann das naechste Thema.`,
-              ...Werkzeugkasten.fahrplanFuerModell(Werkzeugkasten.fahrplan(p, kern.lauf), p) };
+              hinweis: `${flughafenSatz}Die Lage steht schon im Chat: nicht wiederholen, keine Zahlen noch einmal, und die Zahlen auch nicht bewerten oder einordnen. ${p.zielId ? "Das Ziel steht fest - kein Satz ueber Regionen." : "Hoechstens ein Satz aus deinem Wissen zu Klima oder Charakter der Regionen."} Dann das naechste Thema.`,
+              ...Werkzeugkasten.fahrplanFuerModell(Werkzeugkasten.fahrplan(p, kern.lauf), p, kern.lauf) };
           }
           return { ...basis, haeuser: "noch nicht - erst die Beratung",
-            hinweis: (fp.phase === "suche" || !fp.gesucht
+            hinweis: flughafenSatz + (fp.phase === "suche" || !fp.gesucht
               ? "Schildere die Lage in zwei, drei Saetzen: wie viele Haeuser, in welchen Regionen (mit Zahlen), Preisspanne pro Nacht - dein Wissen zu Klima und Art der Regionen darfst du dazunehmen. Dann das naechste Thema. Sag nichts ueber Verpflegung, Ausstattung oder Wuensche (Pool, Kinderclub, All Inclusive, Wellness), solange die Person davon nicht selbst gesprochen hat - sonst steht ein Thema im Raum, das niemand aufgemacht hat."
               : "Nenn, was sich an der Lage geaendert hat (Zahlen), dann das naechste Thema.") + (p.naechte ? "" : " Die Dauer ist noch offen; gerechnet ist eine Woche - sag das in einem Halbsatz."),
-            ...Werkzeugkasten.fahrplanFuerModell(Werkzeugkasten.fahrplan(p, kern.lauf), p) };
+            ...Werkzeugkasten.fahrplanFuerModell(Werkzeugkasten.fahrplan(p, kern.lauf), p, kern.lauf) };
         }
         /* Beratung abgeschlossen: die drei passendsten Haeuser vorlegen.
            Ausgewaehlt wird aus allen Haeusern, die die Vorgaben erfuellen -
@@ -1028,7 +1079,11 @@ const Werkzeugkasten = {
       if (!item) return { ergebnis: { fehler: `${a.id} kenne ich nicht.` } };
       const p = kern.lauf.profil;
       await kern.denkpause(700, "liest nach…");
-      const k = Werkzeugkasten.kompakt(item, p);
+      // Die Hausseite ist offen - damit darf der Agent auch die Teilnoten
+      // und das Gelobte/Kritisierte dieses Hauses kennen (siehe kompakt)
+      kern.lauf.gelesen = kern.lauf.gelesen || {};
+      kern.lauf.gelesen[item.id] = kern.lauf.gelesen[item.id] || "hausseite";
+      const k = Werkzeugkasten.kompakt(item, p, kern.lauf.gelesen);
       const naechte = p.naechte || null;
       const zimmer = Math.max(1, p.zimmer || 1);
       const gebuehr = item.type === "apartment" ? (item.cleaningFee || 0) : 35 * zimmer;
@@ -1663,6 +1718,23 @@ const Werkzeugkasten = {
     return `${teile.slice(0, 2).join(", ")} merke ich mir.`.replace(/^./, (c) => c.toUpperCase());
   },
 
+  /* Der guenstigste Abflughafen fuer die Ziele, die gerade in Frage
+     kommen. Gebraucht, wenn die Person sich nicht festlegt ("Hamburg
+     oder Koeln, je nachdem was billiger ist"): Das Verstehen kommt vom
+     Modell (flugAbEgal), die Entscheidung trifft der Kern anhand der
+     echten Flugpreise. */
+  guenstigsterFlughafen(zieleIds = []) {
+    if (typeof FLIGHTS === "undefined") return null;
+    const ziele = (zieleIds || []).filter(Boolean);
+    const passend = FLIGHTS.filter((f) => !ziele.length || ziele.includes(f.ziel));
+    if (!passend.length) return null;
+    // Je Flughafen der guenstigste Flug; davon der guenstigste Flughafen
+    const je = {};
+    for (const f of passend) je[f.from] = Math.min(je[f.from] ?? Infinity, f.price || Infinity);
+    const sortiert = Object.entries(je).sort((a, b) => a[1] - b[1]);
+    return sortiert.length ? sortiert[0][0] : null;
+  },
+
   // Die moeglichen Anreisetage als Text - gebraucht fuer die Frage und
   // fuer die Chips
   anreiseTage(p) {
@@ -1742,7 +1814,7 @@ const Werkzeugkasten = {
       weiter: true,
       dauer: !!p.naechte,
       flug: p.flug != null || p.typ === "apartment",
-      flugAb: !p.flug || !!p.flugAb || p.typ === "apartment",
+      flugAb: !p.flug || !!p.flugAb || !!p.flugAbEgal || p.typ === "apartment",
       vorgehen: !!p.vorgehen,
       beratung: true,
       preis: !!(p.maxPreis || p.budgetGesamt || p.preisEgal || b.preis),
@@ -1940,12 +2012,6 @@ const Werkzeugkasten = {
       const t = this.anreiseTage(p);
       if (t.length) chips = t.join(" | ");
     }
-    // Zwei Flughaefen genannt: nach genau diesen fragen, nicht nach allen
-    if (naechstes === "flugAb" && p.flugAbAuswahl?.length > 1) {
-      const l = p.flugAbAuswahl;
-      satz = `${l.slice(0, -1).join(", ")} oder ${l[l.length - 1]} - welcher soll es sein?`;
-      chips = l.join(" | ");
-    }
     if (naechstes === "reisende") {
       if (p.personen != null && p.erwachsene == null && p.kinder == null) {
         satz = `Sind von den ${p.personen} Kinder dabei? Wenn ja, wie viele und wie alt?`;
@@ -2023,17 +2089,31 @@ const Werkzeugkasten = {
   },
 
   // Der Fahrplan als Teil eines Werkzeugergebnisses (stand_merken, suchen)
-  fahrplanFuerModell(fp, p) {
+  fahrplanFuerModell(fp, p, lauf = null) {
     /* Die Frage stellt der Chat, nicht das Modell.
        ------------------------------------------------------------------
        Das Modell schreibt nur noch den Anschluss an das, was die Person
        gerade gesagt hat. Der Kern haengt seine Frage an. So kann es keine
        zweite Frage geben, keine woertliche Wiederholung und keine Frage
        ueber die Frage. */
-    if (fp.naechstes && fp.satz) return {
-      alsNaechstes: `Die naechste Frage stellt der Chat selbst - du musst sie NICHT schreiben. Sie lautet: "${fp.satz}" Wiederhole sie nicht, kuendige sie nicht an und stell keine eigene Frage; kein Fragezeichen in deiner Antwort. Schreib nur, was du zu dem sagen willst, was die Person zuletzt gesagt hat: hoechstens zwei kurze Saetze. Hat sie etwas Neues genannt, nimm es ausdruecklich auf ("Gutes Essen merke ich mir."). Gibt es dazu nichts zu sagen, schreib gar nichts.`,
-      nochOffen: fp.fehlt,
-    };
+    if (fp.naechstes && fp.satz) {
+      /* Ebene 2: Die Person hat nicht geantwortet, sondern gefragt,
+         widersprochen oder etwas gesagt, wofuer es kein Feld gibt. Dann
+         fuehrt das Modell den Zug, und der Kern haelt seine Frage zurueck. */
+      const art = lauf?.nachrichtArt || "antwort";
+      if (art !== "antwort") return {
+        alsNaechstes: `Die Person hat nicht auf deine Frage geantwortet, sondern ${
+          { frage: "etwas wissen wollen", einwand: "widersprochen oder korrigiert", unklar: "die Frage nicht verstanden" }[art] || "etwas anderes gesagt"
+        }. Geh darauf ein, in deinen eigenen Worten, und stell ruhig eine eigene Frage, wenn es weiterhilft. Die offene Frage des Fahrplans (${fp.naechstes}) kommt von selbst wieder - haeng sie NICHT an.${
+          fp.erklaerung ? ` Falls sie wissen will, wozu du ${fp.naechstes} brauchst: ${fp.erklaerung}` : ""
+        }`,
+        nochOffen: fp.fehlt,
+      };
+      return {
+        alsNaechstes: `Die naechste Frage stellt der Chat selbst - du musst sie NICHT schreiben. Sie lautet: "${fp.satz}" Wiederhole sie nicht, kuendige sie nicht an und stell keine eigene Frage; kein Fragezeichen in deiner Antwort. Schreib nur, was du zu dem sagen willst, was die Person zuletzt gesagt hat: hoechstens zwei kurze Saetze. Hat sie etwas Neues genannt, nimm es ausdruecklich auf ("Gutes Essen merke ich mir."). Gibt es dazu nichts zu sagen, schreib gar nichts.`,
+        nochOffen: fp.fehlt,
+      };
+    }
     if (fp.naechstes) return { alsNaechstes: `Frag genau ein Thema: ${fp.naechstes}. ${fp.frage}`, ...(fp.chips ? { chipsBeispiel: fp.chips } : { chips: "keine - die Frage ist offen" }), nochOffen: fp.fehlt };
     if (fp.phase === "suche") return { alsNaechstes: "Ruf suchen und schildere danach die Lage." };
     if (fp.phase === "selbst") return { alsNaechstes: "Die Person will selbst schauen. Ruf suchen (stellt die Filter), dann sag ihr, dass die Liste steht und du da bist." };

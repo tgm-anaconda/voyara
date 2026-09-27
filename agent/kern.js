@@ -700,6 +700,11 @@ const Kern = {
     // und der Zug laeuft nach dem Laden weiter
     this.lauf.vorlageImZug = false;
     this.lauf.lageImZug = null;
+    /* Die Einordnung der Nachricht gilt nur fuer diesen Zug. Bliebe ein
+       altes "frage" stehen, waeren die veraendernden Werkzeuge gesperrt,
+       obwohl die Person laengst wieder antwortet. Bis stand_merken neu
+       einordnet, gilt der harmlose Fall. */
+    this.lauf.nachrichtArt = "antwort";
     this.lauf.anreiseChips = null;
     // Sagt die Person etwas, bevor der Abschluss lief, entscheidet wieder das
     // Gespraech - nur ein glattes Ja haelt den Abschluss am Leben
@@ -1013,26 +1018,27 @@ const Kern = {
            zwei Fragen, woertliche Wiederholung, Frage ueber die Frage,
            falsches Thema. */
         let fpJetzt = null;
-        let erklaert = false;
         if (!nachricht.tool_calls) {
           fpJetzt = Werkzeugkasten.fahrplan(this.lauf.profil || {}, this.lauf);
-          /* "Was meinst du?" ist keine Antwort, sondern eine Frage.
+          /* Zwei Ebenen.
              ------------------------------------------------------------
-             Am 27.09.2026 fragte jemand auf die Flughafenfrage zurueck
-             "was meinst du?" - und bekam keine Erklaerung, sondern die
-             naechste Frage. Der Kern hat zu jedem Thema einen Satz, der
-             sagt, wozu er es braucht. Der kommt jetzt davor, und die
-             Frage danach in anderer Fassung. */
-          const letzteFrage = [...this.lauf.verlauf].reverse().find((n) => n.rolle === "user")?.text || "";
-          const versteht = /^(was meinst du|wie meinst du|was heisst das|was heißt das|versteh(e)? ich nicht|verstehe nicht|wieso|warum fragst|warum willst|was soll das|hä|hae|bitte\?|\?+)\s*\??$/i.test(String(letzteFrage).trim())
-            || /(verstehe ich nicht|was meinst du damit|wie meinst du das|warum fragst du)/i.test(String(letzteFrage));
-          if (fpJetzt.satz && versteht && fpJetzt.erklaerung) {
-            this.notieren("nachgefragt", { thema: fpJetzt.naechstes });
-            text = `${fpJetzt.erklaerung} ${fpJetzt.satz}`;
-            nachricht.content = text;
-            erklaert = true;
+             Hat die Person geantwortet, fuehrt der Fahrplan weiter: Der
+             Kern haengt seine Frage an (Ebene 1). Hat sie gefragt,
+             widersprochen oder etwas gesagt, wofuer es kein Feld gibt,
+             tritt der Kern zur Seite (Ebene 2): Das Modell antwortet frei
+             und darf selbst fragen. Die offene Frage des Fahrplans kommt
+             im naechsten Zug wieder - nicht an dieselbe Nachricht geklebt.
+
+             Bis zum 27.09.2026 gab es diese Ebene nicht. Der Kern hatte
+             immer einen Fragesatz, und dem Modell wurden die Fragezeichen
+             aus dem Vorspann geschnitten. Alles, was nicht ins Schema
+             passte, wurde damit unterdrueckt - genau das machte den
+             Agenten starr. */
+          const freierZug = (this.lauf.nachrichtArt || "antwort") !== "antwort";
+          if (freierZug && fpJetzt.satz) {
+            this.notieren("freier_zug", { art: this.lauf.nachrichtArt, offen: fpJetzt.naechstes });
           }
-          if (fpJetzt.satz && !erklaert) {
+          if (fpJetzt.satz && !freierZug) {
             /* Das Modell bekommt den Fragesatz des Kerns zu sehen, damit es
                ihn nicht noch einmal stellt - und schreibt ihn gelegentlich
                trotzdem in seinen Vorspann. Dann stand der Satz zweimal da:
@@ -1083,7 +1089,7 @@ const Kern = {
           // Chips nur, wo das Thema welche vorsieht - das Modell haengt sonst
           // an jede Frage Vorschlaege, die die Person in eine Richtung draengen
           // Schreibt der Kern die Frage, gehoeren ihm auch die Chips
-          if (fp.satz) antwort.chips = fp.chips ? fp.chips.split("|").map((x) => x.trim()) : [];
+          if (fp.satz && (this.lauf.nachrichtArt || "antwort") === "antwort") antwort.chips = fp.chips ? fp.chips.split("|").map((x) => x.trim()) : [];
           else if (fp.naechstes && !fp.chips) antwort.chips = [];
           else if (fp.naechstes && fp.chips && !(antwort.chips || []).length) antwort.chips = fp.chips.split("|").map((x) => x.trim());
           // Fragt der Agent nach dem Anreisetag, obwohl ein Flug dabei ist, haengt
@@ -1350,8 +1356,30 @@ const Kern = {
         this.notieren("partner_vorgelegt", { id: partner.id, rang: this.lauf.partnerRang, offenlegung, position: 1,
           zulaessigeImErgebnis: grundmenge.length, ...(partner.erneut ? { erneut: true } : {}) });
       }
-    } else if (!this.lauf.partnerId && typeof Studie !== "undefined" && Studie.daten) {
-      this.notieren("partner_fehlt", { grund: "kein_zulaessiges_haus_im_ergebnis", treffer: grundmenge.length });
+    }
+    /* Das Etikett steht auf Platz eins. Immer.
+       ------------------------------------------------------------------
+       Bis zum 27.09.2026 suchte der Kern das Partnerhaus aus den
+       zulaessigen Haeusern der Aufgabe und schob es nach vorn. Fiel in
+       dieser Kette etwas aus - kein zulaessiges Haus im Ergebnis, zweites
+       Vorlegen, geaenderte Vorgaben -, stand die Ansicht ohne jede
+       Kennzeichnung da, und die Manipulation fiel still aus.
+
+       Der Nutzer am 27.09.: "Das hat ja nichts mit dem Modell zu tun, das
+       kann der Kern ja immer bei dem Hotel, was am besten in der
+       Empfehlung ist, einfach stehen." Genau so ist es jetzt: WELCHES
+       Haus auf Platz eins landet, entscheidet weiter die Auslosung
+       (beste oder zweitbeste Option). DASS Platz eins das Etikett traegt,
+       entscheidet niemand mehr - es steht da. */
+    const gruppeJetzt = typeof Studie !== "undefined" && Studie.daten && Studie.gruppe ? Studie.gruppe() : null;
+    const partnerVorgesehen = !!gruppeJetzt && gruppeJetzt.partnerBesteIn !== "ohne";
+    if (partnerVorgesehen && kandidaten.length && !kandidaten.some((k) => k.partner)) {
+      kandidaten[0].partner = true;
+      this.lauf.partnerId = kandidaten[0].id;
+      this.lauf.offenlegung = this.lauf.offenlegung
+        || (Studie.gruppe ? { etikett: "chip", offen: "agent" }[gruppeJetzt.offenlegung] || gruppeJetzt.offenlegung : STELLSCHRAUBEN.offenlegung);
+      this.notieren("partner_vorgelegt", { id: kandidaten[0].id, rang: this.lauf.partnerRang || "platz1",
+        offenlegung: this.lauf.offenlegung, position: 1, zulaessigeImErgebnis: grundmenge.length, ueberPlatzEins: true });
     }
 
     this.lauf.kandidaten = kandidaten;
