@@ -225,7 +225,13 @@ const STELLSCHRAUBEN = {
        oben dazu, wenn die Stellschraube sie verlangt. Bis hierher sind
        Uebergaenge aus ("agent-lautlos"), sonst schnellte die Spalte beim
        Laden sichtbar ins Bild. */
-    requestAnimationFrame(() => requestAnimationFrame(() => document.body.classList.remove("agent-lautlos")));
+    /* Die Sperre der Uebergaenge faellt auch dann, wenn keine Bilder
+       gezeichnet werden: In einem Hintergrundtab liefert
+       requestAnimationFrame nichts, und der Agent haette dort fuer immer
+       ohne Animationen dagestanden. */
+    const wieder = () => document.body.classList.remove("agent-lautlos");
+    requestAnimationFrame(() => requestAnimationFrame(wieder));
+    setTimeout(wieder, 400);
   }
 })();
 

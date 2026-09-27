@@ -85,7 +85,23 @@ const Zugang = {
     this.einladungPruefen();
   },
 
-  istOffen() { return document.body.classList.contains("agent-open"); },
+  /* "Offen" heisst nicht ueberall dasselbe.
+     ------------------------------------------------------------------
+     In der Schublade ist der Agent zu, bis jemand ihn aufzieht - daran
+     haengt die Frage nach der Freigabestufe, die Einladung und der
+     Hinweis auf neue Nachrichten. In der Seitenleiste steht er von
+     Anfang an offen; dort gibt es kein erstes Oeffnen, auf das etwas
+     warten koennte.
+
+     Am 27.09.2026 kostete genau das den Agenten seine Eingabezeile: Der
+     Zugang war auf Seitenleiste umgestellt, die Klasse agent-open wurde
+     auf breiten Fenstern nie gesetzt, also galt er als zu. Die
+     Freigabefrage kam nie, und weil die Eingabe bis zu ihrer Antwort
+     ausgeblendet bleibt, stand die Spalte offen und leer da. */
+  istOffen() {
+    if (!document.body.classList.contains("agent-schublade")) return true;
+    return document.body.classList.contains("agent-open");
+  },
   jeGeoeffnet() { return !!this.stand?.geoeffnet; },
 
   /* ==================================================================
