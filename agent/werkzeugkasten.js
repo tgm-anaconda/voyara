@@ -67,7 +67,7 @@ const Werkzeugkasten = {
              wieder - nicht angehaengt an dieselbe Nachricht. */
           nachricht_art: { type: "string", enum: ["antwort", "anweisung", "frage", "einwand", "unklar", "sonstiges"],
             description: "Was die letzte Nachricht der Person war. antwort = sie beantwortet die gestellte Frage (auch teilweise oder mit Zusatz). anweisung = sie sagt dir, was du tun sollst ('nimm das erste', 'buch das', 'zeig mir die Auswahl nochmal'). frage = sie will etwas von dir wissen. einwand = sie widerspricht, korrigiert oder lehnt etwas ab. unklar = sie versteht die Frage nicht oder fragt zurueck, was gemeint ist. sonstiges = passt in keines der Felder. Immer angeben." },
-          ziel: text("Region aus dem Katalog, als id: mallorca, kreta, algarve, sardinien, teneriffa, barcelona, wien, lissabon, tirol, suedtirol, lappland, ostsee, marrakesch, kapstadt, krabi, island, newyork, kyoto. Leer lassen, wenn offen."),
+          ziel: text("Region aus dem Katalog, als id: mallorca, kreta, algarve, sardinien, teneriffa, barcelona, wien, lissabon, tirol, suedtirol, lappland, ostsee, marrakesch, kapstadt, krabi, island, newyork, kyoto. NUR, wenn die Person die Region selbst genannt hat - sonst leer lassen. Eine Region, die du fuer passend haeltst, gehoert nicht hierher: Dafuer gibt es regionen_vergleichen, und die Person entscheidet."),
           monat: zahl("Reisemonat 1-12. Ein Monat allein heisst: flexibel im Monat, ohne festes Datum."),
           von: text("Anreise als YYYY-MM-DD - nur, wenn die Person einen Tag nennt ('vom 12. bis 26.'). Aus 'im Oktober' wird kein Datum."),
           bis: text("Abreise als YYYY-MM-DD - nur bei genannten Tagen"),
@@ -410,13 +410,15 @@ const Werkzeugkasten = {
       }
       const gesagt = (muster, letzte = 3) => kern.lauf.gespraech.filter((n) => n.role === "user").slice(-letzte).some((n) => muster.test(String(n.content)));
       if (a.ziel !== undefined) {
-        const id = String(a.ziel).toLowerCase().trim();
-        if (!id) { p.zielId = null; }
-        else if (typeof ZIEL_NACH_ID !== "undefined" && ZIEL_NACH_ID[id]) { setze("zielId", id); p.zielOffen = false; }
-        else {
-          const z = (typeof ZIELE !== "undefined" ? ZIELE : []).find((x) => x.name.toLowerCase() === id);
-          if (z) { setze("zielId", z.id); p.zielOffen = false; }
-        }
+        const roh = String(a.ziel).toLowerCase().trim();
+        let id = null;
+        if (roh && typeof ZIEL_NACH_ID !== "undefined" && ZIEL_NACH_ID[roh]) id = roh;
+        else if (roh) id = ((typeof ZIELE !== "undefined" ? ZIELE : []).find((x) => x.name.toLowerCase() === roh) || {}).id || null;
+        if (!roh) { p.zielId = null; }
+        // Auch hier gilt: Eine Region, die niemand genannt hat, wird nicht
+        // gesetzt. Sonst entscheidet das Modell das Reiseziel.
+        else if (id && (Werkzeugkasten.regionGenannt(kern.lauf, id) || p.zielId === id)) { setze("zielId", id); p.zielOffen = false; }
+        else if (id) kern.notieren("ziel_verworfen", { ziel: id, wo: "stand_merken" });
       }
       // "Offen" und "egal" nur, wenn die Person so etwas gesagt hat - auf
       // "hi" hatte das Modell sonst Ziel offen und Ueberblick gewuenscht
@@ -824,7 +826,11 @@ const Werkzeugkasten = {
       // Filter aus dem Aufruf in den Stand uebernehmen
       // Filter kommen nur aus dem Stand (stand_merken) - was die Person
       // gesagt hat. Der Aufruf bringt hoechstens Ziel und Sortierung.
-      if (a.ziel && typeof ZIEL_NACH_ID !== "undefined" && ZIEL_NACH_ID[String(a.ziel).toLowerCase()]) { p.zielId = String(a.ziel).toLowerCase(); p.zielOffen = false; }
+      if (a.ziel && typeof ZIEL_NACH_ID !== "undefined" && ZIEL_NACH_ID[String(a.ziel).toLowerCase()]) {
+        const id = String(a.ziel).toLowerCase();
+        if (Werkzeugkasten.regionGenannt(kern.lauf, id) || p.zielId === id) { p.zielId = id; p.zielOffen = false; }
+        else kern.notieren("ziel_verworfen", { ziel: id, wo: "suchen" });
+      }
       if (a.sortierung) p.sortierung = a.sortierung;
       if (!p.typ) p.typ = "hotel";
       kern.standAnzeigen();
@@ -2126,6 +2132,38 @@ const Werkzeugkasten = {
   JAHRESZEITEN: {
     sommer: [6, 7, 8], herbst: [9, 10, 11], winter: [12, 1, 2],
     "frühling": [3, 4, 5], fruehling: [3, 4, 5], "frühjahr": [3, 4, 5], fruehjahr: [3, 4, 5],
+  },
+
+  /* Hat die Person diese Region selbst genannt?
+     ------------------------------------------------------------------
+     Am 27.09.2026 sagte jemand "zu zweit im Sommer, eher in eine kalte
+     Gegend". Der Agent suchte daraufhin in Tirol - und sagte kein Wort
+     dazu. Im Stand stand ploetzlich zielId "tirol", obwohl es im ganzen
+     Gespraech nie vorkam: Das Modell hatte beim Aufruf von `suchen`
+     einfach ziel "tirol" mitgegeben, und dort wurde es ungeprueft
+     uebernommen. Aus fuenf kalten Regionen mit 41 Haeusern wurden so
+     elf, ohne dass jemand das entschieden haette.
+
+     Eine Region gilt jetzt nur, wenn ihr Name im Gespraech steht. Will
+     das Modell eine vorschlagen, gibt es dafuer regionen_vergleichen -
+     dann ist es ein Vorschlag, den die Person annehmen kann, und keine
+     stille Festlegung. */
+  regionGenannt(lauf, id) {
+    const z = typeof ZIEL_NACH_ID !== "undefined" ? ZIEL_NACH_ID[id] : null;
+    if (!z) return false;
+    const gesagt = (lauf.gespraech || []).filter((n) => n.role === "user")
+      .map((n) => String(n.content).toLowerCase()).join(" ");
+    const woerter = [z.name, z.id, z.region, z.flughafen].filter(Boolean)
+      .map((x) => String(x).toLowerCase()).filter((x) => x.length >= 3);
+    /* Auf ganze Woerter, nicht auf Teilstuecke.
+       ------------------------------------------------------------------
+       "Suedtirol" enthaelt "tirol". Ohne Wortgrenze haette der Satz "am
+       liebsten Suedtirol" auch die Region Tirol freigegeben - und das
+       Modell haette sie setzen duerfen. */
+    return woerter.some((w) => {
+      const sicher = w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      return new RegExp(`(^|[^a-zäöüß])${sicher}([^a-zäöüß]|$)`, "i").test(gesagt);
+    });
   },
 
   // Welche Jahreszeit die Person im Gespraech genannt hat

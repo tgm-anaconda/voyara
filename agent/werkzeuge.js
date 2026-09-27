@@ -404,12 +404,22 @@ const Werkzeuge = {
     const karten = [...document.querySelectorAll(".result-card")].slice(0, anzahl);
     if (!karten.length) return { ok: true, text: "Keine Treffer zum Ansehen.", daten: { treffer: [] } };
 
+    const startY = window.scrollY;
+    let weiteste = startY;
     for (const karte of karten) {
       if (Zeiger.abbruch) break;
       await Zeiger.lies(karte, { dauer: 420, hinweis: "vergleiche" });
+      weiteste = Math.max(weiteste, window.scrollY);
+    }
+    // Dieselbe Selbstpruefung wie bei den Bewertungen: Steht die Seite still,
+    // waehrend der Agent "vergleicht", steht das im Protokoll. Bei wenigen
+    // Karten passt die Liste auf den Schirm - dann ist Stillstand richtig.
+    const gescrollt = Math.abs(weiteste - startY) > 8;
+    if (!gescrollt && karten.length >= 4 && typeof Kern !== "undefined") {
+      Kern.notieren?.("scroll_ohne_wirkung", { wo: "trefferliste", karten: karten.length, startY: Math.round(startY) });
     }
     const treffer = karten.map((k) => this.kartenDaten(k)).filter(Boolean);
-    return { ok: true, text: `${treffer.length} Angebote verglichen.`, daten: { treffer } };
+    return { ok: true, text: `${treffer.length} Angebote verglichen.`, daten: { treffer, gescrollt } };
   },
 
   async unterkunftOeffnen(id) {
@@ -454,6 +464,7 @@ const Werkzeuge = {
 
     const gelesen = [];
     let durchgesehen = 0;
+    let gescrollt = null;
     const panel = this.finde("#reviewPanel");
     if (panel) {
       const kopf = this.finde(".review-summary", panel);
@@ -485,14 +496,33 @@ const Werkzeuge = {
         const von = window.scrollY + kasten.top - 120;
         const bis = window.scrollY + kasten.bottom - window.innerHeight + 80;
         const schritte = 16;
+        const startY = window.scrollY;
+        let weiteste = startY;
         for (let i = 1; i <= schritte; i++) {
           if (Zeiger.abbruch) break;
           window.scrollTo({ top: von + ((bis - von) * i) / schritte, behavior: "auto" });
+          weiteste = Math.max(weiteste, window.scrollY);
           const bisher = Math.round((menge * i) / schritte);
           Zeiger.beschrifte?.(`${bisher.toLocaleString("de-DE")} von ${menge.toLocaleString("de-DE")} Bewertungen`);
           await Zeiger.warte(80);
         }
         durchgesehen = menge;
+        /* Der Schritt prueft sich selbst.
+           --------------------------------------------------------------
+           Eine hochlaufende Zahl neben einer Seite, die stillsteht, ist
+           schlimmer als gar keine Geste: Sie behauptet Arbeit, die nicht
+           stattfindet, und genau das hat der Nutzer zweimal gemeldet.
+           Der Fehler war beide Male still - im Protokoll stand, dass 398
+           Bewertungen durchgesehen wurden.
+
+           Deshalb steht jetzt im Protokoll, ob sich die Seite dabei
+           wirklich bewegt hat. Faellt die Geste aus, ist das danach
+           nachweisbar, statt nur von jemandem bemerkt zu werden, der
+           zufaellig zusieht. */
+        gescrollt = Math.abs(weiteste - startY) > 8;
+        if (!gescrollt && typeof Kern !== "undefined") {
+          Kern.notieren?.("scroll_ohne_wirkung", { wo: "bewertungen", id, von: Math.round(von), bis: Math.round(bis), startY: Math.round(startY) });
+        }
         window.scrollTo({ top: von, behavior: "auto" });
         await Zeiger.warte(200);
       }
@@ -574,7 +604,7 @@ const Werkzeuge = {
         id: item.id, name: item.name, note: item.rating, anzahl: item.reviewCount,
         gelobt: k.staerken, kritisiert: k.schwaechen, bilanz,
         sichtbarGelesen: panel ? gelesen.length : 0, stimmen: gelesen,
-        durchgesehen: durchgesehen || null,
+        durchgesehen: durchgesehen || null, gescrollt,
       },
     };
   },
