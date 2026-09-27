@@ -1013,9 +1013,26 @@ const Kern = {
            zwei Fragen, woertliche Wiederholung, Frage ueber die Frage,
            falsches Thema. */
         let fpJetzt = null;
+        let erklaert = false;
         if (!nachricht.tool_calls) {
           fpJetzt = Werkzeugkasten.fahrplan(this.lauf.profil || {}, this.lauf);
-          if (fpJetzt.satz) {
+          /* "Was meinst du?" ist keine Antwort, sondern eine Frage.
+             ------------------------------------------------------------
+             Am 27.09.2026 fragte jemand auf die Flughafenfrage zurueck
+             "was meinst du?" - und bekam keine Erklaerung, sondern die
+             naechste Frage. Der Kern hat zu jedem Thema einen Satz, der
+             sagt, wozu er es braucht. Der kommt jetzt davor, und die
+             Frage danach in anderer Fassung. */
+          const letzteFrage = [...this.lauf.verlauf].reverse().find((n) => n.rolle === "user")?.text || "";
+          const versteht = /^(was meinst du|wie meinst du|was heisst das|was heißt das|versteh(e)? ich nicht|verstehe nicht|wieso|warum fragst|warum willst|was soll das|hä|hae|bitte\?|\?+)\s*\??$/i.test(String(letzteFrage).trim())
+            || /(verstehe ich nicht|was meinst du damit|wie meinst du das|warum fragst du)/i.test(String(letzteFrage));
+          if (fpJetzt.satz && versteht && fpJetzt.erklaerung) {
+            this.notieren("nachgefragt", { thema: fpJetzt.naechstes });
+            text = `${fpJetzt.erklaerung} ${fpJetzt.satz}`;
+            nachricht.content = text;
+            erklaert = true;
+          }
+          if (fpJetzt.satz && !erklaert) {
             /* Das Modell bekommt den Fragesatz des Kerns zu sehen, damit es
                ihn nicht noch einmal stellt - und schreibt ihn gelegentlich
                trotzdem in seinen Vorspann. Dann stand der Satz zweimal da:

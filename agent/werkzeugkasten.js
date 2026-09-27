@@ -567,6 +567,25 @@ const Werkzeugkasten = {
       }
       setze("verpflegung", a.verpflegung);
       if (a.flug !== undefined) setze("flug", !!a.flug);
+      /* Zwei Flughaefen in einer Antwort sind keine Antwort.
+         ----------------------------------------------------------------
+         Auf "Von welchem Flughafen?" kam "Koeln oder Hamburg". Das Modell
+         trug Koeln ein und suchte weiter - die Person hatte sich aber
+         nicht entschieden, und niemand fragte nach. Stehen zwei bekannte
+         Flughaefen in der Nachricht, wird keiner uebernommen; der Kern
+         fragt, welcher es sein soll. */
+      if (a.flugAb && typeof Flug !== "undefined") {
+        const letzteNachricht = String([...(kern.lauf.gespraech || [])].reverse().find((n) => n.role === "user")?.content || "");
+        const genannte = (Flug.flughaefen ? Flug.flughaefen() : []).map((h) => h.name)
+          .filter((stadt) => stadt && new RegExp(`\\b${String(stadt).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`, "i").test(letzteNachricht));
+        if (genannte.length > 1) {
+          kern.notieren("flughafen_mehrdeutig", { genannt: genannte.slice(0, 3) });
+          p.flugAbAuswahl = genannte.slice(0, 3);
+          delete a.flugAb;
+        } else if (genannte.length === 1) {
+          delete p.flugAbAuswahl;
+        }
+      }
       setze("flugAb", a.flugAb); setze("flugKlasse", a.flugKlasse);
       if (a.flugAb && typeof Flug !== "undefined" && !Flug.code(a.flugAb)) { p.flugAb = null; geaendert.push("flugAb unbekannt"); }
       if ((a.flug !== undefined || a.flugAb || a.flugKlasse) && typeof Flug !== "undefined") {
@@ -618,6 +637,21 @@ const Werkzeugkasten = {
       // Was gerade neu hereinkam - der Kern prueft danach, ob das Modell
       // es auch aufgenommen hat
       kern.lauf.zuletztGemerkt = geaendert;
+      /* Was von der Person kommt, ist unantastbar.
+         ----------------------------------------------------------------
+         Am 27.09.2026 sagte jemand "Mit Flug", nannte auf die Frage nach
+         dem Flughafen "Koeln oder Hamburg" und fragte dann "was meinst
+         du?". Weil das Thema damit zweimal offen geblieben war, griff die
+         Annahme - und die lautete fuer flugAb "dann lass den Flug weg".
+         Der Agent ging auf die Seite und waehlte den Flug ab, den die
+         Person ausdruecklich gewollt hatte.
+
+         Der Fehler war nicht die eine Annahme, sondern dass Annahmen
+         ueberhaupt etwas anfassen durften, das gesagt worden war. Jetzt
+         steht in vonPerson, welche Felder aus dem Gespraech stammen, und
+         keine Annahme schreibt darauf. */
+      p.vonPerson = p.vonPerson || {};
+      for (const f of geaendert) p.vonPerson[f] = true;
       kern.notieren("stand", { felder: geaendert });
       const fp = Werkzeugkasten.fahrplan(p, kern.lauf);
       // Eine Frage der Person geht vor: erst antworten, dann das Thema. Fragt
@@ -1486,26 +1520,31 @@ const Werkzeugkasten = {
      chips    Antwortvorschlaege. */
   THEMEN: {
     zeit: {
-      satz: ["Wann soll es denn ungefähr losgehen? Ein Monat reicht mir erst mal.",
+
+      erklaerung: "Ich brauche den Monat, weil Preise und Verfügbarkeit je nach Jahreszeit ganz anders aussehen. Ein ungefährer Monat reicht mir.",      satz: ["Wann soll es denn ungefähr losgehen? Ein Monat reicht mir erst mal.",
         "Hast du schon eine Vorstellung, wann es losgehen soll?"],
       frage: "Wann es ungefaehr losgehen soll - ein Monat reicht. Feste Daten nur, wenn sie welche hat; nicht danach draengen. Nennt sie nur eine Jahreszeit ('im Winter'), frag, welcher Monat - 'egal' ist eine Antwort, dann nimmst du den ersten Monat der Jahreszeit und sagst das.", chips: null },
 
     reisende: {
-      satz: ["Wie viele seid ihr, und sind Kinder dabei?",
+
+      erklaerung: "Die Zahl der Reisenden entscheidet, welche Zimmer überhaupt in Frage kommen - und bei Kindern oft auch den Preis.",      satz: ["Wie viele seid ihr, und sind Kinder dabei?",
         "Sag mir noch kurz, wie viele ihr seid und ob Kinder mitkommen."],
       frage: "Mit wem sie reist - in einem Fragesatz. Nicht zwei Fragesaetze daraus machen.", chips: "1 | 2 | 3 | 4 oder mehr" },
 
     kinderAlter: {
-      satz: ["Wie alt sind die Kinder?", "Und wie alt sind die Kinder?"],
+
+      erklaerung: "Das Alter entscheidet, ob ein Kind im Zimmer der Eltern mitgerechnet wird und ob es beim Preis zählt.",      satz: ["Wie alt sind die Kinder?", "Und wie alt sind die Kinder?"],
       frage: "Wie alt die Kinder sind (die Zahl der Kinder ist bekannt, nur das Alter fehlt).", chips: null },
 
     ziel: {
-      satz: ["Soll es eher in eine warme oder eher in eine kalte Gegend gehen, oder hast du schon ein Ziel im Kopf?",
+
+      erklaerung: "Ich frage, damit ich nicht das ganze Angebot durchgehe: warm heißt Mittelmeer und weiter weg, kalt heißt Berge und Norden.",      satz: ["Soll es eher in eine warme oder eher in eine kalte Gegend gehen, oder hast du schon ein Ziel im Kopf?",
         "Habt ihr schon ein Ziel, oder eher Richtung warm oder kalt?"],
       frage: "Ob es eher warm oder eher kalt werden soll, oder ob sie schon ein Ziel hat. Nichts anpreisen.", chips: "Eher warm | Eher kalt | Ich habe ein Ziel" },
 
     art: {
-      satz: ["Und übernachten: eher ein Hotel oder lieber eine Ferienwohnung?",
+
+      erklaerung: "Im Hotel gibt es Service und Verpflegung, in einer Ferienwohnung mehr Platz und eine Küche. Danach richtet sich, wo ich suche.",      satz: ["Und übernachten: eher ein Hotel oder lieber eine Ferienwohnung?",
         "Hotel oder Ferienwohnung - oder ist dir das offen?"],
       frage: "Ob sie eher ins Hotel oder in eine Ferienwohnung will, oder ob das offen ist (artEgal true).", chips: "Hotel | Ferienwohnung | Noch offen" },
 
@@ -1518,21 +1557,25 @@ const Werkzeugkasten = {
       frage: "Ob du ihr die Filter gleich so setzen sollst, dass sie selbst durch die Liste gehen kann (weiter schauen), oder ob ihr vorher noch ein paar Eckdaten klaert (weiter klaeren).", chips: "Filter setzen, ich schaue | Noch ein paar Eckdaten" },
 
     dauer: {
-      satz: ["Wie lange soll die Reise werden?", "Habt ihr eine Vorstellung, wie viele Nächte es werden sollen?"],
+
+      erklaerung: "Die Dauer brauche ich für den Gesamtpreis - der Nachtpreis allein sagt wenig darüber, was am Ende auf der Rechnung steht.",      satz: ["Wie lange soll die Reise werden?", "Habt ihr eine Vorstellung, wie viele Nächte es werden sollen?"],
       frage: "Wie lange, ungefaehr ('eine Woche' = 7 Naechte).", chips: null },
 
     flug: {
-      satz: ["Soll ein Flug dazu, oder nur die Unterkunft? Mit Flug hängt der Anreisetag von den Flugtagen der Verbindung ab.",
+
+      erklaerung: "Wenn ein Flug dazukommt, suche ich nur Häuser, die sich mit einer passenden Verbindung erreichen lassen, und der Anreisetag hängt dann an den Flugtagen.",      satz: ["Soll ein Flug dazu, oder nur die Unterkunft? Mit Flug hängt der Anreisetag von den Flugtagen der Verbindung ab.",
         "Bucht ihr den Flug selbst, oder soll ich ihn mitsuchen?"],
       frage: "Ob ein Flug dazu soll oder nur die Unterkunft.", chips: "Mit Flug | Nur die Unterkunft" },
 
     flugAb: {
-      satz: ["Von welchem Flughafen soll es losgehen? Hamburg, Stuttgart, Düsseldorf, Hannover, München, Köln, Frankfurt oder Berlin.",
+
+      erklaerung: "Ich brauche den Flughafen, weil davon abhängt, welche Verbindungen es gibt und was sie kosten.",      satz: ["Von welchem Flughafen soll es losgehen? Hamburg, Stuttgart, Düsseldorf, Hannover, München, Köln, Frankfurt oder Berlin.",
         "Und ab welchem Flughafen?"],
       frage: "Von welchem Flughafen. Klasse nicht fragen - Economy ist gerechnet.", chips: null },
 
     anreise: {
-      satz: (p, wk) => {
+
+      erklaerung: "Ohne festen Tag lässt sich auf dieser Seite nicht buchen - der Knopf auf der Hausseite bleibt sonst gesperrt.",      satz: (p, wk) => {
         const t = wk.anreiseTage(p);
         if (!t.length) return "An welchem Tag wollt ihr anreisen?";
         return `Im ${t.monat} ist jeder Tag frei und der Preis bleibt gleich. Passt euch der ${t[0]}, der ${t[1]} oder der ${t[2]}?`;
@@ -1546,17 +1589,20 @@ const Werkzeugkasten = {
       frage: "Ob ihr noch Eckdaten klaert (beratung klaeren) oder ob du gleich eine Auswahl zeigst (beratung auswahl).", chips: "Noch ein paar Eckdaten | Erstmal eine Auswahl" },
 
     vorgehen: {
-      satz: ["Soll ich dir ein paar Häuser raussuchen? Dann frage ich vorher noch kurz nach Dauer, Preis und Verpflegung. Oder gehst du lieber selbst durch die Liste?",
+
+      erklaerung: "Wenn ich raussuche, gehe ich die Häuser einzeln durch, lese Bewertungen und stelle dir eine kleine Auswahl zusammen. Wenn du selbst schaust, stelle ich nur die Filter ein und halte mich raus.",      satz: ["Soll ich dir ein paar Häuser raussuchen? Dann frage ich vorher noch kurz nach Dauer, Preis und Verpflegung. Oder gehst du lieber selbst durch die Liste?",
         "Was ist dir lieber - ich suche dir welche raus, oder du schaust selbst durch die Liste?"],
       frage: "Ob du die Filter stellst und sie selbst schaut (vorgehen selbst) oder ob du Haeuser raussuchst (vorgehen top3) - und wenn ja, wie viele.", chips: "Ich schaue selbst | Such mir drei raus | Lieber fünf" },
 
     preis: {
-      satz: ["Hast du beim Preis eine feste Grenze, oder bist du da offen?",
+
+      erklaerung: "Eine Grenze hilft mir beim Aussortieren. Wenn du offen bist, ist das auch eine Antwort - dann zeige ich die ganze Spanne.",      satz: ["Hast du beim Preis eine feste Grenze, oder bist du da offen?",
         "Gibt es eine Obergrenze, die ich einhalten soll?"],
       frage: "Ob sie beim Preis eine feste Grenze hat (pro Nacht oder gesamt) oder offen ist. Offen heisst preisEgal true.", chips: "Feste Grenze | Offen" },
 
     verpflegung: {
-      satz: (p, wk, lauf) => {
+
+      erklaerung: "Die Verpflegung macht beim Gesamtpreis oft den größten Unterschied, deshalb frage ich früh danach.",      satz: (p, wk, lauf) => {
         const z = lauf?.verpflegungsLage;
         const a = z?.allInclusiveAufpreisProNachtUndZimmer;
         const auf = a > 0 ? ` All Inclusive kostet im Schnitt ${a} € pro Nacht und Zimmer mehr.` : "";
@@ -1566,7 +1612,8 @@ const Werkzeugkasten = {
       frage: "Welche Verpflegung. 'Egal' heisst verpflegungEgal true.", chips: "All Inclusive | Halbpension | Nur Frühstück | Egal" },
 
     wuensche: {
-      satz: (p) => (p.kinder > 0
+
+      erklaerung: "Damit gewichte ich die Auswahl. Was du hier nennst, ziehe ich aus den Gästebewertungen heraus und vergleiche es zwischen den Häusern.",      satz: (p) => (p.kinder > 0
         ? "Worauf achtet ihr bei der Unterkunft besonders? Zum Beispiel Pool, Kinderclub oder die Nähe zum Strand."
         : "Worauf achtest du bei der Unterkunft besonders? Zum Beispiel Ruhe, gutes Essen oder die Lage."),
       nochmal: "Gibt es noch etwas, worauf ich bei der Unterkunft achten soll?",
@@ -1724,18 +1771,21 @@ const Werkzeugkasten = {
        jederzeit widersprechen, und der Stand in der Leiste zeigt, was
        angenommen wurde. */
     const ANNAHME = {
-      weiter: { setzen: (x) => { x.weiter = "schauen"; } },
-      beratung: { setzen: (x) => { x.beratung = "auswahl"; } },
-      vorgehen: { setzen: (x) => { x.vorgehen = "top3"; } },
-      ziel: { setzen: (x) => { x.zielOffen = true; } },
-      art: { setzen: (x) => { x.typ = x.typ || "hotel"; x.artGenannt = true; }, satz: "dass du bei den Hotels schaust" },
-      dauer: { setzen: (x) => { x.naechte = 7; }, satz: "dass du mit einer Woche rechnest" },
-      flug: { setzen: (x) => { x.flug = false; }, satz: "dass du ohne Flug suchst, nur die Unterkunft" },
-      flugAb: { setzen: (x) => { x.flug = false; }, satz: "dass du den Flug weglaesst" },
-      preis: { setzen: (x) => { x.preisEgal = true; }, satz: "dass du dich beim Preis nicht festlegst" },
-      verpflegung: { setzen: (x) => { x.verpflegungEgal = true; }, satz: "dass du die Verpflegung offen laesst" },
-      wuensche: { setzen: (x) => { x.ausstattungEgal = true; }, satz: "dass du keine besondere Ausstattung voraussetzt" },
-      anreise: { setzen: (x, wk) => {
+      weiter: { schreibt: ["weiter"], setzen: (x) => { x.weiter = "schauen"; } },
+      beratung: { schreibt: ["beratung"], setzen: (x) => { x.beratung = "auswahl"; } },
+      vorgehen: { schreibt: ["vorgehen"], setzen: (x) => { x.vorgehen = "top3"; } },
+      ziel: { schreibt: ["zielId", "richtung", "zielOffen"], setzen: (x) => { x.zielOffen = true; } },
+      art: { schreibt: ["typ"], setzen: (x) => { x.typ = x.typ || "hotel"; x.artGenannt = true; }, satz: "dass du bei den Hotels schaust" },
+      dauer: { schreibt: ["naechte"], setzen: (x) => { x.naechte = 7; }, satz: "dass du mit einer Woche rechnest" },
+      flug: { schreibt: ["flug"], setzen: (x) => { x.flug = false; }, satz: "dass du ohne Flug suchst, nur die Unterkunft" },
+      // Schreibt NUR den Flughafen. Den Flug selbst abzuwaehlen, weil der
+      // Flughafen offen ist, hiesse eine Aussage der Person zu kippen.
+      flugAb: { schreibt: ["flugAb"], setzen: (x) => { x.flugAb = x.flugAb || "Frankfurt"; },
+        satz: "von welchem Flughafen du rechnest und dass sie das aendern kann" },
+      preis: { schreibt: ["maxPreis", "budgetGesamt", "preisEgal"], setzen: (x) => { x.preisEgal = true; }, satz: "dass du dich beim Preis nicht festlegst" },
+      verpflegung: { schreibt: ["verpflegung", "verpflegungEgal"], setzen: (x) => { x.verpflegungEgal = true; }, satz: "dass du die Verpflegung offen laesst" },
+      wuensche: { schreibt: ["wuensche", "kriterien", "ausstattungEgal"], setzen: (x) => { x.ausstattungEgal = true; }, satz: "dass du keine besondere Ausstattung voraussetzt" },
+      anreise: { schreibt: ["anreise"], setzen: (x, wk) => {
         const f = wk.flexWahl(x);
         if (f) x.anreise = `${f.monat}-01`;
       }, satz: "welchen Anreisetag du genommen hast und dass sie ihn jederzeit aendern kann" },
@@ -1743,6 +1793,8 @@ const Werkzeugkasten = {
     const angenommen = [];
     for (const [t, a] of Object.entries(ANNAHME)) {
       if (fertig[t] || (lauf.gefragtWie?.[t] || 0) < 2) continue;
+      // Keine Annahme fasst an, was die Person selbst gesagt hat
+      if ((a.schreibt || []).some((f) => p.vonPerson?.[f])) continue;
       a.setzen(p, this);
       fertig[t] = true;
       (lauf.uebersprungen ||= {})[t] = true;
@@ -1833,6 +1885,7 @@ const Werkzeugkasten = {
     let chips = naechstes ? this.THEMEN[naechstes]?.chips : null;
     // Der fertige Fragesatz. Die Sonderfaelle darunter duerfen ihn ersetzen.
     let satz = naechstes ? this.themenSatz(naechstes, p, lauf) : null;
+    const erklaerung = naechstes ? this.THEMEN[naechstes]?.erklaerung || null : null;
     /* Dieselbe Frage zum zweiten Mal.
        ------------------------------------------------------------------
        Wenn die Person auf eine Frage nicht antwortet, sondern etwas
@@ -1887,6 +1940,12 @@ const Werkzeugkasten = {
       const t = this.anreiseTage(p);
       if (t.length) chips = t.join(" | ");
     }
+    // Zwei Flughaefen genannt: nach genau diesen fragen, nicht nach allen
+    if (naechstes === "flugAb" && p.flugAbAuswahl?.length > 1) {
+      const l = p.flugAbAuswahl;
+      satz = `${l.slice(0, -1).join(", ")} oder ${l[l.length - 1]} - welcher soll es sein?`;
+      chips = l.join(" | ");
+    }
     if (naechstes === "reisende") {
       if (p.personen != null && p.erwachsene == null && p.kinder == null) {
         satz = `Sind von den ${p.personen} Kinder dabei? Wenn ja, wie viele und wie alt?`;
@@ -1928,7 +1987,7 @@ const Werkzeugkasten = {
     }
     const empfehlungBereit = p.vorgehen === "top3" && BERATUNG.every((t) => fertig[t])
       && fertig.dauer && fertig.flug && fertig.flugAb;
-    return { fertig, naechstes, frage, satz, chips, phase, suchbereit, eckdatenFertig, gesucht, schluessel, empfehlungBereit,
+    return { fertig, naechstes, frage, satz, erklaerung, chips, phase, suchbereit, eckdatenFertig, gesucht, schluessel, empfehlungBereit,
       angenommen, ueberblickOffen: false, fehlt: [...KERN, ...ECKDATEN].filter((t) => !fertig[t]) };
   },
 
