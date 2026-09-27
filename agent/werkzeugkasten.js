@@ -134,6 +134,11 @@ const Werkzeugkasten = {
       f("haeuser_ansehen",
         "Geht die engere Auswahl der Reihe nach durch: oeffnet jedes Haus, liest dort die Bewertungen, waehlt Zimmer und Verpflegung und kommt zur Liste zurueck. Danach legt es die Vorschlaege vor. Ruf es nicht von dir aus - der Fahrplan verlangt es, wenn es soweit ist.",
         {}),
+      f("monate_vergleichen",
+        "Stellt die Trefferliste nacheinander auf mehrere Monate um, sieht sich jedes Mal die Ergebnisse an und fasst danach zusammen, wie viele Haeuser es je Monat gibt, wo sie liegen und was sie kosten. Ruf es, wenn die Person eine Jahreszeit nennt und wissen will, welcher Monat der beste ist, oder wenn sie dir die Wahl ueberlaesst. Geht nur auf der Trefferliste.",
+        {
+          monate: { type: "array", items: { type: "integer" }, description: "Die Monate als Zahlen 1-12, hoechstens vier. Leer lassen, wenn der Fahrplan den Vergleich schon angesetzt hat." },
+        }),
       f("stichprobe_nehmen",
         "Oeffnet kurz ein, zwei Haeuser aus der Trefferliste, sieht sich Zimmer und Verpflegung an und kommt zurueck - ohne Bewertungen, ohne etwas auszuwaehlen. Ruf es nicht von dir aus; der Fahrplan verlangt es nach der ersten Suche.",
         {}),
@@ -168,7 +173,7 @@ const Werkzeugkasten = {
   // Welche Stufe ein Werkzeug mindestens braucht
   BRAUCHT: {
     haus_oeffnen: "suchen", zurueck_zur_liste: "suchen", merken: "suchen",
-    haeuser_ansehen: "suchen", stichprobe_nehmen: "suchen",
+    haeuser_ansehen: "suchen", stichprobe_nehmen: "suchen", monate_vergleichen: "suchen",
     buchung_vorbereiten: "vorbereiten", buchung_abschliessen: "vorbereiten",
   },
 
@@ -482,16 +487,32 @@ const Werkzeugkasten = {
         const monatGenannt = gesagt(/januar|februar|märz|maerz|april|\bmai\b|juni|juli|august|september|oktober|november|dezember|\bjan\b|\bfeb\b|\bokt\b|\bnov\b|\bdez\b|ostern|pfingsten|weihnachten|silvester/i, 1);
         const abgegeben = gesagt(/egal|gleich|such du|suchst du|du entscheid|dein vorschlag|nimm du|nimm einfach|weißt du|weisst du|was (du )?meinst|keine ahnung|weiß nicht|weiss nicht|wie du meinst|aussuchen|überlass|ueberlass/i, 1);
         if (jz && abgegeben && !monatGenannt && !p.vonPerson?.monat) {
-          const w = Werkzeugkasten.monatWaehlen(p, jz.monate);
-          // Nicht ueber setze(): Der Monat kommt vom Kern, nicht von der
-          // Person - in vonPerson hat er nichts zu suchen.
-          if (w && p.monat !== w.monat) {
-            p.monat = w.monat;
-            kern.standAnzeigen();
-          }
-          if (w) {
-            Werkzeugkasten.ableiten(kern, "monat", w.satz);
-            kern.notieren("monat_abgeleitet", { jahreszeit: jz.name, monat: w.monat, haeuser: w.anzahl, schnitt: w.schnitt });
+          /* Sichtbar vergleichen, wenn er die Seite bedienen darf.
+             ------------------------------------------------------------
+             Der Kern koennte das Ergebnis in einer Millisekunde aus dem
+             Katalog holen - und genau das war der Einwand des Nutzers:
+             Man sieht es nicht. Also stellt der Agent die Liste selbst auf
+             jeden Monat um, scrollt durch und sagt je Monat eine Zeile;
+             entschieden wird danach, mit denselben Zahlen.
+
+             Ohne Freigabe fuer die Seite bleibt die stille Rechnung. Sie
+             ist dann nicht schlechter als vorher, nur unsichtbar - und
+             eine Entscheidung ohne Begruendung waere das Schlechtere. */
+          if (kern.darf("suchen") && STELLSCHRAUBEN.monatsvergleich !== false) {
+            // Vorlaeufig der erste Monat, damit ueberhaupt gesucht werden
+            // kann. Der Vergleich laeuft danach und entscheidet endgueltig.
+            if (!p.monat) { p.monat = jz.monate[0]; kern.standAnzeigen(); }
+            kern.lauf.monatsvergleich = { monate: jz.monate.slice(), entscheiden: true };
+            kern.notieren("monatsvergleich_angesetzt", { jahreszeit: jz.name, monate: jz.monate });
+          } else {
+            const w = Werkzeugkasten.monatWaehlen(p, jz.monate);
+            // Nicht ueber setze(): Der Monat kommt vom Kern, nicht von der
+            // Person - in vonPerson hat er nichts zu suchen.
+            if (w && p.monat !== w.monat) { p.monat = w.monat; kern.standAnzeigen(); }
+            if (w) {
+              Werkzeugkasten.ableiten(kern, "monat", w.satz);
+              kern.notieren("monat_abgeleitet", { jahreszeit: jz.name, monat: w.monat, haeuser: w.anzahl, schnitt: w.schnitt });
+            }
           }
         }
       }
@@ -845,7 +866,7 @@ const Werkzeugkasten = {
       const antwort = async (liste, weg, gesamt) => {
         const fh = kern.lauf.flughafenGewaehlt;
         const flughafenSatz = fh
-          ? `Sag in einem Halbsatz, dass du ab ${fh.ab} rechnest${fh.zweiter && fh.aufpreis > 0 ? `, weil der Hinflug dort ab ${fh.preis} € losgeht und ab ${fh.zweiter} ${fh.aufpreis} € mehr kostet` : ", weil das die guenstigste Verbindung ist"}, und dass sie das aendern kann. `
+          ? `Sag in einem Satz, dass du ab ${fh.ab} rechnest: ${fh.airline}, ${fh.direkt ? "direkt" : "mit einem Stopp"}, ab ${fh.preis} € pro Strecke${fh.zweiter && fh.aufpreis > 0 ? `, ab ${fh.zweiter} waeren es ${fh.aufpreis} € mehr` : ""}. Und dass sie den Flughafen aendern kann. `
           : "";
         if (fh) kern.lauf.flughafenGewaehlt = null;
         const umfang = Werkzeugkasten.umfang(liste, p);
@@ -879,6 +900,16 @@ const Werkzeugkasten = {
         if (!darfEmpfehlen) {
           // Die Lage sagt der Kern selbst, mit festen Zahlen - das Modell hat
           // sie sonst uebersprungen oder halb erzaehlt. Einmal je Eckdatenstand.
+          /* Erst der Monat, dann die Lage.
+             ------------------------------------------------------------
+             Steht der Monatsvergleich an, ist der aktuelle Monat nur
+             vorlaeufig. Eine Lage dazu waere eine Zahl, die gleich wieder
+             hinfaellig ist - und danach stuende im Chat erst "im Juni
+             gibt es 41 Haeuser" und dann "ich nehme doch August". */
+          if (kern.lauf.monatsvergleich?.monate?.length) {
+            return { ...basis, haeuser: "noch nicht - erst der Monatsvergleich",
+              hinweis: "Sag jetzt nichts ueber Zahlen und stell keine Frage. Du vergleichst gleich die Monate (monate_vergleichen); hoechstens ein Halbsatz, dass du dir das ansiehst." };
+          }
           if (fp.suchbereit && kern.lauf.lageFuer !== fp.schluessel && liste.length) {
             kern.lauf.lageFuer = fp.schluessel;
             await kern.denkpause(600, "fasst zusammen…");
@@ -1308,6 +1339,111 @@ const Werkzeugkasten = {
       };
     },
 
+    /* Der Monatsvergleich.
+       ----------------------------------------------------------------
+       Wunsch des Nutzers vom 27.09.2026: Sagt jemand "im Sommer" und
+       ueberlaesst dem Agenten die Wahl, soll der "aktiv im Chat einmal
+       alle Monate auswaehlen und kurz durchscrollen, den anderen Monat
+       auswaehlen, kurz durchscrollen - und dann sagen koennen, wie viele
+       Hotels es gibt, welche Orte es in welchen Monaten gibt."
+
+       Vorher rechnete der Kern dasselbe still im Katalog aus und nannte
+       nur das Ergebnis. Fachlich war das richtig, aber es war nicht zu
+       sehen - und genau das Zusehen ist hier die Sache: Ein Agent, der
+       eine Entscheidung abnimmt, muss zeigen, woher sie kommt, sonst ist
+       er ein Zufallsgenerator mit guten Manieren.
+
+       Die Zahlen stammen weiter aus dem Katalog, nicht aus dem DOM: Die
+       Maske kann immer nur eine Region filtern, "alle kalten" laesst
+       sich dort nicht ausdruecken. Die Liste zeigt also den Monat, die
+       Zahl nennt die Haeuser, die zur Person passen - dieselbe Trennung
+       wie in der Lage. */
+    async monate_vergleichen(a, kern) {
+      const p = kern.lauf.profil || {};
+      const roh = (a?.monate?.length ? a.monate : kern.lauf.monatsvergleich?.monate) || [];
+      const monate = [...new Set(roh.map(Number).filter((m) => Number.isInteger(m) && m >= 1 && m <= 12))].slice(0, 4);
+      const aufgeben = (grund) => { kern.lauf.monatsvergleich = null; kern.sichern(); return grund; };
+      if (monate.length < 2) return { ergebnis: aufgeben({ fehler: "Zum Vergleichen brauche ich mindestens zwei Monate." }) };
+      if (Werkzeuge.seite() !== "results" || !Werkzeuge.hatSuchmaske()) {
+        return { ergebnis: aufgeben({ fehler: "Der Vergleich geht nur auf der Trefferliste.",
+          hinweis: "Such zuerst, dann vergleiche." }) };
+      }
+      const name = (m) => (typeof MONATSNAMEN !== "undefined" ? MONATSNAMEN[m - 1] : `Monat ${m}`);
+
+      kern.notieren("monatsvergleich_start", { monate });
+      kern.logZeile(`Vergleiche ${monate.length} Monate in der Liste`, "schritt");
+      kern.sagen(`Ich stelle die Liste einmal auf ${monate.map(name).join(", ")} um und sehe mir an, was sich unterscheidet.`);
+
+      const ergebnisse = [];
+      for (const m of monate) {
+        if (Zeiger.abbruch) { kern.notieren("monatsvergleich_abgebrochen", { bei: m }); break; }
+        const probe = { ...p, monat: m };
+        const wahl = Werkzeugkasten.flexWahl(probe);
+        if (!wahl) continue;
+        kern.sperreAn();
+        // Die Maske umstellen und suchen - sichtbar, wie ein Mensch es taete
+        await Werkzeuge.suchen({ flex: { monat: wahl.monat, naechte: p.naechte || 7 } });
+        // Die Filter ueberleben die Suche auf dieser Seite nicht immer
+        await Werkzeuge.filterSetzen(Werkzeugkasten.filterWerte(p));
+        await Werkzeuge.ergebnisseLesen(4);
+        kern.sperreAus();
+        const treffer = Werkzeugkasten.katalogTreffer(probe, Werkzeugkasten.filterAusStand(probe));
+        const u = Werkzeugkasten.umfang(treffer, probe);
+        const orte = u.jeRegion.slice(0, 2).map((r) => `${r.region} (${r.haeuser})`).join(", ");
+        ergebnisse.push({ monat: m, name: name(m), haeuser: treffer.length,
+          preisProNacht: u.preisProNacht, regionen: u.jeRegion.slice(0, 3), orte });
+        // Nach jedem Monat eine Zeile, aus den Daten - nicht vom Modell
+        kern.sagen([
+          `${name(m)}: ${treffer.length === 1 ? "ein Haus" : `${treffer.length} Häuser`}`,
+          u.preisProNacht ? (u.preisProNacht.von === u.preisProNacht.bis
+            ? `${u.preisProNacht.von} € pro Nacht`
+            : `${u.preisProNacht.von} bis ${u.preisProNacht.bis} € pro Nacht`) : null,
+          orte ? `vor allem ${orte}` : null,
+        ].filter(Boolean).join(", ") + ".");
+      }
+
+      if (!ergebnisse.length) return { ergebnis: aufgeben({ fehler: "Der Vergleich hat nichts ergeben." }) };
+
+      /* Das Ergebnis: entweder entscheidet der Kern, oder die Person.
+         --------------------------------------------------------------
+         Hat sie die Wahl abgegeben (der Fahrplan hat den Vergleich
+         deshalb angesetzt), trifft der Kern sie jetzt - mit denselben
+         Zahlen, die eben ueber den Bildschirm gelaufen sind. Hat sie nur
+         gefragt, bleibt die Wahl bei ihr. */
+      const selbstEntscheiden = !!kern.lauf.monatsvergleich?.entscheiden;
+      kern.lauf.monatsvergleich = null;
+      const w = Werkzeugkasten.monatWaehlen(p, ergebnisse.map((x) => x.monat));
+
+      if (selbstEntscheiden && w) {
+        p.monat = w.monat;
+        kern.standAnzeigen();
+        Werkzeugkasten.ableiten(kern, "monat", w.satz);
+        kern.notieren("monat_abgeleitet", { monat: w.monat, haeuser: w.anzahl, schnitt: w.schnitt, sichtbar: true });
+        /* Die Liste steht jetzt auf dem falschen Monat - dem letzten des
+           Vergleichs. Statt sie hier von Hand zurueckzustellen und die
+           Lage selbst zu schreiben, wird die Suche einfach fuer ungueltig
+           erklaert: Der Zwang holt sie im naechsten Schritt nach, stellt
+           den gewaehlten Monat ein, sagt die Lage und setzt die
+           Stichprobe an - alles ueber denselben Weg wie sonst. Eine
+           zweite Fassung dieser Kette waere eine zweite Fehlerquelle. */
+        kern.lauf.gesuchtMit = null;
+        kern.lauf.lageFuer = null;
+        // In diesem Zug wurde schon einmal gesucht; der Zwang wird dafuer
+        // ausdruecklich wieder freigegeben, damit die Liste nicht auf dem
+        // letzten Vergleichsmonat stehen bleibt.
+        kern.lauf.zwangFrei = "suchen";
+        kern.sichern();
+        return { ergebnis: { verglichen: ergebnisse, gewaehlt: w.monat,
+          hinweis: "Die Zahlen und deine Wahl stehen schon im Chat - nicht wiederholen und nicht umformulieren. Stell jetzt keine Frage; du stellst die Liste gleich auf den gewaehlten Monat um (suchen).",
+          ...Werkzeugkasten.fahrplanFuerModell(Werkzeugkasten.fahrplan(p, kern.lauf), p, kern.lauf) } };
+      }
+
+      kern.sichern();
+      return { ergebnis: { verglichen: ergebnisse,
+        hinweis: "Die Zahlen stehen schon im Chat - nicht wiederholen. Sag in einem Satz, was auffaellt, und frag, welcher Monat es sein soll.",
+        ...Werkzeugkasten.fahrplanFuerModell(Werkzeugkasten.fahrplan(p, kern.lauf), p, kern.lauf) } };
+    },
+
     /* Die Stichprobe.
        ----------------------------------------------------------------
        Wunsch des Nutzers vom 27.09.2026: Der Agent soll nach der ersten
@@ -1617,6 +1753,26 @@ const Werkzeugkasten = {
               : "Die Suche war flexibel im Monat, und die Person hat noch keinen Tag genannt. Frag sie, an welchem Tag sie anreisen will (im Prototyp ist jeder Tag frei, der Preis im Monat gleich). Erst mit ihrem Tag buchung_vorbereiten mit anreise rufen - keinen Tag selbst waehlen." } };
         }
       }
+      /* Bevor gebucht wird, steht da, wann geflogen wird.
+         ----------------------------------------------------------------
+         Wunsch des Nutzers vom 27.09.2026: "Irgendwann muss der Person
+         mitgeteilt werden, was das jetzt bedeuten wuerde, wann der Flug
+         denn ist." Bis hierher war der Flug eine Zeile im Preis - mit
+         Flug, 1.240 Euro. An welchem Tag, mit wem, um wie viel Uhr: nicht
+         gesagt. Wer so bucht, erfaehrt seinen Abflug erst in der Kasse.
+
+         Der Satz kommt vom Kern und aus den Flugdaten, einmal je Haus und
+         Tag. Er steht vor dem Klick auf "Buchen", nicht danach. */
+      if (flug && pf.anreise && kern.lauf.flugGesagtFuer !== `${a.id}|${pf.anreise}`) {
+        kern.lauf.flugGesagtFuer = `${a.id}|${pf.anreise}`;
+        const rueck = pf.naechte ? new Date(new Date(pf.anreise).getTime() + pf.naechte * 86400000) : null;
+        kern.sagen([
+          `Der Hinflug wäre am ${Flug.datumText(pf.anreise)}: ${flug.airline} ab ${flug.from} um ${flug.depart}${flug.stops === 0 ? ", direkt" : `, ${flug.stops} Stopp`}.`,
+          rueck ? `Zurück am ${Flug.datumText(Werkzeugkasten.alsIso(rueck))}.` : null,
+        ].filter(Boolean).join(" "));
+        kern.notieren("flug_genannt", { id: a.id, anreise: pf.anreise, airline: flug.airline, ab: flug.from });
+      }
+
       /* Die Seite muss zu dem Haus gehoeren, um das es geht.
          ----------------------------------------------------------------
          Am 25.09.2026 bereitete der Agent zweimal die Buchung eines Hauses
@@ -2054,14 +2210,24 @@ const Werkzeugkasten = {
     const ziele = (zieleIds || []).filter(Boolean);
     const passend = FLIGHTS.filter((f) => !ziele.length || ziele.includes(f.ziel));
     if (!passend.length) return null;
-    // Je Flughafen der guenstigste Flug; davon der guenstigste Flughafen
+    /* Je Flughafen der guenstigste Flug; davon der guenstigste Flughafen.
+       ------------------------------------------------------------------
+       Mit dem Flughafen steht im Katalog auch alles andere fest:
+       Fluggesellschaft, Abflugzeit, Stopps, Flugtage. Der Nutzer am
+       27.09.2026: "Bei den Fluegen gibt es halt auch unterschiedliche
+       Airlines. Das muesste man eigentlich auch beruecksichtigen, sonst
+       ist das auch nicht realistisch." Genau deshalb wird hier nicht nur
+       ein Ortsname zurueckgegeben, sondern die Verbindung. */
     const je = {};
-    for (const f of passend) je[f.from] = Math.min(je[f.from] ?? Infinity, f.price || Infinity);
-    const sortiert = Object.entries(je).sort((a, b) => a[1] - b[1]);
+    for (const f of passend) {
+      if (!je[f.from] || (f.price || Infinity) < je[f.from].price) je[f.from] = f;
+    }
+    const sortiert = Object.values(je).sort((a, b) => (a.price || Infinity) - (b.price || Infinity));
     if (!sortiert.length) return null;
-    const [ab, preis] = sortiert[0];
-    const zweiter = sortiert[1] || null;
-    return { ab, preis, zweiter: zweiter ? zweiter[0] : null, aufpreis: zweiter ? zweiter[1] - preis : 0 };
+    const [beste, zweiter] = sortiert;
+    return { ab: beste.from, preis: beste.price, airline: beste.airline,
+      direkt: beste.stops === 0, abflug: beste.depart || null,
+      zweiter: zweiter ? zweiter.from : null, aufpreis: zweiter ? zweiter.price - beste.price : 0 };
   },
 
   // Die moeglichen Anreisetage als Text - gebraucht fuer die Frage und
@@ -2427,6 +2593,13 @@ const Werkzeugkasten = {
     if (lauf.abschlussFaellig) return "buchung_abschliessen";
     // Der Rundgang laeuft: erst ansehen, dann vorlegen
     if (lauf.rundgang?.ids?.length) return "haeuser_ansehen";
+    /* Der Monatsvergleich geht allem voran.
+       ----------------------------------------------------------------
+       Er entscheidet, mit welchem Monat der Rest ueberhaupt rechnet -
+       Lage, Stichprobe und jede Preisangabe haengen daran. Liefe er
+       spaeter, stuende erst eine Lage fuer den vorlaeufigen Monat im
+       Chat und danach die Ansage, dass es doch ein anderer wird. */
+    if (lauf.gesuchtMit && lauf.monatsvergleich?.monate?.length) return "monate_vergleichen";
     // Die Stichprobe nach der ersten Suche laeuft
     if (lauf.stichprobe?.ids?.length) return "stichprobe_nehmen";
 
@@ -2689,6 +2862,13 @@ const Werkzeugkasten = {
       sterne: p.mindestSterne ? [5, 4, 3].filter((s) => s >= p.mindestSterne) : undefined,
       nurAngebote: p.nurAngebote || undefined,
     };
+  },
+
+  // Datum als YYYY-MM-DD in Ortszeit - toISOString() rechnet nach UTC und
+  // schiebt das Datum in Mitteleuropa um einen Tag zurueck.
+  alsIso(d) {
+    const zwei = (n) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${zwei(d.getMonth() + 1)}-${zwei(d.getDate())}`;
   },
 
   flexWahl(p) {

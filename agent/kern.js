@@ -116,6 +116,10 @@ const STELLSCHRAUBEN = {
   // Seitenwechsel und macht aus "184 Haeuser gefunden" eine Aussage,
   // die er auf der Seite nachgesehen hat.
   stichprobe: true,              // true | false
+  // Stellt der Agent die Liste sichtbar auf jeden Monat einer Jahreszeit
+  // um, wenn ihm die Wahl ueberlassen wird? false = er rechnet still im
+  // Katalog und nennt nur das Ergebnis mit Begruendung.
+  monatsvergleich: true,         // true | false
   log: true,
   // Schrittmeldungen ("Filter gesetzt, noch 9 Treffer") im Chat oder nur
   // im Log. Mit Log: nur im Log. Der Chat sagt beim Start einmal, wo man
@@ -240,6 +244,8 @@ const Kern = {
       vorlageFuer: null,       // Vorgaben, fuer die zuletzt vorgelegt wurde
       rundgang: null,          // laufender Rundgang durch die engere Auswahl
       rundgangFuer: null,      // Vorgaben, fuer die schon ein Rundgang lief
+      monatsvergleich: null,   // angesetzter Vergleich mehrerer Monate in der Liste
+      zwangFrei: null,         // Werkzeug, das in diesem Zug noch einmal erzwungen werden darf
       stichprobe: null,        // laufender kurzer Blick in ein, zwei Haeuser
       stichprobeGemacht: false,// einmal je Gespraech, nach der ersten Suche
       abgeleitet: [],          // eigene Entscheidungen des Kerns, die noch erklaert werden muessen
@@ -791,6 +797,14 @@ const Kern = {
         const letzte = this.lauf.gespraech[this.lauf.gespraech.length - 1];
         let pflicht = i === 0 && letzte?.role === "user" ? "stand_merken" : false;
         if (!pflicht) {
+          /* Ein Werkzeug wird je Zug nur einmal erzwungen - sonst wird aus
+             einem Fehlschlag eine Schleife. Manchmal aendert ein Schritt
+             die Lage aber so, dass dasselbe Werkzeug noch einmal an der
+             Reihe ist: Der Monatsvergleich stellt die Liste auf drei
+             Monate um und braucht danach eine Suche fuer den gewaehlten,
+             obwohl in diesem Zug schon gesucht wurde. Wer den Schritt
+             kennt, gibt ihn ausdruecklich wieder frei - einmal. */
+          if (this.lauf.zwangFrei) { erzwungen.delete(this.lauf.zwangFrei); this.lauf.zwangFrei = null; }
           const z = Werkzeugkasten.zwang(this.lauf.profil || {}, this.lauf);
           if (z && !erzwungen.has(z)) { erzwungen.add(z); pflicht = z; this.notieren("zwang", { werkzeug: z }); }
         }
