@@ -360,6 +360,29 @@ function renderReviews() {
   });
 }
 
+/* Der Agent laedt mehr, als ein Mensch laden wuerde.
+   ------------------------------------------------------------------
+   Wunsch des Nutzers vom 27.09.2026: Beim Durchgehen der Bewertungen
+   soll der Agent hundert Stimmen auf einmal vor sich haben und sie
+   sichtbar durchrauschen lassen - "das muss sehr, sehr schnell
+   aussehen". Mit zehn Karten je Klick geht das nicht: Die Liste ist zu
+   kurz, um schnell zu wirken, egal wie schnell gescrollt wird. Die
+   Strecke macht den Eindruck, nicht das Tempo.
+
+   Wer die Seite von Hand bedient, bekommt weiter zehn je Klick. Das ist
+   Absicht und nicht Bequemlichkeit: Dass der Agent in einem Zug
+   ueberblickt, wofuer ein Mensch zehnmal klicken muesste, ist genau der
+   Unterschied, um den es in dieser Arbeit geht. Wuerde die Seite jedem
+   hundert zeigen, waere das Durchscrollen nur noch eine Animation. */
+window.bewertungenAufstocken = function (anzahl) {
+  const ziel = Math.min(Math.max(10, anzahl | 0), item.reviewCount || 0, 400);
+  const seiten = Math.ceil(ziel / REVIEWS_PRO_SEITE) - 1;
+  if (seiten <= reviewSeite) return document.querySelectorAll(".review-item").length;
+  reviewSeite = seiten;
+  renderReviews();
+  return document.querySelectorAll(".review-item").length;
+};
+
 function renderSimilar() {
   const source = isApartment ? APARTMENTS : HOTELS;
   const others = source.filter((h) => h.id !== item.id);

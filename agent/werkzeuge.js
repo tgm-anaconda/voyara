@@ -547,49 +547,60 @@ const Werkzeuge = {
          Die 398 bleiben trotzdem richtig - aber als das, was sie sind:
          eine Auswertung ueber alle Datensaetze, nicht ein Lesevorgang.
          Das steht im Ergebnissatz, nicht am Zeiger. */
-      const nachladen = async (male) => {
-        for (let i = 0; i < male; i++) {
-          if (Zeiger.abbruch) break;
-          const knopf = this.finde("#mehrReviews", panel);
-          if (!knopf) break;
-          await Zeiger.klicke(knopf, { hinweis: "mehr Bewertungen" });
-          await Zeiger.warte(160);
-        }
-      };
-      await nachladen(3);
+      /* Erst aufstocken, dann durchrauschen.
+         ----------------------------------------------------------------
+         Zehnmal auf "mehr laden" zu klicken dauert laenger als das
+         Scrollen danach und sieht nach nichts aus. Die Hausseite stellt
+         dem Agenten deshalb einen eigenen Weg bereit: hundert Stimmen in
+         einem Zug. Fuer die Person bleibt es bei zehn je Klick - der
+         Unterschied ist gewollt und ist das, was er ihr voraushat. */
+      const menge = Math.min(item.reviewCount || 0, 100);
+      let geladen = panel.querySelectorAll(".review-item").length;
+      if (typeof window.bewertungenAufstocken === "function" && menge > geladen) {
+        Zeiger.beschrifte?.(`${menge} Bewertungen laden`);
+        geladen = window.bewertungenAufstocken(menge) || geladen;
+        await Zeiger.warte(260);
+      }
 
       const liste0 = panel.querySelector(".review-list");
-      const karten0 = panel.querySelectorAll(".review-item").length;
-      if (karten0 > 6 && liste0) {
+      if (geladen > 12 && liste0) {
         const kasten = liste0.getBoundingClientRect();
         const von = window.scrollY + kasten.top - 120;
         const bis = Math.max(von, window.scrollY + kasten.bottom - window.innerHeight + 80);
-        const schritte = 26;
+        /* Schritte und Pause sind so gewaehlt, dass die ganze Strecke in
+           gut einer Sekunde durchlaeuft - bei hundert Karten sind das
+           mehrere tausend Pixel, und genau das erzeugt den Eindruck, den
+           der Nutzer beschrieben hat: Text, der vorbeizieht und den man
+           nicht mehr lesen kann. */
+        const schritte = 34;
         const startY = window.scrollY;
         let weiteste = startY;
         for (let i = 1; i <= schritte; i++) {
           if (Zeiger.abbruch) break;
           window.scrollTo({ top: von + ((bis - von) * i) / schritte, behavior: "auto" });
           weiteste = Math.max(weiteste, window.scrollY);
-          Zeiger.beschrifte?.(`${Math.round((karten0 * i) / schritte)} von ${karten0} Bewertungen`);
-          await Zeiger.warte(38);
+          Zeiger.beschrifte?.(`${Math.round((geladen * i) / schritte)} von ${geladen} Bewertungen`);
+          await Zeiger.warte(26);
         }
-        /* Der Schritt prueft sich selbst.
-           --------------------------------------------------------------
-           Eine hochlaufende Zahl neben einer Seite, die stillsteht, ist
-           schlimmer als gar keine Geste: Sie behauptet Arbeit, die nicht
-           stattfindet, und genau das hat der Nutzer zweimal gemeldet.
-           Der Fehler war beide Male still. */
+        /* Der Schritt prueft sich selbst: Eine hochlaufende Zahl neben
+           einer Seite, die stillsteht, behauptet Arbeit, die nicht
+           stattfindet - zweimal gemeldet, beide Male still. */
         gescrollt = Math.abs(weiteste - startY) > 8;
         if (!gescrollt && typeof Kern !== "undefined") {
-          Kern.notieren?.("scroll_ohne_wirkung", { wo: "bewertungen", id, karten: karten0 });
+          Kern.notieren?.("scroll_ohne_wirkung", { wo: "bewertungen", id, karten: geladen });
         }
         window.scrollTo({ top: von, behavior: "auto" });
         Zeiger.beschrifte?.("");
         await Zeiger.warte(180);
       }
-      // Ausgewertet wird ueber alle Datensaetze, nicht ueber die geladenen
-      durchgesehen = Math.min(item.reviewCount || 0, 800);
+      /* Zwei Zahlen, zwei Bedeutungen - und beide muessen stimmen.
+         ----------------------------------------------------------------
+         `durchgesehen` ist, was tatsaechlich unter dem Zeiger durchlief.
+         Die Bilanz weiter unten rechnet ueber alle Datensaetze des
+         Hauses; das steht im Ergebnissatz und ist etwas anderes als
+         Lesen. Bis zum 27.09.2026 stand hier die grosse Zahl, waehrend
+         zehn Karten im Dokument lagen - jeder, der hinsah, merkte das. */
+      durchgesehen = geladen;
 
       // Bewertungen, die den gefragten Aspekt ueberhaupt erwaehnen. Die
       // Marker unter jeder Bewertung tragen das Label ("+ Essen"), danach
