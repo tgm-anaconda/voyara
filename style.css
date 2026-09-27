@@ -2136,6 +2136,27 @@ body.agent-open .vorschlag-schirm { left: 380px; }
 .vorschlag-hinweis { margin: 0; color: var(--ink-500); font-size: .8rem; }
 body.vorschlag-offen { overflow: hidden; }
 
+/* Die Buchungsstrecke, Abschnitt fuer Abschnitt.
+   ------------------------------------------------------------------
+   Seit dem 27.09.2026 ist Schritt eins keine Adresszeile mehr, sondern
+   fuenf Abschnitte. Die Ueberschriften sind das, was den Unterschied
+   zwischen "kurz ausfuellen" und "das dauert" sichtbar macht. */
+.formular-titel {
+  margin: 20px 0 4px; font-size: .92rem; color: var(--ink-900);
+  padding-top: 14px; border-top: 1px solid var(--line);
+}
+.form-stack > .formular-titel:first-child { margin-top: 0; padding-top: 0; border-top: 0; }
+.reisender-zeile {
+  display: grid; grid-template-columns: 74px 1fr 150px 190px; gap: 10px; align-items: end;
+  padding: 9px 0; border-bottom: 1px dashed var(--line);
+}
+.reisender-zeile:last-child { border-bottom: 0; }
+.reisender-nr { font-size: .78rem; color: var(--ink-500); padding-bottom: 9px; }
+@media (max-width: 820px) {
+  .reisender-zeile { grid-template-columns: 1fr 1fr; }
+  .reisender-nr { grid-column: 1 / -1; padding-bottom: 0; font-weight: 600; }
+}
+
 /* ==================================================================
    Bewertungsuebersicht ueber der Vorschlagsansicht
    ------------------------------------------------------------------

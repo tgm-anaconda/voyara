@@ -990,46 +990,107 @@ const Werkzeuge = {
   // Bis wohin er geht, regelt die Freigabestufe in agent/kern.js:
   // "vorbereiten" endet vor dem letzten Klick mit einer Zusammenfassung,
   // "buchen" schliesst ab.
-  async buchungAbschliessen({ nurVorbereiten = false } = {}) {
+  async buchungAbschliessen({ nurVorbereiten = false, daten = {} } = {}) {
     // Schritt 2 oder 3: Bestaetigungsknopf liegt schon vor
     let knopf = this.finde("#confirmBtn");
 
     if (!knopf) {
-      // Schritt 1: Gastdaten
+      /* Schritt 1: das Formular.
+         ----------------------------------------------------------------
+         Seit dem 27.09.2026 sind es fuenf Abschnitte statt vier Feldern.
+         Der Agent fuellt, was er hat, und sagt, was fehlt - er raet
+         nichts. Namen und Geburtsdaten kennt niemand ausser der Person;
+         sie muessen aus dem Gespraech kommen.
+
+         Was er NICHT anfasst: die Reiseruecktrittsversicherung. Sie ist
+         vorausgewaehlt, er hat keinen Auftrag dazu, also bleibt sie wie
+         sie ist - und taucht folgerichtig auch in seinem Bericht nicht
+         auf, denn der Bericht listet, was er getan hat. Dass daraus ein
+         blinder Fleck entsteht, ist kein Versehen im Code, sondern der
+         Gegenstand der Untersuchung: Agenten, die ueber ihre Handlungen
+         berichten statt ueber den Zustand, uebersehen systematisch
+         alles, was voreingestellt ist. */
       const form = this.finde("#guestForm");
       if (!form) return this.fehlt("Die Buchungsstrecke");
 
       const konto = (typeof Account !== "undefined" && Account.konto?.()) || null;
-      const feldName = this.finde("#gName");
-      const feldMail = this.finde("#gMail");
-      const feldTerms = this.finde("#gTerms");
+      const geaendert = [];
+      const fehlt = [];
 
-      // Leere Felder aus dem Konto fuellen - sichtbar, damit die Person
-      // sieht, welche Daten der Agent benutzt
-      if (konto && feldName && !feldName.value.trim()) {
-        await Zeiger.tippe(feldName, `${konto.vorname} ${konto.nachname}`, { hinweis: "Name aus deinem Konto" });
+      const namen = daten.namen || [];
+      const geburt = daten.geburt || [];
+      const zeilen = [...document.querySelectorAll(".reisender-zeile")];
+      for (let i = 0; i < zeilen.length; i++) {
+        const feldName = this.finde(`#rName${i}`);
+        const feldGeburt = this.finde(`#rGeburt${i}`);
+        if (feldName && !feldName.value.trim()) {
+          const wert = namen[i] || (i === 0 && konto ? `${konto.vorname} ${konto.nachname}`.trim() : "");
+          if (wert) {
+            await Zeiger.tippe(feldName, wert, { hinweis: i === 0 && !namen[i] ? "Name aus deinem Konto" : `Reisende ${i + 1}` });
+            geaendert.push(`Name ${i + 1}`);
+          }
+        }
+        if (feldGeburt && !feldGeburt.value && geburt[i]) {
+          await Zeiger.setzeWert(feldGeburt, geburt[i], { hinweis: `Geburtsdatum ${i + 1}` });
+          geaendert.push(`Geburtsdatum ${i + 1}`);
+        }
+        if (feldName && !feldName.value.trim()) fehlt.push(`Name der ${i + 1}. Person`);
+        if (feldGeburt && !feldGeburt.value) fehlt.push(`Geburtsdatum der ${i + 1}. Person`);
       }
-      if (konto && feldMail && !feldMail.value.trim()) {
+
+      // Gepaeck: eine Ansage, alle Zeilen - das ist der Teil, der von Hand
+      // viermal dasselbe waere
+      if (daten.gepaeck) {
+        for (let i = 0; i < zeilen.length; i++) {
+          const feld = this.finde(`#rGepaeck${i}`);
+          if (feld && feld.value !== daten.gepaeck) {
+            await Zeiger.setzeWert(feld, daten.gepaeck, { hinweis: i === 0 ? "Gepäck" : "" });
+          }
+        }
+        const wort = { hand: "nur Handgepäck", 20: "Koffer bis 20 kg", 30: "Koffer bis 30 kg" }[daten.gepaeck];
+        if (wort) geaendert.push(`Gepäck: ${wort} für alle`);
+      }
+
+      const feldMail = this.finde("#gMail");
+      if (konto && feldMail && !feldMail.value.trim() && konto.mail) {
         await Zeiger.tippe(feldMail, konto.mail, { hinweis: "E-Mail aus deinem Konto" });
+        geaendert.push("E-Mail");
       }
+      if (feldMail && !feldMail.value.trim()) fehlt.push("E-Mail");
+
+      /* Die Ankunftszeit rechnet er aus, statt sie zu erfragen.
+         ----------------------------------------------------------------
+         Landung plus eine Stunde Transfer, aufgerundet auf die volle
+         Stunde. Das ist die Art Ableitung, die ein Mensch im Kopf machen
+         muesste und dabei oft daneben liegt - und sie wird gesagt, nicht
+         stumm gesetzt. */
+      const feldAnkunft = this.finde("#cAnkunft");
+      if (feldAnkunft && !feldAnkunft.value && daten.ankunft) {
+        const moeglich = [...feldAnkunft.options].map((o) => o.value).filter(Boolean);
+        const treffer = moeglich.includes(daten.ankunft) ? daten.ankunft : moeglich[moeglich.length - 1];
+        await Zeiger.setzeWert(feldAnkunft, treffer, { hinweis: "Ankunft am Haus" });
+        geaendert.push(`Ankunft ${treffer}${daten.ankunftGrund ? ` (${daten.ankunftGrund})` : ""}`);
+      }
+
+      const feldTerms = this.finde("#gTerms");
       if (feldTerms && !feldTerms.checked) {
         await Zeiger.klicke(feldTerms, { hinweis: "Studienhinweis bestätigen" });
+        geaendert.push("Studienhinweis bestätigt");
       }
 
-      const name = feldName?.value.trim();
-      const mail = feldMail?.value.trim();
-      const fehlt = [];
-      if (!name) fehlt.push("Name");
-      if (!mail) fehlt.push("E-Mail");
       if (fehlt.length) {
-        const liste = fehlt.join(" und ");
+        // Einmal fragen, alles auf einmal - nicht Feld fuer Feld
+        const liste = [...new Set(fehlt)].slice(0, 6).join(", ");
         return {
           ok: false,
-          daten: { wartetAufDaten: true },
-          text: `Für den letzten Schritt fehlt noch ${liste}. Ich habe kein Konto, aus dem ich das nehmen könnte - trag es bitte selbst ein und sag dann Bescheid.`,
+          daten: { wartetAufDaten: true, fehlt, geaendert },
+          text: `Für die Buchung fehlen noch: ${liste}. Die habe ich nirgendwo stehen - sag sie mir einfach, dann trage ich sie ein.`,
         };
       }
 
+      // Was er getan hat, merkt sich das Werkzeug ueber den Seitenwechsel
+      // hinweg - der Bericht entsteht erst nach dem naechsten Schritt.
+      this.zuletztGeaendert = geaendert;
       const weiter = form.querySelector('button[type="submit"]');
       if (!weiter) return this.fehlt("Der Weiter-Knopf");
       await Zeiger.klicke(weiter, { hinweis: "weiter zur Prüfung" });
@@ -1039,7 +1100,7 @@ const Werkzeuge = {
     }
 
     if (nurVorbereiten) {
-      return { ok: true, text: "Die Buchung liegt zur Prüfung bereit.", daten: { vorbereitet: true } };
+      return { ok: true, text: "Die Buchung liegt zur Prüfung bereit.", daten: { vorbereitet: true, geaendert: this.zuletztGeaendert || [] } };
     }
 
     const geklickt = await Zeiger.klicke(knopf, { hinweis: "Buchung abschließen" });

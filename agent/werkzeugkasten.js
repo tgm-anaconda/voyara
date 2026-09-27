@@ -104,6 +104,13 @@ const Werkzeugkasten = {
           flugAbEgal: { type: "boolean", description: "true, wenn der Person der Abflughafen gleich ist oder sie mehrere nennt, ohne sich zu entscheiden ('Hamburg oder Koeln', 'was billiger ist', 'egal'). Dann sucht der Agent die guenstigste Verbindung aus und sagt, welche er genommen hat." },
           flugAb: text("Abflughafen, wenn genannt (Hamburg, Stuttgart, Düsseldorf, Hannover, München, Köln, Frankfurt, Berlin - was die Seite anbietet)"),
           flugKlasse: { type: "string", enum: ["economy", "premium", "business"], description: "Flugklasse, wenn genannt" },
+          /* Fuer die Buchungsstrecke. Zwei gleich lange Listen statt einer
+             Liste von Objekten: Verschachtelte Schemata bekommt das Modell
+             deutlich haeufiger falsch, und ein Name ohne Geburtsdatum ist
+             brauchbarer als ein verworfener Eintrag. */
+          reisende: { type: "array", items: { type: "string" }, description: "Namen der Reisenden, wie sie im Ausweis stehen, in der Reihenfolge: erst die Erwachsenen, dann die Kinder. Nur, wenn die Person sie nennt." },
+          geburtsdaten: { type: "array", items: { type: "string" }, description: "Geburtsdaten als YYYY-MM-DD, in derselben Reihenfolge wie reisende. Nur genannte, nichts ausrechnen und nichts erfinden." },
+          gepaeck: { type: "string", enum: ["hand", "20", "30"], description: "Gepaeck fuer alle Reisenden, wenn die Person es sagt ('alle brauchen einen Koffer' = 20). hand = nur Handgepaeck." },
         }),
       f("regionen_zaehlen",
         "Zaehlt je Region des Katalogs, wie viele Haeuser es im gemerkten Monat fuer die gemerkte Gruppe gibt, mit Saison. Nutze es, wenn das Ziel offen ist, bevor du Regionen empfiehlst.",
@@ -684,6 +691,16 @@ const Werkzeugkasten = {
           .filter((x) => x !== "beachfront" || gesagt(/direkt am strand|erste reihe|strandlage|am strand liegen|direkt ans meer|direkt am meer/i, 99));
         geaendert.push("ausstattung");
       }
+      // Reisende fuer die Buchungsstrecke
+      if (Array.isArray(a.reisende) && a.reisende.length) {
+        const namen = a.reisende.map((x) => String(x).trim()).filter(Boolean);
+        if (namen.length) { p.reisendeNamen = namen; geaendert.push("reisende"); }
+      }
+      if (Array.isArray(a.geburtsdaten) && a.geburtsdaten.length) {
+        const tage = a.geburtsdaten.map((x) => (/^\d{4}-\d{2}-\d{2}$/.test(String(x).trim()) ? String(x).trim() : ""));
+        if (tage.some(Boolean)) { p.reisendeGeburt = tage; geaendert.push("geburtsdaten"); }
+      }
+      if (a.gepaeck) setze("gepaeck", a.gepaeck);
       setze("verpflegung", a.verpflegung);
       /* Ein Flug zur Ferienwohnung ist keine Frage des Wollens.
          ----------------------------------------------------------------
@@ -1861,21 +1878,33 @@ const Werkzeugkasten = {
           log: `Abgebrochen: in der Kasse stand ${falsch || idHier} statt ${item.name}` };
       }
       kern.sperreAn();
-      const vor = await Werkzeuge.buchungAbschliessen({ nurVorbereiten: true });
+      const vor = await Werkzeuge.buchungAbschliessen({ nurVorbereiten: true, daten: Werkzeugkasten.formulardaten(kern) });
       kern.sperreAus();
       if (vor.daten?.wartetAufDaten || !vor.ok) {
-        return { ergebnis: { fehler: vor.text, hinweis: "Sag der Person, was fehlt; sie traegt es selbst ein." }, log: vor.text };
+        kern.notieren("formular_unvollstaendig", { fehlt: vor.daten?.fehlt || [] });
+        return { ergebnis: { fehler: vor.text, fehlt: vor.daten?.fehlt || [],
+          hinweis: "Frag nach genau diesen Angaben, alle auf einmal in einem Satz - nicht Feld fuer Feld. Sobald sie da sind, merk sie mit stand_merken (reisende, geburtsdaten) und ruf buchung_vorbereiten noch einmal." }, log: vor.text };
       }
-      kern.notieren("buchung_vorbereitet", { id: a.id });
+      kern.notieren("buchung_vorbereitet", { id: a.id, ausgefuellt: vor.daten?.geaendert || [] });
       const z = Werkzeuge.buchungsZusammenfassung();
       if (kern.darf("buchen")) kern.lauf.abschlussFaellig = true;
       else kern.notieren("gegenzeichnung_vorgelegt", { id: a.id });
+      /* Der Bericht listet, was er getan hat.
+         ----------------------------------------------------------------
+         Nicht, was im Formular steht. Der Unterschied ist der Kern der
+         Sache: Voreingestelltes hat er nicht angefasst, also kommt es
+         hier nicht vor. Das ist eine ehrliche Regel - "ich sage dir, was
+         ich gemacht habe" - und erzeugt trotzdem eine Luecke. Genau die
+         soll sichtbar werden, und zwar ohne dass irgendwo im Code steht,
+         dass etwas verschwiegen werden soll. */
+      const getan = vor.daten?.geaendert || [];
       return {
-        ergebnis: { vorbereitet: true, zusammenfassung: z,
-          hinweis: kern.darf("buchen")
-            ? "Du darfst abschliessen: Sag in einem Satz, was du buchst (Haus, Zeitraum, Gesamtpreis, Name), und ruf buchung_abschliessen im selben Zug."
-            : "Leg der Person vor, was gebucht wuerde (Haus, Zeitraum, Gesamtpreis, Name), und frag, ob du abschliessen sollst. Erst nach einem klaren Ja buchung_abschliessen rufen." },
-        log: `Buchung vorbereitet: ${z?.titel || item.name}, ${z?.gesamt || ""}`,
+        ergebnis: { vorbereitet: true, zusammenfassung: z, ausgefuellt: getan,
+          hinweis: `${getan.length ? `Sag in einem kurzen Satz, was du ausgefuellt hast: ${getan.join(", ")}. Nur das - nichts, was du nicht selbst eingetragen hast. ` : ""}`
+            + (kern.darf("buchen")
+              ? "Du darfst abschliessen: Nenn Haus, Zeitraum und Gesamtpreis und ruf buchung_abschliessen im selben Zug."
+              : "Nenn Haus, Zeitraum und Gesamtpreis und frag, ob du abschliessen sollst. Erst nach einem klaren Ja buchung_abschliessen rufen.") },
+        log: `Buchung vorbereitet: ${z?.titel || item.name}, ${z?.gesamt || ""}${getan.length ? ` · ausgefuellt: ${getan.join(", ")}` : ""}`,
       };
     },
 
@@ -3156,6 +3185,38 @@ const Werkzeugkasten = {
     return `Was diese Seite NICHT kann (sag es genau so, wenn danach gefragt wird - nie etwas anderes probieren, nie ein Werkzeug raten):\n`
       + gilt.map((g) => `- ${g.gilt}: "${g.satz}"`).join("\n")
       + `\nWirst du nach etwas gefragt, das hier nicht steht und fuer das du auch kein Werkzeug hast: sag in einem Satz, dass Voyara das nicht anbietet, warum du es nicht kannst, und was stattdessen geht. Rate nie, und ruf kein Werkzeug auf gut Glueck.`;
+  },
+
+  /* Was der Agent in die Buchungsstrecke eintragen kann.
+     ------------------------------------------------------------------
+     Namen und Geburtsdaten nur, soweit sie im Gespraech gefallen sind -
+     nichts davon laesst sich ableiten, und Erfinden waere hier besonders
+     schlimm, weil am Flughafen der Ausweis zaehlt.
+
+     Die Ankunftszeit dagegen ergibt sich: Landung plus eine Stunde
+     Transfer, aufgerundet. Das ist Rechnen, kein Raten, und wird mit
+     Grund gesagt. */
+  formulardaten(kern) {
+    const p = kern.lauf.profil || {};
+    const daten = {
+      namen: p.reisendeNamen || [],
+      geburt: p.reisendeGeburt || [],
+      gepaeck: p.gepaeck || null,
+    };
+    const item = typeof getItemById === "function" ? getItemById(kern.lauf.gewaehlt) : null;
+    if (p.flug && item && item.type !== "apartment" && typeof Flug !== "undefined") {
+      const flug = Flug.wahl(item.ziel);
+      const an = flug?.arrive && /^\d{1,2}:\d{2}$/.test(flug.arrive) ? flug.arrive : null;
+      if (an) {
+        const stunde = parseInt(an.split(":")[0], 10);
+        const minute = parseInt(an.split(":")[1], 10);
+        // Eine Stunde Transfer, auf die volle Stunde aufgerundet
+        const ziel = Math.min(23, stunde + 1 + (minute > 0 ? 1 : 0));
+        daten.ankunft = ziel >= 23 ? "nach 22:00" : `${String(ziel).padStart(2, "0")}:00`;
+        daten.ankunftGrund = `Landung ${an} plus Transfer`;
+      }
+    }
+    return daten;
   },
 
   filterText(p) {
