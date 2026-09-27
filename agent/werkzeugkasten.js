@@ -919,8 +919,16 @@ const Werkzeugkasten = {
       if (reset && aktiv > 0 && (kern.lauf.runde || 0) > 0) { await Zeiger.klicke(reset, { hinweis: "Filter zurücksetzen" }); await Zeiger.warte(250); }
       const gesetzt = await Werkzeuge.filterSetzen(Werkzeugkasten.filterWerte(p));
       if (gesetzt.text) kern.logZeile(gesetzt.text, "ergebnis");
-      const nach = p.sortierung === "preis" ? "preis-asc" : (p.sortierung === "bewertung" ? "rating" : "preis-asc");
-      await Werkzeuge.sortieren(nach);
+      /* Sortiert wird nur, wenn die Person es gesagt hat.
+         ----------------------------------------------------------------
+         Hier stand als Rueckfall "preis-asc": Der Agent stellte die Liste
+         also bei jeder Suche auf "billigste zuerst", auch bei der ersten
+         Umschau, bei der noch niemand ueber Preise gesprochen hatte. Fuer
+         die Person sah es aus, als haette er eine Vorgabe erfunden - und
+         fuer die Erhebung waere es eine ungewollte Manipulation der
+         Reihenfolge, also genau dessen, was untersucht werden soll. */
+      const nach = p.sortierung === "preis" ? "preis-asc" : (p.sortierung === "bewertung" ? "rating" : null);
+      if (nach) await Werkzeuge.sortieren(nach);
       const gelesen = darfEmpfehlen ? await Werkzeuge.ergebnisseLesen(8) : { daten: { treffer: [] } };
       kern.sperreAus();
       // Die Seite kennt nur grobe Stufen (Note ab 4,0 oder 4,5; Strand bis
@@ -1212,7 +1220,7 @@ const Werkzeugkasten = {
       if (Werkzeuge.seite() === "results" && !Zeiger.abbruch) {
         kern.sperreAn();
         const wieder = await Werkzeuge.filterSetzen(Werkzeugkasten.filterWerte(p));
-        await Werkzeuge.sortieren(p.sortierung === "bewertung" ? "rating" : "preis-asc");
+        if (p.sortierung) await Werkzeuge.sortieren(p.sortierung === "bewertung" ? "rating" : "preis-asc");
         if (wieder.text) kern.logZeile(`Filter wieder gesetzt: ${wieder.text}`, "ergebnis");
       }
       kern.sperreAus();
@@ -1516,8 +1524,8 @@ const Werkzeugkasten = {
       frage: "Ob ihr noch Eckdaten klaert (beratung klaeren) oder ob du gleich eine Auswahl zeigst (beratung auswahl).", chips: "Noch ein paar Eckdaten | Erstmal eine Auswahl" },
 
     vorgehen: {
-      satz: ["Soll ich dir Häuser raussuchen, oder schaust du lieber selbst durch die Liste? Wenn ich raussuche: drei sind üblich, es dürfen auch mehr sein.",
-        "Was ist dir lieber - ich suche dir welche raus, oder du schaust selbst?"],
+      satz: ["Soll ich dir ein paar Häuser raussuchen? Dann frage ich vorher noch kurz nach Dauer, Preis und Verpflegung. Oder gehst du lieber selbst durch die Liste?",
+        "Was ist dir lieber - ich suche dir welche raus, oder du schaust selbst durch die Liste?"],
       frage: "Ob du die Filter stellst und sie selbst schaut (vorgehen selbst) oder ob du Haeuser raussuchst (vorgehen top3) - und wenn ja, wie viele.", chips: "Ich schaue selbst | Such mir drei raus | Lieber fünf" },
 
     preis: {
@@ -1659,12 +1667,15 @@ const Werkzeugkasten = {
       kinderAlter: kinderAlterOk,
       ziel: !!p.zielId || !!p.zielOffen || !!p.richtung,
       art: !!p.artGenannt || !!p.artEgal,
-      weiter: !!p.weiter || !!b.weiter || alleEckdaten,
+      // weiter und beratung werden nicht mehr gefragt: Die eine Frage nach
+      // der Lage (vorgehen) ersetzt beide. Sie bleiben im Stand, weil
+      // Ableitungen und Auswertung sie lesen.
+      weiter: true,
       dauer: !!p.naechte,
       flug: p.flug != null || p.typ === "apartment",
       flugAb: !p.flug || !!p.flugAb || p.typ === "apartment",
       vorgehen: !!p.vorgehen,
-      beratung: !!p.beratung || !!b.beratung,
+      beratung: true,
       preis: !!(p.maxPreis || p.budgetGesamt || p.preisEgal || b.preis),
       verpflegung: !!(p.verpflegung || p.verpflegungEgal || b.verpflegung || p.typ === "apartment"),
       wuensche: !!((p.kriterien || []).length || p.ausstattungEgal || b.wuensche),
@@ -1722,7 +1733,8 @@ const Werkzeugkasten = {
     // Wer gleich eine Auswahl sehen will, bekommt sie - der Anreisetag
     // bleibt trotzdem, ohne ihn laesst die Seite nicht buchen.
     const BESPRECHEN = p.typ === "apartment" ? ["preis", "wuensche"] : ["preis", "verpflegung", "wuensche"];
-    const BERATUNG = (p.beratung === "auswahl" ? [] : BESPRECHEN).concat("anreise");
+    // Wer selbst schaut, wird nicht ausgefragt; wer raussuchen laesst, schon
+    const BERATUNG = (p.vorgehen === "selbst" ? [] : BESPRECHEN).concat("anreise");
     const kernFertig = KERN.every((t) => fertig[t]);
     const suchbereit = fertig.zeit && fertig.reisende && fertig.kinderAlter;
     const schluessel = this.eckdatenSchluessel(p);
@@ -1749,8 +1761,27 @@ const Werkzeugkasten = {
        sichtbar auf der Seite - und erst die Lage danach traegt die Frage.
        Die Personenzahl ist dafuer da: Sie steht in KERN und damit vorher. */
     else if (!lauf.gesuchtMit) phase = "suche";
-    else if (!fertig.weiter) naechstes = "weiter";
-    else if (!lauf.gesuchtMit && weiter === "klaeren" && !ECKDATEN.every((t) => fertig[t])) naechstes = ECKDATEN.find((t) => !fertig[t]);
+    /* Eine Entscheidung, nicht drei.
+       ------------------------------------------------------------------
+       Am 27.09.2026 stand im Chat zweimal hintereinander dieselbe Frage:
+       "Soll ich die Filter setzen, damit du selbst schaust, oder klaeren
+       wir noch Eckdaten?" - Antwort "Noch ein paar Eckdaten" - und direkt
+       danach "Wollen wir noch ein paar Eckdaten besprechen, oder zeige ich
+       dir gleich eine Auswahl?" Der Nutzer: "Das wirkt direkt wie ein
+       Fehler und nimmt die Lust weiterzumachen."
+
+       Ursache war der Umbau vom 25.09.: Seit die Suche VOR der Frage
+       laeuft, fragen `weiter` (klaeren oder schauen) und `beratung`
+       (klaeren oder Auswahl) dasselbe, nur anders formuliert. Dazu kam
+       `vorgehen` (selbst oder raussuchen) als dritte Variante derselben
+       Entscheidung.
+
+       Jetzt gibt es nach der Lage genau eine Frage: Suche ich dir Haeuser
+       raus, oder gehst du selbst durch die Liste? Wer raussuchen laesst,
+       bekommt die Eckdaten der Reihe nach gestellt - ohne vorher gefragt
+       zu werden, ob er gefragt werden moechte. Niemand im Reisebuero
+       fragt, ob man Fragen beantworten will. */
+    else if (!fertig.vorgehen) { naechstes = "vorgehen"; phase = "beratung"; }
     // Vor der Wahl des Vorgehens wird bei geaenderten Eckdaten neu gesucht
     // (die Lage soll stimmen); danach erst wieder zur Vorlage bzw. Liste -
     // sonst liefe mitten in der Beratung nach jeder Antwort die Maske
@@ -1766,11 +1797,15 @@ const Werkzeugkasten = {
        den Agenten), kommt zum Schluss, wenn alles besprochen ist. */
     else if (!fertig.beratung) { naechstes = "beratung"; phase = "beratung"; }
     else {
-      const offen = [...ECKDATEN, ...BERATUNG].find((t) => !fertig[t]) || null;
-      if (offen) { naechstes = offen; phase = "beratung"; }
-      else if (!fertig.vorgehen) { naechstes = "vorgehen"; phase = "beratung"; }
-      else if (p.vorgehen === "selbst") phase = "selbst";
-      else phase = "vorschlaege";
+      // Wer selbst schauen will, wird nicht weiter ausgefragt. Der Agent
+      // stellt die Filter und laesst die Person in Ruhe; fehlt die Dauer,
+      // rechnet die Maske mit einer Woche, und die Lage sagt das dazu.
+      if (p.vorgehen === "selbst") { phase = "selbst"; }
+      else {
+        const offen = [...ECKDATEN, ...BERATUNG].find((t) => !fertig[t]) || null;
+        if (offen) { naechstes = offen; phase = "beratung"; }
+        else phase = "vorschlaege";
+      }
     }
     let frage = naechstes ? this.THEMEN[naechstes]?.frage : null;
     let chips = naechstes ? this.THEMEN[naechstes]?.chips : null;
