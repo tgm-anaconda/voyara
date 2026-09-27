@@ -311,9 +311,14 @@ const Werkzeugkasten = {
   /* ==================================================================
      Hilfsmittel
      ================================================================== */
+  // Dieselbe Belegung wie in der Trefferliste - der Agent darf kein Haus
+  // nennen, das dort im gewaehlten Monat gar nicht steht.
   katalog(profil) {
-    if (profil?.typ === "apartment") return typeof APARTMENTS !== "undefined" ? APARTMENTS : [];
-    return typeof HOTELS !== "undefined" ? HOTELS : [];
+    const alle = profil?.typ === "apartment"
+      ? (typeof APARTMENTS !== "undefined" ? APARTMENTS : [])
+      : (typeof HOTELS !== "undefined" ? HOTELS : []);
+    if (!profil?.monat || typeof freiImMonat !== "function") return alle;
+    return alle.filter((h) => freiImMonat(h, profil.monat));
   },
 
   // Preis pro Nacht im Reisemonat (Saisonfaktor wie auf der Seite)

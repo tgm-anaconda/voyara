@@ -105,7 +105,14 @@ const STELLSCHRAUBEN = {
   // Wie die drei Vorschlaege gezeigt werden: eigene Ansicht ueber der Seite
   // oder (alt) als drei Chatnachrichten
   vorschlag: "ansicht",          // ansicht | chat
-  partner: "wechselnd",          // zweitbeste | beste | wechselnd | keine
+  /* Entscheidung des Nutzers vom 27.09.2026: das beste Haus.
+     ------------------------------------------------------------------
+     Damit kostet die Provision niemanden etwas - der Agent haette
+     dieses Haus ohnehin empfohlen, und wer Platz eins bucht, hat
+     trotzdem das beste bekommen. Gemessen wird dann, ob die
+     Kennzeichnung auffaellt und was sie mit dem Vertrauen macht, nicht,
+     ob sie vor einem Nachteil schuetzt. */
+  partner: "beste",              // zweitbeste | beste | wechselnd | keine
   // Sieht der Agent sich die engere Auswahl vorher sichtbar an (Haus
   // oeffnen, Bewertungen lesen, Zimmer und Verpflegung setzen)? Kostet
   // acht bis zehn Sekunden je Haus und ist der Kern der Fragestellung:

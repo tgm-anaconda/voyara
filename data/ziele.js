@@ -180,6 +180,46 @@ function preisImMonat(item, monat) {
   return Math.round(item.pricePerNight * saisonFaktor(ziel, monat));
 }
 
+/* ==================================================================
+   Belegung je Monat
+   ------------------------------------------------------------------
+   Bis zum 27.09.2026 war jedes Haus in jedem Monat frei. Damit war die
+   Frage nach dem Reisemonat folgenlos: Der Agent konnte drei Monate der
+   Jahreszeit nebeneinanderlegen und kam dreimal auf dieselbe Zahl, was
+   den ganzen Vergleich zur Geste ohne Inhalt machte.
+
+   Jetzt ist ein Teil der Haeuser je Monat ausgebucht, in der Hauptsaison
+   deutlich mehr als ausserhalb - so, wie es sich anfuehlt, wenn man im
+   August eine Woche Mallorca sucht. Damit wird "in welchem Monat ist am
+   meisten frei" eine Frage mit Antwort.
+
+   Entschieden wird deterministisch aus Haus-id und Monat, nicht
+   zufaellig. Das ist hier keine Feinheit, sondern Bedingung: Dieselbe
+   Zahl muss bei jedem Seitenaufruf herauskommen, in der Trefferliste
+   wie beim Agenten, sonst verschwinden Haeuser zwischen zwei Klicks und
+   der Agent nennt Zahlen, die auf der Seite nicht stehen.
+   ================================================================== */
+
+// FNV-1a: kurz, stabil, gleichmaessig verteilt. Ergebnis 0-999.
+function belegungsZahl(text) {
+  let h = 2166136261;
+  for (let i = 0; i < text.length; i++) {
+    h ^= text.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return (h >>> 0) % 1000;
+}
+
+function freiImMonat(item, monat) {
+  if (!item || !monat) return true;
+  const ziel = typeof ZIEL_NACH_ID !== "undefined" ? ZIEL_NACH_ID[item.ziel] : null;
+  const passung = ziel ? saisonPassung(ziel, monat) : 1;
+  // Anteil der ausgebuchten Haeuser: Hauptsaison knapp ein Drittel,
+  // Randzeit ein Sechstel, ausserhalb der Saison kaum etwas.
+  const belegt = passung === 1 ? 320 : passung === 0.5 ? 160 : 60;
+  return belegungsZahl(`${item.id}|${monat}`) >= belegt;
+}
+
 const MONATSNAMEN = ["Januar", "Februar", "März", "April", "Mai", "Juni",
   "Juli", "August", "September", "Oktober", "November", "Dezember"];
 

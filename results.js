@@ -51,11 +51,18 @@ const state = {
   withFlight: false,
 };
 
+/* Der Vorrat, aus dem gefiltert und gezaehlt wird.
+   ------------------------------------------------------------------
+   Die Belegung sitzt hier und nicht in matches(): Die Zahlen neben den
+   Filtern zaehlen ueber pool(), nicht ueber die gefilterte Liste. Stuende
+   sie in matches(), zeigte die Spalte "11 Haeuser mit Pool", waehrend in
+   der Liste nur sieben stehen. */
 function pool() {
-  if (state.type === "apartment") return APARTMENTS;
   if (state.type === "car") return CARS;
   if (state.type === "flight") return FLIGHTS;
-  return HOTELS;
+  const monat = reisemonat();
+  const alle = state.type === "apartment" ? APARTMENTS : HOTELS;
+  return typeof freiImMonat === "function" ? alle.filter((x) => freiImMonat(x, monat)) : alle;
 }
 
 function priceOf(item) {
