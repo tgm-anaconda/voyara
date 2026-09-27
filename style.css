@@ -2136,6 +2136,58 @@ body.agent-open .vorschlag-schirm { left: 380px; }
 .vorschlag-hinweis { margin: 0; color: var(--ink-500); font-size: .8rem; }
 body.vorschlag-offen { overflow: hidden; }
 
+/* ==================================================================
+   Bewertungsuebersicht ueber der Vorschlagsansicht
+   ------------------------------------------------------------------
+   Auf jeder Karte derselbe Knopf, fuer jedes Haus dieselbe Gliederung.
+   Als Ebene und nicht als Aufklapper in der Karte: Inline haette sie
+   die Karte um ein Vielfaches verlaengert und die Gegenueberstellung
+   von einem Bildschirm geschoben.
+   ================================================================== */
+.vorschlag-bewertungsknopf {
+  width: 100%; text-align: left; background: var(--brand-50, #eef6f3);
+  border: 1px solid var(--line); border-radius: 9px; padding: 7px 10px;
+  font-size: .78rem; font-weight: 600; color: var(--brand-700, #0f6e5c);
+  cursor: pointer; font-family: inherit;
+}
+.vorschlag-bewertungsknopf::after { content: " →"; }
+.vorschlag-bewertungsknopf:hover { background: #e3efea; }
+.bild-schirm {
+  position: fixed; inset: 0; z-index: 940; display: flex; align-items: center; justify-content: center;
+  background: rgba(14, 26, 22, .55); backdrop-filter: blur(3px); padding: 28px 16px;
+  opacity: 0; transition: opacity .18s ease;
+}
+.bild-schirm.da { opacity: 1; }
+.bild-fenster {
+  background: var(--bg, #fff); border-radius: 16px; max-width: 560px; width: 100%;
+  max-height: 88vh; overflow-y: auto; box-shadow: 0 24px 60px rgba(0, 0, 0, .3);
+  padding: 18px 22px 22px;
+}
+.bild-kopf { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; }
+.bild-kopf h3 { margin: 0; font-size: 1.12rem; }
+.bild-marke { margin: 0 0 2px; font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; color: var(--brand-700); }
+.bild-grundlage { margin: 4px 0 0; color: var(--ink-500); font-size: .8rem; }
+.bild-block { margin-top: 18px; }
+.bild-block h4 { margin: 0 0 8px; font-size: .84rem; color: var(--ink-700); }
+.bild-hinweise { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.bild-hinweise li {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+  font-size: .84rem; padding: 6px 10px; border-radius: 8px; background: var(--line);
+}
+/* Lob und Kritik sind an der Farbe zu unterscheiden, aber nicht an der
+   Groesse: Eine Kritik, die kleiner gesetzt waere, waere eine Wertung. */
+.bild-hinweise li.plus { background: rgba(15, 110, 92, .09); }
+.bild-hinweise li.minus { background: rgba(200, 120, 40, .11); }
+.bild-hinweise li b { font-size: .74rem; color: var(--ink-500); font-weight: 600; white-space: nowrap; }
+.bild-stimme {
+  margin: 0 0 10px; padding: 9px 12px; border-radius: 9px; background: var(--line);
+  border-left: 3px solid var(--ink-500);
+}
+.bild-stimme.plus { border-left-color: var(--brand-700, #0f6e5c); }
+.bild-stimme.minus { border-left-color: #c8782a; }
+.bild-stimme p { margin: 0; font-size: .84rem; line-height: 1.5; }
+.bild-stimme cite { display: block; margin-top: 5px; font-size: .74rem; color: var(--ink-500); font-style: normal; }
+
 /* Bewertungen, die der Agent sich im Einzelnen angesehen hat.
    ------------------------------------------------------------------
    Er scrollt schnell durch alle und bleibt bei einigen stehen. Ohne

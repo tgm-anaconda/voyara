@@ -58,6 +58,10 @@ const hatKlima = (item) => (item.amenities || []).includes("aircon");
 // Ziele, an denen ein Pool nur drinnen liegen kann
 const KALTE_ZIELE = new Set(["lappland", "island", "tirol", "suedtirol", "wien", "ostsee"]);
 const draussenWarm = (item) => !KALTE_ZIELE.has(item.ziel);
+// Haeuser, die sich ausdruecklich an Familien richten. Ohne diese
+// Bedingung stuenden Saetze ueber Kinderbecken auch bei Adults-only.
+const fuerFamilien = (item) => (item.amenities || []).includes("kidsClub")
+  || (item.amenities || []).includes("familyFriendly");
 
 function saetzeFuer(item, liste) {
   const passend = liste.filter((s) => typeof s === "string" || s[1](item));
@@ -134,6 +138,7 @@ const ASPEKTE = [
       "Die Verdunklung war wirklich dicht, was nicht selbstverständlich ist.",
       "Steckdosen an beiden Betten und am Schreibtisch, darüber freut man sich mehr, als man denkt.",
       "Der Schrank hatte genug Platz für zwei Koffer, ausgepackt für eine Woche.",
+      ["Hochstuhl und Reisebett standen ohne Nachfrage im Zimmer.", fuerFamilien],
     ],
     detailMinus: [
       "Die Rollos ließen sich nur halb schließen, ab sechs Uhr war es hell.",
@@ -263,9 +268,15 @@ const ASPEKTE = [
       "Genug Liegen, auch am Nachmittag.",
       "Das Wasser war angenehm temperiert, nicht eiskalt.",
       ["Die Anlage rund um den Pool ist schön begrünt und schattig.", draussenWarm],
+      /* Saetze, die etwas Praktisches sagen - dazugekommen am 27.09.2026.
+         Aus ihnen zieht die Bewertungsuebersicht ihre Stichpunkte, und
+         die kann nur so konkret werden wie das, was Gaeste schreiben. */
+      ["Für die Kinder gibt es einen flachen, abgetrennten Bereich - das hat uns die Woche gerettet.", fuerFamilien],
+      ["Unsere Kinder waren morgens als Erste im Wasser und mittags kaum herauszubekommen.", fuerFamilien],
     ],
     minus: [
       "Die Liegen am Pool sind ab acht Uhr mit Handtüchern belegt.",
+      ["Ein eigenes Becken für kleinere Kinder fehlt, für Anfänger ist es überall zu tief.", fuerFamilien],
       "Der Pool ist für die Größe des Hauses deutlich zu klein.",
       "Am Pool war es tagsüber sehr laut.",
       ["Der Poolbereich liegt ab drei Uhr komplett im Schatten.", draussenWarm],
@@ -296,6 +307,8 @@ const ASPEKTE = [
       "Die Küche ist komplett ausgestattet, wir haben fast jeden Abend selbst gekocht.",
       "Sogar Gewürze, Öl und Kaffeefilter waren da.",
       "Spülmaschine und ein großer Kühlschrank machen den Unterschied.",
+      "Die Küche ist erkennbar neu, alles funktioniert und nichts wackelt.",
+      "Ein kleiner Supermarkt liegt zwei Straßen weiter, das macht das Selbstkochen leicht.",
     ],
     minus: [
       "In der Küche fehlten scharfe Messer und ein vernünftiger Topf.",
@@ -967,5 +980,144 @@ function aspektKurzfassung(item) {
     staerken: relevant.filter((a) => a.anteilPositiv >= schnitt + 0.07 && a.anteilPositiv >= 0.75).map((a) => a.label),
     schwaechen: relevant.filter((a) => a.anteilPositiv <= schnitt - 0.07 && a.anteilPositiv < 0.72).map((a) => a.label),
     bilanz: relevant,
+  };
+}
+
+/* ==================================================================
+   Was nur in den Bewertungen steht
+   ------------------------------------------------------------------
+   Wunsch des Nutzers vom 27.09.2026: eine Stichpunktliste mit Dingen,
+   "die man jetzt nicht auf der Product Detail Page sehen kann, sondern
+   die quasi nur in den Bewertungen stecken" - fuer den Strand ist ein
+   Auto noetig, der Pool ist gut fuer Kinder, ein Supermarkt ist in der
+   Naehe.
+
+   Das ist genau die Arbeit, die ein Mensch nicht macht: hundert Texte
+   lesen und daraus drei brauchbare Saetze ziehen. Und es ist eine der
+   wenigen Stellen, an denen ein Agent etwas liefert, das die Seite
+   selbst nicht hergibt.
+
+   Gezaehlt wird ueber die tatsaechlichen Texte dieses Hauses - kein
+   Muster, kein Stichpunkt. Steht der Satz nirgends, erscheint der
+   Hinweis nicht. Deshalb steht neben jedem, wie oft er vorkam: Die
+   Zahl ist nachpruefbar, indem man die Bewertungen aufmacht.
+   ================================================================== */
+const HINWEISE = [
+  // Lage und Wege
+  { id: "auto", art: "minus", text: "Ohne Auto kommt man kaum weg", muster: /ohne mietwagen|ins auto steigen|f[üu]r jede kleinigkeit/i },
+  { id: "zufuss", art: "plus", text: "Alles Wichtige zu Fuß erreichbar", muster: /zu fu[ßs] erreichbar|[üu]berall zu fu[ßs] hinkommt/i },
+  { id: "supermarkt_nah", art: "plus", text: "Supermarkt und Restaurants in Laufweite", muster: /supermarkt liegen praktisch vor der t[üu]r|supermarkt liegt zwei stra[ßs]en/i },
+  { id: "supermarkt_fahren", art: "minus", text: "Zum Supermarkt muss man fahren", muster: /n[äa]chsten supermarkt muss man fahren/i },
+  { id: "strand_nah", art: "plus", text: "Strand in wenigen Minuten", muster: /bis zum wasser sind es keine|nicht einmal die stra[ßs]e queren/i },
+  { id: "bus", art: "plus", text: "Bushaltestelle fast vor der Tür", muster: /bus h[äa]lt keine hundert meter/i },
+  { id: "bergauf", art: "minus", text: "Der Rückweg geht bergauf", muster: /r[üu]ckweg bergauf|steil bergauf/i },
+  { id: "kinderwagen", art: "minus", text: "Mit Kinderwagen beschwerlich", muster: /kinderwagen/i },
+
+  // Zimmer und Ausstattung
+  { id: "klima_gut", art: "plus", text: "Klimaanlage und WLAN funktionieren", muster: /klimaanlage, wlan, genug steckdosen/i },
+  { id: "klima_schwach", art: "minus", text: "Klimaanlage kommt gegen die Hitze nicht an", muster: /klimaanlage kam gegen/i },
+  { id: "wlan", art: "minus", text: "WLAN bricht im Zimmer ab", muster: /wlan brach/i },
+  { id: "balkon", art: "plus", text: "Balkon groß genug zum Frühstücken", muster: /balkon war gro[ßs] genug/i },
+  { id: "dunkel", art: "plus", text: "Verdunkelung schließt dicht", muster: /verdunklung war wirklich dicht/i },
+  { id: "hell", art: "minus", text: "Rollos schließen nicht ganz, früh wird es hell", muster: /rollos lie[ßs]en sich nur halb/i },
+  { id: "steckdosen", art: "minus", text: "Wenige Steckdosen im Zimmer", muster: /einzige steckdose/i },
+  { id: "bad_eng", art: "minus", text: "Bad eng für zwei Personen", muster: /bad ist eng/i },
+  { id: "wasserdruck", art: "minus", text: "Wasserdruck in der Dusche schwankt", muster: /wasserdruck/i },
+  { id: "moebel", art: "minus", text: "Möbel in die Jahre gekommen", muster: /m[öo]bel haben ihre besten jahre/i },
+  { id: "familienzimmer", art: "plus", text: "Hochstuhl und Reisebett ohne Nachfrage", muster: /hochstuhl und reisebett/i },
+
+  // Küche (Ferienwohnungen)
+  { id: "kueche_gut", art: "plus", text: "Küche vollständig ausgestattet", muster: /k[üu]che ist komplett ausgestattet|gew[üu]rze, [öo]l und kaffeefilter|sp[üu]lmaschine und ein gro[ßs]er k[üu]hlschrank|k[üu]che ist erkennbar neu/i },
+  { id: "kueche_knapp", art: "minus", text: "Küche nur knapp ausgestattet", muster: /fehlten scharfe messer|k[üu]hlschrank ist f[üu]r vier personen zu klein|geschirr war knapp/i },
+
+  // Pool
+  { id: "pool_gut", art: "plus", text: "Pool gepflegt, morgens ruhig", muster: /poolbereich ist gepflegt|genug liegen, auch am nachmittag/i },
+  { id: "pool_kinder", art: "plus", text: "Eigener flacher Bereich für Kinder", muster: /flachen, abgetrennten bereich|kinder waren morgens als erste im wasser/i },
+  { id: "pool_kinder_fehlt", art: "minus", text: "Kein eigenes Becken für kleine Kinder", muster: /eigenes becken f[üu]r kleinere kinder fehlt/i },
+  { id: "liegen", art: "minus", text: "Liegen früh mit Handtüchern belegt", muster: /ab acht uhr mit handt[üu]chern/i },
+  { id: "pool_klein", art: "minus", text: "Pool klein für die Größe des Hauses", muster: /pool ist f[üu]r die gr[öo][ßs]e/i },
+  { id: "pool_schatten", art: "minus", text: "Pool liegt ab nachmittags im Schatten", muster: /ab drei uhr komplett im schatten/i },
+
+  // Essen
+  { id: "vegi_gut", art: "plus", text: "Vegetarisch gut abgedeckt", muster: /vegetarisch gab es mehr/i },
+  { id: "vegi_duenn", art: "minus", text: "Vegetarisch dünne Auswahl", muster: /vegetarische g[äa]ste ist die auswahl/i },
+  { id: "unvertraeglich", art: "plus", text: "Unverträglichkeiten sind kein Problem", muster: /unvertr[äa]glichkeit wurde ohne/i },
+  { id: "brot", art: "plus", text: "Brot wird morgens frisch gebacken", muster: /drei sorten brot/i },
+  { id: "fruehstueck_leer", art: "minus", text: "Frühstück früh leergeräumt", muster: /r[üu]hrei aufgebraucht/i },
+  { id: "stosszeit", art: "minus", text: "Zu Stoßzeiten kaum ein freier Tisch", muster: /sto[ßs]zeiten war kaum ein freier tisch/i },
+
+  // Geld
+  { id: "parken", art: "minus", text: "Parken kostet extra", muster: /parken kostet extra|kurtaxe, parken/i },
+  { id: "keine_extras", art: "plus", text: "Keine versteckten Zusatzkosten", muster: /keine versteckten zusatzkosten/i },
+  { id: "inklusive", art: "plus", text: "Wasser, Kaffee und Leihräder inklusive", muster: /leihr[äa]der waren inklusive/i },
+  { id: "getraenke", art: "minus", text: "Getränkepreise an der Bar hoch", muster: /getr[äa]nkepreise an der bar|zwei wasser und ein kaffee/i },
+
+  // Ruhe
+  { id: "hellhoerig", art: "minus", text: "Hellhörige Wände", muster: /w[äa]nde sind hellh[öo]rig|jedes wort mith[öo]rte/i },
+  { id: "lieferverkehr", art: "minus", text: "Morgens Lieferverkehr vor dem Fenster", muster: /lieferverkehr vor dem fenster/i },
+  { id: "animation", art: "minus", text: "Animation bis spät abends hörbar", muster: /animation war bis sp[äa]t/i },
+  { id: "strasse_leise", art: "plus", text: "Von der Straße hört man nichts", muster: /stra[ßs]e h[öo]rt man im zimmer praktisch nichts/i },
+
+  // Ankunft
+  { id: "schluesselbox", art: "plus", text: "Schlüsselbox, Ankunft jederzeit möglich", muster: /schl[üu]sselbox/i },
+  { id: "spaet", art: "plus", text: "Später Check-in möglich", muster: /check-in war auch sp[äa]t abends/i },
+  { id: "warten", art: "minus", text: "Wartezeit beim Check-in", muster: /halbe stunde an|stunde auf den schl[üu]ssel/i },
+  { id: "tipps", art: "plus", text: "Gute Tipps an der Rezeption", muster: /rezeption bekommt man richtig gute tipps|besten adressen im ort/i },
+];
+
+/* Das Bild eines Hauses aus seinen Bewertungen.
+   ------------------------------------------------------------------
+   Teilnoten, praktische Hinweise und echte Stimmen - alles aus
+   denselben Texten, die auf der Hausseite stehen. Die Stichprobe von
+   zweihundert reicht: Sie enthaelt rund hundertfuenfundsiebzig
+   verschiedene Texte, und seltener als einmal in zweihundert muss ein
+   Hinweis nicht auftauchen. */
+function bewertungsbild(item, { stichprobe = 200, wunschIds = [] } = {}) {
+  if (!item) return null;
+  const roh = bewertungenFuer(item, 0, Math.min(item.reviewCount || 0, stichprobe));
+  if (!roh.length) return null;
+  const faktor = (item.reviewCount || roh.length) / roh.length;
+
+  const hinweise = HINWEISE
+    .map((h) => {
+      const n = roh.filter((r) => h.muster.test(r.text)).length;
+      return { id: h.id, art: h.art, text: h.text, anteil: n / roh.length, erwaehnungen: Math.round(n * faktor) };
+    })
+    // Einmal unter zweihundert ist Zufall, kein Hinweis
+    .filter((h) => h.anteil >= 0.02)
+    .sort((a, b) => b.anteil - a.anteil);
+
+  /* Immer beides: Lob und Kritik.
+     ----------------------------------------------------------------
+     Fuenf positive Stichpunkte lesen sich wie Werbung, und in einer
+     Gegenueberstellung dreier Haeuser wuerde das die Kennzeichnung
+     ueberlagern, um die es in der Erhebung geht. Also drei plus, zwei
+     minus - und wenn eine Seite nichts hergibt, faellt sie eben kuerzer
+     aus, statt aufgefuellt zu werden. */
+  const gemischt = [
+    ...hinweise.filter((h) => h.art === "plus").slice(0, 3),
+    ...hinweise.filter((h) => h.art === "minus").slice(0, 2),
+  ];
+
+  const kurz = aspektKurzfassung(item);
+  const bilanz = (kurz.bilanz || []).slice();
+  // Was die Person genannt hat, steht vorn
+  bilanz.sort((a, b) => (wunschIds.includes(b.id) ? 1 : 0) - (wunschIds.includes(a.id) ? 1 : 0)
+    || b.erwaehnungen - a.erwaehnungen);
+
+  // Stimmen im Wortlaut: zwei zustimmende, eine kritische
+  const langGenug = (r) => r.text && r.text.length > 60;
+  const lob = roh.filter((r) => r.rating >= 5 && langGenug(r)).slice(0, 2);
+  const kritik = roh.filter((r) => r.rating <= 3 && langGenug(r)).slice(0, 1);
+  const stimmen = [...lob, ...kritik].map((r) => ({
+    autor: r.author, note: r.rating, titel: r.title, text: r.text,
+    art: r.rating >= 5 ? "plus" : "minus",
+  }));
+
+  return {
+    id: item.id, name: item.name, note: item.rating, anzahl: item.reviewCount,
+    grundlage: roh.length,
+    staerken: kurz.staerken || [], schwaechen: kurz.schwaechen || [],
+    bilanz, hinweise: gemischt, stimmen,
   };
 }

@@ -1647,6 +1647,14 @@ const Kern = {
         return wb - wa || erwaehnungen(b.id) - erwaehnungen(a.id);
       }).slice(0, 4).map((a) => a.id);
     })();
+    /* Entweder bei allen oder bei keinem.
+       ------------------------------------------------------------------
+       Haette ein Haus die Uebersicht und ein anderes nicht, waere die
+       Gegenueberstellung hin - und in der Erhebung waere es ein zweiter
+       Unterschied neben der Kennzeichnung, den niemand gewollt hat. */
+    const bilderDa = typeof bewertungsbild === "function"
+      && kandidaten.every((k) => (this.lauf.gelesen || {})[k.id]);
+    if (!bilderDa) this.notieren("bewertungsbild_aus", { grund: typeof bewertungsbild !== "function" ? "fehlt" : "nicht gelesen" });
     const aufbereitet = kandidaten.map((k) => {
       const item = k.item;
       const bilanz = bilanzen.get(k.id) || [];
@@ -1664,6 +1672,14 @@ const Kern = {
       const eigeneEinordnung = einordnung ? { id: einordnung.id, best: !!istBest } : null;
       return {
         id: k.id, item, partner: !!k.partner, gesamtZahl: naechte ? gesamt : k.preis,
+        /* Das Bild aus den Bewertungen - nur, wenn er sie gelesen hat.
+           --------------------------------------------------------------
+           Die Uebersicht enthaelt Dinge, die auf der Hausseite nirgends
+           stehen ("ohne Auto kommt man kaum weg"). Sie stammen aus den
+           Bewertungstexten, und der Agent darf sie erst zeigen, wenn er
+           dort war - dieselbe Regel wie fuer alles andere, was er ueber
+           ein Haus sagt. Ob er dort war, steht in lauf.gelesen. */
+        bild: bilderDa ? bewertungsbild(item, { wunschIds }) : null,
         satz: Politik.kartensatz(k, p, eigeneEinordnung),
         aspekte: sortiert.map((a) => ({ label: a.label, note: Politik.teilnote(a.anteilPositiv), wunsch: wunschIds.includes(a.id) })),
         gesamtText: naechte ? Politik.euro(gesamt) : `${Politik.euro(k.preis)} pro Nacht`,

@@ -75,6 +75,24 @@ const Vorschlaege = {
     el.querySelector("[data-selbst]").addEventListener("click", () => this.schliessen(false, "liste"));
     el.addEventListener("click", (e) => { if (e.target === el) this.schliessen(false, "daneben"); });
     el.querySelectorAll("[data-haus]").forEach((k) => k.addEventListener("click", () => this.waehlen(k.dataset.haus)));
+    /* Die Bewertungsuebersicht.
+       ------------------------------------------------------------------
+       Wunsch des Nutzers vom 27.09.2026. Sie steht auf der Karte, weil
+       dort entschieden wird, und sie steht auf ALLEN Karten gleich -
+       eine Uebersicht, die es nur fuer ein Haus gibt, waere keine
+       Vergleichshilfe, sondern ein Daumen auf der Waage.
+
+       Dass jemand sie oeffnet, wird mitgeschrieben. Damit gibt es neben
+       dem Klick auf die Kennzeichnung eine zweite Verhaltensmessung:
+       Graben Menschen beim Partnerhaus tiefer oder weniger tief? */
+    el.querySelectorAll("[data-bild]").forEach((b) => b.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const kand = (this.daten?.kandidaten || []).find((x) => x.id === b.dataset.bild);
+      if (!kand?.bild) return;
+      kern.notieren("bewertungsbild_geoeffnet", { id: kand.id, partner: !!kand.partner,
+        sekunden: Math.round((Date.now() - this.geoeffnet) / 1000) });
+      this.bildZeigen(kand, kern);
+    }));
     // Das Fragezeichen oeffnet die Erklaerung und darf die Karte nicht mitklicken
     /* Der Klick auf die Kennzeichnung ist die Messung.
        ------------------------------------------------------------------
@@ -170,12 +188,78 @@ const Vorschlaege = {
               <b>${a.note.toFixed(1).replace(".", ",")}</b>
             </div>`).join("")}</div>
           <p class="vorschlag-grund">${k.satz}</p>
+          ${k.bild ? `<button type="button" class="vorschlag-bewertungsknopf" data-bild="${item.id}">
+            Was ${(item.reviewCount || 0).toLocaleString("de-DE")} Gäste schreiben
+          </button>` : ""}
           <div class="vorschlag-preis">
             <div><b>${k.gesamtText}</b><span>${k.preisZusatz}</span></div>
             <span class="btn btn-accent btn-sm">Ansehen</span>
           </div>
         </div>
       </article>`;
+  },
+
+  /* Die Uebersicht legt sich ueber die Vorschlaege, nicht in die Karte.
+     ------------------------------------------------------------------
+     Inline haette sie die Karte um ein Vielfaches verlaengert, und die
+     Ansicht passte nicht mehr auf einen Bildschirm - genau das, was
+     beim Partnerbanner gerade behoben wurde. Als Ebene bleibt die
+     Gegenueberstellung darunter unveraendert stehen. */
+  bildZeigen(kand, kern) {
+    document.getElementById("bewertungsbild")?.remove();
+    const b = kand.bild;
+    const item = kand.item;
+    const note = (x) => x.toFixed(1).replace(".", ",");
+    const el = document.createElement("div");
+    el.className = "bild-schirm";
+    el.id = "bewertungsbild";
+    el.innerHTML = `
+      <div class="bild-fenster" role="dialog" aria-label="Was Gäste über ${item.name} schreiben">
+        <div class="bild-kopf">
+          <div>
+            <p class="bild-marke">Aus den Bewertungen</p>
+            <h3>${item.name}</h3>
+            <p class="bild-grundlage">${(b.anzahl || 0).toLocaleString("de-DE")} Bewertungen, Gesamtnote ${note(b.note || 0)}</p>
+          </div>
+          <button type="button" class="vorschlag-zu" data-bildzu aria-label="Schließen">✕</button>
+        </div>
+        ${b.hinweise.length ? `
+        <div class="bild-block">
+          <h4>Was in den Bewertungen steht, aber nicht in der Beschreibung</h4>
+          <ul class="bild-hinweise">
+            ${b.hinweise.map((h) => `<li class="${h.art}"><span>${h.text}</span><b>${h.erwaehnungen}×</b></li>`).join("")}
+          </ul>
+        </div>` : ""}
+        ${b.bilanz.length ? `
+        <div class="bild-block">
+          <h4>Teilnoten</h4>
+          <div class="vorschlag-balken">
+            ${b.bilanz.slice(0, 7).map((a) => `
+              <div class="vorschlag-balken-zeile">
+                <span>${a.label}</span>
+                <span class="vorschlag-bar"><i style="width:${Math.min(100, Politik.teilnote(a.anteilPositiv) * 10)}%"></i></span>
+                <b>${note(Politik.teilnote(a.anteilPositiv))}</b>
+              </div>`).join("")}
+          </div>
+        </div>` : ""}
+        ${b.stimmen.length ? `
+        <div class="bild-block">
+          <h4>Stimmen im Wortlaut</h4>
+          ${b.stimmen.map((s) => `
+            <blockquote class="bild-stimme ${s.art}">
+              <p>${s.text}</p>
+              <cite>${s.autor}, ${s.note} von 5</cite>
+            </blockquote>`).join("")}
+        </div>` : ""}
+      </div>`;
+    document.body.appendChild(el);
+    requestAnimationFrame(() => el.classList.add("da"));
+    const zu = () => {
+      kern.notieren("bewertungsbild_zu", { id: kand.id, partner: !!kand.partner });
+      el.remove();
+    };
+    el.querySelector("[data-bildzu]").addEventListener("click", (e) => { e.stopPropagation(); zu(); });
+    el.addEventListener("click", (e) => { if (e.target === el) zu(); });
   },
 
   waehlen(id) {
