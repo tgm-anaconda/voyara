@@ -2142,7 +2142,7 @@ body.vorschlag-offen { overflow: hidden; }
    Markierung ist die Pause vor einer Textwand bedeutungslos - mit ihr
    sieht man, worauf sich sein Satz danach stuetzt. Sie bleibt stehen,
    nicht nur waehrend er liest. */
-.review-item.agent-liest {
+.review-item.agent-gelesen {
   position: relative;
   background: rgba(15, 110, 92, .05);
   box-shadow: inset 3px 0 0 var(--brand-700, #0f6e5c);

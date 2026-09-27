@@ -652,9 +652,12 @@ const Werkzeuge = {
       for (let i = 0; i < wie; i++) {
         if (Zeiger.abbruch) break;
         const el = reihenfolge[i];
-        // Markiert, damit sichtbar ist, WELCHE Stimmen er sich ansieht -
-        // sonst bleibt eine Pause vor einer Textwand ohne Bedeutung.
-        el.classList.add("agent-liest");
+        /* Markiert, damit sichtbar ist, WELCHE Stimmen er sich angesehen
+           hat - sonst bleibt eine Pause vor einer Textwand bedeutungslos.
+           Nicht "agent-liest": Das ist die Hervorhebung des Zeigers, und
+           die nimmt er am Ende jeder Bewegung selbst wieder weg. Genau
+           deshalb war bisher hinterher nichts zu sehen. */
+        el.classList.add("agent-gelesen");
         const autor = el.querySelector(".review-who strong")?.textContent?.trim() || "";
         const note = el.querySelector(".review-rating")?.textContent?.trim() || "";
         const titel = el.querySelector("h4")?.textContent?.trim() || "";
