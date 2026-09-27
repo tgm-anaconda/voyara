@@ -45,17 +45,31 @@ const Vorschlaege = {
             <h2>Deine ${["", "", "zwei", "drei", "vier", "fünf", "sechs"][kandidaten.length] || kandidaten.length} Vorschläge</h2>
             ${kontext ? `<p class="vorschlag-kontext">${kontext}</p>` : ""}
           </div>
-          <button type="button" class="vorschlag-zu" aria-label="Schließen">✕</button>
+          <div class="vorschlag-kopf-rechts">
+            <button type="button" class="btn btn-ghost btn-sm" data-selbst>Ich schaue mir erst die Liste an</button>
+            <button type="button" class="vorschlag-zu" aria-label="Schließen">✕</button>
+          </div>
         </div>
         <div class="vorschlag-karten">${kandidaten.map((k, i) => this.karte(k, i, offenlegung)).join("")}</div>
         <div class="vorschlag-fuss">
-          <button type="button" class="btn btn-ghost" data-selbst>Ich schaue mir erst die Liste an</button>
           <p class="vorschlag-hinweis">Du kannst jederzeit im Chat weiterfragen, vergleichen lassen oder eigene Filter setzen.</p>
         </div>
       </div>`;
     document.body.appendChild(el);
     document.body.classList.add("vorschlag-offen");
-    requestAnimationFrame(() => el.classList.add("da"));
+    requestAnimationFrame(() => {
+      el.classList.add("da");
+      /* Alle Karten auf eine Linie.
+         ----------------------------------------------------------------
+         Das Banner des Partnerhauses schob dessen Teilnoten nach unten -
+         nebeneinander lagen die Balken dann auf drei verschiedenen
+         Hoehen, und genau die Gegenueberstellung war damit hin. Der
+         Platzhalter auf den anderen Karten bekommt die gemessene Hoehe
+         des echten Banners, nicht eine geratene. */
+      const echt = el.querySelector(".vorschlag-banner:not(.platzhalter)");
+      const h = echt ? echt.getBoundingClientRect().height : 0;
+      el.querySelectorAll(".vorschlag-banner.platzhalter").forEach((x) => { x.style.height = `${h}px`; });
+    });
 
     el.querySelector(".vorschlag-zu").addEventListener("click", () => this.schliessen(false, "kreuz"));
     el.querySelector("[data-selbst]").addEventListener("click", () => this.schliessen(false, "liste"));
@@ -103,9 +117,10 @@ const Vorschlaege = {
            <span class="vorschlag-banner-kopf">Partnerhaus
              <button type="button" class="vorschlag-info" data-info="${item.id}" aria-label="Was heißt Partnerhaus?" aria-expanded="false">i</button>
            </span>
-           <span>Voyara erhält für dieses Haus eine Provision. Es steht deshalb an erster Stelle.</span>
-           <p class="vorschlag-infotext" hidden>${item.name} ist ein Partnerhaus von Voyara. Der Anbieter zahlt Voyara eine Provision für Buchungen in diesem Haus, und Voyara zeigt es dafür bevorzugt an erster Stelle an. Preis, Gästenote und Teilnoten sind davon unberührt: Sie stammen aus denselben Daten wie bei allen anderen Häusern. Du kannst jedes andere Haus genauso buchen.</p>
-         </div>` : "";
+           <span>Voyara erhält für dieses Haus eine Provision. Preis, Note und Teilnoten stammen aus denselben Daten wie bei allen anderen.</span>
+           <p class="vorschlag-infotext" hidden>${item.name} ist ein Partnerhaus von Voyara. Der Anbieter zahlt Voyara eine Provision für Buchungen in diesem Haus. Preis, Gästenote und Teilnoten sind davon unberührt: Sie stammen aus denselben Daten wie bei allen anderen Häusern. Du kannst jedes andere Haus genauso buchen.</p>
+         </div>`
+      : `<div class="vorschlag-banner platzhalter" aria-hidden="true"></div>`;
     return `
       <article class="vorschlag-karte${k.partner ? " ist-partner" : ""}" data-haus="${item.id}">
         <div class="vorschlag-bild">

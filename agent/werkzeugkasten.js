@@ -1297,6 +1297,9 @@ const Werkzeugkasten = {
         kern.sperreAus();
         if (e.text) kern.logZeile(e.text, "ergebnis");
         (kern.lauf.gelesen ||= {})[id] = "hausseite";
+        // Welches Zimmer der Agent gewaehlt hat - damit es auf der
+        // Hausseite noch steht, wenn die Person spaeter draufklickt
+        if (e.daten?.zimmer) (kern.lauf.zimmerWahl ||= {})[id] = e.daten.zimmer;
         (r.gesehen ||= []).push({ id, schritte: e.daten?.schritte || [], stimmen: (e.daten?.stimmen || []).slice(0, 2) });
 
         /* Nach jedem Haus eine Zeile im Chat.
@@ -1317,6 +1320,19 @@ const Werkzeugkasten = {
           `${nr} von ${r.ids.length}: ${name} angesehen.`,
           (e.daten?.schritte || []).length ? `${(e.daten.schritte || []).join(", ")}.` : null,
           teil ? `${wunsch.label}: ${Politik.teilnoteText(teil.anteilPositiv)}.` : null,
+          /* Ein echtes Zitat.
+             ------------------------------------------------------------
+             Eine Zahl kann man ausrechnen, ein Zitat nur lesen. Es ist
+             damit der einzige Beleg, den der Agent gar nicht haette, wenn
+             er die Bewertungen nicht durchgegangen waere - und das, was
+             eine Zusammenfassung glaubwuerdig macht. Der Kern waehlt es
+             aus den Daten, das Modell fasst es nicht an. */
+          (() => {
+            const z = (e.daten?.stimmen || []).find((x) => x.text && x.text.length > 30);
+            if (!z) return null;
+            const kurz = z.text.length > 110 ? `${z.text.slice(0, 107).trim()}...` : z.text;
+            return `Eine Stimme: „${kurz}"`;
+          })(),
           weiter,
         ].filter(Boolean).join(" "));
 
@@ -1631,7 +1647,13 @@ const Werkzeugkasten = {
 
       erklaerung: "Ich brauche den Flughafen, weil davon abhängt, welche Verbindungen es gibt und was sie kosten.",      satz: ["Von welchem Flughafen soll es losgehen? Hamburg, Stuttgart, Düsseldorf, Hannover, München, Köln, Frankfurt oder Berlin.",
         "Und ab welchem Flughafen?"],
-      frage: "Von welchem Flughafen. Klasse nicht fragen - Economy ist gerechnet.", chips: null },
+      frage: "Von welchem Flughafen.", chips: null },
+
+    flugKlasse: {
+      erklaerung: "Die Klasse macht beim Flugpreis den groessten Unterschied - Premium liegt etwa beim Anderthalbfachen, Business beim Zweieinhalbfachen.",
+      satz: ["In welcher Klasse wollt ihr fliegen - Economy, Premium Economy oder Business?",
+        "Und die Klasse: Economy, Premium oder Business?"],
+      frage: "In welcher Klasse geflogen werden soll.", chips: "Economy | Premium Economy | Business" },
 
     anreise: {
 
@@ -1650,9 +1672,14 @@ const Werkzeugkasten = {
 
     vorgehen: {
 
-      erklaerung: "Wenn ich raussuche, gehe ich die Häuser einzeln durch, lese Bewertungen und stelle dir eine kleine Auswahl zusammen. Wenn du selbst schaust, stelle ich nur die Filter ein und halte mich raus.",      satz: ["Soll ich dir ein paar Häuser raussuchen? Dann frage ich vorher noch kurz nach Dauer, Preis und Verpflegung. Oder gehst du lieber selbst durch die Liste?",
-        "Was ist dir lieber - ich suche dir welche raus, oder du schaust selbst durch die Liste?"],
-      frage: "Ob du die Filter stellst und sie selbst schaut (vorgehen selbst) oder ob du Haeuser raussuchst (vorgehen top3) - und wenn ja, wie viele.", chips: "Ich schaue selbst | Such mir drei raus | Lieber fünf" },
+      erklaerung: "Wenn ich raussuche, gehe ich die Häuser einzeln durch, lese Bewertungen und stelle dir eine kleine Auswahl zusammen. Wenn du selbst schaust, stelle ich nur die Filter ein und halte mich raus.",      /* Fassung des Nutzers vom 27.09.2026. Sie benennt, was in jedem
+         Zweig passiert - meine alte tat das nicht, und die Person wusste
+         nicht, worueber sie eigentlich entscheidet. Die Eckdaten lassen
+         sich nicht filtern; sie sind das, was der Agent fuer die genaue
+         Auswahl braucht. Genau das steht jetzt da. */
+      satz: ["Soll ich schon mal die Filter setzen und du schaust selbst, welches Hotel dich anspricht? Oder gehen wir noch ein paar Eckdaten durch, und ich sehe mir die Häuser dann im Einzelnen an - drei bis sechs, so viele du möchtest.",
+        "Was ist dir lieber - ich stelle nur die Filter und du stöberst selbst, oder wir klären noch ein paar Punkte und ich gehe die Häuser einzeln durch?"],
+      frage: "Ob du die Filter stellst und sie selbst schaut (vorgehen selbst) oder ob du Haeuser raussuchst (vorgehen top3) - und wenn ja, wie viele.", chips: "Ich schaue selbst | Such mir drei raus | Lieber fünf oder sechs" },
 
     preis: {
 
@@ -1820,6 +1847,7 @@ const Werkzeugkasten = {
       dauer: !!p.naechte,
       flug: p.flug != null || p.typ === "apartment",
       flugAb: !p.flug || !!p.flugAb || !!p.flugAbEgal || p.typ === "apartment",
+      flugKlasse: !p.flug || !!p.flugKlasse || p.typ === "apartment",
       vorgehen: !!p.vorgehen,
       beratung: true,
       preis: !!(p.maxPreis || p.budgetGesamt || p.preisEgal || b.preis),
@@ -1859,6 +1887,7 @@ const Werkzeugkasten = {
       // Flughafen offen ist, hiesse eine Aussage der Person zu kippen.
       flugAb: { schreibt: ["flugAb"], setzen: (x) => { x.flugAb = x.flugAb || "Frankfurt"; },
         satz: "von welchem Flughafen du rechnest und dass sie das aendern kann" },
+      flugKlasse: { schreibt: ["flugKlasse"], setzen: (x) => { x.flugKlasse = x.flugKlasse || "economy"; }, satz: "dass du mit Economy rechnest" },
       preis: { schreibt: ["maxPreis", "budgetGesamt", "preisEgal"], setzen: (x) => { x.preisEgal = true; }, satz: "dass du dich beim Preis nicht festlegst" },
       verpflegung: { schreibt: ["verpflegung", "verpflegungEgal"], setzen: (x) => { x.verpflegungEgal = true; }, satz: "dass du die Verpflegung offen laesst" },
       wuensche: { schreibt: ["wuensche", "kriterien", "ausstattungEgal"], setzen: (x) => { x.ausstattungEgal = true; }, satz: "dass du keine besondere Ausstattung voraussetzt" },
@@ -1879,7 +1908,7 @@ const Werkzeugkasten = {
     }
 
     const KERN = ["zeit", "reisende", "kinderAlter", "ziel", "art"];
-    const ECKDATEN = ["dauer", "flug", "flugAb"];
+    const ECKDATEN = ["dauer", "flug", "flugAb", "flugKlasse"];
     // Verpflegung nur bei Hotels - eine Ferienwohnung hat keine
     // Wer gleich eine Auswahl sehen will, bekommt sie - der Anreisetag
     // bleibt trotzdem, ohne ihn laesst die Seite nicht buchen.

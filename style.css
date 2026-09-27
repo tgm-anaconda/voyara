@@ -2059,7 +2059,7 @@ body.agent-open .vorschlag-schirm { left: 380px; }
   transform: translateY(12px); transition: transform .22s ease;
 }
 .vorschlag-schirm.da .vorschlag-fenster { transform: none; }
-.vorschlag-kopf { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; padding: 22px 24px 8px; }
+.vorschlag-kopf { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; padding: 16px 24px 6px; }
 .vorschlag-marke { margin: 0 0 2px; font-size: .74rem; letter-spacing: .08em; text-transform: uppercase; color: var(--brand-700); }
 .vorschlag-kopf h2 { margin: 0; font-size: 1.32rem; }
 .vorschlag-kontext { margin: 6px 0 0; color: var(--ink-500); font-size: .86rem; }
@@ -2118,7 +2118,11 @@ body.agent-open .vorschlag-schirm { left: 380px; }
 .vorschlag-preis { margin-top: auto; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-top: 8px; border-top: 1px solid var(--line); }
 .vorschlag-preis b { display: block; font-size: 1rem; }
 .vorschlag-preis span span, .vorschlag-preis div span { color: var(--ink-500); font-size: .76rem; }
-.vorschlag-fuss { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 14px 24px 20px; flex-wrap: wrap; }
+.vorschlag-fuss { display: flex; align-items: center; justify-content: flex-end; gap: 14px; padding: 10px 24px 16px; flex-wrap: wrap; }
+.vorschlag-kopf-rechts { display: flex; align-items: center; gap: 10px; }
+/* Der Platzhalter haelt nur Platz - seine Hoehe setzt vorschlaege.js nach
+   dem Zeichnen auf die des echten Banners. */
+.vorschlag-banner.platzhalter { background: none; border: 0; padding: 0; margin-bottom: 10px; }
 .vorschlag-hinweis { margin: 0; color: var(--ink-500); font-size: .8rem; }
 body.vorschlag-offen { overflow: hidden; }
 @media (max-width: 900px) {

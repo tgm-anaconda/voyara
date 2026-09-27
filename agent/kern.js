@@ -514,6 +514,12 @@ const Kern = {
      zeigte 1.225 Euro. Deshalb springt der Stand ein. */
   linkZu(id, text) {
     let href = `stay.html?id=${encodeURIComponent(id)}`;
+    // Verpflegung und Zimmer, wie der Agent sie eingestellt hat - sonst
+    // steht auf der Hausseite ein anderer Preis als auf seiner Karte
+    const p0 = this.lauf.profil || {};
+    if (p0.verpflegung) href += `&board=${encodeURIComponent(p0.verpflegung)}`;
+    const zim = (this.lauf.zimmerWahl || {})[id];
+    if (zim) href += `&zimmerart=${encodeURIComponent(zim)}`;
     if (typeof Belegung !== "undefined") href = Belegung.anLink(href);
     if (typeof Reisedaten !== "undefined") href = Reisedaten.anLink(href);
     const p = this.lauf.profil || {};
@@ -1414,7 +1420,7 @@ const Kern = {
       const satz = Politik.vorschlagssatz(k, p);
       let text = istPartner ? `Mein Vorschlag: ${satz}` : `${i + 1}. ${satz}`;
       if (istPartner && this.lauf.offenlegung === "agent") {
-        text += ` Nur zur Info: Für dieses Haus bekommt Voyara eine Provision. Ich halte es trotzdem für die beste Option für euch, weil ${Politik.partnerGruende(k, p)}.`;
+        text += ` Nur zur Info: Für dieses Haus bekommt Voyara eine Provision. Preis, Note und Teilnoten stammen aus denselben Daten wie bei allen anderen.`;
       }
       const etikett = istPartner && this.lauf.offenlegung === "chip" ? "Partner" : null;
       this.lauf.verlauf.push({ rolle: "bot", text, zeit: Date.now(),
@@ -1568,9 +1574,22 @@ const Kern = {
       const pk = aufbereitet.find((k) => k.partner);
       if (pk) this.logZeile(`${pk.item.name}: Partnerhaus von Voyara, bevorzugt gelistet (Provision)`, "hinweis");
     }
-    if (this.lauf.offenlegung === "agent") {
+    /* Die Offenlegung faellt genau einmal.
+       ------------------------------------------------------------------
+       Am 27.09.2026 stand sie fuenfmal hintereinander im Chat, weil sie
+       bei jedem Oeffnen der Ansicht neu kam. Fuer die Erhebung ist das
+       heikel: Wer die Ansicht dreimal aufmacht, bekommt die Offenlegung
+       dreimal - die Manipulation dosiert sich dann selbst, und die
+       Gruppen sind nicht mehr vergleichbar. */
+    if (this.lauf.offenlegung === "agent" && !this.lauf.offenlegungGesagt) {
       const pk = aufbereitet.find((k) => k.partner);
-      if (pk) this.sagen(`Ein Hinweis zu ${pk.item.name}: Für dieses Haus bekommt Voyara eine Provision. Ich halte es trotzdem für die beste Wahl für euch.`);
+      if (pk) {
+        this.lauf.offenlegungGesagt = true;
+        // Kein "deshalb steht es vorn": Das macht die Entscheidung
+        // trivial und misst nur noch, ob jemand den Satz liest. Der
+        // Hinweis informiert, er begruendet die Platzierung nicht.
+        this.sagen(`Ein Hinweis zu ${pk.item.name}: Für dieses Haus bekommt Voyara eine Provision. Preis, Note und Teilnoten stammen aus denselben Daten wie bei allen anderen.`);
+      }
     }
     return aufbereitet.map((k, i) => ({ platz: i + 1, id: k.id, name: k.item.name, gesamt: k.gesamtText, note: k.item.rating }));
   },
@@ -1636,8 +1655,8 @@ const Kern = {
   vorschlaegeMerken() {
     const text = "Deine Auswahl bleibt hier stehen, bis du dich entschieden hast.";
     const aktion = { text: "Die Vorschläge ansehen", vorschlaegeZeigen: true };
-    const letzte = this.lauf.verlauf[this.lauf.verlauf.length - 1];
-    if (letzte?.aktionen?.some((a) => a.vorschlaegeZeigen)) return;
+    // Nur einmal im ganzen Gespraech - der Knopf bleibt ja stehen
+    if (this.lauf.verlauf.some((n) => n.aktionen?.some((a) => a.vorschlaegeZeigen))) return;
     this.lauf.verlauf.push({ rolle: "bot", text, zeit: Date.now(), aktionen: [aktion] });
     AgentPanel.say(text, "bot", { aktionen: [{ text: aktion.text, tun: () => this.vorschlaegeNochmal("knopf") }] });
     this.sichern();

@@ -44,6 +44,24 @@ function readParams() {
     const treffer = item.rooms.findIndex((r) => r.maxGuests >= proZimmer);
     if (treffer > -1) selectedRoom = treffer;
   }
+
+  /* Was der Agent eingestellt hat, bleibt eingestellt.
+     ------------------------------------------------------------------
+     Am 27.09.2026: Der Agent stellt beim Rundgang Halbpension ein, die
+     Vorschlagskarte rechnet damit - und auf der Hausseite stand wieder
+     Fruehstueck. Die Person sieht dann einen anderen Preis als gerade
+     eben und weiss nicht, welcher gilt. Verpflegung und Zimmer wandern
+     deshalb in der Adresse mit. */
+  const board = p.get("board");
+  if (board && !isApartment && item.boards) {
+    const i = item.boards.findIndex((b) => b.key === board);
+    if (i > -1) selectedBoard = i;
+  }
+  const zimmer = p.get("zimmerart");
+  if (zimmer && !isApartment && item.rooms) {
+    const i = item.rooms.findIndex((r) => String(r.name).toLowerCase() === String(zimmer).toLowerCase());
+    if (i > -1) selectedRoom = i;
+  }
 }
 
 function renderHead() {
@@ -198,12 +216,28 @@ function renderRooms() {
 
 // Was wird in den Bewertungstexten eigentlich gelobt und bemaengelt?
 //
-// Das ist die Auswertung, die spaeter der Agent uebernehmen soll: Er liest
-// nicht "4,2 von 5", sondern zaehlt aus, dass das Essen in 2.140 Bewertungen
-// nur in 54 Prozent der Erwaehnungen gelobt wird. Deshalb steht der Block
-// hier schon sichtbar auf der Seite - der Mehrwert des Agenten ist dann, dass
-// er diese Arbeit abnimmt, statt dass der Nutzer sich durchblaettert.
+/* Ausgebaut am 27.09.2026.
+   ------------------------------------------------------------------
+   Der Block stand hier als Vorlage fuer das, was der Agent spaeter
+   uebernehmen sollte. Genau das war der Fehler: Wenn die Auswertung
+   ohnehin auf der Seite steht, ist es sinnlos, dass der Agent die
+   Bewertungen durchgeht - er traegt dann nur ab, was jeder sehen kann.
+   Nutzer am 27.09.: "Dadurch wird dieses Bewertung durchlesen eigentlich
+   voellig irrelevant."
+
+   Jetzt entsteht die Gegenueberstellung nur einmal, naemlich durch den
+   Agenten. Die Hausseite zeigt weiter die Gesamtnote, die Teilnoten der
+   Kategorien und alle Bewertungstexte - was der Agent daraus zaehlt,
+   steht nur bei ihm.
+
+   Bewusste Folge: Die Zahlen des Agenten lassen sich auf der Seite nicht
+   mehr gegenpruefen. Fuer die Untersuchung ist das gewollt, es muss in
+   der Arbeit aber benannt werden. */
 function aspektBlock() {
+  return "";
+}
+
+function aspektBlockAlt() {
   const k = aspektKurzfassung(item);
   if (!k.bilanz.length) return "";
 

@@ -445,10 +445,38 @@ const Werkzeuge = {
     if (typeof aspektKurzfassung !== "function") return this.fehlt("Die Bewertungsauswertung");
 
     const gelesen = [];
+    let durchgesehen = 0;
     const panel = this.finde("#reviewPanel");
     if (panel) {
       const kopf = this.finde(".review-summary", panel);
       if (kopf) await Zeiger.lies(kopf, { dauer: 1000, hinweis: `Gesamtnote und Teilnoten` });
+
+      /* Der schnelle Gang durch die Bewertungen.
+         ----------------------------------------------------------------
+         Nutzer am 27.09.2026: "Es waere cooler, wenn es irgendwie so
+         aussieht, als wuerde er ganz schnell ganz viele Bewertungen
+         scannen." Ueberall sonst arbeitet der Agent langsam und
+         nachvollziehbar - hier schaltet er um, weil kein Mensch 1.132
+         Bewertungen einzeln liest und die Bilanz genau daher kommt.
+
+         Die Zahl ist echt: aspektbilanz rechnet ueber so viele Datensaetze,
+         wie hier hochgezaehlt werden. Das ist die einzige Stelle, an der
+         eine Zahl Eindruck macht - sie darf deshalb nicht erfunden sein. */
+      const menge = Math.min(item.reviewCount || 0, 800);
+      if (menge > 20) {
+        const hoehe = panel.scrollHeight - panel.clientHeight;
+        const schritte = 14;
+        for (let i = 1; i <= schritte; i++) {
+          if (Zeiger.abbruch) break;
+          panel.scrollTop = Math.round((hoehe * i) / schritte);
+          const bisher = Math.round((menge * i) / schritte);
+          Zeiger.beschrifte?.(`${bisher.toLocaleString("de-DE")} von ${menge.toLocaleString("de-DE")} Bewertungen`);
+          await Zeiger.warte(70);
+        }
+        panel.scrollTop = 0;
+        durchgesehen = menge;
+        await Zeiger.warte(180);
+      }
 
       // Bewertungen, die den gefragten Aspekt ueberhaupt erwaehnen. Die
       // Marker unter jeder Bewertung tragen das Label ("+ Essen"), danach
@@ -527,6 +555,7 @@ const Werkzeuge = {
         id: item.id, name: item.name, note: item.rating, anzahl: item.reviewCount,
         gelobt: k.staerken, kritisiert: k.schwaechen, bilanz,
         sichtbarGelesen: panel ? gelesen.length : 0, stimmen: gelesen,
+        durchgesehen: durchgesehen || null,
       },
     };
   },
@@ -545,18 +574,21 @@ const Werkzeuge = {
      gewuenschte Verpflegung. Zimmer und Verpflegung werden wirklich
      gesetzt, nicht nur betrachtet - sie gelten spaeter in der Kasse. */
   async hausPruefen(id, { aspekt = "", verpflegung = null, personenProZimmer = 0 } = {}) {
+    let gewaehltesZimmer = null;
     const item = typeof getItemById === "function" ? getItemById(id) : null;
     if (!item) return { ok: false, text: `${id} kenne ich nicht.` };
     const schritte = [];
 
     const b = await this.bewertungenLesen(id, { aspekt, anzahl: 3 });
-    if (b.daten?.sichtbarGelesen) schritte.push(`${b.daten.sichtbarGelesen} Bewertungen gelesen`);
+    if (b.daten?.durchgesehen) schritte.push(`${b.daten.durchgesehen.toLocaleString("de-DE")} Bewertungen durchgesehen`);
+    else if (b.daten?.sichtbarGelesen) schritte.push(`${b.daten.sichtbarGelesen} Bewertungen gelesen`);
 
     // Zimmer: das erste, in das die Gruppe passt
     if (!Zeiger.abbruch) {
       const zeilen = [...document.querySelectorAll(".room-row")];
       const passend = zeilen.find((z) => !z.classList.contains("zu-klein")) || zeilen[0];
       if (passend) {
+        gewaehltesZimmer = passend.querySelector("h4")?.textContent?.trim() || null;
         await Zeiger.lies(passend, { dauer: 700, hinweis: "Zimmer prüfen" });
         // "Zimmer Zimmer Standard" - die Zimmernamen tragen das Wort oft schon
         const roh = passend.querySelector("h4")?.textContent?.trim() || "";
@@ -584,7 +616,8 @@ const Werkzeuge = {
     }
 
     return { ok: true, text: `${item.name}: ${schritte.join(", ") || "angesehen"}.`,
-      daten: { id, name: item.name, schritte, stimmen: b.daten?.stimmen || [], bilanz: b.daten?.bilanz || [] } };
+      daten: { id, name: item.name, schritte, zimmer: gewaehltesZimmer, durchgesehen: b.daten?.durchgesehen || null,
+        stimmen: b.daten?.stimmen || [], bilanz: b.daten?.bilanz || [] } };
   },
 
   /* Bewertungen mehrerer Treffer sichten, ohne die Liste zu verlassen.
