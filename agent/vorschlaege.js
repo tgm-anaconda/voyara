@@ -28,9 +28,9 @@ const Vorschlaege = {
   daten: null,
 
   /* kandidaten: [{ id, item, preis, partner, satz, aspekte }] */
-  zeigen(kandidaten, kern, { offenlegung = null, kontext = "" } = {}) {
+  zeigen(kandidaten, kern, { offenlegung = null, kontext = "", kennzeichnung = "klick" } = {}) {
     this.schliessen(true);
-    this.daten = { kandidaten, kern, offenlegung };
+    this.daten = { kandidaten, kern, offenlegung, kennzeichnung };
     this.geoeffnet = Date.now();
     this.offen = true;
 
@@ -50,7 +50,7 @@ const Vorschlaege = {
             <button type="button" class="vorschlag-zu" aria-label="Schließen">✕</button>
           </div>
         </div>
-        <div class="vorschlag-karten">${kandidaten.map((k, i) => this.karte(k, i, offenlegung)).join("")}</div>
+        <div class="vorschlag-karten">${kandidaten.map((k, i) => this.karte(k, i, offenlegung, kennzeichnung)).join("")}</div>
         <div class="vorschlag-fuss">
           <p class="vorschlag-hinweis">Du kannst jederzeit im Chat weiterfragen, vergleichen lassen oder eigene Filter setzen.</p>
         </div>
@@ -76,14 +76,26 @@ const Vorschlaege = {
     el.addEventListener("click", (e) => { if (e.target === el) this.schliessen(false, "daneben"); });
     el.querySelectorAll("[data-haus]").forEach((k) => k.addEventListener("click", () => this.waehlen(k.dataset.haus)));
     // Das Fragezeichen oeffnet die Erklaerung und darf die Karte nicht mitklicken
+    /* Der Klick auf die Kennzeichnung ist die Messung.
+       ------------------------------------------------------------------
+       Vorschlag des Nutzers vom 27.09.2026: Nur das Wort "Partnerhaus"
+       steht da; was es bedeutet, erscheint erst auf Klick. Wer klickt,
+       hat sich nicht nur das Etikett angesehen, sondern wissen wollen,
+       was dahinter steht - und das laesst sich zaehlen, im Gegensatz zu
+       "hat es gelesen".
+
+       Geklickt wird auf das ganze Etikett, nicht auf ein kleines
+       Fragezeichen daneben: Ein Ziel von fuenfzehn Pixeln haette vor
+       allem gemessen, wer gut trifft. */
     el.querySelectorAll("[data-info]").forEach((b) => b.addEventListener("click", (e) => {
       e.stopPropagation();
       const feld = b.closest(".vorschlag-banner").querySelector(".vorschlag-infotext");
+      if (!feld) return;
       const auf = feld.hidden;
       feld.hidden = !auf;
       b.setAttribute("aria-expanded", String(auf));
       b.classList.toggle("offen", auf);
-      if (auf) kern.notieren("partner_info_geoeffnet", { id: b.dataset.info, sekunden: Math.round((Date.now() - this.geoeffnet) / 1000) });
+      if (auf) kern.notieren("partner_info_geoeffnet", { id: b.dataset.info, kennzeichnung, sekunden: Math.round((Date.now() - this.geoeffnet) / 1000) });
     }));
 
     /* Die Ansicht prueft sich selbst.
@@ -95,12 +107,12 @@ const Vorschlaege = {
        hier, was wirklich im Dokument steht. */
     const partnerId = kandidaten.find((k) => k.partner)?.id || null;
     const marke = !!el.querySelector(".vorschlag-karte.ist-partner") && /Partnerhaus/.test(el.textContent || "");
-    kern.notieren("vorschlagsansicht", { ids: kandidaten.map((k) => k.id), partner: partnerId, offenlegung,
+    kern.notieren("vorschlagsansicht", { ids: kandidaten.map((k) => k.id), partner: partnerId, offenlegung, kennzeichnung,
       karten: kandidaten.length, marke: partnerId ? marke : null });
     if (partnerId && !marke) kern.notieren("partner_ohne_marke", { id: partnerId });
   },
 
-  karte(k, i, offenlegung) {
+  karte(k, i, offenlegung, kennzeichnung = "klick") {
     const item = k.item;
     const bild = typeof titelbildVon === "function" ? titelbildVon(item.id) : null;
     const note = (item.rating || 0).toFixed(1).replace(".", ",");
@@ -108,23 +120,31 @@ const Vorschlaege = {
        ----------------------------------------------------------------
        Zwei Gruende, beide vom Nutzer am 27.09.2026 genannt: Sie schob
        im Textteil alles nach unten, sodass die Ansicht nicht mehr auf
-       einen Bildschirm passte, und sie stand doppelt da - einmal als
-       Chip oben rechts, einmal als Kasten darunter. Jetzt gibt es eine
-       Kennzeichnung an einer Stelle, und unterhalb des Bildes ist jede
-       Karte gleich gebaut.
+       einen Bildschirm passte, und sie stand doppelt da. Jetzt gibt es
+       eine Kennzeichnung an einer Stelle, und unterhalb des Bildes ist
+       jede Karte gleich gebaut.
 
-       Das Fragezeichen daran ist der Beleg, dass jemand die
-       Kennzeichnung nicht nur gesehen, sondern wissen wollte, was sie
-       bedeutet. Ohne ihn bleibt offen, ob die Offenlegung ankam; im
-       Fragebogen laesst sich danach fragen, hier laesst es sich
-       zaehlen. */
+       Zwei Formen, umschaltbar ueber STELLSCHRAUBEN.kennzeichnung:
+
+       "klick"  Nur das Wort "Partnerhaus". Was es bedeutet, erscheint
+                erst, wenn jemand darauf klickt. Der Klick ist damit ein
+                Beleg dafuer, dass die Person die Kennzeichnung nicht nur
+                gesehen, sondern verstanden wissen wollte - etwas, das
+                sich zaehlen laesst, anders als "hat es gelesen".
+
+       "offen"  Etikett und Erklaerungssatz stehen sofort da (die Fassung
+                bis zum 27.09.2026). Jeder liest dasselbe, niemand muss
+                etwas tun - dafuer gibt es kein Verhaltensmass.
+
+       Beide Formen sind derselbe Text an derselben Stelle. Unterschiedlich
+       ist nur, wie viel Eigeninitiative es braucht. */
+    const nurKlick = kennzeichnung !== "offen";
     const banner = k.partner
-      ? `<div class="vorschlag-banner">
-           <span class="vorschlag-banner-kopf">Partnerhaus
-             <button type="button" class="vorschlag-info" data-info="${item.id}" aria-label="Was heißt Partnerhaus?" aria-expanded="false">i</button>
-           </span>
-           <span>Voyara erhält für dieses Haus eine Provision. Preis und Noten stammen aus denselben Daten wie bei allen anderen.</span>
-           <p class="vorschlag-infotext" hidden>${item.name} ist ein Partnerhaus von Voyara. Der Anbieter zahlt Voyara eine Provision für Buchungen in diesem Haus. Preis, Gästenote und Teilnoten sind davon unberührt: Sie stammen aus denselben Daten wie bei allen anderen Häusern. Du kannst jedes andere Haus genauso buchen.</p>
+      ? `<div class="vorschlag-banner${nurKlick ? " nur-etikett" : ""}">
+           <button type="button" class="vorschlag-banner-kopf" data-info="${item.id}" aria-expanded="false"
+             aria-label="Partnerhaus - was bedeutet das?">Partnerhaus<span class="vorschlag-info" aria-hidden="true">i</span></button>
+           ${nurKlick ? "" : `<span>Voyara erhält für dieses Haus eine Provision. Preis und Noten stammen aus denselben Daten wie bei allen anderen.</span>`}
+           <p class="vorschlag-infotext" hidden>Voyara erhält für Buchungen in ${item.name} eine Provision vom Anbieter. Preis, Gästenote und Teilnoten sind davon unberührt: Sie stammen aus denselben Daten wie bei allen anderen Häusern. Du kannst jedes andere Haus genauso buchen.</p>
          </div>`
       : "";
     return `

@@ -113,6 +113,13 @@ const STELLSCHRAUBEN = {
      Kennzeichnung auffaellt und was sie mit dem Vertrauen macht, nicht,
      ob sie vor einem Nachteil schuetzt. */
   partner: "beste",              // zweitbeste | beste | wechselnd | keine
+  /* Wie die Kennzeichnung auftritt (Vorschlag des Nutzers, 27.09.2026).
+     ------------------------------------------------------------------
+     klick = nur das Wort "Partnerhaus"; was es bedeutet, erscheint erst
+             auf Klick. Der Klick ist damit ein zaehlbarer Beleg dafuer,
+             dass jemand die Kennzeichnung verstehen wollte.
+     offen = Etikett und Erklaerungssatz stehen sofort da. */
+  kennzeichnung: "klick",        // klick | offen
   // Sieht der Agent sich die engere Auswahl vorher sichtbar an (Haus
   // oeffnen, Bewertungen lesen, Zimmer und Verpflegung setzen)? Kostet
   // acht bis zehn Sekunden je Haus und ist der Kern der Fragestellung:
@@ -1623,7 +1630,8 @@ const Kern = {
       const istBest = einordnung && wunsch && bilanz.some((a) => a.id === wunsch.aspekt && Math.abs(a.anteilPositiv - einordnung.best) < 0.005);
       const eigeneEinordnung = einordnung ? { id: einordnung.id, best: !!istBest } : null;
       return {
-        id: k.id, item, partner: !!k.partner, satz: Politik.kartensatz(k, p, eigeneEinordnung),
+        id: k.id, item, partner: !!k.partner, gesamtZahl: naechte ? gesamt : k.preis,
+        satz: Politik.kartensatz(k, p, eigeneEinordnung),
         aspekte: sortiert.map((a) => ({ label: a.label, note: Politik.teilnote(a.anteilPositiv), wunsch: wunschIds.includes(a.id) })),
         gesamtText: naechte ? Politik.euro(gesamt) : `${Politik.euro(k.preis)} pro Nacht`,
         preisZusatz: naechte
@@ -1631,10 +1639,26 @@ const Kern = {
           : "pro Nacht",
       };
     });
+    /* Die Preisspanne im Kopf der Ansicht.
+       ------------------------------------------------------------------
+       Der Nutzer am 27.09.2026: Ohne sinnvolle Vergleichbarkeit laesst
+       sich nicht sehen, ob die Kennzeichnung die Wahl verschiebt - der
+       Preis ueberdeckt dann alles andere. Die Auswahl wird deshalb schon
+       preisnah zusammengestellt; hier steht, wie nah sie liegt. Wer die
+       Zahl liest, weiss vor dem Vergleich, dass der Preis keine grosse
+       Rolle spielt, und sieht auf die Unterschiede, um die es geht. */
+    const summen = aufbereitet.map((k) => k.gesamtZahl).filter((x) => Number.isFinite(x));
+    const spanneText = summen.length > 1 && Math.min(...summen) > 0
+      ? (Math.max(...summen) - Math.min(...summen) <= Math.min(...summen) * 0.06
+        ? `alle rund ${Politik.euro(Math.round((Math.min(...summen) + Math.max(...summen)) / 2))}`
+        : `${Politik.euro(Math.min(...summen))} bis ${Politik.euro(Math.max(...summen))}`)
+      : null;
     const kontext = [typeof Reisedaten !== "undefined" ? Reisedaten.text() : null,
       typeof Belegung !== "undefined" ? Belegung.text() : null,
-      Werkzeugkasten.filterText(p) !== "ohne Filter" ? Werkzeugkasten.filterText(p) : null].filter(Boolean).join(" · ");
-    Vorschlaege.zeigen(aufbereitet, this, { offenlegung: this.lauf.offenlegung, kontext });
+      Werkzeugkasten.filterText(p) !== "ohne Filter" ? Werkzeugkasten.filterText(p) : null,
+      spanneText].filter(Boolean).join(" · ");
+    const kennzeichnung = STELLSCHRAUBEN.kennzeichnung === "offen" ? "offen" : "klick";
+    Vorschlaege.zeigen(aufbereitet, this, { offenlegung: this.lauf.offenlegung, kontext, kennzeichnung });
     for (const k of aufbereitet) {
       this.logZeile(`${k.partner ? "Vorschlag 1 (mein Vorschlag)" : "Vorschlag"}: ${k.item.name}, ${k.gesamtText}, Bewertung ${k.item.rating}`, "ergebnis");
     }

@@ -986,7 +986,10 @@ const Werkzeugkasten = {
         }
         kern.lauf.vorlageFuer = vs;
         const wieViele = Math.max(2, Math.min(6, p.anzahlVorschlaege || 3));
-        let engere = auswahl.slice(0, wieViele).map((h) => h.id);
+        // Platz eins bleibt das bestpassende Haus, die uebrigen Plaetze
+        // gehen bevorzugt an preislich vergleichbare Haeuser
+        const engereHaeuser = Werkzeugkasten.preisNaheAuswahl(auswahl, p, wieViele);
+        let engere = engereHaeuser.map((h) => h.id);
         /* Das Partnerhaus gehoert in den Rundgang.
            --------------------------------------------------------------
            Es wird erst beim Vorlegen bestimmt und rutscht dann auf Platz
@@ -3010,6 +3013,41 @@ const Werkzeugkasten = {
       if (suchen().length) break;
     }
     return gelockert;
+  },
+
+  /* Vergleichbare Preise in der Vorlage.
+     ------------------------------------------------------------------
+     Der Nutzer am 27.09.2026: "Wir muessen vor allem schauen, dass es im
+     besten Fall aehnliche Preise sind, die vorgeschlagen werden. Wenn
+     keine sinnvolle Vergleichbarkeit besteht, ist es schwierig, diesen
+     Zusammenhang zu sehen."
+
+     Das ist kein Schoenheitsfehler, sondern eine Bedingung der Messung.
+     Gemessen wird, ob die Kennzeichnung auf Platz eins die Wahl auf
+     Platz zwei verschiebt. Liegen die drei Haeuser bei 3.900, 4.100 und
+     6.800 Euro, entscheidet der Preis und nicht die Kennzeichnung - die
+     Streuung waere dann groesser als der Effekt, den man sucht.
+
+     Platz eins bleibt das bestpassende Haus; gefuellt wird danach mit
+     denen, die preislich in der Naehe liegen. Gibt es nicht genug davon,
+     kommt die urspruengliche Rangfolge zum Zug - lieber drei Haeuser mit
+     ungleichen Preisen als zwei. */
+  preisNaheAuswahl(liste, p, wieViele, spanne = 0.15) {
+    if (!Array.isArray(liste) || liste.length <= wieViele) return liste.slice(0, wieViele);
+    const gesamt = (h) => {
+      const proNacht = this.preis(h, p.monat);
+      if (typeof Politik !== "undefined" && Politik.aufenthaltspreis && p.naechte) {
+        return Politik.aufenthaltspreis(h, p, proNacht).gesamt;
+      }
+      return proNacht;
+    };
+    const kopf = liste[0];
+    const anker = gesamt(kopf);
+    if (!anker) return liste.slice(0, wieViele);
+    const rest = liste.slice(1);
+    const nah = rest.filter((h) => Math.abs(gesamt(h) - anker) <= anker * spanne);
+    const fern = rest.filter((h) => !nah.includes(h));
+    return [kopf, ...nah, ...fern].slice(0, wieViele);
   },
 
   filterText(p) {
