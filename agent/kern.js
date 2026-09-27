@@ -1764,7 +1764,15 @@ const Kern = {
       + "(viele|wenige|kaum|einige|zahlreiche|reichlich|begrenzt|knapp|gross|groß|klein|breit|eingeschr(ä|ae)nkt|ueberschaubar|übersichtlich|genug|ausreichend|frei|verf(ü|ue)gbar|ausgebucht)",
     "(viele|wenige|kaum|einige|zahlreiche|genug|ausreichend|begrenzt)[^.!?]{0,40}"
       + "(hotels?|h(ä|ae)user|ferienwohnungen?|unterk(ü|ue)nfte?|objekte?|zimmer)",
-    "\\bes gibt\\b[^.!?]{0,40}(hotels?|h(ä|ae)user|ferienwohnungen?|unterk(ü|ue)nfte?|auswahl)",
+    /* Beide Wortstellungen.
+       ------------------------------------------------------------------
+       Hier stand nur "es gibt". Am 27.09.2026 rutschte deshalb der Satz
+       "Im Sommer gibt es insgesamt 184 buchbare Unterkuenfte" durch die
+       Pruefung - im Deutschen dreht sich das Verb um, sobald etwas
+       anderes vorn steht, und genau so faengt der Agent seine Saetze an.
+       Dazu die Formen, die dasselbe ohne "geben" sagen. */
+    "\\b(es gibt|gibt es|haben wir|wir haben|stehen|steht|sind)\\b[^.!?]{0,45}"
+      + "(hotels?|h(ä|ae)user|ferienwohnungen?|unterk(ü|ue)nfte?|objekte?|auswahl|zur wahl|zur verf(ü|ue)gung)",
     // was es kostet
     "(preise?|kostet|kosten|preisniveau|preislich)[^.!?]{0,50}"
       + "(g(ü|ue)nstig|teuer|preiswert|moderat|bezahlbar|hochpreisig|niedrig|hoch|fair|schnäppchen|erschwinglich)",

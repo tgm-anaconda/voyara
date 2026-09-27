@@ -69,6 +69,16 @@ const Werkzeugkasten = {
             description: "Was die letzte Nachricht der Person war. antwort = sie beantwortet die gestellte Frage (auch teilweise oder mit Zusatz). anweisung = sie sagt dir, was du tun sollst ('nimm das erste', 'buch das', 'zeig mir die Auswahl nochmal'). frage = sie will etwas von dir wissen. einwand = sie widerspricht, korrigiert oder lehnt etwas ab. unklar = sie versteht die Frage nicht oder fragt zurueck, was gemeint ist. sonstiges = passt in keines der Felder. Immer angeben." },
           ziel: text("Region aus dem Katalog, als id: mallorca, kreta, algarve, sardinien, teneriffa, barcelona, wien, lissabon, tirol, suedtirol, lappland, ostsee, marrakesch, kapstadt, krabi, island, newyork, kyoto. NUR, wenn die Person die Region selbst genannt hat - sonst leer lassen. Eine Region, die du fuer passend haeltst, gehoert nicht hierher: Dafuer gibt es regionen_vergleichen, und die Person entscheidet."),
           monat: zahl("Reisemonat 1-12. Ein Monat allein heisst: flexibel im Monat, ohne festes Datum."),
+          /* Die Person gibt die Wahl ab - in beliebigen Worten.
+             ----------------------------------------------------------
+             Am 27.09.2026 sagte jemand "gerne in dem Monat, wo ich die
+             meisten Moeglichkeiten fuer guenstige Hotels habe". Der Kern
+             erkannte das nicht (er suchte nach "egal" und aehnlichem) und
+             stellte dieselbe Frage noch einmal. Ob ein Satz die Wahl
+             abgibt, ist eine Bedeutungsfrage - also Sache des Modells.
+             Was daraus folgt, ist Sache des Kerns: Er vergleicht die
+             Monate sichtbar und begruendet seine Wahl. */
+          monatUeberlassen: { type: "boolean", description: "true, wenn die Person dir die Wahl des Monats ueberlaesst - egal in welchen Worten ('egal', 'such du aus', 'der guenstigste', 'wo am meisten frei ist', 'wo ich die meisten Moeglichkeiten habe'). Setz monat dann NICHT selbst." },
           von: text("Anreise als YYYY-MM-DD - nur, wenn die Person einen Tag nennt ('vom 12. bis 26.'). Aus 'im Oktober' wird kein Datum."),
           bis: text("Abreise als YYYY-MM-DD - nur bei genannten Tagen"),
           anreise: text("Anreisetag als YYYY-MM-DD, wenn die Person ihn fuer die Buchung nennt (bei flexibler Suche)"),
@@ -268,6 +278,31 @@ const Werkzeugkasten = {
        vervollstaendigen); danach wird nicht mehr gesucht, solange der
        Fahrplan eine offene Frage hat. Eine Frage der Person geht weiter
        vor - fragt sie nach dem Angebot, darf gesucht werden. */
+    /* Auch die erste Suche braucht einen Boden.
+       ------------------------------------------------------------------
+       Am 27.09.2026: Auf "gerne in dem Monat, wo ich die meisten
+       Moeglichkeiten fuer guenstige Hotels habe" suchte der Agent
+       sofort - ohne Monat, ohne Reisende, ohne Richtung. Heraus kamen
+       184 Haeuser, also schlicht der ganze Katalog, und er nannte die
+       Zahl, als waere sie eine Auskunft. Der Nutzer: "Er hat nicht
+       recherchiert, sondern einfach die 184 wiedergegeben."
+
+       Die Pruefung darunter galt nur fuer spaetere Suchen (sie verlangte
+       `gesuchtMit`). Die erste war frei - und gerade die ist die
+       gefaehrlichste, weil noch gar nichts feststeht. Gesucht wird jetzt
+       fruehestens, wenn Zeit, Reisende und Kinderalter stehen; das ist
+       dieselbe Schwelle, ab der auch der Fahrplan von selbst sucht. */
+    if (name === "suchen" && stufe === 1 && !kern.lauf.gesuchtMit) {
+      const fpJetzt = this.fahrplan(kern.lauf.profil || {}, kern.lauf);
+      const letzte = [...(kern.lauf.gespraech || [])].reverse().find((n) => n.role === "user")?.content || "";
+      const fragtSelbst = /\?/.test(String(letzte)) || /^(habt|gibt|wie viele|was|welche|zeig)/i.test(String(letzte).trim());
+      if (!fpJetzt.suchbereit && !fragtSelbst) {
+        kern.notieren("suche_ohne_grundlage", { fehlt: fpJetzt.naechstes });
+        return { ergebnis: { nichtGesucht: "Dafuer steht noch zu wenig fest.",
+          hinweis: "Such jetzt nicht. Ohne Monat, Reisende und Richtung kommt der ganze Katalog heraus, und jede Zahl daraus waere ohne Bedeutung. Stell erst die offene Frage; gesucht wird, sobald Zeit, Reisende und Kinderalter stehen.",
+          ...this.fahrplanFuerModell(fpJetzt, kern.lauf.profil || {}, kern.lauf) } };
+      }
+    }
     if (name === "suchen" && stufe === 1 && kern.lauf.gesuchtMit) {
       const fpJetzt = this.fahrplan(kern.lauf.profil || {}, kern.lauf);
       const letzte = [...(kern.lauf.gespraech || [])].reverse().find((n) => n.role === "user")?.content || "";
@@ -499,8 +534,19 @@ const Werkzeugkasten = {
            die Person selbst einen Monat genannt, bleibt der stehen - dann
            greift die Regel nicht. */
         const monatGenannt = gesagt(/januar|februar|märz|maerz|april|\bmai\b|juni|juli|august|september|oktober|november|dezember|\bjan\b|\bfeb\b|\bokt\b|\bnov\b|\bdez\b|ostern|pfingsten|weihnachten|silvester/i, 1);
-        const abgegeben = gesagt(/egal|gleich|such du|suchst du|du entscheid|dein vorschlag|nimm du|nimm einfach|weißt du|weisst du|was (du )?meinst|keine ahnung|weiß nicht|weiss nicht|wie du meinst|aussuchen|überlass|ueberlass/i, 1);
-        if (jz && abgegeben && !monatGenannt && !p.vonPerson?.monat) {
+        // Das Modell urteilt, das Muster faengt auf, was es uebersieht
+        const abgegeben = a.monatUeberlassen === true
+          || gesagt(/egal|gleich|such du|suchst du|du entscheid|dein vorschlag|nimm du|nimm einfach|weißt du|weisst du|was (du )?meinst|keine ahnung|weiß nicht|weiss nicht|wie du meinst|aussuchen|überlass|ueberlass|meisten|g[üu]nstigst|billigst|besten preis|beste[nr]? monat|am wenigsten|wo.*(frei|verf[üu]gbar|auswahl|m[öo]glichkeit)/i, 1);
+        /* Ohne genannte Jahreszeit die naechsten vier Monate.
+           --------------------------------------------------------------
+           "Such du den guenstigsten Monat aus" ohne weitere Angabe waere
+           sonst eine Sackgasse: kein Kandidatenfeld, also keine Wahl, also
+           dieselbe Frage noch einmal. Vier Monate ab dem naechsten sind
+           ein Zeitraum, den man ueberblickt, und decken jede Jahreszeit
+           mindestens zur Haelfte ab. */
+        const naechste4 = () => Array.from({ length: 4 }, (_, i) => ((new Date().getMonth() + 1 + i) % 12) + 1);
+        const kandidatenMonate = jz ? jz.monate : naechste4();
+        if (abgegeben && !monatGenannt && !p.vonPerson?.monat) {
           /* Sichtbar vergleichen, wenn er die Seite bedienen darf.
              ------------------------------------------------------------
              Der Kern koennte das Ergebnis in einer Millisekunde aus dem
@@ -515,17 +561,17 @@ const Werkzeugkasten = {
           if (kern.darf("suchen") && STELLSCHRAUBEN.monatsvergleich !== false) {
             // Vorlaeufig der erste Monat, damit ueberhaupt gesucht werden
             // kann. Der Vergleich laeuft danach und entscheidet endgueltig.
-            if (!p.monat) { p.monat = jz.monate[0]; kern.standAnzeigen(); }
-            kern.lauf.monatsvergleich = { monate: jz.monate.slice(), entscheiden: true };
-            kern.notieren("monatsvergleich_angesetzt", { jahreszeit: jz.name, monate: jz.monate });
+            if (!p.monat) { p.monat = kandidatenMonate[0]; kern.standAnzeigen(); }
+            kern.lauf.monatsvergleich = { monate: kandidatenMonate.slice(), entscheiden: true };
+            kern.notieren("monatsvergleich_angesetzt", { jahreszeit: jz?.name || null, monate: kandidatenMonate });
           } else {
-            const w = Werkzeugkasten.monatWaehlen(p, jz.monate);
+            const w = Werkzeugkasten.monatWaehlen(p, kandidatenMonate);
             // Nicht ueber setze(): Der Monat kommt vom Kern, nicht von der
             // Person - in vonPerson hat er nichts zu suchen.
             if (w && p.monat !== w.monat) { p.monat = w.monat; kern.standAnzeigen(); }
             if (w) {
               Werkzeugkasten.ableiten(kern, "monat", w.satz);
-              kern.notieren("monat_abgeleitet", { jahreszeit: jz.name, monat: w.monat, haeuser: w.anzahl, schnitt: w.schnitt });
+              kern.notieren("monat_abgeleitet", { jahreszeit: jz?.name || null, monat: w.monat, haeuser: w.anzahl, schnitt: w.schnitt });
             }
           }
         }
@@ -2453,6 +2499,24 @@ const Werkzeugkasten = {
        jederzeit widersprechen, und der Stand in der Leiste zeigt, was
        angenommen wurde. */
     const ANNAHME = {
+      /* Auch der Monat wird irgendwann angenommen.
+         ----------------------------------------------------------------
+         Er fehlte hier, und deshalb konnte die Zeitfrage endlos
+         wiederkommen: Fuer jedes andere Thema greift nach zwei
+         vergeblichen Anlaeufen eine Annahme, fuer den Monat nicht. Am
+         27.09.2026 stand er dreimal im Chat, beim dritten Mal Wort fuer
+         Wort wie beim zweiten.
+
+         Angenommen wird nicht blind der naechste Monat, sondern der aus
+         `monatWaehlen` - dieselbe Rechnung, die auch der sichtbare
+         Vergleich benutzt. Nur eben still, weil es hier nicht um eine
+         abgegebene Wahl geht, sondern darum, dass keine Antwort kam. */
+      zeit: { schreibt: ["monat", "von", "bis"], setzen: (x, wk) => {
+        const jz = wk.jahreszeitGenannt?.(lauf);
+        const monate = jz ? jz.monate : null;
+        const w = monate ? wk.monatWaehlen(x, monate) : null;
+        x.monat = w ? w.monat : (new Date().getMonth() + 2 > 12 ? 1 : new Date().getMonth() + 2);
+      }, satz: "mit welchem Monat du rechnest und dass sie ihn jederzeit aendern kann" },
       weiter: { schreibt: ["weiter"], setzen: (x) => { x.weiter = "schauen"; } },
       beratung: { schreibt: ["beratung"], setzen: (x) => { x.beratung = "auswahl"; } },
       vorgehen: { schreibt: ["vorgehen"], setzen: (x) => { x.vorgehen = "top3"; } },
