@@ -353,12 +353,30 @@ const Werkzeugkasten = {
   /* ==================================================================
      Hilfsmittel
      ================================================================== */
+  /* Welcher Reiter zu dem passt, was die Person gesagt hat.
+     ------------------------------------------------------------------
+     Seit dem 28.09.2026 gibt es "Unterkuenfte" - Hotels und
+     Ferienwohnungen zusammen. Das ist der Reiter fuer alle, die sich
+     nicht festgelegt haben, und damit der Normalfall zu Beginn eines
+     Gespraechs. Vorher wich der Agent still auf Hotels aus und suchte
+     damit in der Haelfte des Angebots, ohne es zu sagen. */
+  seitenTyp(p) {
+    return p?.typ === "apartment" ? "apartment" : (p?.typ === "hotel" ? "hotel" : "unterkunft");
+  },
+
+  // Wie der Agent die Art nennt, wenn er darueber spricht
+  artWort(p, mehrzahl = true) {
+    if (p?.typ === "apartment") return mehrzahl ? "Ferienwohnungen" : "eine Ferienwohnung";
+    if (p?.typ === "hotel") return mehrzahl ? "Hotels" : "ein Hotel";
+    return mehrzahl ? "Unterkünfte" : "eine Unterkunft";
+  },
+
   // Dieselbe Belegung wie in der Trefferliste - der Agent darf kein Haus
   // nennen, das dort im gewaehlten Monat gar nicht steht.
   katalog(profil) {
-    const alle = profil?.typ === "apartment"
-      ? (typeof APARTMENTS !== "undefined" ? APARTMENTS : [])
-      : (typeof HOTELS !== "undefined" ? HOTELS : []);
+    const H = typeof HOTELS !== "undefined" ? HOTELS : [];
+    const W = typeof APARTMENTS !== "undefined" ? APARTMENTS : [];
+    const alle = profil?.typ === "apartment" ? W : (profil?.typ === "hotel" ? H : [...H, ...W]);
     if (!profil?.monat || typeof freiImMonat !== "function") return alle;
     return alle.filter((h) => freiImMonat(h, profil.monat));
   },
@@ -668,7 +686,13 @@ const Werkzeugkasten = {
       if (p.kinder === 0) p.kinderAlter = [];
       if (p.kinder > 0 && (p.kinderAlter || []).length > p.kinder) p.kinderAlter = p.kinderAlter.slice(0, p.kinder);
       if (a.typ) { setze("typ", a.typ); p.artGenannt = true; p.artEgal = false; }
-      if (a.artEgal !== undefined && !p.artGenannt) { setze("artEgal", !!a.artEgal); if (p.artEgal && !p.typ) p.typ = "hotel"; }
+      /* "Ist mir egal" hiess bisher "dann Hotels".
+         ----------------------------------------------------------------
+         Hier stand `if (p.artEgal && !p.typ) p.typ = "hotel"` - der Agent
+         suchte also in der Haelfte des Angebots weiter und sagte nichts
+         dazu. Seit es den gemeinsamen Reiter gibt, bleibt typ leer und
+         beides steht nebeneinander. */
+      if (a.artEgal !== undefined && !p.artGenannt) { setze("artEgal", !!a.artEgal); if (p.artEgal) delete p.typ; }
       setze("zimmer", a.zimmer);
       // Geld gilt so, wie die Person es gesagt hat.
       // ------------------------------------------------------------------
@@ -1185,7 +1209,7 @@ const Werkzeugkasten = {
         const wohin = p.zielId && typeof ZIEL_NACH_ID !== "undefined" ? `in ${ZIEL_NACH_ID[p.zielId]?.name}`
           : p.richtung === "warm" ? "in den warmen Regionen" : p.richtung === "kalt" ? "in den kalten Regionen" : "";
         const wann = p.monat && typeof MONATSNAMEN !== "undefined" ? `im ${MONATSNAMEN[p.monat - 1]}` : "";
-        const art = p.typ === "apartment" ? "Ferienwohnungen" : "Häuser";
+        const art = Werkzeugkasten.artWort(p, true);
         kern.sagen(`Ich sehe erst mal nach, wie viele ${art} es ${[wohin, wann].filter(Boolean).join(" ")} überhaupt gibt und was frei ist.`.replace(/\s+/g, " "));
         kern.notieren("recherche_angesagt", { ziel: p.zielId || p.richtung || null, monat: p.monat || null });
       }
@@ -1196,7 +1220,7 @@ const Werkzeugkasten = {
         if (Werkzeuge.seite() !== "results") return false;
         const q = new URLSearchParams(location.search);
         const alter = (p.kinderAlter || []).join(",");
-        return (q.get("type") || "hotel") === (p.typ || "hotel")
+        return (q.get("type") || "hotel") === Werkzeugkasten.seitenTyp(p)
           && (q.get("q") || "") === (zielName || "")
           && (fest ? (q.get("from") === zeitraum.von && q.get("to") === zeitraum.bis)
                    : (q.get("flex") === "1" && q.get("monat") === flex.monat && +q.get("nights") === +flex.naechte))
@@ -1205,7 +1229,7 @@ const Werkzeugkasten = {
           && (p.flug == null || (q.get("flight") || "0") === (p.flug ? "1" : "0"))
           && (!p.flug || !p.flugAb || (q.get("ab") || "") === (typeof Flug !== "undefined" ? Flug.code(p.flugAb) : ""));
       };
-      const maskeText = () => [zielName, p.typ === "apartment" ? "Ferienwohnung" : "Hotel",
+      const maskeText = () => [zielName, Werkzeugkasten.artWort(p, false).replace(/^eine? /, ""),
         fest ? `${zeitraum.von} bis ${zeitraum.bis}` : `${flex.monat}, ${flex.naechte} Nächte, Datum offen`,
         `${p.erwachsene} Erw.`, p.kinder ? `${p.kinder} ${p.kinder === 1 ? "Kind" : "Kinder"} (${(p.kinderAlter || []).join(", ")} J.)` : null,
         p.flug ? `mit Flug${p.flugAb ? ` ab ${p.flugAb}` : ""}` : null].filter(Boolean).join(", ");
@@ -1215,7 +1239,7 @@ const Werkzeugkasten = {
         // Die Art (Hotel oder Ferienwohnung) laesst sich nur auf der
         // Startseite umstellen - auf der Trefferliste sind die Reiter
         // ausgeblendet, und ein Klick darauf ging ins Leere (0/0)
-        const artFalsch = seite === "results" && (new URLSearchParams(location.search).get("type") || "hotel") !== (p.typ || "hotel");
+        const artFalsch = seite === "results" && (new URLSearchParams(location.search).get("type") || "hotel") !== Werkzeugkasten.seitenTyp(p);
         if (!Werkzeuge.hatSuchmaske() || artFalsch) {
           await Werkzeuge.zurStartseite();
           return { navigiert: true, stufe: 1 };
@@ -1226,7 +1250,7 @@ const Werkzeugkasten = {
           kern.sperreAn();
           const flug = p.flug != null ? { mit: !!p.flug, ab: typeof Flug !== "undefined" ? Flug.code(p.flugAb) : "", klasse: p.flugKlasse || "economy" } : null;
           if (flug && typeof Flug !== "undefined") Flug.set(flug);
-          const e = await Werkzeuge.suchen({ typ: p.typ || "hotel", ziel: zielName || "", von: zeitraum.von, bis: zeitraum.bis,
+          const e = await Werkzeuge.suchen({ typ: Werkzeugkasten.seitenTyp(p), ziel: zielName || "", von: zeitraum.von, bis: zeitraum.bis,
             erwachsene: p.erwachsene, kinder: p.kinder, kinderAlter: p.kinderAlter || null, flug, flex });
           if (!e.ok) { kern.sperreAus(); return { ergebnis: { fehler: e.text } }; }
           kern.logZeile(`Suchmaske gesetzt: ${maskeText()}`, "ergebnis");
@@ -2097,9 +2121,9 @@ const Werkzeugkasten = {
 
     art: {
 
-      erklaerung: "Im Hotel gibt es Service und Verpflegung, in einer Ferienwohnung mehr Platz und eine Küche. Danach richtet sich, wo ich suche.",      satz: ["Soll es ein Hotel werden oder lieber eine Ferienwohnung?",
+      erklaerung: "Im Hotel gibt es Service und Verpflegung, in einer Ferienwohnung mehr Platz und eine Küche. Danach richtet sich, wo ich suche.",      satz: ["Soll es ein Hotel werden, eine Ferienwohnung, oder darf ich dir beides zusammen zeigen?",
         "Hotel oder Ferienwohnung - oder ist dir das offen?"],
-      frage: "Ob sie eher ins Hotel oder in eine Ferienwohnung will, oder ob das offen ist (artEgal true).", chips: "Hotel | Ferienwohnung | Noch offen" },
+      frage: "Ob sie eher ins Hotel oder in eine Ferienwohnung will, oder ob das offen ist (artEgal true - dann sucht der Agent unter beidem zugleich).", chips: "Hotel | Ferienwohnung | Beides zeigen" },
 
     /* "Soll ich schon mal suchen" beschrieb das Falsche: Der Agent sucht
        an dieser Stelle keine Haeuser aus, er richtet die Liste ein und die
@@ -2453,7 +2477,7 @@ const Werkzeugkasten = {
   // Schluessel der Eckdaten - aendert er sich, muss neu gesucht werden
   eckdatenSchluessel(p) {
     return JSON.stringify([p.zielId || null, p.richtung || null, p.monat || null, p.von || null, p.bis || null, p.naechte || null,
-      p.erwachsene ?? null, p.kinder ?? null, p.kinderAlter || [], p.typ || "hotel", p.flug ?? null, p.flugAb || null, p.flugKlasse || null]);
+      p.erwachsene ?? null, p.kinder ?? null, p.kinderAlter || [], this.seitenTyp(p), p.flug ?? null, p.flugAb || null, p.flugKlasse || null]);
   },
 
   // Schluessel der Vorgaben fuer eine Vorlage - gleiche Vorgaben, keine
@@ -2476,8 +2500,11 @@ const Werkzeugkasten = {
      einen zweiten Schluessel fuer genau die Felder, die in der Spalte
      landen - aendert sich einer, stimmt die Seite nicht mehr. */
   filterSchluessel(p) {
+    // Die Himmelsrichtung gehoert dazu, seit sich mehrere Regionen
+    // gleichzeitig anhaken lassen - sie steht dann in der Spalte
     return JSON.stringify([p.maxPreis || null, p.maxStrand ?? null, p.mindestbewertung || null, p.mindestSterne || null,
-      (p.kriterien || []).map((k) => k.id), p.ausstattung || [], p.verpflegung || null, p.nurAngebote || false, p.zielId || null]);
+      (p.kriterien || []).map((k) => k.id), p.ausstattung || [], p.verpflegung || null, p.nurAngebote || false,
+      p.zielId || null, (p.zieleErlaubt || []).slice().sort()]);
   },
 
   /* Der Fahrplan (Fassung 3, 20.09.2026 nachts, nach dem dritten Gespraech
@@ -2592,7 +2619,13 @@ const Werkzeugkasten = {
       beratung: { schreibt: ["beratung"], setzen: (x) => { x.beratung = "auswahl"; } },
       vorgehen: { schreibt: ["vorgehen"], setzen: (x) => { x.vorgehen = "top3"; } },
       ziel: { schreibt: ["zielId", "richtung", "zielOffen"], setzen: (x) => { x.zielOffen = true; } },
-      art: { schreibt: ["typ"], setzen: (x) => { x.typ = x.typ || "hotel"; x.artGenannt = true; }, satz: "dass du bei den Hotels schaust" },
+      /* Offen heisst offen.
+         ----------------------------------------------------------------
+         Hier stand `x.typ = "hotel"` - kam zweimal keine Antwort, suchte
+         der Agent still in der Haelfte des Angebots weiter. Seit es den
+         gemeinsamen Reiter gibt, ist das nicht mehr noetig. */
+      art: { schreibt: ["typ", "artEgal"], setzen: (x) => { x.artEgal = true; delete x.typ; },
+        satz: "dass du dich bei Hotel oder Ferienwohnung nicht festlegst und beides zeigst" },
       dauer: { schreibt: ["naechte"], setzen: (x) => { x.naechte = 7; }, satz: "dass du mit einer Woche rechnest" },
       flug: { schreibt: ["flug"], setzen: (x) => { x.flug = false; }, satz: "dass du ohne Flug suchst, nur die Unterkunft" },
       // Schreibt NUR den Flughafen. Den Flug selbst abzuwaehlen, weil der
@@ -2678,7 +2711,18 @@ const Werkzeugkasten = {
        Nennt die Person zwischen Lage und Vorgehensfrage noch einen
        Filter ("am liebsten eins im Angebot"), ist die Spalte veraltet.
        Dann wird erst gesucht und danach gefragt. */
-    else if (lauf.gefiltertMit && lauf.gefiltertMit !== this.filterSchluessel(p)) phase = "suche";
+    /* Bevor er sagt "die Filter stehen", muessen sie wirklich stehen.
+       ------------------------------------------------------------------
+       Am 28.09.2026: Nach "im Februar" suchte der Agent, danach kamen
+       "eher kalt" und "Ferienwohnung" - und er sagte trotzdem "Die Filter
+       stehen jetzt so auf der Seite". Auf der Seite stand nur der Februar.
+
+       Geprueft wurde nur der Filterschluessel, und der kannte weder die
+       Himmelsrichtung noch die Art der Unterkunft. Beide stehen im
+       Eckdatenschluessel - also wird jetzt auch der geprueft. Das ist
+       genau dieselbe Bedingung, die zwei Zeilen weiter unten ohnehin
+       schon steht; sie kam nur zu spaet, naemlich erst NACH der Frage. */
+    else if (!gesucht || (lauf.gefiltertMit && lauf.gefiltertMit !== this.filterSchluessel(p))) phase = "suche";
     else if (!fertig.vorgehen) { naechstes = "vorgehen"; phase = "beratung"; }
     // Vor der Wahl des Vorgehens wird bei geaenderten Eckdaten neu gesucht
     // (die Lage soll stimmen); danach erst wieder zur Vorlage bzw. Liste -
@@ -2976,7 +3020,7 @@ const Werkzeugkasten = {
        78 Hotels" statt "Im Mai". */
     const monat = p.monat && typeof MONATSNAMEN !== "undefined" ? MONATSNAMEN[p.monat - 1] : null;
     const monatText = monat ? `Im ${monat}` : "Aktuell";
-    const art = p.typ === "apartment" ? "Ferienwohnungen" : "Hotels";
+    const art = this.artWort(p, true);
     // "in den warmen Regionen in 8 Regionen" stand so auf der Seite - die
     // Himmelsrichtung gehoert vor das Wort Regionen, nicht davor und danach.
     const warmKalt = p.richtung === "warm" ? "warmen " : p.richtung === "kalt" ? "kalten " : "";
@@ -3000,7 +3044,7 @@ const Werkzeugkasten = {
         : `${liste.length} davon liegen in ${regionen.length} ${warmKalt}Regionen, die meisten ${topText}.`);
     } else if (p.zielId || regionen.length <= 1) {
       // "gibt es 1 Hotels" stand so im Chat
-      const einzahl = p.typ === "apartment" ? "eine Ferienwohnung" : "ein Hotel";
+      const einzahl = this.artWort(p, false);
       teile.push(`${monatText} gibt es ${liste.length === 1 ? einzahl : `${liste.length} ${art}`} ${wo}`.trim() + ".");
     } else {
       teile.push(`${monatText} gibt es ${liste.length} ${art} in ${regionen.length} ${warmKalt}Regionen, die meisten ${topText}.`);

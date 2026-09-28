@@ -46,7 +46,19 @@ const PARTNERS = [
   { name: "Ferienwerk", short: "F", color: "#d6555b" },
 ];
 
+/* Ein Reiter fuer beides.
+   ------------------------------------------------------------------
+   Der Nutzer am 28.09.2026: "Wir brauchen noch einen Reiter, wo Hotels
+   und Ferienwohnungen zusammen sind. Weil sonst kann er, wenn man sagt,
+   ich bin offen, gar nicht unter allen suchen."
+
+   Er hat recht, und es betrifft nicht nur den Agenten: Wer sich bei der
+   Art nicht festlegen will, musste bisher zweimal suchen und im Kopf
+   zusammenfuehren. Der gemeinsame Reiter steht vorn, weil er die
+   allgemeinste Frage stellt; die beiden anderen bleiben fuer alle, die
+   schon wissen, was sie wollen. */
 const NAV_ITEMS = [
+  { key: "unterkunft", label: "Unterkünfte", icon: ICONS.bed, href: "results.html?type=unterkunft" },
   { key: "hotel", label: "Hotels", icon: ICONS.bed, href: "results.html?type=hotel" },
   { key: "apartment", label: "Ferienwohnungen", icon: ICONS.home, href: "results.html?type=apartment" },
   { key: "car", label: "Mietwagen", icon: ICONS.car, href: "results.html?type=car" },
@@ -54,8 +66,12 @@ const NAV_ITEMS = [
 ];
 
 const TYPE_LABELS = {
-  hotel: "Hotels", apartment: "Ferienwohnungen", car: "Mietwagen", flight: "Flüge",
+  unterkunft: "Unterkünfte", hotel: "Hotels", apartment: "Ferienwohnungen", car: "Mietwagen", flight: "Flüge",
 };
+
+// Hotels und Ferienwohnungen zusammen - die Unterscheidung, die es auf
+// der Karte gibt, aber nicht in der Frage "wo schlafe ich?"
+const UNTERKUNFT_TYPEN = ["unterkunft", "hotel", "apartment"];
 
 /* ==================================================================
    Belegung — wie viele Reisende, wie viele Zimmer

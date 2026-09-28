@@ -7,6 +7,13 @@ const FILTER_AMENITIES = ["pool", "beachfront", "spa", "familyFriendly", "kidsCl
 const APT_AMENITIES = ["kitchen", "washer", "balcony", "terrace", "pool", "spa", "parking", "aircon", "seaView", "petsAllowed", "familyFriendly", "wifi"];
 
 const SORT_OPTIONS = {
+  // Der gemeinsame Reiter kennt nur, was beide Arten haben - Sterne gibt
+  // es bei Ferienwohnungen nicht, Wohnflaeche nicht bei Hotels
+  unterkunft: [
+    { v: "empfehlung", l: "Empfehlung" }, { v: "preis-asc", l: "Preis (niedrigster zuerst)" },
+    { v: "preis-desc", l: "Preis (höchster zuerst)" }, { v: "rating", l: "Beste Bewertung" },
+    { v: "strand", l: "Entfernung zum Strand" },
+  ],
   hotel: [
     { v: "empfehlung", l: "Empfehlung" }, { v: "preis-asc", l: "Preis (niedrigster zuerst)" },
     { v: "preis-desc", l: "Preis (höchster zuerst)" }, { v: "rating", l: "Beste Bewertung" },
@@ -74,7 +81,8 @@ function pool() {
   if (state.type === "car") return CARS;
   if (state.type === "flight") return FLIGHTS;
   const monat = reisemonat();
-  const alle = state.type === "apartment" ? APARTMENTS : HOTELS;
+  const alle = state.type === "unterkunft" ? [...HOTELS, ...APARTMENTS]
+    : (state.type === "apartment" ? APARTMENTS : HOTELS);
   return typeof freiImMonat === "function" ? alle.filter((x) => freiImMonat(x, monat)) : alle;
 }
 
@@ -182,15 +190,22 @@ function matches(item) {
       && (item.distanceToBeach === null || item.distanceToBeach > state.maxBeach)) return false;
   for (const a of state.amenities) if (!item.amenities.includes(a)) return false;
 
+  /* Im gemeinsamen Reiter gelten die Filter, die auf beides passen.
+     ------------------------------------------------------------------
+     Sterne, Unterkunftsart und Verpflegung kennt nur ein Hotel,
+     Schlafzimmer nur eine Wohnung. Wuerde man sie im gemeinsamen Reiter
+     anwenden, fiele jeweils die andere Haelfte heraus, ohne dass jemand
+     das gewollt haette. Der Angebotsfilter gilt fuer beide - dort ist
+     "kein alter Preis" eine Aussage und kein fehlendes Merkmal. */
+  if (state.onlyDeals && !item.oldPrice) return false;
   if (state.type === "hotel") {
     if (state.stars.size && !state.stars.has(String(item.stars))) return false;
     if (state.categories.size && !state.categories.has(item.category)) return false;
-    if (state.onlyDeals && !item.oldPrice) return false;
     if (state.boards.size) {
       const keys = item.boards.map((b) => b.key);
       if (![...state.boards].some((b) => keys.includes(b))) return false;
     }
-  } else {
+  } else if (state.type === "apartment") {
     if (state.minBedrooms && item.bedrooms < state.minBedrooms) return false;
   }
   return true;
@@ -240,7 +255,8 @@ function renderFilters() {
     `<div class="range-row"><input type="range" id="fPrice" min="${b.min}" max="${b.max}" step="1" value="${state.priceMax}" /></div>
      <div style="font-size:.84rem;color:var(--ink-500);margin-top:6px">bis <strong id="fPriceOut">${formatPrice(state.priceMax)}</strong></div>`);
 
-  if (state.type === "hotel" || state.type === "apartment") {
+  const istUnterkunft = ["unterkunft", "hotel", "apartment"].includes(state.type);
+  if (istUnterkunft) {
     const monat = reisemonat();
     const zieleImBestand = ZIELE.filter((z) => countIn((h) => h.ziel === z.id));
     if (zieleImBestand.length > 1) {
@@ -264,8 +280,12 @@ function renderFilters() {
        Damit fehlte ihm das Werkzeug, nicht das Verstaendnis. Jetzt steht
        er hier, sichtbar, und der Agent kann ihn klicken wie jeden
        anderen. */
-    html += group("Preisnachlass",
-      `<label class="check-row"><input type="checkbox" class="js-deals" ${state.onlyDeals ? "checked" : ""}/><span>Nur reduzierte Häuser</span><span class="count">${countIn((h) => h.oldPrice)}</span></label>`);
+    // Reduzierte Haeuser gibt es nur bei Hotels - ohne welche im Vorrat
+    // waere der Schalter ein Filter, der immer alles wegnimmt
+    if (countIn((h) => h.oldPrice)) {
+      html += group("Preisnachlass",
+        `<label class="check-row"><input type="checkbox" class="js-deals" ${state.onlyDeals ? "checked" : ""}/><span>Nur reduzierte Häuser</span><span class="count">${countIn((h) => h.oldPrice)}</span></label>`);
+    }
 
     html += group("Entfernung zum Strand",
       [{ v: 0.2, l: "Direkt am Strand" }, { v: 1, l: "Bis 1 km" }, { v: 5, l: "Bis 5 km" }, { v: null, l: "Egal" }]
@@ -505,7 +525,7 @@ function renderResults() {
   const gewaehlt = einzeln && typeof ZIEL_NACH_ID !== "undefined" ? ZIEL_NACH_ID[einzeln] : null;
   document.getElementById("resultsTitle").textContent =
     TYPE_LABELS[state.type] + (gewaehlt ? ` nach ${gewaehlt.name}` : "");
-  const belegungText = (state.type === "hotel" || state.type === "apartment")
+  const belegungText = ["unterkunft", "hotel", "apartment"].includes(state.type)
     ? ` · ${Reisedaten.text() ? `${Reisedaten.text()} · ` : ""}${Belegung.text()}` : "";
   document.getElementById("resultsCount").textContent =
     `${filtered.length} von ${pool().length} Ergebnissen${state.q ? ` für „${state.q}“` : ""}${belegungText}`;

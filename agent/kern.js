@@ -1149,7 +1149,11 @@ const Kern = {
             const kernWoerter = woerter(fpJetzt.satz);
             const sagtDasselbe = (x) => {
               const w = [...woerter(x)];
-              if (w.length < 4) return false;
+              // Drei Inhaltswoerter reichen: "Die Filter sind schon
+              // eingestellt." hatte genau drei und rutschte deshalb am
+              // 28.09.2026 durch - direkt vor die Frage des Kerns, die
+              // dasselbe sagte.
+              if (w.length < 3) return false;
               return w.filter((y) => kernWoerter.has(y)).length / w.length >= 0.5;
             };
             let vorspann = String(text || "").split(/(?<=[.!?])\s+/)

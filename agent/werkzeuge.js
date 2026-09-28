@@ -130,9 +130,10 @@ const Werkzeuge = {
         // Auf der Trefferliste sind die Reiter ausgeblendet - dort ging der
         // Klick ins Leere. Unsichtbar heisst: nicht klicken, sondern melden.
         if (!Zeiger.sichtbar(reiter)) return { ok: false, text: "Die Art lässt sich hier nicht umstellen.", daten: { brauchtStartseite: true } };
-        await Zeiger.klicke(reiter, { hinweis: typ === "apartment" ? "Ferienwohnungen" : "Hotels" });
+        const wort = { apartment: "Ferienwohnungen", hotel: "Hotels", unterkunft: "Unterkünfte" }[typ] || "Unterkünfte";
+        await Zeiger.klicke(reiter, { hinweis: wort });
         await Zeiger.warte(260);
-        getan.push(typ === "apartment" ? "Ferienwohnungen" : "Hotels");
+        getan.push({ apartment: "Ferienwohnungen", hotel: "Hotels", unterkunft: "Unterkünfte" }[typ] || "Unterkünfte");
       }
     }
 
@@ -193,7 +194,8 @@ const Werkzeuge = {
     }
 
     // Flug dazu: Haken und Leiste (Abflughafen, Klasse), nur bei Hotels
-    if (flug && (typ || "hotel") === "hotel") {
+    // Flug nur bei Hotels - im gemeinsamen Reiter gibt es ihn nicht
+    if (flug && typ === "hotel") {
       const haken = this.finde("#sbWithFlight");
       if (haken && haken.checked !== !!flug.mit) {
         await Zeiger.klicke(haken, { hinweis: flug.mit ? "mit Flug" : "ohne Flug" });

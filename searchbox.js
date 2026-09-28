@@ -116,7 +116,7 @@ const SearchBox = (() => {
       ${guestField}`;
     }
 
-    // hotel + apartment
+    // unterkunft + hotel + apartment - dieselbe Maske
     const monate = typeof Reisedaten !== "undefined" && Reisedaten.monateZurWahl ? Reisedaten.monateZurWahl() : [];
     if (!flexMonat && monate.length) flexMonat = monate[0].schluessel;
     const zeitraumFelder = flexibel
@@ -138,7 +138,7 @@ const SearchBox = (() => {
       <div class="field"><label for="sbTo">Abreise</label><input class="input" type="date" id="sbTo" value="${initial.to}" /></div>`;
     return `
       <div class="field">
-        <label for="sbDest">${type === "apartment" ? "Region oder Wohnung" : "Reiseziel oder Hotel"}</label>
+        <label for="sbDest">${type === "apartment" ? "Region oder Wohnung" : (type === "unterkunft" ? "Reiseziel oder Unterkunft" : "Reiseziel oder Hotel")}</label>
         <input class="input" type="text" id="sbDest" list="sbDestList" placeholder="Wohin soll es gehen?" autocomplete="off" value="${initial.q || ""}" />
         <datalist id="sbDestList">${destinationOptions()}</datalist>
       </div>
@@ -148,6 +148,9 @@ const SearchBox = (() => {
 
   function template(initial) {
     const tabs = [
+      // Vorn der gemeinsame Reiter: Wer sich bei der Art nicht festlegen
+      // will, soll nicht zweimal suchen muessen
+      { key: "unterkunft", label: "Unterkünfte" },
       { key: "hotel", label: "Hotels" },
       { key: "apartment", label: "Ferienwohnungen" },
       { key: "car", label: "Mietwagen" },
@@ -163,7 +166,7 @@ const SearchBox = (() => {
 <div class="searchbox-tabs">
   ${tabs.map((t) => `<button type="button" class="searchbox-tab ${t.key === activeType ? "active" : ""}" data-type="${t.key}">${t.label}</button>`).join("")}
 </div>
-${activeType === "hotel" || activeType === "apartment" ? `
+${["unterkunft", "hotel", "apartment"].includes(activeType) ? `
 <div class="date-mode" role="radiogroup" aria-label="Zeitraum">
   <label><input type="radio" name="sbDateMode" value="fest" ${flexibel ? "" : "checked"} /> Feste Daten</label>
   <label><input type="radio" name="sbDateMode" value="flex" ${flexibel ? "checked" : ""} /> Flexibel im Monat</label>
@@ -265,7 +268,7 @@ ${showFlightAddon ? `
     const t = totals();
     const get = (id) => mountEl.querySelector(id)?.value || "";
     const q = activeType === "flight" ? get("#sbOrigin") : get("#sbDest");
-    const unterkunft = activeType === "hotel" || activeType === "apartment";
+    const unterkunft = ["unterkunft", "hotel", "apartment"].includes(activeType);
     const query = {
       type: activeType,
       q: q.trim(),
