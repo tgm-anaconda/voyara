@@ -327,16 +327,39 @@ const Kernpruefung = {
       const iV = schritte.indexOf("vorgehen");
       const iS = schritte.indexOf("suche");
       if (iV >= 0 && (iS < 0 || iS > iV)) melde("reihenfolge", "Vorgehensfrage vor der ersten Suche");
-      // Bei top3 muss alles geklaert sein, bevor vorgelegt wird
+      /* Die Vollstaendigkeitsprobe: welche Themen MUESSEN vorkommen.
+         ----------------------------------------------------------------
+         Der Nutzer am 28.09.2026: "Wird am Ende einmal geprueft, ob alle
+         Aspekte gefragt wurden? Ich hatte das Gefuehl, dass manchmal der
+         Flugtag gar nicht abgefragt wurde."
+
+         Er hatte recht, und es war Absicht - aber genau deshalb gehoert
+         es aufgeschrieben. Hier steht jetzt je Variante, welche Themen
+         kommen muessen und welche bewusst fehlen duerfen. Faellt eines
+         kuenftig heraus, ohne dass jemand es hier eintraegt, meldet sich
+         die Pruefung. Das ist der Unterschied zwischen "fehlt" und "ist
+         mit Grund weggelassen". */
       if (f.vorgehen === "top3" && schritte.includes("vorschlaege")) {
-        for (const t of ["dauer", "preis", "wuensche"]) {
+        const mussKommen = ["zeit", "reisende", "art", "ziel", "vorgehen", "dauer", "preis", "wuensche", "anzahl"];
+        // Verpflegung nur, wo es sie gibt - eine Ferienwohnung hat keine
+        if (f.art !== "apartment") mussKommen.push("verpflegung", "flug");
+        // Der Flughafen nur mit Flug, und Fluege gibt es nicht zur Wohnung
+        if (f.flug === "mitFlug" && f.art !== "apartment") mussKommen.push("flugAb", "flugKlasse");
+        /* Der Anreisetag: ohne Flug hier, mit Flug erst in der
+           Buchungsstrecke - dort haengt er an den Flugtagen der
+           Verbindung, und die stehen erst mit dem Haus fest. Der Agent
+           sagt das beim Vorlegen dazu. */
+        if (f.flug !== "mitFlug" || f.art === "apartment") mussKommen.push("anreise");
+
+        for (const t of mussKommen) {
           if (!schritte.includes(t)) melde("thema_fehlt", `${t} wurde nie gefragt`);
         }
-        // Zu einer Ferienwohnung gibt es keinen Flug, also auch keinen Flughafen
-        if (f.flug === "mitFlug" && f.art !== "apartment" && !schritte.includes("flugAb")) {
-          melde("thema_fehlt", "flugAb wurde nie gefragt");
+        // Und nichts, was hier nicht vorgesehen ist
+        for (const t of themen) {
+          if (!mussKommen.includes(t) && t !== "kinderAlter") melde("thema_unerwartet", `${t} wurde gefragt, steht aber nicht in der Sollliste`);
         }
       }
+
       // Eine Ferienwohnung hat keine Verpflegung und keinen Flug
       if (f.art === "apartment") {
         for (const t of ["verpflegung", "flug", "flugAb", "flugKlasse"]) {

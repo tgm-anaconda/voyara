@@ -1738,6 +1738,24 @@ const Kern = {
       const pk = aufbereitet.find((k) => k.partner);
       if (pk) this.logZeile(`${pk.item.name}: Partnerhaus von Voyara, bevorzugt gelistet (Provision)`, "hinweis");
     }
+    /* Was noch fehlt, sagt er beim Vorlegen - nicht erst in der Kasse.
+       ------------------------------------------------------------------
+       Der Nutzer am 28.09.2026: "Ich hatte das Gefuehl, dass manchmal der
+       Flugtag gar nicht abgefragt wurde." Er hat recht, und es ist
+       Absicht: Welche Tage gehen, haengt an den Flugtagen der Verbindung,
+       und die sind je Haus verschieden - der Tag laesst sich erst
+       festlegen, wenn das Haus feststeht. Gefragt wird er dann in der
+       Buchungsstrecke, die ihn auch erzwingt.
+
+       Absicht hin oder her: Wer eine Beratung durchlaeuft und nie gefragt
+       wird, wann er faehrt, haelt das fuer vergessen. Also steht es hier,
+       einmal, mit Grund. */
+    if (p.flug && !p.anreise && !(p.von && p.bis) && !this.lauf.anreiseErklaert) {
+      this.lauf.anreiseErklaert = true;
+      this.sagen("Den Anreisetag legen wir beim Buchen fest - er hängt von den Flugtagen der Verbindung ab, und die sind je Haus verschieden.");
+      this.notieren("anreise_vertagt", { grund: "flugtage" });
+    }
+
     /* Die Offenlegung faellt genau einmal.
        ------------------------------------------------------------------
        Am 27.09.2026 stand sie fuenfmal hintereinander im Chat, weil sie
