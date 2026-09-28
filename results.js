@@ -208,6 +208,14 @@ function matches(item) {
   } else if (state.type === "apartment") {
     if (state.minBedrooms && item.bedrooms < state.minBedrooms) return false;
   }
+  /* Der Mindestaufenthalt gilt fuer beide Reiter.
+     ------------------------------------------------------------------
+     Er stand bisher nur als Text auf der Hausseite. Damit konnte man
+     eine Wohnung mit fuenf Naechten Minimum fuer drei Naechte in der
+     Liste sehen - und erst in der Kasse merken, dass es nicht geht.
+     Agent und Seite rechnen ihn jetzt gleich. */
+  const gesuchteNaechte = typeof Reisedaten !== "undefined" ? Reisedaten.naechte(0) : 0;
+  if (gesuchteNaechte && item.minNights && gesuchteNaechte < item.minNights) return false;
   return true;
 }
 

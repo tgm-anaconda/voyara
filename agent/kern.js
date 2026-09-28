@@ -1856,13 +1856,57 @@ const Kern = {
   /* ==================================================================
      Uebernahme durch die Person
      ================================================================== */
+  /* Die Sperre liegt ueber der Seite, nicht ueber dem Chat.
+     ------------------------------------------------------------------
+     Gemeldet am 28.09.2026: Waehrend der Agent arbeitete, wollte der
+     Nutzer im Chat nach oben scrollen, um etwas nachzulesen - und der
+     Agent brach ab. Die Sperre war `position: fixed; inset: 0`, lag also
+     ueber allem, auch ueber dem Chat, und jeder Klick galt als
+     Uebernahme.
+
+     Zwei Aenderungen, beide von ihm vorgeschlagen. Die Sperre endet
+     jetzt am rechten Rand des Chats: lesen, scrollen und schreiben geht
+     weiter. Und abgebrochen wird nur ueber einen beschrifteten Knopf,
+     nicht durch einen Klick irgendwohin.
+
+     Fuer die Erhebung ist das ein Gewinn: Bisher zaehlte ein
+     versehentlicher Klick als Uebernahme. Ab jetzt ist jede eine
+     Entscheidung - dafuer sind die Zahlen mit frueheren Testlaeufen
+     nicht mehr vergleichbar. */
   sperreAn() {
     if (document.getElementById("agentSperre")) return;
     const sperre = document.createElement("div");
     sperre.id = "agentSperre";
-    sperre.dataset.hinweis = "Der Chat arbeitet — klicken, um selbst zu übernehmen";
-    sperre.addEventListener("click", () => this.uebernahme());
+
+    const knopf = document.createElement("button");
+    knopf.type = "button";
+    knopf.id = "agentStopp";
+    knopf.textContent = "Agent anhalten";
+    knopf.addEventListener("click", (e) => { e.stopPropagation(); this.uebernahme(); });
+
+    const hinweis = document.createElement("span");
+    hinweis.className = "sperre-hinweis";
+    hinweis.textContent = "Der Assistent arbeitet gerade";
+
+    const leiste = document.createElement("div");
+    leiste.className = "sperre-leiste";
+    leiste.append(hinweis, knopf);
+    sperre.appendChild(leiste);
     document.body.appendChild(sperre);
+    this.sperreAusrichten();
+  },
+
+  /* Wo der Chat aufhoert, faengt die Sperre an.
+     Gemessen statt geraten: Die Breite der Spalte haengt am Fenster, und
+     auf schmalen Geraeten liegt der Chat ueber der Seite statt daneben -
+     dort klappt der Agent ohnehin zu, waehrend er arbeitet. */
+  sperreAusrichten() {
+    const sperre = document.getElementById("agentSperre");
+    if (!sperre) return;
+    const rail = document.getElementById("agentRail");
+    const k = rail ? rail.getBoundingClientRect() : null;
+    const daneben = k && k.width > 0 && k.right < window.innerWidth - 40;
+    sperre.style.left = daneben ? `${Math.round(k.right)}px` : "0px";
   },
 
   sperreAus() {

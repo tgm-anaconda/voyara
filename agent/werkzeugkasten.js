@@ -112,6 +112,13 @@ const Werkzeugkasten = {
           verpflegung: { type: "string", enum: ["ohne", "fruehstueck", "halb", "voll", "ai"], description: "Gewuenschte Verpflegung" },
           flug: { type: "boolean", description: "true, wenn ein Flug dazu gewuenscht ist; false, wenn nur die Unterkunft" },
           flugAbEgal: { type: "boolean", description: "true, wenn der Person der Abflughafen gleich ist oder sie mehrere nennt, ohne sich zu entscheiden ('Hamburg oder Koeln', 'was billiger ist', 'egal'). Dann sucht der Agent die guenstigste Verbindung aus und sagt, welche er genommen hat." },
+          /* Zwei genannte Flughaefen sind keine freie Wahl.
+             ----------------------------------------------------------
+             Am 28.09.2026: "gerne von Hannover oder Muenchen, je nachdem
+             was billiger ist" - der Agent nahm Duesseldorf, weil er nur
+             "billiger" verstand und nicht, worunter. Es fehlte schlicht
+             ein Ort, an dem die zwei Namen haetten stehen koennen. */
+          flugAbAuswahl: { type: "array", items: { type: "string" }, description: "Die Flughaefen, unter denen sie waehlen laesst, wenn sie mehrere nennt ('Hannover oder Muenchen, je nachdem was billiger ist'). Dann gilt flugAbEgal true UND diese Liste - der Agent nimmt den guenstigsten daraus, nicht den guenstigsten ueberhaupt." },
           flugAb: text("Abflughafen, wenn genannt (Hamburg, Stuttgart, Düsseldorf, Hannover, München, Köln, Frankfurt, Berlin - was die Seite anbietet)"),
           flugKlasse: { type: "string", enum: ["economy", "premium", "business"], description: "Flugklasse, wenn genannt" },
           /* Fuer die Buchungsstrecke. Zwei gleich lange Listen statt einer
@@ -831,6 +838,12 @@ const Werkzeugkasten = {
          flugAbEgal), die Entscheidung dem Kern: Er nimmt die guenstigste
          Verbindung und sagt, welche. */
       if (a.flugAbEgal) { p.flugAbEgal = true; delete a.flugAb; }
+      if (Array.isArray(a.flugAbAuswahl) && a.flugAbAuswahl.length && typeof Flug !== "undefined") {
+        // Nur Flughaefen, die es gibt - ein Tippfehler darf die Auswahl
+        // nicht auf null schrumpfen lassen
+        const gueltig = a.flugAbAuswahl.map((x) => Flug.code(x)).filter(Boolean);
+        if (gueltig.length) { p.flugAbAuswahl = gueltig; p.flugAbEgal = true; geaendert.push("flugAbAuswahl"); }
+      }
       setze("flugAb", a.flugAb); setze("flugKlasse", a.flugKlasse);
       if (a.flugAb) p.flugAbEgal = false;
       if (a.flugAb && typeof Flug !== "undefined" && !Flug.code(a.flugAb)) { p.flugAb = null; geaendert.push("flugAb unbekannt"); }
@@ -857,9 +870,29 @@ const Werkzeugkasten = {
           const n = WORTZAHL[roh] ?? parseInt(roh, 10);
           if (Number.isFinite(n) && n >= 2 && n <= 6) a.anzahlVorschlaege = n;
         }
+        /* Ein beilaeufiges Wort ist keine Entscheidung - aber es zaehlt.
+           --------------------------------------------------------------
+           Hier wurde jedes Vorkommen von "Hotel" als Festlegung gewertet.
+           Am 28.09.2026 schrieb der Nutzer "in dem Monat, in dem die
+           meisten HOTELS frei sind" - gemeint war der Monat, gelesen
+           wurde eine Entscheidung ueber die Unterkunftsart.
+
+           Sein Vorschlag, und er ist besser als beides: nicht stumm
+           setzen, aber auch nicht so tun, als haette man nichts gehoert.
+           Der Agent merkt sich das Wort und fragt gezielt nach - "du
+           hattest vorhin Hotel geschrieben, nur Hotels oder auch
+           Ferienwohnungen?". Das ist eine Frage weniger ins Blaue und
+           eine Festlegung weniger hinter dem Ruecken.
+
+           Ist die Art gerade gefragt worden, ist "Hotel" natuerlich eine
+           Antwort und keine Nebenbemerkung. */
         if (!a.typ && !p.artGenannt) {
-          if (/\bhotels?\b/i.test(letzteNachricht)) a.typ = "hotel";
-          else if (/ferienwohnung|ferienhaus|fewo|apartment|appartement/i.test(letzteNachricht)) a.typ = "apartment";
+          const antwortAufArt = kern.lauf.gefragt === "art";
+          if (/\bhotels?\b/i.test(letzteNachricht)) {
+            if (antwortAufArt) a.typ = "hotel"; else p.artErwaehnt = "hotel";
+          } else if (/ferienwohnung|ferienhaus|fewo|apartment|appartement/i.test(letzteNachricht)) {
+            if (antwortAufArt) a.typ = "apartment"; else p.artErwaehnt = "apartment";
+          }
         }
         // "ohne Flug" stand im Satz, kam aber nicht im Stand an - der Agent
         // fragte danach noch einmal nach dem Flug.
@@ -980,7 +1013,7 @@ const Werkzeugkasten = {
       // der Kern sucht den guenstigsten aus und laesst es ansagen
       if (p.flug && p.flugAbEgal && !p.flugAb) {
         const ziele = p.zielId ? [p.zielId] : (p.zieleErlaubt || []);
-        const w = Werkzeugkasten.guenstigsterFlughafen(ziele);
+        const w = Werkzeugkasten.guenstigsterFlughafen(ziele, p.flugAbAuswahl || null);
         if (w) {
           p.flugAb = w.ab;
           p.vonPerson = p.vonPerson || {};
@@ -1013,7 +1046,7 @@ const Werkzeugkasten = {
       const antwort = async (liste, weg, gesamt) => {
         const fh = kern.lauf.flughafenGewaehlt;
         const flughafenSatz = fh
-          ? `Sag in einem Satz, dass du ab ${fh.ab} rechnest: ${fh.airline}, ${fh.direkt ? "direkt" : "mit einem Stopp"}, ab ${fh.preis} € pro Strecke${fh.zweiter && fh.aufpreis > 0 ? `, ab ${fh.zweiter} waeren es ${fh.aufpreis} € mehr` : ""}. Und dass sie den Flughafen aendern kann. `
+          ? `Sag in einem Satz, dass du ab ${fh.ab} rechnest${p.flugAbAuswahl?.length ? " - von den beiden, die sie genannt hat" : ""}: ${fh.airline}, ${fh.direkt ? "direkt" : "mit einem Stopp"}, ab ${fh.preis} € pro Strecke${fh.zweiter && fh.aufpreis > 0 ? `, ab ${fh.zweiter} waeren es ${fh.aufpreis} € mehr` : ""}. Und dass sie den Flughafen aendern kann. `
           : "";
         if (fh) kern.lauf.flughafenGewaehlt = null;
         const umfang = Werkzeugkasten.umfang(liste, p);
@@ -1059,10 +1092,30 @@ const Werkzeugkasten = {
           }
           if (fp.suchbereit && kern.lauf.lageFuer !== fp.schluessel && liste.length) {
             kern.lauf.lageFuer = fp.schluessel;
+            const fertigJetzt = fp.fertig || {};
             await kern.denkpause(600, "fasst zusammen…");
             const lage = Werkzeugkasten.lageSatz(liste, p, umfang, gesamt ?? null);
-            kern.sagen(lage);
-            kern.lauf.lageImZug = lage;
+            /* Die Zahl ist vorlaeufig, und das steht dabei.
+               ----------------------------------------------------------
+               Wunsch des Nutzers vom 28.09.2026: Der Agent sucht frueh,
+               bevor Dauer, Preis und Verpflegung geklaert sind - "dann
+               waere es cool, wenn er sagt, ein paar davon koennen wieder
+               rausfallen".
+
+               Er hat recht, und es ist mehr als Hoeflichkeit: Die Zahl
+               ist eine Momentaufnahme, und wer sie fuer endgueltig haelt,
+               wundert sich spaeter ueber die Vorlage. Genannt wird
+               konkret, was noch offen ist - ein allgemeiner Vorbehalt an
+               jeder Zahl waere Rauschen. */
+            const nochOffen = fp.fehlt.filter((t) => ["dauer", "flug", "flugAb"].includes(t))
+              .concat(!fertigJetzt.preis ? ["preis"] : [], !fertigJetzt.verpflegung ? ["verpflegung"] : []);
+            const WORT = { dauer: "die Dauer", flug: "der Flug", flugAb: "der Abflughafen", preis: "eine Preisgrenze", verpflegung: "die Verpflegung" };
+            const vorbehalt = nochOffen.length && !kern.lauf.vorbehaltGesagt
+              ? ` Das ist der Stand von jetzt - mit ${nochOffen.slice(0, 3).map((t) => WORT[t]).join(", ")} können noch welche wegfallen.`
+              : "";
+            if (vorbehalt) kern.lauf.vorbehaltGesagt = true;
+            kern.sagen(lage + vorbehalt);
+            kern.lauf.lageImZug = lage + vorbehalt;
             kern.notieren("lage_gesagt", { haeuser: liste.length });
             /* Kein Blick in einzelne Haeuser an dieser Stelle.
                ----------------------------------------------------------
@@ -2198,6 +2251,19 @@ const Werkzeugkasten = {
         "Die Liste ist eingestellt. Schaust du selbst, oder klären wir noch ein paar Punkte und ich suche dir die Häuser raus?"],
       frage: "Die Filter stehen schon - frag NICHT, ob du sie setzen sollst. Es geht nur darum, ob sie selbst durch die Liste geht (vorgehen selbst) oder ob du die Haeuser fuer sie raussuchst (vorgehen top3). Frag nicht nach einer Anzahl; ohne Angabe sind es drei.", chips: "Ich schaue selbst | Such du für mich raus" },
 
+    /* Wie viele Haeuser er zusammenstellen soll.
+       ------------------------------------------------------------------
+       Stand bis zum 28.09.2026 in der Vorgehensfrage und flog dort
+       heraus, weil drei Entscheidungen in einer Frage zu viel waren.
+       Seither fragte sie niemand mehr - ohne Angabe waren es stumm drei.
+       Jetzt kommt sie als letzte Frage vor der Vorlage, dort wo sie
+       hingehoert: Man weiss dann, worum es geht. */
+    anzahl: {
+      erklaerung: "Je mehr ich raussuche, desto laenger dauert es - ich gehe jedes Haus einzeln durch und lese die Bewertungen.",
+      satz: ["Wie viele soll ich dir zusammenstellen? Drei reichen meistens, mehr gehen auch.",
+        "Und wie viele Häuser soll ich dir vorlegen?"],
+      frage: "Wie viele Haeuser sie vorgelegt haben will (2 bis 6). Ohne klare Zahl nimmst du drei.", chips: "Drei | Vier | Sechs" },
+
     preis: {
 
       erklaerung: "Eine Grenze hilft mir beim Aussortieren. Wenn du offen bist, ist das auch eine Antwort - dann zeige ich die ganze Spanne.",      satz: ["Hast du beim Preis eine feste Grenze, oder bist du da offen?",
@@ -2413,10 +2479,14 @@ const Werkzeugkasten = {
      abgegebene Entscheidung. Bis zum 27.09.2026 sagte der Agent nur,
      dass er die guenstigste Verbindung genommen habe; woran sich das
      festmacht, blieb offen - und damit auch, ob die Person das so will. */
-  guenstigsterFlughafen(zieleIds = []) {
+  guenstigsterFlughafen(zieleIds = [], nurDiese = null) {
     if (typeof FLIGHTS === "undefined") return null;
     const ziele = (zieleIds || []).filter(Boolean);
-    const passend = FLIGHTS.filter((f) => !ziele.length || ziele.includes(f.ziel));
+    // Hat die Person zwei Flughaefen genannt, wird nur unter denen
+    // gesucht - "je nachdem was billiger ist" heisst nicht "irgendwo"
+    const erlaubt = (nurDiese || []).filter(Boolean);
+    const passend = FLIGHTS.filter((f) => (!ziele.length || ziele.includes(f.ziel))
+      && (!erlaubt.length || erlaubt.includes(f.fromCode)));
     if (!passend.length) return null;
     /* Je Flughafen der guenstigste Flug; davon der guenstigste Flughafen.
        ------------------------------------------------------------------
@@ -2570,6 +2640,9 @@ const Werkzeugkasten = {
       flugAb: !p.flug || !!p.flugAb || !!p.flugAbEgal || p.typ === "apartment",
       flugKlasse: !p.flug || !!p.flugKlasse || p.typ === "apartment",
       vorgehen: !!p.vorgehen,
+      // Nur gefragt, wenn er wirklich raussucht - wer selbst schaut,
+      // bekommt keine Vorlage und damit auch keine Anzahl
+      anzahl: !!p.anzahlVorschlaege || p.vorgehen !== "top3",
       beratung: true,
       preis: !!(p.maxPreis || p.budgetGesamt || p.preisEgal || b.preis),
       verpflegung: !!(p.verpflegung || p.verpflegungEgal || b.verpflegung || p.typ === "apartment"),
@@ -2652,16 +2725,28 @@ const Werkzeugkasten = {
       if (a.satz) angenommen.push(a.satz);
     }
 
-    const KERN = ["zeit", "reisende", "kinderAlter", "ziel", "art"];
+    /* Die Art steht vor dem Ziel - und vor der ersten Suche.
+       ------------------------------------------------------------------
+       Der Nutzer am 28.09.2026: Der Agent sah nach, wie viele Haeuser es
+       im Sommer gibt, bevor klar war, ob es ein Hotel oder eine
+       Ferienwohnung werden soll - und schaute dabei nur auf dem
+       Hotelreiter. "Haette ich ihm danach Ferienwohnung gesagt, haette
+       er nicht die richtigen Informationen gehabt."
+
+       Das Ziel darf weiter nach der Suche kommen: Die Lage soll ja bei
+       der Zielwahl helfen ("im Juni die meisten Haeuser auf Mallorca").
+       Die Art nicht - sie entscheidet, worueber ueberhaupt gezaehlt
+       wird. */
+    const KERN = ["zeit", "reisende", "kinderAlter", "art", "ziel"];
     const ECKDATEN = ["dauer", "flug", "flugAb", "flugKlasse"];
     // Verpflegung nur bei Hotels - eine Ferienwohnung hat keine
     // Wer gleich eine Auswahl sehen will, bekommt sie - der Anreisetag
     // bleibt trotzdem, ohne ihn laesst die Seite nicht buchen.
-    const BESPRECHEN = p.typ === "apartment" ? ["preis", "wuensche"] : ["preis", "verpflegung", "wuensche"];
+    const BESPRECHEN = (p.typ === "apartment" ? ["preis", "wuensche"] : ["preis", "verpflegung", "wuensche"]).concat("anzahl");
     // Wer selbst schaut, wird nicht ausgefragt; wer raussuchen laesst, schon
     const BERATUNG = (p.vorgehen === "selbst" ? [] : BESPRECHEN).concat("anreise");
     const kernFertig = KERN.every((t) => fertig[t]);
-    const suchbereit = fertig.zeit && fertig.reisende && fertig.kinderAlter;
+    const suchbereit = fertig.zeit && fertig.reisende && fertig.kinderAlter && fertig.art;
     const schluessel = this.eckdatenSchluessel(p);
     const gesucht = lauf.gesuchtMit === schluessel;
     // Der vor der Lage geaeusserte Wunsch gilt, sobald die Lage steht.
@@ -2823,6 +2908,19 @@ const Werkzeugkasten = {
       const t = this.anreiseTage(p);
       if (t.length) chips = t.join(" | ");
     }
+    /* Die Art, wenn das Wort schon gefallen ist.
+       ------------------------------------------------------------------
+       "Moechtest du ein Hotel oder eine Ferienwohnung?" waere hier eine
+       Frage, die so tut, als haette der Agent nicht zugehoert. Er hat
+       zugehoert - nur war es eine Nebenbemerkung, keine Wahl. */
+    if (naechstes === "art" && p.artErwaehnt && !p.artGenannt) {
+      const wort = p.artErwaehnt === "apartment" ? "Ferienwohnung" : "Hotel";
+      const anderes = p.artErwaehnt === "apartment" ? "Hotels" : "Ferienwohnungen";
+      satz = `Du hattest vorhin ${wort} geschrieben - soll ich nur danach suchen, oder auch nach ${anderes}?`;
+      frage = `Sie hat beilaeufig "${wort}" erwaehnt, aber nichts entschieden. Frag, ob nur danach gesucht werden soll (typ ${p.artErwaehnt}) oder auch nach dem anderen (artEgal true).`;
+      chips = p.artErwaehnt === "apartment" ? "Nur Ferienwohnungen | Auch Hotels" : "Nur Hotels | Auch Ferienwohnungen";
+    }
+
     if (naechstes === "reisende") {
       // Mehr Kinder als Reisende kann es nicht geben - die Vorschlaege
       // richten sich nach der Gruppe, nicht nach einer festen Liste
@@ -3475,6 +3573,15 @@ const Werkzeugkasten = {
       if (p.maxStrand != null && (h.distanceToBeach ?? 99) > p.maxStrand) return false;
       if (p.mindestbewertung && (h.rating || 0) < p.mindestbewertung) return false;
       if (p.mindestSterne && (h.stars || 0) < p.mindestSterne) return false;
+      /* Der Mindestaufenthalt stand nur da, er galt nicht.
+         ----------------------------------------------------------------
+         Auf der Hausseite steht seit jeher "Mindestaufenthalt 5 Naechte",
+         gefiltert wurde nie danach - eine Wohnung mit fuenf Naechten
+         Minimum erschien auch bei drei gesuchten. Der Nutzer am
+         28.09.2026 ging davon aus, dass die Dauer die Verfuegbarkeit
+         beeinflusst; sie tat es nicht. Hotels haben kein Minimum, das ist
+         so auch realistisch. */
+      if (p.naechte && h.minNights && p.naechte < h.minNights) return false;
       // "Nur was im Angebot ist": reduziert heisst, es steht ein alter
       // Preis daran - dasselbe Merkmal, nach dem die Liste filtert.
       if (p.nurAngebote && !h.oldPrice) return false;

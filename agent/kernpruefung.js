@@ -255,6 +255,7 @@ const Kernpruefung = {
     verpflegung: (p) => { p.verpflegungEgal = true; },
     wuensche: (p) => { p.kriterien = [{ id: "ruhe", gewicht: 1 }]; },
     anreise: (p) => { const f = Werkzeugkasten.flexWahl(p); p.anreise = f ? `${f.monat}-12` : "2027-07-12"; },
+    anzahl: (p) => { p.anzahlVorschlaege = 3; },
   },
 
   ablauf({ art = "hotel", vorgehen = "top3", flug = "mitFlug", start = {} } = {}) {
@@ -264,11 +265,29 @@ const Kernpruefung = {
     const wahl = { art, vorgehen, flug };
     for (let i = 0; i < 30; i++) {
       const fp = Werkzeugkasten.fahrplan(p, lauf);
+      /* Auch der Zwang gehoert zum Ablauf.
+         ----------------------------------------------------------------
+         Die erste Suche kommt nicht aus der Phase des Fahrplans, sondern
+         aus `zwang` - sobald Zeit, Reisende und Art stehen, noch bevor
+         das Ziel geklaert ist. Wer das hier weglaesst, simuliert einen
+         anderen Ablauf als den, der wirklich laeuft. Gefunden, weil die
+         Reihenfolge in der Simulation nicht zu der im Chat passte. */
+      const erzwungen = Werkzeugkasten.zwang(p, lauf);
+      if (erzwungen === "suchen") {
+        schritte.push("suche");
+        // Dasselbe, was das Suchwerkzeug hinterlaesst - ohne das verlangt
+        // der Zwang die Suche endlos noch einmal
+        lauf.gesuchtMit = fp.schluessel;
+        lauf.gefiltertMit = Werkzeugkasten.filterSchluessel(p);
+        if (p.vorgehen) lauf.vorgehenFuer = fp.schluessel + p.vorgehen;
+        continue;
+      }
       if (fp.phase === "vorschlaege" || fp.phase === "selbst") { schritte.push(fp.phase); return { schritte, p, fertig: true }; }
       if (fp.phase === "suche") {
         schritte.push("suche");
         lauf.gesuchtMit = fp.schluessel;
         lauf.gefiltertMit = Werkzeugkasten.filterSchluessel(p);
+        if (p.vorgehen) lauf.vorgehenFuer = fp.schluessel + p.vorgehen;
         continue;
       }
       if (!fp.naechstes) { schritte.push(`SACKGASSE(${fp.phase})`); return { schritte, p, fertig: false }; }

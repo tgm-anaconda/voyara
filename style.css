@@ -1439,18 +1439,31 @@ body.agent-collapsed .agent-head .icon-btn { margin-left: 0; transform: rotate(4
 
 /* Uebernahme-Sperre: faengt Klicks ab, waehrend der Agent arbeitet.
    Ein Klick darauf loest nicht die Seite aus, sondern haelt den Agenten an. */
+/* Die Sperre deckt die Seite ab, nicht den Chat.
+   ------------------------------------------------------------------
+   Sie stand auf inset: 0 und lag damit auch ueber der Chatspalte - wer
+   dort nur scrollen wollte, hielt den Agenten an. Der linke Rand kommt
+   jetzt aus der gemessenen Breite der Spalte (Kern.sperreAusrichten).
+   Angehalten wird ueber den Knopf, nicht durch einen Klick irgendwohin. */
 #agentSperre {
-  position: fixed; inset: 0; z-index: 8500;
-  background: transparent; cursor: pointer;
+  position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 8500;
+  background: transparent; cursor: default;
 }
-#agentSperre::after {
-  content: attr(data-hinweis);
+.sperre-leiste {
   position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 10px;
   background: var(--ink-900); color: #fff;
   font-family: var(--font-body); font-size: .8rem;
-  padding: 9px 16px; border-radius: 999px;
+  padding: 7px 8px 7px 16px; border-radius: 999px;
   box-shadow: var(--sh-lg); white-space: nowrap;
 }
+#agentStopp {
+  font-family: inherit; font-size: .78rem; font-weight: 600;
+  background: rgba(255,255,255,.14); color: #fff;
+  border: 1px solid rgba(255,255,255,.3); border-radius: 999px;
+  padding: 5px 13px; cursor: pointer;
+}
+#agentStopp:hover { background: rgba(255,255,255,.26); }
 
 /* Bei reduzierter Bewegung keine Kurvenfahrt vortaeuschen */
 @media (prefers-reduced-motion: reduce) {
