@@ -9,11 +9,11 @@
                     Reiter erreichbar (zugang.js), nach dem Ausloeser
                     kommt einmal die Einladung; wer ihn oeffnet, waehlt
                     als Erstes die Freigabe (kern.js, freigabeFragen)
-     zwischenfragen kurze Fragen zu dieser Aufgabe
-     aufgabe        Aufgabe 2 lesen, Seite und Agent neu, Schublade zu
-     arbeitet
-     zwischenfragen
-     fragebogen     der allgemeine Fragebogen
+     fragebogen     ein Bogen am Ende, in Abschnitten: erst die Fragen
+                    zu dieser Buchung, dann Assistent, Delegation,
+                    Kontrollfragen, Erfahrung, Demografie. Bis zum
+                    28.09.2026 gab es davor "zwischenfragen" je Aufgabe;
+                    mit einer Aufgabe je Person ist das derselbe Moment
      aufloesung     was untersucht wurde (auch das Partnerhaus), Verlosung
      fertig
 
@@ -210,7 +210,7 @@ const Studie = {
       uebergeben: null,           // Aufgaben.uebergeben(...)
       protokoll: [],              // Kopie des Kern-Protokolls am Ende
       verlauf: [],                // Kopie des Chatverlaufs am Ende
-      zwischenfragen: null,
+      zwischenfragen: null,       // bis 28.09.2026 eigener Schritt, jetzt im Bogen
       freigabeStart: this.kern?.lauf?.freigabe || null,
       freigabeEnde: null,
     };
@@ -265,9 +265,10 @@ const Studie = {
         }
         if (!this.daten.gesendet?.start) this.senden("start");
         return false;
+      // "zwischenfragen" gab es bis zum 28.09.2026 als eigenen Schritt.
+      // Gespeicherte Sitzungen koennen noch darauf stehen, deshalb
+      // faellt der Fall in den Bogen.
       case "zwischenfragen":
-        this.zwischenfragenZeigen();
-        return true;
       case "fragebogen":
         this.fragebogenZeigen();
         return true;
@@ -529,62 +530,27 @@ const Studie = {
     if (d.buchung) d.bewertung = Aufgaben.bewerten(a, d.buchung.id, d.buchung.gesamt);
     this.notieren("aufgabe_beendet", { grund, gebucht: d.buchung?.id || null });
     document.getElementById("aufgabeReiter")?.remove();
-    this.phaseSetzen("zwischenfragen");
-    this.zwischenfragenZeigen();
-  },
 
-  /* ==================================================================
-     Zwischenfragen
-     ================================================================== */
+    /* Zwischenstand sichern und abschicken.
+       ------------------------------------------------------------------
+       Bis zum 28.09.2026 geschah das am Ende der Zwischenfragen. Die
+       sind weg (eine Aufgabe je Person, ein Bogen am Ende), der
+       Speicherpunkt bleibt: Wer den Fragebogen abbricht, soll uns die
+       Aufgabe trotzdem hinterlassen haben. */
+    this.sichern();
+    this.senden(`aufgabe${this.daten.aktuelle + 1}`);
 
-  zwischenfragenZeigen() {
-    const a = this.aufgabe();
-    const d = this.durchlauf();
-    const nummer = this.daten.aktuelle + 1;
-    const ergebnis = d?.buchung
-      ? `Du hast <strong>${d.bewertung?.gebuchtName || "eine Unterkunft"}</strong> gebucht.`
-      : `Du hast diese Aufgabe ohne Buchung beendet.`;
-    // Die Fragen zum Partnerhaus nur, wenn in dieser Aufgabe eines vorlag
-    const partnerGezeigt = (d?.protokoll || []).some((e) => e.ereignis === "partner_vorgelegt");
-    const fragen = partnerGezeigt && typeof PARTNERFRAGEN !== "undefined"
-      ? [...ZWISCHENFRAGEN, ...PARTNERFRAGEN] : ZWISCHENFRAGEN;
-
-    const el = this.blatt("fragen", `
-      <p class="einstieg-etikett">Aufgabe ${nummer} von 2 · Kurze Fragen</p>
-      <h1>Wie war das gerade?</h1>
-      <p class="einstieg-vorspann">${ergebnis} Ein paar Fragen dazu, dann geht es weiter.
-        <span class="fb-entwurf">Entwurf</span></p>
-      <form id="zwischenForm" class="fb-form" novalidate>
-        ${Fragebogen.html(fragen)}
-        <p class="konto-fehler" hidden>Bitte beantworte alle Fragen mit Skala.</p>
-      </form>
-      <div class="einstieg-fuss">
-        <button type="submit" form="zwischenForm" class="einstieg-knopf">Weiter</button>
-      </div>`);
-
-    el.querySelector("#zwischenForm").addEventListener("submit", (e) => {
-      e.preventDefault();
-      const form = e.target;
-      const { antworten, fehlend } = Fragebogen.lesen(form, fragen);
-      if (fehlend.length) { Fragebogen.markieren(form, fehlend); form.querySelector(".konto-fehler").hidden = false; return; }
-      d.zwischenfragen = antworten;
-      this.sichern();
-      this.senden(`aufgabe${nummer}`);
-      el.remove();
-      document.body.classList.remove("startschirm-offen");
-
-      if (this.daten.aktuelle < this.daten.reihenfolge.length - 1) {
-        this.daten.aktuelle += 1;
-        this.phaseSetzen("aufgabe");
-        // Neuer Lauf fuer den Agenten: Gespraech und Suche von vorn, die
-        // Freigabestufe bleibt, wo die Person sie zuletzt hatte.
-        this.kern?.neuerDurchlauf();
-        this.aufgabeZeigen();
-      } else {
-        this.phaseSetzen("fragebogen");
-        this.fragebogenZeigen();
-      }
-    });
+    if (this.daten.aktuelle < this.daten.reihenfolge.length - 1) {
+      this.daten.aktuelle += 1;
+      this.phaseSetzen("aufgabe");
+      // Neuer Lauf fuer den Agenten: Gespraech und Suche von vorn, die
+      // Freigabestufe bleibt, wo die Person sie zuletzt hatte.
+      this.kern?.neuerDurchlauf();
+      this.aufgabeZeigen();
+      return;
+    }
+    this.phaseSetzen("fragebogen");
+    this.fragebogenZeigen();
   },
 
   /* ==================================================================
@@ -592,14 +558,19 @@ const Studie = {
      ================================================================== */
 
   fragebogenZeigen() {
-    const alleFragen = FRAGEBOGEN.flatMap((b) => b.fragen);
+    /* Die Abschnitte kommen aus `Fragebogen.bloecke()`, nicht direkt
+       aus FRAGEBOGEN: Ein Abschnitt kann eine Bedingung tragen. Nach
+       dem Assistenten wird nur gefragt, wenn die Person ihm etwas
+       geschrieben hat. */
+    const bloecke = Fragebogen.bloecke();
+    const alleFragen = bloecke.flatMap((b) => b.fragen);
     const el = this.blatt("fragen fragen-lang", `
       <p class="einstieg-etikett">Zum Schluss</p>
-      <h1>Ein paar Fragen zu dir und dem Assistenten</h1>
-      <p class="einstieg-vorspann">Etwa fünf Minuten. Es gibt keine richtigen oder falschen
-        Antworten. <span class="fb-entwurf">Entwurf</span></p>
+      <h1>Ein paar Fragen zu deiner Buchung und zu dir</h1>
+      <p class="einstieg-vorspann">Etwa vier Minuten, ${alleFragen.length} Fragen. Es gibt keine
+        richtigen oder falschen Antworten.</p>
       <form id="fragebogenForm" class="fb-form" novalidate>
-        ${FRAGEBOGEN.map((b) => `
+        ${bloecke.map((b) => `
           <section class="fb-block">
             <h3>${b.titel}</h3>
             ${b.hinweis ? `<p class="fb-hinweis">${b.hinweis}</p>` : ""}
@@ -852,6 +823,21 @@ const Studie = {
         [p + "gebuchtMitFlug"]: r.buchung ? (r.buchung.flug ? 1 : 0) : "",
         [p + "gebuchtFlugGesamt"]: z(r.buchung?.flug?.gesamt),
         [p + "gebuchtDurchAgent"]: r.buchung ? (r.buchung.durchAgent ? 1 : 0) : "",
+        /* Die Zusaetze an der Kasse.
+           --------------------------------------------------------------
+           Die Reiseruecktrittsversicherung steht vorausgewaehlt da (49
+           Euro) und der Agent laesst sie in Ruhe, weil er ueber seine
+           Handlungen berichtet und nicht ueber den Zustand des
+           Formulars. Ob sie drin bleibt, ist der zweite Sorgfaltswert
+           neben der Wahl der Unterkunft - bis zum 28.09.2026 kam er in
+           den Studiendaten an, stand aber in keiner Spalte.
+           Deutbar wird er erst mit f_versicherungGewohnt weiter unten:
+           Wer sie privat immer mitbucht, hat nichts uebersehen. */
+        [p + "versicherung"]: r.buchung ? (r.buchung.versicherung ? 1 : 0) : "",
+        [p + "zahlungsart"]: z(r.buchung?.zahlung),
+        [p + "gepaeckEur"]: z(r.buchung?.gepaeck),
+        [p + "kartengebuehrEur"]: z(r.buchung?.kartengebuehr),
+        [p + "ankunftzeit"]: z(r.buchung?.ankunft),
         [p + "gebuchtOhneRueckfrage"]: r.buchung ? (r.buchung.ohneRueckfrage ? 1 : 0) : "",
         [p + "zulaessig"]: r.bewertung ? (r.bewertung.zulaessig ? 1 : 0) : "",
         [p + "verletzt"]: (r.bewertung?.verletzt || []).join("; "),
@@ -959,6 +945,26 @@ const Studie = {
     });
 
     for (const [k, v] of Object.entries(d.fragebogen || {})) spalten["f_" + k] = z(v);
+
+    /* Zwei abgeleitete Spalten aus dem Bogen, damit die Auswertung sie
+       nicht jedes Mal neu herstellen muss.
+       ------------------------------------------------------------------
+       aufmerksamOk  Die Aufmerksamkeitskontrolle hat genau eine richtige
+                     Antwort (Stufe 2). Sie schliesst niemanden aus; die
+                     Spalte erlaubt, die Auswertung einmal mit und einmal
+                     ohne diese Faelle zu rechnen.
+       versicherungGewohnt  Kreuzt die Person an, dass sie privat eine
+                     Reiseruecktrittsversicherung mitbucht (Option 1 in
+                     e_zusaetze)? Ohne diesen Wert ist die stehen
+                     gelassene Versicherung an der Kasse nicht deutbar. */
+    const richtig = FRAGEBOGEN.flatMap((b) => b.fragen).find((f) => f.richtig != null);
+    if (richtig) {
+      const wert = d.fragebogen?.[richtig.id];
+      spalten.f_aufmerksamOk = wert == null ? "" : (wert === richtig.richtig ? 1 : 0);
+    }
+    const zusaetze = d.fragebogen?.e_zusaetze;
+    spalten.f_versicherungGewohnt = zusaetze == null ? ""
+      : (String(zusaetze).split(",").includes("1") ? 1 : 0);
     return spalten;
   },
 
