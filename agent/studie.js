@@ -59,7 +59,21 @@ const Studie = {
   leer() {
     // Reihenfolge der Aufgaben ausgelost und festgehalten - der
     // Reihenfolgeeffekt laesst sich damit als Kontrollvariable pruefen
-    const reihenfolge = Math.random() < 0.5 ? ["familie", "paar"] : ["paar", "familie"];
+    /* Wie viele Aufgaben eine Person bekommt.
+       ------------------------------------------------------------------
+       Bis zum 28.09.2026 zwei. Der Nutzer: "Ich glaube, das waere jetzt
+       sowieso erstmal fuer meinen Prof zum ersten Review besser, wenn es
+       erstmal nur eine Aufgabe ist."
+
+       Dazu kommt sein eigenes Argument von vorher: Die Kennzeichnung ist
+       ein Faktor zwischen Personen, nicht innerhalb. Zwei Durchlaeufe
+       derselben Person unter derselben Bedingung liefern kaum eine
+       zweite unabhaengige Beobachtung - wer Partnerhaeuser meidet, meidet
+       sie auch im zweiten Lauf. Welche der beiden Aufgaben es wird,
+       bleibt ausgelost; so sind beide weiter im Umlauf. */
+    const alle = Math.random() < 0.5 ? ["familie", "paar"] : ["paar", "familie"];
+    const wieViele = Math.max(1, Math.min(2, (typeof STELLSCHRAUBEN !== "undefined" && STELLSCHRAUBEN.aufgaben) || 1));
+    const reihenfolge = alle.slice(0, wieViele);
     return {
       teilnehmerId: "t_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
       erstellt: Date.now(),
@@ -128,7 +142,7 @@ const Studie = {
     if (s.partner === "beste") partnerBesteIn = "beide";
     else if (s.partner === "zweitbeste") partnerBesteIn = "keine";
     else if (s.partner === "keine") partnerBesteIn = "ohne";
-    else partnerBesteIn = reihenfolge[Math.floor(Math.random() * 2)];
+    else partnerBesteIn = reihenfolge[Math.floor(Math.random() * reihenfolge.length)];
     return { kennzeichnung, offenlegung, partnerBesteIn, einladung: s.einladung || null, ausgelost: Date.now() };
   },
 
@@ -414,7 +428,10 @@ const Studie = {
     knopf.type = "button";
     knopf.id = "aufgabeReiter";
     knopf.className = "aufgabe-reiter";
-    knopf.innerHTML = `<span>Aufgabe ${this.daten.aktuelle + 1}/2</span>`;
+    // Bei nur einer Aufgabe waere "1/1" eine Zaehlung ohne Sinn
+    knopf.innerHTML = this.daten.reihenfolge.length > 1
+      ? `<span>Aufgabe ${this.daten.aktuelle + 1}/${this.daten.reihenfolge.length}</span>`
+      : `<span>Aufgabe</span>`;
     knopf.addEventListener("click", () => this.reiterOeffnen());
     document.body.appendChild(knopf);
   },

@@ -134,6 +134,8 @@ const STELLSCHRAUBEN = {
   // oeffnen, Bewertungen lesen, Zimmer und Verpflegung setzen)? Kostet
   // acht bis zehn Sekunden je Haus und ist der Kern der Fragestellung:
   // ob nachvollziehbare Arbeit das Vertrauen in die Empfehlung aendert.
+  // Wie viele Aufgaben eine Person bekommt (1 oder 2)
+  aufgaben: 1,
   rundgang: true,                // true | false
   // Sieht der Agent nach der ersten Suche kurz in ein, zwei Haeuser
   // hinein (Zimmer, Verpflegung, keine Bewertungen)? Kostet zwei
@@ -179,6 +181,7 @@ const STELLSCHRAUBEN = {
     vorschlag: ["ansicht", "chat"],
     partner: ["zweitbeste", "beste", "wechselnd", "keine"],
     kennzeichnung: ["zufall", "ohne", "etikett", "text"],
+    aufgaben: ["1", "2"],
   };
   const SCHLUESSEL = "voyara_agent_gruppe";
   let gruppe = {};
@@ -494,6 +497,9 @@ const Kern = {
     } else if (typeof Studie !== "undefined") {
       Studie.start(this);
     }
+    // Die Seite darf jetzt sichtbar werden: Entweder liegt ein Blatt der
+    // Studie darueber, oder es kommt keines mehr.
+    document.documentElement.classList.remove("studie-wartet");
     AgentPanel.freigabeAufbauen(FREIGABE, this.lauf.freigabe, (stufe) => this.freigabeSetzen(stufe));
     document.body.classList.toggle("agent-ohne-freigabe", erstoeffnung && !this.lauf.freigabeGewaehlt);
 
@@ -1381,7 +1387,7 @@ const Kern = {
       let args = {};
       args = this.argumenteLesen(call.function.arguments, call.function.name);
       if (a.stufe === 1) {
-        const zeile = Werkzeugkasten.logText(call.function.name, args);
+        const zeile = Werkzeugkasten.logText(call.function.name, args, this.lauf.profil || {});
         if (zeile) this.logZeile(zeile, "schritt");
         AgentPanel.status(zeile ? `${zeile.charAt(0).toLowerCase()}${zeile.slice(1)}…` : "arbeitet…");
       }

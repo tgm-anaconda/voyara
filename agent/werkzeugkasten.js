@@ -201,14 +201,41 @@ const Werkzeugkasten = {
     buchung_vorbereiten: "vorbereiten", buchung_abschliessen: "vorbereiten",
   },
 
-  // Zeile im Agenten-Log, bevor das Werkzeug laeuft
-  logText(name, a = {}) {
+  /* Zeile im Agenten-Log, bevor das Werkzeug laeuft.
+     ------------------------------------------------------------------
+     Der Nutzer am 28.09.2026: "Da steht sehr oft 'Suche nach den
+     Angaben'. Das sollte schon ein bisschen detaillierter beschreiben,
+     was der Agent gerade macht."
+
+     Er hat recht, und der Satz war doppelt unbrauchbar: Er stand bei
+     jeder der drei bis vier Suchen gleich da, und er nannte die Angaben
+     nicht, nach denen gesucht wurde. Ein Log, in dem viermal dasselbe
+     steht, laesst sich nicht lesen - und es ist eine der Stellen, an
+     denen sich zeigen soll, dass der Agent arbeitet. */
+  logText(name, a = {}, p = null) {
     const haus = (id) => (typeof getItemById === "function" ? getItemById(id)?.name : null) || id;
     switch (name) {
       case "stand_merken": return null;
       case "regionen_zaehlen": return "Zähle, in welchen Regionen es im Zeitraum etwas gibt";
       case "regionen_vergleichen": return `Vergleiche Regionen${a.aspekte?.length ? ` nach ${a.aspekte.join(", ")}` : ""}`;
-      case "suchen": return "Suche nach den Angaben";
+      case "monate_vergleichen": return "Stelle die Liste nacheinander auf jeden Monat um";
+      case "stichprobe_nehmen": return "Sehe mir ein, zwei Häuser von innen an";
+      case "suchen": {
+        // Was tatsaechlich in die Maske geht - nicht "die Angaben"
+        const t = [];
+        if (p) {
+          const wo = p.zielId && typeof ZIEL_NACH_ID !== "undefined" ? ZIEL_NACH_ID[p.zielId]?.name
+            : (p.richtung === "warm" ? "warme Regionen" : p.richtung === "kalt" ? "kalte Regionen" : null);
+          if (wo) t.push(wo);
+          t.push(this.artWort(p, true));
+          if (p.monat && typeof MONATSNAMEN !== "undefined") t.push(MONATSNAMEN[p.monat - 1]);
+          if (p.naechte) t.push(`${p.naechte} Nächte`);
+          const personen = (p.erwachsene || 0) + (p.kinder || 0);
+          if (personen) t.push(`${personen} ${personen === 1 ? "Person" : "Personen"}`);
+          if (p.flug && p.flugAb) t.push(`Flug ab ${p.flugAb}`);
+        }
+        return t.length ? `Suche: ${t.join(", ")}` : "Suche auf der Seite";
+      }
       case "haus_details": return `Sehe mir ${haus(a.id)} genauer an`;
       case "auswahl_vorlegen": return `Lege ${a.ids?.length || 0} Vorschläge vor`;
       case "haus_oeffnen": return `Öffne ${haus(a.id)}`;
@@ -367,15 +394,42 @@ const Werkzeugkasten = {
      nicht festgelegt haben, und damit der Normalfall zu Beginn eines
      Gespraechs. Vorher wich der Agent still auf Hotels aus und suchte
      damit in der Haelfte des Angebots, ohne es zu sagen. */
+  /* "Beides" schlaegt einen stehengebliebenen Typ.
+     ------------------------------------------------------------------
+     Am 28.09.2026 sagte jemand "Auch Ferienwohnungen" - und der Agent
+     kuendigte an, er sehe nach, "wie viele HOTELS es im Dezember gibt".
+     Im Stand stand artEgal, aber daneben lag noch ein typ "hotel" aus
+     einer frueheren Nachricht. Welcher Weg ihn dort gelassen hat, ist
+     zweitrangig: Wenn beides erlaubt ist, hat ein alter Typ nichts mehr
+     zu sagen. Die Auskunft richtet sich deshalb zuerst nach artEgal. */
   seitenTyp(p) {
+    if (p?.artEgal && !p?.artGenannt) return "unterkunft";
     return p?.typ === "apartment" ? "apartment" : (p?.typ === "hotel" ? "hotel" : "unterkunft");
   },
 
   // Wie der Agent die Art nennt, wenn er darueber spricht
   artWort(p, mehrzahl = true) {
-    if (p?.typ === "apartment") return mehrzahl ? "Ferienwohnungen" : "eine Ferienwohnung";
-    if (p?.typ === "hotel") return mehrzahl ? "Hotels" : "ein Hotel";
+    const t = this.seitenTyp(p);
+    if (t === "apartment") return mehrzahl ? "Ferienwohnungen" : "eine Ferienwohnung";
+    if (t === "hotel") return mehrzahl ? "Hotels" : "ein Hotel";
     return mehrzahl ? "Unterkünfte" : "eine Unterkunft";
+  },
+
+  /* Bei "beides" sagt er, wie es sich aufteilt.
+     ------------------------------------------------------------------
+     Der Nutzer am 28.09.2026: "Dann wuerde ich empfehlen, dass er nicht
+     einfach Haeuser schreibt. Es gibt 59 Haeuser. Sondern dass er sagt,
+     es gibt 20 Hotels und 30 Ferienwohnungen."
+
+     Er hat recht: Wer beides sucht, entscheidet sich als Naechstes
+     womoeglich doch fuer eines - und dafuer braucht er die beiden
+     Zahlen, nicht ihre Summe. */
+  artAufteilung(liste, p) {
+    if (this.seitenTyp(p) !== "unterkunft") return null;
+    const h = liste.filter((x) => x.type !== "apartment").length;
+    const w = liste.length - h;
+    if (!h || !w) return null;
+    return `${h} ${h === 1 ? "Hotel" : "Hotels"} und ${w} ${w === 1 ? "Ferienwohnung" : "Ferienwohnungen"}`;
   },
 
   // Dieselbe Belegung wie in der Trefferliste - der Agent darf kein Haus
@@ -1109,9 +1163,9 @@ const Werkzeugkasten = {
                jeder Zahl waere Rauschen. */
             const nochOffen = fp.fehlt.filter((t) => ["dauer", "flug", "flugAb"].includes(t))
               .concat(!fertigJetzt.preis ? ["preis"] : [], !fertigJetzt.verpflegung ? ["verpflegung"] : []);
-            const WORT = { dauer: "die Dauer", flug: "der Flug", flugAb: "der Abflughafen", preis: "eine Preisgrenze", verpflegung: "die Verpflegung" };
+            const WORT = { dauer: "die Dauer", flug: "den Flug", flugAb: "den Abflughafen", preis: "den Preisrahmen", verpflegung: "die Verpflegung" };
             const vorbehalt = nochOffen.length && !kern.lauf.vorbehaltGesagt
-              ? ` Das ist der Stand von jetzt - mit ${nochOffen.slice(0, 3).map((t) => WORT[t]).join(", ")} können noch welche wegfallen.`
+              ? ` Das ist der Stand von jetzt - wenn wir ${nochOffen.slice(0, 3).map((t) => WORT[t]).join(", ")} geklärt haben, können noch welche wegfallen.`
               : "";
             if (vorbehalt) kern.lauf.vorbehaltGesagt = true;
             kern.sagen(lage + vorbehalt);
@@ -2821,6 +2875,26 @@ const Werkzeugkasten = {
        an einer Stelle: bei der Vorgehensfrage ("die Filter stehen jetzt
        so"). Also wird davor gesucht - und sonst erst wieder, wenn er
        vorlegt oder die Person selbst schaut (das erzwingt `zwang`). */
+    /* Erst die Reisedaten, dann die Frage, wer aussucht.
+       ------------------------------------------------------------------
+       Der Nutzer am 28.09.2026: "Die Frage kam zu frueh. Es wurde noch
+       gar nicht gefragt, warme Region, noch gar nicht gefragt, mit Flug.
+       Die soll wirklich kommen, wenn die Hauptsachen schon geklaert
+       sind."
+
+       Sie stand bisher direkt nach der ersten Suche. Der Gedanke dahinter
+       war richtig: Wer selbst stoebern will, soll nicht vorher acht
+       Fragen beantworten muessen. Nur war "die Filter stehen" an dieser
+       Stelle eine duenne Behauptung - Dauer und Flug fehlten, und ohne
+       die kann man weder selbst vernuenftig suchen noch raussuchen
+       lassen.
+
+       Jetzt liegt die Grenze zwischen den Reisedaten und den Feinheiten:
+       Dauer, Flug, Flughafen und Klasse kommen davor - die braucht jeder,
+       in beiden Zweigen. Preis, Verpflegung, Wuensche und die Anzahl
+       danach - die braucht nur, wer raussuchen laesst. Damit bleibt der
+       Sinn der Frage erhalten und ihre Grundlage stimmt. */
+    else if (ECKDATEN.some((t) => !fertig[t])) { naechstes = ECKDATEN.find((t) => !fertig[t]); phase = "eckdaten"; }
     else if (!fertig.vorgehen) {
       const seiteVeraltet = !gesucht
         || (lauf.gefiltertMit && lauf.gefiltertMit !== this.filterSchluessel(p));
@@ -2844,7 +2918,9 @@ const Werkzeugkasten = {
       // rechnet die Maske mit einer Woche, und die Lage sagt das dazu.
       if (p.vorgehen === "selbst") { phase = "selbst"; }
       else {
-        const offen = [...ECKDATEN, ...BERATUNG].find((t) => !fertig[t]) || null;
+        // ECKDATEN sind an dieser Stelle durch - sie stehen jetzt vor der
+        // Vorgehensfrage, nicht mehr dahinter
+        const offen = BERATUNG.find((t) => !fertig[t]) || null;
         if (offen) { naechstes = offen; phase = "beratung"; }
         else phase = "vorschlaege";
       }
@@ -3026,7 +3102,13 @@ const Werkzeugkasten = {
     // Der Fahrplan verlangt eine Suche (erste Umschau, geaenderte Filter,
     // Ende der Beratung) - dann wird gesucht, nicht geredet
     if (fp.phase === "suche") return "suchen";
-    if (fp.eckdatenFertig && !fp.gesucht && !p.vorgehen) return "suchen";
+    /* Hier stand eine dritte Suchregel: sobald die Eckdaten standen und
+       sich etwas geaendert hatte, noch einmal suchen. Sie stammte aus der
+       Zeit, als die Vorgehensfrage direkt nach der ersten Suche kam.
+       Seit die Eckdaten davor liegen, feuerte sie mitten in der Abfrage -
+       nach dem Flughafen eine Suche, nach der Klasse noch eine. Der
+       Fahrplan setzt die Phase "suche" laengst selbst, wenn die Seite vor
+       einer Behauptung veraltet ist; die Regel darueber greift dann. */
     if ((fp.phase === "vorschlaege" || fp.phase === "selbst") && lauf.vorgehenFuer !== fp.schluessel + p.vorgehen) return "suchen";
     return null;
   },
@@ -3138,23 +3220,33 @@ const Werkzeugkasten = {
   warumWeniger(p, monatText = "") {
     const alle = this.katalog(p);
     if (!alle.length) return [];
-    const raus = [];
     const zeit = monatText ? `${monatText.replace(/^Im /, "im ")}` : "gerade";
-
-    if (!p.zielId && p.monat && typeof saisonPassung === "function" && typeof ZIEL_NACH_ID !== "undefined") {
-      const n = alle.filter((h) => ZIEL_NACH_ID[h.ziel] && saisonPassung(ZIEL_NACH_ID[h.ziel], p.monat) < 0.5).length;
-      if (n) raus.push({ n, text: `${n} in Regionen, die ${zeit} außerhalb ihrer Saison liegen` });
-    }
     const personen = (p.erwachsene || 0) + (p.kinder || 0);
-    if (personen) {
-      const n = alle.filter((h) => !this.passtGruppe(h, p)).length;
-      if (n) raus.push({ n, text: `${n}, die für ${personen} Personen zu klein sind` });
+
+    /* Jedes Haus zaehlt genau einmal.
+       ------------------------------------------------------------------
+       Der erste Entwurf zaehlte je Grund ueber den ganzen Katalog. Ein
+       Haus, das ausserhalb der Saison liegt UND zu klein ist, stand dann
+       in beiden Zahlen - und die Summe passte nicht mehr zur Differenz,
+       die sie erklaeren soll. Wer nachrechnet, haelt das fuer einen
+       Fehler, und er hat recht. Gezaehlt wird deshalb nach dem ersten
+       Grund, der greift, in der Reihenfolge, in der auch gefiltert wird. */
+    const zaehler = {};
+    for (const h of alle) {
+      let grund = null;
+      if (!p.zielId && p.monat && typeof saisonPassung === "function" && typeof ZIEL_NACH_ID !== "undefined"
+        && ZIEL_NACH_ID[h.ziel] && saisonPassung(ZIEL_NACH_ID[h.ziel], p.monat) < 0.5) grund = "saison";
+      else if (personen && !this.passtGruppe(h, p)) grund = "gruppe";
+      else if (p.naechte && h.minNights && p.naechte < h.minNights) grund = "dauer";
+      if (grund) zaehler[grund] = (zaehler[grund] || 0) + 1;
     }
-    if (p.naechte) {
-      const n = alle.filter((h) => h.minNights && p.naechte < h.minNights).length;
-      if (n) raus.push({ n, text: `${n} mit einem längeren Mindestaufenthalt` });
-    }
-    return raus.sort((a, b) => b.n - a.n).map((x) => x.text);
+
+    const WORT = {
+      saison: (n) => `${n} in Regionen, die ${zeit} außerhalb ihrer Saison liegen`,
+      gruppe: (n) => `${n}, die für ${personen} ${personen === 1 ? "Person" : "Personen"} nicht passen`,
+      dauer: (n) => `${n} mit einem längeren Mindestaufenthalt`,
+    };
+    return Object.entries(zaehler).sort((a, b) => b[1] - a[1]).map(([k, n]) => WORT[k](n));
   },
 
   lageSatz(liste, p, umfang, aufDerSeite = null) {
@@ -3197,8 +3289,22 @@ const Werkzeugkasten = {
          Rechenfehler - und die Person kann nicht entscheiden, ob sie
          etwas daran aendern will. Genannt wird, was wirklich
          aussortiert: nachgezaehlt, nicht behauptet. */
+      const auf = this.artAufteilung(liste, p);
+      if (auf) teile.push(`Das sind ${auf}.`);
+      /* Die Zahl, auf die sich die Gruende beziehen, muss dabeistehen.
+         ----------------------------------------------------------------
+         Ohne sie liest man "85 passen" und daneben "weg sind 134 und 53"
+         - und rechnet gegen die 176 aus dem Satz davor, die eine ganz
+         andere Grundgesamtheit sind (die Liste kennt weder Saison noch
+         Reisegruppe). Mit der Zahl schliesst die Rechnung: 272 minus 134
+         minus 53 sind 85. */
       const gruende = this.warumWeniger(p, monatText);
-      if (gruende.length) teile.push(`Weg sind ${gruende.slice(0, 2).join(" und ")}.`);
+      const grundmenge = this.katalog(p).length;
+      if (gruende.length) {
+        teile.push(`Nicht dabei sind, von ${grundmenge} im ganzen Katalog, ${gruende.slice(0, 2).join(" und ")}.`);
+      }
+      const aufKurz = this.artAufteilung(liste, p);
+      if (aufKurz && regionen.length <= 1) teile.push(`Das sind ${aufKurz}.`);
     } else if (p.zielId || regionen.length <= 1) {
       // "gibt es 1 Hotels" stand so im Chat
       const einzahl = this.artWort(p, false);

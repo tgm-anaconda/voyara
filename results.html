@@ -4,7 +4,22 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Suchergebnisse — Voyara</title>
-<link rel="stylesheet" href="style.css?v=293" />
+<link rel="stylesheet" href="style.css?v=296" />
+<style>
+/* Kein Aufblitzen der Seite vor dem Studienbildschirm.
+   ------------------------------------------------------------------
+   Die Studienblaetter entstehen erst, wenn alle Skripte geladen sind -
+   bis dahin stand die fertige Seite kurz sichtbar da. Der Inhalt bleibt
+   deshalb verborgen, bis der Kern entschieden hat, ob ein Blatt
+   darueberliegt. Der Notausstieg unten loest die Sperre auf jeden Fall
+   nach anderthalb Sekunden: Lieber ein kurzes Blitzen als eine Seite,
+   die nach einem Skriptfehler leer bleibt. */
+html.studie-wartet .app-shell { visibility: hidden; }
+</style>
+<script>
+document.documentElement.classList.add("studie-wartet");
+setTimeout(function () { document.documentElement.classList.remove("studie-wartet"); }, 1500);
+</script>
 </head>
 <body class="agent-lautlos">
 <div class="app-shell">
@@ -48,26 +63,26 @@
   </div>
 </div>
 
-<script src="data/bildpfade.js?v=293"></script>
-<script src="data/ziele.js?v=293"></script>
-<script src="data/hotels.js?v=293"></script>
-<script src="data/inventory.js?v=293"></script>
-<script src="data/bewertungen.js?v=293"></script>
-<script src="agent/zeiger.js?v=293"></script>
-<script src="agent/werkzeuge.js?v=293"></script>
-<script src="agent/modell.js?v=293"></script>
-<script src="agent/politik.js?v=293"></script>
-<script src="agent/aufgaben.js?v=293"></script>
-<script src="agent/fragebogen.js?v=293"></script>
-<script src="agent/start.js?v=293"></script>
-<script src="agent/studie.js?v=293"></script>
-<script src="agent/zugang.js?v=293"></script>
-<script src="agent/log.js?v=293"></script>
-<script src="agent/werkzeugkasten.js?v=293"></script>
-  <script src="agent/vorschlaege.js?v=293"></script>
-<script src="agent/kern.js?v=293"></script>
-<script src="components.js?v=293"></script>
-<script src="searchbox.js?v=293"></script>
-<script src="results.js?v=293"></script>
+<script src="data/bildpfade.js?v=296"></script>
+<script src="data/ziele.js?v=296"></script>
+<script src="data/hotels.js?v=296"></script>
+<script src="data/inventory.js?v=296"></script>
+<script src="data/bewertungen.js?v=296"></script>
+<script src="agent/zeiger.js?v=296"></script>
+<script src="agent/werkzeuge.js?v=296"></script>
+<script src="agent/modell.js?v=296"></script>
+<script src="agent/politik.js?v=296"></script>
+<script src="agent/aufgaben.js?v=296"></script>
+<script src="agent/fragebogen.js?v=296"></script>
+<script src="agent/start.js?v=296"></script>
+<script src="agent/studie.js?v=296"></script>
+<script src="agent/zugang.js?v=296"></script>
+<script src="agent/log.js?v=296"></script>
+<script src="agent/werkzeugkasten.js?v=296"></script>
+  <script src="agent/vorschlaege.js?v=296"></script>
+<script src="agent/kern.js?v=296"></script>
+<script src="components.js?v=296"></script>
+<script src="searchbox.js?v=296"></script>
+<script src="results.js?v=296"></script>
 </body>
 </html>
