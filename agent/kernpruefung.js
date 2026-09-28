@@ -228,6 +228,106 @@ const Kernpruefung = {
     return fehler;
   },
 
+  /* Der Ablauf, von vorn bis zur Vorlage.
+     ------------------------------------------------------------------
+     Die Pruefungen darueber sehen sich einzelne Staende an. Diese hier
+     spielt ganze Gespraeche durch - aber ohne Modell: Eine erfundene
+     Person beantwortet immer genau das, was der Fahrplan gerade fragt,
+     und die Suche wird simuliert. Danach steht die Reihenfolge der
+     Schritte da, und die laesst sich pruefen.
+
+     Genau das hat mir bei den letzten beiden Fehlern gefehlt. Beide
+     lagen nicht in einem Satz, sondern in der Reihenfolge: eine Frage
+     vor der Suche, die sie voraussetzt. Ein einzelner Stand zeigt so
+     etwas nie. */
+  ANTWORTEN: {
+    zeit: (p) => { p.monat = 7; },
+    reisende: (p) => { p.erwachsene = 2; p.kinder = 0; },
+    kinderAlter: (p) => { p.kinderAlter = (p.kinderAlter || []).concat(Array.from({ length: (p.kinder || 0) - (p.kinderAlter || []).length }, () => 8)); },
+    ziel: (p) => { p.richtung = "warm"; p.zieleErlaubt = ["mallorca", "kreta"]; p.zielOffen = true; },
+    art: (p, wahl) => { if (wahl === "apartment") { p.typ = "apartment"; p.artGenannt = true; } else if (wahl === "beides") { p.artEgal = true; } else { p.typ = "hotel"; p.artGenannt = true; } },
+    vorgehen: (p, wahl) => { p.vorgehen = wahl === "selbst" ? "selbst" : "top3"; },
+    dauer: (p) => { p.naechte = 7; },
+    flug: (p, wahl) => { p.flug = wahl === "mitFlug"; },
+    flugAb: (p) => { p.flugAb = "Köln"; },
+    flugKlasse: (p) => { p.flugKlasse = "economy"; },
+    preis: (p) => { p.preisEgal = true; },
+    verpflegung: (p) => { p.verpflegungEgal = true; },
+    wuensche: (p) => { p.kriterien = [{ id: "ruhe", gewicht: 1 }]; },
+    anreise: (p) => { const f = Werkzeugkasten.flexWahl(p); p.anreise = f ? `${f.monat}-12` : "2027-07-12"; },
+  },
+
+  ablauf({ art = "hotel", vorgehen = "top3", flug = "mitFlug", start = {} } = {}) {
+    const p = { flexibel: true, ...start };
+    const lauf = { gespraech: [], gefragtWie: {}, gesuchtMit: null, gefiltertMit: null };
+    const schritte = [];
+    const wahl = { art, vorgehen, flug };
+    for (let i = 0; i < 30; i++) {
+      const fp = Werkzeugkasten.fahrplan(p, lauf);
+      if (fp.phase === "vorschlaege" || fp.phase === "selbst") { schritte.push(fp.phase); return { schritte, p, fertig: true }; }
+      if (fp.phase === "suche") {
+        schritte.push("suche");
+        lauf.gesuchtMit = fp.schluessel;
+        lauf.gefiltertMit = Werkzeugkasten.filterSchluessel(p);
+        continue;
+      }
+      if (!fp.naechstes) { schritte.push(`SACKGASSE(${fp.phase})`); return { schritte, p, fertig: false }; }
+      schritte.push(fp.naechstes);
+      lauf.gefragtWie[fp.naechstes] = (lauf.gefragtWie[fp.naechstes] || 0) + 1;
+      const antwort = this.ANTWORTEN[fp.naechstes];
+      if (!antwort) { schritte.push(`KEINE_ANTWORT(${fp.naechstes})`); return { schritte, p, fertig: false }; }
+      antwort(p, wahl[fp.naechstes] || wahl.art);
+    }
+    schritte.push("ABBRUCH_NACH_30");
+    return { schritte, p, fertig: false };
+  },
+
+  ablaeufe() {
+    const fehler = [];
+    const faelle = [];
+    for (const art of ["hotel", "apartment", "beides"]) {
+      for (const vorgehen of ["top3", "selbst"]) {
+        for (const flug of ["mitFlug", "ohneFlug"]) {
+          faelle.push({ art, vorgehen, flug });
+        }
+      }
+    }
+    const berichte = [];
+    for (const f of faelle) {
+      const { schritte, fertig } = this.ablauf(f);
+      const name = `${f.art}/${f.vorgehen}/${f.flug}`;
+      berichte.push({ name, schritte: schritte.join(" → ") });
+      const melde = (art, text) => fehler.push({ art, thema: name, satz: schritte.join(" → "), text });
+
+      if (!fertig) melde("kein_ende", "Der Ablauf kommt nicht zur Vorlage");
+      // Kein Thema zweimal - die erfundene Person antwortet ja immer
+      const themen = schritte.filter((x) => !["suche", "vorschlaege", "selbst"].includes(x));
+      const doppelt = themen.filter((t, i) => themen.indexOf(t) !== i);
+      if (doppelt.length) melde("thema_doppelt", `${[...new Set(doppelt)].join(", ")} wird zweimal gefragt`);
+      // Die Vorgehensfrage setzt eine Suche voraus
+      const iV = schritte.indexOf("vorgehen");
+      const iS = schritte.indexOf("suche");
+      if (iV >= 0 && (iS < 0 || iS > iV)) melde("reihenfolge", "Vorgehensfrage vor der ersten Suche");
+      // Bei top3 muss alles geklaert sein, bevor vorgelegt wird
+      if (f.vorgehen === "top3" && schritte.includes("vorschlaege")) {
+        for (const t of ["dauer", "preis", "wuensche"]) {
+          if (!schritte.includes(t)) melde("thema_fehlt", `${t} wurde nie gefragt`);
+        }
+        // Zu einer Ferienwohnung gibt es keinen Flug, also auch keinen Flughafen
+        if (f.flug === "mitFlug" && f.art !== "apartment" && !schritte.includes("flugAb")) {
+          melde("thema_fehlt", "flugAb wurde nie gefragt");
+        }
+      }
+      // Eine Ferienwohnung hat keine Verpflegung und keinen Flug
+      if (f.art === "apartment") {
+        for (const t of ["verpflegung", "flug", "flugAb", "flugKlasse"]) {
+          if (schritte.includes(t)) melde("thema_unpassend", `${t} bei einer Ferienwohnung gefragt`);
+        }
+      }
+    }
+    return { fehler, berichte };
+  },
+
   lauf({ still = false } = {}) {
     const alle = [];
     const staende = this.staende();
@@ -248,6 +348,9 @@ const Kernpruefung = {
     }
     for (const f of this.wortlaut()) alle.push(f);
     for (const f of this.alleThemen()) alle.push(f);
+    const ab = this.ablaeufe();
+    for (const f of ab.fehler) alle.push(f);
+    this.letzteAblaeufe = ab.berichte;
 
     // Zusammenfassen: dieselbe Art mit demselben Satz ist ein Befund
     const gruppen = new Map();

@@ -2722,22 +2722,37 @@ const Werkzeugkasten = {
        Eckdatenschluessel - also wird jetzt auch der geprueft. Das ist
        genau dieselbe Bedingung, die zwei Zeilen weiter unten ohnehin
        schon steht; sie kam nur zu spaet, naemlich erst NACH der Frage. */
-    else if (!gesucht || (lauf.gefiltertMit && lauf.gefiltertMit !== this.filterSchluessel(p))) phase = "suche";
-    else if (!fertig.vorgehen) { naechstes = "vorgehen"; phase = "beratung"; }
-    // Vor der Wahl des Vorgehens wird bei geaenderten Eckdaten neu gesucht
-    // (die Lage soll stimmen); danach erst wieder zur Vorlage bzw. Liste -
-    // sonst liefe mitten in der Beratung nach jeder Antwort die Maske
-    else if (!gesucht && !fertig.beratung) phase = "suche";
-    /* Nach der Lage kommt nicht die Frage nach dem Vorgehen.
+    /* Neu gesucht wird dort, wo es etwas bedeutet - nicht nach jeder Antwort.
        ------------------------------------------------------------------
-       Bis zum 25.09.2026 stand dort "selbst schauen oder soll ich dir drei
-       raussuchen?" - und danach fragte der Agent doch noch Preis,
-       Verpflegung und Wuensche ab. Die Person hatte also ueber das
-       Vorgehen zu entscheiden, bevor klar war, worum es geht. Jetzt steht
-       dort die passende Frage: noch ein paar Eckdaten klaeren oder gleich
-       eine erste Auswahl sehen. Wie ausgewaehlt wird (selbst oder durch
-       den Agenten), kommt zum Schluss, wenn alles besprochen ist. */
-    else if (!fertig.beratung) { naechstes = "beratung"; phase = "beratung"; }
+       Erster Anlauf am 28.09.2026 stellte die Pruefung als eigenen Zweig
+       davor: "Hat sich etwas geaendert? Dann such neu." Das stimmt zwar,
+       galt aber fuer jede Antwort - und die Ablaufsimulation zeigte
+       sechs Suchen in einem Gespraech, nach Dauer, Flug, Flughafen und
+       Klasse jeweils eine. Jede kostet anderthalb Sekunden und laesst
+       die Liste neu aufbauen; mitten in der Beratung ist das nur Unruhe.
+
+       Entscheidend ist nicht, ob sich etwas geaendert hat, sondern ob
+       der Agent gleich etwas ueber die Seite BEHAUPTET. Das tut er genau
+       an einer Stelle: bei der Vorgehensfrage ("die Filter stehen jetzt
+       so"). Also wird davor gesucht - und sonst erst wieder, wenn er
+       vorlegt oder die Person selbst schaut (das erzwingt `zwang`). */
+    else if (!fertig.vorgehen) {
+      const seiteVeraltet = !gesucht
+        || (lauf.gefiltertMit && lauf.gefiltertMit !== this.filterSchluessel(p));
+      if (seiteVeraltet) phase = "suche";
+      else { naechstes = "vorgehen"; phase = "beratung"; }
+    }
+    /* Hier standen zwei weitere Zweige, die nicht mehr erreichbar waren.
+       ------------------------------------------------------------------
+       Sie fragten `beratung` ("noch Eckdaten oder gleich eine Auswahl?")
+       und suchten davor noch einmal. Seit die Vorgehensfrage beide
+       ersetzt, steht `beratung` fest auf erledigt - die Zweige konnten
+       also nie greifen. Sie standen trotzdem noch da und liessen den
+       Ablauf komplizierter aussehen, als er ist. Beim Nachlesen am
+       28.09.2026 habe ich zweimal gebraucht, um zu sehen, dass sie tot
+       sind; das allein ist Grund genug, sie zu entfernen. Die Felder
+       selbst bleiben im Stand, weil Ableitungen und Auswertung sie
+       lesen. */
     else {
       // Wer selbst schauen will, wird nicht weiter ausgefragt. Der Agent
       // stellt die Filter und laesst die Person in Ruhe; fehlt die Dauer,
