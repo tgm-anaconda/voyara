@@ -3112,6 +3112,9 @@ const Werkzeugkasten = {
       { label: "die Strandnähe", weg: (x) => { delete x.maxStrand; }, wenn: () => p.maxStrand != null },
       { label: "die Ausstattungswünsche", weg: (x) => { x.ausstattung = []; x.kriterien = []; }, wenn: () => this.filterAusStand(p).ausstattung.length },
       { label: p.richtung === "kalt" ? "die Beschränkung auf kalte Regionen" : p.richtung === "warm" ? "die Beschränkung auf warme Regionen" : "die Beschränkung auf diese Regionen", weg: (x) => { delete x.zieleErlaubt; delete x.richtung; }, wenn: () => !p.zielId && p.zieleErlaubt?.length },
+      // Seit der feste Anreisetag mitfiltert, kann er der Engpass sein -
+      // und dann ist er der erste, den man nennen sollte
+      { label: "der feste Anreisetag", weg: (x) => { delete x.von; delete x.bis; }, wenn: () => p.flug && p.von },
     ].filter((o) => o.wenn());
     let bester = null;
     for (const o of ohne) {
@@ -3165,6 +3168,18 @@ const Werkzeugkasten = {
     // "Pro Nacht kosten sie 186 bis 186 €" - bei einem einzigen Haus gibt
     // es keine Spanne, und die Wiederholung derselben Zahl liest sich wie
     // ein Fehler in der Rechnung.
+    /* Wie viele der Tag gekostet hat.
+       ------------------------------------------------------------------
+       Wer ein festes Datum nennt, soll wissen, dass es etwas ausschliesst
+       - und wie viel. Sonst wirkt die kleinere Zahl wie ein duennes
+       Angebot, dabei ist sie die Folge einer eigenen Vorgabe. */
+    if (p.flug && p.von && typeof Flug !== "undefined") {
+      const ohneTag = this.katalogTreffer({ ...p, flug: false }, this.filterAusStand(p)).length;
+      const weg = ohneTag - liste.length;
+      if (weg > 0) {
+        teile.push(`${weg} weitere gäbe es, wenn der Anreisetag flexibel wäre - dorthin fliegt am ${Flug.datumText(p.von)} nichts.`);
+      }
+    }
     if (umfang.preisProNacht) {
       const { von, bis } = umfang.preisProNacht;
       const rest = p.naechte ? "" : ", gerechnet mit einer Woche";
@@ -3582,6 +3597,25 @@ const Werkzeugkasten = {
          beeinflusst; sie tat es nicht. Hotels haben kein Minimum, das ist
          so auch realistisch. */
       if (p.naechte && h.minNights && p.naechte < h.minNights) return false;
+      /* Fester Anreisetag mit Flug: nur, was an dem Tag erreichbar ist.
+         ----------------------------------------------------------------
+         Der Nutzer am 28.09.2026: "Was ist, wenn ich direkt sage, ich
+         moechte am 20. Mai ankommen? Sucht er dann auch nur Hotels, wo
+         das ueberhaupt moeglich ist, mit dem entsprechenden Flug?"
+
+         Tat er nicht. Gemessen an diesem Datum: 70 von 128 Haeusern
+         hatten am 20. Mai keine passende Verbindung - sie standen
+         trotzdem in der Auswahl, und erst die Buchungsstrecke haette
+         gesagt "kein Flugtag". Eine Empfehlung, die man nicht buchen
+         kann, ist keine.
+
+         Geprueft wird Hin- UND Rueckflug: Nach sieben Naechten muss auch
+         wieder einer gehen. Ohne festes Datum greift die Regel nicht -
+         dann sucht der Agent spaeter einen Flugtag aus. */
+      if (p.flug && p.von && h.type !== "apartment" && typeof Flug !== "undefined") {
+        const f = Flug.wahl(h.ziel);
+        if (!f || Flug.passtTag(f, p.von, p.naechte || 7) === false) return false;
+      }
       // "Nur was im Angebot ist": reduziert heisst, es steht ein alter
       // Preis daran - dasselbe Merkmal, nach dem die Liste filtert.
       if (p.nurAngebote && !h.oldPrice) return false;
