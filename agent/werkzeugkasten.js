@@ -3128,6 +3128,35 @@ const Werkzeugkasten = {
     return { ...bester, jetzt };
   },
 
+  /* Was zwischen der Zahl der Seite und der des Agenten steht.
+     ------------------------------------------------------------------
+     Der Agent filtert schaerfer als die Liste: Regionen ausserhalb ihrer
+     Saison fallen weg, zu kleine Haeuser auch, und mit festem Datum die
+     ohne Flug an dem Tag. Die Liste kann das nicht abbilden - sie kennt
+     keine Himmelsrichtung und keine Flugtage. Statt die Luecke
+     stehenzulassen, wird sie hier aufgeschluesselt, jede Zahl gezaehlt. */
+  warumWeniger(p, monatText = "") {
+    const alle = this.katalog(p);
+    if (!alle.length) return [];
+    const raus = [];
+    const zeit = monatText ? `${monatText.replace(/^Im /, "im ")}` : "gerade";
+
+    if (!p.zielId && p.monat && typeof saisonPassung === "function" && typeof ZIEL_NACH_ID !== "undefined") {
+      const n = alle.filter((h) => ZIEL_NACH_ID[h.ziel] && saisonPassung(ZIEL_NACH_ID[h.ziel], p.monat) < 0.5).length;
+      if (n) raus.push({ n, text: `${n} in Regionen, die ${zeit} außerhalb ihrer Saison liegen` });
+    }
+    const personen = (p.erwachsene || 0) + (p.kinder || 0);
+    if (personen) {
+      const n = alle.filter((h) => !this.passtGruppe(h, p)).length;
+      if (n) raus.push({ n, text: `${n}, die für ${personen} Personen zu klein sind` });
+    }
+    if (p.naechte) {
+      const n = alle.filter((h) => h.minNights && p.naechte < h.minNights).length;
+      if (n) raus.push({ n, text: `${n} mit einem längeren Mindestaufenthalt` });
+    }
+    return raus.sort((a, b) => b.n - a.n).map((x) => x.text);
+  },
+
   lageSatz(liste, p, umfang, aufDerSeite = null) {
     /* Der Monatsname kam aus einer Rueckwaertssuche in Politik.MONATE,
        die Kurzformen ueber die Laenge aussortierte ("okt" gegen
@@ -3158,6 +3187,18 @@ const Werkzeugkasten = {
       teile.push(regionen.length <= 1
         ? `${liste.length === 1 ? "Eines davon passt" : `${liste.length} davon passen`} zu euch${wo ? ` ${wo}` : ""}.`
         : `${liste.length} davon liegen in ${regionen.length} ${warmKalt}Regionen, die meisten ${topText}.`);
+      /* Warum die uebrigen wegfallen.
+         ----------------------------------------------------------------
+         Der Nutzer am 28.09.2026: "Dann musst du das entsprechend einmal
+         formulieren, dass davon so und so viele rausfallen, weil das
+         nicht die passende Saison ist."
+
+         Zwei Zahlen nebeneinander ohne Grund liest sich wie ein
+         Rechenfehler - und die Person kann nicht entscheiden, ob sie
+         etwas daran aendern will. Genannt wird, was wirklich
+         aussortiert: nachgezaehlt, nicht behauptet. */
+      const gruende = this.warumWeniger(p, monatText);
+      if (gruende.length) teile.push(`Weg sind ${gruende.slice(0, 2).join(" und ")}.`);
     } else if (p.zielId || regionen.length <= 1) {
       // "gibt es 1 Hotels" stand so im Chat
       const einzahl = this.artWort(p, false);

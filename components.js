@@ -300,7 +300,29 @@ const Flug = {
      Naechten muss wieder ein Flugtag sein. */
   WOCHENTAGE: ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"],
   WOCHENTAGE_LANG: ["sonntags", "montags", "dienstags", "mittwochs", "donnerstags", "freitags", "samstags"],
-  MUSTER: [[2, 4, 6], [1, 3, 5], [0, 2, 4, 6], [1, 4], [3, 6], [0, 3, 5], [1, 3, 6], [2, 5]],
+  /* Wie oft eine Verbindung fliegt.
+     ------------------------------------------------------------------
+     Bis zum 28.09.2026 flogen die Verbindungen im Schnitt an drei von
+     sieben Tagen. Das klang plausibel, war aber in der Wirkung hart: Wer
+     einen festen Anreisetag nannte, verlor damit zwei Drittel der
+     Haeuser - in einem Test 70 von 128. Der Nutzer: "Sodass jetzt nicht
+     zwei Drittel der Hotels wegfallen, wenn man einen Anreisetag waehlt."
+
+     Jetzt im Schnitt gut fuenf Tage, mit Spannweite: eine taegliche
+     Verbindung, ein paar mit vier Tagen. Ein fester Tag schliesst damit
+     noch etwas aus - sonst waere die Angabe folgenlos - aber er halbiert
+     die Auswahl nicht mehr. Die Zahlen bleiben nachvollziehbar, weil
+     jede Verbindung ihre Flugtage im Chat und auf der Hausseite nennt. */
+  MUSTER: [
+    [0, 1, 2, 3, 4, 5, 6],   // taeglich
+    [1, 2, 3, 4, 5, 6],      // ausser Sonntag
+    [0, 1, 2, 3, 4, 5],      // ausser Samstag
+    [0, 1, 2, 4, 5, 6],      // ausser Mittwoch
+    [1, 2, 4, 5, 6],
+    [0, 2, 3, 5, 6],
+    [1, 3, 4, 6],
+    [0, 2, 3, 4, 6],
+  ],
   tage(flug) {
     if (!flug) return [0, 1, 2, 3, 4, 5, 6];
     const n = parseInt(String(flug.id).replace(/\D/g, ""), 10) || 0;
