@@ -516,6 +516,18 @@ const Kern = {
       document.head.appendChild(el);
     }
 
+    /* Die Seitenpruefung: ?seitenpruefung=1 an results, stay oder checkout.
+       ------------------------------------------------------------------
+       Die Kernpruefung sieht den Fahrplan, aber nicht die Seite. Diese
+       hier setzt die Filter wirklich, liest die Spalte zurueck und
+       vergleicht die Zahl im Chat mit den Karten auf der Seite. Auch sie
+       kostet keinen Modellaufruf. */
+    if (new URLSearchParams(location.search).get("seitenpruefung")) {
+      const el = document.createElement("script");
+      el.src = "agent/seitenpruefung.js?v=" + Date.now();
+      document.head.appendChild(el);
+    }
+
     // Pruefstand (nur wenn ausdruecklich gestartet): spielt feste Gespraeche
     // gegen den echten Agenten und zaehlt, wie oft die Leitplanken greifen
     if (sessionStorage.getItem("voyara_pruefstand")) {

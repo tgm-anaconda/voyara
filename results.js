@@ -311,6 +311,27 @@ function renderFilters() {
       .map((a) => checkRow("js-amen", a, AMENITY_LABELS[a], countIn((h) => h.amenities.includes(a)), state.amenities.has(a))).join(""));
   }
 
+  /* Der gemeinsame Reiter "Unterkuenfte".
+     ------------------------------------------------------------------
+     Bis zum 29.09.2026 hatte er keine Ausstattungsfilter: Sterne,
+     Verpflegung und Ausstattung standen nur unter "Hotels", Schlafzimmer
+     und Ausstattung nur unter "Ferienwohnungen". Die Seitenpruefung hat
+     es gefunden, und es war nicht nur eine Luecke fuer Menschen: Der
+     Agent rief `filterSetzen` mit "pool" auf, fand keine Checkbox, setzte
+     still nichts und meldete trotzdem Erfolg. Fuer das Modell sah es
+     aus, als staende der Filter.
+
+     Sterne und Verpflegung bleiben hier bewusst draussen: Beides gibt es
+     nur bei Hotels, und ein Haken darauf wuerde ohne Ankuendigung alle
+     Ferienwohnungen aus der Liste nehmen. Wer danach filtern will, kommt
+     ueber den Reiter "Hotels" dorthin - der Agent wechselt dafuer selbst
+     und sagt, warum. */
+  if (state.type === "unterkunft") {
+    const gemeinsam = [...new Set([...FILTER_AMENITIES, ...APT_AMENITIES])];
+    html += group("Ausstattung", gemeinsam.filter((a) => countIn((h) => (h.amenities || []).includes(a)))
+      .map((a) => checkRow("js-amen", a, AMENITY_LABELS[a], countIn((h) => (h.amenities || []).includes(a)), state.amenities.has(a))).join(""));
+  }
+
   if (state.type === "apartment") {
     html += group("Schlafzimmer",
       [{ v: 0, l: "Egal" }, { v: 1, l: "1 oder mehr" }, { v: 2, l: "2 oder mehr" }, { v: 3, l: "3 oder mehr" }]

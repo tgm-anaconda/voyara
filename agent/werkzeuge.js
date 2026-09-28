@@ -305,10 +305,19 @@ const Werkzeuge = {
     if (!panel) return this.fehlt("Die Filterspalte");
 
     const gesetzt = [];
+    /* Was die Spalte auf diesem Reiter nicht hergibt.
+       ----------------------------------------------------------------
+       Bis zum 29.09.2026 uebersprang diese Funktion still, was sie nicht
+       fand, und meldete trotzdem Erfolg - im schlimmsten Fall sogar "die
+       Auswahl stand schon". Das Modell hielt den Filter danach fuer
+       gesetzt und redete ueber eine Liste, die es nicht gab. Jetzt steht
+       am Ende, was nicht ging, im Text und in den Daten. */
+    const nichtGesetzt = [];
 
     for (const stern of wunsch.sterne || []) {
       const el = this.finde(`.js-star[value="${stern}"]`, panel);
-      if (el && !el.checked && await this.klickeFilterZeile(el, `${stern} Sterne`)) gesetzt.push(`${stern} Sterne`);
+      if (!el) { nichtGesetzt.push(`${stern} Sterne`); continue; }
+      if (!el.checked && await this.klickeFilterZeile(el, `${stern} Sterne`)) gesetzt.push(`${stern} Sterne`);
     }
 
     for (const kat of wunsch.kategorien || []) {
@@ -320,7 +329,8 @@ const Werkzeuge = {
 
     for (const a of wunsch.ausstattung || []) {
       const el = this.finde(`.js-amen[value="${a}"]`, panel);
-      if (el && !el.checked && await this.klickeFilterZeile(el, AMENITY_LABELS?.[a] || a)) {
+      if (!el) { nichtGesetzt.push(AMENITY_LABELS?.[a] || a); continue; }
+      if (!el.checked && await this.klickeFilterZeile(el, AMENITY_LABELS?.[a] || a)) {
         gesetzt.push(AMENITY_LABELS?.[a] || a);
       }
     }
@@ -350,7 +360,8 @@ const Werkzeuge = {
 
     for (const b of wunsch.verpflegung || []) {
       const el = this.finde(`.js-board[value="${b}"]`, panel);
-      if (el && !el.checked && await this.klickeFilterZeile(el, BOARD_LABELS?.[b] || b)) {
+      if (!el) { nichtGesetzt.push(BOARD_LABELS?.[b] || b); continue; }
+      if (!el.checked && await this.klickeFilterZeile(el, BOARD_LABELS?.[b] || b)) {
         gesetzt.push(BOARD_LABELS?.[b] || b);
       }
     }
@@ -388,12 +399,15 @@ const Werkzeuge = {
 
     await Zeiger.warte(300);
     const treffer = document.querySelectorAll(".result-card").length;
+    const rest = nichtGesetzt.length ? ` · nicht einstellbar auf dieser Liste: ${nichtGesetzt.join(", ")}` : "";
     return {
       ok: true,
       text: gesetzt.length
-        ? `Filter gesetzt: ${gesetzt.join(", ")} · noch ${treffer} Treffer`
-        : "Es gab nichts zu filtern, die Auswahl stand schon.",
-      daten: this.zustand(),
+        ? `Filter gesetzt: ${gesetzt.join(", ")} · noch ${treffer} Treffer${rest}`
+        : (nichtGesetzt.length
+          ? `Nichts eingestellt: ${nichtGesetzt.join(", ")} gibt es auf dieser Liste nicht als Filter.`
+          : "Es gab nichts zu filtern, die Auswahl stand schon."),
+      daten: { ...this.zustand(), nichtGesetzt },
     };
   },
 

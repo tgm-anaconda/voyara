@@ -108,7 +108,12 @@ const Werkzeugkasten = {
           verpflegungEgal: { type: "boolean", description: "true, wenn Verpflegung egal ist" },
           ausstattungEgal: { type: "boolean", description: "true, wenn die Person auf die Frage nach ihren Wuenschen sagt, dass sie nichts Besonderes braucht" },
           wuensche: { type: "array", items: { type: "string", enum: ["pool", "strand", "strandnah", "meerblick", "kinderclub", "familie", "wellness", "ruhe", "essen", "sauberkeit", "lage", "service", "preis", "bewertung"] }, description: "Was der Person wichtig ist (alle bisher genannten, nicht nur die neuen)" },
-          ausstattung: { type: "array", items: { type: "string", enum: ["pool", "spa", "kidsClub", "familyFriendly", "beachfront", "wifi", "parking", "restaurant", "gym", "seaView"] }, description: "Nur, wenn die Person etwas als Bedingung nennt ('muss einen Pool haben', 'direkt am Strand' = beachfront). Ein Wunsch gehoert in wuensche, nicht hierher." },
+          /* "wifi" stand hier bis zum 29.09.2026 und war nicht einstellbar:
+             Alle 184 Hotels und alle 160 Ferienwohnungen haben WLAN, also
+             gibt es in der Spalte bewusst keinen Haken dafuer. Ein Wert im
+             Schema, den die Seite nicht kennt, fuehrt nur dazu, dass der
+             Agent einen Filter verspricht, den er nicht setzen kann. */
+          ausstattung: { type: "array", items: { type: "string", enum: ["pool", "spa", "kidsClub", "familyFriendly", "beachfront", "parking", "restaurant", "gym", "seaView"] }, description: "Nur, wenn die Person etwas als Bedingung nennt ('muss einen Pool haben', 'direkt am Strand' = beachfront). Ein Wunsch gehoert in wuensche, nicht hierher." },
           verpflegung: { type: "string", enum: ["ohne", "fruehstueck", "halb", "voll", "ai"], description: "Gewuenschte Verpflegung" },
           flug: { type: "boolean", description: "true, wenn ein Flug dazu gewuenscht ist; false, wenn nur die Unterkunft" },
           flugAbEgal: { type: "boolean", description: "true, wenn der Person der Abflughafen gleich ist oder sie mehrere nennt, ohne sich zu entscheiden ('Hamburg oder Koeln', 'was billiger ist', 'egal'). Dann sucht der Agent die guenstigste Verbindung aus und sagt, welche er genommen hat." },
@@ -403,8 +408,38 @@ const Werkzeugkasten = {
      zweitrangig: Wenn beides erlaubt ist, hat ein alter Typ nichts mehr
      zu sagen. Die Auskunft richtet sich deshalb zuerst nach artEgal. */
   seitenTyp(p) {
+    /* Verpflegung und Sterne gibt es nur bei Hotels.
+       ----------------------------------------------------------------
+       Wer "egal, Hauptsache Halbpension" sagt, sucht damit ein Hotel,
+       auch wenn er es nicht so nennt. Bis zum 29.09.2026 blieb der Agent
+       auf dem gemeinsamen Reiter, wo es fuer beides kein Bedienelement
+       gibt: Er setzte nichts, meldete Erfolg und sprach danach ueber
+       eine Auswahl, die niemand gefiltert hatte. Die Seitenpruefung hat
+       das gefunden.
+
+       Die Ableitung wird gesagt, nicht stillschweigend gemacht - siehe
+       `suchen`, wo sie einmal im Gespraech auftaucht. */
+    if (p?.typ !== "apartment" && (this.VERPFLEGUNG_HOTEL.includes(p?.verpflegung) || p?.mindestSterne)) return "hotel";
     if (p?.artEgal && !p?.artGenannt) return "unterkunft";
     return p?.typ === "apartment" ? "apartment" : (p?.typ === "hotel" ? "hotel" : "unterkunft");
+  },
+
+  /* "ohne" gehoert nicht dazu: Wer selbst kochen will, meint eher eine
+     Ferienwohnung als ein Hotel ohne Verpflegung. Nur ein positiver
+     Wunsch (Fruehstueck, Halb-, Vollpension, All Inclusive) ist ein
+     Hinweis auf ein Hotel. */
+  VERPFLEGUNG_HOTEL: ["fruehstueck", "halb", "voll", "ai"],
+
+  /* Der Satz zur Ableitung oben, einmal je Lauf. Ohne ihn waere es genau
+     die stille Transferleistung, die der Nutzer nicht haben will. */
+  artAbleitungSagen(kern, p) {
+    if (!kern?.lauf || !p?.artEgal || p.artGenannt) return;
+    if (this.seitenTyp(p) !== "hotel") return;
+    if (kern.lauf.artAbgeleitet) return;
+    kern.lauf.artAbgeleitet = true;
+    const grund = this.VERPFLEGUNG_HOTEL.includes(p.verpflegung) ? "Verpflegung" : "Sterne";
+    this.ableiten(kern, "typ",
+      `${grund} gibt es nur bei Hotels, deshalb lasse ich die Ferienwohnungen hier weg.`);
   },
 
   // Wie der Agent die Art nennt, wenn er darueber spricht
@@ -839,7 +874,7 @@ const Werkzeugkasten = {
         }
       }
       if (Array.isArray(a.ausstattung)) {
-        const ERLAUBT = ["pool", "spa", "kidsClub", "familyFriendly", "beachfront", "wifi", "parking", "restaurant", "gym", "seaView"];
+        const ERLAUBT = ["pool", "spa", "kidsClub", "familyFriendly", "beachfront", "parking", "restaurant", "gym", "seaView"];
         // "Nicht weit zum Strand" ist nicht "direkt am Strand" - die
         // schaerfere Bedingung braucht ein klares Wort der Person
         p.ausstattung = a.ausstattung.filter((x) => ERLAUBT.includes(x))
@@ -1357,6 +1392,7 @@ const Werkzeugkasten = {
           kern.sperreAn();
           const flug = p.flug != null ? { mit: !!p.flug, ab: typeof Flug !== "undefined" ? Flug.code(p.flugAb) : "", klasse: p.flugKlasse || "economy" } : null;
           if (flug && typeof Flug !== "undefined") Flug.set(flug);
+          Werkzeugkasten.artAbleitungSagen(kern, p);
           const e = await Werkzeuge.suchen({ typ: Werkzeugkasten.seitenTyp(p), ziel: zielName || "", von: zeitraum.von, bis: zeitraum.bis,
             erwachsene: p.erwachsene, kinder: p.kinder, kinderAlter: p.kinderAlter || null, flug, flex });
           if (!e.ok) { kern.sperreAus(); return { ergebnis: { fehler: e.text } }; }
