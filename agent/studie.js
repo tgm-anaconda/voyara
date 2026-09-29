@@ -73,7 +73,15 @@ const Studie = {
        bleibt ausgelost; so sind beide weiter im Umlauf. */
     const alle = Math.random() < 0.5 ? ["familie", "paar"] : ["paar", "familie"];
     const wieViele = Math.max(1, Math.min(2, (typeof STELLSCHRAUBEN !== "undefined" && STELLSCHRAUBEN.aufgaben) || 1));
-    const reihenfolge = alle.slice(0, wieViele);
+    /* Freie Aufgabe (Stand 29.09.2026, Stellschraube `aufgabe`).
+       ------------------------------------------------------------------
+       "frei" heisst: Die Person schreibt sich ihre Aufgabe vor dem ersten
+       Kontakt selbst, mit drei Angaben (agent/aufgaben.js, ECKPUNKTE).
+       "fest" ist der alte Weg mit den beiden vorgegebenen Aufgaben - er
+       bleibt vollstaendig erhalten, damit sich beide Varianten im
+       Testlauf vergleichen lassen und nichts verloren geht. */
+    const frei = (typeof STELLSCHRAUBEN === "undefined" ? "frei" : STELLSCHRAUBEN.aufgabe || "frei") === "frei";
+    const reihenfolge = frei ? ["frei"] : alle.slice(0, wieViele);
     return {
       teilnehmerId: "t_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
       erstellt: Date.now(),
@@ -85,6 +93,7 @@ const Studie = {
       durchlaeufe: [],            // je Aufgabe ein Eintrag, siehe durchlaufAnlegen
       einstieg: {},               // hinweisSekunden, Freigabemessung
       fragebogen: null,
+      eckpunkte: null,            // die drei Angaben der Person (freie Aufgabe)
       ereignisse: [],             // Messpunkte ausserhalb des Kerns
       gesendet: {},               // welche Sicherungspunkte beim Server angekommen sind
     };
@@ -188,7 +197,21 @@ const Studie = {
     this.sichern();
   },
 
+  /* Die Aufgabe dieser Person.
+     ------------------------------------------------------------------
+     Bei der freien Variante wird sie aus den drei Eckpunkten gebaut und
+     gemerkt; solange die noch fehlen, gibt es keine Aufgabe - dann
+     zeigt der Ablauf erst den Eckpunkte-Bildschirm. */
   aufgabe() {
+    if (this.daten?.reihenfolge?.[this.daten.aktuelle] === "frei") {
+      if (!this.daten.eckpunkte) return null;
+      if (!this._freieAufgabe) this._freieAufgabe = Aufgaben.ausEckpunkten(this.daten.eckpunkte);
+      return this._freieAufgabe;
+    }
+    return this.aufgabeAlt();
+  },
+
+  aufgabeAlt() {
     if (!this.daten || typeof Aufgaben === "undefined") return null;
     return Aufgaben.nach(this.daten.reihenfolge[this.daten.aktuelle]);
   },
@@ -359,8 +382,28 @@ const Studie = {
      ================================================================== */
 
   aufgabeHtml(a, nummer) {
+    /* Die freie Aufgabe hat keine Szene - sie zeigt, was die Person
+       selbst angegeben hat. Das ist auch der Inhalt des Reiters am
+       rechten Rand, damit sie ihre eigenen Eckpunkte nachlesen kann. */
+    if (a?.frei) {
+      const e = a.eckpunkte || {};
+      const mitWem = ECKPUNKTE.mitWem.find((m) => m.id === e.mitWem)?.label || "";
+      const budget = ECKPUNKTE.budget.find((b) => b.wert === e.budget)?.label || `bis ${e.budget} €`;
+      return `
+        <p class="einstieg-etikett">Deine Angaben</p>
+        <h1>Deine Reise</h1>
+        <p class="einstieg-vorspann">Das hast du dir vorgenommen. Der Assistent kennt es nicht -
+          erzähl ihm, was du für richtig hältst.</p>
+        <div class="aufgabe-vorgaben">
+          <ul>
+            <li>${mitWem}, ${a.personen} ${a.personen === 1 ? "Person" : "Personen"}</li>
+            <li>${MONATSNAMEN[a.monat - 1]}, etwa ${a.naechte} Nächte</li>
+            <li>Unterkunft ${budget}</li>
+          </ul>
+        </div>`;
+    }
     return `
-      <p class="einstieg-etikett">Aufgabe ${nummer} von 2</p>
+      <p class="einstieg-etikett">${nummer > 1 || (this.daten?.reihenfolge?.length || 1) > 1 ? `Aufgabe ${nummer} von ${this.daten.reihenfolge.length}` : "Deine Aufgabe"}</p>
       <h1>${a.titel}</h1>
       <p class="einstieg-vorspann aufgabe-szene">${a.szene}</p>
 
@@ -371,7 +414,105 @@ const Studie = {
       </div>`;
   },
 
+  /* Die drei Eckpunkte, die sich die Person selbst setzt.
+     ------------------------------------------------------------------
+     Kommt an die Stelle der vorgegebenen Aufgabe (Stellschraube
+     `aufgabe: "frei"`). Alles ist anklickbar, nichts muss getippt
+     werden. Das Ziel wird ausdruecklich nicht gefragt - das erarbeitet
+     der Agent mit der Person, und genau daran soll sich zeigen, wie gut
+     er das kann.
+
+     Der Hinweis, dass der Assistent diese Angaben nicht sieht, steht
+     bewusst da: Er macht aus der scheinbaren Doppelung (der Bot fragt
+     gleich noch einmal) einen verstaendlichen Teil des Aufbaus. */
+  eckpunkteZeigen() {
+    const gezeigt = Date.now();
+    const jetzt = new Date();
+    const monate = Array.from({ length: 12 }, (_, i) => {
+      const d = new Date(jetzt.getFullYear(), jetzt.getMonth() + 1 + i, 1);
+      return { wert: d.getMonth() + 1, label: `${MONATSNAMEN[d.getMonth()]} ${d.getFullYear()}` };
+    });
+    const knopfreihe = (name, liste) => `<div class="eckpunkt-wahl" data-feld="${name}">
+      ${liste.map((o) => `<button type="button" class="eckpunkt-knopf" data-wert="${o.wert}">${o.label}</button>`).join("")}
+    </div>`;
+
+    const el = this.blatt("aufgabe eckpunkte", `
+      <p class="einstieg-etikett">Bevor es losgeht</p>
+      <h1>Was suchst du?</h1>
+      <p class="einstieg-vorspann">
+        Drei Angaben für uns, damit wir deine Suche später einordnen können.
+        <strong>Der Assistent bekommt sie nicht zu sehen</strong> - was du ihm erzählst,
+        entscheidest du selbst. Alles andere ist offen: wohin, Hotel oder Ferienwohnung,
+        mit oder ohne Flug.
+      </p>
+      <div class="eckpunkt-block">
+        <h3>Mit wem reist du?</h3>
+        ${knopfreihe("mitWem", ECKPUNKTE.mitWem.map((m) => ({ wert: m.id, label: m.label })))}
+        <div class="eckpunkt-personen" hidden>
+          <h3>Wie viele seid ihr insgesamt?</h3>
+          ${knopfreihe("personen", [1, 2, 3, 4, 5, 6, 7, 8].map((n) => ({ wert: n, label: String(n) })))}
+        </div>
+      </div>
+      <div class="eckpunkt-block">
+        <h3>Wann etwa?</h3>
+        ${knopfreihe("monat", monate.map((m) => ({ wert: m.wert, label: m.label })))}
+      </div>
+      <div class="eckpunkt-block">
+        <h3>Was darf die Unterkunft insgesamt höchstens kosten?</h3>
+        ${knopfreihe("budget", ECKPUNKTE.budget.map((b) => ({ wert: b.wert, label: b.label })))}
+      </div>
+      <p class="konto-fehler" hidden>Bitte beantworte alle drei Fragen.</p>
+      <div class="einstieg-fuss">
+        <button type="button" class="einstieg-knopf" data-weiter disabled>Weiter</button>
+      </div>`);
+
+    const wahl = {};
+    const weiter = el.querySelector("[data-weiter]");
+    const personenBlock = el.querySelector(".eckpunkt-personen");
+    const pruefe = () => { weiter.disabled = !(wahl.mitWem && wahl.personen && wahl.monat && wahl.budget); };
+    el.querySelectorAll(".eckpunkt-wahl").forEach((reihe) => {
+      const feld = reihe.dataset.feld;
+      reihe.addEventListener("click", (e) => {
+        const knopf = e.target.closest(".eckpunkt-knopf");
+        if (!knopf) return;
+        reihe.querySelectorAll(".eckpunkt-knopf").forEach((k) => k.classList.remove("gewaehlt"));
+        knopf.classList.add("gewaehlt");
+        wahl[feld] = feld === "mitWem" ? knopf.dataset.wert : +knopf.dataset.wert;
+        if (feld === "mitWem") {
+          /* Die Personenzahl steht nicht fest, nur die Vorauswahl.
+             "Mit Familie" kann zu dritt oder zu sechst sein - deshalb
+             wird sie immer noch einmal geklickt, mit einer sinnvollen
+             Vorbelegung. Dieselbe Lehre wie beim Chip "4 oder mehr":
+             eine Zahl, die niemand bestaetigt hat, ist keine Angabe. */
+          personenBlock.hidden = false;
+          const vor = ECKPUNKTE.mitWem.find((m) => m.id === wahl.mitWem)?.personen || 2;
+          if (!wahl.personen) {
+            const k = personenBlock.querySelector(`.eckpunkt-knopf[data-wert="${vor}"]`);
+            if (k) { k.click(); }
+          }
+        }
+        pruefe();
+      });
+    });
+
+    weiter.addEventListener("click", () => {
+      if (weiter.disabled) return;
+      this.daten.eckpunkte = { ...wahl, naechte: 7, sekunden: Math.round((Date.now() - gezeigt) / 1000) };
+      this._freieAufgabe = null;
+      this.notieren("eckpunkte_gesetzt", { ...wahl });
+      this.sichern();
+      el.remove();
+      document.body.classList.remove("startschirm-offen");
+      this.aufgabeZeigen();
+    });
+  },
+
   aufgabeZeigen() {
+    /* Freie Aufgabe ohne Eckpunkte: erst die drei Fragen. */
+    if (this.daten?.reihenfolge?.[this.daten.aktuelle] === "frei" && !this.daten.eckpunkte) {
+      this.eckpunkteZeigen();
+      return;
+    }
     const a = this.aufgabe();
     const nummer = this.daten.aktuelle + 1;
     const gezeigt = Date.now();
@@ -526,7 +667,7 @@ const Studie = {
       d.buchung.ohneRueckfrage = g ? !!g.autonom : false;
     }
     d.verlauf = (this.kern?.lauf?.verlauf || []).map((n) => ({ rolle: n.rolle, text: n.text, zeit: n.zeit }));
-    d.uebergeben = Aufgaben.uebergeben(a, d.verlauf);
+    d.uebergeben = Aufgaben.uebergeben(a, d.verlauf, this.kern?.lauf?.profil || null);
     if (d.buchung) d.bewertung = Aufgaben.bewerten(a, d.buchung.id, d.buchung.gesamt);
     this.notieren("aufgabe_beendet", { grund, gebucht: d.buchung?.id || null });
     document.getElementById("aufgabeReiter")?.remove();
@@ -799,6 +940,14 @@ const Studie = {
       freigabeBedenkzeitMs: z(d.einstieg.freigabe?.bedenkzeitMs),
       freigabeReihenfolge: z(d.einstieg.freigabe?.reihenfolge),
       freigabeErklaerungGeoeffnet: z(d.einstieg.freigabe?.erklaerungGeoeffnet),
+      /* Die drei Eckpunkte der freien Aufgabe. Sie sind der Massstab,
+         gegen den die Buchung gemessen wird - und sie standen fest,
+         bevor der Agent etwas zeigen konnte. */
+      eckMitWem: z(d.eckpunkte?.mitWem),
+      eckPersonen: z(d.eckpunkte?.personen),
+      eckMonat: z(d.eckpunkte?.monat),
+      eckBudget: z(d.eckpunkte?.budget),
+      eckSekunden: z(d.eckpunkte?.sekunden),
     };
 
     d.durchlaeufe.forEach((r, i) => {
@@ -849,6 +998,16 @@ const Studie = {
         [p + "platzImZiel"]: z(r.bewertung?.platzImZiel),
         [p + "abstandEur"]: z(r.bewertung?.abstandEur),
         [p + "platz"]: z(r.bewertung?.platz),
+        /* Dominanz: gab es eine Unterkunft, die guenstiger UND besser
+           bewertet war und dieselben Vorgaben erfuellt hat? Das Guetemass
+           der freien Aufgabe, das ohne Wunsch-Rangfolge auskommt. */
+        [p + "dominiert"]: z(r.bewertung?.dominiert),
+        [p + "dominierendeAnzahl"]: z(r.bewertung?.dominierendeAnzahl),
+        [p + "dominanzErspartEur"]: z(r.bewertung?.dominanzErspartEur),
+        // Was von den eigenen Eckpunkten beim Agenten angekommen ist
+        [p + "uebergebenZeit"]: r.uebergeben?.treffer ? (r.uebergeben.treffer.zeit ? 1 : 0) : "",
+        [p + "uebergebenGruppe"]: r.uebergeben?.treffer ? (r.uebergeben.treffer.gruppe ? 1 : 0) : "",
+        [p + "uebergebenBudget"]: r.uebergeben?.treffer ? (r.uebergeben.treffer.budget ? 1 : 0) : "",
         [p + "rangGebucht"]: z(r.bewertung?.rangGebucht),
         [p + "rangBeste"]: z(r.bewertung?.rangBeste),
         [p + "warumKlicks"]: zaehle(protokoll, "warum"),

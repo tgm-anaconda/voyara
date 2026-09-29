@@ -106,6 +106,14 @@ const STELLSCHRAUBEN = {
      interessant, aber sie kostete jede Sitzung, in der niemand ihn
      fand: Wer den Agenten nie oeffnet, liefert zur Kennzeichnung des
      Partnerhauses keinen einzigen Messwert. */
+  /* Woher die Aufgabe kommt (29.09.2026).
+     ------------------------------------------------------------------
+     frei = die Person setzt sich vor dem ersten Kontakt drei Eckpunkte
+     (mit wem, wann etwa, Hoechstpreis) und sucht danach, was sie will.
+     fest = die beiden vorgegebenen Aufgaben (Familie Mallorca, Paar
+     Algarve). Beides bleibt erhalten, umschaltbar auch ueber die
+     Adresse: ?aufgabe=fest. */
+  aufgabe: "frei",               // frei | fest
   zugang: "seitenleiste",        // schublade | seitenleiste
   einladung: "keine",            // unten-rechts | cursor | mitte | liste | keine
   einladungAusloeser: "detail",  // detail | zeit
@@ -181,6 +189,7 @@ const STELLSCHRAUBEN = {
     vorschlag: ["ansicht", "chat"],
     partner: ["zweitbeste", "beste", "wechselnd", "keine"],
     kennzeichnung: ["zufall", "ohne", "etikett", "text"],
+    aufgabe: ["frei", "fest"],
     aufgaben: ["1", "2"],
   };
   const SCHLUESSEL = "voyara_agent_gruppe";

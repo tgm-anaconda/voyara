@@ -1803,6 +1803,22 @@ body.startschirm-offen { overflow: hidden; }
   .aufgabe-fenster-karte { border-radius: 16px 16px 0 0; padding: 24px 20px 20px; max-height: 92dvh; }
 }
 
+/* Eckpunkte: die drei Angaben vor dem ersten Kontakt */
+.eckpunkte .einstieg-blatt { max-width: 640px; }
+.eckpunkt-block { padding: 14px 0 4px; border-top: 1px solid var(--line); }
+.eckpunkt-block:first-of-type { border-top: none; }
+.eckpunkt-block h3 { font-size: .95rem; color: var(--brand-900); margin: 0 0 10px; }
+.eckpunkt-wahl { display: flex; flex-wrap: wrap; gap: 8px; }
+.eckpunkt-knopf {
+  border: 1px solid var(--line); background: #fff; color: var(--ink-700);
+  border-radius: 999px; padding: 8px 14px; font-size: .88rem; cursor: pointer;
+  transition: border-color .12s, background .12s, color .12s;
+}
+.eckpunkt-knopf:hover { border-color: var(--brand-300, var(--line)); background: var(--canvas); }
+.eckpunkt-knopf.gewaehlt { background: var(--brand-900); border-color: var(--brand-900); color: #fff; }
+.eckpunkt-personen { margin-top: 14px; }
+.einstieg-knopf[disabled] { opacity: .45; cursor: not-allowed; }
+
 /* Fragebogen */
 .einstieg-fragen .einstieg-blatt { max-width: 700px; }
 .einstieg-fragen-lang .einstieg-blatt { max-width: 720px; }

@@ -160,9 +160,106 @@ const AUFGABEN = {
   },
 };
 
+/* Die freie Aufgabe: die Person schreibt sie selbst
+   ====================================================================
+   Statt einer vorgegebenen Szene beantwortet sie vor dem ersten Kontakt
+   mit dem Agenten drei Fragen: mit wem, wann etwa, wie viel hoechstens.
+   Daraus entsteht dasselbe Aufgabenobjekt, das sonst hier fest steht -
+   nur mit ihren Werten.
+
+   Warum ueberhaupt drei Angaben und nicht voellig frei: An ihnen haengt
+   die Ergebnisguete. Ohne Budget ist eine Buchung fuer 2.400 Euro keine
+   schlechte Buchung, sondern eine Entscheidung, und ohne Gruppengroesse
+   laesst sich nicht pruefen, ob die Unterkunft ueberhaupt passt.
+
+   Was NICHT gefragt wird, ist das Ziel. Genau das soll der Agent mit
+   der Person erarbeiten (Nutzer am 29.09.2026). Die Regionen bleiben
+   deshalb offen, und `pruefen` kennt nur zwei harte Regeln: Budget und
+   Gruppe.
+
+   Die Person behaelt ihre Antworten fuer sich - der Agent sieht sie
+   nicht. Was davon im Gespraech ankommt, ist ein Messwert. */
+
+const ECKPUNKTE = {
+  mitWem: [
+    { id: "allein", label: "Allein", personen: 1 },
+    { id: "partner", label: "Mit Partnerin oder Partner", personen: 2 },
+    { id: "familie", label: "Mit Familie", personen: 4 },
+    { id: "freunde", label: "Mit Freunden", personen: 4 },
+  ],
+  // Nach unten begrenzt: Unter 400 Euro fuer eine Woche bleibt im
+  // Katalog fast nichts uebrig, und eine leere Liste ist keine Aufgabe.
+  budget: [
+    { id: 1, label: "bis 600 €", wert: 600 },
+    { id: 2, label: "bis 1.000 €", wert: 1000 },
+    { id: 3, label: "bis 1.500 €", wert: 1500 },
+    { id: 4, label: "bis 2.500 €", wert: 2500 },
+    { id: 5, label: "mehr als 2.500 €", wert: 9000 },
+  ],
+};
+
 const Aufgaben = {
   alle() { return [AUFGABEN.familie, AUFGABEN.paar]; },
   nach(id) { return AUFGABEN[id] || null; },
+
+  /* Aus den drei Angaben wird eine Aufgabe.
+     ------------------------------------------------------------------
+     Dasselbe Objekt wie oben, damit `zulaessige`, `bewerten` und
+     `partnerAus` unveraendert weiterrechnen. Die weichen Wuensche
+     fehlen bewusst: Es gibt keine Rangfolge, die jemand vorgegeben
+     haette. An ihre Stelle tritt in der Auswertung die Dominanz - gab
+     es eine Unterkunft, die guenstiger UND besser bewertet war? */
+  ausEckpunkten(e) {
+    if (!e || !e.monat || !e.budget || !e.personen) return null;
+    const personen = Math.max(1, Math.min(8, e.personen));
+    const budget = e.budget;
+    return {
+      id: "frei",
+      frei: true,
+      titel: "Deine Reise",
+      eckpunkte: e,
+      monat: e.monat,
+      naechte: e.naechte || 7,
+      erwachsene: personen,
+      kinder: 0,
+      personen,
+      zimmer: 1,
+      typ: null,
+      budgetGesamt: budget,
+      ziele: null,
+
+      pruefen(h, gesamt) {
+        const gruende = [];
+        if (gesamt > budget) gruende.push(`${Math.round(gesamt)} Euro, über dem Budget`);
+        /* Der Massstab darf nur enthalten, was die Person haette buchen
+           koennen.
+           --------------------------------------------------------------
+           Ohne diese beiden Regeln waere ein Haus "guenstiger und besser
+           bewertet", das im gewaehlten Monat ausgebucht ist oder dessen
+           Region ausserhalb ihrer Saison liegt - der Agent zeigt solche
+           Haeuser gar nicht, und die Auswertung wuerde der Person etwas
+           vorwerfen, das sie nie gesehen hat. Dieselben zwei Regeln
+           benutzt `katalogTreffer` im Kern. */
+        if (typeof freiImMonat === "function" && !freiImMonat(h, e.monat)) gruende.push("im Monat ausgebucht");
+        if (typeof saisonPassung === "function" && typeof ZIEL_NACH_ID !== "undefined"
+          && ZIEL_NACH_ID[h.ziel] && saisonPassung(ZIEL_NACH_ID[h.ziel], e.monat) < 0.5) {
+          gruende.push("außerhalb der Saison");
+        }
+        if (h.minNights && (e.naechte || 7) < h.minNights) gruende.push(`Mindestaufenthalt ${h.minNights} Nächte`);
+        if (h.type === "apartment") {
+          if ((h.maxGuests || 0) < personen) gruende.push(`zu klein für ${personen} Personen`);
+        } else if (!Aufgaben.zimmerFuer(h, personen)) {
+          gruende.push(`kein Zimmer für ${personen} Personen`);
+        }
+        return gruende;
+      },
+      // Ohne genannte Wunsch-Rangfolge ist die Bewertung der neutralste
+      // Massstab - sie entscheidet nur, was bei gleichem Preis oben steht.
+      rang(h) { return (h.rating || 0) * 10; },
+      zimmerWahl: (h) => Aufgaben.zimmerFuer(h, personen),
+      verpflegung: "ohne",
+    };
+  },
 
   // Das guenstigste Zimmer, in das die Gruppe passt
   zimmerFuer(h, personen) {
@@ -319,6 +416,33 @@ const Aufgaben = {
       platz: platz >= 0 ? platz + 1 : null,
       zulaessigeAnzahl: liste.length,
       istBeste: gebuchtId === beste.id,
+      ...this.dominanz(liste, h, gesamt),
+    };
+  },
+
+  /* Dominanz: gab es etwas, das guenstiger UND besser bewertet war?
+     ------------------------------------------------------------------
+     Das Guetemass, das ohne vorgegebene Wunsch-Rangfolge auskommt und
+     deshalb auch fuer die freie Aufgabe gilt. Verglichen wird nur
+     innerhalb der zulaessigen Haeuser, also unter denen, die Budget und
+     Gruppe erfuellen - sonst waere jedes teure Haus trivial dominiert.
+
+     Gezaehlt wird streng: guenstiger und besser, nicht guenstiger oder
+     besser. Ein Haus, das 10 Euro mehr kostet und eine Zehntelnote
+     besser ist, dominiert nicht. */
+  dominanz(liste, gebucht, gesamt) {
+    if (!gebucht || gesamt == null) return {};
+    const note = (id) => (typeof getItemById === "function" ? getItemById(id)?.rating : null) || 0;
+    const eigene = gebucht.rating || 0;
+    const besser = liste.filter((x) => x.id !== gebucht.id && x.gesamt < gesamt && note(x.id) > eigene);
+    besser.sort((a, b) => note(b.id) - note(a.id) || a.gesamt - b.gesamt);
+    return {
+      dominiert: besser.length ? 1 : 0,
+      dominierendeAnzahl: besser.length,
+      dominierendes: besser[0]?.id || null,
+      dominierendesName: besser[0]?.name || null,
+      // Was die Person haette sparen koennen, ohne schlechter zu wohnen
+      dominanzErspartEur: besser.length ? Math.round(gesamt - Math.min(...besser.map((x) => x.gesamt))) : 0,
     };
   },
 
@@ -328,8 +452,24 @@ const Aufgaben = {
      die im Chatverlauf der Person vorkommen muessten. Das ersetzt keine
      Inhaltsanalyse, gibt aber ein erstes Mass dafuer, ob jemand die
      Aufgabe uebergeben oder nur "Mallorca" gesagt hat. */
-  uebergeben(aufgabe, verlauf) {
+  uebergeben(aufgabe, verlauf, profil = null) {
     const text = (verlauf || []).filter((n) => n.rolle === "user").map((n) => n.text).join(" ").toLowerCase();
+    /* Bei der freien Aufgabe wird nicht geraten, sondern verglichen.
+       ----------------------------------------------------------------
+       Die drei Eckpunkte stehen als Zahlen fest, und was beim Agenten
+       angekommen ist, steht in seinem Profil. Das ist der exakte
+       Abgleich, den der Stichwortvergleich unten nur schaetzen kann. */
+    if (aufgabe?.frei) {
+      const p = profil || {};
+      const treffer = {
+        zeit: p.monat === aufgabe.monat,
+        gruppe: (p.erwachsene || 0) + (p.kinder || 0) === aufgabe.personen,
+        budget: !!(p.budgetGesamt && p.budgetGesamt <= aufgabe.budgetGesamt)
+          || !!(p.maxPreis && p.maxPreis * (aufgabe.naechte || 7) <= aufgabe.budgetGesamt * 1.1),
+      };
+      const n = Object.values(treffer).filter(Boolean).length;
+      return { treffer, anteil: Math.round((n / 3) * 100) / 100 };
+    }
     const muster = aufgabe.id === "familie" ? {
       ziel: /mallorca|kreta|algarve|sardinien|teneriffa|meer|warm|süden|sueden/, zeit: /august|sommer/, gruppe: /kind|famili|vier|zu viert|2 erw/,
       pool: /pool/, strand: /strand|meer/, budget: /1[.,]?600|budget|höchstens|maximal|euro|€/,
