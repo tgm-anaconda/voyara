@@ -809,6 +809,14 @@ const Kern = {
       this.lauf.zuletztGefragt = this.lauf.gefragt;
       this.lauf.gefragt = null;
     }
+    /* Der Stand vor diesem Zug.
+       ------------------------------------------------------------------
+       Damit laesst sich unten unterscheiden, ob von der Antwort wirklich
+       nichts angekommen ist oder ob nur nicht alles gereicht hat. Wer auf
+       "Wer reist mit?" sagt "meine Frau und ich, die Kinder vielleicht",
+       hat die Haelfte beantwortet - da waere ein "das habe ich nicht
+       verstanden" falsch und wuerde unsicher wirken. */
+    try { this.lauf.standVorher = JSON.stringify(this.lauf.profil || {}); } catch { this.lauf.standVorher = null; }
     this.lauf.phase = "gespraech";
     Zeiger.freigeben?.();
     await this.zug();
@@ -1146,7 +1154,9 @@ const Kern = {
              zweiten Mal greift weiter unten die Annahme - aber erst
              dann, und sie wird immer gesagt. */
           const offen = fpJetzt.naechstes;
-          if (!freierZug && offen && offen === this.lauf.zuletztGefragt
+          let standGleich = false;
+          try { standGleich = !!this.lauf.standVorher && this.lauf.standVorher === JSON.stringify(this.lauf.profil || {}); } catch { standGleich = false; }
+          if (!freierZug && offen && offen === this.lauf.zuletztGefragt && standGleich
             && this.lauf.nachrichtArt === "antwort" && fpJetzt.satz) {
             const n = (this.lauf.nichtVerstanden ||= {});
             n[offen] = (n[offen] || 0) + 1;
@@ -1154,7 +1164,7 @@ const Kern = {
             this.notieren("antwort_nicht_verstanden", { thema: offen, mal: n[offen], text: String(letzte).slice(0, 80) });
             if (n[offen] === 1) {
               fpJetzt = { ...fpJetzt,
-                satz: `Da bin ich mir nicht sicher, ob ich dich richtig verstanden habe. ${fpJetzt.satz}` };
+                satz: `Entschuldige, das habe ich nicht sicher verstanden. ${fpJetzt.satz}` };
             }
           }
           const artFrage = !freierZug && Werkzeugkasten.artRueckfrage(this.lauf.profil || {}, this.lauf);
