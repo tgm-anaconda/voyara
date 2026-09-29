@@ -804,6 +804,9 @@ const Kern = {
     if (this.lauf.gefragt) {
       (this.lauf.besprochen ||= {})[this.lauf.gefragt] = true;
       this.notieren("thema_beantwortet", { thema: this.lauf.gefragt });
+      // Fuer den Abgleich weiter unten: Worauf hat sie gerade geantwortet?
+      // Kommt davon nichts im Stand an, hat der Agent sie nicht verstanden.
+      this.lauf.zuletztGefragt = this.lauf.gefragt;
       this.lauf.gefragt = null;
     }
     this.lauf.phase = "gespraech";
@@ -1131,6 +1134,29 @@ const Kern = {
              zwei Fragen in einer Nachricht. `naechstes` faellt dabei weg,
              damit das offene Thema nicht als gefragt zaehlt; es kommt im
              naechsten Zug wieder. */
+          /* Sie hat geantwortet, und nichts davon ist angekommen.
+             ------------------------------------------------------------
+             Nutzer am 29.09.2026: "Wenn er es partout nicht versteht,
+             muss er nachfragen, bevor er falsche Annahmen macht."
+
+             Erkennbar ist das genau hier: Das Modell hat die Nachricht
+             als Antwort eingeordnet, das offene Thema ist dasselbe wie
+             vorhin, und der Fahrplan fragt es wieder. Statt derselben
+             Frage kommt dann eine, die den Zweifel ausspricht. Beim
+             zweiten Mal greift weiter unten die Annahme - aber erst
+             dann, und sie wird immer gesagt. */
+          const offen = fpJetzt.naechstes;
+          if (!freierZug && offen && offen === this.lauf.zuletztGefragt
+            && this.lauf.nachrichtArt === "antwort" && fpJetzt.satz) {
+            const n = (this.lauf.nichtVerstanden ||= {});
+            n[offen] = (n[offen] || 0) + 1;
+            const letzte = [...this.lauf.gespraech].reverse().find((x) => x.role === "user")?.content || "";
+            this.notieren("antwort_nicht_verstanden", { thema: offen, mal: n[offen], text: String(letzte).slice(0, 80) });
+            if (n[offen] === 1) {
+              fpJetzt = { ...fpJetzt,
+                satz: `Da bin ich mir nicht sicher, ob ich dich richtig verstanden habe. ${fpJetzt.satz}` };
+            }
+          }
           const artFrage = !freierZug && Werkzeugkasten.artRueckfrage(this.lauf.profil || {}, this.lauf);
           if (artFrage) {
             this.lauf.artGefragt = true;

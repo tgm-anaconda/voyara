@@ -2905,10 +2905,22 @@ const Werkzeugkasten = {
       if (fertig[t] || (lauf.gefragtWie?.[t] || 0) < 2) continue;
       // Keine Annahme fasst an, was die Person selbst gesagt hat
       if ((a.schreibt || []).some((f) => p.vonPerson?.[f])) continue;
+      /* Erst nachfragen, dann annehmen.
+         ----------------------------------------------------------------
+         Hat die Person geantwortet und der Agent sie nicht verstanden
+         (kern.js setzt dann `nichtVerstanden`), bekommt sie eine
+         Rueckfrage, die den Zweifel ausspricht - und keine Annahme.
+         Beim zweiten Mal greift die Annahme doch, sonst dreht sich das
+         Gespraech im Kreis; sie wird dann gesagt wie jede andere. */
+      if ((lauf.nichtVerstanden?.[t] || 0) === 1) continue;
       a.setzen(p, this);
       fertig[t] = true;
       (lauf.uebersprungen ||= {})[t] = true;
-      if (a.satz) angenommen.push(a.satz);
+      if (a.satz) {
+        angenommen.push((lauf.nichtVerstanden?.[t] || 0) >= 2
+          ? `dass du ihre Angabe nicht sicher lesen konntest und erst einmal davon ausgehst, ${a.satz}`
+          : a.satz);
+      }
     }
 
     /* Die Art steht vor dem Ziel - und vor der ersten Suche.
