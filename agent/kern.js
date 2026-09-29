@@ -628,6 +628,8 @@ const Kern = {
     }
     if (p.von && p.bis) teile.push(`${p.von} bis ${p.bis}`);
     else if (p.flexibel) teile.push(`Daten flexibel im Monat${p.anreise ? `, Anreise ${p.anreise}` : " (Anreisetag noch offen)"}`);
+    if (p.anreiseBis) teile.push(`Anreise spätestens ${p.anreiseBis}`);
+    if (p.anreiseAb) teile.push(`Anreise frühestens ${p.anreiseAb}`);
     if (p.naechte) teile.push(`${p.naechte} Nächte`);
     if (p.personen != null && p.erwachsene == null) teile.push(`${p.personen} Personen (Aufteilung Erwachsene/Kinder noch offen)`);
     if (p.erwachsene != null) teile.push(`${p.erwachsene} Erwachsene`);
@@ -1630,7 +1632,15 @@ const Kern = {
     if (!flug) return null;
     const monat = p.von ? p.von.slice(0, 7) : Werkzeugkasten.flexWahl(p)?.monat;
     const naechte = p.naechte || 7;
-    const tage = Flug.anreiseTage(flug, monat, naechte);
+    /* Eine genannte Frist grenzt die Vorschlaege ein.
+       ----------------------------------------------------------------
+       Wer "spaetestens am 3.12." gesagt hat, soll nicht den 10. Dezember
+       vorgeschlagen bekommen. Bleibt danach kein Tag uebrig, wird nicht
+       stillschweigend der naechstbeste genommen - die Liste ist dann leer,
+       und der Satz unten sagt, dass kein Rueckflug passt. */
+    let tage = Flug.anreiseTage(flug, monat, naechte);
+    if (p.anreiseBis) tage = tage.filter((d) => d <= p.anreiseBis);
+    if (p.anreiseAb) tage = tage.filter((d) => d >= p.anreiseAb);
     const MON = ["Jan.", "Feb.", "März", "April", "Mai", "Juni", "Juli", "Aug.", "Sept.", "Okt.", "Nov.", "Dez."];
     const kurz = (d) => `${new Date(d).getDate()}. ${MON[new Date(d).getMonth()]}`;
     if (!tage.length) {

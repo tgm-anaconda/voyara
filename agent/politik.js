@@ -1534,6 +1534,8 @@ const Politik = {
     if (profil.zimmer > 1) raus.push({ feld: "Zimmer", wert: String(profil.zimmer) });
     if (profil.von && profil.bis) raus.push({ feld: "Daten", wert: `${profil.von.slice(8)}.${profil.von.slice(5, 7)}. bis ${profil.bis.slice(8)}.${profil.bis.slice(5, 7)}.` });
     else if (profil.anreise) raus.push({ feld: "Anreise", wert: `${profil.anreise.slice(8)}.${profil.anreise.slice(5, 7)}.` });
+    else if (profil.anreiseBis) raus.push({ feld: "Anreise", wert: `bis ${profil.anreiseBis.slice(8)}.${profil.anreiseBis.slice(5, 7)}.` });
+    else if (profil.anreiseAb) raus.push({ feld: "Anreise", wert: `ab ${profil.anreiseAb.slice(8)}.${profil.anreiseAb.slice(5, 7)}.` });
     else if (profil.flexibel && profil.monat) raus.push({ feld: "Daten", wert: "flexibel" });
     if (profil.naechte) raus.push({ feld: "Dauer", wert: `${profil.naechte} Nächte` });
     if (profil.maxStrand != null) raus.push({ feld: "Strand", wert: profil.maxStrand < 1 ? `bis ${Math.round(profil.maxStrand * 1000)} m` : `bis ${profil.maxStrand} km` });

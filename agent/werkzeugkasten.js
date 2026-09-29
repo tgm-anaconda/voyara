@@ -82,6 +82,16 @@ const Werkzeugkasten = {
           von: text("Anreise als YYYY-MM-DD - nur, wenn die Person einen Tag nennt ('vom 12. bis 26.'). Aus 'im Oktober' wird kein Datum."),
           bis: text("Abreise als YYYY-MM-DD - nur bei genannten Tagen"),
           anreise: text("Anreisetag als YYYY-MM-DD, wenn die Person ihn fuer die Buchung nennt (bei flexibler Suche)"),
+          /* Fristen hatten bis zum 29.09.2026 kein Feld.
+             ----------------------------------------------------------
+             Auf "boah gerne spaetestens am 03.12" konnte das Modell
+             nichts ablegen: Es ist kein Anreisetag, sondern eine Grenze.
+             Es setzte stattdessen monatUeberlassen, der Kern waehlte
+             Oktober, und die Frage nach der Zeit kam ein zweites Mal -
+             fuer die Person sah es aus, als waere ihre Antwort nicht
+             angekommen. */
+          anreiseBis: text("Spaeteste Anreise als YYYY-MM-DD, wenn die Person eine Frist nennt ('spaetestens am 3.12.', 'wir muessen vor dem 20. da sein')"),
+          anreiseAb: text("Fruehestmoegliche Anreise als YYYY-MM-DD, wenn die Person eine Untergrenze nennt ('fruehestens ab dem 20.5.', 'erst nach dem 10.')"),
           zielOffen: { type: "boolean", description: "true, wenn die Person sagt, dass das Ziel noch offen ist oder sie sich beraten lassen will" },
           richtung: { type: "string", enum: ["warm", "kalt", "strand", "berge", "ski", "norden", "stadt", "wintersonne", "fern"], description: "Richtung statt Ziel, wenn die Person so etwas sagt ('eher warm', 'kalt', 'ans Meer', 'in die Berge') - die Suche beschraenkt sich dann auf passende Regionen" },
           weiter: { type: "string", enum: ["schauen", "klaeren"], description: "Antwort auf die Frage, ob du mit dem Bekannten schon mal schauen sollst (schauen) oder erst noch Eckdaten geklaert werden (klaeren)" },
@@ -428,6 +438,30 @@ const Werkzeugkasten = {
      Hinweis auf ein Hotel. */
   VERPFLEGUNG_HOTEL: ["fruehstueck", "halb", "voll", "ai"],
 
+  /* Aus einer Frist wird ein Monat, und der Agent sagt es.
+     ------------------------------------------------------------------
+     "Spaetestens am 3.12." heisst: Der Monat steht damit fest, und die
+     Anreise muss davor liegen. Beides gehoert ins Profil, und der Schritt
+     dorthin gehoert ausgesprochen - es ist eine Transferleistung, und die
+     werden hier immer erklaert. Einmal je Lauf. */
+  fristAbleiten(kern, p) {
+    const frist = p.anreiseBis || p.anreiseAb;
+    if (!frist || !kern?.lauf || kern.lauf.fristGesagt) return;
+    const monat = parseInt(String(frist).slice(5, 7), 10);
+    if (!(monat >= 1 && monat <= 12)) return;
+    kern.lauf.fristGesagt = true;
+    const tag = `${parseInt(String(frist).slice(8), 10)}. ${MONATSNAMEN[monat - 1]}`;
+    const richtung = p.anreiseBis ? "bis spätestens" : "frühestens ab";
+    if (!p.monat) {
+      p.monat = monat;
+      p.flexibel = true;
+      this.ableiten(kern, "monat",
+        `Also ${richtung} ${tag}. Ich merke mir ${MONATSNAMEN[monat - 1]} und achte darauf, dass die Anreise ${p.anreiseBis ? "davor" : "danach"} liegt.`);
+    } else {
+      this.ableiten(kern, "frist", `Alles klar, ${richtung} ${tag}.`);
+    }
+  },
+
   /* Die Rueckfrage, wenn ein Wunsch nur bei Hotels zu haben ist.
      ------------------------------------------------------------------
      Wer die Art offengelassen hat und dann Halbpension oder vier Sterne
@@ -690,7 +724,16 @@ const Werkzeugkasten = {
            eine Abgabe sein. Deshalb zaehlt die Abgabe nur, wenn die
            Jahreszeit nicht in derselben Nachricht steht. */
         const jahreszeitJetztGenannt = gesagt(/sommer|winter|herbst|frühling|fruehling|frühjahr|fruehjahr/i, 1);
-        if (abgegeben && !jahreszeitJetztGenannt && !monatGenannt && !p.vonPerson?.monat) {
+        /* Ein genanntes Datum ist erst recht eine Angabe.
+           --------------------------------------------------------------
+           Nutzer am 29.09.2026: "boah gerne spaetestens am 03.12" - danach
+           stand Oktober im Kasten und die Frage kam noch einmal. Das
+           Modell hatte monatUeberlassen gesetzt, weil es die Frist nirgends
+           ablegen konnte, und der Kern waehlte daraufhin selbst. Wer ein
+           Datum nennt, hat geantwortet; dieselbe Regel wie bei der
+           Jahreszeit. */
+        const datumJetztGenannt = gesagt(Werkzeugkasten.TAG, 1);
+        if (abgegeben && !jahreszeitJetztGenannt && !datumJetztGenannt && !monatGenannt && !p.vonPerson?.monat) {
           /* Sichtbar vergleichen, wenn er die Seite bedienen darf.
              ------------------------------------------------------------
              Der Kern koennte das Ergebnis in einer Millisekunde aus dem
@@ -746,6 +789,18 @@ const Werkzeugkasten = {
       const ZAHL = /\d|\b(ein|eine|einem|einen|zwei|drei|vier|fünf|fuenf|sechs|sieben|acht|zweit|dritt|viert|fünft|fuenft|sechst|kein|keine|ohne|allein|alleine|beide|zwilling|sohn|tochter|frau|mann|freundin|freund|partner|eltern|paar|erwachsene)\b/i;
       for (const f of ["personenGesamt", "erwachsene", "kinder"]) {
         if (a[f] != null && p[f === "personenGesamt" ? "personen" : f] == null && !gesagt(ZAHL, 1)) { kern.notieren("reisende_verworfen", { feld: f, wert: a[f] }); delete a[f]; }
+      }
+      /* "4 oder mehr" ist keine Vier.
+         ----------------------------------------------------------------
+         Der Chip hiess bis zum 29.09.2026 "4 oder mehr", sein Text ging
+         als Nachricht in den Chat, und das Modell nahm die einzige Zahl,
+         die dastand. Im Kasten stand danach "4 Personen", ohne dass
+         jemand das gesagt haette. Die Mengenangabe hat kein Feld, also
+         darf die Zahl daneben nicht gelten - gefragt wird noch einmal.
+         Faengt auch den Freitext "wir sind mindestens vier". */
+      if (a.personenGesamt != null && gesagt(/oder mehr|mehr als|mindestens|aufwärts|aufwaerts|\bab \d/i, 1)) {
+        kern.notieren("menge_unklar", { wert: a.personenGesamt });
+        delete a.personenGesamt;
       }
       setze("personen", a.personenGesamt);
       setze("erwachsene", a.erwachsene); setze("kinder", a.kinder);
@@ -848,6 +903,17 @@ const Werkzeugkasten = {
         const tag = parseInt(String(a.anreise).slice(-2), 10);
         if (fw && tag >= 1 && tag <= 31) a.anreise = `${fw.monat}-${String(tag).padStart(2, "0")}`;
       }
+      /* Fristen: nur, wenn in der Nachricht auch ein Datum steht.
+         ----------------------------------------------------------------
+         Dieselbe Regel wie beim Anreisetag - sonst traegt das Modell eine
+         Grenze ein, die niemand genannt hat. Der Monat wird daraus
+         abgeleitet, und die Ableitung wird gesagt, nicht stillschweigend
+         gemacht. */
+      for (const f of ["anreiseBis", "anreiseAb"]) {
+        if (a[f] && !gesagt(Werkzeugkasten.TAG)) { kern.notieren("frist_verworfen", { feld: f, wert: a[f] }); delete a[f]; }
+      }
+      setze("anreiseBis", a.anreiseBis); setze("anreiseAb", a.anreiseAb);
+      Werkzeugkasten.fristAbleiten(kern, p);
       setze("anreise", a.anreise);
       /* Aus dem genannten Tag werden feste Reisedaten.
          ----------------------------------------------------------------
@@ -2267,7 +2333,7 @@ const Werkzeugkasten = {
          fehlende Interpunktion haette eine Endlosschleife tragen koennen. */
       satz: ["Wie viele seid ihr, und sind Kinder dabei?",
         "Wie viele seid ihr denn, und kommen Kinder mit?"],
-      frage: "Mit wem sie reist - in einem Fragesatz. Nicht zwei Fragesaetze daraus machen.", chips: "1 | 2 | 3 | 4 oder mehr" },
+      frage: "Mit wem sie reist - in einem Fragesatz. Nicht zwei Fragesaetze daraus machen.", chips: "1 | 2 | 3 | 4 | mehr" },
 
     kinderAlter: {
 
@@ -2650,7 +2716,18 @@ const Werkzeugkasten = {
 
   // Hat die Person einen Tag genannt? "am 5.", "5. Nov.", "5. November",
   // "vom 12. bis 26.", "2026-11-05" oder nur "5." als ganze Antwort
-  TAG: /\b([1-9]|[12]\d|3[01])\.\s*(jan|feb|mär|maer|apr|mai|jun|jul|aug|sep|okt|nov|dez|\d{1,2}\.)|\b(am|ab dem|ab|vom|den)\s+([1-9]|[12]\d|3[01])\b|\d{4}-\d{2}-\d{2}|^\s*([1-9]|[12]\d|3[01])\.?\s*$/i,
+  /* Ein genannter Tag.
+     ------------------------------------------------------------------
+     Zwei Luecken, gefunden am 29.09.2026 an dem Satz "boah gerne
+     spaetestens am 03.12": Die fuehrende Null ("03") fiel durch, weil
+     der Tag mit [1-9] begann, und der Monat brauchte einen Punkt
+     dahinter ("12." statt "12"). Der Satz enthielt damit fuer den Kern
+     kein Datum - also galt er als Abgabe, der Kern waehlte selbst einen
+     Monat, und die Frage nach der Zeit kam ein zweites Mal.
+
+     Jetzt: fuehrende Null erlaubt, Punkt hinter dem Monat optional, und
+     Fristwoerter ("bis", "vor dem", "nach dem") zaehlen wie "am". */
+  TAG: /\b(0?[1-9]|[12]\d|3[01])\.\s*(jan|feb|mär|maer|apr|mai|jun|jul|aug|sep|okt|nov|dez|(0?[1-9]|1[0-2])\.?)|\b(am|ab dem|ab|vom|den|bis|bis zum|vor dem|nach dem)\s+(0?[1-9]|[12]\d|3[01])\b|\d{4}-\d{2}-\d{2}|^\s*(0?[1-9]|[12]\d|3[01])\.?\s*$/i,
 
   // Schluessel der Eckdaten - aendert er sich, muss neu gesucht werden
   eckdatenSchluessel(p) {
@@ -3076,7 +3153,7 @@ const Werkzeugkasten = {
         chips = kindChips(null);
       } else if (p.kinder != null && p.erwachsene == null) {
         satz = zweiter ? "Und wie viele Erwachsene sind dabei?" : "Und wie viele Erwachsene reisen mit?";
-        chips = "1 | 2 | 3 | 4 oder mehr";
+        chips = "1 | 2 | 3 | 4 | mehr";
       }
     }
     /* Dieselbe Frage zum zweiten Mal.
