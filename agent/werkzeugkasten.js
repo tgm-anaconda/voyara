@@ -101,6 +101,10 @@ const Werkzeugkasten = {
           maxStrandMeter: zahl("Hoechstens so viele Meter zum Strand"),
           mindestbewertung: { type: "number", description: "Mindest-Gaestenote, z.B. 4.5 (nur wenn die Person das sagt)" },
           mindestSterne: zahl("Mindestens so viele Hotelsterne (nur wenn die Person das sagt)"),
+          /* Jedes Haus hat WLAN, ein Viertel verlangt eine Tagesgebuehr.
+             Deshalb ist die Frage nicht "mit WLAN", sondern "ohne
+             Aufpreis" - siehe data/ziele.js, wlanGebuehr. */
+          wlanInklusive: { type: "boolean", description: "true, wenn die Person WLAN ohne Aufpreis will ('WLAN muss inklusive sein', 'ich will nicht fuer WLAN zahlen'). Jedes Haus hat WLAN, manche verlangen eine Tagesgebuehr." },
           nurAngebote: { type: "boolean", description: "true, wenn die Person nur Haeuser sehen will, die gerade reduziert sind ('nur was im Angebot ist', 'nur reduziert', 'gibt es Schnaeppchen', 'nur Sonderangebote'). Die Seite hat dafuer einen Schalter in der Filterspalte."},
           preisEgal: { type: "boolean", description: "true, wenn die Person sagt, dass der Preis keine Rolle spielt oder sie keinen Rahmen nennen will" },
           bewertungEgal: { type: "boolean", description: "true, wenn die Person sagt, dass Bewertung oder Sterne ihr egal sind" },
@@ -408,18 +412,12 @@ const Werkzeugkasten = {
      zweitrangig: Wenn beides erlaubt ist, hat ein alter Typ nichts mehr
      zu sagen. Die Auskunft richtet sich deshalb zuerst nach artEgal. */
   seitenTyp(p) {
-    /* Verpflegung und Sterne gibt es nur bei Hotels.
-       ----------------------------------------------------------------
-       Wer "egal, Hauptsache Halbpension" sagt, sucht damit ein Hotel,
-       auch wenn er es nicht so nennt. Bis zum 29.09.2026 blieb der Agent
-       auf dem gemeinsamen Reiter, wo es fuer beides kein Bedienelement
-       gibt: Er setzte nichts, meldete Erfolg und sprach danach ueber
-       eine Auswahl, die niemand gefiltert hatte. Die Seitenpruefung hat
-       das gefunden.
-
-       Die Ableitung wird gesagt, nicht stillschweigend gemacht - siehe
-       `suchen`, wo sie einmal im Gespraech auftaucht. */
-    if (p?.typ !== "apartment" && (this.VERPFLEGUNG_HOTEL.includes(p?.verpflegung) || p?.mindestSterne)) return "hotel";
+    /* Verpflegung und Sterne gibt es nur bei Hotels - aber der Agent
+       grenzt deswegen nicht von sich aus ein. Er fragt (siehe
+       `artRueckfrage`). Nutzer am 29.09.2026: "Ich wuerde jetzt nicht
+       einfach so wechseln, sondern das Modell sollte nochmal nachfragen."
+       Ein stiller Wechsel nimmt 160 Ferienwohnungen aus der Auswahl, und
+       die Person erfaehrt es erst hinterher. */
     if (p?.artEgal && !p?.artGenannt) return "unterkunft";
     return p?.typ === "apartment" ? "apartment" : (p?.typ === "hotel" ? "hotel" : "unterkunft");
   },
@@ -430,16 +428,36 @@ const Werkzeugkasten = {
      Hinweis auf ein Hotel. */
   VERPFLEGUNG_HOTEL: ["fruehstueck", "halb", "voll", "ai"],
 
-  /* Der Satz zur Ableitung oben, einmal je Lauf. Ohne ihn waere es genau
-     die stille Transferleistung, die der Nutzer nicht haben will. */
-  artAbleitungSagen(kern, p) {
-    if (!kern?.lauf || !p?.artEgal || p.artGenannt) return;
-    if (this.seitenTyp(p) !== "hotel") return;
-    if (kern.lauf.artAbgeleitet) return;
-    kern.lauf.artAbgeleitet = true;
-    const grund = this.VERPFLEGUNG_HOTEL.includes(p.verpflegung) ? "Verpflegung" : "Sterne";
-    this.ableiten(kern, "typ",
-      `${grund} gibt es nur bei Hotels, deshalb lasse ich die Ferienwohnungen hier weg.`);
+  /* Die Rueckfrage, wenn ein Wunsch nur bei Hotels zu haben ist.
+     ------------------------------------------------------------------
+     Wer die Art offengelassen hat und dann Halbpension oder vier Sterne
+     nennt, meint vermutlich ein Hotel - aber eben nur vermutlich. Statt
+     stillschweigend einzugrenzen (und damit 160 Ferienwohnungen aus der
+     Auswahl zu nehmen) fragt der Agent einmal nach.
+
+     Gibt `{ satz, chips }` zurueck oder null. Der Kern stellt die Frage
+     anstelle der naechsten Fahrplanfrage - fuer genau einen Zug, damit
+     nicht zwei Fragen in einer Nachricht stehen. Das offene Thema kommt
+     im naechsten Zug wieder.
+
+     "Ohne Verpflegung" zaehlt ausdruecklich nicht dazu: Wer selbst
+     kochen will, meint eher eine Ferienwohnung als ein Hotel ohne
+     Verpflegung. */
+  artRueckfrage(p, lauf) {
+    if (!p || !lauf) return null;
+    if (!p.artEgal || p.artGenannt) return null;
+    if (lauf.artGefragt) return null;
+    const verpflegung = this.VERPFLEGUNG_HOTEL.includes(p.verpflegung);
+    if (!verpflegung && !p.mindestSterne) return null;
+    const wunsch = verpflegung
+      ? ({ fruehstueck: "Frühstück", halb: "Halbpension", voll: "Vollpension", ai: "All Inclusive" })[p.verpflegung]
+      : `${p.mindestSterne} Sterne`;
+    return {
+      grund: verpflegung ? "verpflegung" : "sterne",
+      satz: `Eine Sache dazu: Gerade suche ich Hotels und Ferienwohnungen zusammen, und ${wunsch} `
+        + `gibt es nur bei Hotels. Soll ich auf Hotels eingrenzen, oder beides offen lassen?`,
+      chips: ["Nur Hotels", "Beides offen lassen"],
+    };
   },
 
   // Wie der Agent die Art nennt, wenn er darueber spricht
@@ -858,6 +876,7 @@ const Werkzeugkasten = {
       for (const f of ["preisEgal", "bewertungEgal", "strandEgal", "verpflegungEgal", "ausstattungEgal"]) if (a[f] !== undefined) setze(f, !!a[f]);
       // Nur reduzierte Haeuser - ein Wunsch wie jeder andere, kein "egal"
       if (a.nurAngebote !== undefined) { if (p.nurAngebote !== !!a.nurAngebote) geaendert.push("nurAngebote"); p.nurAngebote = !!a.nurAngebote; }
+      if (a.wlanInklusive !== undefined) { if (p.wlanInklusive !== !!a.wlanInklusive) geaendert.push("wlanInklusive"); p.wlanInklusive = !!a.wlanInklusive; }
       if (Array.isArray(a.wuensche)) {
         const ALIAS = { strand: "strandnah", meer: "strandnah", beach: "strandnah", kids: "kinderclub", kinder: "familie", spa: "wellness", bewertungen: "bewertung", essen: "essen" };
         // Ein Wunsch zaehlt nur, wenn die Person ein passendes Wort gesagt
@@ -1392,7 +1411,6 @@ const Werkzeugkasten = {
           kern.sperreAn();
           const flug = p.flug != null ? { mit: !!p.flug, ab: typeof Flug !== "undefined" ? Flug.code(p.flugAb) : "", klasse: p.flugKlasse || "economy" } : null;
           if (flug && typeof Flug !== "undefined") Flug.set(flug);
-          Werkzeugkasten.artAbleitungSagen(kern, p);
           const e = await Werkzeuge.suchen({ typ: Werkzeugkasten.seitenTyp(p), ziel: zielName || "", von: zeitraum.von, bis: zeitraum.bis,
             erwachsene: p.erwachsene, kinder: p.kinder, kinderAlter: p.kinderAlter || null, flug, flex });
           if (!e.ok) { kern.sperreAus(); return { ergebnis: { fehler: e.text } }; }
@@ -2664,6 +2682,7 @@ const Werkzeugkasten = {
     // gleichzeitig anhaken lassen - sie steht dann in der Spalte
     return JSON.stringify([p.maxPreis || null, p.maxStrand ?? null, p.mindestbewertung || null, p.mindestSterne || null,
       (p.kriterien || []).map((k) => k.id), p.ausstattung || [], p.verpflegung || null, p.nurAngebote || false,
+      p.wlanInklusive || false,
       p.zielId || null, (p.zieleErlaubt || []).slice().sort()]);
   },
 
@@ -3223,6 +3242,7 @@ const Werkzeugkasten = {
     const jetzt = zaehle(p);
     const ohne = [
       { label: "die Vorgabe, dass es reduziert sein soll", weg: (x) => { delete x.nurAngebote; }, wenn: () => p.nurAngebote },
+      { label: "die Vorgabe, dass WLAN ohne Aufpreis dabei ist", weg: (x) => { delete x.wlanInklusive; }, wenn: () => p.wlanInklusive },
       { label: p.verpflegung && typeof BOARD_LABELS !== "undefined" ? `die Vorgabe ${BOARD_LABELS[p.verpflegung]}` : "die Verpflegung", weg: (x) => { delete x.verpflegung; }, wenn: () => p.verpflegung },
       { label: "die Preisgrenze", weg: (x) => { delete x.maxPreis; delete x.budgetGesamt; }, wenn: () => p.maxPreis || p.budgetGesamt },
       { label: "die Mindestzahl an Sternen", weg: (x) => { delete x.mindestSterne; }, wenn: () => p.mindestSterne },
@@ -3483,6 +3503,7 @@ const Werkzeugkasten = {
       mindestbewertung: p.mindestbewertung || undefined,
       sterne: p.mindestSterne ? [5, 4, 3].filter((s) => s >= p.mindestSterne) : undefined,
       nurAngebote: p.nurAngebote || undefined,
+      wlanInklusive: p.wlanInklusive || undefined,
     };
   },
 
@@ -3576,6 +3597,7 @@ const Werkzeugkasten = {
        Sie steht am Ende, weil sie ein ausgesprochener Wunsch ist und
        nicht vor den abgeleiteten Punkten weichen soll. */
     { id: "angebote", tun: (p) => { if (!p.nurAngebote) return null; delete p.nurAngebote; return "die Vorgabe, dass es reduziert sein soll"; } },
+    { id: "wlan", tun: (p) => { if (!p.wlanInklusive) return null; delete p.wlanInklusive; return "die Vorgabe, dass WLAN ohne Aufpreis dabei ist"; } },
   ],
 
   // Solange lockern, bis etwas da ist. Gibt zurueck, was gelockert wurde.
@@ -3742,6 +3764,7 @@ const Werkzeugkasten = {
     if (p.mindestbewertung) t.push(`Note ab ${String(p.mindestbewertung).replace(".", ",")}`);
     if (p.mindestSterne) t.push(`ab ${p.mindestSterne} Sterne`);
     if (p.nurAngebote) t.push("nur Angebote");
+    if (p.wlanInklusive) t.push("WLAN ohne Aufpreis");
     const f = this.filterAusStand(p);
     if (f.ausstattung.length) t.push(f.ausstattung.map((x) => (typeof AMENITY_LABELS !== "undefined" && AMENITY_LABELS[x]) || x).join(", "));
     if (p.verpflegung && typeof BOARD_LABELS !== "undefined") t.push(BOARD_LABELS[p.verpflegung]);
@@ -3802,6 +3825,7 @@ const Werkzeugkasten = {
       // "Nur was im Angebot ist": reduziert heisst, es steht ein alter
       // Preis daran - dasselbe Merkmal, nach dem die Liste filtert.
       if (p.nurAngebote && !h.oldPrice) return false;
+      if (p.wlanInklusive && typeof wlanGebuehr === "function" && wlanGebuehr(h) > 0) return false;
       if (p.verpflegung && h.type !== "apartment" && !(h.boards || []).some((b) => b.key === p.verpflegung)) return false;
       return true;
     });

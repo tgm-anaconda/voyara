@@ -828,6 +828,9 @@ body.agent-collapsed .agent-head .icon-btn { margin-left: 0; transform: rotate(4
 .spec-row span { display: flex; align-items: center; gap: 5px; }
 .spec-row svg { color: var(--ink-500); }
 .tag-ok { background: #eaf7f0; border-color: #cceadc; color: var(--ok); }
+/* Kostet extra: WLAN mit Tagesgebuehr, auf der Karte und in der Ausstattung */
+.tag-hinweis { background: #fdf6e8; border-color: #f0e0bd; color: #8a6d1f; }
+.amenity-kostet { color: #8a6d1f; }
 .tag-brand { background: var(--brand-50); border-color: var(--brand-100); color: var(--brand-800); }
 
 .flight-body { grid-template-columns: 1fr 176px; }

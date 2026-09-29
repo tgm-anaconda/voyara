@@ -141,9 +141,15 @@ const Startbildschirm = {
           <li>
             <span class="einstieg-symbol">${this.SYMBOL.koffer}</span>
             <div>
-              <strong>Zwei Reisen buchen</strong>
-              <span>Du bekommst nacheinander zwei kurze Aufgaben und suchst dafür je
-                    eine Unterkunft - so, wie du es sonst auch tun würdest.</span>
+              ${/* Der Text folgt der Stellschraube, statt zwei Aufgaben zu
+                   versprechen. Seit dem 27.09.2026 ist es eine; der
+                   Einstieg sagte bis zum 29.09. weiter "Zwei Reisen". */ ""}
+              <strong>${(typeof STELLSCHRAUBEN !== "undefined" ? STELLSCHRAUBEN.aufgaben : 1) > 1
+                ? "Zwei Reisen buchen" : "Eine Reise buchen"}</strong>
+              <span>${(typeof STELLSCHRAUBEN !== "undefined" ? STELLSCHRAUBEN.aufgaben : 1) > 1
+                ? "Du bekommst nacheinander zwei kurze Aufgaben und suchst dafür je eine Unterkunft"
+                : "Du bekommst eine kurze Aufgabe und suchst dafür eine Unterkunft"} - so, wie du es
+                    sonst auch tun würdest.</span>
             </div>
           </li>
           <li>

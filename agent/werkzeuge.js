@@ -374,6 +374,13 @@ const Werkzeuge = {
       if (el && !el.checked && await this.klickeFilterZeile(el, "nur Angebote")) gesetzt.push("nur reduzierte Häuser");
     }
 
+    // WLAN ohne Aufpreis: derselbe Weg wie der Angebotsschalter
+    if (wunsch.wlanInklusive) {
+      const el = this.finde(".js-wlan", panel);
+      if (!el) nichtGesetzt.push("WLAN ohne Aufpreis");
+      else if (!el.checked && await this.klickeFilterZeile(el, "WLAN ohne Aufpreis")) gesetzt.push("WLAN ohne Aufpreis");
+    }
+
     if (wunsch.mindestbewertung) {
       const el = this.finde(`.js-rating[value="${wunsch.mindestbewertung}"]`, panel);
       if (el && !el.checked && await this.klickeFilterZeile(el, "Bewertung")) {
@@ -388,13 +395,21 @@ const Werkzeuge = {
       }
     }
 
-    // Der Preisregler wird gezogen, nicht geklickt
+    /* Der Preisregler wird gezogen, nicht geklickt.
+       ----------------------------------------------------------------
+       Der Rueckgabewert wird ausgewertet: `Zeiger.setzeWert` gibt false
+       zurueck, wenn das Element nicht sichtbar ist, und bis zum
+       29.09.2026 stand die Preisgrenze trotzdem im Bericht. Der Agent
+       meldete "bis 220 €", waehrend der Regler auf 448 stand - gefunden
+       von der Seitenpruefung. Bei den Haken war das nie moeglich, dort
+       wurde der Rueckgabewert immer geprueft. */
     if (wunsch.maxPreis) {
       const regler = this.finde("#fPrice", panel);
-      if (regler) {
-        await Zeiger.setzeWert(regler, String(wunsch.maxPreis), { hinweis: "Preisgrenze" });
+      if (!regler) nichtGesetzt.push(`Preisgrenze ${wunsch.maxPreis} €`);
+      else if (await Zeiger.setzeWert(regler, String(wunsch.maxPreis), { hinweis: "Preisgrenze" })
+        && Number(regler.value) === Number(wunsch.maxPreis)) {
         gesetzt.push(`bis ${wunsch.maxPreis} €`);
-      }
+      } else nichtGesetzt.push(`Preisgrenze ${wunsch.maxPreis} €`);
     }
 
     await Zeiger.warte(300);

@@ -1120,6 +1120,21 @@ const Kern = {
         const freierZug = ["frage", "einwand", "unklar", "sonstiges"].includes(this.lauf.nachrichtArt);
         if (!nachricht.tool_calls) {
           fpJetzt = Werkzeugkasten.fahrplan(this.lauf.profil || {}, this.lauf);
+          /* Eine Rueckfrage, die einmal vorgeht.
+             ------------------------------------------------------------
+             Hat die Person die Art offengelassen und nennt dann etwas, das
+             es nur bei Hotels gibt (Halbpension, Sterne), fragt der Agent,
+             ob eingegrenzt werden soll. Diese Frage tritt fuer genau einen
+             Zug an die Stelle der naechsten Fahrplanfrage - sonst staenden
+             zwei Fragen in einer Nachricht. `naechstes` faellt dabei weg,
+             damit das offene Thema nicht als gefragt zaehlt; es kommt im
+             naechsten Zug wieder. */
+          const artFrage = !freierZug && Werkzeugkasten.artRueckfrage(this.lauf.profil || {}, this.lauf);
+          if (artFrage) {
+            this.lauf.artGefragt = true;
+            this.notieren("art_rueckfrage", { grund: artFrage.grund, offen: fpJetzt.naechstes });
+            fpJetzt = { ...fpJetzt, satz: artFrage.satz, chips: artFrage.chips.join(" | "), naechstes: null };
+          }
           /* Zwei Ebenen.
              ------------------------------------------------------------
              Hat die Person geantwortet, fuehrt der Fahrplan weiter: Der

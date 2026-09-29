@@ -67,6 +67,7 @@ const state = {
   directOnly: false,
   freeCancel: false,
   onlyDeals: false,
+  wlanFrei: false,
   sort: "empfehlung",
   withFlight: false,
 };
@@ -198,6 +199,9 @@ function matches(item) {
      das gewollt haette. Der Angebotsfilter gilt fuer beide - dort ist
      "kein alter Preis" eine Aussage und kein fehlendes Merkmal. */
   if (state.onlyDeals && !item.oldPrice) return false;
+  // WLAN hat jedes Haus, aber nicht ueberall ohne Aufpreis. Gilt wie der
+  // Angebotsfilter fuer Hotels und Wohnungen gleichermassen.
+  if (state.wlanFrei && typeof wlanGebuehr === "function" && wlanGebuehr(item) > 0) return false;
   if (state.type === "hotel") {
     if (state.stars.size && !state.stars.has(String(item.stars))) return false;
     if (state.categories.size && !state.categories.has(item.category)) return false;
@@ -295,6 +299,16 @@ function renderFilters() {
         `<label class="check-row"><input type="checkbox" class="js-deals" ${state.onlyDeals ? "checked" : ""}/><span>Nur reduzierte Häuser</span><span class="count">${countIn((h) => h.oldPrice)}</span></label>`);
     }
 
+    /* WLAN inklusive.
+       ----------------------------------------------------------------
+       Alle Haeuser haben WLAN, ein Viertel verlangt eine Tagesgebuehr
+       (data/ziele.js, wlanGebuehr). Deshalb heisst der Haken nicht
+       "WLAN", sondern "ohne Aufpreis" - sonst filtert er nichts. */
+    if (typeof wlanGebuehr === "function" && countIn((h) => wlanGebuehr(h) > 0)) {
+      html += group("WLAN",
+        `<label class="check-row"><input type="checkbox" class="js-wlan" ${state.wlanFrei ? "checked" : ""}/><span>Nur ohne Aufpreis</span><span class="count">${countIn((h) => wlanGebuehr(h) === 0)}</span></label>`);
+    }
+
     html += group("Entfernung zum Strand",
       [{ v: 0.2, l: "Direkt am Strand" }, { v: 1, l: "Bis 1 km" }, { v: 5, l: "Bis 5 km" }, { v: null, l: "Egal" }]
         .map((o) => radioRow("fBeach", "js-beach", o.v === null ? "" : o.v, o.l,
@@ -388,12 +402,13 @@ function renderFilters() {
   panel.querySelector(".js-direct")?.addEventListener("change", (e) => { state.directOnly = e.target.checked; renderResults(); });
   panel.querySelector(".js-cancel")?.addEventListener("change", (e) => { state.freeCancel = e.target.checked; renderResults(); });
   panel.querySelector(".js-deals")?.addEventListener("change", (e) => { state.onlyDeals = e.target.checked; renderResults(); });
+  panel.querySelector(".js-wlan")?.addEventListener("change", (e) => { state.wlanFrei = e.target.checked; renderResults(); });
 
   panel.querySelector("#fReset").addEventListener("click", () => {
     state.stars.clear(); state.categories.clear(); state.amenities.clear(); state.boards.clear();
     state.carCategories.clear(); state.transmissions.clear(); state.airlines.clear();
     state.minRating = 0; state.maxBeach = null; state.minBedrooms = 0;
-    state.directOnly = false; state.freeCancel = false; state.onlyDeals = false;
+    state.directOnly = false; state.freeCancel = false; state.onlyDeals = false; state.wlanFrei = false;
     state.ziel = ""; state.ziele.clear();
     state.priceMax = priceBounds().max;
     renderFilters(); renderResults();
@@ -406,7 +421,11 @@ function stayResultCard(item) {
   const sub = isApt
     ? `${item.bedrooms} Schlafzimmer · ${item.size} m² · bis ${item.maxGuests} Personen`
     : `${starString(item.stars)} · ${CATEGORY_LABELS[item.category]}`;
-  const tags = isApt ? item.amenities.slice(0, 5) : item.amenities.slice(0, 5);
+  /* "wifi" traegt das Etikett "WLAN inklusive" - das stimmt nicht bei
+     jedem Haus, seit ein Viertel eine Tagesgebuehr verlangt. Auf der
+     Karte steht deshalb der Preis, wenn es einen gibt, und der
+     allgemeine Haken faellt weg. */
+  const tags = item.amenities.filter((a) => a !== "wifi").slice(0, 5);
 
   const ziel = typeof ZIEL_NACH_ID !== "undefined" ? ZIEL_NACH_ID[item.ziel] : null;
   const saison = ziel ? saisonLabel(ziel, reisemonat()) : null;
@@ -425,7 +444,11 @@ function stayResultCard(item) {
       <div class="hotel-loc">${ICONS.pin}${item.location}${ziel ? ` · ${ziel.name}, ${ziel.land}` : ""}</div>
       ${saison ? `<div class="saison-zeile"><span class="saison ${saison.klasse}">${saison.text}</span><span class="saison-info">Hauptsaison ${saisonText(ziel)}</span></div>` : ""}
       <p class="result-desc">${item.shortDescription}</p>
-      <div class="hotel-tags">${tags.map((a) => `<span class="tag">${AMENITY_LABELS[a] || a}</span>`).join("")}</div>
+      <div class="hotel-tags">${tags.map((a) => `<span class="tag">${AMENITY_LABELS[a] || a}</span>`).join("")}${
+        typeof wlanGebuehr === "function"
+          ? (wlanGebuehr(item) > 0
+            ? `<span class="tag tag-hinweis">WLAN ${wlanGebuehr(item)} € pro Tag</span>`
+            : `<span class="tag">WLAN inklusive</span>`) : ""}</div>
     </div>
     <div class="result-side">
       <div class="rating-chip">

@@ -133,7 +133,13 @@ function renderAmenities() {
   document.getElementById("amenityPanel").innerHTML = `
     <h2>Ausstattung &amp; Services</h2>
     <div class="amenity-grid">
-      ${item.amenities.map((a) => `<div class="amenity">${ICONS.check}${AMENITY_LABELS[a] || a}</div>`).join("")}
+      ${item.amenities.filter((a) => a !== "wifi")
+        .map((a) => `<div class="amenity">${ICONS.check}${AMENITY_LABELS[a] || a}</div>`).join("")}
+      ${/* WLAN hat jedes Haus, der Preis unterscheidet sich - deshalb steht
+           hier der Preis statt des allgemeinen Hakens "WLAN inklusive",
+           der sonst auch bei Haeusern mit Tagesgebuehr dastuende. */ ""}
+      <div class="amenity${typeof wlanGebuehr === "function" && wlanGebuehr(item) > 0 ? " amenity-kostet" : ""}">
+        ${ICONS.check}${typeof wlanText === "function" ? wlanText(item) : "WLAN"}</div>
     </div>`;
 }
 

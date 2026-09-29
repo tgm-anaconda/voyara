@@ -220,6 +220,38 @@ function freiImMonat(item, monat) {
   return belegungsZahl(`${item.id}|${monat}`) >= belegt;
 }
 
+/* WLAN kostet nicht ueberall gleich.
+   ====================================================================
+   Alle 344 Haeuser haben WLAN - deshalb war ein Haken "WLAN" in der
+   Filterspalte wertlos und stand dort auch nie. Interessant ist nicht
+   ob, sondern zu welchem Preis: Ein Viertel der Haeuser verlangt eine
+   Tagesgebuehr, und das folgt demselben Muster wie in echten Portalen.
+   Guenstige Stadthotels berechnen es, Resorts fast nie, Ferienwohnungen
+   haben meist den Anschluss der Wohnung.
+
+   Bewusst NICHT an der Kasse: Dort steht genau eine vorausgewaehlte
+   Zusatzleistung, die Reiseruecktrittsversicherung, und die ist ein
+   Messwert der Erhebung. Ein zweiter versteckter Posten daneben wuerde
+   ihn unbrauchbar machen - dann waere nicht mehr zu unterscheiden, was
+   jemand uebersehen hat. WLAN ist ein Suchmerkmal, keine Falle.
+
+   Gibt die Tagesgebuehr in Euro zurueck, 0 heisst inklusive. Fester
+   Zufall ueber die id, damit dasselbe Haus immer denselben Preis hat. */
+function wlanGebuehr(item) {
+  if (!item) return 0;
+  const zahl = belegungsZahl(`wlan|${item.id}`);
+  const anteil = item.type === "apartment" ? 120
+    : (item.stars >= 5 ? 100 : item.stars <= 3 ? 350 : 250);
+  if (zahl >= anteil) return 0;
+  return [3, 5, 8, 12][zahl % 4];
+}
+
+// "WLAN inklusive" oder "WLAN 5 € pro Tag"
+function wlanText(item) {
+  const g = wlanGebuehr(item);
+  return g ? `WLAN ${g} € pro Tag` : "WLAN inklusive";
+}
+
 const MONATSNAMEN = ["Januar", "Februar", "März", "April", "Mai", "Juni",
   "Juli", "August", "September", "Oktober", "November", "Dezember"];
 

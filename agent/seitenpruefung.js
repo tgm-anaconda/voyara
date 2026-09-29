@@ -209,11 +209,22 @@ const Seitenpruefung = {
         this.befund(g, "Verpflegungsarten aus dem Werkzeugschema haben hier kein Bedienelement", { ohneVerpflegung });
       } else this.bestanden();
     } else if (typeof Werkzeugkasten !== "undefined") {
-      const mitVerpflegung = Werkzeugkasten.seitenTyp({ artEgal: true, verpflegung: "halb" });
-      const mitSternen = Werkzeugkasten.seitenTyp({ artEgal: true, mindestSterne: 4 });
-      if (mitVerpflegung !== "hotel" || mitSternen !== "hotel") {
-        this.befund(g, "Verpflegung oder Sterne führen nicht auf den Hotel-Reiter",
-          { mitVerpflegung, mitSternen });
+      /* Auf den anderen Reitern muss die Rueckfrage greifen: Wer die Art
+         offengelassen hat und Halbpension oder Sterne nennt, wird gefragt,
+         ob eingegrenzt werden soll. Eingegrenzt wird nicht von selbst. */
+      const frage = (p) => Werkzeugkasten.artRueckfrage(p, {});
+      const beiVerpflegung = !!frage({ artEgal: true, verpflegung: "halb" });
+      const beiSternen = !!frage({ artEgal: true, mindestSterne: 4 });
+      const beiOhne = !!frage({ artEgal: true, verpflegung: "ohne" });
+      const stillerWechsel = Werkzeugkasten.seitenTyp({ artEgal: true, verpflegung: "halb" }) !== "unterkunft";
+      if (!beiVerpflegung || !beiSternen) {
+        this.befund(g, "Bei Verpflegung oder Sternen kommt keine Rückfrage", { beiVerpflegung, beiSternen });
+      } else this.bestanden();
+      if (beiOhne) {
+        this.befund(g, "\"Ohne Verpflegung\" löst eine Rückfrage aus - wer selbst kocht, meint eher eine Wohnung");
+      } else this.bestanden();
+      if (stillerWechsel) {
+        this.befund(g, "Der Reiter wechselt von selbst auf Hotels, statt zu fragen");
       } else this.bestanden();
     }
   },
