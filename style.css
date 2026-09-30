@@ -1803,6 +1803,12 @@ body.startschirm-offen { overflow: hidden; }
   .aufgabe-fenster-karte { border-radius: 16px 16px 0 0; padding: 24px 20px 20px; max-height: 92dvh; }
 }
 
+/* Regionen, die im Reisemonat ausserhalb ihrer Saison sind: sichtbar,
+   aber erkennbar zurueckgenommen. Anklickbar bleiben sie, damit ein
+   Gespraech ueber "Lappland im August" auf der Seite darstellbar ist. */
+.check-row.aus-saison { opacity: .45; }
+.check-row.aus-saison:hover { opacity: .7; }
+
 /* Eckpunkte: die drei Angaben vor dem ersten Kontakt */
 .eckpunkte .einstieg-blatt { max-width: 640px; }
 .eckpunkt-block { padding: 14px 0 4px; border-top: 1px solid var(--line); }

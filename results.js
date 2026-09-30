@@ -182,6 +182,23 @@ function matches(item) {
   const suchtext = `${item.name} ${item.location} ${item.region} ${ziel ? ziel.name + " " + ziel.land : ""}`.toLowerCase();
   if (q && !suchtext.includes(q)) return false;
   if (state.ziele.size && !state.ziele.has(item.ziel)) return false;
+  /* Ausserhalb der Saison heisst: nicht im Angebot.
+     ------------------------------------------------------------------
+     Bis zum 30.09.2026 standen diese Haeuser in der Liste, mit dem
+     Vermerk "Ausserhalb der Saison" auf der Karte. Der Agent zaehlte sie
+     nie mit - er sagte 125, die Liste zeigte 177, und der Unterschied
+     brauchte jedes Mal einen Erklaersatz, den niemand verstand.
+
+     Nutzer am 30.09.2026: "Zeig einfach die Menge von den Ausgegrauten
+     nicht mehr, dann ist es gefixt." Genau so. Seite und Agent zeigen
+     jetzt dieselbe Zahl.
+
+     Eine Ausnahme: Wer eine Region ausdruecklich anhakt, bekommt sie zu
+     sehen - dieselbe Regel, nach der auch der Agent die Saison ignoriert,
+     wenn die Person das Ziel selbst nennt. Sonst waere ein Gespraech
+     ueber "Lappland im August" auf der Seite nicht mehr abbildbar. */
+  if (!state.ziele.has(item.ziel) && ziel && typeof saisonPassung === "function"
+    && saisonPassung(ziel, reisemonat()) < 0.5) return false;
   // Reisegruppe muss hineinpassen - vorher wurde die Personenzahl ignoriert
   if (!Belegung.passt(item)) return false;
   if (saisonpreis(item) > state.priceMax) return false;
@@ -250,8 +267,8 @@ function group(title, inner) {
   return `<div class="filter-group"><h4>${title}</h4>${inner}</div>`;
 }
 
-function checkRow(cls, value, label, count, checked) {
-  return `<label class="check-row"><input type="checkbox" class="${cls}" value="${value}" ${checked ? "checked" : ""}/><span>${label}</span><span class="count">${count}</span></label>`;
+function checkRow(cls, value, label, count, checked, zeilenKlasse = "") {
+  return `<label class="check-row${zeilenKlasse ? ` ${zeilenKlasse}` : ""}"><input type="checkbox" class="${cls}" value="${value}" ${checked ? "checked" : ""}/><span>${label}</span><span class="count">${count}</span></label>`;
 }
 
 function radioRow(name, cls, value, label, count, checked) {
@@ -270,14 +287,37 @@ function renderFilters() {
   const istUnterkunft = ["unterkunft", "hotel", "apartment"].includes(state.type);
   if (istUnterkunft) {
     const monat = reisemonat();
-    const zieleImBestand = ZIELE.filter((z) => countIn((h) => h.ziel === z.id));
+    /* Die Liste zeigt Haeuser ausserhalb ihrer Saison nicht mehr - also
+       zaehlt `countIn` fuer solche Regionen null, und sie faelen ganz aus
+       der Spalte. Sichtbar bleiben sollen sie trotzdem: Wer im Maerz nach
+       Lappland schaut, soll sehen, dass es die Region gibt und warum
+       gerade nichts dasteht. Deshalb eine zweite Zaehlung, die die Saison
+       aussen vor laesst. */
+    const alleHaeuser = () => [...(typeof HOTELS !== "undefined" ? HOTELS : []), ...(typeof APARTMENTS !== "undefined" ? APARTMENTS : [])];
+    const ausserSaison = (z) => typeof saisonPassung === "function" && saisonPassung(z, monat) < 0.5;
+    const bestandOhneSaison = (z) => alleHaeuser().filter((h) => h.ziel === z.id
+      && (typeof freiImMonat !== "function" || freiImMonat(h, monat)) && Belegung.passt(h)).length;
+    const zieleImBestand = ZIELE.filter((z) => countIn((h) => h.ziel === z.id) || (ausserSaison(z) && bestandOhneSaison(z)));
     if (zieleImBestand.length > 1) {
       // Kein Haken heisst: alle Ziele. Ein eigener Knopf dafuer waere eine
       // vierte Moeglichkeit neben an, aus und halb - und muesste erklaert werden.
       html += group("Reiseziel",
-        zieleImBestand.map((z) => checkRow("js-ziel", z.id,
-          `${z.name}${saisonPassung(z, monat) === 1 ? " ·&nbsp;Saison" : ""}`,
-          countIn((h) => h.ziel === z.id), state.ziele.has(z.id))).join(""));
+        zieleImBestand.map((z) => {
+          const aus = ausserSaison(z) && !state.ziele.has(z.id);
+          /* Ausgegraut, aber anklickbar.
+             --------------------------------------------------------------
+             Der Nutzer wollte sie "ausgegraut und nicht anklickbar". Ganz
+             sperren geht nicht: Wer im Gespraech "Lappland im August" sagt,
+             bekommt vom Agenten genau diese Region gezeigt - dann muss die
+             Seite sie auch darstellen koennen. Der Haken ist also weiter
+             benutzbar, sieht aber aus wie das, was er ist: eine Region,
+             die gerade nicht Saison hat. */
+          const zusatz = aus ? " ·&nbsp;außerhalb der Saison"
+            : (saisonPassung(z, monat) === 1 ? " ·&nbsp;Saison" : "");
+          return checkRow("js-ziel", z.id, `${z.name}${zusatz}`,
+            aus ? bestandOhneSaison(z) : countIn((h) => h.ziel === z.id),
+            state.ziele.has(z.id), aus ? "aus-saison" : "");
+        }).join(""));
     }
 
     html += group("Gästebewertung",

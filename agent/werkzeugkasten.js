@@ -3730,14 +3730,18 @@ const Werkzeugkasten = {
           : gruende[0];
         teile.push(`Der Katalog hat ${monatText.replace(/^Im /, "im ")} ${kette.katalog} ${art} frei: ${liste2}.`);
       }
-      /* Die Zahl in der Liste ist die Zwischenstufe der Kette: Sie
-         filtert die Reisegruppe mit, die Saison nicht. Genannt wird sie
-         nur, wenn sie wirklich dort steht - sobald der Agent weitere
-         Filter gesetzt hat, zeigt die Seite etwas anderes, und dann
-         waere die Zahl eine Behauptung. */
-      if (aufDerSeite != null && kette.inDerListe === aufDerSeite && aufDerSeite !== liste.length && !durchVorgaben) {
-        teile.push(`In der Liste daneben stehen deshalb ${aufDerSeite} - die ${liste.length} und die ${kette.ausserSaison} aus der Nebensaison, die ich nicht mitzähle.`);
-      }
+      /* Die Zahl der Liste steht hier nicht mehr.
+         ----------------------------------------------------------------
+         Sie war der Versuch, einen Unterschied zu erklaeren, den es nicht
+         geben muss. Nutzer am 30.09.2026: "Ich habe immer noch nicht ganz
+         verstanden, warum da jetzt nur 177 stehen ... dann lassen wir den
+         Satz einfach weg. Oder zeig einfach die Menge von den Ausgegrauten
+         nicht mehr, dann ist es gefixt."
+
+         Beides ist passiert: Der Satz ist weg, und die Trefferliste zeigt
+         Haeuser ausserhalb ihrer Saison gar nicht mehr (results.js). Damit
+         zeigen Seite und Agent dieselbe Zahl, und es gibt nichts mehr zu
+         erklaeren. */
     }
 
     // "Pro Nacht kosten sie 186 bis 186 €" - bei einem einzigen Haus gibt
