@@ -448,25 +448,143 @@ const Werkzeuge = {
   // Der Agent scrollt die Liste durch, statt sie stumm auszulesen. Ohne diese
   // Geste wirken seine Aussagen, als kaemen sie aus dem Nichts.
   async ergebnisseLesen(anzahl = 5) {
-    const karten = [...document.querySelectorAll(".result-card")].slice(0, anzahl);
+    const alle = [...document.querySelectorAll(".result-card")];
+    const karten = alle.slice(0, anzahl);
     if (!karten.length) return { ok: true, text: "Keine Treffer zum Ansehen.", daten: { treffer: [] } };
 
-    const startY = window.scrollY;
-    let weiteste = startY;
-    for (const karte of karten) {
-      if (Zeiger.abbruch) break;
+    /* Gelesen werden die ersten Karten - durchlaufen wird die ganze Liste.
+       ----------------------------------------------------------------
+       Der Nutzer am 30.09.2026: "So hat er ja nicht alle gescannt, und
+       wir wollen ja wirklich so tun, als wuerde der Agent alles
+       scannen." Er hat recht, und es ist nicht nur Optik: Der Kern
+       rechnet ohnehin ueber den ganzen Katalog (`imKatalog`), die
+       gelesenen Karten sind nur die Stichprobe von der Seite. Die
+       Bewegung zeigt jetzt, was er wirklich ueberblickt.
+
+       Welche Karten in die Auswertung gehen, aendert sich dabei nicht -
+       es bleiben dieselben ersten `anzahl`. Sonst waere mit einer
+       Bewegung auch das Ergebnis der Erhebung verschoben. */
+    const beiHalt = async (karte) => {
       await Zeiger.lies(karte, { dauer: 420, hinweis: "vergleiche" });
-      weiteste = Math.max(weiteste, window.scrollY);
-    }
+    };
+    const r = await this.scrollDurch({
+      elemente: alle, halte: karten, beiHalt, zaehlwort: "Häusern", tempoMs: 22,
+    });
     // Dieselbe Selbstpruefung wie bei den Bewertungen: Steht die Seite still,
     // waehrend der Agent "vergleicht", steht das im Protokoll. Bei wenigen
     // Karten passt die Liste auf den Schirm - dann ist Stillstand richtig.
-    const gescrollt = Math.abs(weiteste - startY) > 8;
-    if (!gescrollt && karten.length >= 4 && typeof Kern !== "undefined") {
-      Kern.notieren?.("scroll_ohne_wirkung", { wo: "trefferliste", karten: karten.length, startY: Math.round(startY) });
+    if (!r.gescrollt && alle.length >= 8 && typeof Kern !== "undefined") {
+      Kern.notieren?.("scroll_ohne_wirkung", { wo: "trefferliste", karten: alle.length });
     }
     const treffer = karten.map((k) => this.kartenDaten(k)).filter(Boolean);
-    return { ok: true, text: `${treffer.length} Angebote verglichen.`, daten: { treffer, gescrollt } };
+    return { ok: true, text: `${treffer.length} Angebote verglichen.`, daten: { treffer, gescrollt: r.gescrollt } };
+  },
+
+  /* Einmal ganz durch, mit Halt unterwegs.
+     ------------------------------------------------------------------
+     Dieselbe Bewegung fuer die Trefferliste und fuer die Bewertungen,
+     damit es nicht zwei Fassungen gibt, die auseinanderlaufen. Der
+     Nutzer am 30.09.2026 zu beiden Stellen: "Er muss einfach einen ganz
+     schnellen Durchlauf machen, die komplette Seite runterscrollen und
+     dann wieder hoch", und unterwegs "zum Beispiel bei 30 von 100
+     anhalten, den genauer scannen, weiterscrollen".
+
+     Drei Dinge macht sie richtig, die vorher falsch waren:
+
+       - Gemessen wird am ersten und letzten Element, nicht am Kasten
+         darum. Der hatte im Moment der Messung die Hoehe 0, und damit
+         war die Scrollstrecke null Pixel, waehrend der Zaehler lief.
+         Gemessen wird so lange, bis die Seite wirklich steht.
+       - Die Schrittweite ist 0,8 Fensterhoehen. Vorher waren es feste
+         18 Spruenge, bei einer langen Liste also drei Bildschirme auf
+         einmal - das sieht aus wie Ueberspringen, nicht wie Lesen.
+       - Der Zaehler haengt an der Scrollposition, nicht an einem eigenen
+         Takt. Am Ende steht deshalb genau die Zahl da, die es gibt.
+
+     `halte` sind Elemente, an denen angehalten wird; `beiHalt` bekommt
+     das Element und die laufende Nummer. Rueckgabe sagt, ob sich
+     wirklich etwas bewegt hat. */
+  async scrollDurch({ elemente, halte = [], beiHalt = null, zaehlwort = "", tempoMs = 24 }) {
+    const mass = await this.strecke(elemente);
+    if (!mass) {
+      // Zu kurz zum Scrollen: dann nur die Haltepunkte ansehen
+      for (let i = 0; i < halte.length && !Zeiger.abbruch; i++) {
+        if (beiHalt) await beiHalt(halte[i], i + 1);
+      }
+      return { gescrollt: false, strecke: 0, gesamt: elemente.length };
+    }
+    const { von, bis } = mass;
+    const gesamt = elemente.length;
+    const schritt = Math.max(220, Math.round(window.innerHeight * 0.8));
+    /* Der Durchlauf soll ueberall gleich lang wirken, egal ob 100 oder
+       253 Karten darunterliegen - sonst zieht sich eine lange Liste
+       ueber sechs Sekunden hin und wirkt zaeh statt schnell. Angepeilt
+       sind rund zweieinhalb Sekunden reines Scrollen; die Halte kommen
+       dazu. Der Faktor `Zeiger.tempo` steckt in `warte` mit drin. */
+    const schritteGesamt = Math.max(1, Math.ceil((bis - von) / schritt));
+    const takt = Math.max(12, Math.min(tempoMs, Math.round((2500 * (Zeiger.tempo || 1)) / schritteGesamt)));
+    const startY = window.scrollY;
+    let weiteste = startY;
+    let naechstes = 0;
+    let y = von;
+    window.scrollTo({ top: von, behavior: "auto" });
+    await Zeiger.warte(120);
+    while (y < bis && !Zeiger.abbruch) {
+      y = Math.min(bis, y + schritt);
+      // Liegt der naechste Haltepunkt in diesem Abschnitt, haelt er dort
+      // an, statt an ihm vorbeizuziehen.
+      while (naechstes < halte.length && !Zeiger.abbruch) {
+        const el = halte[naechstes];
+        const ziel = window.scrollY + el.getBoundingClientRect().top;
+        if (ziel > y + window.innerHeight * 0.5) break;
+        if (beiHalt) await beiHalt(el, naechstes + 1);
+        naechstes += 1;
+        y = Math.max(y, window.scrollY);
+      }
+      window.scrollTo({ top: y, behavior: "auto" });
+      weiteste = Math.max(weiteste, window.scrollY);
+      if (zaehlwort) {
+        const anteil = bis > von ? Math.min(1, (y - von) / (bis - von)) : 1;
+        Zeiger.beschrifte?.(`${Math.max(1, Math.round(gesamt * anteil))} von ${gesamt} ${zaehlwort}`);
+      }
+      await Zeiger.warte(takt);
+    }
+    // Was noch offen ist, weil die Strecke vorher zu Ende war
+    while (naechstes < halte.length && !Zeiger.abbruch) {
+      if (beiHalt) await beiHalt(halte[naechstes], naechstes + 1);
+      naechstes += 1;
+    }
+    if (zaehlwort) {
+      Zeiger.beschrifte?.(`${gesamt} von ${gesamt} ${zaehlwort}`);
+      await Zeiger.warte(160);
+    }
+    const gescrollt = Math.abs(weiteste - startY) > 8;
+    Zeiger.beschrifte?.("");
+    window.scrollTo({ top: von, behavior: "auto" });
+    await Zeiger.warte(180);
+    return { gescrollt, strecke: bis - von, gesamt };
+  },
+
+  /* Die Strecke ueber eine Reihe von Elementen - gemessen an ihnen
+     selbst, nicht am Kasten darum, und so lange wiederholt, bis die
+     Seite steht. Gibt null zurueck, wenn es nichts zu scrollen gibt. */
+  async strecke(elemente) {
+    for (let versuch = 0; versuch < 8; versuch++) {
+      if (elemente.length) {
+        const oben = elemente[0].getBoundingClientRect();
+        const unten = elemente[elemente.length - 1].getBoundingClientRect();
+        const hoehe = (unten.bottom + window.scrollY) - (oben.top + window.scrollY);
+        if (hoehe > window.innerHeight) {
+          return {
+            von: window.scrollY + oben.top - 120,
+            bis: window.scrollY + unten.bottom - window.innerHeight + 80,
+            hoehe,
+          };
+        }
+      }
+      await new Promise((f) => setTimeout(f, 60));
+    }
+    return null;
   },
 
   /* Einmal ganz durch die Liste.
@@ -486,28 +604,33 @@ const Werkzeuge = {
     const karten = [...liste.querySelectorAll(".result-card")];
     if (!karten.length) return { ok: true, text: "Keine Treffer zum Durchsehen.", daten: { karten: 0, gescrollt: false } };
 
-    const kasten = liste.getBoundingClientRect();
-    const von = window.scrollY + kasten.top - 120;
-    const bis = Math.max(von, window.scrollY + kasten.bottom - window.innerHeight + 80);
-    const startY = window.scrollY;
-    let weiteste = startY;
-    const schritte = 18;
-    for (let i = 1; i <= schritte; i++) {
-      if (Zeiger.abbruch) break;
-      window.scrollTo({ top: von + ((bis - von) * i) / schritte, behavior: "auto" });
-      weiteste = Math.max(weiteste, window.scrollY);
-      Zeiger.beschrifte?.(`${Math.round((karten.length * i) / schritte)} von ${karten.length} Häusern`);
-      await Zeiger.warte(90);
-    }
-    const gescrollt = Math.abs(weiteste - startY) > 8;
+    /* Drei Haeuser aus der Tiefe der Liste.
+       ----------------------------------------------------------------
+       Nicht die ersten drei: Wer oben anfaengt, haette nicht scrollen
+       muessen, und genau das hat der Nutzer bei den Bewertungen schon
+       beanstandet. Die Halte sind ueber die Liste verteilt und werden
+       markiert - danach ist sichtbar, wo er hingesehen hat. */
+    const halte = karten.length >= 12
+      ? [0.3, 0.6, 0.88].map((a) => karten[Math.round(a * (karten.length - 1))]).filter(Boolean)
+      : [];
+    const gesehen = [];
+    const beiHalt = async (el) => {
+      el.classList.add("agent-gelesen");
+      const name = el.querySelector(".hotel-name")?.textContent?.trim() || "";
+      await Zeiger.lies(el, { dauer: 420, hinweis: name ? `sieht ${name} an` : "sieht nach" });
+      if (name) gesehen.push(name);
+    };
+
+    const r = await this.scrollDurch({ elemente: karten, halte, beiHalt, zaehlwort: "Häusern", tempoMs: 22 });
     // Dieselbe Selbstpruefung wie bei den Bewertungen
-    if (!gescrollt && karten.length > 6 && typeof Kern !== "undefined") {
+    if (!r.gescrollt && karten.length > 6 && typeof Kern !== "undefined") {
       Kern.notieren?.("scroll_ohne_wirkung", { wo: "trefferliste_ueberflogen", karten: karten.length });
     }
-    window.scrollTo({ top: von, behavior: "auto" });
-    Zeiger.beschrifte?.("");
-    await Zeiger.warte(200);
-    return { ok: true, text: `${karten.length} Häuser durchgesehen.`, daten: { karten: karten.length, gescrollt } };
+    return {
+      ok: true,
+      text: `${karten.length} Häuser durchgesehen.`,
+      daten: { karten: karten.length, gescrollt: r.gescrollt, angesehen: gesehen },
+    };
   },
 
   async unterkunftOeffnen(id) {
@@ -595,47 +718,12 @@ const Werkzeuge = {
 
       /* Ein Durchgang statt zwei.
          ----------------------------------------------------------------
-         Bis zum 30.09.2026 lief das hier in zwei Etappen: erst einmal
-         ganz durch die Liste mit hochlaufendem Zaehler, dann zurueck nach
-         oben, dann noch einmal hinunter zu den einzelnen Stimmen. Der
-         Nutzer: "Das ist halt irgendwie komisch gemacht." Er hat recht -
-         kein Mensch liest so.
-
-         Jetzt ein Zug: hinunterscrollen, unterwegs dreimal anhalten und
-         je eine Stimme genauer ansehen, am Ende ist der Zaehler voll.
-
-         Dazu ein echter Fehler, live nachgemessen: Der Kasten `.review-list`
-         hatte im Moment der Messung die Hoehe 0 - die Scrollstrecke war
-         damit null Pixel, waehrend der Zaehler bis 100 lief. Genau das,
-         was der Nutzer beschrieben hat ("scrollt zwei Zentimeter und
-         zaehlt hoch"). Gemessen wird deshalb an der ersten und der
-         letzten Bewertung, und zwar so lange, bis die Seite wirklich
-         steht. */
-      const messen = async () => {
-        for (let versuch = 0; versuch < 8; versuch++) {
-          const karten = [...panel.querySelectorAll(".review-item")];
-          if (karten.length) {
-            const oben = karten[0].getBoundingClientRect();
-            const unten = karten[karten.length - 1].getBoundingClientRect();
-            const hoehe = (unten.bottom + window.scrollY) - (oben.top + window.scrollY);
-            if (hoehe > window.innerHeight) {
-              return {
-                karten,
-                von: window.scrollY + oben.top - 120,
-                bis: window.scrollY + unten.bottom - window.innerHeight + 80,
-              };
-            }
-          }
-          await new Promise((f) => setTimeout(f, 60));
-        }
-        return null;
-      };
-
-      const mass = geladen > 12 ? await messen() : null;
-      if (!mass && geladen > 12 && typeof Kern !== "undefined") {
-        Kern.notieren?.("bewertungen_ohne_strecke", { id, geladen });
-      }
-
+         Bis zum 30.09.2026 lief das hier in zwei Etappen: erst ganz durch
+         die Liste mit hochlaufendem Zaehler, dann zurueck nach oben, dann
+         noch einmal hinunter zu den einzelnen Stimmen. Der Nutzer: "Das
+         ist halt irgendwie komisch gemacht." Er hat recht - kein Mensch
+         liest so. Die Bewegung selbst steht jetzt in `scrollDurch`, wo
+         auch die Trefferliste sie holt. */
       // Bewertungen, die den gefragten Aspekt ueberhaupt erwaehnen. Die
       // Marker unter jeder Bewertung tragen das Label ("+ Essen"), danach
       // laesst sich filtern, ohne den Text zu durchsuchen.
@@ -710,58 +798,19 @@ const Werkzeuge = {
         gelesen.push({ autor, note, titel, text });
       };
 
-      if (mass) {
-        const { von, bis } = mass;
-        /* Der Zaehler laeuft mit der Scrollposition, nicht mit einem
-           eigenen Takt. Gezaehlt wird, was oberhalb des unteren
-           Fensterrandes durchgelaufen ist - deshalb steht am Ende genau
-           die Zahl da, die auch geladen wurde. */
-        const schritt = Math.max(220, Math.round(window.innerHeight * 0.8));
-        const startY = window.scrollY;
-        let weiteste = startY;
-        let naechstes = 0;
-        let y = von;
-        window.scrollTo({ top: von, behavior: "auto" });
-        await Zeiger.warte(120);
-        while (y < bis && !Zeiger.abbruch) {
-          y = Math.min(bis, y + schritt);
-          // Liegt die naechste ausgewaehlte Stimme in diesem Abschnitt,
-          // haelt er dort an, statt an ihr vorbeizuziehen.
-          while (naechstes < reihenfolge.length && !Zeiger.abbruch) {
-            const el = reihenfolge[naechstes];
-            const ziel = window.scrollY + el.getBoundingClientRect().top;
-            if (ziel > y + window.innerHeight * 0.5) break;
-            await lesen(el, naechstes + 1);
-            naechstes += 1;
-            y = Math.max(y, window.scrollY);
-          }
-          window.scrollTo({ top: y, behavior: "auto" });
-          weiteste = Math.max(weiteste, window.scrollY);
-          const anteil = bis > von ? Math.min(1, (y - von) / (bis - von)) : 1;
-          Zeiger.beschrifte?.(`${Math.max(1, Math.round(geladen * anteil))} von ${geladen} Bewertungen`);
-          await Zeiger.warte(24);
-        }
-        // Was noch nicht gelesen wurde, weil die Strecke vorher zu Ende
-        // war - etwa wenn die letzte Stimme ganz unten steht.
-        while (naechstes < reihenfolge.length && !Zeiger.abbruch) {
-          await lesen(reihenfolge[naechstes], naechstes + 1);
-          naechstes += 1;
-        }
-        Zeiger.beschrifte?.(`${geladen} von ${geladen} Bewertungen`);
-        await Zeiger.warte(160);
-        /* Der Schritt prueft sich selbst: Eine hochlaufende Zahl neben
-           einer Seite, die stillsteht, behauptet Arbeit, die nicht
-           stattfindet - zweimal gemeldet, beide Male still. */
-        gescrollt = Math.abs(weiteste - startY) > 8;
-        if (!gescrollt && typeof Kern !== "undefined") {
-          Kern.notieren?.("scroll_ohne_wirkung", { wo: "bewertungen", id, karten: geladen });
-        }
-        Zeiger.beschrifte?.("");
-        window.scrollTo({ top: von, behavior: "auto" });
-        await Zeiger.warte(180);
-      } else {
-        // Zu wenige Bewertungen zum Scrollen: dann nur die Auswahl ansehen
-        for (let i = 0; i < reihenfolge.length && !Zeiger.abbruch; i++) await lesen(reihenfolge[i], i + 1);
+      /* Dieselbe Bewegung wie in der Trefferliste - eine Funktion, zwei
+         Stellen. `scrollDurch` misst selbst nach, haelt an den gewaehlten
+         Stimmen an und fuehrt den Zaehler mit der Scrollposition. */
+      const alleKarten = [...panel.querySelectorAll(".review-item")];
+      const lauf = await this.scrollDurch({
+        elemente: alleKarten, halte: reihenfolge, beiHalt: lesen, zaehlwort: "Bewertungen", tempoMs: 24,
+      });
+      gescrollt = lauf.gescrollt;
+      /* Der Schritt prueft sich selbst: Eine hochlaufende Zahl neben
+         einer Seite, die stillsteht, behauptet Arbeit, die nicht
+         stattfindet - zweimal gemeldet, beide Male still. */
+      if (!gescrollt && alleKarten.length > 12 && typeof Kern !== "undefined") {
+        Kern.notieren?.("scroll_ohne_wirkung", { wo: "bewertungen", id, karten: geladen });
       }
 
       /* Zwei Zahlen, zwei Bedeutungen - und beide muessen stimmen.

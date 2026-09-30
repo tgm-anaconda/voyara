@@ -2254,6 +2254,13 @@ body.vorschlag-offen { overflow: hidden; }
   border-radius: 8px;
   transition: background .3s ease, box-shadow .3s ease;
 }
+/* Dieselbe Spur in der Trefferliste: Beim Durchgang haelt der Agent an
+   drei Haeusern aus der Tiefe der Liste an. Ohne Markierung waere die
+   Pause vor einer Karte nicht von einem Zufall zu unterscheiden. */
+.result-card.agent-gelesen {
+  box-shadow: inset 3px 0 0 var(--brand-700, #0f6e5c), 0 1px 2px rgba(0, 0, 0, .04);
+  transition: box-shadow .3s ease;
+}
 @media (max-width: 900px) {
   .vorschlag-karten { grid-template-columns: 1fr; }
   .vorschlag-bild { aspect-ratio: 16 / 7; }
