@@ -3551,6 +3551,51 @@ const Werkzeugkasten = {
     };
   },
 
+  /* Die Kette vom Katalog zur Auswahl - in der Reihenfolge, in der die
+     Seite sie auch abarbeitet.
+     ------------------------------------------------------------------
+     Der Nutzer am 30.09.2026: "125 plus 145 waeren 270 und nicht 177.
+     Ich check's nicht, das macht keinen Sinn." Er hat recht: Im Text
+     standen zwei Grundmengen nebeneinander, ohne dass eine genannt war.
+     Die Ausschluesse zaehlten gegen den Monatskatalog (270), die Liste
+     daneben zeigt aber schon ohne die zu kleinen Haeuser (177). Zwei
+     Bezugsgroessen in einem Absatz, und keine Zahl passt zur anderen.
+
+     Deshalb eine einzige Kette mit einer Grundmenge:
+
+       270 im Monat frei
+        -93 zu klein fuer die Reisegruppe   -> 177 stehen in der Liste
+        -52 Region ausserhalb ihrer Saison  -> 125 buchbar
+
+     Die Reihenfolge ist nicht beliebig: Erst die Gruppe, dann die
+     Saison - genau so filtert die Trefferliste, und nur dann ist die
+     mittlere Zahl die, die neben dem Chat steht. */
+  lageKette(p) {
+    const alle = this.katalog(p);
+    const personen = (p.erwachsene || 0) + (p.kinder || 0);
+    /* Regionen zuerst, wie im Filter. Bei "eher warm" faellt hier der
+       groesste Teil weg, und ohne dieses Glied landete er im Sammeltopf
+       "erfuellt die uebrigen Vorgaben nicht" - richtig gerechnet, aber
+       nichtssagend. */
+    const imGebiet = p.zielId
+      ? alle.filter((h) => h.ziel === p.zielId)
+      : (p.zieleErlaubt?.length ? alle.filter((h) => p.zieleErlaubt.includes(h.ziel)) : alle);
+    const passend = personen ? imGebiet.filter((h) => this.passtGruppe(h, p)) : imGebiet;
+    const saisonPrueft = !p.zielId && p.monat && typeof saisonPassung === "function" && typeof ZIEL_NACH_ID !== "undefined";
+    const ausserSaison = saisonPrueft
+      ? passend.filter((h) => ZIEL_NACH_ID[h.ziel] && saisonPassung(ZIEL_NACH_ID[h.ziel], p.monat) < 0.5)
+      : [];
+    return {
+      katalog: alle.length,
+      woanders: alle.length - imGebiet.length,
+      zuKlein: imGebiet.length - passend.length,
+      inDerListe: passend.length,
+      ausserSaison: ausserSaison.length,
+      buchbar: passend.length - ausserSaison.length,
+      personen,
+    };
+  },
+
   /* Wie sich die Auswahl auf warm und kuehl verteilt.
      ------------------------------------------------------------------
      Steht die Richtung noch aus, ist das die Zahl, die der naechsten
@@ -3645,46 +3690,54 @@ const Werkzeugkasten = {
       teile.push(`Alle davon in einer Region: ${regionen[0].region}.`);
     }
 
-    /* Was wegfaellt, als EINE Zahl mit Gruenden.
+    /* Warum es weniger sind - als eine Kette mit einer Grundmenge.
        ------------------------------------------------------------------
-       Vorher: "Nicht dabei sind, von 147 im ganzen Katalog, 44, die fuer
-       4 Personen nicht passen und 41 in Regionen, die ausserhalb ihrer
-       Saison liegen." Drei Zahlen in einem Satz, und die Grundmenge ist
-       eine vierte. Jetzt eine Zahl und die Gruende im Klartext - wer es
-       genauer wissen will, fragt nach. */
-    const weg = this.warumWenigerZahlen(p);
-    if (weg.summe > 0 && weg.gruende.length) {
-      teile.push(`Nicht dabei sind ${weg.summe} weitere ${art}, ${weg.gruende.slice(0, 2).join(" oder ")}.`);
-    }
+       Erst standen hier zwei Bezugsgroessen nebeneinander ("145 weitere"
+       gegen den Monatskatalog, "177" gegen die Liste), und keine Zahl
+       passte zur anderen. Jetzt steht die ganze Rechnung da, in der
+       Reihenfolge, in der auch gefiltert wird - und sie geht auf:
+       buchbar plus zu klein plus ausserhalb der Saison ergibt den
+       Katalog des Monats.
 
-    /* Die Zahl der Liste bleibt - aber am Ende und mit Erklaerung.
-       ------------------------------------------------------------------
-       Ohne sie widersprechen sich Chat und Seite (der Agent sagt 62, die
-       Person zaehlt 177 Karten), mit ihr am Anfang war der Satz
-       unverstaendlich. */
-    if (mehrAufDerSeite) {
-      /* Woran der Unterschied zur Liste wirklich liegt - nachgezaehlt.
-         ----------------------------------------------------------------
-         Hier stand zuerst eine Aufzaehlung der Ausschlussgruende ("dort
-         sind die Reisegruppe und die Saison noch nicht abgezogen"). Das
-         war schlicht falsch: Auf der Seite gemessen filtert die Liste die
-         Reisegruppe sehr wohl mit. Von 177 Karten waren genau 52 zu viel,
-         und alle 52 trugen den Vermerk "Ausserhalb der Saison".
-
-         Gezaehlt wird deshalb genau das: Haeuser, die zur Reisegruppe
-         passen, aber in einer Region liegen, die im Reisemonat ausserhalb
-         ihrer Saison ist. Stimmt diese Zahl nicht mit dem Unterschied
-         ueberein, bleibt der Satz allgemein - lieber unbestimmt als
-         falsch. */
-      const personen = (p.erwachsene || 0) + (p.kinder || 0);
-      const nurSaison = !p.zielId && p.monat && typeof saisonPassung === "function" && typeof ZIEL_NACH_ID !== "undefined"
-        ? this.katalog(p).filter((h) => (!personen || this.passtGruppe(h, p))
-          && ZIEL_NACH_ID[h.ziel] && saisonPassung(ZIEL_NACH_ID[h.ziel], p.monat) < 0.5).length
-        : 0;
-      const unterschied = aufDerSeite - liste.length;
-      teile.push(nurSaison > 0 && nurSaison === unterschied
-        ? `In der Liste daneben stehen ${aufDerSeite}: die ${liste.length} und ${nurSaison} weitere, die ${monatText.replace(/^Im /, "im ")} außerhalb ihrer Saison liegen - die zähle ich nicht mit.`
-        : `In der Liste daneben stehen ${aufDerSeite}, weil sie weniger streng filtert als ich.`);
+       Nur wenn die Kette die Auswahl wirklich erklaert (also keine
+       weiteren Filter wie Preis oder Verpflegung dazwischenstehen),
+       werden die Zahlen genannt. Sonst bliebe eine Rechnung stehen, die
+       nicht aufgeht - genau der Fehler, der behoben werden sollte. */
+    const kette = this.lageKette(p);
+    /* Die Kette erklaert die Auswahl vollstaendig, wenn man die uebrigen
+       Vorgaben als eigenes Glied mitzaehlt (Preis, Verpflegung, Wuensche).
+       Damit geht die Rechnung in jedem Fall auf, nicht nur im ersten
+       Zug - und genau daran war der alte Text gescheitert. */
+    const durchVorgaben = Math.max(0, kette.buchbar - liste.length);
+    /* Bei einem festen Ziel ist die Rechnung ueber den ganzen Katalog
+       kein Gewinn: Dass in Lappland Haeuser stehen, die nicht auf
+       Mallorca liegen, muss niemandem erklaert werden. */
+    if (kette.katalog > liste.length && !p.zielId) {
+      const gruende = [];
+      if (kette.woanders) {
+        gruende.push(p.richtung === "warm" ? `${kette.woanders} liegen nicht in einer warmen Region`
+          : p.richtung === "kalt" ? `${kette.woanders} liegen nicht in einer kalten Region`
+            : `${kette.woanders} liegen außerhalb der gewünschten Regionen`);
+      }
+      if (kette.zuKlein) gruende.push(`${kette.zuKlein} sind für ${kette.personen} ${kette.personen === 1 ? "Person" : "Personen"} zu klein`);
+      if (kette.ausserSaison) gruende.push(`${kette.ausserSaison} liegen in Regionen, die ${monatText.replace(/^Im /, "im ")} außerhalb ihrer Saison sind`);
+      if (durchVorgaben) gruende.push(`${durchVorgaben} erfüllen deine übrigen Vorgaben nicht`);
+      if (gruende.length) {
+        // Das letzte Glied mit "und" - sonst stehen bei gleichen Zahlen
+        // zwei Kommateile nebeneinander, die man als einen liest
+        const liste2 = gruende.length > 1
+          ? `${gruende.slice(0, -1).join(", ")} und ${gruende[gruende.length - 1]}`
+          : gruende[0];
+        teile.push(`Der Katalog hat ${monatText.replace(/^Im /, "im ")} ${kette.katalog} ${art} frei: ${liste2}.`);
+      }
+      /* Die Zahl in der Liste ist die Zwischenstufe der Kette: Sie
+         filtert die Reisegruppe mit, die Saison nicht. Genannt wird sie
+         nur, wenn sie wirklich dort steht - sobald der Agent weitere
+         Filter gesetzt hat, zeigt die Seite etwas anderes, und dann
+         waere die Zahl eine Behauptung. */
+      if (aufDerSeite != null && kette.inDerListe === aufDerSeite && aufDerSeite !== liste.length && !durchVorgaben) {
+        teile.push(`In der Liste daneben stehen deshalb ${aufDerSeite} - die ${liste.length} und die ${kette.ausserSaison} aus der Nebensaison, die ich nicht mitzähle.`);
+      }
     }
 
     // "Pro Nacht kosten sie 186 bis 186 €" - bei einem einzigen Haus gibt
@@ -3738,15 +3791,20 @@ const Werkzeugkasten = {
        hatte (die Bedingung liess sie durch, solange kein anderer Wunsch
        genannt war). Jetzt zaehlt nur noch, was die Person selbst zum
        Thema gemacht hat. */
+    /* "davon" statt einer nackten Zahl.
+       ------------------------------------------------------------------
+       Im Maerz standen zufaellig zweimal 93 im selben Absatz - einmal die
+       zu kleinen Haeuser, einmal die gut bewerteten. Zwei gleiche Zahlen
+       ohne Bezugswort liest man als dieselbe Sache. */
     if (umfang.direktAmStrandBis200m && (p.maxStrand != null || genannt(/strand|meer|beach/))) {
-      merkmale.push(`${umfang.direktAmStrandBis200m} liegen direkt am Strand`);
+      merkmale.push(`${umfang.direktAmStrandBis200m} davon liegen direkt am Strand`);
     }
     if (umfang.mitPool && genannt(/pool/)) merkmale.push(`${umfang.mitPool} haben einen Pool`);
     if (umfang.mitKinderclub && genannt(/kinderclub|kids|familie|betreuung|animation/)) {
       merkmale.push(`${umfang.mitKinderclub} haben einen Kinderclub`);
     }
     if (umfang.mitWellness && genannt(/wellness|spa|sauna/)) merkmale.push(`${umfang.mitWellness} haben Wellness`);
-    if (umfang.gaestenoteAb4_5) merkmale.push(`${umfang.gaestenoteAb4_5} sind mit 4,5 oder besser bewertet`);
+    if (umfang.gaestenoteAb4_5) merkmale.push(`${umfang.gaestenoteAb4_5} davon sind mit 4,5 oder besser bewertet`);
     // "10 haben einen Pool, 10 haben einen Kinderclub" - beim zweiten Mal
     // reicht die Zahl, solange das Verb dasselbe ist
     const gekuerzt = merkmale.slice(0, 3).map((m, i, alle) => {
