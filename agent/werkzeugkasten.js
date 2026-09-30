@@ -3507,6 +3507,71 @@ const Werkzeugkasten = {
     return Object.entries(zaehler).sort((a, b) => b[1] - a[1]).map(([k, n]) => WORT[k](n));
   },
 
+  /* Dieselbe Zaehlung, aber als Zahlen statt als Saetze.
+     ------------------------------------------------------------------
+     Der Nutzer am 30.09.2026: "Ich wuerde die verfuegbaren Hotels als
+     erste Kennzahl sagen und dann sagen, von den Hotels sind nur noch so
+     und so viele verfuegbar, weil ..." Dafuer braucht die Lage eine
+     Gesamtzahl der Ausgeschlossenen und die Gruende ohne eigene Zahlen -
+     drei Zahlen nebeneinander liest niemand mehr nach. */
+  warumWenigerZahlen(p) {
+    const alle = this.katalog(p);
+    const personen = (p.erwachsene || 0) + (p.kinder || 0);
+    const zaehler = {};
+    /* Die Reihenfolge ist dieselbe wie in `katalogTreffer`, und jedes
+       Haus zaehlt genau einmal. Nur dann geht die Rechnung auf:
+       buchbar plus nicht dabei ergibt den Katalog des Monats. Die
+       Regionsgrenze fehlte hier zuerst - dann fehlten in der Summe
+       genau die Haeuser, die wegen "eher warm" weggefallen waren. */
+    for (const h of alle) {
+      let grund = null;
+      if (!p.zielId && p.zieleErlaubt?.length && !p.zieleErlaubt.includes(h.ziel)) grund = "region";
+      else if (!p.zielId && p.monat && typeof saisonPassung === "function" && typeof ZIEL_NACH_ID !== "undefined"
+        && ZIEL_NACH_ID[h.ziel] && saisonPassung(ZIEL_NACH_ID[h.ziel], p.monat) < 0.5) grund = "saison";
+      else if (personen && !this.passtGruppe(h, p)) grund = "gruppe";
+      else if (p.naechte && h.minNights && p.naechte < h.minNights) grund = "dauer";
+      if (grund) zaehler[grund] = (zaehler[grund] || 0) + 1;
+    }
+    const WORT = {
+      region: p.richtung === "warm" ? "weil sie nicht in einer warmen Region liegen"
+        : p.richtung === "kalt" ? "weil sie nicht in einer kalten Region liegen"
+          : "weil sie außerhalb der gewünschten Regionen liegen",
+      saison: "weil ihre Region gerade außerhalb der Saison liegt",
+      gruppe: `weil sie für ${personen} ${personen === 1 ? "Person" : "Personen"} zu klein sind`,
+      dauer: "wegen eines längeren Mindestaufenthalts",
+    };
+    const sortiert = Object.entries(zaehler).sort((a, b) => b[1] - a[1]);
+    return {
+      summe: sortiert.reduce((n, [, x]) => n + x, 0),
+      gruende: sortiert.map(([k]) => WORT[k]),
+      // Die Kennungen fuer kurze Hinweise ("dort ist die Saison noch
+      // nicht abgezogen") - der ausformulierte Grund ist dafuer zu lang
+      ids: sortiert.map(([k]) => k),
+      grundmenge: alle.length,
+    };
+  },
+
+  /* Wie sich die Auswahl auf warm und kuehl verteilt.
+     ------------------------------------------------------------------
+     Steht die Richtung noch aus, ist das die Zahl, die der naechsten
+     Frage vorarbeitet ("warm oder kalt?"). Ist sie schon entschieden,
+     waere sie nur Ballast. */
+  warmKaltTeilung(liste, p) {
+    if (p.richtung || p.zielId || typeof Politik === "undefined") return null;
+    const warm = new Set((Politik.THEMEN.find((t) => t.id === "warm") || {}).ziele || []);
+    const kalt = new Set((Politik.THEMEN.find((t) => t.id === "kalt") || {}).ziele || []);
+    let w = 0, k = 0, rest = 0;
+    for (const h of liste) {
+      if (warm.has(h.ziel)) w += 1;
+      else if (kalt.has(h.ziel)) k += 1;
+      else rest += 1;
+    }
+    /* Der Rest sind die Staedte (Barcelona, Wien, Lissabon, New York,
+       Kyoto) - sie stehen in keiner der beiden Listen. Ohne sie zaehlt
+       jemand 69 und 40 zusammen und kommt nicht auf 125. */
+    return w && k ? { warm: w, kalt: k, staedte: rest } : null;
+  },
+
   lageSatz(liste, p, umfang, aufDerSeite = null) {
     /* Der Monatsname kam aus einer Rueckwaertssuche in Politik.MONATE,
        die Kurzformen ueber die Laenge aussortierte ("okt" gegen
@@ -3532,44 +3597,75 @@ const Werkzeugkasten = {
     const mehrAufDerSeite = aufDerSeite != null && aufDerSeite > liste.length;
     const top = regionen.slice(0, 3).map((r) => `${r.region} (${r.haeuser})`);
     const topText = top.length > 1 ? `${top.slice(0, -1).join(", ")} und ${top[top.length - 1]}` : top[0];
-    if (mehrAufDerSeite) {
-      teile.push(`${monatText} stehen ${aufDerSeite} ${art} in der Liste.`);
-      teile.push(regionen.length <= 1
-        ? `${liste.length === 1 ? "Eines davon passt" : `${liste.length} davon passen`} zu euch${wo ? ` ${wo}` : ""}.`
-        : `${liste.length} davon liegen in ${regionen.length} ${warmKalt}Regionen, die meisten ${topText}.`);
-      /* Warum die uebrigen wegfallen.
-         ----------------------------------------------------------------
-         Der Nutzer am 28.09.2026: "Dann musst du das entsprechend einmal
-         formulieren, dass davon so und so viele rausfallen, weil das
-         nicht die passende Saison ist."
 
-         Zwei Zahlen nebeneinander ohne Grund liest sich wie ein
-         Rechenfehler - und die Person kann nicht entscheiden, ob sie
-         etwas daran aendern will. Genannt wird, was wirklich
-         aussortiert: nachgezaehlt, nicht behauptet. */
-      const auf = this.artAufteilung(liste, p);
-      if (auf) teile.push(`Das sind ${auf}.`);
-      /* Die Zahl, auf die sich die Gruende beziehen, muss dabeistehen.
-         ----------------------------------------------------------------
-         Ohne sie liest man "85 passen" und daneben "weg sind 134 und 53"
-         - und rechnet gegen die 176 aus dem Satz davor, die eine ganz
-         andere Grundgesamtheit sind (die Liste kennt weder Saison noch
-         Reisegruppe). Mit der Zahl schliesst die Rechnung: 272 minus 134
-         minus 53 sind 85. */
-      const gruende = this.warumWeniger(p, monatText);
-      const grundmenge = this.katalog(p).length;
-      if (gruende.length) {
-        teile.push(`Nicht dabei sind, von ${grundmenge} im ganzen Katalog, ${gruende.slice(0, 2).join(" und ")}.`);
-      }
-      const aufKurz = this.artAufteilung(liste, p);
-      if (aufKurz && regionen.length <= 1) teile.push(`Das sind ${aufKurz}.`);
-    } else if (p.zielId || regionen.length <= 1) {
-      // "gibt es 1 Hotels" stand so im Chat
-      const einzahl = this.artWort(p, false);
-      teile.push(`${monatText} gibt es ${liste.length === 1 ? einzahl : `${liste.length} ${art}`} ${wo}`.trim() + ".");
-    } else {
-      teile.push(`${monatText} gibt es ${liste.length} ${art} in ${regionen.length} ${warmKalt}Regionen, die meisten ${topText}.`);
+    /* Die erste Zahl ist die, die gilt.
+       ------------------------------------------------------------------
+       Der Nutzer am 30.09.2026: "Ich wuerde die verfuegbaren Hotels als
+       erste Kennzahl sagen ... damit die erste Zahl, die man
+       zurueckbekommt, auch die Zahl ist, die gilt."
+
+       Vorher stand hier die Zahl der Liste (177), dann die passende (62),
+       dann die Grundmenge des Katalogs (147) - drei Bezugsgroessen in
+       einem Absatz, von denen keine sich selbst erklaert. Jetzt beginnt
+       der Satz mit dem, was buchbar ist; alles andere ordnet sich darum
+       herum. */
+    const einzahl = this.artWort(p, false);
+    // "35 Hotels buchbar in den warmen Regionen" stand so da - der Ort
+    // gehoert vor die Zahl, sonst haengt er hinten dran wie ein Nachtrag.
+    const ort = wo ? `${wo} ` : "";
+    teile.push(liste.length === 1
+      ? `${monatText} gibt es ${ort}${einzahl}.`
+      : `${monatText} sind ${ort}${liste.length} ${art} buchbar.`);
+
+    // Wie sie sich aufteilen: Hotels gegen Ferienwohnungen
+    const auf = this.artAufteilung(liste, p);
+    if (auf) teile.push(`Das sind ${auf}.`);
+
+    /* Warm gegen kuehl - die Zahl, die der naechsten Frage vorarbeitet.
+       Steht die Richtung schon fest, faellt sie weg. */
+    const wk = this.warmKaltTeilung(liste, p);
+    if (wk) {
+      teile.push(`${wk.warm} davon liegen in warmen Regionen, ${wk.kalt} in kühleren${wk.staedte ? `, ${wk.staedte} in Städten` : ""}.`);
     }
+
+    // "Die meisten Mallorca (26)" fehlte eine Praeposition, und "in
+    // Mallorca" waere falsch - der Doppelpunkt loest beides.
+    if (regionen.length > 1) {
+      teile.push(`Am meisten Auswahl gibt es in diesen Regionen: ${topText}.`);
+    } else if (regionen.length === 1 && !p.zielId) {
+      teile.push(`Alle davon in einer Region: ${regionen[0].region}.`);
+    }
+
+    /* Was wegfaellt, als EINE Zahl mit Gruenden.
+       ------------------------------------------------------------------
+       Vorher: "Nicht dabei sind, von 147 im ganzen Katalog, 44, die fuer
+       4 Personen nicht passen und 41 in Regionen, die ausserhalb ihrer
+       Saison liegen." Drei Zahlen in einem Satz, und die Grundmenge ist
+       eine vierte. Jetzt eine Zahl und die Gruende im Klartext - wer es
+       genauer wissen will, fragt nach. */
+    const weg = this.warumWenigerZahlen(p);
+    if (weg.summe > 0 && weg.gruende.length) {
+      teile.push(`Nicht dabei sind ${weg.summe} weitere ${art}, ${weg.gruende.slice(0, 2).join(" oder ")}.`);
+    }
+
+    /* Die Zahl der Liste bleibt - aber am Ende und mit Erklaerung.
+       ------------------------------------------------------------------
+       Ohne sie widersprechen sich Chat und Seite (der Agent sagt 62, die
+       Person zaehlt 177 Karten), mit ihr am Anfang war der Satz
+       unverstaendlich. */
+    if (mehrAufDerSeite) {
+      /* Was in der Liste noch nicht abgezogen ist, richtet sich danach,
+         was tatsaechlich aussortiert wurde. Bei einer Person allein ist
+         die Reisegruppe kein Grund, und dann darf sie auch nicht als
+         einer dastehen. */
+      const KURZ = { region: "die Regionen", saison: "die Saison", gruppe: "die Reisegruppe", dauer: "der Mindestaufenthalt" };
+      const offen = (weg.ids || []).map((k) => KURZ[k]).filter(Boolean).slice(0, 2);
+      const nachsatz = offen.length
+        ? ` - dort ${offen.length > 1 ? "sind" : "ist"} ${offen.join(" und ")} noch nicht abgezogen`
+        : "";
+      teile.push(`In der Liste daneben stehen ${aufDerSeite}${nachsatz}.`);
+    }
+
     // "Pro Nacht kosten sie 186 bis 186 €" - bei einem einzigen Haus gibt
     // es keine Spanne, und die Wiederholung derselben Zahl liest sich wie
     // ein Fehler in der Rechnung.
@@ -3610,8 +3706,18 @@ const Werkzeugkasten = {
     const gesagt = [...(p.wuensche || []), ...(p.kriterien || []), p.ausstattung || ""].join(" ").toLowerCase();
     const genannt = (re) => re.test(gesagt);
     const merkmale = [];
-    const strandGenannt = p.maxStrand != null || genannt(/strand|meer|beach/);
-    if (umfang.direktAmStrandBis200m && (strandGenannt || !genannt(/pool|kinderclub|familie|wellness/))) {
+    /* Die Strandzahl nur noch auf Nachfrage.
+       ------------------------------------------------------------------
+       Der Nutzer am 30.09.2026: "Da wird auf Aspekte eingegangen, die in
+       der Analyse noch gar nicht gewusst werden koennen, wie ob die
+       direkt am Strand liegen - was ja nicht direkt auf jeder Hotelseite
+       einsehbar ist. Das auf keinen Fall."
+
+       Sie stand vorher auch dann da, wenn niemand vom Strand gesprochen
+       hatte (die Bedingung liess sie durch, solange kein anderer Wunsch
+       genannt war). Jetzt zaehlt nur noch, was die Person selbst zum
+       Thema gemacht hat. */
+    if (umfang.direktAmStrandBis200m && (p.maxStrand != null || genannt(/strand|meer|beach/))) {
       merkmale.push(`${umfang.direktAmStrandBis200m} liegen direkt am Strand`);
     }
     if (umfang.mitPool && genannt(/pool/)) merkmale.push(`${umfang.mitPool} haben einen Pool`);
