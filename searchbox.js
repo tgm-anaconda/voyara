@@ -181,12 +181,22 @@ ${showFlightAddon ? `
   <span>Flug dazubuchen</span>
 </label>
 <div class="flight-bar" id="sbFlightBar" ${withFlight ? "" : "hidden"}>
+  ${/* Mehrere Abflughaefen statt einer.
+       ----------------------------------------------------------------
+       Wunsch des Nutzers am 30.09.2026. Ein Auswahlmenue laesst nur
+       einen zu; wer im Norden wohnt, schaut aber auf Hamburg und
+       Hannover zugleich. Aufbau wie beim Reisenden-Feld: ein Knopf mit
+       der Zusammenfassung, dahinter die Haken. */ ""}
   <div class="field">
     <label for="sbFlightFrom">Abflughafen</label>
-    <select class="select" id="sbFlightFrom">
-      <option value="">Günstigster Flughafen</option>
-      ${flughaefen.map((h) => `<option value="${h.code}" ${flightAb === h.code ? "selected" : ""}>${h.name} (${h.code})</option>`).join("")}
-    </select>
+    <button type="button" class="guest-trigger" id="sbFlightFrom">${Flug.abText(flightAb, "Günstigster Flughafen")}</button>
+    <div class="guest-pop flughafen-pop" id="sbFlightPop" hidden>
+      <div class="flughafen-liste">
+        ${flughaefen.map((h) => `<label class="check-row"><input type="checkbox" class="js-sb-ab" value="${h.code}" ${Flug.abListe(flightAb).includes(h.code) ? "checked" : ""}/><span>${h.name} (${h.code})</span></label>`).join("")}
+      </div>
+      <p class="flughafen-hinweis">Ohne Haken rechnet Voyara mit dem günstigsten Flughafen.</p>
+      <button type="button" class="btn btn-primary btn-block btn-sm" id="sbFlightApply">Übernehmen</button>
+    </div>
   </div>
   <div class="field">
     <label for="sbFlightClass">Klasse</label>
@@ -364,7 +374,20 @@ ${showFlightAddon ? `
     const flightBar = mountEl.querySelector("#sbFlightBar");
     const merken = () => { if (typeof Flug !== "undefined") Flug.set({ mit: withFlight, ab: flightAb, klasse: flightKlasse }); };
     if (flightBox) flightBox.addEventListener("change", () => { withFlight = flightBox.checked; if (flightBar) flightBar.hidden = !withFlight; merken(); });
-    mountEl.querySelector("#sbFlightFrom")?.addEventListener("change", (e) => { flightAb = e.target.value; merken(); });
+    const abTrigger = mountEl.querySelector("#sbFlightFrom");
+    const abPop = mountEl.querySelector("#sbFlightPop");
+    if (abTrigger && abPop) {
+      const sammeln = () => [...abPop.querySelectorAll(".js-sb-ab:checked")].map((el) => el.value).join(",");
+      const zeigen = () => { abTrigger.textContent = Flug.abText(flightAb, "Günstigster Flughafen"); };
+      abTrigger.addEventListener("click", (e) => { e.stopPropagation(); abPop.hidden = !abPop.hidden; });
+      abPop.addEventListener("change", () => { flightAb = sammeln(); zeigen(); merken(); });
+      mountEl.querySelector("#sbFlightApply")?.addEventListener("click", () => { abPop.hidden = true; });
+      document.addEventListener("click", (e) => {
+        const pfad = e.composedPath ? e.composedPath() : [];
+        const drinnen = pfad.includes(abPop) || abPop.contains(e.target);
+        if (!abPop.hidden && !drinnen && e.target !== abTrigger) abPop.hidden = true;
+      });
+    }
     mountEl.querySelector("#sbFlightClass")?.addEventListener("change", (e) => { flightKlasse = e.target.value; merken(); });
 
     mountEl.querySelector("#sbForm").addEventListener("submit", (e) => {

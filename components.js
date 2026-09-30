@@ -257,19 +257,42 @@ const Flug = {
     }
     return "";
   },
+  /* Mehrere Abflughaefen.
+     ------------------------------------------------------------------
+     Wunsch des Nutzers am 30.09.2026: "Ich moechte diese Mehrfachauswahl
+     fuer Flughaefen gerne haben." Realistisch ist das auch - wer im
+     Norden wohnt, schaut auf Hamburg und Hannover zugleich.
+
+     Technisch bleibt `ab` ein String, damit Adresse, Speicher und alle
+     Aufrufer unveraendert weiterlaufen; mehrere Codes stehen darin mit
+     Komma ("BER,FRA"). Alles, was vergleicht, geht durch `abListe`. */
+  abListe(wert = null) {
+    const roh = wert === null ? this.lesen().ab : wert;
+    return String(roh || "").split(",").map((x) => x.trim().toUpperCase()).filter(Boolean);
+  },
+
+  // "Berlin", "Berlin oder Frankfurt", sonst der Rueckfalltext
+  abText(wert = null, leer = "dem günstigsten Flughafen") {
+    const codes = this.abListe(wert);
+    if (!codes.length) return leer;
+    const namen = codes.map((c) => this.flughaefen().find((h) => h.code === c)?.name || c);
+    return namen.length > 1 ? `${namen.slice(0, -1).join(", ")} oder ${namen[namen.length - 1]}` : namen[0];
+  },
+
   optionen(zielId, ab = null) {
     const liste = typeof FLIGHTS !== "undefined" ? FLIGHTS : [];
-    const code = ab === null ? this.lesen().ab : ab;
-    return liste.filter((f) => f.ziel === zielId && (!code || f.fromCode === code)).sort((a, b) => a.price - b.price);
+    const codes = this.abListe(ab === null ? this.lesen().ab : ab);
+    return liste.filter((f) => f.ziel === zielId && (!codes.length || codes.includes(f.fromCode))).sort((a, b) => a.price - b.price);
   },
   // Der gewaehlte oder sonst der guenstigste Flug zum Ziel
   wahl(zielId) {
     const s = this.lesen();
     const liste = typeof FLIGHTS !== "undefined" ? FLIGHTS : [];
+    const codes = this.abListe(s.ab);
     const gewaehlt = s.flugId ? liste.find((f) => f.id === s.flugId && f.ziel === zielId) : null;
-    if (gewaehlt && (!s.ab || gewaehlt.fromCode === s.ab)) return gewaehlt;
-    // Nur vom gewuenschten Flughafen - sonst stuende "ab Duesseldorf" in
-    // der Karte, obwohl Frankfurt gewaehlt war
+    if (gewaehlt && (!codes.length || codes.includes(gewaehlt.fromCode))) return gewaehlt;
+    // Nur von den gewuenschten Flughaefen - sonst stuende "ab Duesseldorf"
+    // in der Karte, obwohl Frankfurt gewaehlt war
     return this.optionen(zielId, s.ab)[0] || null;
   },
   preisProPerson(flug, klasse = null) {

@@ -1809,6 +1809,11 @@ body.startschirm-offen { overflow: hidden; }
 .check-row.aus-saison { opacity: .45; }
 .check-row.aus-saison:hover { opacity: .7; }
 
+/* Mehrfachauswahl der Abflughaefen: dieselbe Blase wie bei den Reisenden */
+.flughafen-pop { min-width: 260px; }
+.flughafen-liste { max-height: 240px; overflow: auto; display: grid; gap: 2px; margin-bottom: 8px; }
+.flughafen-hinweis { font-size: .78rem; color: var(--ink-500); margin: 0 0 10px; }
+
 /* Eckpunkte: die drei Angaben vor dem ersten Kontakt */
 .eckpunkte .einstieg-blatt { max-width: 640px; }
 .eckpunkt-block { padding: 14px 0 4px; border-top: 1px solid var(--line); }

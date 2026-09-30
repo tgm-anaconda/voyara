@@ -108,7 +108,7 @@ function paketZeile(item, preisProNacht) {
   if (!state.withFlight || state.type !== "hotel" || typeof Flug === "undefined") return "";
   const b = Belegung.get();
   const paket = Flug.paket(item, b.personen);
-  if (!paket) return `<div class="price-flight"><small>Kein Flug ab ${Flug.get().ab || "deinem Flughafen"} zu diesem Ziel</small></div>`;
+  if (!paket) return `<div class="price-flight"><small>Kein Flug ab ${Flug.abText(null, "deinem Flughafen")} zu diesem Ziel</small></div>`;
   const naechte = Reisedaten.naechte(7);
   const unterkunft = preisProNacht * naechte * b.zimmer + 35 * b.zimmer;
   return `<div class="price-flight">
@@ -629,7 +629,7 @@ function renderFlightAddon() {
   // Eine Zeile: was der Flug kostet, steht bei jedem Hotel in der Karte.
   // Den konkreten Flug waehlt man auf der Hausseite.
   const s = Flug.get();
-  const ab = s.ab ? (Flug.flughaefen().find((h) => h.code === s.ab)?.name || s.ab) : "dem günstigsten Flughafen";
+  const ab = Flug.abText(s.ab);
   const b = Belegung.get();
   // Ein konkreter Flugpreis nur, wenn genau ein Ziel gefiltert ist
   const zielId = einzigesZiel();

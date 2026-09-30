@@ -446,7 +446,7 @@ function renderWidget() {
         <select class="select" id="bwKlasse">
           ${Object.entries(Flug.KLASSEN).map(([k, v]) => `<option value="${k}" ${k === flugStand.klasse ? "selected" : ""}>${v.label}</option>`).join("")}
         </select>
-      </div>` : `<div class="bw-flight-none">Ab ${flugStand.ab || "deinem Flughafen"} gibt es keinen Flug zu diesem Ziel.</div>`}
+      </div>` : `<div class="bw-flight-none">Ab ${Flug.abText(flugStand.ab, "deinem Flughafen")} gibt es keinen Flug zu diesem Ziel.</div>`}
     </div>`;
 
   // Anreisetag. Flexibel gesucht: wird hier gewaehlt, vorher gibt es

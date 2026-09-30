@@ -203,10 +203,29 @@ const Werkzeuge = {
         getan.push(flug.mit ? "mit Flug" : "ohne Flug");
       }
       if (flug.mit) {
-        const feldAb = this.finde("#sbFlightFrom");
-        if (feldAb && flug.ab !== undefined && feldAb.value !== (flug.ab || "")) {
-          await Zeiger.setzeWert(feldAb, flug.ab || "", { hinweis: "Abflughafen" });
-          getan.push(`ab ${flug.ab || "günstigstem Flughafen"}`);
+        /* Der Abflughafen ist seit dem 30.09.2026 eine Mehrfachauswahl.
+           --------------------------------------------------------------
+           Aus dem Auswahlmenue wurde ein Knopf mit Haken dahinter - der
+           Agent muss ihn also aufklappen und ankreuzen wie ein Mensch,
+           statt einen Wert zu setzen. Mehrere Flughaefen kommen als
+           "BER,FRA" an. */
+        const soll = typeof Flug !== "undefined" ? Flug.abListe(flug.ab || "") : [];
+        const pop = this.finde("#sbFlightPop");
+        const jetzt = pop ? [...pop.querySelectorAll(".js-sb-ab:checked")].map((el) => el.value) : [];
+        const gleich = soll.length === jetzt.length && soll.every((c) => jetzt.includes(c));
+        if (pop && flug.ab !== undefined && !gleich) {
+          const knopf = this.finde("#sbFlightFrom");
+          if (knopf && pop.hidden) { await Zeiger.klicke(knopf, { hinweis: "Abflughäfen" }); await Zeiger.warte(180); }
+          for (const el of [...pop.querySelectorAll(".js-sb-ab")]) {
+            const gewollt = soll.includes(el.value);
+            if (el.checked !== gewollt) {
+              await Zeiger.klicke(el, { hinweis: el.parentElement?.textContent?.trim() || el.value });
+              await Zeiger.warte(90);
+            }
+          }
+          const fertig = this.finde("#sbFlightApply");
+          if (fertig) { await Zeiger.klicke(fertig, { hinweis: "übernehmen" }); await Zeiger.warte(150); }
+          getan.push(`ab ${soll.length ? Flug.abText(soll.join(",")) : "günstigstem Flughafen"}`);
         }
         const feldKlasse = this.finde("#sbFlightClass");
         if (feldKlasse && flug.klasse && feldKlasse.value !== flug.klasse) {

@@ -1070,6 +1070,20 @@ const Werkzeugkasten = {
            Preisen beider Flughaefen als Entscheidungshilfe. */
         if (gueltig.length) { p.flugAbAuswahl = gueltig; geaendert.push("flugAbAuswahl"); }
       }
+      /* "Beide behalten" ist eine Antwort, die kein Feld hat.
+         ----------------------------------------------------------------
+         Der Agent fragt bei zwei genannten Flughaefen, ob er auf den
+         guenstigeren eingrenzen soll oder beide suchen. Sagt die Person
+         "beide", ist das keine Wahl eines Flughafens, sondern die Wahl
+         der Mehrfachsuche - und die steht seit dem 30.09.2026 auch in
+         der Suchmaske zur Verfuegung. */
+      if ((p.flugAbAuswahl || []).length > 1 && !a.flugAb
+        && gesagt(/\bbeide|beides|alle beide|lass(e|t)? beide|offen lassen|egal welcher|such(e|st)? in beiden/i, 1)) {
+        p.flugAb = p.flugAbAuswahl.join(",");
+        p.flugAbEgal = false;
+        geaendert.push("flugAb");
+        kern.notieren("flughaefen_beide", { auswahl: p.flugAbAuswahl });
+      }
       setze("flugAb", a.flugAb); setze("flugKlasse", a.flugKlasse);
       if (a.flugAb) p.flugAbEgal = false;
       if (a.flugAb && typeof Flug !== "undefined" && !Flug.code(a.flugAb)) { p.flugAb = null; geaendert.push("flugAb unbekannt"); }
@@ -1237,7 +1251,9 @@ const Werkzeugkasten = {
 
       // Kein Flughafen genannt, aber Flug gewuenscht und egal welcher:
       // der Kern sucht den guenstigsten aus und laesst es ansagen
-      if (p.flug && p.flugAbEgal && !p.flugAb) {
+      // Bei mehreren genannten Flughaefen fragt der Fahrplan; still
+      // entschieden wird nur, wenn die Person gar keinen genannt hat.
+      if (p.flug && p.flugAbEgal && !p.flugAb && (p.flugAbAuswahl || []).length < 2) {
         const ziele = p.zielId ? [p.zielId] : (p.zieleErlaubt || []);
         const w = Werkzeugkasten.guenstigsterFlughafen(ziele, p.flugAbAuswahl || null);
         if (w) {
@@ -1559,7 +1575,11 @@ const Werkzeugkasten = {
         // einmal ausgefuellt (sonst lief der Agent zweimal durch die Leiste)
         if (!passtJetzt()) {
           kern.sperreAn();
-          const flug = p.flug != null ? { mit: !!p.flug, ab: typeof Flug !== "undefined" ? Flug.code(p.flugAb) : "", klasse: p.flugKlasse || "economy" } : null;
+          /* Mehrere Abflughaefen kommen als "BER,FRA" - `Flug.code` kann
+             nur einen und haette daraus einen gemacht. */
+          const abFuerMaske = typeof Flug === "undefined" ? ""
+            : (Flug.abListe(p.flugAb).length > 1 ? Flug.abListe(p.flugAb).join(",") : Flug.code(p.flugAb));
+          const flug = p.flug != null ? { mit: !!p.flug, ab: abFuerMaske, klasse: p.flugKlasse || "economy" } : null;
           if (flug && typeof Flug !== "undefined") Flug.set(flug);
           const e = await Werkzeuge.suchen({ typ: Werkzeugkasten.seitenTyp(p), ziel: zielName || "", von: zeitraum.von, bis: zeitraum.bis,
             erwachsene: p.erwachsene, kinder: p.kinder, kinderAlter: p.kinderAlter || null, flug, flex });
@@ -2907,7 +2927,12 @@ const Werkzeugkasten = {
       weiter: true,
       dauer: !!p.naechte,
       flug: p.flug != null || p.typ === "apartment",
-      flugAb: !p.flug || !!p.flugAb || !!p.flugAbEgal || p.typ === "apartment",
+      /* Mit mehreren genannten Flughaefen ist die Frage noch offen, auch
+         wenn die Person die Wahl abgegeben hat: Der Agent sagt, welcher
+         guenstiger ist, und fragt, ob er eingrenzen soll oder beide
+         offen laesst (Wunsch des Nutzers, 30.09.2026). */
+      flugAb: !p.flug || !!p.flugAb || p.typ === "apartment"
+        || (!!p.flugAbEgal && (p.flugAbAuswahl || []).length < 2),
       flugKlasse: !p.flug || !!p.flugKlasse || p.typ === "apartment",
       vorgehen: !!p.vorgehen,
       // Nur gefragt, wenn er wirklich raussucht - wer selbst schaut,
@@ -2985,8 +3010,17 @@ const Werkzeugkasten = {
       flug: { schreibt: ["flug"], setzen: (x) => { x.flug = false; }, satz: "dass du ohne Flug suchst, nur die Unterkunft" },
       // Schreibt NUR den Flughafen. Den Flug selbst abzuwaehlen, weil der
       // Flughafen offen ist, hiesse eine Aussage der Person zu kippen.
-      flugAb: { schreibt: ["flugAb"], setzen: (x) => { x.flugAb = x.flugAb || "Frankfurt"; },
-        satz: "von welchem Flughafen du rechnest und dass sie das aendern kann" },
+      flugAb: { schreibt: ["flugAb"], setzen: (x, wk) => {
+        /* Hat sie Flughaefen genannt, wird auch daraus angenommen - der
+           Rueckfall auf Frankfurt waere sonst ein Flughafen, von dem nie
+           die Rede war. */
+        if ((x.flugAbAuswahl || []).length && typeof Flug !== "undefined") {
+          const ziele = x.zielId ? [x.zielId] : (x.zieleErlaubt || []);
+          const w = wk.guenstigsterFlughafen(ziele, x.flugAbAuswahl);
+          if (w) { x.flugAb = w.ab; return; }
+        }
+        x.flugAb = x.flugAb || "Frankfurt";
+      }, satz: "von welchem Flughafen du rechnest und dass sie das aendern kann" },
       flugKlasse: { schreibt: ["flugKlasse"], setzen: (x) => { x.flugKlasse = x.flugKlasse || "economy"; }, satz: "dass du mit Economy rechnest" },
       preis: { schreibt: ["maxPreis", "budgetGesamt", "preisEgal"], setzen: (x) => { x.preisEgal = true; }, satz: "dass du dich beim Preis nicht festlegst" },
       verpflegung: { schreibt: ["verpflegung", "verpflegungEgal"], setzen: (x) => { x.verpflegungEgal = true; }, satz: "dass du die Verpflegung offen laesst" },
@@ -3222,12 +3256,26 @@ const Werkzeugkasten = {
       const namen = p.flugAbAuswahl.map((c) => Flug.flughaefen().find((h) => h.code === c)?.name || c);
       const ziele = p.zielId ? [p.zielId] : (p.zieleErlaubt || []);
       const w = this.guenstigsterFlughafen(ziele, p.flugAbAuswahl);
-      const preisTeil = w && w.zweiter && w.aufpreis > 0
-        ? ` Ab ${w.ab} kostet der günstigste Flug ${w.preis} € pro Strecke, ab ${w.zweiter} ${w.aufpreis} € mehr.`
-        : (w ? ` Der günstigste Flug kostet ab ${w.ab} ${w.preis} € pro Strecke.` : "");
-      satz = `Du hast ${namen.join(" und ")} genannt - von welchem soll ich ausgehen?${preisTeil}`;
-      frage = `Sie hat mehrere Flughaefen genannt (${namen.join(", ")}). Frag, welcher es werden soll, und nenn den Preisunterschied. Entscheide NICHT selbst; sagt sie "such du aus" oder "der guenstigere", setzt du flugAbEgal.`;
-      chips = `${namen.join(" | ")} | Nimm den günstigeren`;
+      if (p.flugAbEgal && w) {
+        /* Sie hat die Wahl abgegeben - trotzdem wird gefragt.
+           --------------------------------------------------------------
+           Nutzer am 30.09.2026: "Dann soll er antworten: Hannover ist der
+           billigere Flughafen, soll ich ihn als einzige Auswahl waehlen
+           oder moechtest du dennoch beides suchen?" Der Unterschied ist
+           nicht akademisch: Mit beiden Flughaefen bleiben Verbindungen im
+           Spiel, die an anderen Tagen fliegen - und der Anreisetag haengt
+           daran. */
+        satz = `${w.ab} ist der günstigere${w.zweiter && w.aufpreis > 0 ? ` - ${w.preis} € pro Strecke, ab ${w.zweiter} ${w.aufpreis} € mehr` : ""}. Soll ich nur von dort suchen, oder beide offen lassen?`;
+        frage = `Sie hat dir die Wahl zwischen ${namen.join(" und ")} ueberlassen. Sag, welcher guenstiger ist, und frag, ob du darauf eingrenzen sollst oder beide offen laesst.`;
+        chips = `Nur ${w.ab} | Beide offen lassen`;
+      } else {
+        const preisTeil = w && w.zweiter && w.aufpreis > 0
+          ? ` Ab ${w.ab} kostet der günstigste Flug ${w.preis} € pro Strecke, ab ${w.zweiter} ${w.aufpreis} € mehr.`
+          : (w ? ` Der günstigste Flug kostet ab ${w.ab} ${w.preis} € pro Strecke.` : "");
+        satz = `Du hast ${namen.join(" und ")} genannt - von welchem soll ich ausgehen?${preisTeil}`;
+        frage = `Sie hat mehrere Flughaefen genannt (${namen.join(", ")}). Frag, welcher es werden soll, und nenn den Preisunterschied. Entscheide NICHT selbst; will sie beide behalten, bleibt es bei beiden.`;
+        chips = `${namen.join(" | ")} | Beide offen lassen`;
+      }
     }
 
     // "Ein langes Wochenende" ist eine Dauerangabe. Ohne diesen Zweig fragte
