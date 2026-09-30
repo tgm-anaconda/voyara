@@ -593,45 +593,48 @@ const Werkzeuge = {
         await Zeiger.warte(260);
       }
 
-      const liste0 = panel.querySelector(".review-list");
-      if (geladen > 12 && liste0) {
-        const kasten = liste0.getBoundingClientRect();
-        const von = window.scrollY + kasten.top - 120;
-        const bis = Math.max(von, window.scrollY + kasten.bottom - window.innerHeight + 80);
-        /* Schritte und Pause sind so gewaehlt, dass die ganze Strecke in
-           gut einer Sekunde durchlaeuft - bei hundert Karten sind das
-           mehrere tausend Pixel, und genau das erzeugt den Eindruck, den
-           der Nutzer beschrieben hat: Text, der vorbeizieht und den man
-           nicht mehr lesen kann. */
-        const schritte = 34;
-        const startY = window.scrollY;
-        let weiteste = startY;
-        for (let i = 1; i <= schritte; i++) {
-          if (Zeiger.abbruch) break;
-          window.scrollTo({ top: von + ((bis - von) * i) / schritte, behavior: "auto" });
-          weiteste = Math.max(weiteste, window.scrollY);
-          Zeiger.beschrifte?.(`${Math.round((geladen * i) / schritte)} von ${geladen} Bewertungen`);
-          await Zeiger.warte(26);
-        }
-        /* Der Schritt prueft sich selbst: Eine hochlaufende Zahl neben
-           einer Seite, die stillsteht, behauptet Arbeit, die nicht
-           stattfindet - zweimal gemeldet, beide Male still. */
-        gescrollt = Math.abs(weiteste - startY) > 8;
-        if (!gescrollt && typeof Kern !== "undefined") {
-          Kern.notieren?.("scroll_ohne_wirkung", { wo: "bewertungen", id, karten: geladen });
-        }
-        window.scrollTo({ top: von, behavior: "auto" });
-        Zeiger.beschrifte?.("");
-        await Zeiger.warte(180);
-      }
-      /* Zwei Zahlen, zwei Bedeutungen - und beide muessen stimmen.
+      /* Ein Durchgang statt zwei.
          ----------------------------------------------------------------
-         `durchgesehen` ist, was tatsaechlich unter dem Zeiger durchlief.
-         Die Bilanz weiter unten rechnet ueber alle Datensaetze des
-         Hauses; das steht im Ergebnissatz und ist etwas anderes als
-         Lesen. Bis zum 27.09.2026 stand hier die grosse Zahl, waehrend
-         zehn Karten im Dokument lagen - jeder, der hinsah, merkte das. */
-      durchgesehen = geladen;
+         Bis zum 30.09.2026 lief das hier in zwei Etappen: erst einmal
+         ganz durch die Liste mit hochlaufendem Zaehler, dann zurueck nach
+         oben, dann noch einmal hinunter zu den einzelnen Stimmen. Der
+         Nutzer: "Das ist halt irgendwie komisch gemacht." Er hat recht -
+         kein Mensch liest so.
+
+         Jetzt ein Zug: hinunterscrollen, unterwegs dreimal anhalten und
+         je eine Stimme genauer ansehen, am Ende ist der Zaehler voll.
+
+         Dazu ein echter Fehler, live nachgemessen: Der Kasten `.review-list`
+         hatte im Moment der Messung die Hoehe 0 - die Scrollstrecke war
+         damit null Pixel, waehrend der Zaehler bis 100 lief. Genau das,
+         was der Nutzer beschrieben hat ("scrollt zwei Zentimeter und
+         zaehlt hoch"). Gemessen wird deshalb an der ersten und der
+         letzten Bewertung, und zwar so lange, bis die Seite wirklich
+         steht. */
+      const messen = async () => {
+        for (let versuch = 0; versuch < 8; versuch++) {
+          const karten = [...panel.querySelectorAll(".review-item")];
+          if (karten.length) {
+            const oben = karten[0].getBoundingClientRect();
+            const unten = karten[karten.length - 1].getBoundingClientRect();
+            const hoehe = (unten.bottom + window.scrollY) - (oben.top + window.scrollY);
+            if (hoehe > window.innerHeight) {
+              return {
+                karten,
+                von: window.scrollY + oben.top - 120,
+                bis: window.scrollY + unten.bottom - window.innerHeight + 80,
+              };
+            }
+          }
+          await new Promise((f) => setTimeout(f, 60));
+        }
+        return null;
+      };
+
+      const mass = geladen > 12 ? await messen() : null;
+      if (!mass && geladen > 12 && typeof Kern !== "undefined") {
+        Kern.notieren?.("bewertungen_ohne_strecke", { id, geladen });
+      }
 
       // Bewertungen, die den gefragten Aspekt ueberhaupt erwaehnen. Die
       // Marker unter jeder Bewertung tragen das Label ("+ Essen"), danach
@@ -655,63 +658,120 @@ const Werkzeuge = {
         liste = auswahl();
       }
 
-      /* Welche Bewertungen er sich herausgreift.
+      /* Welche Stimmen er sich heraussucht - und wo.
          ----------------------------------------------------------------
-         Der Nutzer am 27.09.2026: "Das duerfen dann auch nicht die ersten
-         vier sein, logischerweise. Da muss er schnell scrollen, dann bei
-         einem anhalten, das detaillierter angucken, dann weiterscrollen."
+         Zwei Anforderungen, die zusammengehen muessen. Der Nutzer am
+         27.09.2026: "Das duerfen nicht die ersten vier sein." Und am
+         30.09.2026: "Dann haelt er zum Beispiel bei 30 von 100 an, scannt
+         den genauer, scrollt weiter, haelt bei 70 an, dann bei 90."
 
-         Bis dahin nahm der Agent stumpf die ersten vier - direkt nachdem
-         er scheinbar durch vierhundert gescrollt war. Das entwertete die
-         ganze Geste: Wer oben anfaengt, haette nicht scrollen muessen.
-
-         Jetzt sind es Stimmen aus der ganzen Liste, ueber die Laenge
-         verteilt, und der Inhalt entscheidet mit: eine, die den Wunsch
-         lobt, eine mit Kritik, dann der Rest nach Abstand. Genau die
-         Mischung, aus der sich hinterher ein brauchbarer Satz schreiben
-         laesst - Lob allein liest sich wie Werbung. */
+         Also legen drei Baender fest, WO angehalten wird, und der Inhalt
+         entscheidet, WELCHE Stimme es innerhalb des Bandes wird: im
+         ersten eine, die den Wunsch lobt, im zweiten eine mit Kritik.
+         Lob allein liest sich wie Werbung. */
       const lobt = (el) => [...el.querySelectorAll(".aspekt-marker .marker.plus")]
         .some((m) => !suche || m.textContent.toLowerCase().includes(suche));
       const bemaengelt = (el) => el.querySelector(".aspekt-marker .marker.minus");
-      const verteilt = (n) => {
-        // Nicht von vorn: ab einem Fuenftel der Liste, gleichmaessig verteilt
-        const start = Math.max(1, Math.floor(liste.length * 0.2));
-        const schritt = Math.max(1, Math.floor((liste.length - start) / Math.max(1, n)));
-        const raus = [];
-        for (let i = start; i < liste.length && raus.length < n; i += schritt) raus.push(liste[i]);
-        return raus;
-      };
+      const wieViele = Math.max(1, Math.min(anzahl, 5));
+      const baender = wieViele === 1 ? [0.5]
+        : Array.from({ length: wieViele }, (_, i) => 0.28 + (0.62 * i) / (wieViele - 1));
       const gewaehlt = [];
-      const nimm = (el) => { if (el && !gewaehlt.includes(el)) gewaehlt.push(el); };
-      // Auch die inhaltlich gewaehlten Stimmen kommen aus der Tiefe der
-      // Liste. Sonst landete der Agent doch wieder bei Platz zwei und drei,
-      // nur auf Umwegen - und der Nutzer hat genau das beanstandet.
-      const abTiefe = Math.max(1, Math.floor(liste.length * 0.25));
-      const tief = liste.slice(abTiefe);
-      nimm(tief.find(lobt) || liste.slice(1).find(lobt));
-      nimm(tief.find(bemaengelt) || liste.slice(1).find(bemaengelt));
-      for (const el of verteilt(anzahl)) nimm(el);
-      // In der Reihenfolge der Seite durchgehen, nicht in der Reihenfolge
-      // der Auswahl - sonst springt der Zeiger hoch und runter
-      const reihenfolge = liste.filter((el) => gewaehlt.includes(el)).slice(0, anzahl);
+      const fenster = Math.max(2, Math.round(liste.length * 0.08));
+      const suchen = (mitte, pred) => {
+        for (let d = 0; d <= fenster; d++) {
+          for (const j of [mitte - d, mitte + d]) {
+            const el = liste[j];
+            if (el && !gewaehlt.includes(el) && (!pred || pred(el))) return el;
+          }
+        }
+        return null;
+      };
+      baender.forEach((anteil, i) => {
+        const mitte = Math.min(liste.length - 1, Math.max(0, Math.round(anteil * (liste.length - 1))));
+        const wunsch = i === 0 ? lobt : (i === 1 ? bemaengelt : null);
+        const el = suchen(mitte, wunsch) || suchen(mitte, null);
+        if (el) gewaehlt.push(el);
+      });
+      // In der Reihenfolge der Seite, nicht der Auswahl - sonst springt
+      // der Zeiger hoch und runter
+      const reihenfolge = liste.filter((el) => gewaehlt.includes(el));
 
-      const wie = reihenfolge.length;
-      for (let i = 0; i < wie; i++) {
-        if (Zeiger.abbruch) break;
-        const el = reihenfolge[i];
+      const lesen = async (el, nummer) => {
         /* Markiert, damit sichtbar ist, WELCHE Stimmen er sich angesehen
            hat - sonst bleibt eine Pause vor einer Textwand bedeutungslos.
            Nicht "agent-liest": Das ist die Hervorhebung des Zeigers, und
-           die nimmt er am Ende jeder Bewegung selbst wieder weg. Genau
-           deshalb war bisher hinterher nichts zu sehen. */
+           die nimmt er am Ende jeder Bewegung selbst wieder weg. */
         el.classList.add("agent-gelesen");
         const autor = el.querySelector(".review-who strong")?.textContent?.trim() || "";
         const note = el.querySelector(".review-rating")?.textContent?.trim() || "";
         const titel = el.querySelector("h4")?.textContent?.trim() || "";
         const text = el.querySelector("p")?.textContent?.trim() || "";
-        await Zeiger.lies(el, { dauer: 760, hinweis: `Bewertung ${i + 1} von ${wie}${autor ? `: ${autor}` : ""}` });
+        await Zeiger.lies(el, { dauer: 760, hinweis: `Bewertung ${nummer} von ${reihenfolge.length}${autor ? `: ${autor}` : ""}` });
         gelesen.push({ autor, note, titel, text });
+      };
+
+      if (mass) {
+        const { von, bis } = mass;
+        /* Der Zaehler laeuft mit der Scrollposition, nicht mit einem
+           eigenen Takt. Gezaehlt wird, was oberhalb des unteren
+           Fensterrandes durchgelaufen ist - deshalb steht am Ende genau
+           die Zahl da, die auch geladen wurde. */
+        const schritt = Math.max(220, Math.round(window.innerHeight * 0.8));
+        const startY = window.scrollY;
+        let weiteste = startY;
+        let naechstes = 0;
+        let y = von;
+        window.scrollTo({ top: von, behavior: "auto" });
+        await Zeiger.warte(120);
+        while (y < bis && !Zeiger.abbruch) {
+          y = Math.min(bis, y + schritt);
+          // Liegt die naechste ausgewaehlte Stimme in diesem Abschnitt,
+          // haelt er dort an, statt an ihr vorbeizuziehen.
+          while (naechstes < reihenfolge.length && !Zeiger.abbruch) {
+            const el = reihenfolge[naechstes];
+            const ziel = window.scrollY + el.getBoundingClientRect().top;
+            if (ziel > y + window.innerHeight * 0.5) break;
+            await lesen(el, naechstes + 1);
+            naechstes += 1;
+            y = Math.max(y, window.scrollY);
+          }
+          window.scrollTo({ top: y, behavior: "auto" });
+          weiteste = Math.max(weiteste, window.scrollY);
+          const anteil = bis > von ? Math.min(1, (y - von) / (bis - von)) : 1;
+          Zeiger.beschrifte?.(`${Math.max(1, Math.round(geladen * anteil))} von ${geladen} Bewertungen`);
+          await Zeiger.warte(24);
+        }
+        // Was noch nicht gelesen wurde, weil die Strecke vorher zu Ende
+        // war - etwa wenn die letzte Stimme ganz unten steht.
+        while (naechstes < reihenfolge.length && !Zeiger.abbruch) {
+          await lesen(reihenfolge[naechstes], naechstes + 1);
+          naechstes += 1;
+        }
+        Zeiger.beschrifte?.(`${geladen} von ${geladen} Bewertungen`);
+        await Zeiger.warte(160);
+        /* Der Schritt prueft sich selbst: Eine hochlaufende Zahl neben
+           einer Seite, die stillsteht, behauptet Arbeit, die nicht
+           stattfindet - zweimal gemeldet, beide Male still. */
+        gescrollt = Math.abs(weiteste - startY) > 8;
+        if (!gescrollt && typeof Kern !== "undefined") {
+          Kern.notieren?.("scroll_ohne_wirkung", { wo: "bewertungen", id, karten: geladen });
+        }
+        Zeiger.beschrifte?.("");
+        window.scrollTo({ top: von, behavior: "auto" });
+        await Zeiger.warte(180);
+      } else {
+        // Zu wenige Bewertungen zum Scrollen: dann nur die Auswahl ansehen
+        for (let i = 0; i < reihenfolge.length && !Zeiger.abbruch; i++) await lesen(reihenfolge[i], i + 1);
       }
+
+      /* Zwei Zahlen, zwei Bedeutungen - und beide muessen stimmen.
+         ----------------------------------------------------------------
+         `durchgesehen` ist, was tatsaechlich unter dem Zeiger durchlief.
+         Die Bilanz weiter unten rechnet ueber alle Datensaetze des
+         Hauses; das steht im Ergebnissatz und ist etwas anderes als
+         Lesen. */
+      durchgesehen = geladen;
+
       // Die Markierungen bleiben stehen, bis der Agent die Seite verlaesst:
       // Wer danach hinsieht, soll nachvollziehen koennen, worauf sich sein
       // Satz stuetzt. Beim naechsten Haus faengt es ohnehin von vorn an.
