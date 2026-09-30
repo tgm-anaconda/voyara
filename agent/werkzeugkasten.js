@@ -2548,11 +2548,25 @@ const Werkzeugkasten = {
         }
       }
       if (flexibel) {
-        // Der Anreisetag muss von der Person kommen - das Modell hat ihn
-        // sonst gern selbst gesetzt ("1. Oktober"). Geprueft wird, ob in
-        // ihren letzten Nachrichten ueberhaupt ein Tag vorkommt.
-        const tagGenannt = kern.lauf.gespraech.filter((n) => n.role === "user").slice(-4)
-          .some((n) => Werkzeugkasten.TAG.test(String(n.content)));
+        /* Der Anreisetag muss von der Person kommen - das Modell hat ihn
+           sonst gern selbst gesetzt ("1. Oktober"). Geprueft wird, ob in
+           ihren letzten Nachrichten ueberhaupt ein Tag vorkommt.
+
+           Dazu seit dem 01.10.2026 ein zweiter Weg. Seit der Kern gleich
+           nach dem Monat einmal nach dem genauen Tag fragt, faellt die
+           Antwort viel frueher als die Buchung - oft zehn Nachrichten
+           davor. Das Fenster der letzten vier haette den Tag dann
+           weggeworfen und ein zweites Mal danach gefragt, obwohl die
+           Person ihn laengst genannt hat.
+
+           Der zweite Weg ist enger als der erste, nicht weiter: Er
+           verlangt, dass genau der gemerkte Tag irgendwo in ihren eigenen
+           Nachrichten steht. Ein Tag, den das Modell sich ausgedacht hat,
+           kommt damit weiterhin nicht durch. */
+        const nutzer = kern.lauf.gespraech.filter((n) => n.role === "user");
+        const tagZahl = parseInt(String(kern.lauf.profil.anreise || "").slice(-2), 10);
+        const tagGenannt = nutzer.slice(-4).some((n) => Werkzeugkasten.TAG.test(String(n.content)))
+          || (!!tagZahl && nutzer.some((n) => new RegExp(`(^|[^\\d])0?${tagZahl}\\s*\\.`).test(String(n.content))));
         if (!kern.lauf.profil.anreise || !tagGenannt) {
           kern.lauf.profil.anreise = null;
           kern.standAnzeigen();
