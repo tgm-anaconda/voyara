@@ -579,6 +579,30 @@ const Kern = {
   /* ==================================================================
      Sprechen und Stand
      ================================================================== */
+  /* Wuerde der Agent dieselbe Frage noch einmal stellen?
+     ------------------------------------------------------------------
+     Das Zeichen dafuer, dass von der Antwort nichts angekommen ist. Zwei
+     Faelle, die gleich aussehen und es nicht sind:
+
+       "gerne im sommer"  Im Profil aendert sich nichts, der Monat steht
+                          weiter aus - aber der Fahrplan fragt danach
+                          nicht mehr offen, sondern nach einem der drei
+                          Sommermonate. Angekommen.
+       "Gerne im Augus"   Dieselbe Frage, Wort fuer Wort. Nicht angekommen.
+
+     Die zweite Fassung einer Frage zaehlt nicht als Aenderung: Jedes
+     Thema hat zwei Formulierungen, damit sich nichts woertlich
+     wiederholt, und gewechselt wird nach dem Zaehler - nicht nach dem,
+     was die Person gesagt hat. */
+  wiederholtDieFrage(thema, satzJetzt) {
+    const vorher = this.lauf?.letzteFrage;
+    if (!thema || !satzJetzt || !vorher || vorher.thema !== thema || !vorher.satz) return false;
+    const schluck = (x) => String(x || "").toLowerCase().replace(/[^a-zäöüß0-9]/g, "");
+    if (schluck(vorher.satz) === schluck(satzJetzt)) return true;
+    const fassungen = typeof Werkzeugkasten !== "undefined" ? Werkzeugkasten.THEMEN?.[thema]?.satz : null;
+    return Array.isArray(fassungen) && fassungen.includes(vorher.satz) && fassungen.includes(satzJetzt);
+  },
+
   sagen(text, rolle = "bot", links = null, extra = null) {
     const n = { rolle, text, zeit: Date.now() };
     if (links && links.length) n.links = links;
@@ -1165,14 +1189,38 @@ const Kern = {
           const offen = fpJetzt.naechstes;
           let standGleich = false;
           try { standGleich = !!this.lauf.standVorher && this.lauf.standVorher === JSON.stringify(this.lauf.profil || {}); } catch { standGleich = false; }
+          /* Zweite Bedingung: Wuerde er sich wortgleich wiederholen?
+             ------------------------------------------------------------
+             Der Stand allein reicht nicht. Auf "gerne im sommer" aendert
+             sich im Profil nichts - der Monat steht ja weiter aus -, und
+             trotzdem ist die Antwort angekommen: Der Fahrplan fragt
+             danach nicht mehr offen nach der Zeit, sondern nach einem der
+             drei Sommermonate. Am 30.09.2026 stand deshalb
+             "Entschuldige, das habe ich nicht sicher verstanden" unter
+             einem Satz, den der Agent sehr wohl verstanden hatte.
+
+             Umgekehrt beim Tippfehler "Augus": Da kam wortgleich dieselbe
+             Frage noch einmal - und genau das ist das Zeichen, dass
+             nichts angekommen ist.
+
+             Die zweite Fassung einer Frage (jedes Thema hat zwei, damit
+             sich nichts woertlich wiederholt) zaehlt dabei nicht als
+             Aenderung: Beide stehen in derselben Liste, und der Wechsel
+             kommt vom Zaehler, nicht von dem, was die Person gesagt hat. */
+          const satzJetzt = fpJetzt.satz;
+          const wuerdeWiederholen = this.wiederholtDieFrage(offen, satzJetzt);
+
           if (!freierZug && offen && offen === this.lauf.zuletztGefragt && standGleich
-            && this.lauf.nachrichtArt === "antwort" && fpJetzt.satz) {
+            && wuerdeWiederholen && this.lauf.nachrichtArt === "antwort" && fpJetzt.satz) {
             const n = (this.lauf.nichtVerstanden ||= {});
             n[offen] = (n[offen] || 0) + 1;
             const letzte = [...this.lauf.gespraech].reverse().find((x) => x.role === "user")?.content || "";
             this.notieren("antwort_nicht_verstanden", { thema: offen, mal: n[offen], text: String(letzte).slice(0, 80) });
             if (n[offen] === 1) {
-              fpJetzt = { ...fpJetzt,
+              /* Die Rueckfrage tritt vor die Frage, nicht an ihre Stelle.
+                 `satzRoh` haelt den Satz ohne diesen Vorspann fest, damit
+                 der Vergleich im naechsten Zug nicht daran scheitert. */
+              fpJetzt = { ...fpJetzt, satzRoh: satzJetzt,
                 satz: `Entschuldige, das habe ich nicht sicher verstanden. ${fpJetzt.satz}` };
             }
           }
@@ -1279,6 +1327,9 @@ const Kern = {
             // dabei zu "Okt.?" - und zwei solche Reste sahen immer gleich aus.
             const fragesatz = String(text).replace(/\s+/g, " ").trim().slice(0, 220);
             this.notieren("thema_gefragt", { thema: fp.naechstes, phase: fp.phase, mal: this.lauf.gefragtWie[fp.naechstes], frage: fragesatz });
+            // Womit er gefragt hat - Grundlage fuer den Vergleich oben:
+            // Stellt er im naechsten Zug dieselbe Frage, ist nichts angekommen.
+            this.lauf.letzteFrage = { thema: fp.naechstes, satz: fp.satzRoh || fp.satz || fragesatz };
           }
           // Chips nur, wo das Thema welche vorsieht - das Modell haengt sonst
           // an jede Frage Vorschlaege, die die Person in eine Richtung draengen
