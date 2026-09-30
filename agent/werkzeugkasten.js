@@ -2830,7 +2830,19 @@ const Werkzeugkasten = {
       // bekommt keine Vorlage und damit auch keine Anzahl
       anzahl: !!p.anzahlVorschlaege || p.vorgehen !== "top3",
       beratung: true,
-      preis: !!(p.maxPreis || p.budgetGesamt || p.preisEgal || b.preis),
+      /* Die Preisfrage braucht eine Zahl oder ein "offen".
+         ----------------------------------------------------------------
+         Hier stand `|| b.preis`: Sobald die Person auf die Frage
+         ueberhaupt etwas geantwortet hatte, galt das Thema als erledigt.
+         Mit dem Chip "Feste Grenze" war der Haken damit gesetzt, ohne
+         dass je ein Betrag dastand - gemeldet am 30.09.2026: "Dann hat
+         er einfach die naechste Frage gestellt, ohne nochmal nach der
+         festen Grenze zu fragen."
+
+         Jetzt zaehlt nur, was wirklich im Stand steht. Eine Endlosschleife
+         kann daraus nicht werden: Nach zwei vergeblichen Anlaeufen nimmt
+         der Kern "offen" an und sagt es (ANNAHME weiter unten). */
+      preis: !!(p.maxPreis || p.budgetGesamt || p.preisEgal),
       verpflegung: !!(p.verpflegung || p.verpflegungEgal || b.verpflegung || p.typ === "apartment"),
       wuensche: !!((p.kriterien || []).length || p.ausstattungEgal || b.wuensche),
       /* Der Anreisetag. Mit festen Daten aus der Suche ist er da, sonst
@@ -3101,6 +3113,19 @@ const Werkzeugkasten = {
         chips = `${m.join(" | ")} | Such du aus`;
       }
     }
+    /* "Feste Grenze" ist noch keine Grenze.
+       ------------------------------------------------------------------
+       Wer den Chip geklickt hat, hat die Frage beantwortet, aber keine
+       Zahl genannt. Dieselbe Frage noch einmal zu stellen ("Hast du eine
+       feste Grenze, oder bist du offen?") waere, als haette der Agent die
+       Antwort nicht gehoert. Also fasst er konkret nach. */
+    if (naechstes === "preis" && lauf.besprochen?.preis
+      && !p.maxPreis && !p.budgetGesamt && !p.preisEgal) {
+      satz = "Welche Grenze soll ich einhalten - pro Nacht oder für die ganze Unterkunft?";
+      frage = "Sie hat gesagt, dass sie eine feste Grenze hat, aber noch keinen Betrag genannt. Frag nach der Zahl und danach, ob sie pro Nacht oder fuer die ganze Unterkunft gilt.";
+      chips = null;
+    }
+
     // "Ein langes Wochenende" ist eine Dauerangabe. Ohne diesen Zweig fragte
     // der Agent danach trotzdem "Eine Woche, zehn Tage oder etwas anderes?"
     // und die Person musste sich wiederholen. Eine Zahl wird nicht geraten -
