@@ -940,6 +940,44 @@ const Werkzeugkasten = {
         }
       }
       for (const f of ["preisEgal", "bewertungEgal", "strandEgal", "verpflegungEgal", "ausstattungEgal"]) if (a[f] !== undefined) setze(f, !!a[f]);
+      /* "Geld ist egal" muss die Grenze wirklich wegnehmen.
+         ----------------------------------------------------------------
+         Am 30.09.2026 im Testlauf: Die Person sagte "ok geld ist egal",
+         der Kern setzte preisEgal - und rechnete weiter mit den 45 Euro
+         von vorher, weil `maxPreis` stehen blieb. Danach fand er
+         weiterhin nichts und fragte dieselbe Frage noch einmal. Ein
+         Flag, das nichts loescht, ist kein Flag, sondern eine Notiz. */
+      if (p.preisEgal && (p.maxPreis || p.budgetGesamt)) {
+        delete p.maxPreis; delete p.budgetGesamt;
+        geaendert.push("maxPreis", "budgetGesamt");
+        kern.notieren("preis_geloest", {});
+      }
+      /* "45 Euro pro Nacht pro Person" mal der Gruppe.
+         ----------------------------------------------------------------
+         Die Seite rechnet je Zimmer, die Person denkt je Kopf. Ohne die
+         Umrechnung sucht der Agent bei vier Reisenden mit einem Viertel
+         des Budgets - und findet nichts. Gesagt wird es auch, denn es ist
+         eine Transferleistung. */
+      /* Geprueft wird der Satz der Person, nicht das Feld des Modells.
+         ----------------------------------------------------------------
+         Den Betrag kann entweder das Modell setzen (haeufig: "45 Euro"
+         ohne "hoechstens" faengt kein Muster) oder der Textleser in
+         politik.js. Wer hier nur auf ein Feld schaut, deckt einen der
+         beiden Wege nicht ab - also steht die Frage dort, wo beide
+         vorbeikommen. */
+      const proPerson = gesagt(/pro person|je person|pro kopf|pro nase|\bp\.\s?p\.|pro erwachsene[mn]?\b/i, 1);
+      if (proPerson && (p.maxPreis || p.budgetGesamt)) {
+        const koepfe = (p.erwachsene || 0) + (p.kinder || 0) || p.personen || 0;
+        if (koepfe > 1 && !kern.lauf.preisProPersonGesagt) {
+          kern.lauf.preisProPersonGesagt = true;
+          const feld = p.maxPreis ? "maxPreis" : "budgetGesamt";
+          const einzeln = p[feld];
+          p[feld] = einzeln * koepfe;
+          geaendert.push(feld);
+          Werkzeugkasten.ableiten(kern, feld,
+            `${einzeln} € pro Person, bei ${koepfe} Reisenden rechne ich also mit ${p[feld]} €${feld === "maxPreis" ? " pro Nacht" : " insgesamt"}.`);
+        }
+      }
       // Nur reduzierte Haeuser - ein Wunsch wie jeder andere, kein "egal"
       if (a.nurAngebote !== undefined) { if (p.nurAngebote !== !!a.nurAngebote) geaendert.push("nurAngebote"); p.nurAngebote = !!a.nurAngebote; }
       if (a.wlanInklusive !== undefined) { if (p.wlanInklusive !== !!a.wlanInklusive) geaendert.push("wlanInklusive"); p.wlanInklusive = !!a.wlanInklusive; }
@@ -1328,10 +1366,27 @@ const Werkzeugkasten = {
         kern.lauf.letzteTreffer = auswahl.map((h) => h.id);
         kern.lauf.vorgehenFuer = fp.schluessel + p.vorgehen;
         if (!auswahl.length) {
+          /* Statt noch einmal offen zu fragen: die Zahl nennen.
+             ------------------------------------------------------------
+             Am 30.09.2026 drehte sich das Gespraech im Kreis - nichts
+             gefunden, "welche Vorgabe darf ich lockern?", Antwort,
+             wieder nichts, wieder dieselbe Frage. Der Ausweg ist keine
+             hoefliche Wiederholung, sondern eine Zahl: Ab wie viel gaebe
+             es etwas, und was ist der Engpass. Damit kann die Person
+             entscheiden, statt zu raten. */
+          const mp = Werkzeugkasten.mindestpreis(p);
+          const e = Werkzeugkasten.engpass(p);
+          const zahl = mp
+            ? ` Das guenstigste Haus, das sonst alles erfuellt, kostet ${mp.betrag} € ${mp.art}. Nenn diese Zahl und frag, ob du damit rechnen darfst.`
+            : "";
+          const woran = e ? ` Am engsten ist ${e.label}: ohne sie waeren es ${e.haeuser}.` : "";
           return { ...basis, treffer: [], gelockert,
-            hinweis: gelockert.length
-              ? `Auch nach dem Lockern (${gelockert.join(", ")}) ist nichts da. Sag das in einem Satz, nenn den Preis als den Punkt, an dem es haengt, und frag, ob das Budget hoeher darf. Frag genau einmal, nicht noch einmal dasselbe.`
-              : "Nichts gefunden. Sag der Person in einem Satz, woran es haengt, und frag, welche Vorgabe weicher werden darf. Frag genau einmal." };
+            mindestpreis: mp || null,
+            hinweis: (gelockert.length
+              ? `Auch nach dem Lockern (${gelockert.join(", ")}) ist nichts da.`
+              : "Nichts gefunden.")
+              + woran + zahl
+              + " Sag es in hoechstens zwei Saetzen und stell genau eine Frage. Wiederhole nicht dieselbe Frage wie zuletzt - wenn die Person schon einmal gelockert hat, schlag konkret vor, was du aendern wuerdest." };
         }
         const sagLockerung = gelockert.length
           ? `Mit den urspruenglichen Vorgaben war nichts frei. Sag in einem Satz, dass du ${gelockert.join(" und ")} gelockert hast, damit ueberhaupt etwas da ist - als Ansage, nicht als Frage. `
@@ -3351,6 +3406,39 @@ const Werkzeugkasten = {
      ist der Engpass. Das ist Rechnen im Katalog, keine Behauptung -
      und es gibt der Person etwas zu entscheiden, statt sie vor eine
      leere Liste zu stellen. */
+  /* Ab wie viel gibt es ueberhaupt etwas?
+     ------------------------------------------------------------------
+     Der Nutzer fragte am 30.09.2026 genau das ("ab wie viel gibt es denn
+     hotels?") - und bekam zur Antwort noch einmal die Frage, welche
+     Vorgabe er lockern will. Der Agent konnte es nicht beantworten, weil
+     ihm niemand die Zahl ausgerechnet hat.
+
+     Gerechnet wird mit demselben Preis, gegen den auch gefiltert wird:
+     bei einer Nachtgrenze der Nachtpreis, bei einem Gesamtbudget der
+     Aufenthaltspreis. Sonst nennt der Agent eine Zahl, mit der es
+     hinterher immer noch nicht klappt. */
+  mindestpreis(p) {
+    const ohne = { ...p };
+    delete ohne.maxPreis;
+    delete ohne.budgetGesamt;
+    const treffer = this.katalogTreffer(ohne, this.filterAusStand(ohne));
+    if (!treffer.length) return null;
+    const gesamtGrenze = !!p.budgetGesamt;
+    const betrag = (h) => {
+      const nacht = this.preis(h, p.monat);
+      if (!gesamtGrenze) return nacht;
+      return typeof Politik !== "undefined" && Politik.aufenthaltspreis
+        ? Politik.aufenthaltspreis(h, p, nacht).gesamt : nacht * (p.naechte || 7);
+    };
+    let bestes = null;
+    for (const h of treffer) {
+      const b = betrag(h);
+      if (b != null && (!bestes || b < bestes.betrag)) bestes = { betrag: Math.round(b), name: h.name, id: h.id };
+    }
+    if (!bestes) return null;
+    return { ...bestes, art: gesamtGrenze ? "für den ganzen Aufenthalt" : "pro Nacht", haeuser: treffer.length };
+  },
+
   engpass(p) {
     const zaehle = (x) => this.katalogTreffer(x, this.filterAusStand(x)).length;
     const jetzt = zaehle(p);
