@@ -3560,16 +3560,27 @@ const Werkzeugkasten = {
     if (p.richtung || p.zielId || typeof Politik === "undefined") return null;
     const warm = new Set((Politik.THEMEN.find((t) => t.id === "warm") || {}).ziele || []);
     const kalt = new Set((Politik.THEMEN.find((t) => t.id === "kalt") || {}).ziele || []);
-    let w = 0, k = 0, rest = 0;
+    let w = 0, k = 0;
     for (const h of liste) {
       if (warm.has(h.ziel)) w += 1;
       else if (kalt.has(h.ziel)) k += 1;
-      else rest += 1;
     }
-    /* Der Rest sind die Staedte (Barcelona, Wien, Lissabon, New York,
-       Kyoto) - sie stehen in keiner der beiden Listen. Ohne sie zaehlt
-       jemand 69 und 40 zusammen und kommt nicht auf 125. */
-    return w && k ? { warm: w, kalt: k, staedte: rest } : null;
+    /* Keine Aufteilung, sondern zwei Auswahlmengen.
+       ------------------------------------------------------------------
+       Erst stand hier ein dritter Topf "Staedte", damit die Summe aufgeht.
+       Einwand des Nutzers am 30.09.2026, und er trifft: "Staedte koennen
+       auch in warmen oder kaelteren Regionen liegen" - Barcelona und
+       Lissabon sind warm, Wien ist es nicht. Klima und Siedlungsform sind
+       zwei verschiedene Dinge, und ein Topf, der beides mischt, erklaert
+       nichts.
+
+       Deshalb steht hier keine Aufteilung mehr. Die beiden Zahlen sind
+       das, was bei "eher warm" beziehungsweise "eher kalt" uebrig bliebe
+       - genau die Frage, die als naechste kommt. Dass sie zusammen
+       weniger ergeben als die Gesamtzahl, ist dann kein Widerspruch,
+       sondern selbstverstaendlich: Es sind zwei Antworten auf eine Frage,
+       keine Torte. */
+    return w && k ? { warm: w, kalt: k } : null;
   },
 
   lageSatz(liste, p, umfang, aufDerSeite = null) {
@@ -3624,9 +3635,7 @@ const Werkzeugkasten = {
     /* Warm gegen kuehl - die Zahl, die der naechsten Frage vorarbeitet.
        Steht die Richtung schon fest, faellt sie weg. */
     const wk = this.warmKaltTeilung(liste, p);
-    if (wk) {
-      teile.push(`${wk.warm} davon liegen in warmen Regionen, ${wk.kalt} in kühleren${wk.staedte ? `, ${wk.staedte} in Städten` : ""}.`);
-    }
+    if (wk) teile.push(`In eine warme Gegend kämen davon ${wk.warm} in Frage, in eine kalte ${wk.kalt}.`);
 
     // "Die meisten Mallorca (26)" fehlte eine Praeposition, und "in
     // Mallorca" waere falsch - der Doppelpunkt loest beides.
@@ -3654,16 +3663,28 @@ const Werkzeugkasten = {
        Person zaehlt 177 Karten), mit ihr am Anfang war der Satz
        unverstaendlich. */
     if (mehrAufDerSeite) {
-      /* Was in der Liste noch nicht abgezogen ist, richtet sich danach,
-         was tatsaechlich aussortiert wurde. Bei einer Person allein ist
-         die Reisegruppe kein Grund, und dann darf sie auch nicht als
-         einer dastehen. */
-      const KURZ = { region: "die Regionen", saison: "die Saison", gruppe: "die Reisegruppe", dauer: "der Mindestaufenthalt" };
-      const offen = (weg.ids || []).map((k) => KURZ[k]).filter(Boolean).slice(0, 2);
-      const nachsatz = offen.length
-        ? ` - dort ${offen.length > 1 ? "sind" : "ist"} ${offen.join(" und ")} noch nicht abgezogen`
-        : "";
-      teile.push(`In der Liste daneben stehen ${aufDerSeite}${nachsatz}.`);
+      /* Woran der Unterschied zur Liste wirklich liegt - nachgezaehlt.
+         ----------------------------------------------------------------
+         Hier stand zuerst eine Aufzaehlung der Ausschlussgruende ("dort
+         sind die Reisegruppe und die Saison noch nicht abgezogen"). Das
+         war schlicht falsch: Auf der Seite gemessen filtert die Liste die
+         Reisegruppe sehr wohl mit. Von 177 Karten waren genau 52 zu viel,
+         und alle 52 trugen den Vermerk "Ausserhalb der Saison".
+
+         Gezaehlt wird deshalb genau das: Haeuser, die zur Reisegruppe
+         passen, aber in einer Region liegen, die im Reisemonat ausserhalb
+         ihrer Saison ist. Stimmt diese Zahl nicht mit dem Unterschied
+         ueberein, bleibt der Satz allgemein - lieber unbestimmt als
+         falsch. */
+      const personen = (p.erwachsene || 0) + (p.kinder || 0);
+      const nurSaison = !p.zielId && p.monat && typeof saisonPassung === "function" && typeof ZIEL_NACH_ID !== "undefined"
+        ? this.katalog(p).filter((h) => (!personen || this.passtGruppe(h, p))
+          && ZIEL_NACH_ID[h.ziel] && saisonPassung(ZIEL_NACH_ID[h.ziel], p.monat) < 0.5).length
+        : 0;
+      const unterschied = aufDerSeite - liste.length;
+      teile.push(nurSaison > 0 && nurSaison === unterschied
+        ? `In der Liste daneben stehen ${aufDerSeite}: die ${liste.length} und ${nurSaison} weitere, die ${monatText.replace(/^Im /, "im ")} außerhalb ihrer Saison liegen - die zähle ich nicht mit.`
+        : `In der Liste daneben stehen ${aufDerSeite}, weil sie weniger streng filtert als ich.`);
     }
 
     // "Pro Nacht kosten sie 186 bis 186 €" - bei einem einzigen Haus gibt
