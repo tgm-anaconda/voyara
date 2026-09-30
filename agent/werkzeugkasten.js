@@ -93,6 +93,7 @@ const Werkzeugkasten = {
           anreiseBis: text("Spaeteste Anreise als YYYY-MM-DD, wenn die Person eine Frist nennt ('spaetestens am 3.12.', 'wir muessen vor dem 20. da sein')"),
           anreiseAb: text("Fruehestmoegliche Anreise als YYYY-MM-DD, wenn die Person eine Untergrenze nennt ('fruehestens ab dem 20.5.', 'erst nach dem 10.')"),
           zielOffen: { type: "boolean", description: "true, wenn die Person sagt, dass das Ziel noch offen ist oder sie sich beraten lassen will" },
+          mindestGrad: zahl("Gradzahl, wenn die Person eine nennt ('mir reichen 20 Grad', 'mindestens 25 Grad warm'). Verschiebt, welche Regionen als warm oder kalt zaehlen."),
           richtung: { type: "string", enum: ["warm", "kalt", "strand", "berge", "ski", "norden", "stadt", "wintersonne", "fern"], description: "Richtung statt Ziel, wenn die Person so etwas sagt ('eher warm', 'kalt', 'ans Meer', 'in die Berge') - die Suche beschraenkt sich dann auf passende Regionen" },
           weiter: { type: "string", enum: ["schauen", "klaeren"], description: "Antwort auf die Frage, ob du mit dem Bekannten schon mal schauen sollst (schauen) oder erst noch Eckdaten geklaert werden (klaeren)" },
           artEgal: { type: "boolean", description: "true, wenn die Person bei Hotel oder Ferienwohnung nicht festgelegt ist" },
@@ -462,6 +463,93 @@ const Werkzeugkasten = {
     }
   },
 
+  /* Welche Regionen zu "eher warm" oder "eher kalt" zaehlen.
+     ------------------------------------------------------------------
+     Bis zum 30.09.2026 waren das feste Listen. Das war grob: Barcelona
+     stand nirgends, obwohl es im August 29 Grad hat, und Lappland galt
+     im Juli als kalt, obwohl es dort 19 Grad sind.
+
+     Jetzt entscheidet die Temperatur im gewaehlten Monat (`temp` je
+     Region in data/ziele.js). Die Grenze liegt bei 22 Grad, die Person
+     kann sie verschieben ("mir reichen 20 Grad" -> mindestGrad). Ohne
+     Monat bleibt es bei der Liste - ohne Monat gibt es keine Temperatur.
+
+     Bei "kalt" ist die Grenze die Gegenrichtung: hoechstens 12 Grad,
+     oder was die Person nennt. */
+  regionenFuerRichtung(thema, p) {
+    const fallback = (thema.ziele || []).slice();
+    if (!thema || !p?.monat || typeof regionenAbGrad !== "function") return fallback;
+    const alle = (typeof ZIELE !== "undefined" ? ZIELE : []).filter((z) => grad(z, p.monat) != null);
+    if (!alle.length) return fallback;
+    if (thema.id === "warm") {
+      const grenze = p.mindestGrad != null ? p.mindestGrad : 22;
+      /* Reicht es im gewaehlten Monat nirgends fuer die Grenze, wird die
+         Grenze schrittweise gesenkt, bis wenigstens drei Regionen
+         zusammenkommen - aber nie unter 18 Grad. Im Januar sind das
+         Krabi, Kapstadt und Teneriffa; alles darunter waere im Januar
+         nicht mehr "warm", sondern nur noch das Beste, was da ist. */
+      let liste = alle.filter((z) => grad(z, p.monat) >= grenze);
+      for (let g = grenze - 2; liste.length < 3 && g >= 18; g -= 2) {
+        liste = alle.filter((z) => grad(z, p.monat) >= g);
+      }
+      return liste.sort((a, b) => grad(b, p.monat) - grad(a, p.monat)).map((z) => z.id);
+    }
+    if (thema.id === "kalt") {
+      const grenze = p.mindestGrad != null ? p.mindestGrad : 12;
+      // Dasselbe von der anderen Seite: im Juli ist nirgends unter zwoelf
+      // Grad, dann steigt die Grenze schrittweise - hoechstens bis 22.
+      let liste = alle.filter((z) => grad(z, p.monat) <= grenze);
+      for (let g = grenze + 2; liste.length < 3 && g <= 22; g += 2) {
+        liste = alle.filter((z) => grad(z, p.monat) <= g);
+      }
+      return liste.sort((a, b) => grad(a, p.monat) - grad(b, p.monat)).map((z) => z.id);
+    }
+    return fallback;
+  },
+
+  /* Der Satz dazu: welche Regionen es sind und wie warm es dort wird.
+     Ohne ihn waere "eher warm" eine Auswahl, die niemand nachpruefen
+     kann - und die Person koennte die Grenze nicht verschieben, weil sie
+     sie nicht kennt. */
+  richtungSatz(p) {
+    if (!p?.richtung || !p.monat || !p.zieleErlaubt?.length || typeof grad !== "function") return null;
+    if (typeof MONATSNAMEN === "undefined" || typeof ZIEL_NACH_ID === "undefined") return null;
+    const mit = p.zieleErlaubt.map((id) => ZIEL_NACH_ID[id]).filter((z) => z && grad(z, p.monat) != null);
+    if (mit.length < 2) return null;
+    const warm = p.richtung === "warm";
+    const werte = mit.map((z) => grad(z, p.monat));
+    const von = Math.min(...werte);
+    const bis = Math.max(...werte);
+    /* Genannt werden die Regionen mit der groessten Auswahl, nicht die
+       waermsten. Sonst stuende im Oktober "Krabi, Marrakesch, Teneriffa"
+       da - richtig gerechnet, aber an der Frage vorbei: Die Person will
+       wissen, wo sie etwas findet. */
+    const haeuser = (id) => this.katalog(p).filter((h) => h.ziel === id).length;
+    const nachAuswahl = [...mit].sort((a, b) => haeuser(b.id) - haeuser(a.id) || (warm ? grad(b, p.monat) - grad(a, p.monat) : grad(a, p.monat) - grad(b, p.monat)));
+    // Genannt werden die drei mit der groessten Auswahl, aber der
+    // Temperatur nach geordnet - sonst springen die Zahlen im Satz
+    // ("Krabi 32, Teneriffa 21, Kapstadt 27").
+    const namen = nachAuswahl.slice(0, 3)
+      .sort((a, b) => (warm ? grad(b, p.monat) - grad(a, p.monat) : grad(a, p.monat) - grad(b, p.monat)))
+      .map((z) => `${z.name} (${grad(z, p.monat)} Grad)`);
+    const monat = MONATSNAMEN[p.monat - 1];
+    return `${warm ? "Warm" : "Kalt"} heißt im ${monat} für mich ${mit.length} Regionen mit ${von} bis ${bis} Grad, darunter ${namen.join(", ")}. Sag Bescheid, wenn dir eine andere Grenze lieber ist.`;
+  },
+
+  /* Gesagt wird es einmal je Stand - und wieder, wenn die Person die
+     Grenze verschiebt. Sonst waere die neue Auswahl so unsichtbar wie
+     die alte. */
+  richtungAnsagen(kern, p) {
+    if (!kern?.lauf) return;
+    const satz = this.richtungSatz(p);
+    if (!satz) return;
+    // Verglichen wird der Satz selbst: Verschiebt jemand die Grenze von 22
+    // auf 20 und es aendert sich nichts, waere die Wiederholung nur Laerm.
+    if (kern.lauf.richtungGesagt === satz) return;
+    kern.lauf.richtungGesagt = satz;
+    this.ableiten(kern, "richtung", satz);
+  },
+
   /* Die Rueckfrage, wenn ein Wunsch nur bei Hotels zu haben ist.
      ------------------------------------------------------------------
      Wer die Art offengelassen hat und dann Halbpension oder vier Sterne
@@ -663,8 +751,31 @@ const Werkzeugkasten = {
         const th = (Politik.THEMEN || []).find((t) => t.id === a.richtung);
         const woerter = th ? [...(th.woerter || []), th.id] : [];
         if (th && gesagt(new RegExp(woerter.map((x) => x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|"), "i"), 99)) {
-          setze("richtung", th.id); p.zieleErlaubt = th.ziele.slice(); if (!p.zielId) p.zielOffen = true;
+          setze("richtung", th.id);
+          p.zieleErlaubt = Werkzeugkasten.regionenFuerRichtung(th, p);
+          if (!p.zielId) p.zielOffen = true;
+          Werkzeugkasten.richtungAnsagen(kern, p);
         } else kern.notieren("richtung_verworfen", { richtung: a.richtung });
+      }
+      /* "Mir reicht es, wenn es 20 Grad sind."
+         ----------------------------------------------------------------
+         Wunsch des Nutzers am 30.09.2026: Nachdem der Agent gesagt hat,
+         welche Regionen er als warm zaehlt und wie warm es dort ist, soll
+         die Person die Grenze verschieben koennen. Damit ist "warm" keine
+         feste Liste mehr, sondern eine Schwelle im gewaehlten Monat. */
+      if (a.mindestGrad != null && gesagt(/grad|°/i, 1)) {
+        const g = Math.round(Number(a.mindestGrad));
+        if (Number.isFinite(g) && g >= -20 && g <= 45) {
+          setze("mindestGrad", g);
+          if (p.richtung && typeof Politik !== "undefined") {
+            const th2 = (Politik.THEMEN || []).find((t) => t.id === p.richtung);
+            if (th2) {
+              p.zieleErlaubt = Werkzeugkasten.regionenFuerRichtung(th2, p);
+              geaendert.push("zieleErlaubt");
+              Werkzeugkasten.richtungAnsagen(kern, p);
+            }
+          }
+        }
       }
       if (a.weiter) { setze("weiter", a.weiter); kern.notieren("weiter", { wahl: a.weiter }); }
       // Ein Monat nur, wenn die Person einen genannt hat (oder eine

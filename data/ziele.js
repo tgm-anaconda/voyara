@@ -15,30 +15,35 @@ const ZIELE = [
     id: "mallorca", name: "Mallorca", land: "Spanien", typ: "strand",
     flughafen: "PMI", flughafenName: "Palma de Mallorca",
     monate: [4, 5, 6, 7, 8, 9, 10],
+    temp: [15, 15, 17, 19, 23, 27, 30, 30, 27, 23, 19, 16],
     kurz: "Buchten, Tramuntana und Palmas Altstadt — der Klassiker im Mittelmeer.",
   },
   {
     id: "kreta", name: "Kreta", land: "Griechenland", typ: "strand",
     flughafen: "HER", flughafenName: "Heraklion",
     monate: [5, 6, 7, 8, 9, 10],
+    temp: [16, 16, 18, 21, 25, 29, 31, 31, 28, 24, 21, 17],
     kurz: "Lange Sandstrände, Bergdörfer und minoische Ausgrabungen.",
   },
   {
     id: "algarve", name: "Algarve", land: "Portugal", typ: "strand",
     flughafen: "FAO", flughafenName: "Faro",
     monate: [4, 5, 6, 7, 8, 9, 10],
+    temp: [16, 17, 19, 21, 23, 27, 29, 29, 27, 23, 19, 17],
     kurz: "Goldene Steilküsten, Felsbögen und ruhige Fischerorte im Süden Portugals.",
   },
   {
     id: "sardinien", name: "Sardinien", land: "Italien", typ: "strand",
     flughafen: "AHO", flughafenName: "Alghero",
     monate: [6, 7, 8, 9],
+    temp: [14, 15, 17, 19, 23, 27, 30, 31, 27, 23, 18, 15],
     kurz: "Karibisch klares Wasser, Granitfelsen und Macchia.",
   },
   {
     id: "teneriffa", name: "Teneriffa", land: "Spanien", typ: "strand",
     flughafen: "TFS", flughafenName: "Teneriffa Süd",
     monate: [1, 2, 3, 4, 10, 11, 12],
+    temp: [21, 21, 22, 23, 24, 26, 29, 29, 28, 26, 24, 22],
     kurz: "Wintersonne am Atlantik, dazu der Teide und schwarze Lavastrände.",
     winterziel: true,
   },
@@ -46,24 +51,28 @@ const ZIELE = [
     id: "barcelona", name: "Barcelona", land: "Spanien", typ: "stadt",
     flughafen: "BCN", flughafenName: "Barcelona",
     monate: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    temp: [14, 15, 17, 19, 22, 26, 29, 29, 26, 22, 17, 15],
     kurz: "Modernisme, Tapas und Stadtstrand — funktioniert das ganze Jahr.",
   },
   {
     id: "wien", name: "Wien", land: "Österreich", typ: "stadt",
     flughafen: "VIE", flughafenName: "Wien-Schwechat",
     monate: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    temp: [4, 6, 11, 16, 21, 24, 26, 26, 20, 14, 8, 4],
     kurz: "Kaffeehäuser, Ringstraße und im Dezember die Christkindlmärkte.",
   },
   {
     id: "lissabon", name: "Lissabon", land: "Portugal", typ: "stadt",
     flughafen: "LIS", flughafenName: "Lissabon",
     monate: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    temp: [15, 16, 19, 20, 23, 26, 28, 29, 27, 22, 18, 15],
     kurz: "Azulejos, Aussichtsterrassen und die alte Straßenbahn 28.",
   },
   {
     id: "tirol", name: "Tirol", land: "Österreich", typ: "berge",
     flughafen: "INN", flughafenName: "Innsbruck",
     monate: [1, 2, 3, 6, 7, 8, 9, 12],
+    temp: [3, 5, 10, 14, 19, 22, 24, 23, 19, 14, 8, 4],
     kurz: "Im Winter Skigebiete, im Sommer Almwege — zwei Saisons in einem Tal.",
     winterziel: true,
   },
@@ -71,6 +80,7 @@ const ZIELE = [
     id: "suedtirol", name: "Südtirol", land: "Italien", typ: "berge",
     flughafen: "VRN", flughafenName: "Verona",
     monate: [1, 2, 3, 6, 7, 8, 9, 10, 12],
+    temp: [5, 8, 13, 17, 22, 25, 28, 27, 22, 16, 10, 5],
     kurz: "Dolomiten, Weinberge und Südtiroler Küche zwischen zwei Sprachen.",
     winterziel: true,
   },
@@ -78,6 +88,7 @@ const ZIELE = [
     id: "lappland", name: "Lappland", land: "Finnland", typ: "natur",
     flughafen: "RVN", flughafenName: "Rovaniemi",
     monate: [1, 2, 3, 11, 12],
+    temp: [-11, -10, -5, 2, 9, 16, 19, 16, 10, 2, -4, -9],
     kurz: "Polarnacht, Nordlichter und Schneewälder nördlich des Polarkreises.",
     winterziel: true,
   },
@@ -85,12 +96,14 @@ const ZIELE = [
     id: "ostsee", name: "Ostsee", land: "Deutschland", typ: "strand",
     flughafen: "RLG", flughafenName: "Rostock-Laage",
     monate: [5, 6, 7, 8, 9, 10],
+    temp: [3, 3, 6, 11, 16, 19, 21, 21, 17, 12, 7, 4],
     kurz: "Steilküste, Bäderarchitektur und Strandkörbe — auch im Herbst schön.",
   },
   {
     id: "marrakesch", name: "Marrakesch", land: "Marokko", typ: "stadt",
     flughafen: "RAK", flughafenName: "Marrakesch Menara",
     monate: [1, 2, 3, 4, 10, 11, 12],
+    temp: [19, 21, 24, 26, 30, 34, 38, 38, 33, 28, 23, 19],
     kurz: "Souks, Riads und der Atlas am Horizont — angenehm, wenn Europa kalt ist.",
     winterziel: true,
   },
@@ -98,6 +111,7 @@ const ZIELE = [
     id: "kapstadt", name: "Kapstadt", land: "Südafrika", typ: "stadt",
     flughafen: "CPT", flughafenName: "Kapstadt",
     monate: [1, 2, 3, 11, 12],
+    temp: [27, 27, 26, 23, 20, 18, 18, 18, 20, 22, 24, 26],
     kurz: "Tafelberg, Weingüter und Atlantikstrände — Hochsommer in unserem Winter.",
     winterziel: true,
   },
@@ -105,6 +119,7 @@ const ZIELE = [
     id: "krabi", name: "Krabi", land: "Thailand", typ: "strand",
     flughafen: "KBV", flughafenName: "Krabi",
     monate: [1, 2, 3, 11, 12],
+    temp: [32, 33, 34, 34, 33, 32, 32, 32, 31, 31, 31, 31],
     kurz: "Kalksteinfelsen, warmes Wasser und lange Trockenzeit über den Winter.",
     winterziel: true,
   },
@@ -112,6 +127,7 @@ const ZIELE = [
     id: "island", name: "Island", land: "Island", typ: "natur",
     flughafen: "KEF", flughafenName: "Reykjavík-Keflavík",
     monate: [1, 2, 3, 6, 7, 8, 9, 10, 11, 12],
+    temp: [2, 3, 4, 6, 10, 12, 14, 14, 11, 7, 4, 2],
     kurz: "Nordlichter im Winter, Mitternachtssonne im Sommer, Dampf das ganze Jahr.",
     winterziel: true,
   },
@@ -119,12 +135,14 @@ const ZIELE = [
     id: "newyork", name: "New York", land: "USA", typ: "stadt",
     flughafen: "JFK", flughafenName: "New York JFK",
     monate: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    temp: [4, 6, 10, 17, 22, 27, 29, 28, 25, 18, 12, 6],
     kurz: "Ganzjährig, aber im Dezember zwischen Lichtern und Eisbahnen am schönsten.",
   },
   {
     id: "kyoto", name: "Kyoto", land: "Japan", typ: "stadt",
     flughafen: "KIX", flughafenName: "Osaka Kansai",
     monate: [3, 4, 5, 10, 11],
+    temp: [9, 10, 14, 20, 25, 28, 32, 34, 29, 23, 17, 11],
     kurz: "Kirschblüte im Frühjahr, rotes Ahornlaub im Herbst, Tempel dazwischen.",
   },
 ];
@@ -201,6 +219,29 @@ function preisImMonat(item, monat) {
    ================================================================== */
 
 // FNV-1a: kurz, stabil, gleichmaessig verteilt. Ergebnis 0-999.
+/* Wie warm es wird.
+   ====================================================================
+   `temp` an jeder Region: zwoelf Tageshoechstwerte, Januar bis Dezember,
+   gerundete Durchschnitte. Gebraucht fuer die Frage "eher warm oder eher
+   kalt": Nutzer am 30.09.2026: "Sag ihm kurz, welche Regionen fuer ihn
+   in warm reinzaehlen - Mallorca, Kreta und Sardinien sind im Oktober
+   immer noch mit mindestens 23 Grad sehr warm. Und dann waere es auch
+   moeglich, dass die Person sagt, mir reicht es, wenn es 20 Grad sind."
+
+   Damit ist "warm" keine feste Liste mehr, sondern eine Schwelle im
+   gewaehlten Monat - und die Person kann sie verschieben. */
+function grad(ziel, monat) {
+  if (!ziel || !Array.isArray(ziel.temp) || !monat) return null;
+  return ziel.temp[Math.max(0, Math.min(11, monat - 1))];
+}
+
+// Alle Regionen, in denen es im Monat mindestens so warm ist
+function regionenAbGrad(monat, grenze) {
+  if (typeof ZIELE === "undefined" || !monat) return [];
+  return ZIELE.filter((z) => { const t = grad(z, monat); return t != null && t >= grenze; })
+    .sort((a, b) => grad(b, monat) - grad(a, monat));
+}
+
 function belegungsZahl(text) {
   let h = 2166136261;
   for (let i = 0; i < text.length; i++) {
