@@ -1048,6 +1048,18 @@ const Studie = {
         [p + "tippfehlerVermutungen"]: zaehle(protokoll, "tippfehler_rueckfrage"),
         [p + "nichtVerstanden"]: zaehle(protokoll, "antwort_nicht_verstanden"),
         [p + "themenUebersprungen"]: protokoll.filter((e) => e.ereignis === "thema_uebersprungen").map((e) => e.thema).join(","),
+        /* Die Frage nach dem genauen Anreisetag (01.10.2026).
+           --------------------------------------------------------------
+           Sie ist selbst ein kleines Experiment: Bringt eine ausdrueckliche
+           Nachfrage Leute dazu, ein Datum zu nennen, das sie ohnehin im
+           Kopf hatten? `datumGenannt` haelt das Ergebnis fest, sobald die
+           Frage beantwortet ist - 1, wenn danach ein Tag oder ein
+           Zeitraum im Stand stand. */
+        [p + "datumRueckfrage"]: zaehle(protokoll, "datum_rueckfrage"),
+        [p + "datumGenannt"]: (() => {
+          const e = [...protokoll].reverse().find((x) => x.ereignis === "datum_geklaert");
+          return e ? (e.hatDatum ? 1 : 0) : "";
+        })(),
         [p + "einfuegen"]: einfuegen.length,
         [p + "einfuegenAusAufgabeMax"]: einfuegen.length ? Math.max(...einfuegen.map((e) => e.ausAufgabe)) : "",
         [p + "detailsGeoeffnet"]: details.length,

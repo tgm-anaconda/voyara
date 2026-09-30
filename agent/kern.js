@@ -1213,12 +1213,13 @@ const Kern = {
           // Art-Rueckfrage darunter zurueck - sonst stuenden zwei Fragen da,
           // und die Vermutung waere weg, obwohl sie als gestellt gilt.
           let tippGestellt = false;
+          const letzteNachricht = [...this.lauf.gespraech].reverse().find((x) => x.role === "user")?.content || "";
 
           if (!freierZug && offen && offen === this.lauf.zuletztGefragt && standGleich
             && wuerdeWiederholen && this.lauf.nachrichtArt === "antwort" && fpJetzt.satz) {
             const n = (this.lauf.nichtVerstanden ||= {});
             n[offen] = (n[offen] || 0) + 1;
-            const letzte = [...this.lauf.gespraech].reverse().find((x) => x.role === "user")?.content || "";
+            const letzte = letzteNachricht;
             this.notieren("antwort_nicht_verstanden", { thema: offen, mal: n[offen], text: String(letzte).slice(0, 80) });
             if (n[offen] === 1) {
               /* Steht ein verschriebenes Wort da, kommt die Vermutung.
@@ -1253,6 +1254,32 @@ const Kern = {
             this.lauf.artGefragt = true;
             this.notieren("art_rueckfrage", { grund: artFrage.grund, offen: fpJetzt.naechstes });
             fpJetzt = { ...fpJetzt, satz: artFrage.satz, chips: artFrage.chips.join(" | "), naechstes: null };
+          }
+          /* Der genaue Anreisetag, einmal nach dem Monat.
+             ------------------------------------------------------------
+             Auch das ist eine Rueckfrage fuer genau einen Zug: Das offene
+             Thema des Fahrplans bleibt stehen und kommt danach von selbst
+             wieder (`naechstes: null`). Sie tritt hinter die anderen
+             beiden zurueck - eine Frage je Nachricht.
+
+             Die erste Stufe wird im naechsten Zug aufgeloest, in beide
+             Richtungen: entweder folgt die konkrete Frage nach dem Tag,
+             oder das Thema ist erledigt (9). Ohne dieses feste Auflösen
+             haenge die Entscheidung an der jeweils letzten Nachricht und
+             koennte Zuege spaeter aus dem Nichts zuschlagen. */
+          if (!freierZug && !tippGestellt && !artFrage) {
+            const p2 = this.lauf.profil || {};
+            const datumFrage = Werkzeugkasten.datumRueckfrage(p2, this.lauf, letzteNachricht);
+            if (datumFrage) {
+              this.lauf.datumFrage = datumFrage.stufe;
+              this.notieren("datum_rueckfrage", { stufe: datumFrage.stufe, monat: p2.monat || null });
+              fpJetzt = { ...fpJetzt, satz: datumFrage.satz,
+                chips: (datumFrage.chips || []).join(" | "), naechstes: null };
+            } else if (this.lauf.datumFrage === 1 || this.lauf.datumFrage === 2) {
+              // Beantwortet - und ob ein Tag dabei herauskam, ist ein Messwert
+              this.lauf.datumFrage = 9;
+              this.notieren("datum_geklaert", { hatDatum: !!(p2.anreise || (p2.von && p2.bis)) });
+            }
           }
           /* Zwei Ebenen.
              ------------------------------------------------------------

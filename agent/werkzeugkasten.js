@@ -740,6 +740,65 @@ const Werkzeugkasten = {
     return { label, satz: regel.satz(label), chips: regel.chips(label) };
   },
 
+  /* Nach dem Monat einmal nach dem Tag fragen.
+     ------------------------------------------------------------------
+     "Wann soll es denn ungefaehr losgehen? Ein Monat reicht mir erst
+     mal." - dieses "ungefaehr" tut genau das, was es verspricht: Es
+     laedt dazu ein, nur den Monat zu nennen. Wer den 10. August schon
+     im Kopf hat, sagt ihn dann nicht, und der Agent sucht flexibel im
+     Monat weiter. Am Ende steht in der Maske "flexibel im August",
+     obwohl die Person ein Datum hatte.
+
+     Also fragt der Kern direkt nach dem Monat einmal nach - einmal,
+     nicht mehr. Wer flexibel ist, klickt es weg und verliert einen
+     Klick; wer einen Tag hat, nennt ihn, und dann steht er von der
+     ersten Suche an in der Maske. Nebenbei faellt fuer diese Person die
+     spaete Anreisefrage weg: `fertig.anreise` ist damit erfuellt.
+
+     Wen der Kern NICHT fragt:
+       - wen er den Monat selbst hat waehlen lassen (`vonPerson.monat`
+         fehlt) - wer die Wahl abgibt, hat kein Datum,
+       - wen er nach zwei Anlaeufen uebergangen hat (`uebersprungen.zeit`),
+       - wer schon einen Tag, einen Zeitraum oder eine Frist genannt hat.
+         Ueber Termine wurde dann bereits gesprochen.
+
+     Zwei Stufen, weil ein Chip, der etwas ankuendigt, eine konkrete
+     Frage nach sich ziehen muss. Das war der Fehler bei "Feste Grenze"
+     am 30.09.2026: geklickt, und danach nie nach dem Betrag gefragt.
+     Wer hier "Ich habe ein Datum" klickt, ohne eines zu nennen, wird
+     nach dem Tag gefragt. Wer abwinkt, nicht. */
+  DATUM_ABWINKEN: /flexib|egal|kein|nein|nee\b|nicht|wei(ss|ß) nicht|offen|noch nicht|sp(ae|ä)ter|mal sehen|schau/i,
+
+  datumRueckfrage(p, lauf, letzte = "") {
+    if (!p || !lauf) return null;
+    if (!p.monat) return null;
+    // Der Monat kam vom Kern, nicht von der Person - dann gibt es auch keinen Tag
+    if (!p.vonPerson?.monat) return null;
+    if (lauf.uebersprungen?.zeit) return null;
+    // Ein Tag, ein Zeitraum oder eine Frist steht schon
+    if ((p.von && p.bis) || p.anreise || p.anreiseBis || p.anreiseAb) return null;
+    const monat = typeof MONATSNAMEN !== "undefined" ? MONATSNAMEN[p.monat - 1] : null;
+    if (!monat) return null;
+    const stufe = lauf.datumFrage || 0;
+    if (stufe === 0) {
+      return {
+        stufe: 1,
+        satz: `Weißt du im ${monat} schon einen genauen Anreisetag, oder bist du da flexibel? `
+          + `Wenn du einen Tag hast, nenn ihn mir gern.`,
+        chips: ["Ich bin flexibel", "Ich habe ein Datum"],
+      };
+    }
+    // Zweite Stufe nur fuer die, die nicht abgewunken haben
+    if (stufe === 1 && !this.DATUM_ABWINKEN.test(String(letzte || ""))) {
+      return {
+        stufe: 2,
+        satz: `An welchem Tag im ${monat} wollt ihr anreisen? Es ist jeder Tag frei, und der Preis bleibt im Monat gleich.`,
+        chips: null,
+      };
+    }
+    return null;
+  },
+
   // Wie der Agent die Art nennt, wenn er darueber spricht
   artWort(p, mehrzahl = true) {
     const t = this.seitenTyp(p);

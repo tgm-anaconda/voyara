@@ -444,6 +444,59 @@ const Kernpruefung = {
     }
     return fehler;
   },
+  /* Die Frage nach dem genauen Anreisetag.
+     ------------------------------------------------------------------
+     Auch das eine Tabelle, aus demselben Grund wie oben: Die Frage
+     haengt an einem Stand UND an der letzten Nachricht, und die
+     interessanten Faelle sind die, in denen sie NICHT kommen darf -
+     wenn der Kern den Monat selbst gewaehlt hat, wenn ein Datum schon
+     dasteht, wenn die Person abgewunken hat. */
+  DATUM_FAELLE: [
+    { name: "nach genanntem Monat", p: { monat: 8, vonPerson: { monat: true } }, lauf: {}, letzte: "im August", stufe: 1 },
+    { name: "Chip: Ich habe ein Datum", p: { monat: 8, vonPerson: { monat: true } }, lauf: { datumFrage: 1 }, letzte: "Ich habe ein Datum", stufe: 2 },
+    { name: "Chip: Ich bin flexibel", p: { monat: 8, vonPerson: { monat: true } }, lauf: { datumFrage: 1 }, letzte: "Ich bin flexibel", stufe: null },
+    { name: "abgewunken mit egal", p: { monat: 8, vonPerson: { monat: true } }, lauf: { datumFrage: 1 }, letzte: "ist mir egal", stufe: null },
+    { name: "abgewunken mit weiss nicht", p: { monat: 8, vonPerson: { monat: true } }, lauf: { datumFrage: 1 }, letzte: "weiss nicht", stufe: null },
+    // Der Monat kam vom Kern, nicht von der Person: dann gibt es auch keinen Tag
+    { name: "Monat vom Kern gewaehlt", p: { monat: 8 }, lauf: {}, letzte: "such du aus", stufe: null },
+    { name: "Monat angenommen", p: { monat: 8, vonPerson: { monat: true } }, lauf: { uebersprungen: { zeit: true } }, letzte: "", stufe: null },
+    // Ueber Termine ist schon gesprochen worden
+    { name: "fester Zeitraum steht", p: { monat: 8, vonPerson: { monat: true }, von: "2027-08-10", bis: "2027-08-17" }, lauf: {}, letzte: "", stufe: null },
+    { name: "Anreisetag steht", p: { monat: 8, vonPerson: { monat: true }, anreise: "2027-08-10" }, lauf: {}, letzte: "", stufe: null },
+    { name: "Frist genannt", p: { monat: 8, vonPerson: { monat: true }, anreiseBis: "2027-08-20" }, lauf: {}, letzte: "", stufe: null },
+    { name: "kein Monat", p: { vonPerson: {} }, lauf: {}, letzte: "", stufe: null },
+    // Zweimal gefragt ist genug
+    { name: "zweite Stufe war schon", p: { monat: 8, vonPerson: { monat: true } }, lauf: { datumFrage: 2 }, letzte: "hm", stufe: null },
+    { name: "erledigt", p: { monat: 8, vonPerson: { monat: true } }, lauf: { datumFrage: 9 }, letzte: "hm", stufe: null },
+  ],
+
+  datum() {
+    const fehler = [];
+    const melde = (art, text) => fehler.push({ art, text, thema: "anreise", satz: "" });
+    for (const f of this.DATUM_FAELLE) {
+      let raus = null;
+      try { raus = Werkzeugkasten.datumRueckfrage(JSON.parse(JSON.stringify(f.p)), f.lauf, f.letzte); }
+      catch (e) { melde("datum_absturz", `${f.name}: ${e && e.message}`); continue; }
+      const stufe = raus ? raus.stufe : null;
+      if (stufe !== f.stufe) {
+        melde("datum_falsch", `${f.name}: Stufe ${stufe === null ? "keine" : stufe}, erwartet ${f.stufe === null ? "keine" : f.stufe}`);
+        continue;
+      }
+      if (!raus) continue;
+      if ((raus.satz.match(/\?/g) || []).length !== 1) melde("datum_zwei_fragen", `${f.name}: nicht genau ein Fragezeichen: "${raus.satz}"`);
+      const monat = typeof MONATSNAMEN !== "undefined" ? MONATSNAMEN[f.p.monat - 1] : null;
+      if (monat && !raus.satz.includes(monat)) melde("datum_ohne_monat", `${f.name}: der Monat steht nicht im Satz: "${raus.satz}"`);
+      if (raus.stufe === 1 && (raus.chips || []).length !== 2) melde("datum_ohne_chips", `${f.name}: die erste Stufe braucht beide Antworten zur Wahl`);
+      // Die Chips der ersten Stufe muessen auch als Antwort taugen: das
+      // Abwinken muss erkannt werden, die Zusage nicht
+      if (raus.stufe === 1) {
+        const [ab, zu] = raus.chips;
+        if (!Werkzeugkasten.DATUM_ABWINKEN.test(ab)) melde("datum_chip_unlesbar", `"${ab}" wird nicht als Abwinken gelesen - die Frage kaeme ein zweites Mal`);
+        if (Werkzeugkasten.DATUM_ABWINKEN.test(zu)) melde("datum_chip_verwechselt", `"${zu}" wird als Abwinken gelesen - die Nachfrage nach dem Tag bliebe aus`);
+      }
+    }
+    return fehler;
+  },
   lauf({ still = false } = {}) {
     const alle = [];
     const staende = this.staende();
@@ -464,6 +517,7 @@ const Kernpruefung = {
     }
     for (const f of this.wortlaut()) alle.push(f);
     for (const f of this.tippfehler()) alle.push(f);
+    for (const f of this.datum()) alle.push(f);
     for (const f of this.alleThemen()) alle.push(f);
     const ab = this.ablaeufe();
     for (const f of ab.fehler) alle.push(f);
