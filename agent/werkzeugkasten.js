@@ -1054,7 +1054,21 @@ const Werkzeugkasten = {
         // Nur Flughaefen, die es gibt - ein Tippfehler darf die Auswahl
         // nicht auf null schrumpfen lassen
         const gueltig = a.flugAbAuswahl.map((x) => Flug.code(x)).filter(Boolean);
-        if (gueltig.length) { p.flugAbAuswahl = gueltig; p.flugAbEgal = true; geaendert.push("flugAbAuswahl"); }
+        /* Zwei genannte Flughaefen sind noch keine Abgabe.
+           --------------------------------------------------------------
+           Hier stand `p.flugAbEgal = true`: Wer "gerne Berlin oder
+           Frankfurt" sagte, hatte damit angeblich die Wahl abgegeben, und
+           der Kern nahm den guenstigeren. Nutzer am 30.09.2026: "Er hat
+           wieder nur den erstgenannten genommen ... er soll sagen, du
+           hast zwei Flughaefen genannt, auf welcher Basis soll ich mich
+           entscheiden?"
+
+           Jetzt merkt sich der Kern nur die Auswahl. Ob er selbst
+           entscheiden darf, sagt weiterhin flugAbEgal - das setzt das
+           Modell, wenn ein Kriterium dabeisteht ("je nachdem was billiger
+           ist"). Sonst bleibt das Thema offen und er fragt, mit den
+           Preisen beider Flughaefen als Entscheidungshilfe. */
+        if (gueltig.length) { p.flugAbAuswahl = gueltig; geaendert.push("flugAbAuswahl"); }
       }
       setze("flugAb", a.flugAb); setze("flugKlasse", a.flugKlasse);
       if (a.flugAb) p.flugAbEgal = false;
@@ -3194,6 +3208,26 @@ const Werkzeugkasten = {
       satz = "Welche Grenze soll ich einhalten - pro Nacht oder für die ganze Unterkunft?";
       frage = "Sie hat gesagt, dass sie eine feste Grenze hat, aber noch keinen Betrag genannt. Frag nach der Zahl und danach, ob sie pro Nacht oder fuer die ganze Unterkunft gilt.";
       chips = null;
+    }
+
+    /* Zwei genannte Flughaefen: fragen, nicht entscheiden.
+       ------------------------------------------------------------------
+       Die allgemeine Frage ("Von welchem Flughafen soll es losgehen?")
+       waere hier keine Frage mehr, sondern eine Wiederholung - die
+       Person hat ja gerade zwei genannt. Stattdessen stehen beide zur
+       Wahl, mit dem Preisunterschied dazu. Das ist die Entscheidungshilfe,
+       die der Kern ohnehin ausrechnet; entschieden wird trotzdem nicht
+       von ihm. */
+    if (naechstes === "flugAb" && (p.flugAbAuswahl || []).length > 1 && typeof Flug !== "undefined") {
+      const namen = p.flugAbAuswahl.map((c) => Flug.flughaefen().find((h) => h.code === c)?.name || c);
+      const ziele = p.zielId ? [p.zielId] : (p.zieleErlaubt || []);
+      const w = this.guenstigsterFlughafen(ziele, p.flugAbAuswahl);
+      const preisTeil = w && w.zweiter && w.aufpreis > 0
+        ? ` Ab ${w.ab} kostet der günstigste Flug ${w.preis} € pro Strecke, ab ${w.zweiter} ${w.aufpreis} € mehr.`
+        : (w ? ` Der günstigste Flug kostet ab ${w.ab} ${w.preis} € pro Strecke.` : "");
+      satz = `Du hast ${namen.join(" und ")} genannt - von welchem soll ich ausgehen?${preisTeil}`;
+      frage = `Sie hat mehrere Flughaefen genannt (${namen.join(", ")}). Frag, welcher es werden soll, und nenn den Preisunterschied. Entscheide NICHT selbst; sagt sie "such du aus" oder "der guenstigere", setzt du flugAbEgal.`;
+      chips = `${namen.join(" | ")} | Nimm den günstigeren`;
     }
 
     // "Ein langes Wochenende" ist eine Dauerangabe. Ohne diesen Zweig fragte
