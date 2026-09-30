@@ -1335,10 +1335,28 @@ const Kern = {
               if (w.length < 3) return false;
               return w.filter((y) => kernWoerter.has(y)).length / w.length >= 0.5;
             };
+            /* Und was er vor zwei Nachrichten schon gesagt hat.
+               ------------------------------------------------------------
+               Am 01.10.2026 stand "August merke ich mir." zweimal im
+               selben Gespraech: einmal, als der Monat ankam, und noch
+               einmal zwei Zuege spaeter, als nichts Neues dazukam. Das
+               Modell soll aufnehmen, was neu ist - hat es nichts
+               aufzunehmen, soll es schweigen. Tut es das nicht, faellt der
+               Satz hier weg.
+
+               Nur laengere Saetze: "Alles klar." darf zweimal vorkommen,
+               das ist Gespraech und keine Wiederholung. Und nur in
+               Antwortzuegen - fragt die Person zweimal dasselbe, soll er
+               zweimal antworten duerfen (bei "frage" laeuft dieser Block
+               ohnehin nicht). */
+            const frueher = (this.lauf.verlauf || []).filter((n) => n.rolle === "bot")
+              .slice(-4).map((n) => norm(n.text || ""));
+            const schonGesagt = (x) => { const n = norm(x); return n.length > 14 && frueher.some((f) => f.includes(n)); };
             let vorspann = String(text || "").split(/(?<=[.!?])\s+/)
               .filter((x) => x.trim() && !/\?/.test(x))
               .filter((x) => { const n = norm(x); return n.length > 8 && !frageNorm.includes(n); })
               .filter((x) => !sagtDasselbe(x))
+              .filter((x) => !schonGesagt(x))
               .slice(0, 2).join(" ").trim();
             const nachtrag = Werkzeugkasten.aufnahmeSatz(this, vorspann);
             if (nachtrag) vorspann = `${nachtrag} ${vorspann}`.trim();
