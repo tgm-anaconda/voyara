@@ -1376,6 +1376,21 @@ const Werkzeugkasten = {
              entscheiden, statt zu raten. */
           const mp = Werkzeugkasten.mindestpreis(p);
           const e = Werkzeugkasten.engpass(p);
+          /* Der haeufigste Grund fuer eine leere Liste bei genanntem Ziel:
+             Die Region hat in diesem Monat keine Saison. Das ist keine
+             Vorgabe, die man lockern kann - deshalb bekommt das Modell
+             hier die Hauptsaison und soll einen Monat oder eine Region
+             vorschlagen, statt nach dem Budget zu fragen. */
+          const z = p.zielId && typeof ZIEL_NACH_ID !== "undefined" ? ZIEL_NACH_ID[p.zielId] : null;
+          const ausserSaison = z && p.monat && typeof saisonPassung === "function"
+            && saisonPassung(z, p.monat) < 0.5;
+          if (ausserSaison) {
+            const haupt = typeof saisonText === "function" ? saisonText(z) : "";
+            const monatName = p.monat && typeof MONATSNAMEN !== "undefined" ? `im ${MONATSNAMEN[p.monat - 1]}` : "in diesem Monat";
+            return { ...basis, treffer: [], gelockert,
+              hinweis: `${z.name} hat ${monatName} keine Saison${haupt ? ` (Hauptsaison ${haupt})` : ""}, deshalb ist dort nichts buchbar. `
+                + "Sag das in einem Satz und biete zwei Wege an: ein anderer Monat fuer diese Region, oder eine andere Region in diesem Monat. Stell genau eine Frage." };
+          }
           const zahl = mp
             ? ` Das guenstigste Haus, das sonst alles erfuellt, kostet ${mp.betrag} € ${mp.art}. Nenn diese Zahl und frag, ob du damit rechnen darfst.`
             : "";
@@ -3526,7 +3541,7 @@ const Werkzeugkasten = {
     for (const h of alle) {
       let grund = null;
       if (!p.zielId && p.zieleErlaubt?.length && !p.zieleErlaubt.includes(h.ziel)) grund = "region";
-      else if (!p.zielId && p.monat && typeof saisonPassung === "function" && typeof ZIEL_NACH_ID !== "undefined"
+      else if (p.monat && typeof saisonPassung === "function" && typeof ZIEL_NACH_ID !== "undefined"
         && ZIEL_NACH_ID[h.ziel] && saisonPassung(ZIEL_NACH_ID[h.ziel], p.monat) < 0.5) grund = "saison";
       else if (personen && !this.passtGruppe(h, p)) grund = "gruppe";
       else if (p.naechte && h.minNights && p.naechte < h.minNights) grund = "dauer";
@@ -3581,7 +3596,7 @@ const Werkzeugkasten = {
       ? alle.filter((h) => h.ziel === p.zielId)
       : (p.zieleErlaubt?.length ? alle.filter((h) => p.zieleErlaubt.includes(h.ziel)) : alle);
     const passend = personen ? imGebiet.filter((h) => this.passtGruppe(h, p)) : imGebiet;
-    const saisonPrueft = !p.zielId && p.monat && typeof saisonPassung === "function" && typeof ZIEL_NACH_ID !== "undefined";
+    const saisonPrueft = p.monat && typeof saisonPassung === "function" && typeof ZIEL_NACH_ID !== "undefined";
     const ausserSaison = saisonPrueft
       ? passend.filter((h) => ZIEL_NACH_ID[h.ziel] && saisonPassung(ZIEL_NACH_ID[h.ziel], p.monat) < 0.5)
       : [];
@@ -3665,6 +3680,20 @@ const Werkzeugkasten = {
        einem Absatz, von denen keine sich selbst erklaert. Jetzt beginnt
        der Satz mit dem, was buchbar ist; alles andere ordnet sich darum
        herum. */
+    /* Leer, weil die Region gerade keine Saison hat.
+       ------------------------------------------------------------------
+       "Im Maerz sind auf Kreta 0 Hotels buchbar" waere zwar richtig, sagt
+       aber nicht, woran es liegt - und die Person koennte denken, der
+       Katalog sei leer. Der Grund steht seit dem 30.09.2026 fest: Die
+       Saisonregel gilt jetzt ueberall, also ist sie hier auch die
+       Erklaerung. */
+    const zielRegion = p.zielId && typeof ZIEL_NACH_ID !== "undefined" ? ZIEL_NACH_ID[p.zielId] : null;
+    if (!liste.length && zielRegion && p.monat && typeof saisonPassung === "function"
+      && saisonPassung(zielRegion, p.monat) < 0.5) {
+      const haupt = typeof saisonText === "function" ? saisonText(zielRegion) : "";
+      return `${zielRegion.name} hat ${monatText.replace(/^Im /, "im ")} keine Saison${haupt ? ` - Hauptsaison ist ${haupt}` : ""}. Dort ist gerade nichts buchbar.`;
+    }
+
     const einzahl = this.artWort(p, false);
     // "35 Hotels buchbar in den warmen Regionen" stand so da - der Ort
     // gehoert vor die Zahl, sonst haengt er hinten dran wie ein Nachtrag.
@@ -4171,7 +4200,17 @@ const Werkzeugkasten = {
       // August Monsun, die Liste schrieb "Ausserhalb der Saison" an die
       // Karte, der Agent sagte nichts dazu. Wer die Region selbst nennt,
       // bekommt sie weiter.
-      if (!p.zielId && p.monat && typeof saisonPassung === "function"
+      /* Ausserhalb der Saison gilt jetzt ueberall.
+         ----------------------------------------------------------------
+         Hier stand `!p.zielId`: Wer die Region selbst nannte, bekam sie
+         auch ausserhalb ihrer Saison zu sehen. Seit die Trefferliste
+         diese Haeuser nicht mehr zeigt (30.09.2026), waere das ein
+         Widerspruch - der Agent zaehlte 17 Hotels auf Kreta im Maerz, die
+         Seite zeigte keins. Eine Regel, zwei Orte: Ausserhalb der Saison
+         heisst nicht buchbar, egal wer die Region genannt hat. Der Agent
+         sagt es und schlaegt einen anderen Monat oder eine andere Region
+         vor. */
+      if (p.monat && typeof saisonPassung === "function"
         && typeof ZIEL_NACH_ID !== "undefined" && ZIEL_NACH_ID[h.ziel]
         && saisonPassung(ZIEL_NACH_ID[h.ziel], p.monat) < 0.5) return false;
       if (filter.ausstattung.some((x) => !(h.amenities || []).includes(x))) return false;

@@ -352,6 +352,14 @@ const Werkzeuge = {
       for (const el of [...panel.querySelectorAll(".js-ziel")]) {
         const gewollt = soll.has(el.value);
         if (el.checked === gewollt) continue;
+        /* Gesperrt heisst: Die Region hat in diesem Monat keine Saison.
+           Der Kern zaehlt sie ohnehin nicht mehr mit - hier wird nur
+           gemeldet, dass der Haken nicht zu setzen war, damit das Modell
+           nicht behauptet, die Region sei eingestellt. */
+        if (el.disabled) {
+          if (gewollt) nichtGesetzt.push(ZIEL_NACH_ID?.[el.value]?.name || el.value);
+          continue;
+        }
         const name = ZIEL_NACH_ID?.[el.value]?.name || el.value;
         if (await this.klickeFilterZeile(el, name) && gewollt) namen.push(name);
       }

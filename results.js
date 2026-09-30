@@ -193,11 +193,12 @@ function matches(item) {
      nicht mehr, dann ist es gefixt." Genau so. Seite und Agent zeigen
      jetzt dieselbe Zahl.
 
-     Eine Ausnahme: Wer eine Region ausdruecklich anhakt, bekommt sie zu
-     sehen - dieselbe Regel, nach der auch der Agent die Saison ignoriert,
-     wenn die Person das Ziel selbst nennt. Sonst waere ein Gespraech
-     ueber "Lappland im August" auf der Seite nicht mehr abbildbar. */
-  if (!state.ziele.has(item.ziel) && ziel && typeof saisonPassung === "function"
+     Ohne Ausnahme, auch wenn die Region angehakt ist. Erst gab es eine:
+     Wer sie ausdruecklich waehlte, bekam sie zu sehen. Damit haette aber
+     ein ausgegrauter Haken doch noch etwas bewirken muessen, und der
+     Agent haette Haeuser zaehlen koennen, die die Liste nicht zeigt.
+     Eine Regel an beiden Orten ist mehr wert als eine Hintertuer. */
+  if (ziel && typeof saisonPassung === "function"
     && saisonPassung(ziel, reisemonat()) < 0.5) return false;
   // Reisegruppe muss hineinpassen - vorher wurde die Personenzahl ignoriert
   if (!Belegung.passt(item)) return false;
@@ -267,8 +268,8 @@ function group(title, inner) {
   return `<div class="filter-group"><h4>${title}</h4>${inner}</div>`;
 }
 
-function checkRow(cls, value, label, count, checked, zeilenKlasse = "") {
-  return `<label class="check-row${zeilenKlasse ? ` ${zeilenKlasse}` : ""}"><input type="checkbox" class="${cls}" value="${value}" ${checked ? "checked" : ""}/><span>${label}</span><span class="count">${count}</span></label>`;
+function checkRow(cls, value, label, count, checked, zeilenKlasse = "", gesperrt = false) {
+  return `<label class="check-row${zeilenKlasse ? ` ${zeilenKlasse}` : ""}"><input type="checkbox" class="${cls}" value="${value}" ${checked ? "checked" : ""}${gesperrt ? " disabled" : ""}/><span>${label}</span><span class="count">${count}</span></label>`;
 }
 
 function radioRow(name, cls, value, label, count, checked) {
@@ -303,20 +304,24 @@ function renderFilters() {
       // vierte Moeglichkeit neben an, aus und halb - und muesste erklaert werden.
       html += group("Reiseziel",
         zieleImBestand.map((z) => {
-          const aus = ausserSaison(z) && !state.ziele.has(z.id);
-          /* Ausgegraut, aber anklickbar.
+          const aus = ausserSaison(z);
+          /* Ausgegraut und gesperrt.
              --------------------------------------------------------------
-             Der Nutzer wollte sie "ausgegraut und nicht anklickbar". Ganz
-             sperren geht nicht: Wer im Gespraech "Lappland im August" sagt,
-             bekommt vom Agenten genau diese Region gezeigt - dann muss die
-             Seite sie auch darstellen koennen. Der Haken ist also weiter
-             benutzbar, sieht aber aus wie das, was er ist: eine Region,
-             die gerade nicht Saison hat. */
+             Wunsch des Nutzers, zweimal geaeussert. Der Einwand dagegen
+             (ein Gespraech ueber "Kreta im Maerz" waere dann nicht mehr
+             darstellbar) ist geloest, indem die Saisonregel jetzt ueberall
+             gilt - auch fuer den Agenten. Er zeigt die Region dann nicht
+             mehr, sondern sagt, dass sie gerade keine Saison hat, und
+             bietet einen anderen Monat oder eine andere Region an.
+
+             Die Zahl daneben ist die, die es dort ohne die Saisongrenze
+             gaebe - sonst staende ueberall null und die Zeile saehe aus
+             wie ein Fehler. */
           const zusatz = aus ? " ·&nbsp;außerhalb der Saison"
             : (saisonPassung(z, monat) === 1 ? " ·&nbsp;Saison" : "");
           return checkRow("js-ziel", z.id, `${z.name}${zusatz}`,
             aus ? bestandOhneSaison(z) : countIn((h) => h.ziel === z.id),
-            state.ziele.has(z.id), aus ? "aus-saison" : "");
+            state.ziele.has(z.id), aus ? "aus-saison" : "", aus);
         }).join(""));
     }
 
