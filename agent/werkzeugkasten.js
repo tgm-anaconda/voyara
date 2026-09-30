@@ -582,6 +582,164 @@ const Werkzeugkasten = {
     };
   },
 
+  /* Tippfehler: mit der Vermutung nachfragen, nicht raten.
+     ------------------------------------------------------------------
+     Im Testlauf am 30.09.2026 schrieb der Nutzer "Gerne im Augus" - und
+     der Agent stellte die Monatsfrage wortgleich noch einmal. Fuer die
+     Person sieht das aus, als hoere ihr niemand zu: Sie hat geantwortet.
+
+     Der naheliegende Weg waere, "Augus" gleich als August in den Stand
+     zu schreiben. Genau das nicht. Aufgenommen wird nur, was die Person
+     gesagt oder bestaetigt hat; sonst steht am Ende ein Monat im Stand,
+     den niemand genannt hat - und an den Feldern des Stands haengt die
+     ganze Auswertung. Ein falsch geratener Monat waere schlimmer als
+     eine Rueckfrage.
+
+     Deshalb der Mittelweg: Der Kern sucht das gemeinte Wort nur, um die
+     RUECKFRAGE zu formulieren ("Meinst du August?"). In den Stand kommt
+     es erst mit dem Ja der Person.
+
+     Warum der Kern und nicht das Modell: Der Chat stellt seine Fragen
+     selbst, und dem Modell ist in `fahrplanFuerModell` ausdruecklich
+     verboten, ein Fragezeichen zu schreiben - der Kern schneidet jeden
+     Fragesatz des Modells aus dem Vorspann. Eine Vermutung, die das
+     Modell aeussert, waere also entweder keine Frage oder sie faellt
+     weg. Sie muss von hier kommen.
+
+     Geraten wird nur innerhalb geschlossener Listen: zwoelf Monate,
+     achtzehn Regionen, acht Flughaefen, drei Klassen, zwei Arten, vier
+     Verpflegungen. Und nur, wenn genau ein Eintrag nahe genug liegt. */
+  TIPPFEHLER: {
+    zeit: {
+      liste: () => (typeof MONATSNAMEN !== "undefined" ? MONATSNAMEN : []).map((m) => ({ label: m, woerter: [m] })),
+      satz: (l) => `Meinst du ${l}? Dann rechne ich mit dem Monat - sonst sag mir gern, welcher es sein soll.`,
+      chips: (l) => [`Ja, ${l}`, "Nein, ein anderer Monat"],
+    },
+    ziel: {
+      liste: () => (typeof ZIELE !== "undefined" ? ZIELE : []).map((z) => ({ label: z.name, woerter: [z.name] })),
+      satz: (l) => `Meinst du ${l}? Dann schaue ich dort - sonst nenn mir gern die Gegend.`,
+      chips: (l) => [`Ja, ${l}`, "Nein, eine andere Gegend"],
+    },
+    flugAb: {
+      liste: () => (typeof Flug !== "undefined" ? Flug.flughaefen() : []).map((h) => ({ label: h.name, woerter: [h.name] })),
+      satz: (l) => `Meinst du ${l}? Dann suche ich die Flüge ab dort.`,
+      chips: (l) => [`Ja, ${l}`, "Nein, ein anderer Flughafen"],
+    },
+    flugKlasse: {
+      liste: () => [{ label: "Economy", woerter: ["Economy"] },
+        { label: "Premium Economy", woerter: ["Premium"] },
+        { label: "Business", woerter: ["Business"] }],
+      satz: (l) => `Meinst du ${l}? Dann rechne ich mit der Klasse.`,
+      chips: (l) => [`Ja, ${l}`, "Nein, eine andere Klasse"],
+    },
+    art: {
+      liste: () => [{ label: "ein Hotel", woerter: ["Hotel"] },
+        { label: "eine Ferienwohnung", woerter: ["Ferienwohnung", "Ferienhaus"] }],
+      satz: (l) => `Meinst du ${l}? Dann suche ich danach.`,
+      chips: () => ["Hotel", "Ferienwohnung", "Beides zeigen"],
+    },
+    verpflegung: {
+      liste: () => [{ label: "Frühstück", woerter: ["Frühstück"] },
+        { label: "Halbpension", woerter: ["Halbpension"] },
+        { label: "Vollpension", woerter: ["Vollpension"] },
+        { label: "All Inclusive", woerter: ["Inclusive"] }],
+      satz: (l) => `Meinst du ${l}? Dann nehme ich das als Wunsch auf.`,
+      chips: (l) => [`Ja, ${l}`, "Nein, etwas anderes"],
+    },
+  },
+
+  /* Woerter, aus denen nie geraten wird.
+     ------------------------------------------------------------------
+     "Ich weiss nicht so genau" ist keine Vorlage fuer eine Vermutung.
+     Die Liste steht hier flach geschrieben (ohne Umlaute), weil der
+     Vergleich unten auch so rechnet. */
+  TIPPFEHLER_AUSNAHMEN: ["nicht", "keine", "kein", "egal", "gerne", "bitte", "danke", "weiss",
+    "also", "dann", "sonst", "eher", "schon", "noch", "aber", "oder", "wenn", "genau", "gleich",
+    "ungefaehr", "moeglich", "moechte", "wollen", "will", "haben", "habe", "sind", "seid", "kann",
+    "koennte", "sehr", "viel", "mehr", "weniger", "guenstig", "guenstiger", "teuer", "billig",
+    "vielleicht", "irgendwas", "mich", "meine", "ganz", "etwas", "alles", "immer", "schoen",
+    "keinen", "ahnung", "offen", "flexibel"],
+
+  /* Welches Wort war gemeint?
+     ------------------------------------------------------------------
+     Gibt die Beschriftung des einen naheliegenden Eintrags zurueck oder
+     null. Vier Sperren, damit daraus keine wilde Rateei wird:
+
+       - Richtig geschriebene Woerter des Themas beenden die Suche. Steht
+         "August" da und der Monat ist trotzdem offen, liegt das Problem
+         nicht an der Schreibweise - eine Rueckfrage danach waere absurd.
+       - Die ersten zwei Buchstaben muessen stimmen. Sie sind beim Tippen
+         am seltensten falsch, und die Sperre haelt "warm" von "Wien"
+         und "kalt" von "Kapstadt" fern.
+       - Der erlaubte Abstand haengt an der Wortlaenge: ein Zeichen bis
+         sechs Buchstaben, zwei ab sieben. "Augus" ist eines, "Septmber"
+         eines, "Duesseldorff" eines.
+       - Zwei gleich nahe Eintraege oder zwei verschiedene Vermutungen im
+         Satz: nichts. Lieber die normale Rueckfrage als eine falsche. */
+  tippfehlerVermutung(thema, text) {
+    const regel = this.TIPPFEHLER[thema];
+    if (!regel || !text) return null;
+    const flach = (x) => String(x || "").toLowerCase()
+      .replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue").replace(/ß/g, "ss")
+      .replace(/[^a-z]/g, "");
+    // Levenshtein-Abstand, eine Zeile im Speicher
+    const abstand = (a, b) => {
+      const zeile = Array.from({ length: b.length + 1 }, (_, i) => i);
+      for (let i = 1; i <= a.length; i++) {
+        let schraeg = zeile[0];
+        zeile[0] = i;
+        for (let j = 1; j <= b.length; j++) {
+          const oben = zeile[j];
+          zeile[j] = Math.min(zeile[j] + 1, zeile[j - 1] + 1, schraeg + (a[i - 1] === b[j - 1] ? 0 : 1));
+          schraeg = oben;
+        }
+      }
+      return zeile[b.length];
+    };
+    const paare = [];
+    for (const e of regel.liste()) for (const w of e.woerter || []) {
+      const f = flach(w);
+      if (f.length >= 4) paare.push({ label: e.label, wort: f });
+    }
+    if (!paare.length) return null;
+    const stuecke = String(text).split(/[^A-Za-zÄÖÜäöüß]+/).map(flach).filter((x) => x.length >= 4);
+    let treffer = null;
+    for (const s of stuecke) {
+      if (this.TIPPFEHLER_AUSNAHMEN.includes(s)) continue;
+      if (paare.some((pp) => pp.wort === s)) return null;
+      const erlaubt = s.length >= 7 ? 2 : 1;
+      let beste = null;
+      let zweite = null;
+      for (const pp of paare) {
+        if (pp.wort.slice(0, 2) !== s.slice(0, 2)) continue;
+        const d = abstand(s, pp.wort);
+        if (d > erlaubt) continue;
+        if (!beste || d < beste.d) { if (beste && beste.label !== pp.label) zweite = beste; beste = { label: pp.label, d }; }
+        else if (pp.label !== beste.label && (!zweite || d < zweite.d)) zweite = { label: pp.label, d };
+      }
+      if (!beste) continue;
+      // Zwei Eintraege gleich nah: nicht raten
+      if (zweite && zweite.d === beste.d) continue;
+      // Zwei verschiedene Vermutungen in einem Satz: auch nicht
+      if (treffer && treffer.label !== beste.label) return null;
+      if (!treffer || beste.d < treffer.d) treffer = beste;
+    }
+    return treffer ? treffer.label : null;
+  },
+
+  /* Die fertige Rueckfrage, oder null.
+     ------------------------------------------------------------------
+     Zweimal dieselbe Vermutung gibt es nicht: Wer "Nein" geklickt hat,
+     bekommt danach die normale Frage, nicht wieder denselben Vorschlag.
+     Der Kern setzt `lauf.tippfehlerGefragt[thema]`. */
+  tippfehlerRueckfrage(thema, text, lauf = {}) {
+    const label = this.tippfehlerVermutung(thema, text);
+    if (!label) return null;
+    if ((lauf.tippfehlerGefragt || {})[thema] === label) return null;
+    const regel = this.TIPPFEHLER[thema];
+    return { label, satz: regel.satz(label), chips: regel.chips(label) };
+  },
+
   // Wie der Agent die Art nennt, wenn er darueber spricht
   artWort(p, mehrzahl = true) {
     const t = this.seitenTyp(p);

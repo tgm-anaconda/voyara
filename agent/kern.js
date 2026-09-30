@@ -1209,6 +1209,10 @@ const Kern = {
              kommt vom Zaehler, nicht von dem, was die Person gesagt hat. */
           const satzJetzt = fpJetzt.satz;
           const wuerdeWiederholen = this.wiederholtDieFrage(offen, satzJetzt);
+          // Eine Rueckfrage je Zug. Kommt die Tippfehler-Vermutung, tritt die
+          // Art-Rueckfrage darunter zurueck - sonst stuenden zwei Fragen da,
+          // und die Vermutung waere weg, obwohl sie als gestellt gilt.
+          let tippGestellt = false;
 
           if (!freierZug && offen && offen === this.lauf.zuletztGefragt && standGleich
             && wuerdeWiederholen && this.lauf.nachrichtArt === "antwort" && fpJetzt.satz) {
@@ -1217,14 +1221,34 @@ const Kern = {
             const letzte = [...this.lauf.gespraech].reverse().find((x) => x.role === "user")?.content || "";
             this.notieren("antwort_nicht_verstanden", { thema: offen, mal: n[offen], text: String(letzte).slice(0, 80) });
             if (n[offen] === 1) {
-              /* Die Rueckfrage tritt vor die Frage, nicht an ihre Stelle.
-                 `satzRoh` haelt den Satz ohne diesen Vorspann fest, damit
-                 der Vergleich im naechsten Zug nicht daran scheitert. */
-              fpJetzt = { ...fpJetzt, satzRoh: satzJetzt,
-                satz: `Entschuldige, das habe ich nicht sicher verstanden. ${fpJetzt.satz}` };
+              /* Steht ein verschriebenes Wort da, kommt die Vermutung.
+                 ------------------------------------------------------------
+                 "Gerne im Augus" ist eine Antwort, nur falsch getippt. Statt
+                 der Entschuldigung fragt der Kern dann mit seiner Vermutung
+                 nach ("Meinst du August?"). Aufgenommen wird dabei nichts -
+                 das passiert erst mit dem Ja der Person.
+
+                 Die Vermutung tritt an die Stelle der Entschuldigung, sie
+                 kommt nicht zusaetzlich: Beide gehoeren in denselben ersten
+                 Anlauf, und der zweite bleibt frei fuer die offene Frage.
+                 Am Zaehler aendert sich deshalb nichts - die Annahme nach
+                 zwei Anlaeufen greift wie bisher. */
+              const tipp = Werkzeugkasten.tippfehlerRueckfrage(offen, letzte, this.lauf);
+              if (tipp) {
+                (this.lauf.tippfehlerGefragt ||= {})[offen] = tipp.label;
+                tippGestellt = true;
+                this.notieren("tippfehler_rueckfrage", { thema: offen, vermutung: tipp.label });
+                fpJetzt = { ...fpJetzt, satzRoh: satzJetzt, satz: tipp.satz, chips: tipp.chips.join(" | ") };
+              } else {
+                /* Die Rueckfrage tritt vor die Frage, nicht an ihre Stelle.
+                   `satzRoh` haelt den Satz ohne diesen Vorspann fest, damit
+                   der Vergleich im naechsten Zug nicht daran scheitert. */
+                fpJetzt = { ...fpJetzt, satzRoh: satzJetzt,
+                  satz: `Entschuldige, das habe ich nicht sicher verstanden. ${fpJetzt.satz}` };
+              }
             }
           }
-          const artFrage = !freierZug && Werkzeugkasten.artRueckfrage(this.lauf.profil || {}, this.lauf);
+          const artFrage = !freierZug && !tippGestellt && Werkzeugkasten.artRueckfrage(this.lauf.profil || {}, this.lauf);
           if (artFrage) {
             this.lauf.artGefragt = true;
             this.notieren("art_rueckfrage", { grund: artFrage.grund, offen: fpJetzt.naechstes });

@@ -1037,6 +1037,17 @@ const Studie = {
         [p + "spracheSekunden"]: protokoll.filter((e) => e.ereignis === "sprache_ende").reduce((s2, e) => s2 + (e.sekunden || 0), 0),
         [p + "partnerInfoSekunden"]: z(protokoll.find((e) => e.ereignis === "partner_info_geoeffnet")?.sekunden),
         [p + "themaZweimalGefragt"]: protokoll.filter((e) => e.ereignis === "thema_gefragt" && (e.mal || 1) > 1).length,
+        /* Wenn der Agent eine Antwort nicht lesen konnte.
+           --------------------------------------------------------------
+           Drei Stufen, und jede steht in einer eigenen Spalte, weil sie
+           verschieden schwer wiegen: Er vermutet einen Tippfehler und
+           fragt mit seiner Vermutung nach (leicht), er sagt nur, dass er
+           es nicht verstanden hat (mittel), er nimmt nach zwei Anlaeufen
+           das Naheliegende an (schwer - hier steht am Ende ein Wert im
+           Stand, den die Person nicht selbst genannt hat). */
+        [p + "tippfehlerVermutungen"]: zaehle(protokoll, "tippfehler_rueckfrage"),
+        [p + "nichtVerstanden"]: zaehle(protokoll, "antwort_nicht_verstanden"),
+        [p + "themenUebersprungen"]: protokoll.filter((e) => e.ereignis === "thema_uebersprungen").map((e) => e.thema).join(","),
         [p + "einfuegen"]: einfuegen.length,
         [p + "einfuegenAusAufgabeMax"]: einfuegen.length ? Math.max(...einfuegen.map((e) => e.ausAufgabe)) : "",
         [p + "detailsGeoeffnet"]: details.length,

@@ -370,6 +370,80 @@ const Kernpruefung = {
     return { fehler, berichte };
   },
 
+  /* Die Tippfehler-Rueckfrage, Fall fuer Fall.
+     ------------------------------------------------------------------
+     Die Pruefungen darueber spielen Staende durch; diese hier ist eine
+     Tabelle. Sie muss es sein: Die Vermutung entsteht aus einem Text,
+     nicht aus einem Stand, und der einzige Weg, sie festzunageln, sind
+     Beispiele mit ihrem erwarteten Ergebnis - richtig geschrieben,
+     verschrieben, mehrdeutig, gar nicht gemeint.
+
+     Wer den Wortschatz oder die Abstandsregel anfasst, sieht hier
+     sofort, was das kostet. */
+  TIPPFEHLER_FAELLE: [
+    { thema: "zeit", text: "Gerne im Augus", erwartet: "August" },
+    { thema: "zeit", text: "am besten Septmber", erwartet: "September" },
+    { thema: "zeit", text: "Dezmber waere schoen", erwartet: "Dezember" },
+    // Richtig geschrieben: dann liegt das Problem nicht an der Schreibweise
+    { thema: "zeit", text: "gerne im August", erwartet: null },
+    // Keine Vorlage fuer eine Vermutung
+    { thema: "zeit", text: "ich weiss nicht so genau", erwartet: null },
+    { thema: "zeit", text: "keine Ahnung, sag du was", erwartet: null },
+    // Zwei verschiedene Vermutungen in einem Satz: lieber keine
+    { thema: "zeit", text: "Augus oder Septmber", erwartet: null },
+    // Bestaetigt die Person, steht das Wort richtig da: keine neue Vermutung
+    { thema: "zeit", text: "Ja, August", erwartet: null },
+    // Ein Zeichen neben einer Region des Katalogs
+    { thema: "ziel", text: "nach Krati", erwartet: "Krabi" },
+    /* Zwei Zeichen in einem kurzen Wort: keine Vermutung. "Lisabo" waere
+       wohl Lissabon, aber bei sechs Buchstaben und zwei Fehlern faengt
+       das Raten an - dann lieber die normale Rueckfrage. */
+    { thema: "ziel", text: "nach Lisabo", erwartet: null },
+    { thema: "ziel", text: "wir wollen nach Kretta", erwartet: "Kreta" },
+    { thema: "ziel", text: "am liebsten Mallorka", erwartet: "Mallorca" },
+    { thema: "ziel", text: "eher was warmes", erwartet: null },
+    { thema: "flugAb", text: "ab Hamburgg", erwartet: "Hamburg" },
+    { thema: "flugAb", text: "von Duesseldorff", erwartet: "Düsseldorf" },
+    // Hamburg und Hannover liegen nah beieinander und werden nicht verwechselt
+    { thema: "flugAb", text: "ab Hanburg", erwartet: "Hamburg" },
+    { thema: "flugAb", text: "ab Hannoverr", erwartet: "Hannover" },
+    { thema: "flugAb", text: "ab Muenchen", erwartet: null },
+    { thema: "flugKlasse", text: "Busines bitte", erwartet: "Business" },
+    { thema: "art", text: "eine Ferienwonung", erwartet: "eine Ferienwohnung" },
+    { thema: "verpflegung", text: "Halbpansion", erwartet: "Halbpension" },
+    // Themen ohne Wortschatz raten nicht
+    { thema: "dauer", text: "eine Woche", erwartet: null },
+    { thema: "preis", text: "hundertfuffzig", erwartet: null },
+  ],
+
+  tippfehler() {
+    const fehler = [];
+    const melde = (art, text, thema) => fehler.push({ art, text, thema, satz: "" });
+    for (const f of this.TIPPFEHLER_FAELLE) {
+      let raus = null;
+      try { raus = Werkzeugkasten.tippfehlerVermutung(f.thema, f.text) || null; }
+      catch (e) { melde("tippfehler_absturz", `"${f.text}": ${e && e.message}`, f.thema); continue; }
+      if (raus !== (f.erwartet || null)) {
+        melde("tippfehler_falsch", `"${f.text}" ergab ${raus ? `"${raus}"` : "keine Vermutung"}, `
+          + `erwartet ${f.erwartet ? `"${f.erwartet}"` : "keine"}`, f.thema);
+        continue;
+      }
+      if (!raus) continue;
+      const rf = Werkzeugkasten.tippfehlerRueckfrage(f.thema, f.text, {});
+      if (!rf) { melde("tippfehler_ohne_satz", `"${f.text}" hat eine Vermutung, aber keine Rueckfrage`, f.thema); continue; }
+      // Dieselbe Regel wie fuer jede andere Frage des Kerns: genau eine
+      if ((rf.satz.match(/\?/g) || []).length !== 1) {
+        melde("tippfehler_zwei_fragen", `nicht genau ein Fragezeichen: "${rf.satz}"`, f.thema);
+      }
+      if (!rf.satz.includes(raus)) melde("tippfehler_ohne_wort", `Rueckfrage nennt die Vermutung nicht: "${rf.satz}"`, f.thema);
+      if (!(rf.chips || []).length) melde("tippfehler_ohne_chips", `Rueckfrage ohne Auswahl: "${rf.satz}"`, f.thema);
+      // Wer "Nein" geklickt hat, darf denselben Vorschlag nicht wieder bekommen
+      if (Werkzeugkasten.tippfehlerRueckfrage(f.thema, f.text, { tippfehlerGefragt: { [f.thema]: raus } })) {
+        melde("tippfehler_wiederholt", `"${raus}" kaeme ein zweites Mal`, f.thema);
+      }
+    }
+    return fehler;
+  },
   lauf({ still = false } = {}) {
     const alle = [];
     const staende = this.staende();
@@ -389,6 +463,7 @@ const Kernpruefung = {
       }
     }
     for (const f of this.wortlaut()) alle.push(f);
+    for (const f of this.tippfehler()) alle.push(f);
     for (const f of this.alleThemen()) alle.push(f);
     const ab = this.ablaeufe();
     for (const f of ab.fehler) alle.push(f);
