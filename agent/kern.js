@@ -455,6 +455,14 @@ const Kern = {
 
   notieren(ereignis, daten = {}) {
     (this.lauf.protokoll ||= []).push({ t: Date.now(), ereignis, ...daten });
+    /* Alles, was in diesem Zug verworfen wurde, ist ein Zeichen von
+       Verstaendnis - nicht von Unverstaendnis. Das Modell hat einen Wert
+       mitgebracht, und der Kern hat ihn abgelehnt (ein Monat ohne
+       genannten Monatsnamen, eine Zahl Reisender ohne Zahl im Satz).
+       Wer so etwas ablehnt, darf nicht im selben Atemzug sagen, er habe
+       nichts verstanden. Zurueckgesetzt wird das Zeichen mit jeder neuen
+       Nachricht der Person. */
+    if (/_verworfen$/.test(ereignis)) this.lauf.verworfenImZug = true;
   },
 
   logZeile(text, art = "schritt") {
@@ -850,6 +858,7 @@ const Kern = {
        hat die Haelfte beantwortet - da waere ein "das habe ich nicht
        verstanden" falsch und wuerde unsicher wirken. */
     try { this.lauf.standVorher = JSON.stringify(this.lauf.profil || {}); } catch { this.lauf.standVorher = null; }
+    this.lauf.verworfenImZug = false;
     this.lauf.phase = "gespraech";
     Zeiger.freigeben?.();
     await this.zug();
@@ -1215,8 +1224,30 @@ const Kern = {
           let tippGestellt = false;
           const letzteNachricht = [...this.lauf.gespraech].reverse().find((x) => x.role === "user")?.content || "";
 
+          /* Zwei Gegenproben, bevor er sich entschuldigt.
+             ------------------------------------------------------------
+             Gemeldet am 01.10.2026: "in 2 monaten" - das Modell antwortete
+             "Dezember ist eine gute Zeit fuer viele Reiseziele", und
+             direkt dahinter stand "Entschuldige, das habe ich nicht
+             sicher verstanden". Verstanden war es, nur nicht aufgenommen.
+
+             Der Stand allein ist also kein Beweis. Zwei Zeichen sprechen
+             dagegen, und jedes einzelne genuegt:
+
+               - Im Zug wurde etwas verworfen. Dann hat das Modell einen
+                 Wert geliefert und der Kern ihn abgelehnt.
+               - Das Modell nennt in seinem eigenen Satz einen Wert des
+                 offenen Themas ("Dezember", "Kreta", "Hannover").
+
+             In beiden Faellen kommt die normale Frage noch einmal, ohne
+             Entschuldigung. Das ist die konservative Richtung, und sie
+             ist die richtige: Eine ausgebliebene Entschuldigung kostet
+             nichts, eine falsche kostet das Zutrauen in den Agenten. */
+          const zeigtVerstaendnis = !!this.lauf.verworfenImZug
+            || !!Werkzeugkasten.themaWortImText(offen, text);
           if (!freierZug && offen && offen === this.lauf.zuletztGefragt && standGleich
-            && wuerdeWiederholen && this.lauf.nachrichtArt === "antwort" && fpJetzt.satz) {
+            && wuerdeWiederholen && !zeigtVerstaendnis
+            && this.lauf.nachrichtArt === "antwort" && fpJetzt.satz) {
             const n = (this.lauf.nichtVerstanden ||= {});
             n[offen] = (n[offen] || 0) + 1;
             const letzte = letzteNachricht;

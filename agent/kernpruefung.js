@@ -497,6 +497,69 @@ const Kernpruefung = {
     }
     return fehler;
   },
+  /* Relative Zeitangaben und die Gegenprobe zur Entschuldigung.
+     ------------------------------------------------------------------
+     Beides haengt an Text, nicht an einem Stand, also wieder Tabellen.
+     Der heutige Tag steht fest eingetragen, sonst waere die Pruefung im
+     Dezember eine andere als im Juni. */
+  HEUTE_PROBE: new Date(2026, 9, 1),   // 1. Oktober 2026
+
+  RELATIV_FAELLE: [
+    { text: "in 2 monaten", monat: 12 },
+    { text: "in zwei monaten", monat: 12 },
+    { text: "in einem monat", monat: 11 },
+    { text: "nächsten monat", monat: 11 },
+    { text: "übernächsten monat", monat: 12 },
+    { text: "in etwa 3 Monaten", monat: 1 },
+    { text: "in 6 wochen", monat: 11 },
+    { text: "in einem halben jahr", monat: 4 },
+    // Keine relative Angabe: dafuer gibt es den normalen Weg
+    { text: "im august", monat: null },
+    { text: "wir sind zu zweit", monat: null },
+    { text: "", monat: null },
+    // Ausserhalb des Rahmens
+    { text: "in 30 monaten", monat: null },
+    { text: "in 3 jahren", monat: null },
+  ],
+
+  VERSTAENDNIS_FAELLE: [
+    { thema: "zeit", text: "Dezember ist eine gute Zeit für viele Reiseziele.", wert: "Dezember" },
+    { thema: "zeit", text: "Wann soll es denn ungefähr losgehen?", wert: null },
+    { thema: "ziel", text: "Kreta wäre dafür gut geeignet.", wert: "Kreta" },
+    { thema: "flugAb", text: "Ab Hannover wird es günstiger.", wert: "Hannover" },
+    { thema: "art", text: "Eine Ferienwohnung hätte eine Küche.", wert: "eine Ferienwohnung" },
+    // Thema ohne Wortschatz: hier traegt das andere Zeichen (verworfen im Zug)
+    { thema: "dauer", text: "Sieben Nächte sind üblich.", wert: null },
+    { thema: "preis", text: "Ab 69 Euro geht es los.", wert: null },
+  ],
+
+  relativ() {
+    const fehler = [];
+    const melde = (art, text) => fehler.push({ art, text, thema: "zeit", satz: "" });
+    for (const f of this.RELATIV_FAELLE) {
+      let raus = null;
+      try { raus = Werkzeugkasten.relativerMonat(f.text, this.HEUTE_PROBE); }
+      catch (e) { melde("relativ_absturz", `"${f.text}": ${e && e.message}`); continue; }
+      if ((raus || null) !== (f.monat || null)) {
+        melde("relativ_falsch", `"${f.text}" ergab ${raus === null ? "nichts" : raus}, erwartet ${f.monat === null ? "nichts" : f.monat}`);
+      }
+    }
+    // Der Jahreswechsel: zwei Monate nach Dezember ist Februar
+    const ueberJahr = Werkzeugkasten.relativerMonat("in 2 monaten", new Date(2026, 11, 15));
+    if (ueberJahr !== 2) melde("relativ_jahreswechsel", `Dezember plus zwei Monate ergab ${ueberJahr}, erwartet 2`);
+    // Der 31.: ein Monat spaeter darf nicht ueberlaufen
+    const ueberlauf = Werkzeugkasten.relativerMonat("nächsten monat", new Date(2026, 9, 31));
+    if (ueberlauf !== 11) melde("relativ_monatsende", `31. Oktober plus ein Monat ergab ${ueberlauf}, erwartet 11`);
+    for (const f of this.VERSTAENDNIS_FAELLE) {
+      let raus = null;
+      try { raus = Werkzeugkasten.themaWortImText(f.thema, f.text) || null; }
+      catch (e) { melde("verstaendnis_absturz", `"${f.text}": ${e && e.message}`); continue; }
+      if (raus !== (f.wert || null)) {
+        melde("verstaendnis_falsch", `${f.thema}: "${f.text}" ergab ${raus || "nichts"}, erwartet ${f.wert || "nichts"}`);
+      }
+    }
+    return fehler;
+  },
   lauf({ still = false } = {}) {
     const alle = [];
     const staende = this.staende();
@@ -518,6 +581,7 @@ const Kernpruefung = {
     for (const f of this.wortlaut()) alle.push(f);
     for (const f of this.tippfehler()) alle.push(f);
     for (const f of this.datum()) alle.push(f);
+    for (const f of this.relativ()) alle.push(f);
     for (const f of this.alleThemen()) alle.push(f);
     const ab = this.ablaeufe();
     for (const f of ab.fehler) alle.push(f);

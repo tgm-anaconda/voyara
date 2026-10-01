@@ -732,6 +732,81 @@ const Werkzeugkasten = {
      Zweimal dieselbe Vermutung gibt es nicht: Wer "Nein" geklickt hat,
      bekommt danach die normale Frage, nicht wieder denselben Vorschlag.
      Der Kern setzt `lauf.tippfehlerGefragt[thema]`. */
+  /* "In zwei Monaten" ist eine Zeitangabe, keine Luecke.
+     ------------------------------------------------------------------
+     Gemeldet am 01.10.2026. Die Person schrieb "in 2 monaten", das
+     Modell antwortete "Dezember ist eine gute Zeit fuer viele
+     Reiseziele" - und direkt dahinter stand "Entschuldige, das habe ich
+     nicht sicher verstanden". Verstanden hatten es beide, nur kam
+     nichts im Stand an: Die Aufnahme verlangt, dass im Satz der Person
+     ein Monatsname steht ("hauptsache warm" hatte das Modell sonst mit
+     Oktober beantwortet), und "in 2 monaten" enthaelt keinen.
+
+     Gerechnet wird hier und nicht vom Modell. Ob es den heutigen Tag
+     kennt, ist nicht garantiert; der Kern kennt ihn. Zwei Monate sind
+     zwei Monate, das ist keine Bedeutungsfrage.
+
+     Dass die Angabe rund ist, bleibt erhalten: Der Monat wird gesetzt,
+     ein Tag nicht, und die Frage nach dem genauen Anreisetag faellt
+     fuer diese Person aus (`lauf.monatRelativ`). Wer "in zwei Monaten"
+     sagt, hat keinen Kalender vor sich. */
+  RELATIVZAHL: { einem: 1, einer: 1, eine: 1, ein: 1, zwei: 2, drei: 3, vier: 4, "fünf": 5, fuenf: 5,
+    sechs: 6, sieben: 7, acht: 8, neun: 9, zehn: 10, elf: 11, "zwölf": 12, zwoelf: 12 },
+
+  relativerMonat(text, heute = new Date()) {
+    const t = String(text || "").toLowerCase();
+    if (!t) return null;
+    const zahl = (w) => {
+      const n = parseInt(w, 10);
+      if (Number.isFinite(n)) return n;
+      return this.RELATIVZAHL[w] || null;
+    };
+    const etwa = "(?:etwa\\s+|ungef(?:ä|ae)hr\\s+|ca\\.?\\s+|gut\\s+|knapp\\s+)?";
+    let monate = null;
+    let treffer = null;
+    if (/(?:ü|ue)bern(?:ä|ae)chsten\s+monat/.test(t)) monate = 2;
+    else if (/n(?:ä|ae)chsten\s+monat|kommenden\s+monat/.test(t)) monate = 1;
+    else if (/in\s+(?:einem\s+)?halben\s+jahr/.test(t)) monate = 6;
+    else if ((treffer = t.match(new RegExp(`in\\s+${etwa}(\\d{1,2}|[a-zäöüß]+)\\s+monat`)))) monate = zahl(treffer[1]);
+    else if ((treffer = t.match(new RegExp(`in\\s+${etwa}(\\d{1,2}|[a-zäöüß]+)\\s+wochen?`)))) {
+      const w = zahl(treffer[1]);
+      if (!w || w < 1 || w > 104) return null;
+      const d = new Date(heute.getFullYear(), heute.getMonth(), heute.getDate() + w * 7);
+      return d.getMonth() + 1;
+    }
+    if (!monate || monate < 1 || monate > 24) return null;
+    // Immer vom Monatsersten, sonst macht der 31. Oktober plus ein Monat den 1. Dezember
+    return new Date(heute.getFullYear(), heute.getMonth() + monate, 1).getMonth() + 1;
+  },
+
+  /* Hat das Modell selbst gesagt, worum es geht?
+     ------------------------------------------------------------------
+     Die Gegenprobe zur Rueckfrage "das habe ich nicht verstanden".
+     Steht im Satz des Modells ein Wert des offenen Themas ("Dezember
+     ist eine gute Zeit"), dann ist angekommen, was die Person gesagt
+     hat - der Kern hat es nur nicht aufgenommen. Sich dann zu
+     entschuldigen waere das Gegenteil von dem, was die Nachricht zeigt.
+
+     Geprueft wird gegen denselben geschlossenen Wortschatz, aus dem
+     auch die Tippfehler-Vermutung schoepft. Themen ohne Wortschatz
+     (Dauer, Preis, Wuensche) liefern hier nichts; fuer die traegt das
+     andere Zeichen, dass naemlich im Zug etwas verworfen wurde. */
+  themaWortImText(thema, text) {
+    const regel = this.TIPPFEHLER[thema];
+    if (!regel || !text) return null;
+    const flach = (x) => String(x || "").toLowerCase()
+      .replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue").replace(/ß/g, "ss")
+      .replace(/[^a-z]/g, "");
+    const stuecke = new Set(String(text).split(/[^A-Za-zÄÖÜäöüß]+/).map(flach).filter(Boolean));
+    for (const e of regel.liste()) {
+      for (const w of e.woerter || []) {
+        const f = flach(w);
+        if (f.length >= 4 && stuecke.has(f)) return e.label;
+      }
+    }
+    return null;
+  },
+
   tippfehlerRueckfrage(thema, text, lauf = {}) {
     const label = this.tippfehlerVermutung(thema, text);
     if (!label) return null;
@@ -775,6 +850,8 @@ const Werkzeugkasten = {
     // Der Monat kam vom Kern, nicht von der Person - dann gibt es auch keinen Tag
     if (!p.vonPerson?.monat) return null;
     if (lauf.uebersprungen?.zeit) return null;
+    // "In zwei Monaten" ist eine runde Angabe - wer so spricht, hat keinen Tag
+    if (lauf.monatRelativ) return null;
     // Ein Tag, ein Zeitraum oder eine Frist steht schon
     if ((p.von && p.bis) || p.anreise || p.anreiseBis || p.anreiseAb) return null;
     const monat = typeof MONATSNAMEN !== "undefined" ? MONATSNAMEN[p.monat - 1] : null;
@@ -1001,6 +1078,17 @@ const Werkzeugkasten = {
       // Agent nach dem Monat; "egal" darf er selbst aufloesen
       if (a.monat && !p.monat && !gesagt(/januar|februar|märz|maerz|april|\bmai\b|juni|juli|august|september|oktober|november|dezember|\bjan\b|\bfeb\b|\bokt\b|\bnov\b|\bdez\b|ostern|pfingsten|weihnachten|silvester|nächsten monat|naechsten monat|\d{1,2}\.\s*\d{1,2}\.|\d{4}-\d{2}|egal|gleich|such du|du entscheid|dein vorschlag|nimm/i)) {
         kern.notieren("monat_verworfen", { monat: a.monat }); delete a.monat;
+      }
+      /* "In zwei Monaten" rechnet der Kern selbst aus - siehe
+         relativerMonat. Das steht hinter der Pruefung oben, weil es
+         keine Aufnahme aus dem Modell ist, sondern eine eigene: Die
+         Angabe kommt von der Person, nur eben ohne Monatsnamen. */
+      const relativ = Werkzeugkasten.relativerMonat(
+        kern.lauf.gespraech.filter((n) => n.role === "user").slice(-1)[0]?.content || "");
+      if (relativ && !p.monat) {
+        a.monat = relativ;
+        kern.lauf.monatRelativ = true;
+        kern.notieren("monat_relativ", { monat: relativ });
       }
       setze("monat", a.monat);
       /* "Im Sommer." - "Juni, Juli oder August?" - "Egal."
