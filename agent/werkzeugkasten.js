@@ -1964,10 +1964,20 @@ const Werkzeugkasten = {
         }
         kern.lauf.vorlageFuer = vs;
         const wieViele = Math.max(2, Math.min(6, p.anzahlVorschlaege || 3));
-        // Platz eins bleibt das bestpassende Haus, die uebrigen Plaetze
-        // gehen bevorzugt an preislich vergleichbare Haeuser
-        const engereHaeuser = Werkzeugkasten.preisNaheAuswahl(auswahl, p, wieViele);
+        /* Das Vergleichsset: aehnliche Preise, Note im Gleichlauf.
+           --------------------------------------------------------------
+           Steht das Partnerhaus aus einer frueheren Vorlage schon fest,
+           muss es im Set liegen - sonst waere es beim zweiten Vorlegen
+           ein anderes Haus. */
+        const set = Werkzeugkasten.vergleichsSet(auswahl, p, wieViele, kern.lauf.partnerId || null);
+        const engereHaeuser = set.haeuser;
         let engere = engereHaeuser.map((h) => h.id);
+        kern.notieren("vorschlagsset", {
+          anzahl: engere.length,
+          spanneProzent: set.spanne == null ? null : Math.round(set.spanne * 1000) / 10,
+          grenze: set.grenze == null ? null : Math.round(set.grenze * 100),
+          gleichlauf: set.gleichlauf == null ? null : Math.round(set.gleichlauf * 100),
+        });
         /* Das Partnerhaus gehoert in den Rundgang.
            --------------------------------------------------------------
            Es wird erst beim Vorlegen bestimmt und rutscht dann auf Platz
@@ -1976,13 +1986,28 @@ const Werkzeugkasten = {
            viertes, das er nie geoeffnet hatte. Deshalb steht es schon
            hier fest. auswahl ist bereits nach dem Gespraech sortiert und
            damit genau die Rangfolge, die das Partnerhaus braucht. */
+        /* Das Partnerhaus kommt AUS dem Set, nicht davor.
+           --------------------------------------------------------------
+           Bis zum 02.10.2026 wurde es ueber die ganze Rangfolge bestimmt
+           und, wenn es nicht in der engeren Auswahl lag, einfach
+           davorgesetzt. Genau so kam ein Haus fuer 14.603 Euro zu fuenf
+           Haeusern fuer rund 6.000. Damit war die Vergleichbarkeit per
+           Konstruktion zerstoert - und mit ihr die Messung.
+
+           Jetzt entscheidet dieselbe Regel wie vorher (bestes oder
+           zweitbestes zulaessiges Haus), aber nur unter den Haeusern des
+           Vergleichssets. Das Partnerhaus ist damit immer eine plausible
+           Wahl, und das ist die Voraussetzung dafuer, dass die
+           Kennzeichnung ueberhaupt etwas zu tun hat. */
         if (typeof Studie !== "undefined" && Studie.partnerhaus) {
-          const rang = auswahl.map((h) => h.id);
-          // Steht es schon fest, bleibt es dasselbe Haus - sonst faellt es
-          // beim zweiten Vorlegen aus dem Rundgang und aus der Ansicht.
-          const ph = kern.lauf.partnerId && rang.includes(kern.lauf.partnerId)
-            ? { id: kern.lauf.partnerId } : (kern.lauf.partnerId ? null : Studie.partnerhaus(rang, rang));
-          if (ph && !engere.includes(ph.id)) engere = [ph.id, ...engere.slice(0, wieViele - 1)];
+          if (kern.lauf.partnerId && engere.includes(kern.lauf.partnerId)) {
+            // bleibt, wie es ist
+          } else if (!kern.lauf.partnerId && engere.length) {
+            const ph = Studie.partnerhaus(engere, engere);
+            if (ph && engere.includes(ph.id)) {
+              engere = [ph.id, ...engere.filter((id) => id !== ph.id)];
+            }
+          }
         }
         /* Erst ansehen, dann empfehlen.
            --------------------------------------------------------------
@@ -4796,72 +4821,144 @@ const Werkzeugkasten = {
     return gelockert;
   },
 
-  /* Vergleichbare Preise in der Vorlage.
+  /* Die Vorlage ist der Reiz, nicht ein Suchergebnis.
      ------------------------------------------------------------------
-     Der Nutzer am 27.09.2026: "Wir muessen vor allem schauen, dass es im
-     besten Fall aehnliche Preise sind, die vorgeschlagen werden. Wenn
-     keine sinnvolle Vergleichbarkeit besteht, ist es schwierig, diesen
-     Zusammenhang zu sehen."
+     Gemeldet am 02.10.2026, und es ist der schwerste Befund des ganzen
+     Projekts: Partnerhaus 14.603 Euro, die uebrigen fuenf zwischen 5.837
+     und 6.335. Alle fuenf Sterne, das Partnerhaus ohne bessere Noten.
+     Der Nutzer: "Selbst wenn es nicht das Partnerhaus waere, wuerde man
+     es niemals waehlen. Wenn sowas passiert, koennen wir die Studie
+     abbrechen, weil wir dann keine sinnvollen Ergebnisse rausbekommen."
 
-     Das ist kein Schoenheitsfehler, sondern eine Bedingung der Messung.
-     Gemessen wird, ob die Kennzeichnung auf Platz eins die Wahl auf
-     Platz zwei verschiebt. Liegen die drei Haeuser bei 3.900, 4.100 und
-     6.800 Euro, entscheidet der Preis und nicht die Kennzeichnung - die
-     Streuung waere dann groesser als der Effekt, den man sucht.
+     Er hat recht. Gemessen wird, ob die Kennzeichnung die Wahl
+     verschiebt. Ist das gekennzeichnete Haus offensichtlich die
+     schlechteste Option, gibt es nichts zu verschieben, und eine Null in
+     allen drei Gruppen hiesse nicht "Kennzeichnung wirkt nicht", sondern
+     "es gab nie eine Entscheidung".
 
-     Platz eins bleibt das bestpassende Haus; gefuellt wird danach mit
-     denen, die preislich in der Naehe liegen. Gibt es nicht genug davon,
-     kommt die urspruengliche Rangfolge zum Zug - lieber drei Haeuser mit
-     ungleichen Preisen als zwei. */
-  preisNaheAuswahl(liste, p, wieViele) {
-    if (!Array.isArray(liste) || liste.length <= wieViele) return liste.slice(0, wieViele);
-    /* Gerechnet wird der Preis, der auf der Karte steht.
-       ------------------------------------------------------------------
-       Also Unterkunft UND Flug. Zwei Haeuser mit demselben Zimmerpreis
-       koennen sich um achthundert Euro unterscheiden, wenn eines in
-       Lappland liegt und eines auf Mallorca. Wer hier nur die Unterkunft
-       vergleicht, stellt eine Auswahl zusammen, die auf dem Bildschirm
-       alles andere als vergleichbar aussieht. */
-    const personen = (p.erwachsene || 0) + (p.kinder || 0);
-    const gesamt = (h) => {
-      const proNacht = this.preis(h, p.monat);
-      let summe = proNacht;
-      if (typeof Politik !== "undefined" && Politik.aufenthaltspreis && p.naechte) {
-        summe = Politik.aufenthaltspreis(h, p, proNacht).gesamt;
+     Die Vorgaengerfassung hatte zwei Konstruktionsfehler:
+
+       1. Sie verankerte die Spanne am bestpassenden Haus. War das ein
+          Ausreisser, lag die ganze Auswahl um einen Ausreisser herum.
+          Und sie oeffnete die Spanne bis 45 Prozent, mit einem
+          Rueckfall, der gar keine Grenze mehr kannte.
+       2. Das Partnerhaus wurde ueber die GANZE Rangfolge bestimmt und,
+          wenn es nicht in der engeren Auswahl lag, einfach davorgesetzt.
+          Damit war die Vergleichbarkeit per Konstruktion zerstoert -
+          genau der Fall aus dem Testlauf.
+
+     Jetzt wird ein Vergleichsset gesucht statt einer Liste: ein Fenster
+     ueber die nach Preis sortierten Kandidaten, dessen Spanne die Grenze
+     des Nutzers haelt (5 Prozent, notfalls 10). Lieber vier vergleichbare
+     Haeuser als sechs unvergleichbare - deshalb wird erst die Gruppe
+     verkleinert und erst danach die Spanne geoeffnet.
+
+     Zusaetzlich zaehlt der Gleichlauf von Preis und Note: Unter mehreren
+     Fenstern gewinnt das, in dem teurer auch besser bewertet heisst. Der
+     Nutzer dazu: "Die Bewertungen sollten wirklich zu 90 Prozent
+     proportional mit dem Preis sein." Ein Haus, das zugleich das
+     billigste und das bestbewertete ist, liefert sonst einen eigenen
+     Grund zu waehlen, der mit der Kennzeichnung nichts zu tun hat. */
+  VERGLEICH_GRENZEN: [0.05, 0.10],
+
+  // Wie oft gilt im Fenster: teurer heisst auch besser bewertet?
+  gleichlauf(fenster) {
+    let paare = 0;
+    let gleich = 0;
+    for (let i = 0; i < fenster.length; i++) {
+      for (let j = i + 1; j < fenster.length; j++) {
+        paare++;
+        if (fenster[j].note >= fenster[i].note) gleich++;
       }
-      if (p.flug && h.type !== "apartment" && typeof Flug !== "undefined") {
-        summe += Flug.paket(h, personen || 1, p.flugKlasse || null)?.gesamt || 0;
-      }
-      return summe;
-    };
-    const kopf = liste[0];
-    const anker = gesamt(kopf);
-    if (!anker) return liste.slice(0, wieViele);
-    const rest = liste.slice(1);
-    /* So eng wie moeglich, so weit wie noetig.
-       ------------------------------------------------------------------
-       Der Nutzer am 27.09.2026: "Ein Hotel, was zweitausend Euro kostet,
-       ist aehnlich bewertet wie eines fuer viertausendfuenfhundert. Das
-       fuehrt zwangslaeufig dazu, dass man das billigere nimmt - und damit
-       waere der Effekt des Partnerhauses komplett eliminiert."
-
-       Er hat recht, und es ist die Achillesferse des ganzen Versuchs: Ein
-       Preisunterschied von hundert Prozent schlaegt jede Kennzeichnung.
-       Die erste Fassung nahm eine feste Spanne von fuenfzehn Prozent und
-       fiel auf die Rangfolge zurueck, wenn nicht genug dabei war - der
-       Rueckfall brachte dann genau die Ausreisser wieder herein.
-
-       Jetzt wird die Spanne schrittweise geoeffnet, bis genug Haeuser
-       drin sind, und nicht weiter. Meist reichen acht Prozent; wo es
-       eng wird, dreissig. Genommen wird immer die engste Stufe, die
-       ueberhaupt traegt. */
-    for (const spanne of [0.08, 0.15, 0.22, 0.30, 0.45]) {
-      const nah = rest.filter((h) => Math.abs(gesamt(h) - anker) <= anker * spanne);
-      if (nah.length >= wieViele - 1) return [kopf, ...nah].slice(0, wieViele);
     }
-    // Auch die weiteste Stufe traegt nicht: dann die preislich naechsten
-    const nachAbstand = rest.slice().sort((a, b) => Math.abs(gesamt(a) - anker) - Math.abs(gesamt(b) - anker));
-    return [kopf, ...nachAbstand].slice(0, wieViele);
+    return paare ? gleich / paare : 1;
+  },
+
+  vergleichsSet(liste, p, wieViele, pflichtId = null) {
+    const leer = { haeuser: [], spanne: null, grenze: null };
+    if (!Array.isArray(liste) || !liste.length) return leer;
+    const messen = (f) => (f.length < 2 ? 0 : f[f.length - 1].preis / f[0].preis - 1);
+    /* Erst Passung, dann Vergleichbarkeit. Nur die bestpassenden Haeuser
+       kommen ueberhaupt in Frage - sonst stuenden sechs vergleichbare,
+       aber unpassende Haeuser in der Ansicht. Die Reihenfolge von
+       `liste` ist die Passung aus dem Gespraech. */
+    const vorrat = liste.slice(0, Math.max(wieViele * 4, 20));
+    const kandidaten = vorrat
+      .map((h) => ({ h, preis: this.reisepreis(h, p)?.gesamt ?? null, note: h.rating || 0 }))
+      .filter((x) => x.preis != null && x.preis > 0)
+      .sort((a, b) => a.preis - b.preis);
+    if (kandidaten.length <= 1) {
+      return { haeuser: kandidaten.map((x) => x.h), spanne: 0, grenze: null };
+    }
+    const fenster = (groesse) => {
+      const raus = [];
+      for (let i = 0; i + groesse <= kandidaten.length; i++) {
+        const w = kandidaten.slice(i, i + groesse);
+        // Steht das Partnerhaus schon fest, muss es im Fenster liegen -
+        // sonst waere es beim zweiten Vorlegen ein anderes Haus
+        if (pflichtId && !w.some((x) => x.h.id === pflichtId)) continue;
+        /* Das billigste Haus darf nicht das bestbewertete sein.
+           ------------------------------------------------------------
+           Sonst gibt es einen zweiten, offensichtlichen Grund zu waehlen,
+           der mit der Kennzeichnung nichts zu tun hat - der Nutzer hat
+           genau das an Vale Dourado bemerkt (billigstes Haus, gleiche
+           Note wie die teureren). Solche Fenster kommen nach hinten,
+           verboten sind sie nicht: Lieber ein vergleichbares Set mit
+           diesem Schoenheitsfehler als ein unvergleichbares. */
+        const noten = w.map((x) => x.note);
+        const hoechste = Math.max(...noten);
+        raus.push({
+          w,
+          spanne: messen(w),
+          gleichlauf: this.gleichlauf(w),
+          // Noten nah beieinander: 4,2 neben 4,7 bei gleichem Preis heisst,
+          // dass Preis und Guete nichts miteinander zu tun haben
+          notenSpanne: hoechste - Math.min(...noten),
+          // Das billigste Haus soll nicht das bestbewertete sein
+          billigstesBestes: w[0].note >= hoechste,
+        });
+      }
+      return raus;
+    };
+    /* Erst die Guete des Sets, dann seine Groesse.
+       ------------------------------------------------------------------
+       Ein sauberes Dreierset schlaegt ein truebes Viererset: Vier Haeuser
+       mit Noten von 4,2 bis 4,7 bei gleichem Preis sagen der Person, dass
+       Guete und Preis hier nichts miteinander zu tun haben - dann
+       entscheidet wieder etwas anderes als die Kennzeichnung. Drei
+       Haeuser mit 4,3 / 4,3 / 4,4 und drei Prozent Preisunterschied sind
+       die bessere Grundlage, auch wenn die Person sechs sehen wollte.
+
+       Innerhalb einer Guetestufe gilt dann: lieber viele als wenige, und
+       lieber eng als weit. */
+    const kleinste = Math.min(3, wieViele);
+    const stufen = [
+      (f) => f.notenSpanne <= 0.3 && f.gleichlauf >= 0.6 && !f.billigstesBestes,
+      (f) => f.notenSpanne <= 0.3 && f.gleichlauf >= 0.6,
+      (f) => f.notenSpanne <= 0.4,
+      () => true,
+    ];
+    for (const stufe of stufen) {
+      for (let groesse = Math.min(wieViele, kandidaten.length); groesse >= kleinste; groesse--) {
+        for (const grenze of this.VERGLEICH_GRENZEN) {
+          const passend = fenster(groesse).filter((f) => f.spanne <= grenze && stufe(f));
+          if (!passend.length) continue;
+          passend.sort((a2, b2) => (a2.billigstesBestes ? 1 : 0) - (b2.billigstesBestes ? 1 : 0)
+            || b2.gleichlauf - a2.gleichlauf || a2.notenSpanne - b2.notenSpanne || a2.spanne - b2.spanne);
+          const beste = passend[0];
+          return { haeuser: beste.w.map((x) => x.h), spanne: beste.spanne, grenze,
+            gleichlauf: beste.gleichlauf, notenSpanne: beste.notenSpanne, billigstesBestes: beste.billigstesBestes };
+        }
+      }
+    }
+    /* Keine Grenze traegt. Dann das engste Fenster, das es gibt - aber
+       mit der gemessenen Spanne im Protokoll, damit in der Auswertung
+       steht, wie homogen die Sets wirklich waren. */
+    const alle = [];
+    for (let groesse = Math.min(wieViele, kandidaten.length); groesse >= kleinste; groesse--) alle.push(...fenster(groesse));
+    if (!alle.length) return { haeuser: kandidaten.slice(0, wieViele).map((x) => x.h), spanne: messen(kandidaten.slice(0, wieViele)), grenze: null };
+    alle.sort((a, b) => a.spanne - b.spanne || b.w.length - a.w.length);
+    return { haeuser: alle[0].w.map((x) => x.h), spanne: alle[0].spanne, grenze: null, gleichlauf: alle[0].gleichlauf };
   },
 
   /* Was diese Seite nicht kann.

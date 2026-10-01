@@ -1025,6 +1025,17 @@ const Studie = {
         // ob der Agent die Haeuser vorher sichtbar durchgegangen ist und
         // ob die Auswahl noch einmal geoeffnet wurde
         [p + "anzahlVorschlaege"]: z([...protokoll].reverse().find((e) => e.ereignis === "anzahl_vorschlaege")?.anzahl),
+        /* Wie homogen die Vorlage war - die Guete des Reizes.
+           --------------------------------------------------------------
+           Am 02.10.2026 standen in einer Vorlage ein Haus fuer 14.603
+           Euro und fuenf fuer rund 6.000. Dort gab es nichts zu
+           entscheiden, und ein Nullbefund haette nichts bedeutet. Seit
+           v=367 wird ein Vergleichsset gebaut; diese drei Spalten sagen
+           je Teilnahme, wie gut das gelungen ist. Wer sie in der Arbeit
+           berichtet, kann den Reiz beschreiben, statt ihn zu behaupten. */
+        [p + "setGroesse"]: z([...protokoll].reverse().find((e) => e.ereignis === "vorschlagsset")?.anzahl),
+        [p + "setSpanneProzent"]: z([...protokoll].reverse().find((e) => e.ereignis === "vorschlagsset")?.spanneProzent),
+        [p + "setGleichlauf"]: z([...protokoll].reverse().find((e) => e.ereignis === "vorschlagsset")?.gleichlauf),
         [p + "rundgangHaeuser"]: z([...protokoll].reverse().find((e) => e.ereignis === "rundgang_fertig")?.haeuser),
         [p + "rundgangAbgebrochen"]: zaehle(protokoll, "rundgang_abgebrochen"),
         [p + "bewertungenGelesen"]: zaehle(protokoll, "bewertungen_gelesen"),

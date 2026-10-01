@@ -834,6 +834,74 @@ const Kernpruefung = {
     return fehler;
   },
 
+  /* Das Vergleichsset.
+     ------------------------------------------------------------------
+     Die Vorlage ist der Reiz der Erhebung, nicht ein Suchergebnis. Am
+     02.10.2026 standen dort ein Haus fuer 14.603 Euro und fuenf fuer
+     rund 6.000 - das gekennzeichnete war offensichtlich die schlechteste
+     Wahl, und damit gab es nichts mehr zu messen.
+
+     Diese Pruefung laeuft ueber Monate, Gruppen, Budgets und
+     Reisearten und haelt fuer jedes erzeugte Set drei Dinge fest:
+     Preisspanne hoechstens 10 Prozent, Notenspanne hoechstens 0,4, und
+     mindestens drei Haeuser, solange der Katalog so viele hergibt. */
+  SET_FAELLE: [
+    { monat: 11, naechte: 9, erwachsene: 2, kinder: 1, budget: 5000, flug: true, wieViele: 6 },
+    { monat: 1, naechte: 7, erwachsene: 2, kinder: 0, budget: 4000, flug: true, wieViele: 3 },
+    { monat: 7, naechte: 7, erwachsene: 2, kinder: 2, budget: 3500, flug: false, wieViele: 6 },
+    { monat: 5, naechte: 5, erwachsene: 1, kinder: 0, budget: null, flug: false, wieViele: 6 },
+    { monat: 3, naechte: 10, erwachsene: 3, kinder: 0, budget: 6000, flug: true, wieViele: 4 },
+    { monat: 9, naechte: 7, erwachsene: 2, kinder: 1, budget: 2500, flug: false, wieViele: 6 },
+    { monat: 12, naechte: 4, erwachsene: 2, kinder: 0, budget: 1500, flug: false, wieViele: 3 },
+  ],
+
+  vorschlagsset() {
+    const fehler = [];
+    const melde = (art, text, satz = "") => fehler.push({ art, thema: "vorschlaege", text, satz });
+    for (const f of this.SET_FAELLE) {
+      const p = { monat: f.monat, naechte: f.naechte, erwachsene: f.erwachsene, kinder: f.kinder,
+        kinderAlter: Array.from({ length: f.kinder }, () => 8), zimmer: 1, typ: "hotel", artGenannt: true,
+        zielOffen: true, flug: f.flug, flugAb: "München", flugKlasse: "economy", flexibel: true,
+        ...(f.budget ? { budgetGesamt: f.budget } : {}) };
+      let liste = [];
+      try {
+        liste = Werkzeugkasten.katalogTreffer(p, Werkzeugkasten.filterAusStand(p))
+          .sort((a, b) => (b.rating || 0) - (a.rating || 0));
+      } catch (e) { melde("set_absturz", String(e && e.message)); continue; }
+      if (liste.length < 3) continue;
+      let set = null;
+      try { set = Werkzeugkasten.vergleichsSet(liste, p, f.wieViele); }
+      catch (e) { melde("set_absturz", String(e && e.message)); continue; }
+      const name = `${f.monat}/${f.naechte} Naechte/${f.erwachsene}+${f.kinder}${f.flug ? "/Flug" : ""}`;
+      if (!set.haeuser.length) { melde("set_leer", `${name}: kein Set, obwohl ${liste.length} Haeuser passen`); continue; }
+      if (set.haeuser.length < Math.min(3, f.wieViele)) {
+        melde("set_zu_klein", `${name}: nur ${set.haeuser.length} Haeuser aus ${liste.length} passenden`);
+      }
+      if (set.spanne > 0.10 + 1e-9) {
+        melde("set_preisspanne", `${name}: Preisspanne ${(set.spanne * 100).toFixed(1)} % (hoechstens 10)`);
+      }
+      if ((set.notenSpanne ?? 0) > 0.4 + 1e-9) {
+        melde("set_notenspanne", `${name}: Notenspanne ${(set.notenSpanne).toFixed(1)} (hoechstens 0,4)`);
+      }
+      // Jedes Haus im Set muss das Budget halten - sonst war die Auswahl umsonst
+      if (f.budget) {
+        for (const h of set.haeuser) {
+          const r = Werkzeugkasten.reisepreis(h, p);
+          if (r && r.gesamt > f.budget) melde("set_ueber_budget", `${name}: ${h.name} kostet ${Math.round(r.gesamt)} € bei ${f.budget} €`, h.name);
+        }
+      }
+      // Und ein schon festgelegtes Partnerhaus muss im Set bleiben
+      const pflicht = set.haeuser[Math.floor(set.haeuser.length / 2)]?.id;
+      if (pflicht) {
+        const zweites = Werkzeugkasten.vergleichsSet(liste, p, f.wieViele, pflicht);
+        if (!zweites.haeuser.some((h) => h.id === pflicht)) {
+          melde("set_ohne_partner", `${name}: ein festgelegtes Partnerhaus faellt beim zweiten Zusammenstellen heraus`);
+        }
+      }
+    }
+    return fehler;
+  },
+
   relativ() {
     const fehler = [];
     const melde = (art, text) => fehler.push({ art, text, thema: "zeit", satz: "" });
@@ -889,6 +957,7 @@ const Kernpruefung = {
     for (const f of this.wortwahl()) alle.push(f);
     for (const f of this.filterbitte()) alle.push(f);
     for (const f of this.budget()) alle.push(f);
+    for (const f of this.vorschlagsset()) alle.push(f);
     for (const f of this.alleThemen()) alle.push(f);
     const ab = this.ablaeufe();
     for (const f of ab.fehler) alle.push(f);
