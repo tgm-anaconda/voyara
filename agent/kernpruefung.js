@@ -705,6 +705,55 @@ const Kernpruefung = {
     return fehler;
   },
 
+  /* Mehrzahl, wo es nur einen gibt.
+     ------------------------------------------------------------------
+     Zwei Befunde vom 01.10.2026 aus demselben Testlauf: "3 Erwachsene
+     und 1 Kind, das merke ich. Wie alt sind die Kinder?" und, nach drei
+     genannten Flughaefen, "Soll ich nur von dort suchen, oder beide
+     offen lassen?" Beides faellt sofort auf und laesst den Agenten
+     wirken, als lese dort niemand mit. Beide Saetze haengen jetzt an
+     einer Zahl, die der Kern ohnehin kennt - und diese Pruefung haelt
+     das fest. */
+  wortwahl() {
+    const fehler = [];
+    const melde = (art, thema, text, satz = "") => fehler.push({ art, thema, text, satz });
+    // Das Alter der Kinder
+    for (const n of [1, 2, 3, 4]) {
+      const p = { erwachsene: 2, kinder: n, kinderAlter: [] };
+      const erste = Werkzeugkasten.themenSatz("kinderAlter", p, { gefragtWie: {} }) || "";
+      const zweite = Werkzeugkasten.themenSatz("kinderAlter", p, { gefragtWie: { kinderAlter: 1 } }) || "";
+      for (const [wie, satz] of [["erste", erste], ["zweite", zweite]]) {
+        if (!satz) { melde("kind_ohne_satz", "kinderAlter", `${n} Kind(er), ${wie} Fassung: kein Satz`); continue; }
+        if (!/\?/.test(satz)) melde("kind_ohne_fragezeichen", "kinderAlter", `${n} Kind(er), ${wie} Fassung ohne Fragezeichen`, satz);
+        if (n === 1 && /\bKinder\b/.test(satz)) melde("kind_mehrzahl", "kinderAlter", "Ein Kind, aber im Plural gefragt", satz);
+        if (n > 1 && /\bdas Kind\b/.test(satz)) melde("kind_einzahl", "kinderAlter", `${n} Kinder, aber in der Einzahl gefragt`, satz);
+      }
+      if (erste && erste === zweite) melde("kind_gleicher_wortlaut", "kinderAlter", `${n} Kind(er): zweite Fassung woertlich gleich`, erste);
+    }
+    // Mehrere genannte Flughaefen
+    const basis = { erwachsene: 2, kinder: 0, monat: 7, typ: "hotel", artGenannt: true, zielOffen: true,
+      zieleErlaubt: ["mallorca", "kreta"], naechte: 7, flug: true, vorgehen: "top3" };
+    for (const codes of [["HAJ", "HAM"], ["HAJ", "HAM", "CGN"]]) {
+      for (const egal of [false, true]) {
+        const p = { ...basis, flugAbAuswahl: codes.slice(), flugAbEgal: egal };
+        const lauf = { gespraech: [], gefragtWie: {}, gesuchtMit: Werkzeugkasten.eckdatenSchluessel(p) };
+        const fp = Werkzeugkasten.fahrplan(p, lauf);
+        if (fp.naechstes !== "flugAb" || !fp.satz) { melde("flughafen_nicht_gefragt", "flugAb", `${codes.length} Flughaefen: der Fahrplan fragt nicht danach`); continue; }
+        const chips = (fp.chips || "").split("|").map((x) => x.trim()).filter(Boolean);
+        if (codes.length > 2 && /\bbeide\b/i.test(`${fp.satz} ${fp.chips}`)) {
+          melde("flughafen_beide", "flugAb", `${codes.length} Flughaefen, aber von "beide" die Rede`, fp.satz);
+        }
+        if (codes.length > 2 && /günstigere\b/.test(fp.satz)) {
+          melde("flughafen_vergleich", "flugAb", "Bei mehr als zweien heisst es \"der guenstigste\"", fp.satz);
+        }
+        const soll = egal ? 2 : codes.length + 1;
+        if (chips.length !== soll) melde("flughafen_chips", "flugAb", `${codes.length} Flughaefen${egal ? ", Wahl abgegeben" : ""}: ${chips.length} Karten, erwartet ${soll}`, fp.chips || "");
+        if (/ und .* und /.test(fp.satz)) melde("flughafen_aufzaehlung", "flugAb", "Aufzaehlung mit zweimal \"und\"", fp.satz);
+      }
+    }
+    return fehler;
+  },
+
   relativ() {
     const fehler = [];
     const melde = (art, text) => fehler.push({ art, text, thema: "zeit", satz: "" });
@@ -757,6 +806,7 @@ const Kernpruefung = {
     for (const f of this.unsicher()) alle.push(f);
     for (const f of this.annahmen()) alle.push(f);
     for (const f of this.art()) alle.push(f);
+    for (const f of this.wortwahl()) alle.push(f);
     for (const f of this.alleThemen()) alle.push(f);
     const ab = this.ablaeufe();
     for (const f of ab.fehler) alle.push(f);

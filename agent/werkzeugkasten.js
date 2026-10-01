@@ -2964,7 +2964,28 @@ const Werkzeugkasten = {
 
     kinderAlter: {
 
-      erklaerung: "Das Alter entscheidet, ob ein Kind im Zimmer der Eltern mitgerechnet wird und ob es beim Preis zählt.",      satz: ["Wie alt sind die Kinder?", "Und wie alt sind die Kinder?"],
+      erklaerung: "Das Alter entscheidet, ob ein Kind im Zimmer der Eltern mitgerechnet wird und ob es beim Preis zählt.",
+      /* Ein Kind ist kein Plural.
+         ----------------------------------------------------------------
+         Gemeldet am 01.10.2026: "3 Erwachsene und 1 Kind, das merke ich.
+         Wie alt sind die Kinder?" Der erste Satz zaehlt richtig, der
+         zweite fragt im Plural - und die Person merkt, dass da kein
+         Mensch liest. Der Satz haengt jetzt an der Zahl, die der Kern
+         ohnehin schon kennt.
+
+         Beide Fassungen stehen in derselben Funktion, weil `nochmal` nur
+         einen festen Satz zulaesst und der wieder im Plural staende. Die
+         zweite Fassung braucht ein Fragezeichen: Ohne eines zaehlt das
+         Thema nicht als gefragt (siehe die Anmerkung bei `reisende`). */
+      satz: (p, wk, lauf) => {
+        const n = p?.kinder || 0;
+        const mal = lauf?.gefragtWie?.kinderAlter || 0;
+        const wort = { 3: "drei", 4: "vier", 5: "fünf", 6: "sechs" }[n] || n;
+        if (n === 1) return mal >= 1 ? "Und wie alt ist das Kind?" : "Wie alt ist das Kind?";
+        if (n === 2) return mal >= 1 ? "Und wie alt sind die beiden?" : "Wie alt sind die beiden Kinder?";
+        if (n >= 3) return mal >= 1 ? `Und wie alt sind die ${wort}?` : `Wie alt sind die ${wort} Kinder?`;
+        return mal >= 1 ? "Und wie alt sind die Kinder?" : "Wie alt sind die Kinder?";
+      },
       frage: "Wie alt die Kinder sind (die Zahl der Kinder ist bekannt, nur das Alter fehlt).", chips: null },
 
     ziel: {
@@ -3824,6 +3845,19 @@ const Werkzeugkasten = {
       const namen = p.flugAbAuswahl.map((c) => Flug.flughaefen().find((h) => h.code === c)?.name || c);
       const ziele = p.zielId ? [p.zielId] : (p.zieleErlaubt || []);
       const w = this.guenstigsterFlughafen(ziele, p.flugAbAuswahl);
+      /* Zwei sind "beide", drei sind "alle drei".
+         ----------------------------------------------------------------
+         Gemeldet am 01.10.2026: Auf "gerne von Hannover, Hamburg oder
+         Köln" kam "Soll ich nur von dort suchen, oder beide offen
+         lassen?" - und damit fiel einer der drei unter den Tisch, ohne
+         dass jemand etwas dazu gesagt haette. Der Vergleich ("der
+         guenstigere") stimmt bei dreien auch nicht mehr. */
+      const alle = { 2: "beide", 3: "alle drei", 4: "alle vier", 5: "alle fünf" }[namen.length] || "alle";
+      // "Hannover und Hamburg und Köln" ist keine Aufzaehlung
+      const liste = namen.length > 1
+        ? `${namen.slice(0, -1).join(", ")} und ${namen[namen.length - 1]}`
+        : namen[0];
+      const vergleich = namen.length > 2 ? "günstigste" : "günstigere";
       if (p.flugAbEgal && w) {
         /* Sie hat die Wahl abgegeben - trotzdem wird gefragt.
            --------------------------------------------------------------
@@ -3833,17 +3867,32 @@ const Werkzeugkasten = {
            nicht akademisch: Mit beiden Flughaefen bleiben Verbindungen im
            Spiel, die an anderen Tagen fliegen - und der Anreisetag haengt
            daran. */
-        satz = `${w.ab} ist der günstigere${w.zweiter && w.aufpreis > 0 ? ` - ${w.preis} € pro Strecke, ab ${w.zweiter} ${w.aufpreis} € mehr` : ""}. Soll ich nur von dort suchen, oder beide offen lassen?`;
-        frage = `Sie hat dir die Wahl zwischen ${namen.join(" und ")} ueberlassen. Sag, welcher guenstiger ist, und frag, ob du darauf eingrenzen sollst oder beide offen laesst.`;
-        chips = `Nur ${w.ab} | Beide offen lassen`;
+        satz = `${w.ab} ist der ${vergleich}${w.zweiter && w.aufpreis > 0 ? ` - ${w.preis} € pro Strecke, ab ${w.zweiter} ${w.aufpreis} € mehr` : ""}. Soll ich nur von dort suchen, oder ${alle} offen lassen?`;
+        frage = `Sie hat dir die Wahl zwischen ${liste} ueberlassen (${namen.length} Stueck). Sag, welcher guenstiger ist, und frag, ob du darauf eingrenzen sollst oder ${alle} offen laesst.`;
+        chips = `Nur ${w.ab} | ${alle.charAt(0).toUpperCase()}${alle.slice(1)} offen lassen`;
       } else {
         const preisTeil = w && w.zweiter && w.aufpreis > 0
           ? ` Ab ${w.ab} kostet der günstigste Flug ${w.preis} € pro Strecke, ab ${w.zweiter} ${w.aufpreis} € mehr.`
           : (w ? ` Der günstigste Flug kostet ab ${w.ab} ${w.preis} € pro Strecke.` : "");
-        satz = `Du hast ${namen.join(" und ")} genannt - von welchem soll ich ausgehen?${preisTeil}`;
-        frage = `Sie hat mehrere Flughaefen genannt (${namen.join(", ")}). Frag, welcher es werden soll, und nenn den Preisunterschied. Entscheide NICHT selbst; will sie beide behalten, bleibt es bei beiden.`;
-        chips = `${namen.join(" | ")} | Beide offen lassen`;
+        satz = `Du hast ${liste} genannt - von welchem soll ich ausgehen?${preisTeil}`;
+        frage = `Sie hat mehrere Flughaefen genannt (${namen.join(", ")}, also ${namen.length}). Frag, welcher es werden soll, und nenn den Preisunterschied. Entscheide NICHT selbst; will sie ${alle} behalten, bleibt es dabei.`;
+        chips = `${namen.join(" | ")} | ${alle.charAt(0).toUpperCase()}${alle.slice(1)} offen lassen`;
       }
+    }
+
+    /* Die Zahl der Kinder geht auch an das Modell.
+       ------------------------------------------------------------------
+       Wunsch des Nutzers am 01.10.2026: "Hier sollte das Modell gerne
+       bestimmen, wie man es formuliert, bzw. weitergeben, wie viele
+       Kinder es waren." Der Fragesatz des Kerns steht schon richtig; hier
+       bekommt auch das Modell die Zahl, damit es in seinem Anschluss
+       nicht doch wieder in den Plural faellt. */
+    if (naechstes === "kinderAlter") {
+      const n = p.kinder || 0;
+      const schon = (p.kinderAlter || []).length;
+      frage = n === 1
+        ? "Wie alt das eine Kind ist. Es ist genau EIN Kind - nicht im Plural von Kindern sprechen."
+        : `Wie alt die ${n} Kinder sind${schon ? ` (von ${schon} weisst du das Alter schon)` : ""}. Die Zahl steht fest, nur das Alter fehlt.`;
     }
 
     // "Ein langes Wochenende" ist eine Dauerangabe. Ohne diesen Zweig fragte
