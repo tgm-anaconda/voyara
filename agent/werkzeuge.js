@@ -449,8 +449,32 @@ const Werkzeuge = {
         : (nichtGesetzt.length
           ? `Nichts eingestellt: ${nichtGesetzt.join(", ")} gibt es auf dieser Liste nicht als Filter.`
           : "Es gab nichts zu filtern, die Auswahl stand schon."),
-      daten: { ...this.zustand(), nichtGesetzt },
+      daten: { ...this.zustand(), nichtGesetzt, abdruck: this.filterAbdruck() },
     };
+  },
+
+  /* Ein Fingerabdruck der Filterspalte.
+     ------------------------------------------------------------------
+     Gemeldet am 01.10.2026: Die Person war auf den Hotelreiter gewechselt
+     - ein Seitenwechsel, der die Spalte zuruecksetzt - und bat den Agenten
+     danach, die Filter wieder zu setzen. Er antwortete "Die Filter sind
+     schon gesetzt und die Liste steht bereit". Aus seiner Sicht stimmte
+     das: Er vergleicht seinen eigenen Stand mit dem, womit er zuletzt
+     gefiltert hat, und der hatte sich nicht geaendert. Nur stand auf der
+     Seite nichts mehr davon.
+
+     Also wird nicht mehr der Stand mit sich selbst verglichen, sondern
+     mit der Seite. Der Abdruck haelt fest, was die Spalte wirklich
+     anzeigt: welcher Reiter, welche Haken, welcher Preisregler. Aendert
+     er sich, ohne dass der Agent etwas getan hat, war jemand anderes dran. */
+  filterAbdruck() {
+    if (typeof document === "undefined") return null;
+    if (this.seite() !== "results") return null;
+    const haken = [...document.querySelectorAll("#filterPanel input:checked")]
+      .map((e) => `${(e.className || "").split(" ")[0]}=${e.value}`).sort();
+    const preis = document.getElementById("fPrice");
+    const typ = typeof state !== "undefined" ? (state.typ ?? state.type ?? null) : null;
+    return JSON.stringify([typ, haken, preis ? String(preis.value) : null]);
   },
 
   async sortieren(nach) {

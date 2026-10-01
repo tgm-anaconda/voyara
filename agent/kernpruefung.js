@@ -754,6 +754,40 @@ const Kernpruefung = {
     return fehler;
   },
 
+  /* Die Bitte, die Filter neu zu setzen.
+     ------------------------------------------------------------------
+     Gemeldet am 01.10.2026: Die Person war auf den Hotelreiter gewechselt
+     und bat danach, die Filter wieder zu setzen - der Agent antwortete,
+     sie staenden schon. Das Muster muss die Bitte treffen und darf eine
+     neue Vorgabe ("setz mir einen Filter fuer Pool") nicht mitnehmen:
+     Das waere kein Neuaufbau, sondern eine Ergaenzung. */
+  FILTER_FAELLE: [
+    { text: "setz bitte nochmal die filter", soll: true },
+    { text: "kannst du die Filter nochmal setzen?", soll: true },
+    { text: "stell die Filter bitte wieder her", soll: true },
+    { text: "die Filter sind weg, bitte neu", soll: true },
+    { text: "mach die Suche nochmal", soll: true },
+    { text: "setz die filter neu", soll: true },
+    // Keine Bitte um einen Neuaufbau
+    { text: "kannst du einen Filter für Pool setzen?", soll: false },
+    { text: "ich hätte gerne nur Häuser mit Pool", soll: false },
+    { text: "zeig mir nochmal die Auswahl", soll: false },
+    { text: "was kostet das nochmal?", soll: false },
+    { text: "", soll: false },
+  ],
+
+  filterbitte() {
+    const fehler = [];
+    for (const f of this.FILTER_FAELLE) {
+      const ist = Werkzeugkasten.FILTER_NEU.test(f.text);
+      if (ist !== f.soll) {
+        fehler.push({ art: ist ? "filterbitte_zu_weit" : "filterbitte_nicht_erkannt", thema: "suche", satz: f.text,
+          text: `"${f.text}" ${ist ? "gilt als Bitte um neue Filter, sollte es aber nicht" : "wird nicht als Bitte um neue Filter gelesen"}` });
+      }
+    }
+    return fehler;
+  },
+
   relativ() {
     const fehler = [];
     const melde = (art, text) => fehler.push({ art, text, thema: "zeit", satz: "" });
@@ -807,6 +841,7 @@ const Kernpruefung = {
     for (const f of this.annahmen()) alle.push(f);
     for (const f of this.art()) alle.push(f);
     for (const f of this.wortwahl()) alle.push(f);
+    for (const f of this.filterbitte()) alle.push(f);
     for (const f of this.alleThemen()) alle.push(f);
     const ab = this.ablaeufe();
     for (const f of ab.fehler) alle.push(f);

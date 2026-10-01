@@ -492,6 +492,27 @@ const Kern = {
       AgentPanel.say(n.text, n.rolle, { still: true, links: n.links, aktionen, etikett: n.etikett || null });
     }
 
+    /* Steht die Spalte noch so, wie der Agent sie gesetzt hat?
+       ------------------------------------------------------------------
+       Ein Reiterwechsel ("Hotels") laedt die Seite neu und setzt die
+       Filter zurueck. Der Agent merkte davon nichts: Er vergleicht seinen
+       eigenen Stand mit dem, womit er zuletzt gefiltert hat, und der ist
+       unveraendert. Also behauptete er weiter, die Filter staenden.
+
+       Verglichen wird deshalb mit der Seite. Nicht waehrend einer
+       laufenden Werkzeugkette (`ausstehend`): Dort laedt die Seite
+       zwischendurch neu, und die Filter kommen erst danach - der
+       Unterschied waere dann seine eigene Arbeit und kein fremder
+       Eingriff. */
+    if (this.lauf.filterAbdruck && !this.lauf.ausstehend && typeof Werkzeuge !== "undefined") {
+      const jetzt = Werkzeuge.filterAbdruck();
+      if (jetzt && jetzt !== this.lauf.filterAbdruck) {
+        this.lauf.filterFremd = true;
+        this.notieren("filter_fremd_geaendert", {});
+        this.sichern();
+      }
+    }
+
     const erstoeffnung = STELLSCHRAUBEN.freigabeFrage === "erstoeffnung";
     if (!this.lauf.verlauf.length && (!erstoeffnung || this.lauf.freigabeGewaehlt)) this.begruessen();
 
@@ -837,6 +858,18 @@ const Kern = {
        einordnet, gilt der harmlose Fall. */
     this.lauf.nachrichtArt = "antwort";
     this.lauf.anreiseChips = null;
+    /* "Setz bitte nochmal die Filter."
+       ------------------------------------------------------------------
+       Die Bitte muss der Kern erkennen, nicht das Modell: Der Fahrplan
+       sagt dem Modell, die Suche sei erledigt, und daran haelt es sich.
+       Gilt die letzte Suche als ungueltig, geht der Fahrplan zurueck in
+       die Suchphase - und der Agent stellt die Spalte neu ein, auf
+       demselben Weg wie beim ersten Mal. */
+    if (Werkzeugkasten.FILTER_NEU.test(t)) {
+      this.lauf.gesuchtMit = null;
+      this.lauf.gefiltertMit = null;
+      this.notieren("filter_neu_gewuenscht", { text: String(t).slice(0, 80) });
+    }
     // Sagt die Person etwas, bevor der Abschluss lief, entscheidet wieder das
     // Gespraech - nur ein glattes Ja haelt den Abschluss am Leben
     if (this.lauf.abschlussFaellig && !/^\s*(ja|jap|jo|okay|ok|gern|bitte|mach|klar|passt|genau)\b/i.test(t)) this.lauf.abschlussFaellig = false;

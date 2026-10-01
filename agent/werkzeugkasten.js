@@ -576,6 +576,18 @@ const Werkzeugkasten = {
      und in der Trefferliste standen Haeuser, zu denen es gar keinen Flug
      gibt. Dieselbe Regel an beiden Orten heisst hier: Wer einen Flug
      will, muss wissen, dass es den nur zum Hotel gibt. */
+  /* "Setz bitte nochmal die Filter."
+     ------------------------------------------------------------------
+     Eine Bitte, die der Kern selbst erkennen muss. Ueber das Modell
+     liefe sie ins Leere: Der Fahrplan sagt ihm, die Suche sei erledigt,
+     und daran haelt es sich. Trifft dieses Muster, gilt die letzte Suche
+     als ungueltig - der Fahrplan geht zurueck in die Suchphase, und der
+     Agent stellt die Spalte neu ein.
+
+     Absichtlich eng gefasst: "Kannst du einen Filter fuer Pool setzen?"
+     faellt nicht darunter, das ist eine neue Vorgabe und kein Neuaufbau. */
+  FILTER_NEU: /(filter|suchmaske|spalte|suche)[^.?!]{0,40}\b(nochmal|noch mal|neu|wieder|erneut|zurück|zurueck)\b|\b(nochmal|noch mal|neu|wieder|erneut)\b[^.?!]{0,25}(filter|suchmaske|spalte)|\bsetz[a-zäöüß]*\b[^.?!]{0,25}\bfilter/i,
+
   artRueckfrage(p, lauf) {
     if (!p || !lauf) return null;
     // Alte Faelle merkten sich nur "schon gefragt". Jetzt je Grund, denn
@@ -2117,6 +2129,10 @@ const Werkzeugkasten = {
       const aktiv = document.querySelectorAll("#filterPanel input:checked:not([value=''])").length;
       if (reset && aktiv > 0 && (kern.lauf.runde || 0) > 0) { await Zeiger.klicke(reset, { hinweis: "Filter zurücksetzen" }); await Zeiger.warte(250); }
       const gesetzt = await Werkzeuge.filterSetzen(Werkzeugkasten.filterWerte(p));
+      // Womit die Spalte jetzt wirklich dasteht - der Vergleichspunkt fuer
+      // spaeter, wenn jemand anderes die Seite angefasst hat
+      kern.lauf.filterAbdruck = gesetzt?.daten?.abdruck || Werkzeuge.filterAbdruck();
+      kern.lauf.filterFremd = false;
       if (gesetzt.text) kern.logZeile(gesetzt.text, "ergebnis");
       /* Sortiert wird nur, wenn die Person es gesagt hat.
          ----------------------------------------------------------------
@@ -2378,6 +2394,8 @@ const Werkzeugkasten = {
         await Werkzeuge.suchen({ flex: { monat: wahl.monat, naechte: p.naechte || 7 } });
         // Die Filter ueberleben die Suche auf dieser Seite nicht immer
         await Werkzeuge.filterSetzen(Werkzeugkasten.filterWerte(p));
+        kern.lauf.filterAbdruck = Werkzeuge.filterAbdruck();
+        kern.lauf.filterFremd = false;
         await Werkzeuge.ergebnisseLesen(4);
         kern.sperreAus();
         const treffer = Werkzeugkasten.katalogTreffer(probe, Werkzeugkasten.filterAusStand(probe));
@@ -2528,6 +2546,8 @@ const Werkzeugkasten = {
       if (Werkzeuge.seite() === "results" && !Zeiger.abbruch) {
         kern.sperreAn();
         const wieder = await Werkzeuge.filterSetzen(Werkzeugkasten.filterWerte(p));
+        kern.lauf.filterAbdruck = Werkzeuge.filterAbdruck();
+        kern.lauf.filterFremd = false;
         if (p.sortierung) await Werkzeuge.sortieren(p.sortierung === "bewertung" ? "rating" : "preis-asc");
         if (wieder.text) kern.logZeile(`Filter wieder gesetzt: ${wieder.text}`, "ergebnis");
       }
@@ -2652,6 +2672,8 @@ const Werkzeugkasten = {
       if (Werkzeuge.seite() === "results" && !Zeiger.abbruch) {
         kern.sperreAn();
         const wieder = await Werkzeuge.filterSetzen(Werkzeugkasten.filterWerte(p));
+        kern.lauf.filterAbdruck = Werkzeuge.filterAbdruck();
+        kern.lauf.filterFremd = false;
         if (p.sortierung) await Werkzeuge.sortieren(p.sortierung === "bewertung" ? "rating" : "preis-asc");
         if (wieder.text) kern.logZeile(`Filter wieder gesetzt: ${wieder.text}`, "ergebnis");
       }
@@ -4053,6 +4075,12 @@ const Werkzeugkasten = {
 
   // Der Fahrplan als Teil eines Werkzeugergebnisses (stand_merken, suchen)
   fahrplanFuerModell(fp, p, lauf = null) {
+    /* Hat jemand anderes die Seite bedient, darf er nicht behaupten,
+       seine Filter staenden noch. Der Hinweis haengt an jeder Lage, weil
+       das Modell sonst aus dem Gedaechtnis des Gespraechs antwortet. */
+    const fremd = lauf?.filterFremd
+      ? " ACHTUNG: Die Filterspalte auf der Seite ist nicht mehr die, die du gesetzt hast - die Person hat die Seite selbst bedient (Reiterwechsel oder Filter zurueckgesetzt). Behaupte NICHT, die Filter staenden. Will sie sie wiederhaben, ruf suchen."
+      : "";
     /* Die Frage stellt der Chat, nicht das Modell.
        ------------------------------------------------------------------
        Das Modell schreibt nur noch den Anschluss an das, was die Person
@@ -4069,11 +4097,11 @@ const Werkzeugkasten = {
           { frage: "etwas wissen wollen", einwand: "widersprochen oder korrigiert", unklar: "die Frage nicht verstanden" }[art] || "etwas anderes gesagt"
         }. Geh darauf ein, in deinen eigenen Worten, und stell ruhig eine eigene Frage, wenn es weiterhilft. Die offene Frage des Fahrplans (${fp.naechstes}) kommt von selbst wieder - haeng sie NICHT an.${
           fp.erklaerung ? ` Falls sie wissen will, wozu du ${fp.naechstes} brauchst: ${fp.erklaerung}` : ""
-        }`,
+        }${fremd}`,
         nochOffen: fp.fehlt,
       };
       return {
-        alsNaechstes: `Die naechste Frage stellt der Chat selbst - du musst sie NICHT schreiben. Sie lautet: "${fp.satz}" Wiederhole sie nicht, kuendige sie nicht an und stell keine eigene Frage; kein Fragezeichen in deiner Antwort. Schreib nur, was du zu dem sagen willst, was die Person zuletzt gesagt hat: hoechstens zwei kurze Saetze. Hat sie etwas Neues genannt, nimm es ausdruecklich auf ("Gutes Essen merke ich mir."). Gibt es dazu nichts zu sagen, schreib gar nichts.`,
+        alsNaechstes: `Die naechste Frage stellt der Chat selbst - du musst sie NICHT schreiben. Sie lautet: "${fp.satz}" Wiederhole sie nicht, kuendige sie nicht an und stell keine eigene Frage; kein Fragezeichen in deiner Antwort. Schreib nur, was du zu dem sagen willst, was die Person zuletzt gesagt hat: hoechstens zwei kurze Saetze. Hat sie etwas Neues genannt, nimm es ausdruecklich auf ("Gutes Essen merke ich mir."). Gibt es dazu nichts zu sagen, schreib gar nichts.${fremd}`,
         /* Der Fragetext des Fahrplans geht weiter mit, auch wenn der Chat
            die Frage selbst stellt.
            --------------------------------------------------------------
@@ -4087,10 +4115,10 @@ const Werkzeugkasten = {
         nochOffen: fp.fehlt,
       };
     }
-    if (fp.naechstes) return { alsNaechstes: `Frag genau ein Thema: ${fp.naechstes}. ${fp.frage}`, ...(fp.chips ? { chipsBeispiel: fp.chips } : { chips: "keine - die Frage ist offen" }), nochOffen: fp.fehlt };
-    if (fp.phase === "suche") return { alsNaechstes: "Ruf suchen und schildere danach die Lage." };
-    if (fp.phase === "selbst") return { alsNaechstes: "Die Person will selbst schauen. Ruf suchen (stellt die Filter), dann sag ihr, dass die Liste steht und du da bist." };
-    return { alsNaechstes: "Beratung abgeschlossen. Ruf suchen - es legt die drei passendsten Haeuser gleich vor." };
+    if (fp.naechstes) return { alsNaechstes: `Frag genau ein Thema: ${fp.naechstes}. ${fp.frage}${fremd}`, ...(fp.chips ? { chipsBeispiel: fp.chips } : { chips: "keine - die Frage ist offen" }), nochOffen: fp.fehlt };
+    if (fp.phase === "suche") return { alsNaechstes: `Ruf suchen und schildere danach die Lage.${fremd}` };
+    if (fp.phase === "selbst") return { alsNaechstes: `Die Person will selbst schauen. Ruf suchen (stellt die Filter), dann sag ihr, dass die Liste steht und du da bist.${fremd}` };
+    return { alsNaechstes: `Beratung abgeschlossen. Ruf suchen - es legt die drei passendsten Haeuser gleich vor.${fremd}` };
   },
 
   // Rueckwaertskompatibel: Punkte, die vor einer Vorlage fehlen
