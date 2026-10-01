@@ -1484,7 +1484,7 @@ const Kern = {
           }
           // Moegliche Anreisetage (Flugtage) als Chips - konkreter als jede Umschreibung
           if (this.lauf.anreiseChips?.length) { antwort.chips = this.lauf.anreiseChips; this.lauf.anreiseChips = null; }
-          this.lauf.chips = (antwort.chips || []).length ? antwort.chips : this.ersatzChips();
+          this.lauf.chips = (antwort.chips || []).length ? antwort.chips : this.ersatzChips(fp);
           AgentPanel.setSuggestions(this.lauf.chips);
           break;
         }
@@ -1547,7 +1547,7 @@ const Kern = {
   },
 
   // Wenn das Modell keine Antwortvorschlaege mitgibt: passende aus der Lage
-  ersatzChips() {
+  ersatzChips(fp = null) {
     const w = this.lauf.letztesWerkzeug;
     const seite = Werkzeuge.seite();
     if (w === "buchung_vorbereiten" && seite === "checkout") return ["Ja, schließ ab", "Ich mache das selbst"];
@@ -1559,7 +1559,26 @@ const Kern = {
     // der ganzen Hausseite - auch unter der Frage "Welchen Tag moechtest du
     // als Anreisetag?", wo "Zur Buchung" als Antwort keinen Sinn ergibt.
     if (w === "haus_oeffnen") return ["Auf den Merkzettel", "Zur Buchung", "Zurück zur Auswahl"];
-    if (this.lauf.gefragt) { const fp = Werkzeugkasten.fahrplan(this.lauf.profil || {}, this.lauf); if (fp.chips) return fp.chips.split("|").map((x) => x.trim()); }
+    /* Der Fahrplan wird hier NICHT noch einmal gerechnet.
+       ------------------------------------------------------------------
+       Bis zum 01.10.2026 stand hier ein zweiter Aufruf von `fahrplan`.
+       Der ist nicht folgenlos: Ist ein Thema zweimal gefragt und nicht
+       beantwortet worden, traegt der Fahrplan die Annahme in den Stand
+       ein. Von diesem zweiten Ergebnis wurden aber nur die Chips
+       benutzt - und zwar die des Themas, das NACH der Annahme dran war.
+
+       Gemeldet aus einem Testlauf: Unter "Habt ihr eine Vorstellung, wie
+       viele Naechte es werden sollen?" standen die Karten "Mit Flug" und
+       "Nur die Unterkunft". Dieselbe Rechnung hatte nebenbei sieben
+       Naechte in den Stand geschrieben, die Dauer auf erledigt gesetzt
+       und den Satz "ich rechne mit einer Woche" mit dem Rest des
+       Ergebnisses weggeworfen. Die Frage nach der Dauer kam nie wieder,
+       und in der Uebersicht stand eine Zahl, die niemand gesagt hatte.
+
+       Jetzt kommt der Fahrplan dieses Zuges herein. Er ist derselbe, aus
+       dem oben schon die Frage und die Chips stammen - damit koennen
+       Frage und Karten gar nicht mehr auseinanderlaufen. */
+    if (this.lauf.gefragt && fp?.chips) return fp.chips.split("|").map((x) => x.trim());
     return [];
   },
 

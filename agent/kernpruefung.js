@@ -586,6 +586,53 @@ const Kernpruefung = {
     return fehler;
   },
 
+  /* Keine stille Aenderung des Standes.
+     ------------------------------------------------------------------
+     Der Fahrplan ist nicht nur eine Auskunft, er traegt auch ein: Kam auf
+     ein Thema zweimal keine Antwort, nimmt er das Naheliegende an und
+     schreibt es in den Stand. Das ist gewollt, aber nur zusammen mit dem
+     Satz, der es ausspricht ("ich rechne mit einer Woche").
+
+     Am 01.10.2026 ist genau diese Kopplung einmal gerissen: Ein zweiter,
+     nur fuer die Auswahlkarten gedachter Aufruf schrieb sieben Naechte in
+     den Stand, und weil von seinem Ergebnis nur die Chips benutzt wurden,
+     fiel der Satz unter den Tisch. In der Uebersicht stand danach eine
+     Dauer, die niemand genannt hatte, und die Frage kam nie wieder.
+
+     Gehalten wird die Kopplung an der Marke, die der Fahrplan selbst
+     setzt: `lauf.uebersprungen[thema]`. Steht sie, muss er auch etwas zu
+     sagen haben. Nicht am Vergleich der Felder - der Fahrplan zieht
+     nebenbei auch Widersprueche glatt (Erwachsene aus Gesamtzahl und
+     Kindern, kein Flug zur Ferienwohnung), und das ist eine Ableitung aus
+     dem, was die Person gesagt hat, keine Annahme darueber hinaus. */
+  STILL_ERLAUBT: {
+    weiter: "nur der innere Ablauf (schauen oder klaeren), nie eine Angabe der Person",
+    beratung: "dito - die Frage wird seit dem 27.09.2026 gar nicht mehr gestellt",
+    vorgehen: "wird an anderer Stelle gefragt und dort auch gesagt",
+    ziel: "setzt nur zielOffen, also ausdruecklich KEINE Festlegung",
+  },
+
+  annahmen() {
+    const fehler = [];
+    const themen = ["zeit", "weiter", "beratung", "vorgehen", "ziel", "art", "dauer",
+      "flug", "flugAb", "flugKlasse", "preis", "verpflegung", "wuensche", "anreise"];
+    for (const p of this.staende().slice(0, 300)) {
+      for (const t of themen) {
+        const probe = JSON.parse(JSON.stringify(p));
+        const lauf = { gespraech: [], gefragtWie: { [t]: 2 } };
+        let fp = null;
+        try { fp = Werkzeugkasten.fahrplan(probe, lauf); }
+        catch (e) { fehler.push({ art: "annahme_absturz", thema: t, text: String(e && e.message), satz: "" }); continue; }
+        if (!lauf.uebersprungen?.[t]) continue;
+        if ((fp.angenommen || []).length) continue;
+        if (this.STILL_ERLAUBT[t]) continue;
+        fehler.push({ art: "annahme_still", thema: t, satz: "",
+          text: "Das Thema wird uebergangen und etwas angenommen, ohne dass der Agent etwas dazu sagt" });
+      }
+    }
+    return fehler;
+  },
+
   relativ() {
     const fehler = [];
     const melde = (art, text) => fehler.push({ art, text, thema: "zeit", satz: "" });
@@ -636,6 +683,7 @@ const Kernpruefung = {
     for (const f of this.datum()) alle.push(f);
     for (const f of this.relativ()) alle.push(f);
     for (const f of this.unsicher()) alle.push(f);
+    for (const f of this.annahmen()) alle.push(f);
     for (const f of this.alleThemen()) alle.push(f);
     const ab = this.ablaeufe();
     for (const f of ab.fehler) alle.push(f);
