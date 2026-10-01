@@ -462,7 +462,7 @@ const Kern = {
        Wer so etwas ablehnt, darf nicht im selben Atemzug sagen, er habe
        nichts verstanden. Zurueckgesetzt wird das Zeichen mit jeder neuen
        Nachricht der Person. */
-    if (/_verworfen$/.test(ereignis)) this.lauf.verworfenImZug = true;
+    if (/_verworfen$/.test(ereignis)) this.lauf.verworfenImZug = { ereignis, ...daten };
   },
 
   logZeile(text, art = "schritt") {
@@ -858,7 +858,7 @@ const Kern = {
        hat die Haelfte beantwortet - da waere ein "das habe ich nicht
        verstanden" falsch und wuerde unsicher wirken. */
     try { this.lauf.standVorher = JSON.stringify(this.lauf.profil || {}); } catch { this.lauf.standVorher = null; }
-    this.lauf.verworfenImZug = false;
+    this.lauf.verworfenImZug = null;
     this.lauf.phase = "gespraech";
     Zeiger.freigeben?.();
     await this.zug();
@@ -1239,13 +1239,43 @@ const Kern = {
                - Das Modell nennt in seinem eigenen Satz einen Wert des
                  offenen Themas ("Dezember", "Kreta", "Hannover").
 
-             In beiden Faellen kommt die normale Frage noch einmal, ohne
-             Entschuldigung. Das ist die konservative Richtung, und sie
-             ist die richtige: Eine ausgebliebene Entschuldigung kostet
-             nichts, eine falsche kostet das Zutrauen in den Agenten. */
+             In beiden Faellen faellt die Entschuldigung weg. Was an ihre
+             Stelle tritt, haengt davon ab, wie sicher die Lage ist: Laesst
+             sich die Vermutung an dem festmachen, was die Person gesagt
+             hat, fragt der Kern mit dem Wert nach ("Meinst du Dezember?",
+             siehe gleich darunter). Sonst kommt einfach die Frage noch
+             einmal.
+
+             Die konservative Richtung ist in beiden Faellen die richtige:
+             Eine ausgebliebene Entschuldigung kostet nichts, eine falsche
+             kostet das Zutrauen in den Agenten. */
           const zeigtVerstaendnis = !!this.lauf.verworfenImZug
             || !!Werkzeugkasten.themaWortImText(offen, text);
           if (!freierZug && offen && offen === this.lauf.zuletztGefragt && standGleich
+            && wuerdeWiederholen && this.lauf.nachrichtArt === "antwort" && fpJetzt.satz) {
+            /* Der mittlere Fall: unsicher, nicht unverstanden.
+               ----------------------------------------------------------
+               Die Person hat ueber die Zeit gesprochen, einen Monat aber
+               nicht genannt, und der Kern musste den Vorschlag des
+               Modells ablehnen. Dann fragt er mit dem Wert nach, statt
+               die Frage noch einmal zu stellen. Aufgenommen wird nichts,
+               bis sie bestaetigt - dieselbe Regel wie bei der
+               Tippfehler-Vermutung, nur mit einer anderen Quelle. */
+            const unsicher = Werkzeugkasten.unsicherRueckfrage(offen, this.lauf, letzteNachricht, text);
+            if (unsicher) {
+              (this.lauf.unsicherGefragt ||= {})[offen] = unsicher.label;
+              tippGestellt = true;
+              /* Der Zaehler laeuft mit, obwohl es keine Entschuldigung
+                 gibt: Angekommen ist auch hier nichts, und ohne ihn
+                 wuerde der Kern nach einem "Nein" sofort einen Monat
+                 annehmen, statt noch einmal zu fragen. */
+              const n2 = (this.lauf.nichtVerstanden ||= {});
+              n2[offen] = (n2[offen] || 0) + 1;
+              this.notieren("unsicher_rueckfrage", { thema: offen, vermutung: unsicher.label });
+              fpJetzt = { ...fpJetzt, satzRoh: satzJetzt, satz: unsicher.satz, chips: unsicher.chips.join(" | ") };
+            }
+          }
+          if (!freierZug && !tippGestellt && offen && offen === this.lauf.zuletztGefragt && standGleich
             && wuerdeWiederholen && !zeigtVerstaendnis
             && this.lauf.nachrichtArt === "antwort" && fpJetzt.satz) {
             const n = (this.lauf.nichtVerstanden ||= {});

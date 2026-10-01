@@ -533,6 +533,59 @@ const Kernpruefung = {
     { thema: "preis", text: "Ab 69 Euro geht es los.", wert: null },
   ],
 
+  /* Der mittlere Fall: unsicher statt unverstanden.
+     ------------------------------------------------------------------
+     Die interessanten Zeilen sind die, in denen die Nachfrage NICHT
+     kommen darf: wenn die Person ueber die Zeit gar nichts gesagt hat
+     (dann waere die Vermutung die des Agenten), bei jedem anderen Thema
+     (dort sind die Aufnahmeregeln bereits so breit wie ihr Thema), und
+     beim zweiten Mal. */
+  UNSICHER_FAELLE: [
+    { name: "Ende des Jahres, Monat verworfen", thema: "zeit",
+      lauf: { verworfenImZug: { ereignis: "monat_verworfen", monat: 12 } },
+      letzte: "so gegen Ende des Jahres", modell: "", label: "Dezember" },
+    { name: "Modell sagt den Monat nur", thema: "zeit", lauf: {},
+      letzte: "in den Herbstferien", modell: "Oktober passt dafuer gut.", label: "Oktober" },
+    // Die Person hat ueber die Zeit nichts gesagt: dann waere es ein Vorschlag des Agenten
+    { name: "kein Zeitbezug im Satz", thema: "zeit",
+      lauf: { verworfenImZug: { ereignis: "monat_verworfen", monat: 10 } },
+      letzte: "hauptsache warm", modell: "Oktober waere warm genug.", label: null },
+    // Andere Themen: ihre Aufnahmeregeln fragen schon breit genug
+    { name: "Ziel wird nie vorgeschlagen", thema: "ziel",
+      lauf: { verworfenImZug: { ereignis: "ziel_verworfen", ziel: "tirol" } },
+      letzte: "irgendwas im Winter", modell: "Tirol waere passend.", label: null },
+    { name: "Dauer wird nicht geraten", thema: "dauer",
+      lauf: { verworfenImZug: { ereignis: "naechte_verworfen", naechte: 7 } },
+      letzte: "nicht zu lang", modell: "Sieben Naechte sind ueblich.", label: null },
+    // Einmal fragen reicht
+    { name: "schon gefragt", thema: "zeit",
+      lauf: { verworfenImZug: { ereignis: "monat_verworfen", monat: 12 }, unsicherGefragt: { zeit: "Dezember" } },
+      letzte: "so gegen Ende des Jahres", modell: "", label: null },
+    // Ohne Wert gibt es nichts zu fragen
+    { name: "nichts verworfen, nichts gesagt", thema: "zeit", lauf: {},
+      letzte: "irgendwann im naechsten Jahr", modell: "Alles klar.", label: null },
+  ],
+
+  unsicher() {
+    const fehler = [];
+    const melde = (art, text, thema) => fehler.push({ art, text, thema, satz: "" });
+    for (const f of this.UNSICHER_FAELLE) {
+      let raus = null;
+      try { raus = Werkzeugkasten.unsicherRueckfrage(f.thema, f.lauf, f.letzte, f.modell); }
+      catch (e) { melde("unsicher_absturz", `${f.name}: ${e && e.message}`, f.thema); continue; }
+      const label = raus ? raus.label : null;
+      if (label !== (f.label || null)) {
+        melde("unsicher_falsch", `${f.name}: ${label || "keine Nachfrage"}, erwartet ${f.label || "keine"}`, f.thema);
+        continue;
+      }
+      if (!raus) continue;
+      if ((raus.satz.match(/\?/g) || []).length !== 1) melde("unsicher_zwei_fragen", `${f.name}: "${raus.satz}"`, f.thema);
+      if (!raus.satz.includes(label)) melde("unsicher_ohne_wort", `${f.name}: der Wert steht nicht im Satz`, f.thema);
+      if ((raus.chips || []).length !== 2) melde("unsicher_ohne_chips", `${f.name}: beide Antworten muessen zur Wahl stehen`, f.thema);
+    }
+    return fehler;
+  },
+
   relativ() {
     const fehler = [];
     const melde = (art, text) => fehler.push({ art, text, thema: "zeit", satz: "" });
@@ -582,6 +635,7 @@ const Kernpruefung = {
     for (const f of this.tippfehler()) alle.push(f);
     for (const f of this.datum()) alle.push(f);
     for (const f of this.relativ()) alle.push(f);
+    for (const f of this.unsicher()) alle.push(f);
     for (const f of this.alleThemen()) alle.push(f);
     const ab = this.ablaeufe();
     for (const f of ab.fehler) alle.push(f);

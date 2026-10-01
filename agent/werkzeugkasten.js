@@ -807,6 +807,55 @@ const Werkzeugkasten = {
     return null;
   },
 
+  /* Unsicher ist nicht dasselbe wie unverstanden.
+     ------------------------------------------------------------------
+     Wunsch des Nutzers am 01.10.2026: "Wenn der Kern bzw. das Modell
+     sich unsicher sind, dann kann es schon sein, dass man am besten mal
+     nachfragt: Meinst du Dezember? Aber wenn es offensichtlich ist,
+     dann natuerlich nicht."
+
+     Damit sind es drei Faelle statt zwei:
+
+       1. Eindeutig ("im Dezember", "in zwei Monaten"). Der Kern nimmt es
+          auf und sagt, was er sich gemerkt hat. Keine Frage.
+       2. Unsicher: Es stand etwas ueber die Zeit im Satz, aber kein
+          Monat, und das Modell hat einen vorgeschlagen, den der Kern
+          nicht annehmen durfte ("so gegen Ende des Jahres" -> Dezember).
+          Dann fragt er nach, mit dem Wert. Aufgenommen wird nichts, bis
+          die Person ja sagt.
+       3. Gar nichts angekommen. Dann die Entschuldigung, wie bisher.
+
+     Warum nur die Zeit und nicht alle Themen: Die anderen Aufnahmeregeln
+     fragen bereits breit ("steht ueberhaupt eine Zahl im Satz?"). Wird
+     dort etwas verworfen, hat die Person zu dem Thema nichts gesagt -
+     eine Nachfrage waere dann keine Rueckversicherung, sondern ein
+     Vorschlag des Agenten. Beim Ziel waere das sogar schaedlich: Welche
+     Region gebucht wird, soll von der Person kommen, sonst misst die
+     Erhebung den Agenten statt des Menschen. Die Monatsregel ist die
+     einzige, die enger ist als ihr Thema - sie verlangt einen
+     Monatsnamen, und ueber Zeit kann man ohne Monatsnamen sprechen.
+     Genau in diese Luecke faellt die Nachfrage. */
+  ZEITBEZUG: /\d|monat|wochen?|tage?n?\b|jahr|ferien|feiertag|ostern|pfingsten|weihnacht|silvester|neujahr|sommer|winter|herbst|frühling|fruehling|frühjahr|fruehjahr|saison|anfang|mitte|ende|bald|demnächst|demnaechst|schulfrei|urlaub/i,
+
+  unsicherRueckfrage(thema, lauf, letzte = "", satzDesModells = "") {
+    if (thema !== "zeit" || !lauf) return null;
+    if ((lauf.unsicherGefragt || {})[thema]) return null;
+    // Die Person muss ueber die Zeit gesprochen haben - sonst waere die
+    // Vermutung nicht ihre, sondern die des Agenten
+    if (!this.ZEITBEZUG.test(String(letzte || ""))) return null;
+    const v = lauf.verworfenImZug;
+    let label = null;
+    if (v && v.ereignis === "monat_verworfen" && v.monat >= 1 && v.monat <= 12) {
+      label = typeof MONATSNAMEN !== "undefined" ? MONATSNAMEN[v.monat - 1] : null;
+    }
+    // Zweite Quelle: Das Modell hat den Monat nur ausgesprochen, ohne ihn
+    // ueberhaupt mitzuschicken ("Dezember ist eine gute Zeit")
+    if (!label) label = this.themaWortImText(thema, satzDesModells);
+    if (!label) return null;
+    const regel = this.TIPPFEHLER[thema];
+    return { label, satz: regel.satz(label), chips: regel.chips(label) };
+  },
+
   tippfehlerRueckfrage(thema, text, lauf = {}) {
     const label = this.tippfehlerVermutung(thema, text);
     if (!label) return null;
