@@ -4101,7 +4101,7 @@ const Werkzeugkasten = {
         nochOffen: fp.fehlt,
       };
       return {
-        alsNaechstes: `Die naechste Frage stellt der Chat selbst - du musst sie NICHT schreiben. Sie lautet: "${fp.satz}" Wiederhole sie nicht, kuendige sie nicht an und stell keine eigene Frage; kein Fragezeichen in deiner Antwort. Schreib nur, was du zu dem sagen willst, was die Person zuletzt gesagt hat: hoechstens zwei kurze Saetze. Hat sie etwas Neues genannt, nimm es ausdruecklich auf ("Gutes Essen merke ich mir."). Gibt es dazu nichts zu sagen, schreib gar nichts.${fremd}`,
+        alsNaechstes: `Die naechste Frage stellt der Chat selbst - du musst sie NICHT schreiben. Sie lautet: "${fp.satz}" Wiederhole sie nicht, kuendige sie nicht an und stell keine eigene Frage; kein Fragezeichen in deiner Antwort. Schreib nur, was du zu dem sagen willst, was die Person zuletzt gesagt hat: hoechstens zwei kurze Saetze. Hat sie etwas Neues genannt, nimm es ausdruecklich auf ("Gutes Essen merke ich mir."). GRUESST sie dich oder sagt sie etwas Persoenliches ("hi", "wie geht es dir?", "danke dir"), geh in einem kurzen Satz darauf ein, bevor es weitergeht - das ist der einzige Fall, in dem du etwas schreibst, das nichts mit der Reise zu tun hat. Gibt es sonst nichts zu sagen, schreib gar nichts.${fremd}`,
         /* Der Fragetext des Fahrplans geht weiter mit, auch wenn der Chat
            die Frage selbst stellt.
            --------------------------------------------------------------
