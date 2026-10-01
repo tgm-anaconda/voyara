@@ -1251,16 +1251,25 @@ const Kern = {
              kostet das Zutrauen in den Agenten. */
           const zeigtVerstaendnis = !!this.lauf.verworfenImZug
             || !!Werkzeugkasten.themaWortImText(offen, text);
-          if (!freierZug && offen && offen === this.lauf.zuletztGefragt && standGleich
-            && wuerdeWiederholen && this.lauf.nachrichtArt === "antwort" && fpJetzt.satz) {
-            /* Der mittlere Fall: unsicher, nicht unverstanden.
-               ----------------------------------------------------------
-               Die Person hat ueber die Zeit gesprochen, einen Monat aber
-               nicht genannt, und der Kern musste den Vorschlag des
-               Modells ablehnen. Dann fragt er mit dem Wert nach, statt
-               die Frage noch einmal zu stellen. Aufgenommen wird nichts,
-               bis sie bestaetigt - dieselbe Regel wie bei der
-               Tippfehler-Vermutung, nur mit einer anderen Quelle. */
+          /* Der mittlere Fall: unsicher, nicht unverstanden.
+             ------------------------------------------------------------
+             Die Person hat ueber die Zeit gesprochen, einen Monat aber
+             nicht genannt, und der Kern musste den Vorschlag des Modells
+             ablehnen. Dann fragt er mit dem Wert nach, statt die offene
+             Frage zu stellen. Aufgenommen wird nichts, bis sie
+             bestaetigt - dieselbe Regel wie bei der Tippfehler-Vermutung,
+             nur mit einer anderen Quelle.
+
+             Diese Pruefung haengt NICHT daran, dass das Thema vorher
+             schon gefragt wurde. Am 01.10.2026 im Test: Auf "so gegen
+             Ende des Jahres" - ungefragt gesagt - antwortete der Agent
+             "Dezember ist eine gute Wahl fuer viele Reiseziele. Wann soll
+             es denn ungefaehr losgehen?" Dieselbe Taubheit wie vorher,
+             nur ohne Entschuldigung. Wer einen Monat im Kopf hat und ihn
+             ausspricht, soll gefragt werden, ob er stimmt - gleich beim
+             ersten Mal. */
+          if (!freierZug && !tippGestellt && offen && fpJetzt.satz
+            && this.lauf.nachrichtArt === "antwort") {
             const unsicher = Werkzeugkasten.unsicherRueckfrage(offen, this.lauf, letzteNachricht, text);
             if (unsicher) {
               (this.lauf.unsicherGefragt ||= {})[offen] = unsicher.label;
