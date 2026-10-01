@@ -1326,7 +1326,7 @@ const Kern = {
             if (this.lauf.artGefragt === true) this.lauf.artGefragt = { verpflegung: true, sterne: true };
             (this.lauf.artGefragt ||= {})[artFrage.grund] = true;
             this.notieren("art_rueckfrage", { grund: artFrage.grund, offen: fpJetzt.naechstes });
-            fpJetzt = { ...fpJetzt, satz: artFrage.satz, chips: artFrage.chips.join(" | "), naechstes: null };
+            fpJetzt = { ...fpJetzt, satz: artFrage.satz, chips: artFrage.chips.join(" | "), naechstes: null, nurKern: true };
           }
           /* Der genaue Anreisetag, einmal nach dem Monat.
              ------------------------------------------------------------
@@ -1437,7 +1437,15 @@ const Kern = {
             const frueher = (this.lauf.verlauf || []).filter((n) => n.rolle === "bot")
               .slice(-4).map((n) => norm(n.text || ""));
             const schonGesagt = (x) => { const n = norm(x); return n.length > 14 && frueher.some((f) => f.includes(n)); };
-            let vorspann = String(text || "").split(/(?<=[.!?])\s+/)
+            /* Tritt eine Rueckfrage an die Stelle der geplanten Frage,
+               faellt der Vorspann des Modells weg.
+               ----------------------------------------------------------
+               Es hat ihn fuer die andere Frage geschrieben. Am 01.10.2026
+               stand deshalb "Economy, Premium Economy." vor der Frage, ob
+               auf Hotels eingegrenzt werden soll - ein Rest der
+               Klassenfrage, die gar nicht mehr kam. Was aufgenommen wurde,
+               sagt der Kern gleich darunter ohnehin selbst. */
+            let vorspann = fpJetzt.nurKern ? "" : String(text || "").split(/(?<=[.!?])\s+/)
               .filter((x) => x.trim() && !/\?/.test(x))
               .filter((x) => { const n = norm(x); return n.length > 8 && !frageNorm.includes(n); })
               .filter((x) => !sagtDasselbe(x))
