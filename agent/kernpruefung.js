@@ -658,6 +658,49 @@ const Kernpruefung = {
     return fehler;
   },
 
+  /* Die Rueckfrage zur Art: Flug, Verpflegung, Sterne.
+     ------------------------------------------------------------------
+     Der Flug ist seit dem 01.10.2026 dabei und der dringendste Fall: Die
+     Seite zeigt den Flugblock nur auf dem Hotelreiter, also darf der
+     Agent nicht "mit Flug" merken und weiter unter Ferienwohnungen
+     suchen. Die Zeilen mit `label: null` sind die, in denen die Frage
+     NICHT kommen darf. */
+  ART_FAELLE: [
+    { name: "beides offen, Flug gewuenscht", p: { artEgal: true, flug: true }, lauf: {}, grund: "flug" },
+    { name: "Ferienwohnung gewaehlt, Flug gewuenscht", p: { typ: "apartment", artGenannt: true, flug: true }, lauf: {}, grund: "flug" },
+    { name: "Hotel gewaehlt, Flug gewuenscht", p: { typ: "hotel", artGenannt: true, flug: true }, lauf: {}, grund: null },
+    { name: "beides offen, ohne Flug", p: { artEgal: true, flug: false }, lauf: {}, grund: null },
+    { name: "beides offen, Halbpension", p: { artEgal: true, verpflegung: "halb" }, lauf: {}, grund: "verpflegung" },
+    { name: "beides offen, vier Sterne", p: { artEgal: true, mindestSterne: 4 }, lauf: {}, grund: "sterne" },
+    // Ohne Verpflegung zaehlt nicht: wer selbst kocht, meint eher die Wohnung
+    { name: "beides offen, ohne Verpflegung", p: { artEgal: true, verpflegung: "ohne" }, lauf: {}, grund: null },
+    // Einmal je Grund, aber der Flug kommt auch nach der Verpflegungsfrage noch
+    { name: "Verpflegung schon gefragt", p: { artEgal: true, verpflegung: "halb" }, lauf: { artGefragt: { verpflegung: true } }, grund: null },
+    { name: "Verpflegung gefragt, jetzt der Flug", p: { artEgal: true, verpflegung: "halb", flug: true }, lauf: { artGefragt: { verpflegung: true } }, grund: "flug" },
+    { name: "Flug schon gefragt", p: { artEgal: true, flug: true }, lauf: { artGefragt: { flug: true } }, grund: null },
+    // Alte Laeufe hatten nur den Schalter true - der darf nicht alles sperren
+    { name: "alter Schalter, jetzt der Flug", p: { artEgal: true, flug: true }, lauf: { artGefragt: true }, grund: "flug" },
+  ],
+
+  art() {
+    const fehler = [];
+    const melde = (art, text) => fehler.push({ art, text, thema: "art", satz: "" });
+    for (const f of this.ART_FAELLE) {
+      let raus = null;
+      try { raus = Werkzeugkasten.artRueckfrage(JSON.parse(JSON.stringify(f.p)), f.lauf); }
+      catch (e) { melde("art_absturz", `${f.name}: ${e && e.message}`); continue; }
+      const grund = raus ? raus.grund : null;
+      if (grund !== (f.grund || null)) {
+        melde("art_falsch", `${f.name}: ${grund || "keine Rueckfrage"}, erwartet ${f.grund || "keine"}`);
+        continue;
+      }
+      if (!raus) continue;
+      if ((raus.satz.match(/\?/g) || []).length !== 1) melde("art_zwei_fragen", `${f.name}: "${raus.satz}"`);
+      if ((raus.chips || []).length !== 2) melde("art_chips", `${f.name}: beide Wege muessen zur Wahl stehen`);
+    }
+    return fehler;
+  },
+
   relativ() {
     const fehler = [];
     const melde = (art, text) => fehler.push({ art, text, thema: "zeit", satz: "" });
@@ -709,6 +752,7 @@ const Kernpruefung = {
     for (const f of this.relativ()) alle.push(f);
     for (const f of this.unsicher()) alle.push(f);
     for (const f of this.annahmen()) alle.push(f);
+    for (const f of this.art()) alle.push(f);
     for (const f of this.alleThemen()) alle.push(f);
     const ab = this.ablaeufe();
     for (const f of ab.fehler) alle.push(f);

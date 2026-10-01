@@ -1321,7 +1321,10 @@ const Kern = {
           }
           const artFrage = !freierZug && !tippGestellt && Werkzeugkasten.artRueckfrage(this.lauf.profil || {}, this.lauf);
           if (artFrage) {
-            this.lauf.artGefragt = true;
+            // Je Grund merken, nicht pauschal: Flug und Verpflegung sind
+            // zwei verschiedene Abwaegungen fuer dieselbe Entscheidung.
+            if (this.lauf.artGefragt === true) this.lauf.artGefragt = { verpflegung: true, sterne: true };
+            (this.lauf.artGefragt ||= {})[artFrage.grund] = true;
             this.notieren("art_rueckfrage", { grund: artFrage.grund, offen: fpJetzt.naechstes });
             fpJetzt = { ...fpJetzt, satz: artFrage.satz, chips: artFrage.chips.join(" | "), naechstes: null };
           }

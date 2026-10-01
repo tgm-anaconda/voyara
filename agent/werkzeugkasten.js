@@ -564,18 +564,53 @@ const Werkzeugkasten = {
 
      "Ohne Verpflegung" zaehlt ausdruecklich nicht dazu: Wer selbst
      kochen will, meint eher eine Ferienwohnung als ein Hotel ohne
-     Verpflegung. */
+     Verpflegung.
+
+     Seit dem 01.10.2026 faellt auch der Flug darunter, und das ist der
+     dringendste der drei Faelle. Gemeldet aus einem Testlauf: Die Person
+     hatte "beides zeigen" gewaehlt und spaeter "Mit Flug" gesagt. Der
+     Agent merkte sich den Flug und suchte weiter unter Hotels UND
+     Ferienwohnungen - nur zeigt die Seite den Flugblock ueberhaupt nur
+     auf dem Hotelreiter (`results.js`: `state.type !== "hotel"` blendet
+     ihn aus). Gemerkt war also etwas, das auf der Seite nirgends stand,
+     und in der Trefferliste standen Haeuser, zu denen es gar keinen Flug
+     gibt. Dieselbe Regel an beiden Orten heisst hier: Wer einen Flug
+     will, muss wissen, dass es den nur zum Hotel gibt. */
   artRueckfrage(p, lauf) {
     if (!p || !lauf) return null;
+    // Alte Faelle merkten sich nur "schon gefragt". Jetzt je Grund, denn
+    // der Flug ist eine andere Abwaegung als die Verpflegung.
+    const schon = lauf.artGefragt === true
+      ? { verpflegung: true, sterne: true }
+      : (lauf.artGefragt || {});
+    /* Der Flug zuerst, und er gilt auch bei gewaehlter Ferienwohnung:
+       Dort ist die Frage nicht "eingrenzen oder nicht", sondern "Hotel
+       oder kein Flug". Beides sind Aussagen der Person, der Kern kippt
+       keine davon still. */
+    if (p.flug === true && p.typ !== "hotel" && !schon.flug) {
+      const wohnung = p.typ === "apartment";
+      return {
+        grund: "flug",
+        satz: wohnung
+          ? "Eine Sache dazu: Zu einer Ferienwohnung kann ich hier keinen Flug dazubuchen, den gibt es nur zum Hotel. "
+            + "Soll ich stattdessen unter Hotels suchen, oder bleibt es bei der Ferienwohnung ohne Flug?"
+          : "Eine Sache dazu: Einen Flug kann ich nur zu einem Hotel dazubuchen, zu Ferienwohnungen gibt es hier keine. "
+            + "Soll ich auf Hotels eingrenzen, oder lieber ohne Flug bei beidem bleiben?",
+        chips: wohnung
+          ? ["Dann Hotels mit Flug", "Ferienwohnung ohne Flug"]
+          : ["Nur Hotels, mit Flug", "Ohne Flug, dafür beides"],
+      };
+    }
     if (!p.artEgal || p.artGenannt) return null;
-    if (lauf.artGefragt) return null;
     const verpflegung = this.VERPFLEGUNG_HOTEL.includes(p.verpflegung);
     if (!verpflegung && !p.mindestSterne) return null;
+    const grund = verpflegung ? "verpflegung" : "sterne";
+    if (schon[grund]) return null;
     const wunsch = verpflegung
       ? ({ fruehstueck: "Frühstück", halb: "Halbpension", voll: "Vollpension", ai: "All Inclusive" })[p.verpflegung]
       : `${p.mindestSterne} Sterne`;
     return {
-      grund: verpflegung ? "verpflegung" : "sterne",
+      grund,
       satz: `Eine Sache dazu: Gerade suche ich Hotels und Ferienwohnungen zusammen, und ${wunsch} `
         + `gibt es nur bei Hotels. Soll ich auf Hotels eingrenzen, oder beides offen lassen?`,
       chips: ["Nur Hotels", "Beides offen lassen"],
