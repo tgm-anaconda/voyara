@@ -732,7 +732,18 @@ const Politik = {
     if (item.type === "apartment") return { zimmer: null, board: null, gesamt: preisProNacht * naechte + (item.cleaningFee || 0) };
     const personen = (profil.erwachsene || 0) + (profil.kinder || 0);
     const jeZimmer = personen ? Math.ceil(personen / zimmerZahl) : 0;
-    const zimmer = (item.rooms || []).find((r) => (r.maxGuests || 0) >= jeZimmer) || (item.rooms || [])[0] || null;
+    /* Hat die Person ein Zimmer gewaehlt, gilt ihres.
+       ----------------------------------------------------------------
+       Bis zum 02.10.2026 nahm der Agent immer das erste passende, also
+       in aller Regel das guenstigste - gefragt wurde nie. Der Nutzer:
+       "Die Wahl des Zimmers muss noch eine Frage sein, die man
+       beantworten muss." Seitdem steht ihre Wahl in `zimmerTyp`, und der
+       Preis muss ihr folgen, sonst stuende auf der Karte etwas anderes
+       als in der Kasse. */
+    const passend = (item.rooms || []).filter((r) => (r.maxGuests || 0) >= jeZimmer);
+    const gewaehlt = profil.zimmerTyp
+      ? (item.rooms || []).find((r) => r.name === profil.zimmerTyp) : null;
+    const zimmer = gewaehlt || passend[0] || (item.rooms || [])[0] || null;
     const board = (item.boards || []).find((b) => b.key === profil.verpflegung) || (item.boards || [])[0] || null;
     const nacht = preisProNacht + (zimmer?.priceDelta || 0) + (board?.priceDelta || 0);
     return { zimmer, board, gesamt: nacht * naechte * zimmerZahl + 35 * zimmerZahl };

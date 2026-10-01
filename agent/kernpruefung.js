@@ -1043,6 +1043,85 @@ const Kernpruefung = {
     return fehler;
   },
 
+  /* Der Riegel vor der Vorlage.
+     ------------------------------------------------------------------
+     Gemeldet am 02.10.2026: "Es wurden keine Fragen zur Halbpension oder
+     zum All-Inclusive gefragt, was halt auch verpflichtend ist. Ich
+     verstehe nicht, warum das nicht angewendet werden kann, dass es
+     einfach Pflichtfragen gibt, die immer gefragt werden muessen, bis
+     ueberhaupt diese finale Suche passiert."
+
+     Den Riegel gab es - er ging nur auf, weil ein Thema schon dann als
+     erledigt galt, wenn die Person darauf irgendetwas geantwortet hatte
+     (`besprochen`), nicht erst, wenn ein Wert im Stand stand. Diese
+     Pruefung haelt fest, dass "besprochen" allein nicht reicht. */
+  riegel() {
+    const fehler = [];
+    const basis = { erwachsene: 2, kinder: 0, monat: 7, typ: "hotel", artGenannt: true, zielOffen: true,
+      naechte: 7, flug: false, vorgehen: "top3", anzahlVorschlaege: 3, preisEgal: true };
+    const faelle = [
+      { name: "Verpflegung nur besprochen", p: { ...basis, ausstattungEgal: true }, lauf: { besprochen: { verpflegung: true } }, erwartet: "Verpflegung" },
+      { name: "Wuensche nur besprochen", p: { ...basis, verpflegungEgal: true }, lauf: { besprochen: { wuensche: true } }, erwartet: "Wuensche" },
+      { name: "Preis nur besprochen", p: { ...basis, verpflegungEgal: true, ausstattungEgal: true, preisEgal: false }, lauf: { besprochen: { preis: true } }, erwartet: "Preis" },
+      { name: "alles beantwortet", p: { ...basis, verpflegungEgal: true, ausstattungEgal: true }, lauf: {}, erwartet: null },
+    ];
+    for (const f of faelle) {
+      const probe = JSON.parse(JSON.stringify(f.p));
+      const offen = Werkzeugkasten.nochOffen(probe, { gespraech: [], gefragtWie: {}, ...f.lauf });
+      const liste = offen.pflicht.join(", ");
+      if (f.erwartet && !liste.includes(f.erwartet)) {
+        fehler.push({ art: "riegel_offen", thema: "vorschlaege", satz: liste,
+          text: `${f.name}: "${f.erwartet}" fehlt in der Pflichtliste, die Vorlage waere erlaubt` });
+      }
+      if (!f.erwartet && offen.pflicht.length) {
+        fehler.push({ art: "riegel_zu", thema: "vorschlaege", satz: liste,
+          text: `${f.name}: die Vorlage wird blockiert, obwohl alles beantwortet ist` });
+      }
+    }
+    return fehler;
+  },
+
+  /* Das Zimmer waehlt die Person.
+     ------------------------------------------------------------------
+     Gemeldet am 02.10.2026: Der Agent nahm immer das erste passende -
+     also das guenstigste - und fragte nie. Geprueft wird, dass die Frage
+     kommt, wenn es etwas zu waehlen gibt, dass sie nur einmal kommt, und
+     dass der Preis der Wahl auch wirklich folgt. */
+  zimmer() {
+    const fehler = [];
+    const melde = (art, text, satz = "") => fehler.push({ art, thema: "zimmer", text, satz });
+    const hotels = (typeof HOTELS !== "undefined" ? HOTELS : []).slice(0, 25);
+    const p = { erwachsene: 2, kinder: 0, zimmer: 1, naechte: 7, monat: 7 };
+    let gefragt = 0;
+    for (const h of hotels) {
+      const liste = Werkzeugkasten.zimmerAuswahl(h, p);
+      const r = Werkzeugkasten.zimmerRueckfrage(h, p, {});
+      if (liste.length >= 2 && !r) { melde("zimmer_nicht_gefragt", `${h.name}: ${liste.length} Zimmer passen, es wird nicht gefragt`); continue; }
+      if (liste.length < 2 && r) { melde("zimmer_unnoetig", `${h.name}: nur ein passendes Zimmer, trotzdem eine Frage`); continue; }
+      if (!r) continue;
+      gefragt++;
+      if ((r.satz.match(/\?/g) || []).length !== 1) melde("zimmer_zwei_fragen", `${h.name}: nicht genau ein Fragezeichen`, r.satz);
+      if (!(r.chips || []).length) melde("zimmer_ohne_chips", `${h.name}: keine Auswahl`, r.satz);
+      // Schon gewaehlt oder schon gefragt: keine zweite Frage
+      if (Werkzeugkasten.zimmerRueckfrage(h, { ...p, zimmerTyp: liste[0].name }, {})) {
+        melde("zimmer_trotz_wahl", `${h.name}: fragt, obwohl ein Zimmer gewaehlt ist`);
+      }
+      if (Werkzeugkasten.zimmerRueckfrage(h, p, { zimmerGefragt: true })) {
+        melde("zimmer_wiederholt", `${h.name}: fragt ein zweites Mal`);
+      }
+      // Und der Preis muss der Wahl folgen
+      if (typeof Politik !== "undefined" && liste.length >= 2) {
+        const guenstig = Politik.aufenthaltspreis(h, p, 200).gesamt;
+        const teuer = Politik.aufenthaltspreis(h, { ...p, zimmerTyp: liste[liste.length - 1].name }, 200).gesamt;
+        if (liste[liste.length - 1].aufpreis > 0 && !(teuer > guenstig)) {
+          melde("zimmer_ohne_preiswirkung", `${h.name}: das teurere Zimmer kostet nicht mehr`);
+        }
+      }
+    }
+    if (hotels.length && !gefragt) melde("zimmer_nie_gefragt", "In keinem der geprueften Hotels kam die Zimmerfrage");
+    return fehler;
+  },
+
   relativ() {
     const fehler = [];
     const melde = (art, text) => fehler.push({ art, text, thema: "zeit", satz: "" });
@@ -1102,6 +1181,8 @@ const Kernpruefung = {
     for (const f of this.flughaefen()) alle.push(f);
     for (const f of this.namen()) alle.push(f);
     for (const f of this.korrektur()) alle.push(f);
+    for (const f of this.riegel()) alle.push(f);
+    for (const f of this.zimmer()) alle.push(f);
     for (const f of this.alleThemen()) alle.push(f);
     const ab = this.ablaeufe();
     for (const f of ab.fehler) alle.push(f);

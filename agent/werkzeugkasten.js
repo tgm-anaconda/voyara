@@ -130,6 +130,7 @@ const Werkzeugkasten = {
              Agent einen Filter verspricht, den er nicht setzen kann. */
           ausstattung: { type: "array", items: { type: "string", enum: ["pool", "spa", "kidsClub", "familyFriendly", "beachfront", "parking", "restaurant", "gym", "seaView"] }, description: "Nur, wenn die Person etwas als Bedingung nennt ('muss einen Pool haben', 'direkt am Strand' = beachfront). Ein Wunsch gehoert in wuensche, nicht hierher." },
           verpflegung: { type: "string", enum: ["ohne", "fruehstueck", "halb", "voll", "ai"], description: "Gewuenschte Verpflegung" },
+          zimmerTyp: text("Name des Zimmers, das die Person gewaehlt hat (genau so, wie er auf der Hausseite steht). Nur, wenn sie sich entschieden hat - nicht selbst auswaehlen."),
           flug: { type: "boolean", description: "true, wenn ein Flug dazu gewuenscht ist; false, wenn nur die Unterkunft" },
           flugAbEgal: { type: "boolean", description: "true, wenn der Person der Abflughafen gleich ist oder sie mehrere nennt, ohne sich zu entscheiden ('Hamburg oder Koeln', 'was billiger ist', 'egal'). Dann sucht der Agent die guenstigste Verbindung aus und sagt, welche er genommen hat." },
           /* Zwei genannte Flughaefen sind keine freie Wahl.
@@ -673,6 +674,51 @@ const Werkzeugkasten = {
     return {
       satz,
       chips: fehlen === 1 ? ["Ich bin die fehlende Person", "Ich nenne dir den Namen"] : null,
+    };
+  },
+
+  /* Welche Zimmer fuer diese Gruppe in Frage kommen.
+     ------------------------------------------------------------------
+     Gemeldet am 02.10.2026: Das Zimmer wird gesetzt, nicht gewaehlt. Der
+     Agent nahm immer das erste passende - das guenstigste -, und die
+     Person erfuhr davon nichts. Gibt es mehr als eines, ist das eine
+     Entscheidung und gehoert ihr. */
+  zimmerAuswahl(item, p) {
+    if (!item || item.type === "apartment" || !Array.isArray(item.rooms)) return [];
+    const zimmerZahl = Math.max(1, p?.zimmer || 1);
+    const personen = (p?.erwachsene || 0) + (p?.kinder || 0);
+    const jeZimmer = personen ? Math.ceil(personen / zimmerZahl) : 1;
+    const passend = item.rooms.filter((r) => (r.maxGuests || 0) >= jeZimmer);
+    if (passend.length < 2) return [];
+    const guenstigste = Math.min(...passend.map((r) => r.priceDelta || 0));
+    return passend.map((r) => ({
+      name: r.name,
+      aufpreis: (r.priceDelta || 0) - guenstigste,
+      plaetze: r.maxGuests,
+      merkmale: (r.features || []).slice(0, 2),
+    }));
+  },
+
+  zimmerRueckfrage(item, p, lauf) {
+    if (lauf?.zimmerGefragt) return null;
+    if (p?.zimmerTyp) return null;
+    const liste = this.zimmerAuswahl(item, p);
+    if (!liste.length) return null;
+    /* Wer ein Budget genannt hat, soll sehen, welches Zimmer es sprengt -
+       sonst waere die Zimmerwahl die eine Stelle, an der die Vorgabe
+       lautlos ueberschritten wird. */
+    const ueberBudget = (name) => {
+      if (!p?.budgetGesamt) return false;
+      const r = this.reisepreis(item, { ...p, zimmerTyp: name });
+      return !!r && r.gesamt > p.budgetGesamt;
+    };
+    const teil = liste.slice(0, 3).map((z) => {
+      const geld = z.aufpreis > 0 ? `${z.aufpreis} € mehr pro Nacht` : "im Preis";
+      return `${z.name} (${geld}${ueberBudget(z.name) ? ", über deinem Budget" : ""})`;
+    });
+    return {
+      satz: `Bevor ich buche: In ${item.name} kommen für euch ${liste.length} Zimmer in Frage - ${teil.join(", ")}. Welches soll es sein?`,
+      chips: liste.slice(0, 3).map((z) => z.name),
     };
   },
 
@@ -1645,6 +1691,15 @@ const Werkzeugkasten = {
       if (Array.isArray(a.geburtsdaten) && a.geburtsdaten.length) {
         const tage = a.geburtsdaten.map((x) => (/^\d{4}-\d{2}-\d{2}$/.test(String(x).trim()) ? String(x).trim() : ""));
         if (tage.some(Boolean)) { p.reisendeGeburt = tage; geaendert.push("geburtsdaten"); }
+      }
+      /* Die Zimmerwahl gilt nur, wenn es das Zimmer im gewaehlten Haus
+         wirklich gibt - sonst stuende ein Name im Stand, den die Kasse
+         nicht kennt. */
+      if (a.zimmerTyp) {
+        const haus = typeof getItemById === "function" ? getItemById(kern.lauf.gewaehlt) : null;
+        const treffer = (haus?.rooms || []).find((r) => String(r.name).toLowerCase() === String(a.zimmerTyp).trim().toLowerCase());
+        if (treffer) { setze("zimmerTyp", treffer.name); kern.lauf.zimmerGefragt = true; }
+        else kern.notieren("zimmer_verworfen", { genannt: a.zimmerTyp, haus: kern.lauf.gewaehlt || null });
       }
       if (a.gepaeck) setze("gepaeck", a.gepaeck);
       setze("verpflegung", a.verpflegung);
@@ -2950,6 +3005,19 @@ const Werkzeugkasten = {
          gebucht wird, ist die Hauptmessgroesse; hier darf nichts
          verrutschen. */
       if (stufe === 1) {
+        /* Das Zimmer waehlt die Person, nicht der Agent.
+           --------------------------------------------------------------
+           Gefragt wird genau hier, einmal, mit den Aufpreisen - nicht
+           schon in der Beratung: Welche Zimmer es gibt, haengt am Haus,
+           und das steht erst jetzt fest. */
+        const zr = Werkzeugkasten.zimmerRueckfrage(item, kern.lauf.profil || {}, kern.lauf);
+        if (zr) {
+          kern.lauf.zimmerGefragt = true;
+          kern.lauf.anreiseChips = zr.chips;
+          kern.notieren("zimmer_rueckfrage", { id: a.id, zimmer: zr.chips });
+          return { ergebnis: { fehler: "Zimmer noch nicht gewaehlt", frage: zr.satz,
+            hinweis: "Sag genau diesen Satz, Wort fuer Wort, und warte auf die Antwort. Erst danach buchung_vorbereiten noch einmal rufen." } };
+        }
         kern.notieren("zur_buchung", { id: a.id });
         if (seite === "checkout" && idHier === a.id) return this.werkzeuge.buchung_vorbereiten.call(this, a, kern, 3);
         if (seite === "stay" && idHier === a.id) return this.werkzeuge.buchung_vorbereiten.call(this, a, kern, 2);
@@ -3655,8 +3723,22 @@ const Werkzeugkasten = {
          kann daraus nicht werden: Nach zwei vergeblichen Anlaeufen nimmt
          der Kern "offen" an und sagt es (ANNAHME weiter unten). */
       preis: !!(p.maxPreis || p.budgetGesamt || p.preisEgal),
-      verpflegung: !!(p.verpflegung || p.verpflegungEgal || b.verpflegung || p.typ === "apartment"),
-      wuensche: !!((p.kriterien || []).length || p.ausstattungEgal || b.wuensche),
+      /* Besprochen ist nicht beantwortet.
+         ----------------------------------------------------------------
+         Hier stand `|| b.verpflegung` und `|| b.wuensche`: Sobald die
+         Person auf die Frage ueberhaupt etwas geantwortet hatte, galt das
+         Thema als erledigt - auch wenn im Stand nichts stand. Genau
+         dieses Schlupfloch war beim Preis am 30.09.2026 schon einmal
+         geschlossen worden; hier blieb es offen. Gemeldet am 02.10.2026:
+         "Zusaetzlich wurden halt jetzt hier schon wieder keine Fragen zur
+         Halbpension oder zum All-Inclusive gefragt, was halt auch
+         verpflichtend ist."
+
+         Jetzt zaehlt nur, was wirklich im Stand steht. Eine
+         Endlosschleife kann daraus nicht werden: Nach zwei vergeblichen
+         Anlaeufen nimmt der Kern "offen" an und sagt es. */
+      verpflegung: !!(p.verpflegung || p.verpflegungEgal || p.typ === "apartment"),
+      wuensche: !!((p.kriterien || []).length || p.ausstattungEgal),
       /* Der Anreisetag. Mit festen Daten aus der Suche ist er da, sonst
          muss die Person ihn nennen - ohne ihn laesst die Seite nicht
          buchen, und der Knopf auf der Hausseite bleibt gesperrt.
