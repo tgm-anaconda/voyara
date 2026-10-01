@@ -460,6 +460,10 @@ const Kernpruefung = {
     // Der Monat kam vom Kern, nicht von der Person: dann gibt es auch keinen Tag
     { name: "Monat vom Kern gewaehlt", p: { monat: 8 }, lauf: {}, letzte: "such du aus", stufe: null },
     { name: "Monat angenommen", p: { monat: 8, vonPerson: { monat: true } }, lauf: { uebersprungen: { zeit: true } }, letzte: "", stufe: null },
+    /* Eine runde Angabe schliesst ein Datum nicht aus (Nutzer, 02.10.2026).
+       Die Ausnahme von gestern ist wieder weg: Wer "in zwei Monaten" sagt,
+       kann trotzdem einen Tag im Kopf haben. */
+    { name: "Monat aus relativer Angabe", p: { monat: 12, vonPerson: { monat: true } }, lauf: { monatRelativ: true }, letzte: "in zwei monaten", stufe: 1 },
     // Ueber Termine ist schon gesprochen worden
     { name: "fester Zeitraum steht", p: { monat: 8, vonPerson: { monat: true }, von: "2027-08-10", bis: "2027-08-17" }, lauf: {}, letzte: "", stufe: null },
     { name: "Anreisetag steht", p: { monat: 8, vonPerson: { monat: true }, anreise: "2027-08-10" }, lauf: {}, letzte: "", stufe: null },
@@ -902,6 +906,102 @@ const Kernpruefung = {
     return fehler;
   },
 
+  /* "Beide offen lassen" darf nicht zu einem Flughafen werden.
+     ------------------------------------------------------------------
+     Gemeldet am 02.10.2026, und es war ein Folgefehler der Flughafenregel
+     vom 30.09.: Das Thema galt als offen, solange zwei Flughaefen zur
+     Wahl standen - auch nachdem die Person "beide" gesagt hatte. Nach
+     zwei Anlaeufen griff dann die Annahme und nahm den guenstigsten.
+
+     Geprueft wird beides: dass das Muster die Antwort trifft, und dass
+     das Thema danach wirklich abgeschlossen ist. */
+  MEHRERE_FAELLE: [
+    { text: "Beide offen lassen", soll: true },
+    { text: "beide", soll: true },
+    { text: "Alle drei offen lassen", soll: true },
+    { text: "lass beide offen", soll: true },
+    { text: "such in beiden", soll: true },
+    { text: "Nur München", soll: false },
+    { text: "Hannover bitte", soll: false },
+    { text: "ist mir egal", soll: false },
+  ],
+
+  flughaefen() {
+    const fehler = [];
+    for (const f of this.MEHRERE_FAELLE) {
+      const ist = Werkzeugkasten.MEHRERE_FLUGHAEFEN.test(f.text);
+      if (ist !== f.soll) {
+        fehler.push({ art: ist ? "mehrere_zu_weit" : "mehrere_nicht_erkannt", thema: "flugAb", satz: f.text,
+          text: `"${f.text}" ${ist ? "gilt als 'beide', sollte es aber nicht" : "wird nicht als 'beide' gelesen"}` });
+      }
+    }
+    // Und das Thema muss danach abgeschlossen sein
+    const basis = { erwachsene: 2, kinder: 0, monat: 7, typ: "hotel", artGenannt: true, zielOffen: true,
+      naechte: 7, flug: true, vorgehen: "top3", flugKlasse: "economy" };
+    const offen = { ...basis, flugAbEgal: true, flugAbAuswahl: ["MUC", "CGN"] };
+    const lauf = { gespraech: [], gefragtWie: {}, gesuchtMit: Werkzeugkasten.eckdatenSchluessel(offen) };
+    if (Werkzeugkasten.fahrplan(JSON.parse(JSON.stringify(offen)), lauf).fertig.flugAb) {
+      fehler.push({ art: "flughafen_zu_frueh_fertig", thema: "flugAb", satz: "",
+        text: "Zwei genannte Flughaefen ohne Entscheidung gelten schon als erledigt" });
+    }
+    const beide = { ...offen, flugAb: "MUC,CGN", flugAbEgal: false };
+    const lauf2 = { gespraech: [], gefragtWie: {}, gesuchtMit: Werkzeugkasten.eckdatenSchluessel(beide) };
+    const fp2 = Werkzeugkasten.fahrplan(JSON.parse(JSON.stringify(beide)), lauf2);
+    if (!fp2.fertig.flugAb) {
+      fehler.push({ art: "flughafen_bleibt_offen", thema: "flugAb", satz: "",
+        text: "Nach 'beide offen lassen' gilt das Thema immer noch als offen - die Annahme wuerde einen einzelnen Flughafen setzen" });
+    }
+    // Und die Annahme darf dann gar nicht mehr greifen
+    const lauf3 = { gespraech: [], gefragtWie: { flugAb: 2 } };
+    const probe = JSON.parse(JSON.stringify(beide));
+    Werkzeugkasten.fahrplan(probe, lauf3);
+    if (probe.flugAb !== "MUC,CGN") {
+      fehler.push({ art: "flughafen_ueberschrieben", thema: "flugAb", satz: probe.flugAb || "",
+        text: `Nach zwei Anlaeufen steht ${probe.flugAb} im Stand statt beider Flughaefen` });
+    }
+    return fehler;
+  },
+
+  /* Die Namen muessen aufgehen, bevor etwas eingetragen wird.
+     ------------------------------------------------------------------
+     Gemeldet am 02.10.2026: drei Reisende, zwei Namen - der Agent trug
+     ein und fragte danach nach "der dritten Person, also von dir",
+     obwohl die Person im ersten Feld stand. */
+  NAMEN_FAELLE: [
+    { genannt: ["Liana Mielicki", "Paul Behrendt"], noetig: 3, frage: true },
+    { genannt: ["Anna"], noetig: 4, frage: true },
+    { genannt: ["A", "B", "C"], noetig: 2, frage: true },
+    { genannt: ["A", "B", "C"], noetig: 3, frage: false },
+    { genannt: [], noetig: 3, frage: false },
+  ],
+
+  namen() {
+    const fehler = [];
+    for (const f of this.NAMEN_FAELLE) {
+      const lauf = f.genannt.length && f.genannt.length !== f.noetig
+        ? { namenUnklar: { genannt: f.genannt, noetig: f.noetig } } : {};
+      const r = Werkzeugkasten.namenRueckfrage({}, lauf);
+      if (!!r !== f.frage) {
+        fehler.push({ art: r ? "namen_zu_oft" : "namen_nicht_gefragt", thema: "reisende", satz: "",
+          text: `${f.genannt.length} Namen bei ${f.noetig} Reisenden: ${r ? "fragt" : "fragt nicht"}, erwartet ${f.frage ? "fragen" : "nicht fragen"}` });
+        continue;
+      }
+      if (!r) continue;
+      if ((r.satz.match(/\?/g) || []).length !== 1) {
+        fehler.push({ art: "namen_zwei_fragen", thema: "reisende", satz: r.satz, text: "nicht genau ein Fragezeichen" });
+      }
+      // Die Rechnung muss im Satz stehen, sonst weiss die Person nicht, woran es haengt
+      if (!r.satz.includes(String(f.genannt.length)) && !/einen Namen/.test(r.satz)) {
+        fehler.push({ art: "namen_ohne_rechnung", thema: "reisende", satz: r.satz, text: "die Zahl der genannten Namen fehlt" });
+      }
+      // Einmal fragen reicht
+      if (Werkzeugkasten.namenRueckfrage({}, { ...lauf, namenGefragt: true })) {
+        fehler.push({ art: "namen_wiederholt", thema: "reisende", satz: "", text: "die Frage kaeme ein zweites Mal" });
+      }
+    }
+    return fehler;
+  },
+
   relativ() {
     const fehler = [];
     const melde = (art, text) => fehler.push({ art, text, thema: "zeit", satz: "" });
@@ -958,6 +1058,8 @@ const Kernpruefung = {
     for (const f of this.filterbitte()) alle.push(f);
     for (const f of this.budget()) alle.push(f);
     for (const f of this.vorschlagsset()) alle.push(f);
+    for (const f of this.flughaefen()) alle.push(f);
+    for (const f of this.namen()) alle.push(f);
     for (const f of this.alleThemen()) alle.push(f);
     const ab = this.ablaeufe();
     for (const f of ab.fehler) alle.push(f);

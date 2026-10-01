@@ -586,7 +586,45 @@ const Werkzeugkasten = {
 
      Absichtlich eng gefasst: "Kannst du einen Filter fuer Pool setzen?"
      faellt nicht darunter, das ist eine neue Vorgabe und kein Neuaufbau. */
+  /* "Beide offen lassen" ist eine Antwort.
+     ------------------------------------------------------------------
+     Gemeldet am 02.10.2026: Auf "Beide offen lassen" kam "Ich rechne erst
+     mal ab Muenchen" - also genau das Gegenteil. Die Behandlung gab es
+     schon, sie sass nur an der falschen Stelle: in `stand_merken`, und
+     das ruft das Modell nur, wenn es etwas einzutragen hat. Ein Klick auf
+     eine Auswahlkarte traegt nichts ein, also lief sie nie, das Thema
+     blieb offen, wurde ein zweites Mal gefragt - und danach griff die
+     Annahme, die sich den guenstigsten aussucht.
+
+     Jetzt liest der Kern das Muster selbst, so wie bei der Bitte um neue
+     Filter. Jede Nachricht kommt dort vorbei, ob das Modell ein Werkzeug
+     ruft oder nicht. */
+  MEHRERE_FLUGHAEFEN: /\bbeide\b|\bbeides\b|alle beide|alle (drei|vier|fünf|fuenf)|offen lassen|egal welcher|in beiden|von beiden/i,
+
   FILTER_NEU: /(filter|suchmaske|spalte|suche)[^.?!]{0,40}\b(nochmal|noch mal|neu|wieder|erneut|zurück|zurueck)\b|\b(nochmal|noch mal|neu|wieder|erneut)\b[^.?!]{0,25}(filter|suchmaske|spalte)|\bsetz[a-zäöüß]*\b[^.?!]{0,25}\bfilter/i,
+
+  /* Die Rueckfrage, wenn die Zahl der Namen nicht aufgeht.
+     ------------------------------------------------------------------
+     Mit der Rechnung, nicht mit einer allgemeinen Bitte: Die Person soll
+     sehen, woran es haengt. Gefragt wird einmal; danach traegt sie
+     entweder die fehlenden Namen nach oder sagt, dass sie selbst dabei
+     ist. */
+  namenRueckfrage(p, lauf) {
+    const u = lauf?.namenUnklar;
+    if (!u || !u.genannt?.length || !u.noetig) return null;
+    if (lauf.namenGefragt) return null;
+    const fehlen = u.noetig - u.genannt.length;
+    const wer = u.genannt.length === 1 ? "einen Namen" : `${u.genannt.length} Namen`;
+    const satz = fehlen > 0
+      ? `Ihr seid zu ${{ 2: "zweit", 3: "dritt", 4: "viert", 5: "fünft", 6: "sechst" }[u.noetig] || `${u.noetig}.`}, `
+        + `und du hast mir ${wer} genannt: ${u.genannt.join(" und ")}. `
+        + `Bist du selbst ${fehlen === 1 ? "die fehlende Person" : "dabei"}, oder soll ich noch ${fehlen === 1 ? "einen Namen" : `${fehlen} Namen`} aufnehmen?`
+      : `Du hast mir ${wer} genannt, gebucht wird aber für ${u.noetig}. Welche davon reisen mit?`;
+    return {
+      satz,
+      chips: fehlen === 1 ? ["Ich bin die fehlende Person", "Ich nenne dir den Namen"] : null,
+    };
+  },
 
   artRueckfrage(p, lauf) {
     if (!p || !lauf) return null;
@@ -955,8 +993,14 @@ const Werkzeugkasten = {
     // Der Monat kam vom Kern, nicht von der Person - dann gibt es auch keinen Tag
     if (!p.vonPerson?.monat) return null;
     if (lauf.uebersprungen?.zeit) return null;
-    // "In zwei Monaten" ist eine runde Angabe - wer so spricht, hat keinen Tag
-    if (lauf.monatRelativ) return null;
+    /* Die Ausnahme fuer runde Angaben ist wieder weg.
+       ------------------------------------------------------------------
+       Am 01.10.2026 hatte ich angenommen, wer "in zwei Monaten" sagt,
+       habe keinen Tag im Kopf. Der Nutzer hat das am 02.10. widerlegt:
+       "Wenn ich sage, ich moechte im naechsten Monat fliegen, kann es ja
+       trotzdem sein, dass ich ein Datum habe. Wenn man kein genaues Datum
+       nennt, immer nochmal fragen - immer sicher gehen." Die Frage kostet
+       einen Klick, die Annahme kostet die Angabe. */
     // Ein Tag, ein Zeitraum oder eine Frist steht schon
     if ((p.von && p.bis) || p.anreise || p.anreiseBis || p.anreiseAb) return null;
     const monat = typeof MONATSNAMEN !== "undefined" ? MONATSNAMEN[p.monat - 1] : null;
@@ -1525,10 +1569,28 @@ const Werkzeugkasten = {
           .filter((x) => x !== "beachfront" || gesagt(/direkt am strand|erste reihe|strandlage|am strand liegen|direkt ans meer|direkt am meer/i, 99));
         geaendert.push("ausstattung");
       }
-      // Reisende fuer die Buchungsstrecke
+      /* Reisende fuer die Buchungsstrecke - aber nur, wenn die Zahl aufgeht.
+         ----------------------------------------------------------------
+         Gemeldet am 02.10.2026: "neben mir noch, Liana Mielicki
+         (12.03.2008) und Paul Behrendt (12.02.2004)". Drei Reisende, zwei
+         Namen. Der Agent trug Paul in das zweite Feld, liess das dritte
+         leer und fragte danach nach "der dritten Person, also von dir" -
+         obwohl die Person im ersten Feld stand. Der Nutzer: "Da muss er
+         direkt, bevor er irgendwas macht, einmal fragen."
+
+         Also: Stimmt die Zahl nicht, wird nichts eingetragen. Der Kern
+         merkt sich den Widerspruch und fragt mit der Rechnung. */
       if (Array.isArray(a.reisende) && a.reisende.length) {
         const namen = a.reisende.map((x) => String(x).trim()).filter(Boolean);
-        if (namen.length) { p.reisendeNamen = namen; geaendert.push("reisende"); }
+        const personen = (p.erwachsene || 0) + (p.kinder || 0);
+        if (namen.length && personen && namen.length !== personen) {
+          kern.lauf.namenUnklar = { genannt: namen, noetig: personen };
+          kern.notieren("namen_unklar", { genannt: namen.length, noetig: personen });
+        } else if (namen.length) {
+          p.reisendeNamen = namen;
+          geaendert.push("reisende");
+          kern.lauf.namenUnklar = null;
+        }
       }
       if (Array.isArray(a.geburtsdaten) && a.geburtsdaten.length) {
         const tage = a.geburtsdaten.map((x) => (/^\d{4}-\d{2}-\d{2}$/.test(String(x).trim()) ? String(x).trim() : ""));
@@ -1599,7 +1661,7 @@ const Werkzeugkasten = {
          der Mehrfachsuche - und die steht seit dem 30.09.2026 auch in
          der Suchmaske zur Verfuegung. */
       if ((p.flugAbAuswahl || []).length > 1 && !a.flugAb
-        && gesagt(/\bbeide|beides|alle beide|lass(e|t)? beide|offen lassen|egal welcher|such(e|st)? in beiden/i, 1)) {
+        && gesagt(Werkzeugkasten.MEHRERE_FLUGHAEFEN, 1)) {
         p.flugAb = p.flugAbAuswahl.join(",");
         p.flugAbEgal = false;
         geaendert.push("flugAb");

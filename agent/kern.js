@@ -865,6 +865,25 @@ const Kern = {
        Gilt die letzte Suche als ungueltig, geht der Fahrplan zurueck in
        die Suchphase - und der Agent stellt die Spalte neu ein, auf
        demselben Weg wie beim ersten Mal. */
+    /* "Beide offen lassen" schliesst das Thema Flughafen.
+       ------------------------------------------------------------------
+       Hier und nicht im Werkzeug: Ein Klick auf eine Auswahlkarte traegt
+       nichts ein, also ruft das Modell `stand_merken` gar nicht, und die
+       Behandlung dort lief nie. Jede Nachricht kommt hier vorbei. */
+    {
+      const pr = this.lauf.profil || {};
+      const auswahl = pr.flugAbAuswahl || [];
+      if (auswahl.length > 1 && !pr.flugAb && Werkzeugkasten.MEHRERE_FLUGHAEFEN.test(t)) {
+        pr.flugAb = auswahl.join(",");
+        pr.flugAbEgal = false;
+        this.notieren("flughaefen_beide", { auswahl, wo: "kern" });
+        if (typeof Flug !== "undefined") {
+          try { Flug.set({ mit: !!pr.flug, ab: pr.flugAb, klasse: pr.flugKlasse || "economy" }); } catch { /* Seite ohne Flugmodul */ }
+        }
+        this.standAnzeigen?.();
+        this.sichern();
+      }
+    }
     if (Werkzeugkasten.FILTER_NEU.test(t)) {
       this.lauf.gesuchtMit = null;
       this.lauf.gefiltertMit = null;
@@ -1360,6 +1379,16 @@ const Kern = {
             (this.lauf.artGefragt ||= {})[artFrage.grund] = true;
             this.notieren("art_rueckfrage", { grund: artFrage.grund, offen: fpJetzt.naechstes });
             fpJetzt = { ...fpJetzt, satz: artFrage.satz, chips: artFrage.chips.join(" | "), naechstes: null, nurKern: true };
+          }
+          /* Die Namen gehen nicht auf: fragen, bevor etwas eingetragen wird. */
+          if (!freierZug && !tippGestellt && !artFrage && fpJetzt.satz !== null) {
+            const nf = Werkzeugkasten.namenRueckfrage(this.lauf.profil || {}, this.lauf);
+            if (nf) {
+              this.lauf.namenGefragt = true;
+              tippGestellt = true;
+              this.notieren("namen_rueckfrage", { noetig: this.lauf.namenUnklar?.noetig || null });
+              fpJetzt = { ...fpJetzt, satz: nf.satz, chips: (nf.chips || []).join(" | "), naechstes: null, nurKern: true };
+            }
           }
           /* Der genaue Anreisetag, einmal nach dem Monat.
              ------------------------------------------------------------
