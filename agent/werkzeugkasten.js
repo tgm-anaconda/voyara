@@ -4159,6 +4159,43 @@ const Werkzeugkasten = {
      bei einer Nachtgrenze der Nachtpreis, bei einem Gesamtbudget der
      Aufenthaltspreis. Sonst nennt der Agent eine Zahl, mit der es
      hinterher immer noch nicht klappt. */
+  /* Was die Reise kostet - einmal, fuer alle.
+     ------------------------------------------------------------------
+     Gemeldet am 02.10.2026: "5.000 Euro Gesamtbudget" genannt, kein
+     einziger Vorschlag darunter (5.837 bis 14.603). Die Pruefung gegen
+     das Budget rechnete nur die Unterkunft: 3.708 Euro fuer neun
+     Naechte lagen unter 5.000, der Flug mit 1.632 Euro kam obendrauf und
+     zaehlte nicht mit. Auf der Vorschlagskarte stand dagegen die ganze
+     Summe - die Person sah also eine Zahl, die der Agent nie geprueft
+     hatte.
+
+     Ab jetzt rechnet diese eine Funktion, was die Reise kostet, und alle
+     fragen sie: der Katalogfilter, der Mindestpreis, der Engpass und die
+     Guetemessung. Gerechnet wird, was auf der Karte steht - Unterkunft
+     mit Zimmer, Verpflegung und Endreinigung, dazu der Flug fuer alle
+     Reisenden, hin und zurueck. Was erst an der Kasse dazukommt
+     (Gepaeck, Versicherung, Kartengebuehr), gehoert nicht dazu: Das sind
+     Entscheidungen der Person, keine Eigenschaft der Reise. */
+  reisepreis(item, p) {
+    if (!item || !p) return null;
+    const nacht = this.preis(item, p.monat);
+    if (nacht == null) return null;
+    const a = typeof Politik !== "undefined" && Politik.aufenthaltspreis
+      ? Politik.aufenthaltspreis(item, p, nacht) : null;
+    const unterkunft = a ? a.gesamt : nacht * (p.naechte || 7);
+    if (unterkunft == null) return null;
+    const personen = (p.erwachsene || 0) + (p.kinder || 0);
+    /* Der Flugteil darf die Rechnung nicht zum Absturz bringen: `paket`
+       liest die Adresse und den Speicher der Seite. Faellt er aus, ist
+       der Preis die Unterkunft - und das Feld `mitFlug` sagt, dass die
+       Zahl unvollstaendig ist, statt sie als ganze auszugeben. */
+    let paket = null;
+    if (p.flug && item.type !== "apartment" && typeof Flug !== "undefined") {
+      try { paket = Flug.paket(item, personen || 1, p.flugKlasse || null); } catch { paket = null; }
+    }
+    return { unterkunft, flug: paket ? paket.gesamt : 0, gesamt: unterkunft + (paket ? paket.gesamt : 0), mitFlug: !!paket };
+  },
+
   mindestpreis(p) {
     const ohne = { ...p };
     delete ohne.maxPreis;
@@ -4167,10 +4204,8 @@ const Werkzeugkasten = {
     if (!treffer.length) return null;
     const gesamtGrenze = !!p.budgetGesamt;
     const betrag = (h) => {
-      const nacht = this.preis(h, p.monat);
-      if (!gesamtGrenze) return nacht;
-      return typeof Politik !== "undefined" && Politik.aufenthaltspreis
-        ? Politik.aufenthaltspreis(h, p, nacht).gesamt : nacht * (p.naechte || 7);
+      if (!gesamtGrenze) return this.preis(h, p.monat);
+      return this.reisepreis(h, p)?.gesamt ?? null;
     };
     let bestes = null;
     for (const h of treffer) {
@@ -4178,7 +4213,8 @@ const Werkzeugkasten = {
       if (b != null && (!bestes || b < bestes.betrag)) bestes = { betrag: Math.round(b), name: h.name, id: h.id };
     }
     if (!bestes) return null;
-    return { ...bestes, art: gesamtGrenze ? "für den ganzen Aufenthalt" : "pro Nacht", haeuser: treffer.length };
+    return { ...bestes, art: gesamtGrenze ? (p.flug ? "für die ganze Reise mit Flug" : "für den ganzen Aufenthalt") : "pro Nacht",
+      haeuser: treffer.length };
   },
 
   engpass(p) {
@@ -4946,7 +4982,11 @@ const Werkzeugkasten = {
       // Ein Gesamtbudget gilt fuer den ganzen Aufenthalt, wie die Kasse ihn
       // rechnet (Zimmer fuer die Gruppe, Verpflegung, Gebuehr) - sonst lag
       // ein Vorschlag mit 1.512 Euro im "Budget bis 1.500"
-      if (p.budgetGesamt && p.naechte && typeof Politik !== "undefined" && Politik.aufenthaltspreis(h, p, preis).gesamt > p.budgetGesamt) return false;
+      // Das Gesamtbudget gilt fuer die ganze Reise, also mit Flug - siehe reisepreis
+      if (p.budgetGesamt && p.naechte) {
+        const r = this.reisepreis(h, p);
+        if (r && r.gesamt > p.budgetGesamt) return false;
+      }
       if (!p.budgetGesamt && p.maxPreis && preis > p.maxPreis) return false;
       if (p.maxStrand != null && (h.distanceToBeach ?? 99) > p.maxStrand) return false;
       if (p.mindestbewertung && (h.rating || 0) < p.mindestbewertung) return false;

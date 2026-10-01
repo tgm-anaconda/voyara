@@ -788,6 +788,52 @@ const Kernpruefung = {
     return fehler;
   },
 
+  /* Kein Vorschlag ueber dem Budget.
+     ------------------------------------------------------------------
+     Gemeldet am 02.10.2026: "5.000 Euro insgesamt" genannt, kein
+     einziger Vorschlag darunter. Die Pruefung gegen das Budget rechnete
+     nur die Unterkunft; der Flug kam obendrauf und zaehlte nicht mit.
+     Auf der Karte stand dagegen die ganze Summe.
+
+     Diese Pruefung nimmt die Zahl, die die Person sieht - Unterkunft
+     plus Flug - und haelt sie gegen das Budget. Sie laeuft ueber mehrere
+     Monate, Gruppen und Budgets, mit und ohne Flug. */
+  BUDGET_FAELLE: [
+    { monat: 11, naechte: 9, erwachsene: 2, kinder: 1, budget: 5000, flug: true },
+    { monat: 11, naechte: 9, erwachsene: 2, kinder: 1, budget: 5000, flug: false },
+    { monat: 1, naechte: 7, erwachsene: 2, kinder: 0, budget: 2000, flug: true },
+    { monat: 7, naechte: 14, erwachsene: 4, kinder: 0, budget: 8000, flug: true },
+    { monat: 7, naechte: 5, erwachsene: 1, kinder: 0, budget: 900, flug: true },
+    { monat: 3, naechte: 7, erwachsene: 2, kinder: 2, budget: 3000, flug: false },
+  ],
+
+  budget() {
+    const fehler = [];
+    for (const f of this.BUDGET_FAELLE) {
+      const p = { monat: f.monat, naechte: f.naechte, erwachsene: f.erwachsene, kinder: f.kinder,
+        kinderAlter: Array.from({ length: f.kinder }, () => 8), zimmer: 1, typ: "hotel", artGenannt: true,
+        budgetGesamt: f.budget, flug: f.flug, flugAb: "München", flugKlasse: "economy", flexibel: true, zielOffen: true };
+      let treffer = [];
+      try { treffer = Werkzeugkasten.katalogTreffer(p, Werkzeugkasten.filterAusStand(p)); }
+      catch (e) { fehler.push({ art: "budget_absturz", thema: "preis", satz: "", text: String(e && e.message) }); continue; }
+      for (const h of treffer) {
+        const r = Werkzeugkasten.reisepreis(h, p);
+        if (!r) { fehler.push({ art: "budget_ohne_preis", thema: "preis", satz: h.name, text: `${h.name}: kein Reisepreis berechenbar` }); continue; }
+        if (r.gesamt > f.budget) {
+          fehler.push({ art: "budget_ueberschritten", thema: "preis", satz: h.name,
+            text: `${h.name} kostet ${Math.round(r.gesamt)} € bei einem Budget von ${f.budget} € (Unterkunft ${Math.round(r.unterkunft)} + Flug ${Math.round(r.flug)})` });
+        }
+      }
+      // Und der Mindestpreis muss zu demselben Massstab passen
+      const m = Werkzeugkasten.mindestpreis(p);
+      if (m && treffer.length && m.betrag > f.budget) {
+        fehler.push({ art: "budget_mindestpreis", thema: "preis", satz: "",
+          text: `Es gibt ${treffer.length} Treffer, aber der Mindestpreis liegt mit ${m.betrag} € ueber dem Budget` });
+      }
+    }
+    return fehler;
+  },
+
   relativ() {
     const fehler = [];
     const melde = (art, text) => fehler.push({ art, text, thema: "zeit", satz: "" });
@@ -842,6 +888,7 @@ const Kernpruefung = {
     for (const f of this.art()) alle.push(f);
     for (const f of this.wortwahl()) alle.push(f);
     for (const f of this.filterbitte()) alle.push(f);
+    for (const f of this.budget()) alle.push(f);
     for (const f of this.alleThemen()) alle.push(f);
     const ab = this.ablaeufe();
     for (const f of ab.fehler) alle.push(f);
