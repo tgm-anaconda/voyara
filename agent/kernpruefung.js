@@ -669,6 +669,10 @@ const Kernpruefung = {
     { name: "beides offen, Flug gewuenscht", p: { artEgal: true, flug: true }, lauf: {}, grund: "flug" },
     { name: "Ferienwohnung gewaehlt, Flug gewuenscht", p: { typ: "apartment", artGenannt: true, flug: true }, lauf: {}, grund: "flug" },
     { name: "Hotel gewaehlt, Flug gewuenscht", p: { typ: "hotel", artGenannt: true, flug: true }, lauf: {}, grund: null },
+    /* Der Stand aus dem Testlauf: artEgal UND typ hotel zugleich. Die
+       Liste steht dann auf dem gemeinsamen Reiter, also muss gefragt
+       werden - frueher sah die Pruefung nur auf `typ` und schwieg. */
+    { name: "artEgal, aber typ noch hotel", p: { artEgal: true, typ: "hotel", flug: true }, lauf: {}, grund: "flug" },
     { name: "beides offen, ohne Flug", p: { artEgal: true, flug: false }, lauf: {}, grund: null },
     { name: "beides offen, Halbpension", p: { artEgal: true, verpflegung: "halb" }, lauf: {}, grund: "verpflegung" },
     { name: "beides offen, vier Sterne", p: { artEgal: true, mindestSterne: 4 }, lauf: {}, grund: "sterne" },

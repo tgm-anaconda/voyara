@@ -587,8 +587,17 @@ const Werkzeugkasten = {
        Dort ist die Frage nicht "eingrenzen oder nicht", sondern "Hotel
        oder kein Flug". Beides sind Aussagen der Person, der Kern kippt
        keine davon still. */
-    if (p.flug === true && p.typ !== "hotel" && !schon.flug) {
-      const wohnung = p.typ === "apartment";
+    /* Massgeblich ist, was die Seite zeigt, nicht das Feld `typ`.
+       ----------------------------------------------------------------
+       Beim Nachspielen am 01.10.2026 stand im Stand `artEgal: true` UND
+       `typ: "hotel"` - das Feld bleibt vom Vorlauf stehen, waehrend die
+       Suche laengst auf dem gemeinsamen Reiter laeuft. Wer auf `typ`
+       schaut, haelt diesen Stand faelschlich fuer "nur Hotels" und
+       schweigt. `seitenTyp` ist die eine Stelle, die beantwortet, worauf
+       die Trefferliste gerade steht. */
+    const zeigt = this.seitenTyp(p);
+    if (p.flug === true && zeigt !== "hotel" && !schon.flug) {
+      const wohnung = zeigt === "apartment";
       return {
         grund: "flug",
         satz: wohnung
