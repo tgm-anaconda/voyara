@@ -1478,9 +1478,28 @@ const Kern = {
                auf Hotels eingegrenzt werden soll - ein Rest der
                Klassenfrage, die gar nicht mehr kam. Was aufgenommen wurde,
                sagt der Kern gleich darunter ohnehin selbst. */
+            /* Eine Begruessung ist kurz - und daran scheiterte sie.
+               ----------------------------------------------------------
+               Die Laengengrenze unten (neun Zeichen ohne Satzzeichen)
+               haelt Bruchstuecke heraus, "Also." oder "Und dann.". Eine
+               Begruessung ist genauso kurz: "Hallo!" hat fuenf Zeichen,
+               "Guten Tag!" acht. Gemeldet am 01.10.2026: Der Agent
+               begruesste nicht mehr, sondern fragte stumpf. Ob es auffiel,
+               war Zufall - schrieb das Modell "Hallo, mir geht es gut,
+               danke.", rutschte der Satz ueber die Grenze.
+
+               Also eine Ausnahme vor der Laengengrenze, und zwar genau
+               einmal je Gespraech (`lauf.gegruesst`). Sonst stuende in
+               jeder zweiten Nachricht wieder ein "Hallo!". */
+            let gruessteJetzt = false;
+            const istGruss = (x) => {
+              const t2 = String(x).trim();
+              return !this.lauf.gegruesst && !gruessteJetzt && t2.length <= 40
+                && /^(hallo|hi|hey|moin|servus|guten (tag|morgen|abend)|grüß|gruess|schön, dass)\b/i.test(t2);
+            };
             let vorspann = fpJetzt.nurKern ? "" : String(text || "").split(/(?<=[.!?])\s+/)
               .filter((x) => x.trim() && !/\?/.test(x))
-              .filter((x) => { const n = norm(x); return n.length > 8 && !frageNorm.includes(n); })
+              .filter((x) => { if (istGruss(x)) { gruessteJetzt = true; return true; } const n = norm(x); return n.length > 8 && !frageNorm.includes(n); })
               .filter((x) => !sagtDasselbe(x))
               .filter((x) => !schonGesagt(x))
               .slice(0, 2).join(" ").trim();
@@ -1494,6 +1513,7 @@ const Kern = {
                abgelegt (`annahmeOffen`), hier wird er abgeholt - und zwar
                endgueltig, damit er nicht in einer spaeteren Nachricht ein
                zweites Mal auftaucht. */
+            if (gruessteJetzt && vorspann) this.lauf.gegruesst = true;
             if (annahmen) this.notieren("annahme_gesagt", { satz: annahmen.slice(0, 120) });
             this.lauf.annahmeOffen = [];
             text = [vorspann, annahmen, fpJetzt.satz].filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
