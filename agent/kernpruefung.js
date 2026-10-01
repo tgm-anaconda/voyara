@@ -1002,6 +1002,47 @@ const Kernpruefung = {
     return fehler;
   },
 
+  /* Eine Korrektur wird als Korrektur gesagt.
+     ------------------------------------------------------------------
+     Gemeldet am 02.10.2026: Nach der Korrektur der Temperaturgrenze kam
+     derselbe Satz noch einmal von vorn, als waere nie etwas anderes
+     dagewesen. Beim zweiten Mal muss der Unterschied dastehen - was
+     dazukommt, was wegfaellt, wie viele es jetzt sind. */
+  korrektur() {
+    const fehler = [];
+    const melde = (art, text, satz = "") => fehler.push({ art, thema: "ziel", text, satz });
+    const faelle = [
+      { name: "kalt, Grenze hoch", richtung: "kalt", monat: 1, grad: 15, aendert: true },
+      { name: "kalt, Grenze runter", richtung: "kalt", monat: 1, grad: 4, aendert: true },
+      { name: "warm, Grenze hoch", richtung: "warm", monat: 10, grad: 28, aendert: true },
+      { name: "warm, keine Aenderung", richtung: "warm", monat: 10, grad: 20, aendert: false },
+    ];
+    for (const f of faelle) {
+      const th = (typeof Politik !== "undefined" ? Politik.THEMEN || [] : []).find((t) => t.id === f.richtung);
+      if (!th) continue;
+      const p = { monat: f.monat, richtung: f.richtung, erwachsene: 2, kinder: 0, typ: "hotel" };
+      p.zieleErlaubt = Werkzeugkasten.regionenFuerRichtung(th, p);
+      const vorher = (p.zieleErlaubt || []).slice();
+      p.mindestGrad = f.grad;
+      p.zieleErlaubt = Werkzeugkasten.regionenFuerRichtung(th, p);
+      const k = Werkzeugkasten.richtungKorrektur(p, vorher);
+      const aendert = JSON.stringify(vorher) !== JSON.stringify(p.zieleErlaubt);
+      if (aendert !== f.aendert) continue;   // Katalog hat sich geaendert, kein Befund
+      if (aendert && !k) { melde("korrektur_fehlt", `${f.name}: die Auswahl aendert sich, aber es wird nichts dazu gesagt`); continue; }
+      if (!aendert && k) { melde("korrektur_ohne_grund", `${f.name}: nichts aendert sich, trotzdem ein Korrektursatz`, k); continue; }
+      if (!k) continue;
+      // Die neue Zahl und die alte muessen im Satz stehen - sonst ist es keine Korrektur
+      if (!k.includes(String(p.zieleErlaubt.length)) || !k.includes(String(vorher.length))) {
+        melde("korrektur_ohne_zahlen", `${f.name}: alte oder neue Zahl fehlt`, k);
+      }
+      if (/\d+ weitere weg|\d+ weitere dazu/.test(k) && !/und \d+ weitere|und eine weitere/.test(k)) {
+        melde("korrektur_satzbau", `${f.name}: Aufzaehlung ohne "und"`, k);
+      }
+      if (!/^Alles klar/.test(k)) melde("korrektur_ohne_quittung", `${f.name}: der Satz nimmt die Korrektur nicht auf`, k);
+    }
+    return fehler;
+  },
+
   relativ() {
     const fehler = [];
     const melde = (art, text) => fehler.push({ art, text, thema: "zeit", satz: "" });
@@ -1060,6 +1101,7 @@ const Kernpruefung = {
     for (const f of this.vorschlagsset()) alle.push(f);
     for (const f of this.flughaefen()) alle.push(f);
     for (const f of this.namen()) alle.push(f);
+    for (const f of this.korrektur()) alle.push(f);
     for (const f of this.alleThemen()) alle.push(f);
     const ab = this.ablaeufe();
     for (const f of ab.fehler) alle.push(f);

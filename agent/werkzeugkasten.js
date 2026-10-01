@@ -539,14 +539,64 @@ const Werkzeugkasten = {
   /* Gesagt wird es einmal je Stand - und wieder, wenn die Person die
      Grenze verschiebt. Sonst waere die neue Auswahl so unsichtbar wie
      die alte. */
+  /* Eine Korrektur ist keine neue Aussage.
+     ------------------------------------------------------------------
+     Gemeldet am 02.10.2026: Der Nutzer verschob die Temperaturgrenze, und
+     der Agent sagte den ganzen Satz noch einmal von vorn - "Kalt heisst
+     im Januar fuer mich 12 Regionen mit -11 bis 15 Grad, darunter ..." -
+     als waere nie etwas anderes dagewesen. Der Nutzer: "Das muss als eine
+     Art Korrektur hinterlegt sein. Und dann muss entsprechend auch darauf
+     eingegangen werden. Also zum Beispiel: Alles klar, ich suche jetzt
+     Hotels, bei denen es 17 Grad warm ist. Da kommt jetzt Kreta noch mit
+     hinzu."
+
+     Genau das: Beim zweiten Mal steht nicht die Liste da, sondern der
+     Unterschied - was dazukommt, was wegfaellt, und wie viele es jetzt
+     sind. */
+  richtungKorrektur(p, vorher) {
+    if (!Array.isArray(vorher) || !vorher.length || !p?.zieleErlaubt?.length) return null;
+    if (typeof ZIEL_NACH_ID === "undefined") return null;
+    const jetzt = p.zieleErlaubt;
+    const dazu = jetzt.filter((id) => !vorher.includes(id)).map((id) => ZIEL_NACH_ID[id]?.name).filter(Boolean);
+    const weg = vorher.filter((id) => !jetzt.includes(id)).map((id) => ZIEL_NACH_ID[id]?.name).filter(Boolean);
+    if (!dazu.length && !weg.length) return null;
+    const aufzaehlen = (liste) => {
+      if (liste.length <= 3) {
+        return liste.length > 1 ? `${liste.slice(0, -1).join(", ")} und ${liste[liste.length - 1]}` : liste[0];
+      }
+      const rest = liste.length - 3;
+      return `${liste.slice(0, 3).join(", ")} und ${rest === 1 ? "eine weitere" : `${rest} weitere`}`;
+    };
+    const kopf = p.mindestGrad != null
+      ? `Alles klar, ${p.richtung === "warm" ? "ab" : "bis"} ${p.mindestGrad} Grad.`
+      : "Alles klar.";
+    const was = [];
+    if (dazu.length) was.push(`${dazu.length === 1 ? "kommt" : "kommen"} ${aufzaehlen(dazu)} dazu`);
+    if (weg.length) was.push(`${weg.length === 1 ? "fällt" : "fallen"} ${aufzaehlen(weg)} weg`);
+    return `${kopf} Damit ${was.join(" und ")} - jetzt ${jetzt.length} Regionen statt ${vorher.length}.`;
+  },
+
   richtungAnsagen(kern, p) {
     if (!kern?.lauf) return;
+    /* Zweites Mal und spaeter: der Unterschied statt der ganzen Liste. */
+    const vorher = kern.lauf.richtungRegionen;
+    if (vorher) {
+      const k = this.richtungKorrektur(p, vorher);
+      if (k) {
+        kern.lauf.richtungRegionen = (p.zieleErlaubt || []).slice();
+        kern.lauf.richtungGesagt = k;
+        kern.notieren("richtung_korrigiert", { vorher: vorher.length, jetzt: (p.zieleErlaubt || []).length, grad: p.mindestGrad ?? null });
+        this.ableiten(kern, "richtung", k);
+        return;
+      }
+    }
     const satz = this.richtungSatz(p);
     if (!satz) return;
     // Verglichen wird der Satz selbst: Verschiebt jemand die Grenze von 22
     // auf 20 und es aendert sich nichts, waere die Wiederholung nur Laerm.
     if (kern.lauf.richtungGesagt === satz) return;
     kern.lauf.richtungGesagt = satz;
+    kern.lauf.richtungRegionen = (p.zieleErlaubt || []).slice();
     this.ableiten(kern, "richtung", satz);
   },
 
