@@ -624,10 +624,35 @@ const Kernpruefung = {
         try { fp = Werkzeugkasten.fahrplan(probe, lauf); }
         catch (e) { fehler.push({ art: "annahme_absturz", thema: t, text: String(e && e.message), satz: "" }); continue; }
         if (!lauf.uebersprungen?.[t]) continue;
-        if ((fp.angenommen || []).length) continue;
         if (this.STILL_ERLAUBT[t]) continue;
-        fehler.push({ art: "annahme_still", thema: t, satz: "",
-          text: "Das Thema wird uebergangen und etwas angenommen, ohne dass der Agent etwas dazu sagt" });
+        if (!(fp.angenommen || []).length) {
+          fehler.push({ art: "annahme_still", thema: t, satz: "",
+            text: "Das Thema wird uebergangen und etwas angenommen, ohne dass der Agent etwas dazu sagt" });
+          continue;
+        }
+        /* Und der Satz, den der Kern selbst sagt. Der Auftrag an das
+           Modell reicht nicht: Im Testlauf am 01.10.2026 hat es ihn
+           ignoriert, und die angenommene Dauer stand unkommentiert in der
+           Uebersicht. */
+        const eigen = (lauf.annahmeOffen || []).join(" ");
+        if (!eigen) {
+          fehler.push({ art: "annahme_ohne_eigenen_satz", thema: t, satz: "",
+            text: "Es gibt nur den Auftrag an das Modell, keinen Satz, den der Kern selbst sagen kann" });
+          continue;
+        }
+        if (!/^[A-ZÄÖÜ]/.test(eigen) || !/[.!?]$/.test(eigen.trim())) {
+          fehler.push({ art: "annahme_satzbau", thema: t, satz: eigen.slice(0, 120),
+            text: "Der Satz des Kerns ist kein ganzer Satz" });
+        }
+        // "du" darf nicht den Agenten meinen - der Satz steht in der Ich-Form
+        if (!/\bich\b/i.test(eigen)) {
+          fehler.push({ art: "annahme_person", thema: t, satz: eigen.slice(0, 120),
+            text: "Der Satz des Kerns spricht nicht in der Ich-Form" });
+        }
+        if (/undefined|null|NaN/.test(eigen)) {
+          fehler.push({ art: "annahme_luecke", thema: t, satz: eigen.slice(0, 120),
+            text: "Im Satz des Kerns steht ein unausgefuellter Platzhalter" });
+        }
       }
     }
     return fehler;

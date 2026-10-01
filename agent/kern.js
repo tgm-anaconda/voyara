@@ -1368,6 +1368,17 @@ const Kern = {
           if (freierZug && fpJetzt.satz) {
             this.notieren("freier_zug", { art: this.lauf.nachrichtArt, offen: fpJetzt.naechstes });
           }
+          /* Auch wenn der Kern seine Frage zurueckhaelt, wird die Annahme
+             gesagt. Sonst bliebe sie liegen, bis die Person wieder auf
+             eine Frage antwortet - und bis dahin stuende ein Wert in der
+             Uebersicht, ueber den niemand gesprochen hat. */
+          if (freierZug && (this.lauf.annahmeOffen || []).length) {
+            const offen = this.lauf.annahmeOffen.slice(0, 2).join(" ");
+            this.lauf.annahmeOffen = [];
+            this.notieren("annahme_gesagt", { satz: offen.slice(0, 120), frei: true });
+            text = `${String(text || "").trim()} ${offen}`.trim();
+            nachricht.content = text;
+          }
           if (fpJetzt.satz && !freierZug) {
             /* Das Modell bekommt den Fragesatz des Kerns zu sehen, damit es
                ihn nicht noch einmal stellt - und schreibt ihn gelegentlich
@@ -1380,7 +1391,8 @@ const Kern = {
             // Auch das, was der Kern in diesem Zug schon selbst gesagt hat
             // (etwa die Begruendung einer eigenen Entscheidung), faellt
             // aus dem Vorspann des Modells - sonst steht es zweimal da.
-            const frageNorm = norm(`${(this.lauf.abgeleitet || []).map((x) => x.satz).join(" ")} ${fpJetzt.satz}`);
+            const annahmen = (this.lauf.annahmeOffen || []).slice(0, 2).join(" ");
+            const frageNorm = norm(`${(this.lauf.abgeleitet || []).map((x) => x.satz).join(" ")} ${annahmen} ${fpJetzt.satz}`);
             /* Auch die Umschreibung faellt weg, nicht nur die Kopie.
                ------------------------------------------------------------
                Am 27.09.2026 stand im Chat: "Die Filter sind gesetzt, ich
@@ -1430,7 +1442,17 @@ const Kern = {
               .slice(0, 2).join(" ").trim();
             const nachtrag = Werkzeugkasten.aufnahmeSatz(this, vorspann);
             if (nachtrag) vorspann = `${nachtrag} ${vorspann}`.trim();
-            text = [vorspann, fpJetzt.satz].filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
+            /* Die Annahme steht zwischen dem Anschluss und der Frage.
+               ----------------------------------------------------------
+               Erst aufnehmen, was die Person gerade gesagt hat, dann
+               sagen, was der Kern dort annimmt, wo sie nichts gesagt hat,
+               und dann die naechste Frage. Der Fahrplan hat den Satz
+               abgelegt (`annahmeOffen`), hier wird er abgeholt - und zwar
+               endgueltig, damit er nicht in einer spaeteren Nachricht ein
+               zweites Mal auftaucht. */
+            if (annahmen) this.notieren("annahme_gesagt", { satz: annahmen.slice(0, 120) });
+            this.lauf.annahmeOffen = [];
+            text = [vorspann, annahmen, fpJetzt.satz].filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
             nachricht.content = text;
             // Welcher Teil vom Kern stammt. Die Pruefungen beurteilen nur
             // den Teil des Modells - sonst zaehlt jede Kern-Frage als

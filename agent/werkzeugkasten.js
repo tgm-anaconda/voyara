@@ -3473,7 +3473,8 @@ const Werkzeugkasten = {
         const monate = jz ? jz.monate : null;
         const w = monate ? wk.monatWaehlen(x, monate) : null;
         x.monat = w ? w.monat : (new Date().getMonth() + 2 > 12 ? 1 : new Date().getMonth() + 2);
-      }, satz: "mit welchem Monat du rechnest und dass sie ihn jederzeit aendern kann" },
+      }, satz: "mit welchem Monat du rechnest und dass sie ihn jederzeit aendern kann",
+        selbst: (x) => `Ich rechne erst mal mit ${typeof MONATSNAMEN !== "undefined" ? MONATSNAMEN[x.monat - 1] : "diesem Monat"}. Sag gern Bescheid, wenn ein anderer Monat besser passt.` },
       weiter: { schreibt: ["weiter"], setzen: (x) => { x.weiter = "schauen"; } },
       beratung: { schreibt: ["beratung"], setzen: (x) => { x.beratung = "auswahl"; } },
       vorgehen: { schreibt: ["vorgehen"], setzen: (x) => { x.vorgehen = "top3"; } },
@@ -3484,9 +3485,12 @@ const Werkzeugkasten = {
          der Agent still in der Haelfte des Angebots weiter. Seit es den
          gemeinsamen Reiter gibt, ist das nicht mehr noetig. */
       art: { schreibt: ["typ", "artEgal"], setzen: (x) => { x.artEgal = true; delete x.typ; },
-        satz: "dass du dich bei Hotel oder Ferienwohnung nicht festlegst und beides zeigst" },
-      dauer: { schreibt: ["naechte"], setzen: (x) => { x.naechte = 7; }, satz: "dass du mit einer Woche rechnest" },
-      flug: { schreibt: ["flug"], setzen: (x) => { x.flug = false; }, satz: "dass du ohne Flug suchst, nur die Unterkunft" },
+        satz: "dass du dich bei Hotel oder Ferienwohnung nicht festlegst und beides zeigst",
+        selbst: "Ich lege dich bei Hotel oder Ferienwohnung nicht fest und zeige dir erst mal beides." },
+      dauer: { schreibt: ["naechte"], setzen: (x) => { x.naechte = 7; }, satz: "dass du mit einer Woche rechnest",
+        selbst: "Ich rechne erst mal mit einer Woche. Sag gern, wenn es anders sein soll." },
+      flug: { schreibt: ["flug"], setzen: (x) => { x.flug = false; }, satz: "dass du ohne Flug suchst, nur die Unterkunft",
+        selbst: "Ich suche erst mal ohne Flug, nur die Unterkunft." },
       // Schreibt NUR den Flughafen. Den Flug selbst abzuwaehlen, weil der
       // Flughafen offen ist, hiesse eine Aussage der Person zu kippen.
       flugAb: { schreibt: ["flugAb"], setzen: (x, wk) => {
@@ -3499,15 +3503,25 @@ const Werkzeugkasten = {
           if (w) { x.flugAb = w.ab; return; }
         }
         x.flugAb = x.flugAb || "Frankfurt";
-      }, satz: "von welchem Flughafen du rechnest und dass sie das aendern kann" },
-      flugKlasse: { schreibt: ["flugKlasse"], setzen: (x) => { x.flugKlasse = x.flugKlasse || "economy"; }, satz: "dass du mit Economy rechnest" },
-      preis: { schreibt: ["maxPreis", "budgetGesamt", "preisEgal"], setzen: (x) => { x.preisEgal = true; }, satz: "dass du dich beim Preis nicht festlegst" },
-      verpflegung: { schreibt: ["verpflegung", "verpflegungEgal"], setzen: (x) => { x.verpflegungEgal = true; }, satz: "dass du die Verpflegung offen laesst" },
-      wuensche: { schreibt: ["wuensche", "kriterien", "ausstattungEgal"], setzen: (x) => { x.ausstattungEgal = true; }, satz: "dass du keine besondere Ausstattung voraussetzt" },
+      }, satz: "von welchem Flughafen du rechnest und dass sie das aendern kann",
+        selbst: (x) => `Ich rechne erst mal ab ${x.flugAb}. Du kannst den Flughafen jederzeit ändern.` },
+      flugKlasse: { schreibt: ["flugKlasse"], setzen: (x) => { x.flugKlasse = x.flugKlasse || "economy"; }, satz: "dass du mit Economy rechnest",
+        selbst: "Ich rechne erst mal mit Economy." },
+      preis: { schreibt: ["maxPreis", "budgetGesamt", "preisEgal"], setzen: (x) => { x.preisEgal = true; }, satz: "dass du dich beim Preis nicht festlegst",
+        selbst: "Beim Preis lege ich dich erst mal nicht fest." },
+      verpflegung: { schreibt: ["verpflegung", "verpflegungEgal"], setzen: (x) => { x.verpflegungEgal = true; }, satz: "dass du die Verpflegung offen laesst",
+        selbst: "Die Verpflegung lasse ich erst mal offen." },
+      wuensche: { schreibt: ["wuensche", "kriterien", "ausstattungEgal"], setzen: (x) => { x.ausstattungEgal = true; }, satz: "dass du keine besondere Ausstattung voraussetzt",
+        selbst: "Besondere Ausstattung setze ich erst mal nicht voraus." },
       anreise: { schreibt: ["anreise"], setzen: (x, wk) => {
         const f = wk.flexWahl(x);
         if (f) x.anreise = `${f.monat}-01`;
-      }, satz: "welchen Anreisetag du genommen hast und dass sie ihn jederzeit aendern kann" },
+      }, satz: "welchen Anreisetag du genommen hast und dass sie ihn jederzeit aendern kann",
+        selbst: (x) => {
+          const tag = parseInt(String(x.anreise || "").slice(-2), 10);
+          const monat = typeof MONATSNAMEN !== "undefined" && x.monat ? ` ${MONATSNAMEN[x.monat - 1]}` : "";
+          return tag ? `Ich nehme erst mal den ${tag}.${monat} als Anreisetag. Du kannst ihn jederzeit ändern.` : null;
+        } },
     };
     const angenommen = [];
     for (const [t, a] of Object.entries(ANNAHME)) {
@@ -3522,13 +3536,44 @@ const Werkzeugkasten = {
          Beim zweiten Mal greift die Annahme doch, sonst dreht sich das
          Gespraech im Kreis; sie wird dann gesagt wie jede andere. */
       if ((lauf.nichtVerstanden?.[t] || 0) === 1) continue;
+      /* Eine Annahme, die nichts setzt, ist keine.
+         ----------------------------------------------------------------
+         Gefunden von der Pruefung am 01.10.2026: Der Anreisetag wurde in
+         168 Staenden als erledigt abgehakt, ohne dass ein Tag im Stand
+         stand - `flexWahl` liefert ohne Monat nichts zurueck. Danach galt
+         das Thema als besprochen, obwohl niemand etwas davon hatte, und
+         zu sagen gab es auch nichts.
+
+         Jetzt wird erst gesetzt und dann nachgesehen: Hat sich keines der
+         Felder bewegt, bleibt das Thema offen. */
+      const vorFeldern = JSON.stringify((a.schreibt || []).map((f) => p[f] ?? null));
       a.setzen(p, this);
+      if (JSON.stringify((a.schreibt || []).map((f) => p[f] ?? null)) === vorFeldern) continue;
       fertig[t] = true;
       (lauf.uebersprungen ||= {})[t] = true;
       if (a.satz) {
         angenommen.push((lauf.nichtVerstanden?.[t] || 0) >= 2
           ? `dass du ihre Angabe nicht sicher lesen konntest und erst einmal davon ausgehst, ${a.satz}`
           : a.satz);
+      }
+      /* Gesagt wird die Annahme vom Kern, nicht vom Modell.
+         ----------------------------------------------------------------
+         Bis zum 01.10.2026 bekam das Modell nur den Auftrag ("Sag zuerst
+         in einem kurzen Halbsatz, dass du mit einer Woche rechnest"). Im
+         Testlauf hat es stattdessen die Wuensche quittiert, und die
+         sieben Naechte standen unkommentiert in der Uebersicht. Fuer
+         einen Wert, der in den Studiendaten landet, ist ein Auftrag an
+         das Modell zu schwach - er wird mal befolgt und mal nicht.
+
+         Deshalb legt der Fahrplan den fertigen Satz hier ab, und der Kern
+         sagt ihn beim naechsten Zusammensetzen einer Nachricht. Das gilt
+         auch fuer die Aufrufe aus den Werkzeugen heraus: Wo auch immer
+         die Annahme greift, der Satz wartet, bis er gesagt werden kann. */
+      const eigen = typeof a.selbst === "function" ? a.selbst(p, this) : a.selbst;
+      if (eigen) {
+        const vorsicht = (lauf.nichtVerstanden?.[t] || 0) >= 2
+          ? "Deine Angabe konnte ich nicht sicher lesen. " : "";
+        (lauf.annahmeOffen ||= []).push(`${vorsicht}${eigen}`);
       }
     }
 
@@ -3848,8 +3893,8 @@ const Werkzeugkasten = {
     // Was der Kern angenommen hat, weil zweimal keine Antwort kam, wird
     // gesagt - nicht stillschweigend gesetzt.
     if (angenommen.length) {
-      const sag = `Sag zuerst in einem kurzen Halbsatz, ${angenommen.slice(0, 2).join(" und ")}. Das ist eine Annahme, keine Ansage: Sie kann jederzeit widersprechen.`;
-      frage = frage ? `${sag} Dann: ${frage}` : sag;
+      const sag = `Der Chat sagt gleich selbst, ${angenommen.slice(0, 2).join(" und ")}. Wiederhole das NICHT und formuliere es nicht um.`;
+      frage = frage ? `${sag} ${frage}` : sag;
     }
     /* Was der Kern selbst entschieden hat, hat er schon gesagt.
        ------------------------------------------------------------------
