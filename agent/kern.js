@@ -517,7 +517,13 @@ const Kern = {
 
     if (!neu.length) return;
     this.notieren("seitenstand_uebernommen", { teile: neu, seite });
-    (this.lauf.annahmeOffen ||= []).push(`Du hast ${neu.join(" und ")} schon ausgewählt - das übernehme ich.`);
+    /* Nur die letzte Uebernahme zaehlt.
+       ------------------------------------------------------------------
+       Wer drei Haeuser durchklickt, bevor er etwas schreibt, bekaeme sonst
+       drei Saetze auf einmal - zwei davon ueber Haeuser, die er laengst
+       wieder verlassen hat. Deshalb ein eigener Platz statt der Liste:
+       Ein neuer Seitenstand ersetzt den alten. */
+    this.lauf.uebernahmeSatz = `Du hast ${neu.join(" und ")} schon ausgewählt - das übernehme ich.`;
     this.standAnzeigen?.();
     this.sichern();
   },
@@ -1508,9 +1514,10 @@ const Kern = {
              gesagt. Sonst bliebe sie liegen, bis die Person wieder auf
              eine Frage antwortet - und bis dahin stuende ein Wert in der
              Uebersicht, ueber den niemand gesprochen hat. */
-          if (freierZug && (this.lauf.annahmeOffen || []).length) {
-            const offen = this.lauf.annahmeOffen.slice(0, 2).join(" ");
+          if (freierZug && ((this.lauf.annahmeOffen || []).length || this.lauf.uebernahmeSatz)) {
+            const offen = [this.lauf.uebernahmeSatz, ...(this.lauf.annahmeOffen || []).slice(0, 2)].filter(Boolean).join(" ");
             this.lauf.annahmeOffen = [];
+            this.lauf.uebernahmeSatz = null;
             this.notieren("annahme_gesagt", { satz: offen.slice(0, 120), frei: true });
             text = `${String(text || "").trim()} ${offen}`.trim();
             nachricht.content = text;
@@ -1527,7 +1534,8 @@ const Kern = {
             // Auch das, was der Kern in diesem Zug schon selbst gesagt hat
             // (etwa die Begruendung einer eigenen Entscheidung), faellt
             // aus dem Vorspann des Modells - sonst steht es zweimal da.
-            const annahmen = (this.lauf.annahmeOffen || []).slice(0, 2).join(" ");
+            const annahmen = [this.lauf.uebernahmeSatz, ...(this.lauf.annahmeOffen || []).slice(0, 2)]
+              .filter(Boolean).join(" ");
             const frageNorm = norm(`${(this.lauf.abgeleitet || []).map((x) => x.satz).join(" ")} ${annahmen} ${fpJetzt.satz}`);
             /* Auch die Umschreibung faellt weg, nicht nur die Kopie.
                ------------------------------------------------------------
@@ -1633,6 +1641,7 @@ const Kern = {
             if (gruessteJetzt && vorspann) this.lauf.gegruesst = true;
             if (annahmen) this.notieren("annahme_gesagt", { satz: annahmen.slice(0, 120) });
             this.lauf.annahmeOffen = [];
+            this.lauf.uebernahmeSatz = null;
             text = [vorspann, annahmen, fpJetzt.satz].filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
             nachricht.content = text;
             // Welcher Teil vom Kern stammt. Die Pruefungen beurteilen nur
