@@ -923,32 +923,79 @@ const Werkzeugkasten = {
        Im Stand steht der Flughafen als Name ("München", oder "Hamburg,
        München" bei mehreren). `Flug.optionen` vergleicht aber gegen
        `fromCode`, also "MUC". Der Abgleich ging nie auf, die Liste kam
-       leer zurueck, `flugRueckfrage` brauchte zwei Eintraege - und das
-       Flugfenster oeffnete nie. Gemeldet am 02.10.2026: "Weiss ich auch
-       nicht, warum das nicht richtig umgesetzt wurde." Genau deshalb.
+       leer zurueck, und das Flugfenster oeffnete nie. */
+    const codes = Flug.codeListe(p.flugAb);
 
-       Gemessen: 0 Verbindungen fuer ein Haus auf Mallorca mit Flughafen
-       "München" im Stand, 3 mit "MUC". */
-    const codes = String(p.flugAb || "").split(",").map((x) => Flug.code(x.trim())).filter(Boolean);
+    /* Nur ein Flughafen im Fenster.
+       ----------------------------------------------------------------
+       Der Nutzer am 02.10.2026: "Auch wenn man gesagt hat, man ist
+       flexibel, man wuerde von Hamburg und von Duesseldorf fliegen, soll
+       da bitte nur von einem Ort sein, damit man sich nicht doch selbst
+       noch ein Bias dadurch zieht, dass das unterschiedliche Orte sind."
+
+       Er hat recht: Wer zwischen Hamburg und Duesseldorf waehlt, waehlt
+       nach dem Weg zum Flughafen - und nicht nach dem, was gemessen wird.
+       Genommen wird der guenstigste der genannten; welcher das war, sagt
+       der Agent ohnehin an. */
     let liste = [];
-    try { liste = Flug.optionen(item.ziel, codes.length ? codes.join(",") : null) || []; } catch { liste = []; }
+    try { liste = Flug.optionen(item.ziel, codes.length ? codes.join(",") : null) || []; }
+    catch { liste = []; }
     if (!liste.length) return [];
+    /* Auf einen Flughafen eingrenzen - immer, auch wenn gar keiner
+       genannt wurde. Sonst mischen sich die Abflugorte im Fenster, und
+       die Wahl faellt nach dem Weg zum Flughafen statt nach dem, was
+       gemessen wird. Genommen wird der mit der guenstigsten Verbindung. */
+    const nachOrt = new Map();
+    for (const f of liste) {
+      if (!nachOrt.has(f.fromCode)) nachOrt.set(f.fromCode, []);
+      nachOrt.get(f.fromCode).push(f);
+    }
+    if (nachOrt.size > 1) {
+      let bester = null;
+      for (const [code, l] of nachOrt) {
+        const preis = Math.min(...l.map((f) => Flug.preisProPerson(f, p.flugKlasse || null)));
+        if (!bester || preis < bester.preis) bester = { code, preis, liste: l };
+      }
+      liste = bester ? bester.liste : liste;
+    }
+
     const personen = Math.max(1, (p.erwachsene || 0) + (p.kinder || 0));
     const proPers = (f) => Flug.preisProPerson(f, p.flugKlasse || null);
-    const sortiert = liste.slice().sort((a, b) => (a.stops || 0) - (b.stops || 0)
-      || proPers(a) - proPers(b));
-    /* Die guenstigste Verbindung ist immer dabei.
+
+    /* Dieselbe Vergleichsregel wie bei den Haeusern.
        ----------------------------------------------------------------
-       Sortiert wird direkt vor billig, wie ein Mensch vergleicht. Bei
-       mehreren Flughaefen standen danach vier Direktfluege im Fenster und
-       der billige mit einem Stopp fiel heraus - damit gab es nichts
-       abzuwaegen, nur eine Rangfolge. Die Wahl soll eine Entscheidung
-       sein: schneller oder guenstiger. */
-    const gewaehlt = sortiert.slice(0, 3);
-    const billigster = liste.slice().sort((a, b) => proPers(a) - proPers(b))[0];
-    if (billigster && !gewaehlt.includes(billigster)) gewaehlt.push(billigster);
-    return gewaehlt.map((f) => {
-      const proPerson = Flug.preisProPerson(f, p.flugKlasse || null);
+       "Mach einfach, dass die Fluege super aehnlichen Kostenpunkt haben.
+       Also dass es eigentlich keinen Grund gibt, den Partnerflug
+       rauszunehmen, weil er eigentlich gleiche Sachen bietet wie die
+       anderen auch."
+
+       Die Daten liefern das je Flughafen schon (rund sieben Prozent
+       Unterschied, gleiche Stopps, gleiches Gepaeck). Wo sie es nicht
+       tun - etwa weil zu einem Paar mehrere handgeschriebene Fluege
+       gehoeren -, sorgt dieses Fenster dafuer: nach Preis sortieren und
+       die drei dichtesten nehmen, bei gleichem Abstand die mit gleicher
+       Stoppzahl. Was sich im Fenster unterscheidet, ist Airline und
+       Uhrzeit, und das ist genau die Entscheidung, die gemessen wird. */
+    const sortiert = liste.slice().sort((a, b) => proPers(a) - proPers(b));
+    const wieViele = Math.min(3, sortiert.length);
+    let fenster = sortiert.slice(0, wieViele);
+    let beste = Infinity;
+    for (let i = 0; i + wieViele <= sortiert.length; i++) {
+      const w = sortiert.slice(i, i + wieViele);
+      const spanne = proPers(w[w.length - 1]) / proPers(w[0]) - 1;
+      /* Gleiche Stoppzahl und gleiches Gepaeck sind mehr wert als ein
+         halbes Prozent Preis: Beides ist ein Grund zur Wahl, der mit der
+         Kennzeichnung nichts zu tun hat. */
+      const strafe = (new Set(w.map((f) => f.stops || 0)).size > 1 ? 0.06 : 0)
+        + (new Set(w.map((f) => f.baggage || "")).size > 1 ? 0.06 : 0);
+      if (spanne + strafe < beste) { beste = spanne + strafe; fenster = w; }
+    }
+    // Innerhalb des Fensters wie ein Mensch vergleicht: erst direkt, dann frueh
+    fenster = fenster.slice().sort((a, b) => (a.stops || 0) - (b.stops || 0)
+      || String(a.depart).localeCompare(String(b.depart)));
+
+    return fenster.map((f) => {
+      const proPerson = proPers(f);
       const gesamt = proPerson * personen;
       return {
         id: f.id, flug: f, preis: gesamt,

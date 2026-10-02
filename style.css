@@ -2350,3 +2350,47 @@ body.vorschlag-offen { overflow: hidden; }
 /* Der Eintrag, zu dem der Agent gefahren ist */
 .faq-eintrag.faq-treffer { border-color: var(--brand-500); box-shadow: 0 0 0 3px rgba(13,110,96,.1); }
 .faq-leer { color: var(--ink-500); font-size: .92rem; }
+
+/* ---------- Flugauswahl als Kacheln ----------
+   Dieselbe Darstellung, die die frühere Flugliste hatte: Zeit und
+   Kennung an beiden Enden, dazwischen Dauer und Stopps. */
+.flug-zeile { display: flex; flex-direction: column; gap: 10px; }
+.flug-kopf { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.flug-haken {
+  width: 17px; height: 17px; border-radius: 50%; border: 2px solid var(--line);
+  flex: 0 0 auto; position: relative;
+}
+.flug-zeile.ist-gewaehlt .flug-haken { border-color: var(--brand-600); background: var(--brand-600); }
+.flug-zeile.ist-gewaehlt .flug-haken::after {
+  content: ""; position: absolute; inset: 3px 4px 5px 4px;
+  border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg);
+}
+.flug-zeile.ist-gewaehlt { border-color: var(--brand-500); background: var(--brand-50, #f3f9f7); }
+.flug-vorwahl {
+  margin-left: auto; font-size: .72rem; color: var(--brand-700);
+  background: var(--brand-100, #e3f1ed); padding: 2px 8px; border-radius: 999px; white-space: nowrap;
+}
+.flug-airline strong { display: block; font-size: .95rem; }
+.flug-airline small { font-size: .74rem; color: var(--ink-500); }
+.flug-strecke { display: flex; align-items: center; gap: 14px; }
+.flug-punkt { text-align: center; min-width: 54px; }
+.flug-punkt strong { display: block; font-size: 1.02rem; }
+.flug-punkt span { font-size: .74rem; color: var(--ink-500); letter-spacing: .04em; }
+.flug-linie { flex: 1; text-align: center; position: relative; }
+.flug-linie span, .flug-linie small { display: block; font-size: .73rem; color: var(--ink-500); }
+.flug-linie i {
+  display: block; height: 1px; background: var(--line); margin: 5px 0; position: relative;
+}
+.flug-linie i::after {
+  content: "✈"; position: absolute; right: -2px; top: -9px;
+  font-size: .72rem; color: var(--ink-500); background: inherit;
+}
+.flug-fuss { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
+.flug-fuss > small { font-size: .76rem; color: var(--ink-500); }
+.flug-preis { text-align: right; white-space: nowrap; }
+.flug-preis strong { display: block; font-size: 1.05rem; }
+.flug-preis small { font-size: .73rem; color: var(--ink-500); }
+@media (max-width: 460px) {
+  .flug-fuss { flex-direction: column; align-items: flex-start; }
+  .flug-preis { text-align: left; }
+}

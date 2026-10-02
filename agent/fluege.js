@@ -39,6 +39,22 @@ const Fluege = {
     this.schliessen(true);
     if (!kandidaten.length) return;
     this.daten = { kandidaten, kern, kennzeichnung, nachWahl };
+    /* Vorausgewaehlt ist der Partnerflug.
+       ----------------------------------------------------------------
+       Der Nutzer am 02.10.2026: "Wichtig hierbei ist, dass der
+       vorausgewaehlte Flug immer der Partnerflug ist." Das ist die
+       Manipulation an diesem Produkt - dieselbe Rolle, die beim
+       Partnerhaus Platz eins spielt. Alle Verbindungen im Fenster sind
+       nach Preis, Stopps und Gepaeck gleichwertig (siehe `flugAuswahl`),
+       also wirkt allein die Vorauswahl und ihre Kennzeichnung.
+
+       In der Kontrollbedingung ohne Kennzeichnung gibt es kein
+       Partnerobjekt; dann ist nichts vorausgewaehlt, und die Person
+       entscheidet ohne jeden Anker. */
+    const vorwahl = kandidaten.find((k) => k.partner)?.id || null;
+    if (vorwahl && typeof Flug !== "undefined") {
+      try { if (!Flug.get().flugId) Flug.set({ flugId: vorwahl }); } catch { /* Seite ohne Flugmodul */ }
+    }
     this.geoeffnet = Date.now();
     this.offen = true;
 
@@ -57,7 +73,7 @@ const Fluege = {
             <button type="button" class="vorschlag-zu" aria-label="Schließen">✕</button>
           </div>
         </div>
-        <div class="flug-liste">${kandidaten.map((k, i) => this.zeile(k, i, kennzeichnung)).join("")}</div>
+        <div class="flug-liste">${kandidaten.map((k, i) => this.zeile(k, i, kennzeichnung, k.id === vorwahl)).join("")}</div>
         <div class="vorschlag-fuss">
           <p class="vorschlag-hinweis">Alle Preise für Hin- und Rückflug, für alle Reisenden zusammen.</p>
         </div>
@@ -101,7 +117,14 @@ const Fluege = {
     });
   },
 
-  zeile(k, i, kennzeichnung) {
+  /* Die Zeile sieht aus wie eine Flugkarte.
+     ------------------------------------------------------------------
+     Der Nutzer am 02.10.2026: "Diese Visualisierung, die man aktuell bei
+     Fluegen hat, diese Kacheln, wo das von wo zu wo angezeigt wird mit so
+     einem Flugzeug - das koennen wir gerne in dieser Vorschau-Ansicht
+     nehmen." Dieselbe Darstellung wie in der frueheren Flugliste: Zeit,
+     Kennung, Dauer mit Linie, Stopps, dann Gepaeck und Preis. */
+  zeile(k, i, kennzeichnung, gewaehlt = false) {
     const f = k.flug;
     const nurKlick = kennzeichnung === "etikett";
     const banner = kennzeichnung === "ohne" || !k.partner ? "" : `
@@ -112,23 +135,32 @@ const Fluege = {
         <p class="vorschlag-infotext" hidden>Voyara erhält für Buchungen bei ${f.airline} eine Provision von der Airline. Preis, Zeiten und Gepäck sind davon unberührt: Sie stammen aus denselben Daten wie bei allen anderen Verbindungen. Du kannst jede andere genauso buchen.</p>
       </div>`;
     return `
-      <article class="flug-zeile${k.partner && kennzeichnung !== "ohne" ? " ist-partner" : ""}" data-flug="${f.id}" role="button" tabindex="0">
+      <article class="flug-zeile${k.partner && kennzeichnung !== "ohne" ? " ist-partner" : ""}${gewaehlt ? " ist-gewaehlt" : ""}"
+        data-flug="${f.id}" role="button" tabindex="0" aria-pressed="${gewaehlt ? "true" : "false"}">
         <div class="flug-kopf">
-          <span class="flug-platz">${i + 1}</span>
+          <span class="flug-haken" aria-hidden="true"></span>
           <div class="flug-airline">
             <strong>${f.airline}</strong>
-            <small>${f.from} nach ${f.to}</small>
+            <small>${f.aircraft || ""}</small>
           </div>
           ${banner}
+          ${gewaehlt ? `<span class="flug-vorwahl">Vorausgewählt</span>` : ""}
         </div>
-        <div class="flug-zeiten">
-          <span>${f.depart} – ${f.arrive}</span>
-          <small>${f.duration}${f.stops === 0 ? ", direkt" : `, ${f.stops} Stopp`}</small>
+        <div class="flug-strecke">
+          <div class="flug-punkt"><strong>${f.depart}</strong><span>${f.fromCode}</span></div>
+          <div class="flug-linie">
+            <span>${f.duration}</span>
+            <i></i>
+            <small>${f.stops === 0 ? "Direktflug" : `${f.stops} ${f.stops === 1 ? "Stopp" : "Stopps"}`}</small>
+          </div>
+          <div class="flug-punkt"><strong>${f.arrive}</strong><span>${f.toCode}</span></div>
         </div>
-        <div class="flug-gepaeck"><small>${f.baggage || ""}</small></div>
-        <div class="flug-preis">
-          <strong>${k.preisText}</strong>
-          <small>${k.personenText}</small>
+        <div class="flug-fuss">
+          <small>${f.from} nach ${f.to} · ${f.baggage || ""}</small>
+          <div class="flug-preis">
+            <strong>${k.preisText}</strong>
+            <small>${k.personenText}</small>
+          </div>
         </div>
       </article>`;
   },

@@ -2795,39 +2795,48 @@ FLIGHTS.push(
     const basisMin = minuten(basis.duration);
     const abflug = alsMinuten(basis.depart);
 
-    /* Zwei Rollen, damit die Wahl eine Abwaegung ist:
-       - "guenstig": ein Stopp mehr, deutlich billiger, wenig Gepaeck
-       - "bequem":   direkt, frueher oder spaeter, teurer, Gepaeck dabei
-       Welche Airline sie fliegt, haengt an der Nummer des Basisflugs -
-       also fest, aber je Paar verschieden. */
+    /* Drei Verbindungen, die sich kaum unterscheiden - mit Absicht.
+       ----------------------------------------------------------------
+       Erst standen hier zwei Rollen: eine guenstige mit Stopp und wenig
+       Gepaeck, eine bequeme mit Gepaeck. Das war als echte Abwaegung
+       gedacht, ist aber fuer diese Erhebung falsch. Der Nutzer am
+       02.10.2026: "Mach einfach, dass die Fluege super aehnlichen
+       Kostenpunkt haben. Also dass es eigentlich keinen Grund gibt, den
+       Partnerflug rauszunehmen, weil er eigentlich gleiche Sachen bietet
+       wie die anderen auch."
+
+       Genau wie beim Vergleichsset der Haeuser: Unterscheiden sich die
+       Angebote in Preis, Stopps oder Gepaeck, entscheidet das - und nicht
+       die Kennzeichnung, die gemessen werden soll. Die Verbindungen
+       unterscheiden sich deshalb nur noch in Airline und Abflugzeit; die
+       Stopps sind dieselben wie beim Basisflug, das Gepaeck gleichwertig,
+       und der Preis liegt innerhalb weniger Prozent. */
     const rollen = [
-      { art: "guenstig", stops: Math.min(2, (basis.stops || 0) + 1), extra: Math.round(basisMin * 0.45) + 40, versatz: -195 },
-      { art: "bequem", stops: 0, extra: basis.stops > 0 ? -Math.round(basisMin * 0.3) : 10, versatz: 240 },
+      { art: "frueher", stops: basis.stops || 0, extra: 8, versatz: -150, faktor: 0.97 },
+      { art: "spaeter", stops: basis.stops || 0, extra: -6, versatz: 205, faktor: 1.035 },
     ];
 
     for (let i = 0; i < rollen.length && vorhanden.length + dazu.filter((d) => `${d.ziel}|${d.fromCode}` === k).length < 3; i++) {
       const r = rollen[i];
-      // Eine Airline, die hier noch nicht fliegt, und die zur Rolle passt
-      const kandidaten = AIRLINES.filter((a) => !genutzt.has(a.name)
-        && (r.art === "guenstig" ? a.faktor < 1 : a.faktor >= 1));
-      const pool = kandidaten.length ? kandidaten : AIRLINES.filter((a) => !genutzt.has(a.name));
+      /* Eine Airline, die hier noch nicht fliegt. Welche, haengt an der
+         Nummer des Basisflugs - fest, aber je Paar verschieden. Das
+         Gepaeck wird gleichgezogen: Wer weniger mitnehmen darf, hat einen
+         Grund zur Wahl, der nichts mit der Kennzeichnung zu tun hat. */
+      const pool = AIRLINES.filter((x) => !genutzt.has(x.name));
       if (!pool.length) continue;
       const a = pool[(nummer + i * 3) % pool.length];
       genutzt.add(a.name);
 
       const dauerMin = Math.max(45, basisMin + r.extra);
       const ab = abflug + r.versatz + (nummer % 5) * 15;
-      /* Der Preis folgt der Airline und der Rolle. Ein Stopp drueckt ihn
-         zusaetzlich - sonst waere die unbequeme Verbindung auch noch die
-         teure, und niemand wuerde sie je waehlen. */
-      const stopAbschlag = r.stops > (basis.stops || 0) ? 0.88 : 1;
-      const preis = Math.max(39, Math.round(basis.price * a.faktor * stopAbschlag));
+      // Wenige Prozent um den Basispreis herum, mehr nicht
+      const preis = Math.max(39, Math.round(basis.price * r.faktor));
       dazu.push({
         id: `f${nummer}v${i + 2}`, type: "flight", airline: a.name,
         from: basis.from, fromCode: basis.fromCode, to: basis.to, toCode: basis.toCode,
         ziel: basis.ziel, depart: uhrText(ab), arrive: uhrText(ab + dauerMin),
         duration: dauerText(dauerMin), stops: r.stops, price: preis,
-        baggage: a.gepaeck, aircraft: basis.aircraft,
+        baggage: basis.baggage, aircraft: basis.aircraft,
       });
     }
   }

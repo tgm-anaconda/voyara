@@ -62,7 +62,14 @@ const NAV_ITEMS = [
   { key: "hotel", label: "Hotels", icon: ICONS.bed, href: "results.html?type=hotel" },
   { key: "apartment", label: "Ferienwohnungen", icon: ICONS.home, href: "results.html?type=apartment" },
   { key: "car", label: "Mietwagen", icon: ICONS.car, href: "results.html?type=car" },
-  { key: "flight", label: "Flüge", icon: ICONS.plane, href: "results.html?type=flight" },
+  /* Kein eigener Flug-Reiter mehr.
+     ------------------------------------------------------------------
+     Der Nutzer am 02.10.2026: "Zusaetzlich koennen wir die Flugkarte,
+     also diesen Fluege-Reiter, loeschen." Fluege werden in dieser Studie
+     nur zu einer Unterkunft gewaehlt, und zwar in der Uebersicht, in der
+     die Partner-Airline gekennzeichnet ist. Ein zweiter Weg zum selben
+     Produkt ohne diese Kennzeichnung waere ein Leck in der Messung. Die
+     Kachelansicht von dort lebt in der Flugauswahl weiter. */
 ];
 
 const TYPE_LABELS = {
@@ -1226,7 +1233,6 @@ function renderFooter() {
         <a href="results.html?type=hotel">Hotels</a>
         <a href="results.html?type=apartment">Ferienwohnungen</a>
         <a href="results.html?type=car">Mietwagen</a>
-        <a href="results.html?type=flight">Flüge</a>
         <a href="merkzettel.html">Merkzettel</a>
         <a href="faq.html">Häufige Fragen</a>
       </div>
