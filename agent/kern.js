@@ -1082,7 +1082,7 @@ const Kern = {
           const z = Werkzeugkasten.zwang(this.lauf.profil || {}, this.lauf);
           if (z && !erzwungen.has(z)) { erzwungen.add(z); pflicht = z; this.notieren("zwang", { werkzeug: z }); }
         }
-        const antwort = await Modell.agent(this.gespraechFuerModell(), Werkzeugkasten.definitionen(), this.standFuerModell(), pflicht);
+        const antwort = await Modell.agent(this.gespraechFuerModell(), Werkzeugkasten.definitionen(this.freigabe()), this.standFuerModell(), pflicht);
         if (!antwort) {
           // Der Browser hat schon zweimal wiederholt, der Server auch einmal.
           // Kommt hier nichts an, ist es kein Sekundenkram mehr.
@@ -1112,7 +1112,7 @@ const Kern = {
             const zweiter = await Modell.agent(
               [...this.gespraechFuerModell(), { role: "assistant", content: text },
                 { role: "system", content: hinweis }],
-              Werkzeugkasten.definitionen(), this.standFuerModell());
+              Werkzeugkasten.definitionen(this.freigabe()), this.standFuerModell());
             if (zweiter) {
               this.kostenMerken(zweiter.verbrauch);
               text = zweiter.text || "";
@@ -1514,6 +1514,19 @@ const Kern = {
               this.lauf.datumFrage = 9;
               this.notieren("datum_geklaert", { hatDatum: !!(p2.anreise || (p2.von && p2.bis)) });
             }
+            /* Die Temperaturgrenze: einmal fragen statt vorgeben.
+               ----------------------------------------------------------
+               Steht keine Datumsfrage an, kommt sie hier - und nur dann,
+               damit nie zwei Rueckfragen in einer Nachricht stehen. */
+            if (!datumFrage) {
+              const sp = Werkzeugkasten.spanneRueckfrage(p2, this.lauf);
+              if (sp) {
+                this.lauf.spanneFrage = 1;
+                this.notieren("spanne_rueckfrage", { grenze: sp.grenze, weiter: sp.weiter,
+                  jetzt: sp.jetzt, dann: sp.dann });
+                fpJetzt = { ...fpJetzt, satz: sp.satz, chips: sp.chips.join(" | "), naechstes: null };
+              }
+            }
           }
           /* Zwei Ebenen.
              ------------------------------------------------------------
@@ -1537,10 +1550,11 @@ const Kern = {
              eine Frage antwortet - und bis dahin stuende ein Wert in der
              Uebersicht, ueber den niemand gesprochen hat. */
           if (freierZug && ((this.lauf.annahmeOffen || []).length || this.lauf.uebernahmeSatz)) {
-            const offen = [this.lauf.uebernahmeSatz,
+            const offen = [this.lauf.aenderungSatz, this.lauf.uebernahmeSatz,
               ...Werkzeugkasten.annahmeSaetze(this.lauf, this.lauf.profil)].filter(Boolean).join(" ");
             this.lauf.annahmeOffen = [];
             this.lauf.uebernahmeSatz = null;
+            this.lauf.aenderungSatz = null;
             this.notieren("annahme_gesagt", { satz: offen.slice(0, 120), frei: true });
             text = `${String(text || "").trim()} ${offen}`.trim();
             nachricht.content = text;
@@ -1560,7 +1574,10 @@ const Kern = {
             /* Nur Annahmen, die noch gelten. Ein Satz, der in einem
                frueheren Zug beschlossen wurde, ist hinfaellig, sobald die
                Person den Wert selbst genannt hat. */
-            const annahmen = [this.lauf.uebernahmeSatz,
+            /* Was die Aenderung bewirkt, steht vor der Uebernahme und vor
+               den Annahmen: Sie ist die Antwort auf das, was die Person
+               gerade gesagt hat. */
+            const annahmen = [this.lauf.aenderungSatz, this.lauf.uebernahmeSatz,
               ...Werkzeugkasten.annahmeSaetze(this.lauf, this.lauf.profil)]
               .filter(Boolean).join(" ");
             const frageNorm = norm(`${(this.lauf.abgeleitet || []).map((x) => x.satz).join(" ")} ${annahmen} ${fpJetzt.satz}`);
@@ -1691,6 +1708,7 @@ const Kern = {
             if (annahmen) this.notieren("annahme_gesagt", { satz: annahmen.slice(0, 120) });
             this.lauf.annahmeOffen = [];
             this.lauf.uebernahmeSatz = null;
+            this.lauf.aenderungSatz = null;
             text = [vorspann, annahmen, fpJetzt.satz].filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
             nachricht.content = text;
             // Welcher Teil vom Kern stammt. Die Pruefungen beurteilen nur

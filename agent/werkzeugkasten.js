@@ -46,7 +46,35 @@ const Werkzeugkasten = {
   /* ==================================================================
      Beschreibungen fuer das Modell
      ================================================================== */
-  definitionen() {
+  /* Nur die Werkzeuge, die gerade benutzbar sind.
+     ------------------------------------------------------------------
+     Der Nutzer am 02.10.2026: "Es muss einfach gut funktionieren, dass
+     das Modell nur die Sachen bekommt, die es auch wirklich jetzt gerade
+     benoetigt an Informationen, damit es nicht ueberfordert ist."
+
+     Gemessen: 18 Werkzeuge, rund 18.000 Zeichen in jedem Zug. Drei davon
+     braeuchten eine hoehere Freigabestufe und konnten gar nicht gerufen
+     werden - der Kern haette sie ohnehin abgewiesen. Sie standen
+     trotzdem jedes Mal mit im Auftrag und waren damit nichts als
+     Angebot, das ins Leere fuehrt: Das Modell kuendigt eine Buchung an,
+     der Kern laesst sie nicht zu, und die Person sieht einen Agenten,
+     der sich widerspricht.
+
+     `freigabe_aendern` bleibt immer dabei - sonst koennte die Person den
+     Agenten nicht mehr weiterlassen. */
+  definitionen(freigabe = null) {
+    const alle = this.alleDefinitionen();
+    if (!freigabe) return alle;
+    const RANG = { suchen: 1, vorbereiten: 2, buchen: 3 };
+    const habe = RANG[freigabe] || 1;
+    return alle.filter((d) => {
+      const name = d.function?.name;
+      const noetig = this.BRAUCHT[name];
+      return !noetig || (RANG[noetig] || 1) <= habe;
+    });
+  },
+
+  alleDefinitionen() {
     const f = (name, description, properties, required = []) => ({
       type: "function",
       function: { name, description, parameters: { type: "object", properties, required, additionalProperties: false } },
@@ -595,6 +623,122 @@ const Werkzeugkasten = {
      Genau das: Beim zweiten Mal steht nicht die Liste da, sondern der
      Unterschied - was dazukommt, was wegfaellt, und wie viele es jetzt
      sind. */
+  /* Was eine Aenderung an der Auswahl bewirkt, in Haeusern.
+     ------------------------------------------------------------------
+     Gilt nur fuer Korrekturen - also fuer Felder, in denen vorher schon
+     etwas stand und die die Auswahl auch wirklich einschraenken. Beim
+     ersten Nennen eines Werts waere der Satz Unsinn: Da gibt es kein
+     Vorher, mit dem man vergleichen koennte, und die Lage sagt die Zahl
+     ohnehin.
+
+     Gerechnet wird mit derselben Regel, nach der auch gefiltert wird
+     (`katalogTreffer`), also stimmt die Zahl mit der Liste ueberein.
+     Aendert sich nichts, wird auch nichts gesagt - ein "jetzt 34 statt
+     34" waere schlimmer als Schweigen. */
+  AENDERUNG_FELDER: {
+    budgetGesamt: (w) => `Budget ${w} € gesamt`,
+    maxPreis: (w) => `höchstens ${w} € pro Nacht`,
+    verpflegung: (w) => (typeof BOARD_LABELS !== "undefined" ? BOARD_LABELS[w] : w),
+    naechte: (w) => `${w} Nächte`,
+    monat: (w) => (typeof MONATSNAMEN !== "undefined" ? MONATSNAMEN[w - 1] : `Monat ${w}`),
+    mindestbewertung: (w) => `Note ab ${String(w).replace(".", ",")}`,
+    mindestSterne: (w) => `ab ${w} Sternen`,
+    maxStrand: (w) => `Strand bis ${w < 1 ? `${Math.round(w * 1000)} m` : `${w} km`}`,
+    flugKlasse: (w) => ({ economy: "Economy", premium: "Premium Economy", business: "Business" }[w] || w),
+    erwachsene: (w) => `${w} Erwachsene`,
+    kinder: (w) => `${w} Kinder`,
+    zimmer: (w) => `${w} Zimmer`,
+  },
+
+  aenderungsSatz(p, vorher, geaendert) {
+    if (!p || !vorher || !(geaendert || []).length) return null;
+    // Nur Felder, die der Kern erklaeren kann, und nur echte Korrekturen
+    const feld = geaendert.find((f) => this.AENDERUNG_FELDER[f]
+      && vorher[f] != null && vorher[f] !== "" && vorher[f] !== p[f]);
+    if (!feld) return null;
+    /* Die Richtung hat ihren eigenen, besseren Satz - der nennt die
+       Regionen beim Namen. Zwei Saetze ueber dieselbe Aenderung waeren
+       einer zu viel. */
+    if (geaendert.includes("richtung") || geaendert.includes("mindestGrad")) return null;
+    let vorZahl = null, jetztZahl = null;
+    try {
+      vorZahl = this.katalogTreffer(vorher, this.filterAusStand(vorher)).length;
+      jetztZahl = this.katalogTreffer(p, this.filterAusStand(p)).length;
+    } catch { return null; }
+    const wort = this.AENDERUNG_FELDER[feld];
+    const neu = wort(p[feld]);
+    const alt = wort(vorher[feld]);
+    const art = this.artWort(p, true);
+    if (vorZahl !== jetztZahl) {
+      const richtung = jetztZahl > vorZahl ? "kommen" : "fallen";
+      const unterschied = Math.abs(jetztZahl - vorZahl);
+      return `${neu} statt ${alt} - damit ${richtung} ${unterschied} ${art} `
+        + `${jetztZahl > vorZahl ? "dazu" : "weg"}, jetzt ${jetztZahl} statt ${vorZahl}.`;
+    }
+    /* Gleich viele Haeuser heisst nicht, dass nichts passiert ist.
+       ----------------------------------------------------------------
+       Zwoelf Naechte statt sieben, Business statt Economy: Die Auswahl
+       bleibt dieselbe, die Rechnung nicht. Dann ist der Preis das, was
+       die Aenderung bedeutet - gemessen am guenstigsten Haus, das beide
+       Male in Frage kam, damit die beiden Zahlen vergleichbar sind. */
+    const billigster = (x) => {
+      let bestes = null;
+      for (const h of this.katalogTreffer(x, this.filterAusStand(x))) {
+        const r = this.reisepreis(h, x);
+        if (r && (bestes == null || r.gesamt < bestes)) bestes = r.gesamt;
+      }
+      return bestes;
+    };
+    const vorPreis = billigster(vorher);
+    const jetztPreis = billigster(p);
+    if (vorPreis == null || jetztPreis == null || !vorPreis) return null;
+    const unterschiedProzent = Math.abs(jetztPreis - vorPreis) / vorPreis;
+    if (unterschiedProzent < 0.03) return null;
+    const euro = (x) => `${Math.round(x).toLocaleString("de-DE")} €`;
+    return `${neu} statt ${alt} - die Auswahl bleibt bei ${jetztZahl} ${art}, `
+      + `aber die günstigste Reise kostet jetzt ${euro(jetztPreis)} statt ${euro(vorPreis)}.`;
+  },
+
+  /* Die Temperaturgrenze ist ein Vorschlag, keine Vorgabe.
+     ------------------------------------------------------------------
+     Der Nutzer am 02.10.2026: "Da war wieder so ein bisschen die Sache,
+     dass du nicht automatisch gefragt hast, ob man die Spanne noch
+     veraendern moechte, sondern du hast die Spanne einfach vorgegeben und
+     hast dann schon nach den Naechten gefragt."
+
+     Er hat recht, und es war eine halbe Sache: Der Satz zur Richtung
+     endete mit "Sag Bescheid, wenn dir eine andere Grenze lieber ist" -
+     eine Einladung, keine Frage, und direkt danach kam das naechste
+     Thema. Wer nicht von selbst widerspricht, hat damit eine Grenze
+     bekommen, die der Agent gesetzt hat.
+
+     Also einmal fragen, mit den Zahlen, die zur Wahl stehen, und dann nie
+     wieder. Genauso wie bei der Datumsfrage: Das Thema des Fahrplans
+     bleibt stehen und kommt danach von selbst wieder. */
+  spanneRueckfrage(p, lauf) {
+    if (!p?.richtung || !p.monat || !p.zieleErlaubt?.length) return null;
+    if (lauf?.spanneFrage) return null;              // hoechstens einmal
+    if (p.mindestGrad != null) return null;          // sie hat die Grenze selbst gesetzt
+    if (p.zielId) return null;                       // ein festes Ziel braucht keine Spanne
+    if (typeof grad !== "function" || typeof ZIEL_NACH_ID === "undefined") return null;
+    const warm = p.richtung === "warm";
+    const grenze = warm ? 22 : 12;
+    /* Was eine andere Grenze braechte - sonst ist die Frage so abstrakt
+       wie die Vorgabe vorher. Zwei Grad weiter in die offene Richtung. */
+    const alle = (typeof ZIELE !== "undefined" ? ZIELE : [])
+      .filter((z) => grad(z, p.monat) != null && (typeof saisonPassung !== "function" || saisonPassung(z, p.monat) >= 0.5));
+    const weiter = warm ? grenze - 4 : grenze + 4;
+    const jetzt = p.zieleErlaubt.length;
+    const dann = alle.filter((z) => (warm ? grad(z, p.monat) >= weiter : grad(z, p.monat) <= weiter)).length;
+    if (dann <= jetzt) return null;                  // nichts zu gewinnen, nicht fragen
+    return {
+      satz: `Ich rechne ${warm ? "ab" : "bis"} ${grenze} Grad - das sind die ${jetzt} Regionen von eben. `
+        + `${warm ? "Ab" : "Bis"} ${weiter} Grad wären es ${dann}. Soll ich bei ${grenze} bleiben oder die Grenze verschieben?`,
+      chips: [`Bei ${grenze} Grad bleiben`, `${warm ? "Ab" : "Bis"} ${weiter} Grad`],
+      grenze, weiter, jetzt, dann,
+    };
+  },
+
   richtungKorrektur(p, vorher) {
     if (!Array.isArray(vorher) || !vorher.length || !p?.zieleErlaubt?.length) return null;
     if (typeof ZIEL_NACH_ID === "undefined") return null;
@@ -800,6 +944,41 @@ const Werkzeugkasten = {
     const liste = this.flugAuswahl(item, p);
     if (liste.length < 2) return null;
     return { kandidaten: liste };
+  },
+
+  /* Wonach soll er in den Bewertungen sehen?
+     ------------------------------------------------------------------
+     Der Nutzer am 02.10.2026: "Da ist er einfach wieder genau die
+     gleichen Bewertungen durchgegangen, was ich irgendwie nicht so
+     sinnvoll fand. Er koennte zum Beispiel fragen, soll ich nach
+     bestimmten Gesichtspunkten da die Bewertungen durchgehen, und dass
+     er dann wirklich bei Kommentaren anhaelt, die passen."
+
+     Gefragt wird einmal je Gespraech und nur, wenn die Person noch
+     nichts genannt hat, worauf es ihr ankommt - wer "Lage" gesagt hat,
+     muss das nicht zweimal sagen. Die Vorschlaege sind die Themen, die
+     es bei DIESEM Haus wirklich gibt: Ueber einen Kinderclub schreibt
+     niemand, wenn es keinen gibt.
+
+     "Einfach alles" ist dabei eine gleichwertige Antwort und steht
+     deshalb als Chip mit da. */
+  bewertungsRueckfrage(item, p, lauf) {
+    if (!item || lauf?.bewertungsFrage) return null;
+    if ((p?.kriterien || []).length) return null;
+    if (typeof aspekteFuer !== "function") return null;
+    const da = aspekteFuer(item).map((a) => a.label).filter(Boolean);
+    if (da.length < 3) return null;
+    /* Genannt werden die, nach denen am haeufigsten gefragt wird - in der
+       Reihenfolge der Gewichte aus der Aspekttabelle. */
+    const vorn = aspekteFuer(item).slice().sort((a, b) => (b.gewicht || 0) - (a.gewicht || 0))
+      .map((a) => a.label).slice(0, 3);
+    return {
+      satz: `Ich gehe die Bewertungen von ${item.name} durch. Worauf soll ich dabei achten - `
+        + `${vorn.slice(0, -1).join(", ")} oder ${vorn[vorn.length - 1]}? `
+        + "Du kannst mir auch etwas anderes nennen, dann halte ich bei den Stimmen an, die davon sprechen.",
+      chips: [...vorn, "Einfach alles"],
+      themen: da,
+    };
   },
 
   zimmerRueckfrage(item, p, lauf) {
@@ -1331,6 +1510,10 @@ const Werkzeugkasten = {
   werkzeuge: {
     async stand_merken(a, kern) {
       const p = kern.lauf.profil;
+      /* Der Stand vor der Aenderung - fuer den Satz, der sagt, was sie
+         bewirkt (`aenderungsSatz`). Eine flache Kopie reicht: Verglichen
+         werden Werte, nicht Objekte. */
+      const vorStand = { ...p };
       const geaendert = [];
       const setze = (feld, wert) => { if (wert !== undefined && wert !== null && wert !== "") { if (p[feld] !== wert) geaendert.push(feld); p[feld] = wert; } };
       // Das Modell schickt Zahlenfelder gelegentlich als true oder als Text.
@@ -1963,6 +2146,24 @@ const Werkzeugkasten = {
         ? a.nachricht_art : "antwort";
       p.vonPerson = p.vonPerson || {};
       for (const f of geaendert) p.vonPerson[f] = true;
+      /* Was die Aenderung bewirkt, sagt der Kern - immer.
+         ----------------------------------------------------------------
+         Der Nutzer am 02.10.2026: "Wenn man eine Aenderung macht, muss er
+         immer sagen, was das bedeutet. Ich habe gesagt, ab 18 Grad reicht
+         mir. Und dann hat er gesagt, ja, das aendert die Auswahl, aber
+         hat nicht gesagt, welche Regionen jetzt dazukommen. Das wuerde
+         ich nicht nur auf die einzelnen Aspekte beziehen, die ich sage,
+         sondern das muss insgesamt so sein."
+
+         Fuer die Himmelsrichtung gab es das schon (`richtungKorrektur`,
+         mit den Namen der Regionen). Fuer alles andere nicht - und "das
+         aendert die Auswahl" ist keine Auskunft, sondern eine Floskel.
+         Jetzt rechnet der Kern beide Staende durch und nennt die Zahl. */
+      const aend = Werkzeugkasten.aenderungsSatz(p, vorStand, geaendert);
+      if (aend) {
+        kern.lauf.aenderungSatz = aend;
+        kern.notieren("aenderung_erklaert", { felder: geaendert, satz: aend.slice(0, 120) });
+      }
       kern.notieren("stand", { felder: geaendert });
       const fp = Werkzeugkasten.fahrplan(p, kern.lauf);
       // Eine Frage der Person geht vor: erst antworten, dann das Thema. Fragt
@@ -2641,6 +2842,24 @@ const Werkzeugkasten = {
           location.href = kern.linkZu(a.id, item.name).href;
         }
         return { navigiert: true, stufe: 2 };
+      }
+
+      /* Erst fragen, dann lesen - einmal je Gespraech.
+         ----------------------------------------------------------------
+         Nur wenn kein Aspekt im Aufruf steht und die Person auch sonst
+         nichts genannt hat. Sagt sie "einfach alles", liest er wie
+         vorher; nennt sie etwas, haelt er an den passenden Stimmen an. */
+      if (!aspekt) {
+        const br = Werkzeugkasten.bewertungsRueckfrage(item, kern.lauf.profil || {}, kern.lauf);
+        if (br) {
+          kern.lauf.bewertungsFrage = true;
+          kern.lauf.anreiseChips = br.chips;
+          kern.notieren("bewertungs_rueckfrage", { id: a.id, themen: br.themen });
+          return { ergebnis: { fehler: "Noch nicht gelesen", frage: br.satz,
+            hinweis: "Sag genau diesen Satz, Wort fuer Wort, und warte auf die Antwort. "
+              + "Danach bewertungen_lesen noch einmal rufen, mit ihrem Stichwort als aspekt - "
+              + "oder bewertungen_durchsuchen, wenn sie etwas Bestimmtes genannt hat." } };
+        }
       }
 
       kern.sperreAn();
