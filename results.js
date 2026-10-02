@@ -356,7 +356,14 @@ function renderFilters() {
      dessen rechtes Ende niemand erreicht. Ganz rechts heisst "keine
      Grenze"; dann faellt der Filter weg. */
   if (istUnterkunft) {
-    const summen = alleHaeuser().map(gesamtpreisFuer).filter((x) => x != null && x > 0);
+    /* Nicht der ganze Katalog, sondern die Haeuser, die hier ueberhaupt
+       in Frage kommen - sonst reicht der Regler bis zu einer Summe, die
+       in dieser Liste nie vorkommt. `matches(h, "gesamt")` prueft alles
+       ausser der Gesamtgrenze selbst, sonst schnitte sich der Regler
+       seine eigene Spanne weg. */
+    const bestand = [...(typeof HOTELS !== "undefined" ? HOTELS : []), ...(typeof APARTMENTS !== "undefined" ? APARTMENTS : [])]
+      .filter((h) => (state.type === "unterkunft" || h.type === state.type) && matches(h, "gesamt"));
+    const summen = bestand.map(gesamtpreisFuer).filter((x) => x != null && x > 0);
     if (summen.length > 1) {
       const gMin = Math.floor(Math.min(...summen) / 50) * 50;
       const gMax = Math.ceil(Math.max(...summen) / 50) * 50;
