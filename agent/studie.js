@@ -179,6 +179,28 @@ const Studie = {
     return { id: wahl.id, name: wahl.name, rang: beste ? "beste" : "zweitbeste" };
   },
 
+  /* Die Partner-Airline.
+     ------------------------------------------------------------------
+     Dasselbe Verfahren wie beim Partnerhaus, nur auf der Rangfolge der
+     Fluege: Die Gruppe entscheidet, ob die beste oder die zweitbeste
+     Verbindung gekennzeichnet wird, und die Kennzeichnungsform
+     (ohne/etikett/text) ist dieselbe wie beim Haus. Wer beim Haus das
+     Etikett sieht, sieht es auch hier - sonst waeren es zwei Versuche
+     statt einer Replikation.
+
+     "Beste" heisst hier, was `flugAuswahl` nach oben sortiert hat: erst
+     direkt, dann guenstig. Das Partnerobjekt ist damit eine plausible
+     Wahl, genau wie beim Haus - gemessen wird die Kennzeichnung, nicht
+     ob jemand einen Fehlgriff bemerkt. */
+  partnerflug(ids = []) {
+    if (!Array.isArray(ids) || ids.length < 2) return null;
+    const g = this.gruppe();
+    if (g.partnerBesteIn === "ohne") return null;
+    const a = this.aufgabe();
+    const beste = g.partnerBesteIn === "beide" || g.partnerBesteIn === a?.id;
+    return ids[beste ? 0 : 1] || null;
+  },
+
   // Vom Kern gerufen, wenn die Person beim ersten Oeffnen die Stufe waehlt
   freigabeGewaehlt(stufe, messung = {}) {
     if (!this.daten) return;
@@ -1036,6 +1058,22 @@ const Studie = {
         [p + "setGroesse"]: z([...protokoll].reverse().find((e) => e.ereignis === "vorschlagsset")?.anzahl),
         [p + "setSpanneProzent"]: z([...protokoll].reverse().find((e) => e.ereignis === "vorschlagsset")?.spanneProzent),
         [p + "setGleichlauf"]: z([...protokoll].reverse().find((e) => e.ereignis === "vorschlagsset")?.gleichlauf),
+        /* Der Flug als zweites Objekt der Erhebung (v=376).
+           --------------------------------------------------------------
+           Dieselbe Kennzeichnung an einem anderen Produkt - eine
+           Replikation innerhalb derselben Person, ohne zusaetzliche
+           Teilnahme. `flugPartnerGewaehlt` ist das Gegenstueck zu
+           "Partnerhaus gebucht"; der Vergleich der beiden Quoten ist der
+           eigentliche Befund. */
+        [p + "flugAuswahlGezeigt"]: zaehle(protokoll, "flugauswahl_gezeigt"),
+        [p + "flugGewaehlt"]: z([...protokoll].reverse().find((e) => e.ereignis === "flug_gewaehlt")?.airline),
+        [p + "flugPartnerGewaehlt"]: (() => {
+          const e = [...protokoll].reverse().find((x) => x.ereignis === "flug_gewaehlt");
+          return e ? (e.partner ? 1 : 0) : "";
+        })(),
+        [p + "flugPosition"]: z([...protokoll].reverse().find((e) => e.ereignis === "flug_gewaehlt")?.position),
+        [p + "flugSekunden"]: z([...protokoll].reverse().find((e) => e.ereignis === "flug_gewaehlt")?.sekunden),
+        [p + "flugOhneWahlGeschlossen"]: zaehle(protokoll, "flugauswahl_zu"),
         [p + "rundgangHaeuser"]: z([...protokoll].reverse().find((e) => e.ereignis === "rundgang_fertig")?.haeuser),
         [p + "rundgangAbgebrochen"]: zaehle(protokoll, "rundgang_abgebrochen"),
         [p + "bewertungenGelesen"]: zaehle(protokoll, "bewertungen_gelesen"),

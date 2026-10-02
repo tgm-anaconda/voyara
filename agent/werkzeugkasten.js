@@ -699,6 +699,45 @@ const Werkzeugkasten = {
     }));
   },
 
+  /* Welche Fluege fuer diese Reise in Frage kommen.
+     ------------------------------------------------------------------
+     Die Verbindungen zum Ziel, von den Flughaefen, die die Person
+     genannt hat (oder von allen, wenn ihr das gleich war). Sortiert wie
+     ein Mensch sie vergleichen wuerde: erst die direkten, dann nach
+     Preis. Hoechstens vier - das Fenster soll eine Entscheidung
+     ermoeglichen, keine Recherche.
+
+     Das Partnerobjekt bestimmt `Studie.partnerflug` nach derselben Regel
+     wie beim Haus (bestes oder zweitbestes, je nach ausgeloster Gruppe)
+     und auf derselben Rangfolge, die hier herauskommt. */
+  flugAuswahl(item, p) {
+    if (!item || item.type === "apartment" || !p?.flug || typeof Flug === "undefined") return [];
+    let liste = [];
+    try { liste = Flug.optionen(item.ziel, p.flugAb || null) || []; } catch { liste = []; }
+    if (!liste.length) return [];
+    const personen = Math.max(1, (p.erwachsene || 0) + (p.kinder || 0));
+    const sortiert = liste.slice().sort((a, b) => (a.stops || 0) - (b.stops || 0)
+      || Flug.preisProPerson(a, p.flugKlasse || null) - Flug.preisProPerson(b, p.flugKlasse || null));
+    return sortiert.slice(0, 4).map((f) => {
+      const proPerson = Flug.preisProPerson(f, p.flugKlasse || null);
+      const gesamt = proPerson * personen;
+      return {
+        id: f.id, flug: f, preis: gesamt,
+        preisText: `${Math.round(gesamt).toLocaleString("de-DE")} €`,
+        personenText: `${personen} ${personen === 1 ? "Person" : "Personen"}, hin und zurück`,
+      };
+    });
+  },
+
+  /* Die Rueckfrage: einmal je Haus, und nur wenn es etwas zu waehlen gibt. */
+  flugRueckfrage(item, p, lauf) {
+    if (lauf?.flugGefragt) return null;
+    if (p?.flugId) return null;
+    const liste = this.flugAuswahl(item, p);
+    if (liste.length < 2) return null;
+    return { kandidaten: liste };
+  },
+
   zimmerRueckfrage(item, p, lauf) {
     if (lauf?.zimmerGefragt) return null;
     if (p?.zimmerTyp) return null;
@@ -3005,6 +3044,28 @@ const Werkzeugkasten = {
          gebucht wird, ist die Hauptmessgroesse; hier darf nichts
          verrutschen. */
       if (stufe === 1) {
+        /* Der Flug wird gewaehlt, nicht gesetzt - und er ist das zweite
+           Objekt der Erhebung.
+           --------------------------------------------------------------
+           Vor dem Zimmer, weil er den Preis staerker bewegt. Gefragt wird
+           hier und nicht in der Beratung: Welche Verbindungen es gibt,
+           haengt am Ziel, und das steht erst mit dem Haus fest. */
+        const fr = Werkzeugkasten.flugRueckfrage(item, kern.lauf.profil || {}, kern.lauf);
+        if (fr && typeof Fluege !== "undefined") {
+          kern.lauf.flugGefragt = true;
+          const ids = fr.kandidaten.map((k) => k.id);
+          const partnerId = typeof Studie !== "undefined" && Studie.partnerflug ? Studie.partnerflug(ids) : null;
+          const kandidaten = fr.kandidaten.map((k) => ({ ...k, partner: k.id === partnerId }));
+          kern.lauf.partnerFlugId = partnerId;
+          kern.sichern();
+          Fluege.zeigen(kandidaten, kern, {
+            kennzeichnung: kern.kennzeichnung ? kern.kennzeichnung() : "etikett",
+            kontext: `${item.name} · ${kandidaten.length} Verbindungen`,
+          });
+          return { ergebnis: { fehler: "Flug noch nicht gewaehlt",
+            hinweis: "Die Flugauswahl steht jetzt offen vor der Person. Sag in einem Satz, dass sie waehlen kann, und warte. Stell keine weitere Frage. Erst nach ihrer Wahl buchung_vorbereiten noch einmal rufen." } };
+        }
+
         /* Das Zimmer waehlt die Person, nicht der Agent.
            --------------------------------------------------------------
            Gefragt wird genau hier, einmal, mit den Aufpreisen - nicht

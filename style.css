@@ -2283,3 +2283,36 @@ body.vorschlag-offen { overflow: hidden; }
   .vorschlag-karten { grid-template-columns: 1fr; }
   .vorschlag-bild { aspect-ratio: 16 / 7; }
 }
+
+/* Die Flugauswahl - ein Fenster, keine zweite Ansichtsseite.
+   ------------------------------------------------------------------
+   Wunsch des Nutzers am 02.10.2026: "Einfach, dass dann wirklich so ein
+   Pop-up kommt mit allen Fluegen, die in Frage kommen." Deshalb Zeilen
+   statt Karten: Vier Verbindungen untereinander lassen sich vergleichen,
+   vier Karten nebeneinander nicht. Rahmen, Schirm und Kopf kommen von
+   der Vorschlagsansicht, damit beide Fenster gleich wirken. */
+.flug-fenster { max-width: 760px; }
+.flug-liste { display: flex; flex-direction: column; gap: 10px; padding: 0 22px 4px; }
+.flug-zeile {
+  display: grid; grid-template-columns: 1.6fr 1fr 1fr auto; gap: 14px; align-items: center;
+  padding: 14px 16px; border: 1px solid var(--line); border-radius: 12px; background: #fff;
+  cursor: pointer; transition: border-color .15s ease, box-shadow .15s ease;
+}
+.flug-zeile:hover, .flug-zeile:focus-visible { border-color: var(--brand-500); box-shadow: 0 2px 10px rgba(0,0,0,.06); }
+.flug-zeile.ist-partner { border-color: #d6a44c; }
+.flug-kopf { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.flug-platz {
+  width: 24px; height: 24px; border-radius: 50%; background: var(--ink-900); color: #fff;
+  display: grid; place-items: center; font-size: .78rem; flex: none;
+}
+.flug-airline strong { display: block; font-size: .98rem; }
+.flug-airline small, .flug-zeiten small, .flug-gepaeck small, .flug-preis small { color: var(--ink-500); font-size: .78rem; }
+.flug-zeiten span { display: block; font-variant-numeric: tabular-nums; }
+.flug-preis { text-align: right; }
+.flug-preis strong { display: block; font-size: 1.05rem; }
+.flug-banner { position: static; margin: 0; }
+@media (max-width: 720px) {
+  .flug-zeile { grid-template-columns: 1fr 1fr; }
+  .flug-kopf { grid-column: 1 / -1; }
+  .flug-preis { text-align: left; }
+}
