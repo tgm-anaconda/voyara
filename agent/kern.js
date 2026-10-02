@@ -453,6 +453,75 @@ const Kern = {
     AgentPanel.freigabeZeigen(stufe);
   },
 
+  /* Was die Person selbst eingestellt hat.
+     ------------------------------------------------------------------
+     Gemeldet am 02.10.2026: Der Nutzer war selbst auf ein Haus gegangen,
+     hatte das Datum gewaehlt, das Zimmer gesetzt und eine andere
+     Flugverbindung genommen. Dann bat er den Agenten, das Formular
+     auszufuellen - und der fragte nach Haus und Anreisetag, die laengst
+     dastanden. Sein Wunsch: "Dass der Kern sieht: okay, Nutzer sucht
+     selbst eins von den von mir vorgeschlagenen Haeusern aus und stellt
+     das Datum ein. Und wenn der Nutzer dann schreibt, fuell mir bitte das
+     Formular aus, muss der Kern auch wissen, in welcher Ansicht der
+     Nutzer gerade ist."
+
+     Gelesen wird bei jedem Seitenaufbau, was auf der Seite steht: welche
+     Ansicht, welches Haus, welcher Zeitraum, wie viele Reisende, welcher
+     Flug. Was dort steht und im Stand fehlt oder abweicht, uebernimmt der
+     Kern - und sagt es in einem Satz, statt es stillschweigend zu tun.
+
+     Nicht waehrend einer laufenden Werkzeugkette (`ausstehend`): Dort
+     laedt die Seite zwischendurch neu, und was dort steht, hat der Agent
+     gerade selbst eingestellt. */
+  seitenstandUebernehmen() {
+    if (this.lauf.ausstehend) return;
+    if (typeof Werkzeuge === "undefined") return;
+    const seite = Werkzeuge.seite();
+    this.lauf.seite = seite;
+    if (seite !== "stay" && seite !== "checkout") return;
+    const p = (this.lauf.profil ||= {});
+    const neu = [];
+
+    const id = new URLSearchParams(location.search).get("id");
+    const item = id && typeof getItemById === "function" ? getItemById(id) : null;
+    if (item && this.lauf.gewaehlt !== id) {
+      const ausVorlage = (this.lauf.letzteVorlage || []).includes(id);
+      this.lauf.gewaehlt = id;
+      this.notieren("selbst_geoeffnet", { id, ausVorlage, seite });
+      neu.push(ausVorlage ? `${item.name} aus meiner Auswahl` : item.name);
+    }
+
+    if (typeof Reisedaten !== "undefined") {
+      const r = Reisedaten.get();
+      if (r?.von && r?.bis && (p.von !== r.von || p.bis !== r.bis)) {
+        p.von = r.von; p.bis = r.bis;
+        const n = Math.round((new Date(r.bis) - new Date(r.von)) / 86400000);
+        if (n > 0 && n < 60) p.naechte = n;
+        p.flexibel = false;
+        p.anreise = r.von;
+        neu.push(`den ${new Date(r.von).getDate()}. als Anreisetag`);
+      }
+    }
+
+    if (typeof Flug !== "undefined") {
+      try {
+        const f = Flug.lesen();
+        if (f.flugId && p.flugId !== f.flugId) {
+          p.flugId = f.flugId;
+          this.lauf.flugGefragt = true;
+          const v = typeof FLIGHTS !== "undefined" ? FLIGHTS.find((x) => x.id === f.flugId) : null;
+          neu.push(v ? `den Flug mit ${v.airline}` : "deine Flugverbindung");
+        }
+      } catch { /* Seite ohne Flugmodul */ }
+    }
+
+    if (!neu.length) return;
+    this.notieren("seitenstand_uebernommen", { teile: neu, seite });
+    (this.lauf.annahmeOffen ||= []).push(`Du hast ${neu.join(" und ")} schon ausgewählt - das übernehme ich.`);
+    this.standAnzeigen?.();
+    this.sichern();
+  },
+
   notieren(ereignis, daten = {}) {
     (this.lauf.protokoll ||= []).push({ t: Date.now(), ereignis, ...daten });
     /* Alles, was in diesem Zug verworfen wurde, ist ein Zeichen von
@@ -512,6 +581,8 @@ const Kern = {
         this.sichern();
       }
     }
+
+    this.seitenstandUebernehmen();
 
     const erstoeffnung = STELLSCHRAUBEN.freigabeFrage === "erstoeffnung";
     if (!this.lauf.verlauf.length && (!erstoeffnung || this.lauf.freigabeGewaehlt)) this.begruessen();
