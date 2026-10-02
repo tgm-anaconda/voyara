@@ -2165,10 +2165,37 @@ const Werkzeugkasten = {
            Antwort und keine Nebenbemerkung. */
         if (!a.typ && !p.artGenannt) {
           const antwortAufArt = kern.lauf.gefragt === "art";
-          if (/\bhotels?\b/i.test(letzteNachricht)) {
-            if (antwortAufArt) a.typ = "hotel"; else p.artErwaehnt = "hotel";
-          } else if (/ferienwohnung|ferienhaus|fewo|apartment|appartement/i.test(letzteNachricht)) {
-            if (antwortAufArt) a.typ = "apartment"; else p.artErwaehnt = "apartment";
+          /* "Auch Ferienwohnungen" heisst beides, nicht nur Ferienwohnungen.
+             --------------------------------------------------------------
+             Gemeldet am 02.10.2026, dreimal hintereinander im selben
+             Gespraech: "Auch Ferienwohnungen" - "Okay, ich suche also
+             sowohl nach Hotels als auch nach Ferienwohnungen. Du hattest
+             vorhin Ferienwohnung geschrieben, soll ich nur danach suchen
+             oder auch nach Hotels?" - "Auch Hotels" - und wieder dieselbe
+             Frage.
+
+             Zwei Fehler griffen ineinander. Erstens las der Kern das Wort
+             "Ferienwohnung" im Satz und setzte `typ` darauf, obwohl davor
+             "auch" stand - die Antwort bedeutete das Gegenteil. Zweitens
+             setzte das nichts, woran `fertig.art` haengt (artGenannt oder
+             artEgal), also galt die Art weiter als offen, und die Antwort
+             der Person wurde selbst zum Ausloeser der naechsten Frage:
+             Ihr Wort landete in `artErwaehnt`.
+
+             Jetzt zuerst auf "beides" pruefen, dann auf "nur", und in
+             jedem Fall festhalten, dass entschieden wurde. */
+          const beides = /\b(auch|beide[sn]?|sowohl|egal|alles)\b/i.test(letzteNachricht);
+          const nennt = /\bhotels?\b/i.test(letzteNachricht) ? "hotel"
+            : (/ferienwohnung|ferienhaus|fewo|apartment|appartement/i.test(letzteNachricht) ? "apartment" : null);
+          if (nennt && beides) {
+            if (antwortAufArt) { p.artEgal = true; p.artGenannt = true; delete p.typ; delete p.artErwaehnt; }
+            else p.artErwaehnt = nennt;
+          } else if (nennt) {
+            if (antwortAufArt) { a.typ = nennt; p.artGenannt = true; delete p.artErwaehnt; }
+            else p.artErwaehnt = nennt;
+          } else if (antwortAufArt && beides) {
+            // "Beides" allein, ohne das Wort - auch das ist eine Antwort
+            p.artEgal = true; p.artGenannt = true; delete p.typ; delete p.artErwaehnt;
           }
         }
         // "ohne Flug" stand im Satz, kam aber nicht im Stand an - der Agent
@@ -4927,7 +4954,12 @@ const Werkzeugkasten = {
        "Moechtest du ein Hotel oder eine Ferienwohnung?" waere hier eine
        Frage, die so tut, als haette der Agent nicht zugehoert. Er hat
        zugehoert - nur war es eine Nebenbemerkung, keine Wahl. */
-    if (naechstes === "art" && p.artErwaehnt && !p.artGenannt) {
+    /* Hoechstens einmal. Dass die Antwort der Person selbst wieder ein
+       Wort enthaelt, das wie eine Erwaehnung aussieht, darf die Frage
+       nicht neu ausloesen - genau so entstand die Schleife vom
+       02.10.2026. */
+    if (naechstes === "art" && p.artErwaehnt && !p.artGenannt && !lauf.artErwaehntGefragt) {
+      lauf.artErwaehntGefragt = true;
       const wort = p.artErwaehnt === "apartment" ? "Ferienwohnung" : "Hotel";
       const anderes = p.artErwaehnt === "apartment" ? "Hotels" : "Ferienwohnungen";
       satz = `Du hattest vorhin ${wort} geschrieben - soll ich nur danach suchen, oder auch nach ${anderes}?`;

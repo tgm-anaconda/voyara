@@ -135,6 +135,60 @@ function paketZeile(item, preisProNacht) {
   </div>`;
 }
 
+/* Die Filter bleiben stehen.
+   ------------------------------------------------------------------
+   Der Nutzer am 02.10.2026: "Zusaetzlich muss er jedes Mal immer wieder
+   die Filter neu setzen. Wenn er von Juni auf August wechselt, muss er
+   immer wieder alle Filter neu setzen. Oder wenn er von Unterkuenfte auf
+   Hotels wechselt. Das macht keinen Sinn. Die Filter koennen doch einfach
+   stehen bleiben."
+
+   Stimmt - und es war der Grund fuer einen guten Teil der Arbeit, die der
+   Agent sichtbar doppelt gemacht hat: Jeder Monatswechsel laedt die Seite
+   neu, und alles, was nur im Arbeitsspeicher stand (Ausstattung,
+   Verpflegung, Sterne, Note, Strand, Preisregler), war weg.
+
+   In der Adresse stehen weiterhin nur Reise und Ziel. Die Filter wandern
+   in den Sitzungsspeicher: Sie gehoeren zur Person und nicht zur
+   Trefferseite, und sie sollen den Reiterwechsel ueberleben, nicht aber
+   die Studie. Faellt der Speicher aus (privates Fenster, gesperrte
+   Seitendaten), verhaelt sich die Seite wie vorher. */
+const FILTER_SPEICHER = "voyara_filter";
+
+function filterMerken() {
+  try {
+    sessionStorage.setItem(FILTER_SPEICHER, JSON.stringify({
+      amenities: [...state.amenities], boards: [...state.boards], stars: [...state.stars],
+      categories: [...state.categories], minRating: state.minRating, maxBeach: state.maxBeach,
+      minBedrooms: state.minBedrooms, onlyDeals: state.onlyDeals, wlanFrei: state.wlanFrei,
+      gesamtMax: state.gesamtMax, priceMax: state.priceMax, sort: state.sort,
+    }));
+  } catch { /* ohne Speicher wie bisher */ }
+}
+
+function filterHolen() {
+  try {
+    const roh = sessionStorage.getItem(FILTER_SPEICHER);
+    if (!roh) return;
+    const g = JSON.parse(roh);
+    state.amenities = new Set(g.amenities || []);
+    state.boards = new Set(g.boards || []);
+    state.stars = new Set((g.stars || []).map(String));
+    state.categories = new Set(g.categories || []);
+    state.minRating = g.minRating || 0;
+    state.maxBeach = g.maxBeach ?? null;
+    state.minBedrooms = g.minBedrooms || 0;
+    state.onlyDeals = !!g.onlyDeals;
+    state.wlanFrei = !!g.wlanFrei;
+    state.gesamtMax = g.gesamtMax ?? null;
+    if (g.sort) state.sort = g.sort;
+    /* Der Preisregler nur, wenn er in die Spanne dieses Monats passt -
+       sonst stuende er bei einem Wechsel in einen teureren Monat am
+       Anschlag und zeigte nichts. */
+    if (g.priceMax != null) state.priceMax = g.priceMax;
+  } catch { /* ohne Speicher wie bisher */ }
+}
+
 function readUrl() {
   const p = new URLSearchParams(window.location.search);
   state.type = p.get("type") || "hotel";
@@ -491,6 +545,7 @@ function renderFilters() {
   price.addEventListener("input", () => {
     state.priceMax = +price.value;
     panel.querySelector("#fPriceOut").textContent = formatPrice(state.priceMax);
+    filterMerken();
     renderResults();
   });
 
@@ -500,12 +555,13 @@ function renderFilters() {
       const max = +gesamt.max;
       state.gesamtMax = +gesamt.value >= max ? null : +gesamt.value;
       panel.querySelector("#fGesamtOut").textContent = state.gesamtMax == null ? "ohne Grenze" : formatPrice(state.gesamtMax);
+      filterMerken();
       renderResults();
     });
   }
 
   const bindSet = (cls, target) => panel.querySelectorAll(cls).forEach((el) =>
-    el.addEventListener("change", () => { el.checked ? target.add(el.value) : target.delete(el.value); renderResults(); }));
+    el.addEventListener("change", () => { el.checked ? target.add(el.value) : target.delete(el.value); filterMerken(); renderResults(); }));
 
   bindSet(".js-ziel", state.ziele);
   bindSet(".js-star", state.stars);
@@ -516,14 +572,14 @@ function renderFilters() {
   bindSet(".js-trans", state.transmissions);
   bindSet(".js-airline", state.airlines);
 
-  panel.querySelectorAll(".js-rating").forEach((el) => el.addEventListener("change", () => { state.minRating = +el.value; renderResults(); }));
-  panel.querySelectorAll(".js-beach").forEach((el) => el.addEventListener("change", () => { state.maxBeach = el.value === "" ? null : +el.value; renderResults(); }));
-  panel.querySelectorAll(".js-bed").forEach((el) => el.addEventListener("change", () => { state.minBedrooms = +el.value; renderResults(); }));
+  panel.querySelectorAll(".js-rating").forEach((el) => el.addEventListener("change", () => { state.minRating = +el.value; filterMerken(); renderResults(); }));
+  panel.querySelectorAll(".js-beach").forEach((el) => el.addEventListener("change", () => { state.maxBeach = el.value === "" ? null : +el.value; filterMerken(); renderResults(); }));
+  panel.querySelectorAll(".js-bed").forEach((el) => el.addEventListener("change", () => { state.minBedrooms = +el.value; filterMerken(); renderResults(); }));
 
   panel.querySelector(".js-direct")?.addEventListener("change", (e) => { state.directOnly = e.target.checked; renderResults(); });
   panel.querySelector(".js-cancel")?.addEventListener("change", (e) => { state.freeCancel = e.target.checked; renderResults(); });
-  panel.querySelector(".js-deals")?.addEventListener("change", (e) => { state.onlyDeals = e.target.checked; renderResults(); });
-  panel.querySelector(".js-wlan")?.addEventListener("change", (e) => { state.wlanFrei = e.target.checked; renderResults(); });
+  panel.querySelector(".js-deals")?.addEventListener("change", (e) => { state.onlyDeals = e.target.checked; filterMerken(); renderResults(); });
+  panel.querySelector(".js-wlan")?.addEventListener("change", (e) => { state.wlanFrei = e.target.checked; filterMerken(); renderResults(); });
 
   panel.querySelector("#fReset").addEventListener("click", () => {
     state.stars.clear(); state.categories.clear(); state.amenities.clear(); state.boards.clear();
@@ -784,6 +840,11 @@ document.addEventListener("DOMContentLoaded", () => {
   mountChrome(state.type);
   state.priceMax = priceBounds().max;
   state.gesamtMax = null;
+  /* Erst nach den Grenzen des Monats: `filterHolen` darf den Preisregler
+     ueberschreiben, aber nur auf einen Wert, den es hier auch gibt. */
+  filterHolen();
+  const grenzen = priceBounds();
+  if (!(state.priceMax >= grenzen.min && state.priceMax <= grenzen.max)) state.priceMax = grenzen.max;
 
   SearchBox.mount("#searchBox", {
     onSubmit: (query) => {
