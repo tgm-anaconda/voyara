@@ -245,6 +245,26 @@ const Werkzeugkasten = {
         + "Steht nichts dazu in den Bewertungen, sag genau das - leite nichts aus der Gesamtnote ab.",
         { id: text("Haus-id"), begriff: text("Das Wort, nach dem gesucht wird - so, wie die Person es gesagt hat") },
         ["id", "begriff"]),
+      /* Nachschlagen statt erfinden.
+         ----------------------------------------------------------------
+         Der Nutzer am 02.10.2026: "Sollte es noch eine FAQ-Seite geben,
+         wo der Bot sich bei jeder moeglichen Frage bedienen kann. Dann
+         geht er auf die Seite vom FAQ, liest das kurz durch und gibt
+         dann die Antwort aus."
+
+         Der Grund dahinter ist nicht nur Bequemlichkeit: Ohne FAQ
+         beantwortet das Modell solche Fragen aus seinem Weltwissen ueber
+         Reiseportale im Allgemeinen. Dann unterscheidet sich die Antwort
+         zwischen zwei Teilnehmenden, ohne dass es jemand steuert oder
+         sieht. Mit FAQ ist jede Antwort auf einen Eintrag zurueckfuehrbar
+         - und was nicht darin steht, bleibt unbeantwortet. */
+      f("faq_nachschlagen",
+        "Schlaegt eine Frage zum Ablauf im FAQ der Seite nach: Buchung, Bezahlung, Stornierung, Check-in, "
+        + "Gepaeck, Kinder, Haustiere, Gebuehren, Merkzettel, Datenschutz und so weiter. "
+        + "Nimm es fuer alles, was den SERVICE betrifft, nicht fuer Fragen zu Haeusern, Regionen oder Preisen "
+        + "einer bestimmten Unterkunft - dafuer gibt es suchen, haus_oeffnen und bewertungen_lesen. "
+        + "Steht nichts im FAQ, sag, dass du dazu nichts hast, und erfinde keine Auskunft.",
+        { frage: text("Die Frage der Person, moeglichst in ihren Worten") }, ["frage"]),
       f("zurueck_zur_liste",
         "Geht von einer Hausseite zurueck zur Trefferliste (Freigabe ab 'suchen').",
         {}),
@@ -333,6 +353,7 @@ const Werkzeugkasten = {
       case "merken": return `Setze ${haus(a.id)} auf den Merkzettel`;
       case "buchung_vorbereiten": return `Bereite die Buchung für ${haus(a.id)} vor`;
       case "bewertungen_durchsuchen": return `Suche in den Bewertungen nach „${a?.begriff || "dem Stichwort"}“`;
+      case "faq_nachschlagen": return "Schlage im FAQ nach";
       case "formular_ausfuellen": return "Fülle das Buchungsformular aus";
       case "buchung_abschliessen": return "Schließe die Buchung ab";
       case "freigabe_aendern": return `Freigabe geändert: ${a.stufe}`;
@@ -2887,6 +2908,77 @@ const Werkzeugkasten = {
           hinweis: "Teilnoten als 'x von 10' nennen, nie als Prozent. Wird es konkret, gib wieder, was in stimmen steht - erfinde keine Inhalte, die dort nicht vorkommen.",
         },
         log: `${item.name}: ${(d.anzahl ?? item.reviewCount).toLocaleString("de-DE")} Bewertungen ausgewertet${d.sichtbarGelesen ? `, ${d.sichtbarGelesen} im Wortlaut gelesen` : ""}`,
+      };
+    },
+
+    /* Im FAQ nachschlagen - sichtbar.
+       ----------------------------------------------------------------
+       Zwei Stufen wie beim Lesen der Bewertungen: erst auf die FAQ-Seite,
+       dann zum passenden Eintrag fahren und ihn hervorheben. Wer
+       zusieht, soll sehen, woher die Antwort kommt.
+
+       Danach geht es zurueck, wo die Person war - eine Frage nach der
+       Stornofrist darf nicht die Trefferliste kosten. */
+    async faq_nachschlagen(a, kern, stufe) {
+      const frage = String(a.frage || "").trim();
+      if (typeof faqSuchen !== "function") {
+        return { ergebnis: { fehler: "Das FAQ steht hier nicht bereit" } };
+      }
+      const treffer = faqSuchen(frage);
+      if (!treffer.length) {
+        kern.notieren("faq_ohne_treffer", { frage: frage.slice(0, 120) });
+        return {
+          ergebnis: { gefunden: 0, frage,
+            hinweis: "Dazu steht nichts im FAQ der Seite. Sag in einem Satz, dass du nur auf das FAQ "
+              + "zugreifen kannst und die Frage daraus nicht beantworten laesst, und biete an, was du "
+              + "stattdessen tun kannst (suchen, ein Haus ansehen, den Kundenservice nennen). "
+              + "Erfinde keine Auskunft und rate nicht." },
+          log: `Im FAQ nachgesehen: nichts zu „${frage.slice(0, 40)}“`,
+        };
+      }
+
+      /* Hinfahren lohnt nur, wenn der Agent die Seite bedienen darf und
+         nicht schon dort steht. Der Rueckweg wird gemerkt. */
+      const aufFaq = Werkzeuge.seite() === "faq";
+      if (stufe === 1 && kern.darf("suchen") && !aufFaq) {
+        kern.lauf.faqZurueck = location.href;
+        kern.sperreAn();
+        await Zeiger.warte(250);
+        location.href = `faq.html?frage=${encodeURIComponent(treffer[0].id)}`;
+        return { navigiert: true, stufe: 2 };
+      }
+
+      if (aufFaq) {
+        // Sichtbar zum Eintrag und kurz darauf verweilen
+        const el = document.getElementById(treffer[0].id);
+        if (el) {
+          try { el.open = true; } catch { /* kein details-Element */ }
+          await Zeiger.lies(el, { dauer: 900, hinweis: "Antwort im FAQ" });
+        }
+        kern.sperreAus();
+      }
+      kern.notieren("faq_treffer", { frage: frage.slice(0, 120), ids: treffer.map((t) => t.id) });
+
+      /* Zurueck, wo die Person war. Ohne das stuende sie nach einer
+         Zwischenfrage im FAQ statt in ihrer Trefferliste. */
+      const zurueck = kern.lauf.faqZurueck;
+      if (zurueck && Werkzeuge.seite() === "faq") {
+        kern.lauf.faqZurueck = null;
+        kern.sichern();
+        await Zeiger.warte(400);
+        location.href = zurueck;
+        return { navigiert: true, stufe: 3 };
+      }
+
+      return {
+        ergebnis: {
+          gefunden: treffer.length,
+          antworten: treffer.map((t) => ({ frage: t.frage, antwort: t.antwort })),
+          hinweis: "Antworte mit dem, was in antworten steht - in deinen Worten, aber ohne etwas "
+            + "hinzuzufuegen, was dort nicht steht. Eine Antwort reicht meistens; nenn nur dann eine "
+            + "zweite, wenn sie wirklich zur Frage gehoert.",
+        },
+        log: `Im FAQ nachgesehen: ${treffer.map((t) => t.frage).slice(0, 2).join(" / ")}`,
       };
     },
 

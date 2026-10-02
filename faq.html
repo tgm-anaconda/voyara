@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Information — Voyara</title>
+<title>Häufige Fragen — Voyara</title>
 <link rel="stylesheet" href="style.css?v=387" />
 <style>
 /* Kein Aufblitzen der Seite vor dem Studienbildschirm.
@@ -29,10 +29,17 @@ setTimeout(function () { document.documentElement.classList.remove("studie-warte
     <div id="siteHeader"></div>
 
     <div class="wrap">
-      <div class="breadcrumb" id="breadcrumb"></div>
-      <div class="info-layout">
-        <aside class="info-nav" id="infoNav"></aside>
-        <main class="panel" id="infoContent"></main>
+      <div class="section">
+        <div class="section-head">
+          <div>
+            <h1 style="font-size:1.5rem;color:var(--brand-900)">Häufige Fragen</h1>
+            <p id="faqSubline">Antworten zu Buchung, Unterkunft, Flug und Service.</p>
+          </div>
+        </div>
+        <div class="faq-suche">
+          <input class="input" type="search" id="faqSuche" placeholder="Stichwort suchen, zum Beispiel Stornierung oder Gepäck" autocomplete="off" />
+        </div>
+        <div id="faqInhalt"></div>
       </div>
     </div>
 
@@ -61,6 +68,7 @@ setTimeout(function () { document.documentElement.classList.remove("studie-warte
 <script src="agent/fluege.js?v=387"></script>
   <script src="agent/kern.js?v=387"></script>
 <script src="components.js?v=387"></script>
-<script src="info.js?v=387"></script>
+<script src="data/faq.js?v=387"></script>
+<script src="faq.js?v=387"></script>
 </body>
 </html>

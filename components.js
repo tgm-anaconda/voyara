@@ -1228,13 +1228,14 @@ function renderFooter() {
         <a href="results.html?type=car">Mietwagen</a>
         <a href="results.html?type=flight">Flüge</a>
         <a href="merkzettel.html">Merkzettel</a>
+        <a href="faq.html">Häufige Fragen</a>
       </div>
       <div class="footer-col">
         <h4>Über das Projekt</h4>
         <a href="info.html?p=studie">Hintergrund der Studie</a>
         <a href="info.html?p=team">Forschungsteam</a>
         <a href="info.html?p=ablauf">Studienablauf</a>
-        <a href="info.html?p=faq">Häufige Fragen</a>
+        <a href="info.html?p=faq">Fragen zur Studie</a>
       </div>
       <div class="footer-col">
         <h4>Rechtliches</h4>
