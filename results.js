@@ -408,8 +408,16 @@ function renderFilters() {
              Die Zahl daneben ist die, die es dort ohne die Saisongrenze
              gaebe - sonst staende ueberall null und die Zeile saehe aus
              wie ein Fehler. */
+          /* Ein Wort fuer eine Sache.
+             --------------------------------------------------------------
+             Der Nutzer am 02.10.2026 fragte, warum hinter manchen Regionen
+             "Saison" steht und hinter anderen nichts. Es waren drei
+             Zustaende in zwei Beschriftungen: Hauptsaison ("Saison"),
+             Nebensaison (gar nichts) und ausserhalb ("ausserhalb der
+             Saison"). Dass "nichts" Nebensaison hiess, konnte niemand
+             wissen. Jetzt steht an jeder Zeile, woran sie ist. */
           const zusatz = aus ? " ·&nbsp;außerhalb der Saison"
-            : (saisonPassung(z, monat) === 1 ? " ·&nbsp;Saison" : "");
+            : (saisonPassung(z, monat) === 1 ? " ·&nbsp;Hauptsaison" : " ·&nbsp;Nebensaison");
           // Immer die Zahl aus der Liste - bei gesperrten Regionen ist das
           // null, und dann steht dort nichts.
           return checkRow("js-ziel", z.id, `${z.name}${zusatz}`,

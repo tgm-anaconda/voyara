@@ -354,14 +354,22 @@ function renderStep3() {
       </div>
       <div style="display:flex;gap:10px;justify-content:center;margin-top:20px">
         ${typeof Studie !== "undefined" && Studie.laeuft()
-          ? `<button type="button" class="btn btn-primary" id="studieWeiter">Weiter zur Studie</button>`
+          ? ""
           : `<a class="btn btn-ghost" href="merkzettel.html">Zum Merkzettel</a>
              <a class="btn btn-primary" href="index.html">Weitere Reise suchen</a>`}
       </div>
     </section>`;
-  // Nach der Buchung geht es in die Zwischenfragen. Der Knopf statt
-  // eines Automatismus: Die Person soll die Bestaetigung lesen koennen.
-  document.getElementById("studieWeiter")?.addEventListener("click", () => Studie.aufgabeAbschliessen("gebucht"));
+  /* Kein Knopf "Weiter zur Studie" mehr.
+     ------------------------------------------------------------------
+     Gemeldet am 02.10.2026: "Man sieht da noch kurz quasi die Seite mit
+     weiter zur Studie mit so einem Button, und dann springt es aber
+     dennoch sofort in den Umfragebogen. Das einfach weglassen."
+
+     Er hat recht: Der Knopf war als Ruhepunkt gedacht, aber der
+     Uebergang laeuft ohnehin nach 2,6 Sekunden von selbst (weiter oben).
+     Zwei Wege zum selben Ziel, von denen einer immer gewinnt - uebrig
+     blieb ein Knopf, den niemand druecken kann. Jetzt bleibt nur die
+     Bestaetigung stehen, und der Uebergang kommt. */
 }
 
 function renderSummary() {

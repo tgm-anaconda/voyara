@@ -1604,7 +1604,24 @@ const Kern = {
               .filter((x) => !schonGesagt(x))
               .slice(0, 2).join(" ").trim();
             const nachtrag = Werkzeugkasten.aufnahmeSatz(this, vorspann);
-            if (nachtrag) vorspann = `${nachtrag} ${vorspann}`.trim();
+            /* Zweimal dasselbe Quittieren.
+               ----------------------------------------------------------
+               Gemeldet am 02.10.2026: "Hoechstens 5000 Euro insgesamt
+               merke ich mir. Das Budget von 5000 Euro insgesamt fuer die
+               Unterkunft und den Flug merke ich mir." Der erste Satz kommt
+               vom Kern, der zweite vom Modell. Die Pruefung lief bisher
+               nur in eine Richtung: Der Kern sah nach, ob das Modell seine
+               Formulierung schon gebracht hatte - umgekehrt nicht.
+
+               Sagt der Kern ohnehin, was er aufgenommen hat, faellt das
+               Quittieren des Modells weg. Es ist dieselbe Funktion in
+               anderen Worten, und zwei davon klingen nach Schluckauf. */
+            if (nachtrag) {
+              vorspann = vorspann.split(/(?<=[.!?])\s+/)
+                .filter((x) => !/merke ich mir|notiere ich|habe ich (mir )?gemerkt|nehme ich (so )?auf|ist notiert/i.test(x))
+                .join(" ").trim();
+              vorspann = `${nachtrag} ${vorspann}`.trim();
+            }
             /* Die Annahme steht zwischen dem Anschluss und der Frage.
                ----------------------------------------------------------
                Erst aufnehmen, was die Person gerade gesagt hat, dann
