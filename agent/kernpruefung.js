@@ -1614,6 +1614,21 @@ const Kernpruefung = {
     { name: "Frage nach der Lage ist erlaubt", ok: true,
       text: "Soll es eher in eine warme oder in eine kalte Region gehen?",
       plan: { thema: "ziel", quittungWorte: [], etwasGemerkt: false, lageGesagt: true } },
+    /* Der Befund vom 02.10.2026 als Prueffall: beide Saetze woertlich so,
+       wie sie im Chat untereinander standen. */
+    { name: "wiederholt den Kernsatz", ok: false, grund: "schon_gesagt",
+      text: "Warm heißt im Juni für mich 14 Regionen mit 22 bis 34 Grad, darunter Kreta, Mallorca und Teneriffa. Soll ich dir ein Angebot mit Flug suchen oder nur die Unterkunft?",
+      plan: { thema: "flug", quittungWorte: [], etwasGemerkt: false,
+        schonGesagt: ["Warm heißt im Juni für mich 14 Regionen mit 22 bis 34 Grad, darunter Kreta (29 Grad), Mallorca (27 Grad), Teneriffa (26 Grad). Sag Bescheid, wenn dir eine andere Grenze lieber ist."] } },
+    { name: "umschreibt den Kernsatz", ok: false, grund: "schon_gesagt",
+      text: "Es sind also 14 warme Regionen im Juni. Soll ein Flug dazu?",
+      plan: { thema: "flug", quittungWorte: [], etwasGemerkt: false,
+        schonGesagt: ["Warm heißt im Juni für mich 14 Regionen mit 22 bis 34 Grad."] } },
+    // Ein eigener Anschluss darf daneben stehen
+    { name: "eigener Anschluss nach dem Kernsatz", ok: true,
+      text: "Gute Wahl. Soll ein Flug dazu, oder bucht ihr ihn selbst?",
+      plan: { thema: "flug", quittungWorte: [], etwasGemerkt: false,
+        schonGesagt: ["Warm heißt im Juni für mich 14 Regionen mit 22 bis 34 Grad."] } },
     { name: "zu lang", ok: false, grund: "zu_lang",
       text: `${"Dazu kann ich dir viel erzaehlen. ".repeat(14)}Wie viele seid ihr?`,
       plan: { thema: "reisende", quittungWorte: [], etwasGemerkt: false } },
@@ -1683,6 +1698,63 @@ const Kernpruefung = {
   KATALOG_GRENZE_WARM: 25,
   KATALOG_GRENZE_OFFEN: 50,
   KATALOG_GRUPPEN: [[1, 0], [2, 0], [2, 1], [2, 2], [2, 3], [4, 0]],
+
+  /* Ein Stand, der sich selbst widerspricht.
+     ------------------------------------------------------------------
+     Der Befund vom 02.10.2026: "Zeit Juni", "Daten 01.11. bis 08.11.",
+     "Dauer 7 Nächte" - und im Chat stand "12 Nächte merke ich mir". Drei
+     Angaben, die nicht zusammenpassen, und nichts hat es bemerkt. */
+  WIDERSPRUCH_FAELLE: [
+    { name: "Zeitraum im falschen Monat",
+      p: { monat: 6, von: "2026-11-01", bis: "2026-11-08", naechte: 7 },
+      arten: ["zeitraum_ausserhalb_monat"] },
+    { name: "Anreisetag im falschen Monat",
+      p: { monat: 6, anreise: "2026-11-01" }, arten: ["anreise_ausserhalb_monat"] },
+    { name: "Dauer passt nicht zum Zeitraum",
+      p: { monat: 6, von: "2027-06-01", bis: "2027-06-08", naechte: 12, vonPerson: { naechte: true } },
+      arten: ["dauer_passt_nicht"] },
+    { name: "Anreise neben abweichendem Zeitraum",
+      p: { monat: 6, von: "2027-06-01", bis: "2027-06-08", naechte: 7, anreise: "2027-06-05" },
+      arten: ["anreise_neben_zeitraum"] },
+    // Stimmige Staende duerfen nichts melden
+    { name: "stimmig, flexibel", p: { monat: 6, naechte: 7 }, arten: [] },
+    { name: "stimmig, fest", p: { monat: 6, von: "2027-06-10", bis: "2027-06-17", naechte: 7, anreise: "2027-06-10" }, arten: [] },
+    { name: "nur Monat", p: { monat: 12 }, arten: [] },
+    { name: "leer", p: {}, arten: [] },
+  ],
+
+  standStimmig() {
+    const fehler = [];
+    const melde = (art, text) => fehler.push({ art, text, thema: "stand", satz: "" });
+    for (const f of this.WIDERSPRUCH_FAELLE) {
+      let raus = null;
+      try { raus = Werkzeugkasten.zeitWidersprueche(JSON.parse(JSON.stringify(f.p)), false); }
+      catch (e) { melde("stand_absturz", `${f.name}: ${e && e.message}`); continue; }
+      const arten = raus.map((x) => x.art).sort();
+      if (JSON.stringify(arten) !== JSON.stringify([...f.arten].sort())) {
+        melde("stand_erkennung", `${f.name}: ${JSON.stringify(arten)}, erwartet ${JSON.stringify(f.arten)}`);
+      }
+    }
+    /* Und die Reparatur: Nach `stimmigMachen` darf kein Widerspruch mehr
+       uebrig sein. Sonst meldete der Kern ihn in jedem Zug neu, ohne dass
+       sich etwas aendert. */
+    for (const f of this.WIDERSPRUCH_FAELLE) {
+      const p = JSON.parse(JSON.stringify(f.p));
+      try { Werkzeugkasten.stimmigMachen(p); } catch (e) { melde("stand_absturz", `${f.name}: ${e && e.message}`); continue; }
+      const rest = Werkzeugkasten.zeitWidersprueche(p, false);
+      if (rest.length) {
+        melde("stand_nicht_repariert", `${f.name}: nach stimmigMachen bleibt ${rest.map((x) => x.art).join(", ")}`);
+      }
+      // Was die Person gesagt hat, darf die Reparatur nicht wegwerfen
+      if (f.p.vonPerson?.naechte && p.naechte !== f.p.naechte) {
+        melde("stand_angabe_verloren", `${f.name}: ${f.p.naechte} Nächte der Person wurden zu ${p.naechte}`);
+      }
+      if (f.p.monat && p.monat !== f.p.monat) {
+        melde("stand_monat_verloren", `${f.name}: Monat ${f.p.monat} wurde zu ${p.monat}`);
+      }
+    }
+    return fehler;
+  },
 
   katalogDecke() {
     const fehler = [];
@@ -1767,6 +1839,7 @@ const Kernpruefung = {
     for (const f of this.datumUndPreis()) alle.push(f);
     for (const f of this.nachrichtvertrag()) alle.push(f);
     for (const f of this.katalogDecke()) alle.push(f);
+    for (const f of this.standStimmig()) alle.push(f);
     for (const f of this.unsicher()) alle.push(f);
     for (const f of this.annahmen()) alle.push(f);
     for (const f of this.art()) alle.push(f);

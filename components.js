@@ -5,6 +5,9 @@ const ICONS = {
   search: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>',
   heart: '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 5.6a5.5 5.5 0 0 0-7.8 0L12 6.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 22l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8Z"/></svg>',
   heartFilled: '<svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M20.8 5.6a5.5 5.5 0 0 0-7.8 0L12 6.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 22l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8Z"/></svg>',
+  // Fragezeichen fuer die haeufigen Fragen. Ohne eigenes Symbol trug die
+  // Aktion dasselbe Sprechblasen-Icon wie die Hilfe daneben.
+  help: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.4 2.3c-.6.25-.9.8-.9 1.45V13"/><path d="M12 16.5h.01"/></svg>`,
   chat: '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9.9 9.9 0 0 1-4-.8L3 21l1.9-4.6A8.3 8.3 0 0 1 4 11.5 8.4 8.4 0 0 1 12.5 3 8.4 8.4 0 0 1 21 11.5Z"/></svg>',
   user: '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>',
   bed: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 18v-7h20v7M2 11V6M22 18v2M2 18v2"/><circle cx="7.5" cy="9" r="2"/></svg>',
@@ -1204,6 +1207,7 @@ function renderHeader(active) {
           <span class="action-icon">${ICONS.heart}<span class="badge" id="wishCount" hidden>0</span></span>
           <span>Merkzettel</span>
         </a>
+        <a class="header-action" href="faq.html" title="Häufige Fragen">${ICONS.help}<span>Fragen</span></a>
         <button type="button" class="header-action" id="helpBtn" title="Hilfe">${ICONS.chat}<span>Hilfe</span></button>
         <button type="button" class="header-action" id="accountBtn" title="Konto">${ICONS.user}<span id="accountLabel">Anmelden</span></button>
       </div>
@@ -1369,8 +1373,13 @@ function mountChrome(activeNav) {
         "Hilfe & Kontakt",
         `<p>Voyara ist ein Prototyp für eine wissenschaftliche Studie. Es sind keine echten Buchungen möglich.</p>
          <p><strong>Fragen zur Bedienung?</strong> Der Reise-Assistent am rechten Rand hilft dir bei der Suche.</p>
+         <p><strong>Fragen zur Reise?</strong> Gepäck, Stornierung, Anzahlung, Haustiere: das steht in den <a href="faq.html">häufigen Fragen</a>.</p>
          <p><strong>Fragen zur Studie?</strong> Schreib an <a href="mailto:studie@voyara.example">studie@voyara.example</a>.</p>`,
-        `<a class="btn btn-ghost" href="info.html?p=faq">Zu den häufigen Fragen</a>
+        /* Hier stand der Verweis auf info.html?p=faq - das sind die Fragen
+           ZUR STUDIE. Die 50 Reisefragen liegen auf faq.html und waren damit
+           nur ueber die Fusszeile erreichbar. Gemeldet am 02.10.2026: "Dazu
+           sehe ich das FAQ noch nicht." */
+        `<a class="btn btn-ghost" href="faq.html">Zu den häufigen Fragen</a>
          <button type="button" class="btn btn-primary" data-close>Verstanden</button>`
       )
     );

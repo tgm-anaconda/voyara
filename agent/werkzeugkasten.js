@@ -1697,6 +1697,55 @@ const Werkzeugkasten = {
     if (plan.lageGesagt && saetze.some((x) => !/\?/.test(x) && this.ANGEBOT_AUSSAGE.test(x))) {
       return { ok: false, grund: "eigene_menge" };
     }
+    /* Und nicht noch einmal, was der Kern in diesem Zug schon gesagt hat.
+       ----------------------------------------------------------------
+       Gemeldet am 02.10.2026, und es war meine eigene Regression aus
+       v=395: Der Kern sagte "Warm heisst im Juni fuer mich 14 Regionen
+       mit 22 bis 34 Grad, darunter Kreta (29 Grad), Mallorca (27 Grad),
+       Teneriffa (26 Grad)." Direkt darunter das Modell: "Warm heisst im
+       Juni fuer mich 14 Regionen mit 22 bis 34 Grad, darunter Kreta,
+       Mallorca und Teneriffa. Soll ich dir ein Angebot mit Flug
+       suchen?"
+
+       Die alte Verkettung hatte dafuer zwei Filter, einen fuer das
+       Zitat und einen fuer die Umschreibung. Beim Umbau auf einen Autor
+       je Nachricht habe ich den Vertrag gebaut und diese beiden
+       vergessen - er prueft die Frage, die Quittung und die Zahlen, nur
+       nicht die Wiederholung.
+
+       Jetzt wieder beide: woertlich und ueber die Inhaltswoerter. Unter
+       drei Inhaltswoertern wird nicht verglichen ("Alles klar." darf
+       neben allem stehen). */
+    const vorhin = (plan.schonGesagt || []).filter(Boolean);
+    if (vorhin.length) {
+      const flach = (x) => String(x).toLowerCase().replace(/[^a-zäöüß0-9]/g, "");
+      const woerter = (x) => new Set(String(x).toLowerCase().match(/[a-zäöüß]{5,}/g) || []);
+      const vorhinFlach = vorhin.map(flach);
+      const vorhinWoerter = vorhin.map(woerter);
+      for (const x of saetze) {
+        if (/\?/.test(x)) continue;
+        const f = flach(x);
+        if (f.length > 14 && vorhinFlach.some((v) => v.includes(f) || f.includes(v))) {
+          return { ok: false, grund: "schon_gesagt" };
+        }
+        /* Eine kurze Umschreibung teilt oft nur die Zahl und ein Wort:
+           "Es sind also 14 warme Regionen im Juni." neben "Warm heisst im
+           Juni fuer mich 14 Regionen mit 22 bis 34 Grad." Dafuer reichen
+           die Inhaltswoerter nicht, die Zahl schon. */
+        const zahlen = (x.match(/\d+/g) || []).filter((z) => +z >= 5);
+        const w = [...woerter(x)];
+        for (let i = 0; i < vorhin.length; i++) {
+          const v = vorhinWoerter[i];
+          const vz = (vorhin[i].match(/\d+/g) || []).filter((z) => +z >= 5);
+          if (zahlen.some((z) => vz.includes(z)) && w.some((y) => v.has(y))) {
+            return { ok: false, grund: "schon_gesagt" };
+          }
+          if (w.length >= 3 && w.filter((y) => v.has(y)).length / w.length >= 0.5) {
+            return { ok: false, grund: "schon_gesagt" };
+          }
+        }
+      }
+    }
     if (t.length > 420) return { ok: false, grund: "zu_lang" };
     return { ok: true, grund: null };
   },
@@ -2249,14 +2298,42 @@ const Werkzeugkasten = {
       // Oktober" machte das Modell sonst einen Zeitraum - und die Maske
       // zeigte Daten, die nie jemand gesagt hat.
       if (a.von && a.bis) {
-        if (gesagt(/\b\d{1,2}\.\s*(\d{1,2}\.|[a-zäöü]{3,})|\d{4}-\d{2}-\d{2}|\b(vom|ab|am)\s+\d{1,2}\b/i)) {
+        /* Ein Zeitraum, der nicht in den gemerkten Monat gehoert, wird
+           nicht uebernommen.
+           --------------------------------------------------------------
+           Gemeldet am 02.10.2026: Gesucht war Juni, im Stand standen
+           danach der 1. bis 8. November. Der Monat kommt aus `p.monat`
+           und kann das nicht gewesen sein - es war ein Wert des Modells,
+           den niemand gegen den Rest gehalten hat. Hat die Person den
+           anderen Monat selbst genannt, greift die Regel nicht: dann
+           steht er oben ohnehin schon. */
+        const monatDesDatums = new Date(a.von).getMonth() + 1;
+        const passtZumMonat = !p.monat || !Number.isFinite(monatDesDatums) || monatDesDatums === p.monat;
+        if (!passtZumMonat) {
+          kern.notieren("datum_anderer_monat", { von: a.von, bis: a.bis, monat: p.monat });
+          delete a.von; delete a.bis;
+        } else if (gesagt(/\b\d{1,2}\.\s*(\d{1,2}\.|[a-zäöü]{3,})|\d{4}-\d{2}-\d{2}|\b(vom|ab|am)\s+\d{1,2}\b/i)) {
           setze("von", a.von); setze("bis", a.bis);
           const n = Math.round((new Date(a.bis) - new Date(a.von)) / 86400000);
-          if (n > 0 && n < 60 && !a.naechte) setze("naechte", n);
+          /* Eine Dauer, die die Person selbst genannt hat, wird nicht aus
+             einem Zeitraum neu gerechnet. Genau so wurden aus zwoelf
+             Naechten sieben. */
+          if (n > 0 && n < 60 && !a.naechte && !p.vonPerson?.naechte) setze("naechte", n);
+          else if (n > 0 && n !== p.naechte && p.vonPerson?.naechte) {
+            kern.notieren("dauer_nicht_ueberschrieben", { gesagt: p.naechte, ausZeitraum: n });
+          }
           if (!a.monat) setze("monat", new Date(a.von).getMonth() + 1);
         } else {
+          /* Das Datum gilt nicht - dann darf auch sein Monat nicht gelten,
+             wenn die Person laengst einen genannt hat. Hier stand
+             `if (!a.monat)`, und das prueft nur das Modell, nicht den
+             Stand: Ein erfundener Novembertermin konnte so einen
+             genannten Juni ueberschreiben. */
           kern.notieren("datum_verworfen", { von: a.von, bis: a.bis });
-          if (!a.monat) setze("monat", new Date(a.von).getMonth() + 1);
+          if (!a.monat && !p.monat) setze("monat", new Date(a.von).getMonth() + 1);
+          else if (!a.monat && p.monat && new Date(a.von).getMonth() + 1 !== p.monat) {
+            kern.notieren("monat_nicht_ueberschrieben", { gemerkt: p.monat, ausDatum: new Date(a.von).getMonth() + 1 });
+          }
         }
       }
       // Ohne feste Daten wird flexibel im Monat gesucht - keine Entscheidung
@@ -2383,12 +2460,26 @@ const Werkzeugkasten = {
       if (a.anreise && !gesagt(Werkzeugkasten.TAG)) {
         kern.notieren("anreise_verworfen", { anreise: a.anreise }); delete a.anreise;
       }
-      // Monat und Jahr kommen aus der Suche, nicht vom Modell - aus "16. Okt."
-      // wurde sonst gern der 16. des laufenden Monats.
+      /* Monat und Jahr kommen aus der Suche, nicht vom Modell - aus "16.
+         Okt." wurde sonst gern der 16. des laufenden Monats.
+         ------------------------------------------------------------------
+         Der Tag wird aber nur dann in den gesuchten Monat gesetzt, wenn er
+         auch dorthin gehoert. Nennt das Modell einen Tag in einem anderen
+         Monat, war das bisher ein stilles Verschieben: Aus dem 1. November
+         wurde der 1. Juni, ohne dass jemand davon erfuhr. Jetzt faellt der
+         Wert weg, und wenn die Person wirklich einen anderen Monat meint,
+         fragt der Kern danach (datumWiderspruch). */
       if (a.anreise) {
         const fw = Werkzeugkasten.flexWahl(p);
-        const tag = parseInt(String(a.anreise).slice(-2), 10);
-        if (fw && tag >= 1 && tag <= 31) a.anreise = `${fw.monat}-${String(tag).padStart(2, "0")}`;
+        const roh = String(a.anreise);
+        const tag = parseInt(roh.slice(-2), 10);
+        const monatDesTages = /^\d{4}-\d{2}-\d{2}$/.test(roh) ? new Date(roh).getMonth() + 1 : null;
+        if (p.monat && monatDesTages && monatDesTages !== p.monat) {
+          kern.notieren("anreise_anderer_monat", { anreise: roh, monat: p.monat });
+          delete a.anreise;
+        } else if (fw && tag >= 1 && tag <= 31) {
+          a.anreise = `${fw.monat}-${String(tag).padStart(2, "0")}`;
+        }
       }
       /* Fristen: nur, wenn in der Nachricht auch ein Datum steht.
          ----------------------------------------------------------------
@@ -4070,8 +4161,20 @@ const Werkzeugkasten = {
         // Bei flexibler Suche zaehlt nur der Tag - Monat und Jahr kommen aus
         // der Suche (das Modell setzte sonst das laufende Jahr ein)
         const fw = flexibel ? Werkzeugkasten.flexWahl(kern.lauf.profil) : null;
-        const tag = parseInt(String(a.anreise).slice(-2), 10);
-        kern.lauf.profil.anreise = fw && tag >= 1 && tag <= 31 ? `${fw.monat}-${String(tag).padStart(2, "0")}` : a.anreise;
+        const roh = String(a.anreise);
+        const tag = parseInt(roh.slice(-2), 10);
+        /* Der rohe Wert des Modells war die letzte offene Tuer: Ohne
+           flexible Suche wurde er ungeprueft uebernommen, und so stand
+           bei einer Junireise der 1. November im Stand (gemeldet am
+           02.10.2026). Jetzt muss er zum gemerkten Monat passen. */
+        const monatDesTages = /^\d{4}-\d{2}-\d{2}$/.test(roh) ? new Date(roh).getMonth() + 1 : null;
+        const pm = kern.lauf.profil.monat;
+        if (pm && monatDesTages && monatDesTages !== pm) {
+          kern.notieren("anreise_anderer_monat", { anreise: roh, monat: pm, wo: "buchung_vorbereiten" });
+          delete a.anreise;
+        } else {
+          kern.lauf.profil.anreise = fw && tag >= 1 && tag <= 31 ? `${fw.monat}-${String(tag).padStart(2, "0")}` : roh;
+        }
       }
       // Mit Flug: nur an Flugtagen der Verbindung, und nach n Naechten muss
       // wieder einer sein - das gilt auch fuer feste Daten
@@ -4877,7 +4980,72 @@ const Werkzeugkasten = {
     if (p.kinder > 0 && (p.kinderAlter || []).length > p.kinder) p.kinderAlter = p.kinderAlter.slice(0, p.kinder);
     // Zur Ferienwohnung gibt es keinen Flug - die Seite kennt das nicht
     if (p.typ === "apartment") { p.flug = false; delete p.flugAb; delete p.flugKlasse; }
+    for (const w of this.zeitWidersprueche(p, true)) (p.widersprueche ||= []).push(w);
     return p;
+  },
+
+  /* Ein Stand, der sich selbst widerspricht.
+     ==================================================================
+     Gemeldet am 02.10.2026: In der Uebersicht stand gleichzeitig "Zeit
+     Juni", "Daten 01.11. bis 08.11." und "Dauer 7 Nächte", obwohl der
+     Chat "12 Nächte merke ich mir" gesagt hatte. Der Nutzer: "Das mit
+     dem November ist echt sehr komisch. Im Filter steht tatsaechlich
+     Juni, und man kann auch nur die Juni-Tage auswaehlen. Ich glaube,
+     das November ist einfach halluziniert."
+
+     Er hat recht: Der Monat wird aus `p.monat` gerechnet, von dort kann
+     kein November kommen. Es war ein Wert, den das Modell geliefert hat
+     und den niemand gegen den Rest gehalten hat. Danach passte der
+     Anreisetag zu keinem Flugtag, das Werkzeug meldete denselben Fehler
+     wieder und wieder, und die Buchung kam nicht mehr weiter.
+
+     `stimmigMachen` zog bisher nur Erwachsene, Kinder und Personen
+     glatt. Zeitangaben wurden gar nicht gegeneinander geprueft. Jetzt
+     schon, und zwar bei jedem Fahrplan:
+
+       - Ein Zeitraum oder Anreisetag ausserhalb des gemerkten Monats
+         faellt weg. Der Monat bleibt: Den hat die Person genannt.
+       - Stimmt die Dauer nicht zum Zeitraum, gilt die Angabe der Person
+         (`vonPerson.naechte`) und das Ende wird neu gerechnet. Hat sie
+         nichts gesagt, gilt der Zeitraum.
+
+     `reparieren=false` liefert die Widersprueche, ohne etwas zu aendern -
+     damit prueft die Kernpruefung ueber tausende Staende. */
+  zeitWidersprueche(p, reparieren = false) {
+    const raus = [];
+    if (!p) return raus;
+    const monatVon = (iso) => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? null : d.getMonth() + 1; };
+    if (p.monat && p.von) {
+      const m = monatVon(p.von);
+      if (m && m !== p.monat) {
+        raus.push({ art: "zeitraum_ausserhalb_monat", monat: p.monat, von: p.von, bis: p.bis || null });
+        if (reparieren) { delete p.von; delete p.bis; p.flexibel = true; }
+      }
+    }
+    if (p.monat && p.anreise) {
+      const m = monatVon(p.anreise);
+      if (m && m !== p.monat) {
+        raus.push({ art: "anreise_ausserhalb_monat", monat: p.monat, anreise: p.anreise });
+        if (reparieren) delete p.anreise;
+      }
+    }
+    if (p.von && p.bis) {
+      const n = Math.round((new Date(p.bis) - new Date(p.von)) / 86400000);
+      if (Number.isFinite(n) && p.naechte && n !== p.naechte) {
+        raus.push({ art: "dauer_passt_nicht", naechte: p.naechte, zeitraum: n });
+        if (reparieren) {
+          if (p.vonPerson?.naechte) {
+            const ab = new Date(p.von);
+            if (!Number.isNaN(ab.getTime())) p.bis = new Date(ab.getTime() + p.naechte * 86400000).toISOString().slice(0, 10);
+          } else if (n > 0 && n < 60) p.naechte = n;
+        }
+      }
+    }
+    if (p.anreise && p.von && p.anreise !== p.von) {
+      raus.push({ art: "anreise_neben_zeitraum", anreise: p.anreise, von: p.von });
+      if (reparieren && !p.vonPerson?.anreise) p.anreise = p.von;
+    }
+    return raus;
   },
 
   fahrplan(p, lauf = {}) {

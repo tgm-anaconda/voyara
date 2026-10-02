@@ -952,6 +952,7 @@ const Kern = {
     this.lauf.vorlageImZug = false;
     this.lauf.lageImZug = null;
     this.lauf.lageGesagtImZug = false;
+    this.lauf.lageSatzImZug = null;
     /* Die Einordnung der Nachricht gilt nur fuer diesen Zug. Bliebe ein
        altes "frage" stehen, waeren die veraendernden Werkzeuge gesperrt,
        obwohl die Person laengst wieder antwortet. Bis stand_merken neu
@@ -1249,6 +1250,9 @@ const Kern = {
             this.notieren("lage_wiederholt");
           }
           this.lauf.lageGesagtImZug = true;
+          // Der Wortlaut bleibt stehen: Der Vertrag prueft dagegen, ob das
+          // Modell ihn gleich noch einmal erzaehlt
+          this.lauf.lageSatzImZug = this.lauf.lageImZug;
           this.lauf.lageImZug = null;
         }
         // Nach einer Vorlage nennt das Modell manchmal ganz andere Haeuser aus
@@ -1590,7 +1594,24 @@ const Kern = {
              oder das Thema ist erledigt (9). Ohne dieses feste Auflösen
              haenge die Entscheidung an der jeweils letzten Nachricht und
              koennte Zuege spaeter aus dem Nichts zuschlagen. */
-          if (!freierZug && !tippGestellt && !artFrage) {
+          /* Die Sackgasse sagt der Kern.
+             ------------------------------------------------------------
+             Dreimal derselbe Werkzeugfehler heisst: Das Modell kommt aus
+             der Schleife nicht heraus. Dann sagt der Kern, was blockiert,
+             und fragt nach dem Weg - eine Frage, die wirklich weiterhilft,
+             statt der vierten Bestaetigungsfrage. */
+          if (!freierZug && this.lauf.werkzeugSackgasse) {
+            const sg = this.lauf.werkzeugSackgasse;
+            this.lauf.werkzeugSackgasse = null;
+            this.lauf.werkzeugFehler = {};
+            this.notieren("sackgasse_gesagt", { werkzeug: sg.werkzeug, fehler: sg.fehler.slice(0, 80) });
+            fpJetzt = { ...fpJetzt, nurKern: true, kernFragt: true, naechstes: null,
+              chips: "Anderes Haus | Anderer Zeitraum | Ich mache das selbst",
+              // Fragezeichen aus dem Fehlertext raus: Eine Frage je Nachricht
+              satz: `Hier komme ich nicht weiter: ${sg.fehler.replace(/\s+/g, " ").replace(/\?/g, ".").trim().slice(0, 120)}. `
+                + "Sollen wir ein anderes Haus nehmen, den Zeitraum ändern, oder machst du den Rest selbst?" };
+          }
+          if (!freierZug && !tippGestellt && !artFrage && !this.lauf.werkzeugSackgasse) {
             const p2 = this.lauf.profil || {};
             /* Der Widerspruch geht vor: Erst klaeren, welcher Monat
                gemeint ist, dann wieder nach dem Tag fragen. Zweimal, dann
@@ -1748,6 +1769,10 @@ const Kern = {
                 quittungWorte,
                 etwasGemerkt: (this.lauf.zuletztGemerkt || []).length > 0,
                 lageGesagt: !!this.lauf.lageGesagtImZug,
+                // Was der Kern in diesem Zug schon gesagt hat, darf nicht
+                // noch einmal kommen - auch nicht umschrieben
+                schonGesagt: [...(this.lauf.abgeleitet || []).map((x) => x.satz),
+                  this.lauf.lageImZug, this.lauf.lageSatzImZug].filter(Boolean),
               });
               if (pr.ok) {
                 ausDemModell = String(text).replace(/\s+/g, " ").trim();
@@ -2150,6 +2175,33 @@ const Kern = {
         a.stufe = r.stufe || (a.stufe + 1);
         this.sichern();
         return false;
+      }
+      /* Derselbe Fehler zum dritten Mal: dann wird nicht mehr gefragt.
+         ----------------------------------------------------------------
+         Gemeldet am 02.10.2026: "Ich kann die Buchung fuer das Hotel
+         Ringblick jetzt vorbereiten. Soll ich das so machen?" - "ja" -
+         und von vorn, ohne Ende. Das Werkzeug meldete jedes Mal dieselbe
+         Sperre, das Modell machte daraus jedes Mal dieselbe Frage, und
+         die Person konnte antworten, was sie wollte.
+
+         Ein Werkzeug, das zweimal dasselbe meldet, meldet es beim dritten
+         Mal auch. Also bekommt das Modell beim zweiten Mal den Auftrag,
+         zu sagen WAS blockiert, statt noch einmal zu fragen - und beim
+         dritten Mal uebernimmt der Kern den Satz ganz. Wie oft das
+         vorkommt, gehoert in die Auswertung. */
+      const fehlerText = r?.ergebnis?.fehler || null;
+      if (fehlerText) {
+        const schl = `${call.function.name}|${String(fehlerText).slice(0, 80)}`;
+        const zaehler = (this.lauf.werkzeugFehler ||= {});
+        zaehler[schl] = (zaehler[schl] || 0) + 1;
+        const mal = zaehler[schl];
+        if (mal >= 2) {
+          this.notieren("werkzeug_fehler_wiederholt", { werkzeug: call.function.name, fehler: String(fehlerText).slice(0, 80), mal });
+          r.ergebnis.wiederholt = mal;
+          r.ergebnis.hinweis = `Dieser Fehler kam jetzt ${mal} Mal. Stell NICHT noch einmal dieselbe Frage und ruf dieses Werkzeug nicht noch einmal mit denselben Angaben. `
+            + `Sag in einem Satz, was genau blockiert, und nenn die konkrete Alternative. ${r.ergebnis.hinweis || ""}`.trim();
+        }
+        if (mal >= 3) this.lauf.werkzeugSackgasse = { werkzeug: call.function.name, fehler: String(fehlerText).slice(0, 160) };
       }
       if (r.log) this.logZeile(r.log, "ergebnis");
       this.gespraechPush({ role: "tool", tool_call_id: call.id, content: JSON.stringify(r.ergebnis ?? { ok: true }) });
