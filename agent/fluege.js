@@ -71,8 +71,13 @@ const Fluege = {
        (agent/vorschlaege.js). Hier fehlte die Zeile: Das Fenster lag mit
        allen drei Verbindungen im Dokument und war unsichtbar. Gemessen am
        02.10.2026 auf der Hausseite - opacity 0 bei offenem Schirm.
-       Im naechsten Bild, damit der Uebergang laeuft. */
-    requestAnimationFrame(() => el.classList.add("da"));
+
+       Nicht ueber requestAnimationFrame: Im Hintergrundtab liefert der
+       Browser keine Bilder, der Rueckruf kaeme nie, und das Fenster
+       bliebe unsichtbar. Das Lesen von offsetHeight erzwingt den Umbruch,
+       danach laeuft der Uebergang trotzdem. */
+    void el.offsetHeight;
+    el.classList.add("da");
 
     el.querySelectorAll("[data-flug]").forEach((z) =>
       z.addEventListener("click", (e) => {
