@@ -1627,9 +1627,16 @@ const Kern = {
                  Buchungsknopf, ohne zu wissen, warum. */
               if (!hatDatum && !p2.flug) {
                 const monatWort = typeof MONATSNAMEN !== "undefined" && p2.monat ? MONATSNAMEN[p2.monat - 1] : null;
+                /* Ueber den Annahme-Platz, nicht als eigene Nachricht:
+                   Der Satz gehoert vor die naechste Frage, nicht in eine
+                   zweite Sprechblase. Zwei Blasen hintereinander sind
+                   genau das, was der Nutzer als "doppelte Antworten"
+                   meldet. Sagt sie spaeter doch einen Tag, faellt der
+                   Satz von selbst weg (annahmeGilt). */
                 if (monatWort) {
-                  Werkzeugkasten.ableiten(this, "anreise",
-                    `Ich suche dann flexibel im ${monatWort} weiter. Den genauen Tag können wir vor der Buchung festlegen.`);
+                  (this.lauf.annahmeOffen ||= []).push({ thema: "anreise",
+                    text: `Ich suche dann flexibel im ${monatWort} weiter, den genauen Tag legen wir vor der Buchung fest.`,
+                    felder: { anreise: null } });
                 }
               }
             }
