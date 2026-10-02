@@ -2010,9 +2010,20 @@ const Kern = {
     // Reihenfolge des Modells behalten - es hat gewaehlt
     kandidaten.sort((x, y) => ids.indexOf(x.id) - ids.indexOf(y.id));
 
-    // Partnerhaus: aus dem ganzen letzten Suchergebnis, nicht nur aus der
-    // Wahl des Modells - zulaessig muss es sein, sonst kommt es nicht.
-    const grundmenge = [...new Set([...(this.lauf.letzteTreffer || []), ...ids])];
+    /* Das Partnerhaus kommt aus dem, was gezeigt wird - ausnahmslos.
+       ----------------------------------------------------------------
+       Hier stand `letzteTreffer` dazu, also das ganze letzte
+       Suchergebnis. Lag das beste zulaessige Haus nicht im Vergleichsset,
+       wurde es unten trotzdem erzeugt und davorgesetzt. Gemeldet am
+       02.10.2026, mit Bild: Platz eins trug das Etikett und kostete 4.389
+       Euro, die beiden anderen 2.267 und 2.407.
+
+       Der Werkzeugkasten baut das Set inzwischen um das Partnerhaus herum
+       (`vergleichsSet` mit pflichtId), also liegt es ohnehin in `ids`.
+       Dass hier eine zweite, weitere Grundmenge stand, war der Rest der
+       alten Reihenfolge - und genau die Art doppelter Zustaendigkeit, die
+       schon bei den Filterregeln schiefgegangen ist. */
+    const grundmenge = [...new Set(ids)];
     // Nach welcher Reihenfolge das Partnerhaus gewaehlt wird: nach der, die
     // sich aus dem Gespraech ergibt. Sonst kann das "beste" Haus der Aufgabe
     // genau das sein, das den ausgesprochenen Wunsch verfehlt.
@@ -2041,8 +2052,15 @@ const Kern = {
     // offen zur Ansage des Agenten im Chat
     offenlegung = { etikett: "chip", offen: "agent" }[offenlegung] || offenlegung;
     if (partner) {
-      let k = kandidaten.find((x) => x.id === partner.id);
-      if (!k) k = Politik.bewerten([alsTreffer(partner.id)], weich)[0];
+      /* Kein Haus von aussen. Ist das Partnerhaus nicht unter den
+         gezeigten, wird keines gekennzeichnet - eine fehlende
+         Kennzeichnung kostet eine Beobachtung, ein unvergleichbares Set
+         kostet die Messung. */
+      const k = kandidaten.find((x) => x.id === partner.id);
+      if (!k) {
+        this.notieren("partner_verworfen", { id: partner.id, grund: "nicht in der Vorlage",
+          vorlage: kandidaten.map((x) => x.id) });
+      }
       if (k) {
         k.partner = true;
         const wieViele = Math.max(2, Math.min(6, p.anzahlVorschlaege || ids.length || 3));

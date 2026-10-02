@@ -2491,6 +2491,37 @@ const Werkzeugkasten = {
            Steht das Partnerhaus aus einer frueheren Vorlage schon fest,
            muss es im Set liegen - sonst waere es beim zweiten Vorlegen
            ein anderes Haus. */
+        /* Erst das Partnerhaus, dann das Set drumherum.
+           --------------------------------------------------------------
+           Gemeldet am 02.10.2026, mit Bild: Platz eins trug das Etikett
+           "Partnerhaus" und kostete 4.389 Euro, die beiden anderen 2.267
+           und 2.407. "Der schlimmste Fehler ist natuerlich wieder, dass
+           das Partnerhaus wieder viel teurer ist als die anderen. Das
+           sind doch harte Regeln, die eingebaut sein muessen."
+
+           Sie waren eingebaut - aber nur an einer von zwei Stellen. Der
+           Werkzeugkasten nahm das Partnerhaus aus dem Vergleichsset;
+           `Kern.auswahlVorlegen` bestimmte es danach noch einmal selbst,
+           aus dem ganzen letzten Suchergebnis, und setzte es davor, wenn
+           es nicht dabei war. Dieselbe Art Fehler wie bei den zwei
+           Filterregeln: zwei Orte, eine Frage.
+
+           Jetzt gilt die Reihenfolge, die beides zugleich erfuellt: Das
+           Partnerhaus wird aus der ganzen Auswahl bestimmt - also nach der
+           Regel der Erhebung, bestes oder zweitbestes zulaessiges Haus -
+           und das Vergleichsfenster wird um dieses Haus herum gebaut
+           (`pflichtId`). Damit ist das Partnerhaus immer drin UND alle
+           anderen liegen in seiner Preisklasse. */
+        if (typeof Studie !== "undefined" && Studie.partnerhaus && !kern.lauf.partnerId) {
+          const alle = auswahl.map((h) => h.id);
+          const ph = Studie.partnerhaus(alle, alle);
+          if (ph && alle.includes(ph.id)) {
+            kern.lauf.partnerId = ph.id;
+            kern.lauf.partnerRang = ph.rang || null;
+            kern.notieren("partner_bestimmt", { id: ph.id, rang: ph.rang || null,
+              ausWieVielen: alle.length, wo: "vor dem Set" });
+          }
+        }
         const set = Werkzeugkasten.vergleichsSet(auswahl, p, wieViele, kern.lauf.partnerId || null);
         const engereHaeuser = set.haeuser;
         let engere = engereHaeuser.map((h) => h.id);
@@ -2499,7 +2530,28 @@ const Werkzeugkasten = {
           spanneProzent: set.spanne == null ? null : Math.round(set.spanne * 1000) / 10,
           grenze: set.grenze == null ? null : Math.round(set.grenze * 100),
           gleichlauf: set.gleichlauf == null ? null : Math.round(set.gleichlauf * 100),
+          partner: kern.lauf.partnerId || null,
         });
+        /* Traegt die Konstruktion nicht, steht es in den Daten.
+           --------------------------------------------------------------
+           Ueber 440 geprueften Staenden bleiben rund zehn Prozent uebrig,
+           in denen sich kein Set mit hoechstens zehn Prozent
+           Preisunterschied bilden laesst - meist, weil das Partnerhaus
+           preislich allein steht. Der schlimmste gemessene Rest liegt bei
+           10,9 Prozent, also knapp darueber.
+
+           Diese Faelle sind als Reiz nur bedingt brauchbar: Wo der Preis
+           deutlich auseinandergeht, entscheidet er und nicht die
+           Kennzeichnung. Sie gehoeren deshalb markiert, damit sie in der
+           Auswertung erkennbar sind - und nicht stillschweigend
+           mitgezaehlt werden. */
+        if (set.spanne != null && set.spanne > 0.105) {
+          kern.notieren("set_unvergleichbar", {
+            spanneProzent: Math.round(set.spanne * 1000) / 10,
+            anzahl: engere.length, kandidaten: auswahl.length,
+            partner: kern.lauf.partnerId || null,
+          });
+        }
         /* Das Partnerhaus gehoert in den Rundgang.
            --------------------------------------------------------------
            Es wird erst beim Vorlegen bestimmt und rutscht dann auf Platz
@@ -2521,15 +2573,17 @@ const Werkzeugkasten = {
            Vergleichssets. Das Partnerhaus ist damit immer eine plausible
            Wahl, und das ist die Voraussetzung dafuer, dass die
            Kennzeichnung ueberhaupt etwas zu tun hat. */
-        if (typeof Studie !== "undefined" && Studie.partnerhaus) {
-          if (kern.lauf.partnerId && engere.includes(kern.lauf.partnerId)) {
-            // bleibt, wie es ist
-          } else if (!kern.lauf.partnerId && engere.length) {
-            const ph = Studie.partnerhaus(engere, engere);
-            if (ph && engere.includes(ph.id)) {
-              engere = [ph.id, ...engere.filter((id) => id !== ph.id)];
-            }
-          }
+        /* Das Partnerhaus steht schon fest (siehe oben) und liegt im Set,
+           weil das Fenster darum herum gebaut wurde. Hier kommt es nur
+           noch nach vorn - der Rundgang soll es zuerst ansehen. */
+        if (kern.lauf.partnerId && engere.includes(kern.lauf.partnerId)) {
+          engere = [kern.lauf.partnerId, ...engere.filter((id) => id !== kern.lauf.partnerId)];
+        } else if (kern.lauf.partnerId) {
+          /* Das darf nicht passieren: `vergleichsSet` bekommt es als
+             Pflicht mit. Wenn doch, ist eine leere Kennzeichnung besser
+             als ein Set, das auseinanderfaellt - und es steht in den
+             Daten, statt still zu bleiben. */
+          kern.notieren("partner_nicht_im_set", { id: kern.lauf.partnerId, set: engere });
         }
         /* Erst ansehen, dann empfehlen.
            --------------------------------------------------------------
@@ -3432,8 +3486,30 @@ const Werkzeugkasten = {
        der Hausseite "Buchen" klicken - laedt die Buchungsstrecke; (3)
        Gastdaten aus dem Konto, weiter zur Pruefseite. */
     async buchung_vorbereiten(a, kern, stufe) {
-      const item = typeof getItemById === "function" ? getItemById(a.id) : null;
-      if (!item) return { ergebnis: { fehler: `${a.id} kenne ich nicht.` } };
+      /* Welches Haus - das steht in der Adresse.
+         ----------------------------------------------------------------
+         Gemeldet am 02.10.2026: Die Person stand im Buchungsformular von
+         Gut Hohenkirchen und sagte "ich moechte, dass du es ausfuellst".
+         Antwort: "Bitte sag mir, welches der vier Hotels du buchen
+         moechtest." Sie hatte es laengst gesagt - durch Hingehen.
+
+         Fehlt die Kennung im Aufruf, nimmt der Kern die der offenen
+         Seite. Das ist keine Annahme, sondern das, was die Person
+         sichtbar vor sich hat; dasselbe Prinzip wie bei
+         `seitenstandUebernehmen`. */
+      let id = a.id;
+      if (!id && typeof Werkzeuge !== "undefined" && ["stay", "checkout"].includes(Werkzeuge.seite())) {
+        id = new URLSearchParams(location.search).get("id") || kern.lauf.gewaehlt || null;
+        if (id) kern.notieren("haus_aus_der_seite", { id, wo: Werkzeuge.seite() });
+      }
+      if (!id) id = kern.lauf.gewaehlt || null;
+      a = { ...a, id };
+      const item = typeof getItemById === "function" ? getItemById(id) : null;
+      if (!item) {
+        return { ergebnis: { fehler: id ? `${id} kenne ich nicht.` : "Kein Haus angegeben",
+          hinweis: "Frag in einem Satz, welches Haus es sein soll - aber nur, wenn die Person nicht "
+            + "gerade auf einer Hausseite oder im Buchungsformular steht. Dort gilt das Haus der Seite." } };
+      }
       const seite = Werkzeuge.seite();
       const idHier = new URLSearchParams(location.search).get("id");
       kern.lauf.gewaehlt = a.id;
@@ -5797,15 +5873,41 @@ const Werkzeugkasten = {
 
        Innerhalb einer Guetestufe gilt dann: lieber viele als wenige, und
        lieber eng als weit. */
-    const kleinste = Math.min(3, wieViele);
+    /* Lieber zwei vergleichbare als drei unvergleichbare.
+       ------------------------------------------------------------------
+       Gemessen am 02.10.2026 ueber 440 Sets: 72 sprengten die
+       Preisspanne, im schlimmsten Fall um 40 Prozent (2.607 / 2.943 /
+       3.643 Euro bei vier Kandidaten). Die Untergrenze lag bei drei
+       Haeusern - gab es keine drei aehnlichen, nahm die Funktion das
+       engste Fenster, das es gab, und das war manchmal keins.
+
+       Ein Set aus zwei Haeusern ist ein vollwertiger Reiz: Die Person
+       vergleicht zwei Angebote, von denen eines gekennzeichnet ist. Ein
+       Set aus drei Haeusern mit 40 Prozent Preisunterschied ist keiner -
+       dort entscheidet der Preis, nicht die Kennzeichnung. Die
+       Vergleichbarkeit ist das, was gemessen wird; die Anzahl ist es
+       nicht. */
+    const kleinste = Math.min(2, wieViele);
     const stufen = [
       (f) => f.notenSpanne <= 0.3 && f.gleichlauf >= 0.6 && !f.billigstesBestes,
       (f) => f.notenSpanne <= 0.3 && f.gleichlauf >= 0.6,
       (f) => f.notenSpanne <= 0.4,
       () => true,
     ];
+    /* Zwei Durchgaenge, damit die Groesse nicht zu frueh faellt.
+       ------------------------------------------------------------------
+       Mit einer Untergrenze von zwei gewann sonst ein Zweierset in der
+       strengsten Guetestufe gegen ein Viererset in der naechsten - und
+       aus "zeig mir vier" wurden regelmaessig zwei. Gemessen: 190 von 440
+       Sets schrumpften auf zwei Haeuser.
+
+       Also erst alle Guetestufen mit drei und mehr Haeusern durchgehen.
+       Nur wenn davon keine einzige traegt, ist ein Zweierset die Antwort
+       - und es ist immer noch ein besserer Reiz als drei Haeuser mit
+       vierzig Prozent Preisunterschied. */
+    for (const untergrenze of [3, kleinste]) {
     for (const stufe of stufen) {
-      for (let groesse = Math.min(wieViele, kandidaten.length); groesse >= kleinste; groesse--) {
+      for (let groesse = Math.min(wieViele, kandidaten.length); groesse >= untergrenze; groesse--) {
         for (const grenze of this.VERGLEICH_GRENZEN) {
           let passend = fenster(groesse).filter((f) => f.spanne <= grenze && stufe(f));
           if (!passend.length) continue;
@@ -5865,12 +5967,17 @@ const Werkzeugkasten = {
         }
       }
     }
+    }
     /* Keine Grenze traegt. Dann das engste Fenster, das es gibt - aber
        mit der gemessenen Spanne im Protokoll, damit in der Auswertung
        steht, wie homogen die Sets wirklich waren. */
     const alle = [];
     for (let groesse = Math.min(wieViele, kandidaten.length); groesse >= kleinste; groesse--) alle.push(...fenster(groesse));
     if (!alle.length) return { haeuser: kandidaten.slice(0, wieViele).map((x) => x.h), spanne: messen(kandidaten.slice(0, wieViele)), grenze: null };
+    /* Hier endet die Konstruktion: Keine Grenze traegt, auch nicht mit
+       zwei Haeusern. Das engste Fenster gewinnt, und die gemessene Spanne
+       geht ins Protokoll - damit in der Auswertung steht, welche Faelle
+       als Reiz nur bedingt taugen. */
     alle.sort((a, b) => a.spanne - b.spanne || b.w.length - a.w.length);
     return { haeuser: alle[0].w.map((x) => x.h), spanne: alle[0].spanne, grenze: null, gleichlauf: alle[0].gleichlauf };
   },

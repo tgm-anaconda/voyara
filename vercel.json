@@ -1,0 +1,28 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "headers": [
+    {
+      "//": "HTML nie aus dem Cache. Gemeldet am 02.10.2026: 'Baue gerne noch ein, dass automatisch der Cache geleert wird, damit ich nicht alte Versionen habe.' Die Skripte tragen eine Version in der Adresse (?v=NNN) und duerfen deshalb lange liegen bleiben - aber nur, wenn das HTML, das die Versionen nennt, immer frisch kommt. Sonst zeigt der Browser alte Seiten mit alten Versionsnummern, und keine Aenderung kommt an.",
+      "source": "/(.*).html",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
+        { "key": "Pragma", "value": "no-cache" },
+        { "key": "Expires", "value": "0" }
+      ]
+    },
+    {
+      "//": "Auch die Startseite ohne Dateinamen",
+      "source": "/",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+      ]
+    },
+    {
+      "//": "Skripte und Stile tragen ?v= und duerfen zwischengespeichert werden - sie aendern sich nur mit der Version.",
+      "source": "/(.*).(js|css)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=300, must-revalidate" }
+      ]
+    }
+  ]
+}

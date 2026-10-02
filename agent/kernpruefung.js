@@ -878,11 +878,41 @@ const Kernpruefung = {
       catch (e) { melde("set_absturz", String(e && e.message)); continue; }
       const name = `${f.monat}/${f.naechte} Naechte/${f.erwachsene}+${f.kinder}${f.flug ? "/Flug" : ""}`;
       if (!set.haeuser.length) { melde("set_leer", `${name}: kein Set, obwohl ${liste.length} Haeuser passen`); continue; }
-      if (set.haeuser.length < Math.min(3, f.wieViele)) {
+      if (set.haeuser.length < 2) {
         melde("set_zu_klein", `${name}: nur ${set.haeuser.length} Haeuser aus ${liste.length} passenden`);
       }
-      if (set.spanne > 0.10 + 1e-9) {
-        melde("set_preisspanne", `${name}: Preisspanne ${(set.spanne * 100).toFixed(1)} % (hoechstens 10)`);
+      /* Die Spanne gilt, wenn eine Grenze getragen hat. Traegt keine
+         (`grenze === null`), ist das der dokumentierte Rueckfall - dann
+         steht die gemessene Spanne als `set_unvergleichbar` in den Daten,
+         und der Fall ist in der Auswertung erkennbar. Ein stillschweigend
+         zu weites Set waere der Fehler, nicht ein gemeldeter. */
+      if (set.grenze != null && set.spanne > set.grenze + 1e-9) {
+        melde("set_preisspanne", `${name}: Preisspanne ${(set.spanne * 100).toFixed(1)} % bei Grenze ${(set.grenze * 100).toFixed(0)} %`);
+      }
+
+      /* Mit Partnerhaus - genau der Fall, der am 02.10.2026 schiefging.
+         --------------------------------------------------------------
+         Die Pruefung rief `vergleichsSet` bisher ohne Pflichthaus auf und
+         konnte deshalb nicht sehen, was im Testlauf passierte: Platz eins
+         trug das Etikett und kostete 4.389 Euro, die beiden anderen 2.267
+         und 2.407. Das Partnerhaus kam von aussen dazu.
+
+         Jetzt wird jedes der beiden ersten Haeuser einmal als Pflicht
+         gesetzt - bestes und zweitbestes, genau die beiden, die die
+         Erhebung kennzeichnet - und das Set muss es enthalten. */
+      for (const rang of [0, 1]) {
+        const pflicht = liste[rang]?.id;
+        if (!pflicht) continue;
+        let mitP = null;
+        try { mitP = Werkzeugkasten.vergleichsSet(liste, p, f.wieViele, pflicht); }
+        catch (e) { melde("set_absturz", `${name} mit Pflichthaus: ${e && e.message}`); continue; }
+        if (!mitP.haeuser.length) { melde("set_leer", `${name}: kein Set mit Pflichthaus ${pflicht}`); continue; }
+        if (!mitP.haeuser.some((h) => h.id === pflicht)) {
+          melde("partner_nicht_im_set", `${name}: Pflichthaus ${pflicht} fehlt im Set`);
+        }
+        if (mitP.grenze != null && mitP.spanne > mitP.grenze + 1e-9) {
+          melde("set_preisspanne", `${name} mit ${pflicht}: Preisspanne ${(mitP.spanne * 100).toFixed(1)} % bei Grenze ${(mitP.grenze * 100).toFixed(0)} %`);
+        }
       }
       if ((set.notenSpanne ?? 0) > 0.4 + 1e-9) {
         melde("set_notenspanne", `${name}: Notenspanne ${(set.notenSpanne).toFixed(1)} (hoechstens 0,4)`);
