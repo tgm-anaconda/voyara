@@ -283,7 +283,14 @@ img, svg { max-width: 100%; }
 }
 .chip:hover { background: rgba(255,255,255,.16); }
 
-.agent-input { display: flex; gap: 7px; padding: 12px 16px 8px; border-top: 1px solid var(--chat-line); background: var(--chat-head); }
+.agent-input { display: flex; gap: 7px; padding: 12px 16px 8px; border-top: 1px solid var(--chat-line); background: var(--chat-head); align-items: flex-end; }
+/* Das Eingabefeld ist ein Textfeld, kein einzeiliges Feld: Es waechst
+   nach unten mit, statt waagerecht wegzuscrollen. Die Hoehe setzt
+   components.js bei jeder Eingabe; hier stehen nur die Grenzen. */
+.agent-input textarea.input {
+  resize: none; overflow-y: hidden; min-height: 42px; max-height: 160px;
+  line-height: 1.45; font-family: inherit;
+}
 .agent-input .input { background: rgba(255,255,255,.10); border-color: rgba(255,255,255,.2); color: #fff; }
 .agent-input .input::placeholder { color: rgba(255,255,255,.45); }
 .agent-input .input:focus { background: rgba(255,255,255,.16); border-color: var(--brand-500); box-shadow: none; }

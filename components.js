@@ -560,7 +560,7 @@ function renderAgentRail() {
   <div class="agent-suggestions" id="agentSuggestions"></div>
 
   <form class="agent-input" id="agentForm">
-    <input class="input" type="text" id="agentInput" placeholder="Nachricht schreiben…" autocomplete="off" />
+    <textarea class="input" id="agentInput" placeholder="Nachricht schreiben…" rows="1" autocomplete="off"></textarea>
     <button type="button" class="agent-mikro" id="agentMikro" aria-label="Sprechen statt tippen" hidden>${ICONS.mic}</button>
     <button type="submit" class="btn btn-primary" aria-label="Senden">${ICONS.send}</button>
   </form>
@@ -591,6 +591,41 @@ const AgentPanel = {
       this.setSuggestions(["Hotel am Strand für 2 Personen", "Günstige Ferienwohnung"]);
     }
 
+    /* Das Eingabefeld waechst nach unten, nicht nach rechts.
+       ------------------------------------------------------------------
+       Wunsch des Nutzers am 02.10.2026: "Dass das nicht so nach rechts
+       waechst und man dann irgendwann gar nicht mehr lesen kann, was man
+       alles geschrieben hat, sondern dass es nach unten waechst, so wie
+       das auch bei WhatsApp-Nachrichten der Fall ist."
+
+       Ein einzeiliges Eingabefeld scrollt waagerecht; was man geschrieben
+       hat, verschwindet links. Ein Textfeld kann umbrechen, und seine
+       Hoehe wird hier bei jeder Eingabe neu gesetzt: erst auf null
+       zuruecksetzen, damit es auch wieder kleiner wird, dann auf die
+       Hoehe des Inhalts, gedeckelt bei sieben Zeilen. Danach scrollt es
+       senkrecht, statt ins Uferlose zu wachsen.
+
+       Enter sendet weiterhin, Shift+Enter macht einen Absatz - sonst
+       waere die haeufigste Eingabe (ein kurzer Satz) umstaendlicher
+       geworden als vorher. */
+    const feld = document.getElementById("agentInput");
+    const hoeheAnpassen = () => {
+      if (!feld) return;
+      feld.style.height = "auto";
+      const zeile = parseFloat(getComputedStyle(feld).lineHeight) || 20;
+      const rand = feld.offsetHeight - feld.clientHeight;
+      const max = Math.round(zeile * 7 + rand);
+      feld.style.height = `${Math.min(feld.scrollHeight + rand, max)}px`;
+      feld.style.overflowY = feld.scrollHeight + rand > max ? "auto" : "hidden";
+    };
+    feld?.addEventListener("input", hoeheAnpassen);
+    feld?.addEventListener("keydown", (e) => {
+      if (e.key !== "Enter" || e.shiftKey || e.isComposing) return;
+      e.preventDefault();
+      document.getElementById("agentForm")?.requestSubmit?.()
+        || document.getElementById("agentForm")?.dispatchEvent(new Event("submit", { cancelable: true, bubbles: true }));
+    });
+
     document.getElementById("agentForm").addEventListener("submit", (e) => {
       e.preventDefault();
       const input = document.getElementById("agentInput");
@@ -598,6 +633,7 @@ const AgentPanel = {
       if (!text) return;
       this.handleUserInput(text);
       input.value = "";
+      hoeheAnpassen();
     });
 
     this.spracheAnbinden();
