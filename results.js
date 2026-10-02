@@ -740,7 +740,8 @@ function renderFlightAddon() {
   <div class="addon-panel">
     <div class="addon-head">
       <div>${ICONS.plane}<strong>Mit Flug ab ${ab}</strong> · ${Flug.KLASSEN[s.klasse].label} · Hin- und Rückflug für ${b.personen} ${b.personen === 1 ? "Person" : "Personen"}${flug ? ` · ab ${formatPrice(Flug.preisProPerson(flug))} pro Person nach ${ziel.name}` : ""}</div>
-      <a class="section-link" href="results.html?type=flight${zielId ? `&ziel=${zielId}` : ""}">Alle Flüge ansehen →</a>
+      <!-- Kein Verweis auf eine eigene Flugliste: Die Verbindung waehlt
+           man auf der Hausseite, wo die Partner-Airline gekennzeichnet ist. -->
     </div>
   </div>`;
 }

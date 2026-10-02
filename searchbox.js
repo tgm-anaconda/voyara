@@ -154,7 +154,14 @@ const SearchBox = (() => {
       { key: "hotel", label: "Hotels" },
       { key: "apartment", label: "Ferienwohnungen" },
       { key: "car", label: "Mietwagen" },
-      { key: "flight", label: "Flüge" },
+      /* Kein Flug-Reiter.
+         ----------------------------------------------------------------
+         Der Nutzer am 02.10.2026: "Zusaetzlich koennen wir diesen
+         Fluege-Reiter loeschen." Fluege werden in dieser Studie nur zu
+         einer Unterkunft gewaehlt, und zwar in der Uebersicht, in der die
+         Partner-Airline gekennzeichnet ist. Ein zweiter Weg zum selben
+         Produkt ohne diese Kennzeichnung waere ein Leck in der Messung.
+         Die Kachelansicht von dort lebt in der Flugauswahl weiter. */
     ];
     // Flug dazu gibt es nur bei Hotels (Wunsch des Nutzers: bei Wohnungen
     // passt es selten)

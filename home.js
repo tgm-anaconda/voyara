@@ -164,14 +164,10 @@ function renderExtras() {
         <span class="extra-price">ab ${formatPrice(cheapestCar.pricePerDay)} pro Tag</span>
       </div>
     </a>
-    <a class="extra-card" href="results.html?type=flight">
-      <div class="extra-icon">${ICONS.plane}</div>
-      <div class="extra-body">
-        <strong>Flüge nach Palma</strong>
-        <span>Direktverbindungen aus ${new Set(FLIGHTS.map((f) => f.fromCode)).size} deutschen Städten</span>
-        <span class="extra-price">ab ${formatPrice(cheapestFlight.price)} pro Person</span>
-      </div>
-    </a>`;
+    <!-- Keine Flugkachel mehr auf der Startseite.
+         Fluege werden nur noch zu einer Unterkunft gewaehlt, in der
+         Uebersicht mit der gekennzeichneten Partner-Airline. Ein zweiter
+         Weg dorthin ohne Kennzeichnung waere ein Leck in der Messung. -->`;
 }
 
 function renderUsps() {
