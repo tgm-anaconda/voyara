@@ -703,14 +703,18 @@ const Werkzeuge = {
        fuer spaetere Ansicht. Dann kann er nachher auch zwischen den
        Product Detail Pages springen."
 
-       Genau so: Beim Halt wird gemerkt, nicht geoeffnet. Erst nach dem
-       Durchgang geht er die gemerkten Haeuser auf (haeuser_ansehen).
-       Damit hat der Durchgang eine erkennbare Aufgabe, und der Wechsel
-       zwischen Liste und Hausseite passiert nicht mehr mittendrin.
+       Hier laeuft davon der erste Teil: von oben nach unten, mit Halten,
+       und die Halte liegen jetzt auch im ersten Drittel - der frueheste
+       lag bei 30 Prozent, davor lief die Liste ohne jeden Halt durch, und
+       das war der Teil, der wirr wirkte.
 
-       Die Halte liegen jetzt auch im ersten Drittel: Der frueheste lag
-       bei 30 Prozent, und davor lief die Liste ohne jeden Halt durch -
-       das war der Teil, der wirr wirkte. */
+       Was hier NICHT steht, und das ist wichtig: "merkt sich X" waere an
+       dieser Stelle gelogen. Diese Umschau laeuft, BEVOR die engere
+       Auswahl feststeht - welche Haeuser er spaeter oeffnet, entscheidet
+       die Rangfolge aus dem Gespraech, nicht dieser Durchgang. Der Halt
+       heisst deshalb, was er ist: Er sieht sich eines genauer an. Das
+       Merken gehoert in den zweiten Durchgang (haeuser_ansehen), wo die
+       Auswahl bekannt ist - das steht noch aus. */
     const anteile = karten.length >= 20 ? [0.12, 0.38, 0.64, 0.88]
       : karten.length >= 8 ? [0.15, 0.5, 0.85] : [];
     const halte = anteile.map((a) => karten[Math.round(a * (karten.length - 1))])
@@ -719,9 +723,9 @@ const Werkzeuge = {
     const beiHalt = async (el, nr) => {
       el.classList.add("agent-gelesen");
       const name = el.querySelector(".hotel-name")?.textContent?.trim() || "";
-      await Zeiger.lies(el, { dauer: 520, hinweis: name ? `merkt sich ${name}` : "merkt sich dieses Haus" });
+      await Zeiger.lies(el, { dauer: 520, hinweis: name ? `sieht sich ${name} genauer an` : "sieht genauer hin" });
       if (name) gesehen.push(name);
-      if (typeof Kern !== "undefined") Kern.notieren?.("haus_gemerkt", { name, nr });
+      if (typeof Kern !== "undefined") Kern.notieren?.("haus_ueberflogen", { name, nr });
     };
 
     const r = await this.scrollDurch({ elemente: karten, halte, beiHalt, zaehlwort: "Häusern", tempoMs: 22 });
