@@ -951,6 +951,7 @@ const Kern = {
     // und der Zug laeuft nach dem Laden weiter
     this.lauf.vorlageImZug = false;
     this.lauf.lageImZug = null;
+    this.lauf.lageGesagtImZug = false;
     /* Die Einordnung der Nachricht gilt nur fuer diesen Zug. Bliebe ein
        altes "frage" stehen, waeren die veraendernden Werkzeuge gesperrt,
        obwohl die Person laengst wieder antwortet. Bis stand_merken neu
@@ -1247,6 +1248,7 @@ const Kern = {
             nachricht.content = text;
             this.notieren("lage_wiederholt");
           }
+          this.lauf.lageGesagtImZug = true;
           this.lauf.lageImZug = null;
         }
         // Nach einer Vorlage nennt das Modell manchmal ganz andere Haeuser aus
@@ -1519,7 +1521,7 @@ const Kern = {
               const n2 = (this.lauf.nichtVerstanden ||= {});
               n2[offen] = (n2[offen] || 0) + 1;
               this.notieren("unsicher_rueckfrage", { thema: offen, vermutung: unsicher.label });
-              fpJetzt = { ...fpJetzt, satzRoh: satzJetzt, satz: unsicher.satz, chips: unsicher.chips.join(" | ") };
+              fpJetzt = { ...fpJetzt, satzRoh: satzJetzt, satz: unsicher.satz, chips: unsicher.chips.join(" | "), kernFragt: true };
             }
           }
           if (!freierZug && !tippGestellt && offen && offen === this.lauf.zuletztGefragt && standGleich
@@ -1547,12 +1549,12 @@ const Kern = {
                 (this.lauf.tippfehlerGefragt ||= {})[offen] = tipp.label;
                 tippGestellt = true;
                 this.notieren("tippfehler_rueckfrage", { thema: offen, vermutung: tipp.label });
-                fpJetzt = { ...fpJetzt, satzRoh: satzJetzt, satz: tipp.satz, chips: tipp.chips.join(" | ") };
+                fpJetzt = { ...fpJetzt, satzRoh: satzJetzt, satz: tipp.satz, chips: tipp.chips.join(" | "), kernFragt: true };
               } else {
                 /* Die Rueckfrage tritt vor die Frage, nicht an ihre Stelle.
                    `satzRoh` haelt den Satz ohne diesen Vorspann fest, damit
                    der Vergleich im naechsten Zug nicht daran scheitert. */
-                fpJetzt = { ...fpJetzt, satzRoh: satzJetzt,
+                fpJetzt = { ...fpJetzt, satzRoh: satzJetzt, kernFragt: true,
                   satz: `Entschuldige, das habe ich nicht sicher verstanden. ${fpJetzt.satz}` };
               }
             }
@@ -1605,7 +1607,7 @@ const Kern = {
                 this.lauf.datumWiderspruchMal = mal;
                 this.notieren("datum_widerspruch_gefragt", { tag: wid.tag, genannt: wid.genannt, mal });
                 fpJetzt = { ...fpJetzt, satz: wid.satz, chips: (wid.chips || []).join(" | "),
-                  naechstes: null, fragtThema: "anreise" };
+                  naechstes: null, fragtThema: "anreise", kernFragt: true };
               }
             }
             const datumFrage = this.lauf.datumWiderspruch ? null
@@ -1614,7 +1616,7 @@ const Kern = {
               this.lauf.datumFrage = datumFrage.stufe;
               this.notieren("datum_rueckfrage", { stufe: datumFrage.stufe, monat: p2.monat || null });
               fpJetzt = { ...fpJetzt, satz: datumFrage.satz,
-                chips: (datumFrage.chips || []).join(" | "), naechstes: null, fragtThema: "anreise" };
+                chips: (datumFrage.chips || []).join(" | "), naechstes: null, fragtThema: "anreise", kernFragt: true };
             } else if (!this.lauf.datumWiderspruch && [1, 2, 3].includes(this.lauf.datumFrage)) {
               // Beantwortet - und ob ein Tag dabei herauskam, ist ein Messwert
               const hatDatum = !!(p2.anreise || (p2.von && p2.bis));
@@ -1650,7 +1652,7 @@ const Kern = {
                 this.lauf.spanneFrage = 1;
                 this.notieren("spanne_rueckfrage", { grenze: sp.grenze, weiter: sp.weiter,
                   jetzt: sp.jetzt, dann: sp.dann });
-                fpJetzt = { ...fpJetzt, satz: sp.satz, chips: sp.chips.join(" | "), naechstes: null };
+                fpJetzt = { ...fpJetzt, satz: sp.satz, chips: sp.chips.join(" | "), naechstes: null, kernFragt: true };
               }
             }
           }
@@ -1706,6 +1708,55 @@ const Kern = {
             const annahmen = [this.lauf.aenderungSatz, this.lauf.uebernahmeSatz,
               ...Werkzeugkasten.annahmeSaetze(this.lauf, this.lauf.profil)]
               .filter(Boolean).join(" ");
+            /* Ein Autor je Nachricht.
+               ----------------------------------------------------------
+               Bis v=394 schrieben beide in dieselbe Nachricht: Das Modell
+               den Vorspann, der Kern Quittung, Annahme und Frage
+               dahinter. Jeder gemeldete Doppler sass in dieser Naht, und
+               jede Gegenmassnahme war ein weiterer Filter, der dem einen
+               wegstrich, was der andere schon gesagt hatte.
+
+               Jetzt schreibt das Modell die ganze Nachricht - mit der
+               Frage, die der Kern geplant hat, in eigenen Worten - und
+               der Kern prueft sie gegen den Plan. Haelt sie ihn nicht
+               ein, nimmt er seinen eigenen Satz; das ist genau die
+               Nachricht, die vorher immer kam. Der schlechteste Fall ist
+               damit der alte Stand.
+
+               Zwei Faelle bleiben beim Kern: wenn er selbst etwas
+               entschieden hat (Annahme, Aenderung, Uebernahme) - dort
+               zaehlt der genaue Wortlaut mehr als der Ton -, und wenn die
+               Frage nicht aus dem Fahrplan kommt, sondern eine Rueckfrage
+               ist (`nurKern`). */
+            const planThema = fpJetzt.naechstes || fpJetzt.fragtThema || null;
+            const quittungWorte = Werkzeugkasten.aufnahmeWorte(this.lauf, this.lauf.profil);
+            let ausDemModell = null;
+            /* Eine Rueckfrage des Kerns schreibt der Kern.
+               ----------------------------------------------------------
+               Tippfehler-Vermutung, Datumsfrage, Widerspruch,
+               Temperaturgrenze: Diese Saetze treten an die Stelle der
+               geplanten Frage, NACHDEM das Modell geantwortet hat. Es
+               hat seine Nachricht also fuer eine andere Frage
+               geschrieben und kann die Rueckfrage nicht enthalten -
+               `kernFragt` sperrt den Modellweg fuer diesen Zug. Ohne
+               diese Sperre waere die Rueckfrage still verschwunden,
+               sobald die Nachricht des Modells den Vertrag zufaellig
+               erfuellt. */
+            if (!fpJetzt.nurKern && !fpJetzt.kernFragt && !annahmen && planThema) {
+              const pr = Werkzeugkasten.nachrichtPruefen(text, {
+                thema: planThema,
+                quittungWorte,
+                etwasGemerkt: (this.lauf.zuletztGemerkt || []).length > 0,
+                lageGesagt: !!this.lauf.lageGesagtImZug,
+              });
+              if (pr.ok) {
+                ausDemModell = String(text).replace(/\s+/g, " ").trim();
+                this.notieren("nachricht_vom_modell", { thema: planThema });
+              } else {
+                this.notieren("eigener_satz", { grund: pr.grund, thema: planThema,
+                  text: String(text || "").replace(/\s+/g, " ").slice(0, 160) });
+              }
+            }
             const frageNorm = norm(`${(this.lauf.abgeleitet || []).map((x) => x.satz).join(" ")} ${annahmen} ${fpJetzt.satz}`);
             /* Auch die Umschreibung faellt weg, nicht nur die Kopie.
                ------------------------------------------------------------
@@ -1826,7 +1877,7 @@ const Kern = {
                mehr etwas sagte. Was weggestrichen wird, darf nichts
                verdraengen. */
             const nachtrag = Werkzeugkasten.aufnahmeSatz(this, vorspann);
-            if (behauptet.length && !nachtrag) {
+            if (behauptet.length && !nachtrag && !ausDemModell) {
               this.notieren("quittung_ohne_stand", { satz: behauptet.join(" ").slice(0, 160),
                 gemerkt: this.lauf.zuletztGemerkt || [] });
             }
@@ -1839,18 +1890,23 @@ const Kern = {
                abgelegt (`annahmeOffen`), hier wird er abgeholt - und zwar
                endgueltig, damit er nicht in einer spaeteren Nachricht ein
                zweites Mal auftaucht. */
-            if (gruessteJetzt && vorspann) this.lauf.gegruesst = true;
+            if (gruessteJetzt && (vorspann || ausDemModell)) this.lauf.gegruesst = true;
+            if (ausDemModell && /^(hallo|hi|hey|moin|servus|guten (tag|morgen|abend))\b/i.test(ausDemModell)) {
+              this.lauf.gegruesst = true;
+            }
             if (annahmen) this.notieren("annahme_gesagt", { satz: annahmen.slice(0, 120) });
             this.lauf.annahmeOffen = [];
             this.lauf.uebernahmeSatz = null;
             this.lauf.aenderungSatz = null;
-            text = [vorspann, annahmen, fpJetzt.satz].filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
+            text = ausDemModell
+              || [vorspann, annahmen, fpJetzt.satz].filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
             nachricht.content = text;
             // Welcher Teil vom Kern stammt. Die Pruefungen beurteilen nur
             // den Teil des Modells - sonst zaehlt jede Kern-Frage als
             // dessen Fehler (die Verpflegungsfrage nennt All Inclusive,
             // und der Pruefstand meldete ein "unmotiviertes Thema").
-            kernSatzImZug = fpJetzt.satz;
+            // Schreibt das Modell die ganze Nachricht, gehoert sie ihm.
+            kernSatzImZug = ausDemModell ? null : fpJetzt.satz;
           }
         }
         if (text && !gleich(text, zuletzt)) this.sagen(text, "bot", null, { vomModell: true, ...(kernSatzImZug ? { kernSatz: kernSatzImZug } : {}) });
@@ -1931,21 +1987,9 @@ const Kern = {
   /* Fragt das Modell etwas anderes als das Thema des Fahrplans? Grob an
      Schluesselwoertern erkannt - nur in der Eckdaten- und Beratungsphase,
      und nur, wenn ueberhaupt eine Frage im Text steht. */
-  THEMA_WOERTER: {
-    zeit: /wann|monat|zeitpunkt|losgehen|reisezeit|jahreszeit|termin|zeitraum|daten/i,
-    reisende: /\bwer\b|personen|wie viele|kinder|erwachsene|zu zweit|allein|mitreis|reist/i,
-    kinderAlter: /\balt\b|alter|jahre|jährig/i,
-    ziel: /warm|kalt|ziel|wohin|region|richtung|land|insel/i,
-    art: /hotel|ferienwohnung|unterkunft/i,
-    weiter: /schauen|sehen|klären|klaeren|eckdaten|angaben|weiter/i,
-    dauer: /lange|nächte|naechte|tage|dauer|woche/i,
-    flug: /flug/i,
-    flugAb: /flughafen|abflug|ab welch|von wo|fliegen/i,
-    vorgehen: /selbst|drei|filter|raussuch|favorit|vorschl|liste/i,
-    preis: /preis|budget|kosten|euro|grenze|ausgeben/i,
-    verpflegung: /verpflegung|inclusive|inklusive|halbpension|vollpension|frühstück|fruehstueck|mahlzeit|all ?in/i,
-    wuensche: /wichtig|achte|wert|wünsch|wuensch|vorstell|lieber/i,
-  },
+  // Eine Liste, eine Stelle: sie steht beim Werkzeugkasten, weil auch
+  // nachrichtPruefen und die Kernpruefung damit arbeiten
+  get THEMA_WOERTER() { return Werkzeugkasten.THEMA_WOERTER; },
   themaVerfehlt(text) {
     if (!/\?/.test(text)) return null;
     const fp = Werkzeugkasten.fahrplan(this.lauf.profil || {}, this.lauf);
@@ -1963,14 +2007,10 @@ const Kern = {
      gehoeren zur Frage davor; sie als zweite Frage zu zaehlen, kostete
      einen unnoetigen zweiten Modellaufruf und liess die Messung
      schlechter aussehen, als der Agent war. */
-  FRAGEWORT: /\b(wie|was|wo|wer|wen|wem|worauf|wofür|wofuer|womit|wohin|woran|wobei|wann|welche[rsnm]?|warum|wieso|ob|soll|sollen|möchte|moechte|möchtest|moechtest|möchtet|moechtet|willst|wollt|hast|habt|haben|ist|sind|seid|bist|gibt|kann|kannst|könnt|koennt|darf|brauchst|braucht|passt|interessiert)\b/i,
-  fragenZaehlen(text) {
-    return String(text).split(/(?<=[.!?])\s+/)
-      .filter((s) => /\?\s*$/.test(s))
-      .filter((s) => !/^(oder|bzw\.?|beziehungsweise|also|und wenn|zum beispiel|etwa|z\. ?b\.?)\b/i.test(s.trim()))
-      .filter((s) => this.FRAGEWORT.test(s))
-      .length;
-  },
+  // Beide stehen beim Werkzeugkasten, damit die Kernpruefung dieselbe
+  // Regel sieht wie der Kern
+  get FRAGEWORT() { return Werkzeugkasten.FRAGEWORT; },
+  fragenZaehlen(text) { return Werkzeugkasten.fragenZaehlen(text); },
 
   // Wenn das Modell keine Antwortvorschlaege mitgibt: passende aus der Lage
   ersatzChips(fp = null) {

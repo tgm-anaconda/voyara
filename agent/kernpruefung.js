@@ -1566,6 +1566,97 @@ const Kernpruefung = {
     }
     return fehler;
   },
+
+  /* Der Vertrag fuer eine Nachricht aus einer Feder.
+     ------------------------------------------------------------------
+     Seit v=395 schreibt das Modell die ganze Nachricht und der Kern
+     prueft sie. Diese Pruefung prueft die Pruefung: Was durchgehen muss,
+     muss durchgehen (sonst nimmt der Kern immer seinen eigenen Satz und
+     der Umbau war sinnlos), und was auffallen muss, muss auffallen. */
+  NACHRICHT_FAELLE: [
+    // Das soll durchgehen: eine Feder, eine Frage, Aufnahme davor
+    { name: "Quittung und Frage", ok: true,
+      text: "9 Nächte habe ich mir notiert. Wie viele seid ihr, und sind Kinder dabei?",
+      plan: { thema: "reisende", quittungWorte: ["9 Nächte"], etwasGemerkt: true } },
+    { name: "frei formuliert", ok: true,
+      text: "Alles klar, neun Nächte im Juni. Reist ihr zu zweit, oder kommen noch Leute mit?",
+      plan: { thema: "reisende", quittungWorte: ["9 Nächte"], etwasGemerkt: true } },
+    { name: "mit Begruessung", ok: true,
+      text: "Hallo, mir geht es gut, danke. Wann möchtest du denn ungefähr verreisen?",
+      plan: { thema: "zeit", quittungWorte: [], etwasGemerkt: false } },
+    { name: "Nebenfrage im Nachsatz", ok: true,
+      text: "Oktober ist notiert. Soll ein Flug dazu, oder bucht ihr ihn selbst?",
+      plan: { thema: "flug", quittungWorte: [], etwasGemerkt: true } },
+    // Das muss auffallen
+    { name: "zwei Fragen", ok: false, grund: "mehrere_fragezeichen",
+      text: "Wie viele seid ihr? Und wie alt sind die Kinder?",
+      plan: { thema: "reisende", quittungWorte: [], etwasGemerkt: false } },
+    { name: "keine Frage", ok: false, grund: "keine_frage",
+      text: "9 Nächte habe ich mir notiert.",
+      plan: { thema: "reisende", quittungWorte: ["9 Nächte"], etwasGemerkt: true } },
+    { name: "leer", ok: false, grund: "leer", text: "",
+      plan: { thema: "reisende", quittungWorte: [], etwasGemerkt: false } },
+    { name: "anderes Thema gefragt", ok: false, grund: "thema_verfehlt:reisende",
+      text: "9 Nächte habe ich mir notiert. Soll es warm werden?",
+      plan: { thema: "reisende", quittungWorte: ["9 Nächte"], etwasGemerkt: true } },
+    { name: "Aufnahme fehlt", ok: false, grund: "nicht_quittiert:9 Nächte",
+      text: "Gut. Wie viele seid ihr denn?",
+      plan: { thema: "reisende", quittungWorte: ["9 Nächte"], etwasGemerkt: true } },
+    /* Der Befund vom 02.10.2026, jetzt als Regel: eine Zusage ohne
+       etwas im Stand faellt durch. */
+    { name: "Zusage ohne Stand", ok: false, grund: "quittung_ohne_stand",
+      text: "Ich merke mir 9 Nächte. Wie viele seid ihr?",
+      plan: { thema: "reisende", quittungWorte: [], etwasGemerkt: false } },
+    // Und die doppelte Mengenangabe nach der Lage
+    { name: "eigene Menge nach der Lage", ok: false, grund: "eigene_menge",
+      text: "Ich habe eine Auswahl von 182 Unterkünften gefunden. Soll es warm oder kalt werden?",
+      plan: { thema: "ziel", quittungWorte: [], etwasGemerkt: false, lageGesagt: true } },
+    { name: "Frage nach der Lage ist erlaubt", ok: true,
+      text: "Soll es eher in eine warme oder in eine kalte Region gehen?",
+      plan: { thema: "ziel", quittungWorte: [], etwasGemerkt: false, lageGesagt: true } },
+    { name: "zu lang", ok: false, grund: "zu_lang",
+      text: `${"Dazu kann ich dir viel erzaehlen. ".repeat(14)}Wie viele seid ihr?`,
+      plan: { thema: "reisende", quittungWorte: [], etwasGemerkt: false } },
+  ],
+
+  nachrichtvertrag() {
+    const fehler = [];
+    const melde = (art, text, thema) => fehler.push({ art, text, thema: thema || null, satz: "" });
+    for (const f of this.NACHRICHT_FAELLE) {
+      let pr = null;
+      try { pr = Werkzeugkasten.nachrichtPruefen(f.text, f.plan); }
+      catch (e) { melde("vertrag_absturz", `${f.name}: ${e && e.message}`, f.plan.thema); continue; }
+      if (pr.ok !== f.ok) {
+        melde(f.ok ? "vertrag_zu_streng" : "vertrag_zu_lasch",
+          `${f.name}: ${pr.ok ? "durchgelassen" : `abgelehnt (${pr.grund})`}, erwartet ${f.ok ? "durchlassen" : "ablehnen"}`,
+          f.plan.thema);
+      } else if (!f.ok && f.grund && pr.grund !== f.grund) {
+        melde("vertrag_falscher_grund", `${f.name}: Grund "${pr.grund}", erwartet "${f.grund}"`, f.plan.thema);
+      }
+    }
+    /* Jedes Thema, das der Fahrplan fragen kann, braucht ein Wort, an dem
+       sich die Frage erkennen laesst. Fehlt es, laesst der Vertrag jede
+       Frage zu diesem Thema durch - die Pruefung waere dort blind. */
+    for (const t of Object.keys(Werkzeugkasten.THEMEN || {})) {
+      if (!Werkzeugkasten.THEMA_WOERTER[t]) {
+        melde("thema_ohne_wort", `Zum Thema ${t} gibt es kein Erkennungswort - der Vertrag prueft es nicht`, t);
+      }
+    }
+    /* Und die Gegenprobe dazu: Der Fragesatz des Kerns selbst muss den
+       Vertrag erfuellen. Tut er es nicht, kann ihn auch das Modell nicht
+       erfuellen, und der Kern faellt immer auf sich selbst zurueck. */
+    const GRUND = { monat: 6, vonPerson: { monat: true }, zielOffen: true, artEgal: true,
+      flug: false, vorgehen: "selbst", erwachsene: 2, kinder: 0, naechte: 7 };
+    for (const t of Object.keys(Werkzeugkasten.THEMEN || {})) {
+      if (!Werkzeugkasten.THEMA_WOERTER[t]) continue;
+      let satz = null;
+      try { satz = Werkzeugkasten.themenSatz(t, { ...GRUND }, {}); } catch { satz = null; }
+      if (!satz) continue;
+      const pr = Werkzeugkasten.nachrichtPruefen(satz, { thema: t, quittungWorte: [], etwasGemerkt: false });
+      if (!pr.ok) melde("kernsatz_bricht_vertrag", `Die eigene Frage zu ${t} haelt den Vertrag nicht: ${pr.grund} ("${satz}")`, t);
+    }
+    return fehler;
+  },
   lauf({ still = false } = {}) {
     const alle = [];
     const staende = this.staende();
@@ -1590,6 +1681,7 @@ const Kernpruefung = {
     for (const f of this.relativ()) alle.push(f);
     for (const f of this.selbstgelesen()) alle.push(f);
     for (const f of this.datumUndPreis()) alle.push(f);
+    for (const f of this.nachrichtvertrag()) alle.push(f);
     for (const f of this.unsicher()) alle.push(f);
     for (const f of this.annahmen()) alle.push(f);
     for (const f of this.art()) alle.push(f);

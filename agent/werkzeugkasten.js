@@ -1580,6 +1580,127 @@ const Werkzeugkasten = {
      darauf passt: Wie viel es gibt, sagt der Kern. */
   ANGEBOT_AUSSAGE: /\b(unterk(ü|ue)nfte|unterkunft|h(ä|ae)user|hotels?|ferienwohnungen?|wohnungen?|objekte?|angebote?|auswahl|treffer|buchbar|verf(ü|ue)gbar|gefunden)\b/i,
 
+  /* Ein Autor je Nachricht - und der Vertrag dazu.
+     ==================================================================
+     Bis v=394 schrieben beide in dieselbe Nachricht: Das Modell lieferte
+     einen Vorspann, der Kern haengte Quittung, Annahme und Frage an.
+     Jeder gemeldete Doppler sass in dieser Naht, und jede Gegenmassnahme
+     war ein weiterer Filter, der dem einen Autor wegstrich, was der
+     andere schon gesagt hatte.
+
+     Der Nutzer am 02.10.2026: "Ist mir voellig egal, ob die sich
+     identisch anhoeren. Ich moechte, dass der Bot funktioniert und dass
+     ich eine gute User Experience habe."
+
+     Also schreibt das Modell die ganze Nachricht, und der Kern prueft
+     sie gegen den Plan, den er dafuer aufgestellt hat. Faellt sie durch,
+     nimmt er seinen eigenen Satz - das ist genau die Nachricht, die
+     vorher immer kam. Der schlechteste Fall ist damit der alte Stand,
+     der Regelfall eine Nachricht aus einer Feder.
+
+     Geprueft wird, was messbar ist, nicht der Stil:
+
+       - genau eine Frage, und zwar zum geplanten Thema
+       - aufgenommen, was gerade in den Stand ging
+       - keine Zusage ("merke ich mir") ohne etwas im Stand
+       - keine eigene Mengenangabe, wenn der Kern die Lage schon gesagt hat
+       - nicht laenger als drei, vier Saetze
+
+     Die Zahlenpruefung bleibt beim Kern: Sie braucht die Werkzeugergebnisse
+     des Zuges, und die hat nur er. */
+  FRAGEWORT: /\b(wie|was|wo|wer|wen|wem|worauf|wofür|wofuer|womit|wohin|woran|wobei|wann|welche[rsnm]?|warum|wieso|ob|soll|sollen|möchte|moechte|möchtest|moechtest|möchtet|moechtet|willst|wollt|hast|habt|haben|ist|sind|seid|bist|gibt|kann|kannst|könnt|koennt|darf|brauchst|braucht|passt|interessiert)\b/i,
+
+  fragenZaehlen(text) {
+    return String(text).split(/(?<=[.!?])\s+/)
+      .filter((s) => /\?\s*$/.test(s))
+      .filter((s) => !/^(oder|bzw\.?|beziehungsweise|also|und wenn|zum beispiel|etwa|z\. ?b\.?)\b/i.test(s.trim()))
+      .filter((s) => this.FRAGEWORT.test(s))
+      .length;
+  },
+
+  /* Woran man erkennt, dass eine Frage zu einem Thema gehoert. Dieselbe
+     Liste, die auch `themaVerfehlt` im Kern benutzt. */
+  THEMA_WOERTER: {
+    zeit: /wann|monat|zeitpunkt|losgehen|reisezeit|jahreszeit|termin|zeitraum|daten/i,
+    reisende: /\bwer\b|personen|wie viele|kinder|erwachsene|zu zweit|allein|mitreis|reist/i,
+    kinderAlter: /\balt\b|alter|jahre|jährig/i,
+    ziel: /warm|kalt|ziel|wohin|region|richtung|land|insel/i,
+    art: /hotel|ferienwohnung|unterkunft/i,
+    weiter: /schauen|sehen|klären|klaeren|eckdaten|angaben|weiter/i,
+    dauer: /lange|nächte|naechte|tage|dauer|woche/i,
+    flug: /flug/i,
+    flugAb: /flughafen|abflug|ab welch|von wo|fliegen/i,
+    flugKlasse: /klasse|economy|premium|business/i,
+    // "Tag" allein zaehlt: Die eigene Frage lautet "Im Juni ist jeder Tag
+    // frei ... Passt euch der 8. Juni?" und nennt das Wort Anreise nicht
+    anreise: /anreise|datum|\btag(e)?\b|passt euch/i,
+    vorgehen: /selbst|drei|filter|raussuch|favorit|vorschl|liste/i,
+    anzahl: /wie viele|anzahl|h(ä|ae)user|vorschl(ä|ae)ge|unterk(ü|ue)nfte/i,
+    preis: /preis|budget|kosten|euro|grenze|ausgeben/i,
+    verpflegung: /verpflegung|inclusive|inklusive|halbpension|vollpension|frühstück|fruehstueck|mahlzeit|all ?in/i,
+    wuensche: /wichtig|achte|wert|wünsch|wuensch|vorstell|lieber/i,
+    beratung: /eckdaten|klären|klaeren|auswahl|zeigen/i,
+  },
+
+  /* Die Worte, die der Kern in diesem Zug aufgenommen hat - das, was in
+     der Nachricht vorkommen muss. */
+  aufnahmeWorte(lauf, p) {
+    const raus = [];
+    for (const f of [...new Set(lauf?.zuletztGemerkt || [])]) {
+      const e = this.FELDWORT[f];
+      if (!e) continue;
+      const wort = e.wort(p || {});
+      if (wort) raus.push(wort);
+    }
+    return raus;
+  },
+
+  // Die Zahlen als Wort - "neun Naechte" ist dieselbe Aufnahme wie
+  // "9 Naechte", und ein Modell, das ausschreibt, soll nicht durchfallen
+  ZAHLWORT: ["null", "ein", "zwei", "drei", "vier", "fünf", "sechs", "sieben", "acht", "neun",
+    "zehn", "elf", "zwölf", "dreizehn", "vierzehn", "fünfzehn", "sechzehn", "siebzehn",
+    "achtzehn", "neunzehn", "zwanzig", "einundzwanzig"],
+
+  // Kommt eines der Worte in der Nachricht vor? Geprueft wird am
+  // kennzeichnenden Teil: eine Zahl, sonst das laengste Wort.
+  wortErkannt(wort, text) {
+    const t = String(text || "");
+    const zahl = String(wort).match(/\d+/);
+    if (zahl) {
+      if (t.includes(zahl[0])) return true;
+      const w = this.ZAHLWORT[Number(zahl[0])];
+      return !!w && new RegExp(`\\b${w}`, "i").test(t);
+    }
+    const lang = String(wort).split(/\s+/).filter((x) => x.length > 3).sort((a, b) => b.length - a.length)[0];
+    if (!lang) return true;
+    return new RegExp(lang.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i").test(t);
+  },
+
+  nachrichtPruefen(text, plan = {}) {
+    const t = String(text == null ? "" : text).replace(/\s+/g, " ").trim();
+    if (!t) return { ok: false, grund: "leer" };
+    const frageZeichen = (t.match(/\?/g) || []).length;
+    if (frageZeichen === 0) return { ok: false, grund: "keine_frage" };
+    if (frageZeichen > 1) return { ok: false, grund: "mehrere_fragezeichen" };
+    if (this.fragenZaehlen(t) > 1) return { ok: false, grund: "zwei_fragen" };
+    if (plan.thema) {
+      const re = this.THEMA_WOERTER[plan.thema];
+      if (re && !re.test(t)) return { ok: false, grund: `thema_verfehlt:${plan.thema}` };
+    }
+    for (const wort of plan.quittungWorte || []) {
+      if (!this.wortErkannt(wort, t)) return { ok: false, grund: `nicht_quittiert:${wort}` };
+    }
+    const saetze = t.split(/(?<=[.!?])\s+/);
+    if (!plan.etwasGemerkt && saetze.some((x) => this.QUITTUNG.test(x))) {
+      return { ok: false, grund: "quittung_ohne_stand" };
+    }
+    if (plan.lageGesagt && saetze.some((x) => !/\?/.test(x) && this.ANGEBOT_AUSSAGE.test(x))) {
+      return { ok: false, grund: "eigene_menge" };
+    }
+    if (t.length > 420) return { ok: false, grund: "zu_lang" };
+    return { ok: true, grund: null };
+  },
+
   antwortSelbstLesen(kern, thema, text) {
     const leser = thema ? this.SELBST_LESEN[thema] : null;
     if (!leser) return null;
@@ -5466,8 +5587,22 @@ const Werkzeugkasten = {
         }${fremd}`,
         nochOffen: fp.fehlt,
       };
+      /* Du schreibst die ganze Nachricht - und der Kern prueft sie.
+         --------------------------------------------------------------
+         Bis v=394 stand hier das Gegenteil: Das Modell sollte KEINE
+         Frage stellen, der Kern haengte seine an. Daraus wurde eine
+         Nachricht von zwei Autoren, und jeder gemeldete Doppler sass in
+         dieser Naht. Jetzt schreibt das Modell alles, der Kern prueft
+         den Vertrag (`nachrichtPruefen`) und nimmt bei einem Verstoss
+         seinen eigenen Satz. Der Fragesatz des Kerns steht weiter dabei,
+         aber als Vorlage, nicht als Verbot. */
+      const nimmAuf = this.aufnahmeWorte(lauf, p);
       return {
-        alsNaechstes: `Die naechste Frage stellt der Chat selbst - du musst sie NICHT schreiben. Sie lautet: "${fp.satz}" Wiederhole sie nicht, kuendige sie nicht an und stell keine eigene Frage; kein Fragezeichen in deiner Antwort. Schreib nur, was du zu dem sagen willst, was die Person zuletzt gesagt hat: hoechstens zwei kurze Saetze. Hat sie etwas Neues genannt, nimm es ausdruecklich auf ("Gutes Essen merke ich mir."). GRUESST sie dich oder sagt sie etwas Persoenliches ("hi", "wie geht es dir?", "danke dir"), geh in einem kurzen Satz darauf ein, bevor es weitergeht - das ist der einzige Fall, in dem du etwas schreibst, das nichts mit der Reise zu tun hat. Gibt es sonst nichts zu sagen, schreib gar nichts.${fremd}`,
+        alsNaechstes: `Schreib die ganze Nachricht selbst, in deinen eigenen Worten, und stell darin GENAU EINE Frage - diese: ${fp.frage} So wuerde der Chat sie stellen: "${fp.satz}" Du darfst es anders formulieren, aber frag dasselbe und nichts dazu.${
+          nimmAuf.length
+            ? ` Sag ZUERST in einem kurzen Satz, dass du aufgenommen hast: ${nimmAuf.join(", ")}. Genau diese Angabe muss vorkommen.`
+            : " Es ist nichts Neues in den Stand gegangen - behaupte also NICHT, du haettest dir etwas gemerkt."
+        } GRUESST sie dich oder sagt sie etwas Persoenliches ("hi", "wie geht es dir?", "danke dir"), geh in einem kurzen Satz darauf ein, bevor es weitergeht. Hoechstens drei kurze Saetze, genau ein Fragezeichen, keine zweite Frage und keine Zahl, die nicht im Stand oder in einem Werkzeugergebnis steht.${fremd}`,
         /* Der Fragetext des Fahrplans geht weiter mit, auch wenn der Chat
            die Frage selbst stellt.
            --------------------------------------------------------------
