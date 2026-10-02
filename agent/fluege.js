@@ -35,10 +35,10 @@ const Fluege = {
   daten: null,
 
   /* kandidaten: [{ id, flug, preis, partner, dauerText, gepaeck }] */
-  zeigen(kandidaten, kern, { kennzeichnung = "etikett", kontext = "" } = {}) {
+  zeigen(kandidaten, kern, { kennzeichnung = "etikett", kontext = "", nachWahl = null } = {}) {
     this.schliessen(true);
     if (!kandidaten.length) return;
-    this.daten = { kandidaten, kern, kennzeichnung };
+    this.daten = { kandidaten, kern, kennzeichnung, nachWahl };
     this.geoeffnet = Date.now();
     this.offen = true;
 
@@ -121,6 +121,9 @@ const Fluege = {
 
   waehlen(id) {
     const k = this.daten?.kern;
+    // Der Rueckruf wird vor dem Schliessen gesichert - `schliessen(true)`
+    // raeumt `daten` weg, und danach gaebe es ihn nicht mehr.
+    const nachWahl = this.daten?.nachWahl || null;
     const kand = this.daten?.kandidaten || [];
     const pos = kand.findIndex((x) => x.id === id);
     const gewaehlt = kand[pos];
@@ -144,6 +147,10 @@ const Fluege = {
          ist, und fragte noch einmal. */
       k.nachricht?.(`Ich nehme den Flug mit ${gewaehlt?.flug?.airline || "dieser Verbindung"}.`);
     }
+    /* Ohne Kern - die Person hat selbst auf "Jetzt buchen" geklickt und
+       waehlt hier ihren Flug. Dann geht es nach der Wahl weiter, wohin sie
+       wollte. */
+    if (nachWahl) nachWahl(id, gewaehlt);
   },
 
   schliessen(still = false, grund = null) {

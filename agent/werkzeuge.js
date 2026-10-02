@@ -439,6 +439,20 @@ const Werkzeuge = {
       } else nichtGesetzt.push(`Preisgrenze ${wunsch.maxPreis} €`);
     }
 
+    /* Der Gesamtregler. Steht die Grenze fuer die ganze Reise, gehoert sie
+       hierher und nicht an den Nachtregler - siehe filterWerte. */
+    if (wunsch.budgetGesamt) {
+      const regler = this.finde("#fGesamt", panel);
+      if (!regler) nichtGesetzt.push(`Gesamtbudget ${wunsch.budgetGesamt} €`);
+      else {
+        const max = Number(regler.max);
+        const wert = Math.min(max, Number(wunsch.budgetGesamt));
+        if (await Zeiger.setzeWert(regler, String(wert), { hinweis: "Gesamtbudget" })
+          && Number(regler.value) === wert) gesetzt.push(`bis ${wert} € gesamt`);
+        else nichtGesetzt.push(`Gesamtbudget ${wunsch.budgetGesamt} €`);
+      }
+    }
+
     await Zeiger.warte(300);
     const treffer = document.querySelectorAll(".result-card").length;
     const rest = nichtGesetzt.length ? ` · nicht einstellbar auf dieser Liste: ${nichtGesetzt.join(", ")}` : "";
@@ -602,8 +616,34 @@ const Werkzeuge = {
     let weiteste = startY;
     let naechstes = 0;
     let y = von;
+    /* Der Zaehler haengt an der echten Position, nicht an der geplanten.
+       ------------------------------------------------------------------
+       Gemeldet am 02.10.2026: "Er scrollt drei Hotels runter und dann
+       springt die Zahl schon von 0 bis 70 und dann scrollt er erst bis zur
+       70. Stelle. Bleibt kurz stehen, dann springt die Zahl von 70 auf 120
+       und danach scrollt er dann erst zur 120. Stelle. Also es geht nicht
+       auf die gesamte Scrolldauer kontinuierlich hoch die Zahl."
+
+       Die Ursache stand hier: Gezaehlt wurde gegen `y` - die Stelle, zu
+       der gleich gescrollt WERDEN SOLL. Bei einem Haltepunkt springt `y`
+       auf dessen Position, und die Zahl sprang mit, bevor sich das Bild
+       bewegt hatte. Die Zahl lief der Bewegung also voraus, und genau das
+       sieht man.
+
+       Jetzt wird `window.scrollY` gelesen, also wo die Seite wirklich
+       steht. Die Zahl kann der Bewegung damit nicht mehr vorauslaufen.
+       Und sie laeuft nur nach oben: Ein Haltepunkt scrollt gelegentlich
+       ein Stueck zurueck, und eine Zahl, die beim Durchgehen wieder
+       kleiner wird, liest sich als Fehler. */
+    let hoechste = 0;
+    const beschriften = () => {
+      if (!zaehlwort) return;
+      hoechste = Math.max(hoechste, gesehen(window.scrollY));
+      Zeiger.beschrifte?.(`${Math.max(1, hoechste)} von ${gesamt} ${zaehlwort}`);
+    };
     window.scrollTo({ top: von, behavior: "auto" });
     await Zeiger.warte(120);
+    beschriften();
     while (y < bis && !Zeiger.abbruch) {
       y = Math.min(bis, y + schritt);
       // Liegt der naechste Haltepunkt in diesem Abschnitt, haelt er dort
@@ -615,10 +655,14 @@ const Werkzeuge = {
         if (beiHalt) await beiHalt(el, naechstes + 1);
         naechstes += 1;
         y = Math.max(y, window.scrollY);
+        // Nach dem Halt wieder die Zahl - der Halt hat den Zeiger
+        // beschriftet, und ohne das stand dort bis zum naechsten Schritt
+        // "Bewertung 3 von 5" statt des Zaehlers.
+        beschriften();
       }
       window.scrollTo({ top: y, behavior: "auto" });
       weiteste = Math.max(weiteste, window.scrollY);
-      if (zaehlwort) Zeiger.beschrifte?.(`${Math.max(1, gesehen(y))} von ${gesamt} ${zaehlwort}`);
+      beschriften();
       await Zeiger.warte(takt);
     }
     // Was noch offen ist, weil die Strecke vorher zu Ende war
@@ -901,8 +945,25 @@ const Werkzeuge = {
         const note = el.querySelector(".review-rating")?.textContent?.trim() || "";
         const titel = el.querySelector("h4")?.textContent?.trim() || "";
         const text = el.querySelector("p")?.textContent?.trim() || "";
+        /* Welche Aspekte diese Stimme nennt, und mit welchem Vorzeichen.
+           --------------------------------------------------------------
+           Gemeldet am 02.10.2026: Der Agent zitierte "Das Essen war
+           richtig gut" und sagte im selben Atemzug, das Essen sei "eher
+           nicht so gut". Beides stimmte fuer sich - die Teilnote lag bei
+           6,7, und diese eine Stimme war positiv. Nur gehoerte sie nicht
+           zu dem Satz, den sie belegen sollte.
+
+           Ein Zitat kann nur belegen, wenn man weiss, wovon es spricht.
+           Die Marker unter jeder Bewertung sagen das ("+ Essen",
+           "- Sauberkeit"); von hier an reisen sie mit, und der Kern waehlt
+           danach aus. */
+        const aspekte = {};
+        for (const m of el.querySelectorAll(".aspekt-marker .marker")) {
+          const label = m.textContent.replace(/^[+\u2212-]\s*/, "").trim();
+          if (label) aspekte[label] = m.classList.contains("minus") ? -1 : 1;
+        }
         await Zeiger.lies(el, { dauer: 760, hinweis: `Bewertung ${nummer} von ${reihenfolge.length}${autor ? `: ${autor}` : ""}` });
-        gelesen.push({ autor, note, titel, text });
+        gelesen.push({ autor, note, titel, text, aspekte });
       };
 
       /* Dieselbe Bewegung wie in der Trefferliste - eine Funktion, zwei
@@ -944,7 +1005,11 @@ const Werkzeuge = {
       const passt = (r) => !suche || Object.keys(r.aspekte || {})
         .some((a) => ((typeof ASPEKT_NACH_ID !== "undefined" && ASPEKT_NACH_ID[a]?.label) || a).toLowerCase().includes(suche));
       for (const r of vorrat.filter(passt).slice(0, anzahl)) {
-        gelesen.push({ autor: r.author, note: String(r.rating), titel: r.title, text: r.text });
+        const marken = {};
+        for (const [id, w] of Object.entries(r.aspekte || {})) {
+          marken[(typeof ASPEKT_LABELS !== "undefined" && ASPEKT_LABELS[id]) || id] = w > 0 ? 1 : -1;
+        }
+        gelesen.push({ autor: r.author, note: String(r.rating), titel: r.title, text: r.text, aspekte: marken });
       }
     }
 

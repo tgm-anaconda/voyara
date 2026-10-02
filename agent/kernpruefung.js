@@ -638,7 +638,7 @@ const Kernpruefung = {
            Modell reicht nicht: Im Testlauf am 01.10.2026 hat es ihn
            ignoriert, und die angenommene Dauer stand unkommentiert in der
            Uebersicht. */
-        const eigen = (lauf.annahmeOffen || []).join(" ");
+        const eigen = (lauf.annahmeOffen || []).map((e) => (typeof e === "string" ? e : e.text)).join(" ");
         if (!eigen) {
           fehler.push({ art: "annahme_ohne_eigenen_satz", thema: t, satz: "",
             text: "Es gibt nur den Auftrag an das Modell, keinen Satz, den der Kern selbst sagen kann" });

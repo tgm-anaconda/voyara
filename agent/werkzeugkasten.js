@@ -209,6 +209,19 @@ const Werkzeugkasten = {
       f("buchung_abschliessen",
         "Schliesst die vorbereitete Buchung ab (Freigabe 'buchen', oder 'vorbereiten' nach klarem Ja der Person). Es wird nichts wirklich gebucht, die Seite ist ein Prototyp.",
         {}),
+      /* Das Formular auf dieser Seite ist deins.
+         ----------------------------------------------------------------
+         Gemeldet am 02.10.2026: Auf "fuell mir dieses Kontaktformular aus"
+         antwortete das Modell "Das Ausfuellen von Kontaktformularen kann
+         ich nicht uebernehmen". Es hielt das Buchungsformular der Seite
+         fuer ein fremdes Formular im Netz. Dafuer gab es kein Werkzeug mit
+         diesem Namen - also wird es eines, mit genau den Worten, die die
+         Person benutzt. */
+      f("formular_ausfuellen",
+        "Fuellt das Buchungsformular auf der Kasse mit den Daten der Person aus (Name, Anschrift, Kontakt) und laesst es zum Pruefen stehen. "
+        + "Nimm dieses Werkzeug, wenn die Person 'fuell mir das aus', 'trag die Namen ein' oder Aehnliches sagt, waehrend das Formular offen ist. "
+        + "Es ist das Formular DIESER Seite, kein fremdes - du darfst es bedienen. Abgeschickt wird nichts.",
+        {}),
       f("freigabe_aendern",
         "Setzt die Freigabestufe, wenn die Person im Gespraech sagt, dass du mehr (oder weniger) darfst.",
         { stufe: { type: "string", enum: ["suchen", "vorbereiten", "buchen"] } }, ["stufe"]),
@@ -220,6 +233,7 @@ const Werkzeugkasten = {
     haus_oeffnen: "suchen", zurueck_zur_liste: "suchen", merken: "suchen",
     haeuser_ansehen: "suchen", stichprobe_nehmen: "suchen", monate_vergleichen: "suchen",
     buchung_vorbereiten: "vorbereiten", buchung_abschliessen: "vorbereiten",
+    formular_ausfuellen: "vorbereiten",
   },
 
   /* Zeile im Agenten-Log, bevor das Werkzeug laeuft.
@@ -265,6 +279,7 @@ const Werkzeugkasten = {
       case "zurueck_zur_liste": return "Gehe zurück zur Trefferliste";
       case "merken": return `Setze ${haus(a.id)} auf den Merkzettel`;
       case "buchung_vorbereiten": return `Bereite die Buchung für ${haus(a.id)} vor`;
+      case "formular_ausfuellen": return "Fülle das Buchungsformular aus";
       case "buchung_abschliessen": return "Schließe die Buchung ab";
       case "freigabe_aendern": return `Freigabe geändert: ${a.stufe}`;
       default: return name;
@@ -377,7 +392,7 @@ const Werkzeugkasten = {
        macht das Gespraech dann holprig, aber er kann die Hauptmessgroesse
        nicht verfaelschen: welches Haus gebucht wurde und ob das
        Partnerhaus dabei war. */
-    const AENDERT_MESSWERTE = ["auswahl_vorlegen", "buchung_vorbereiten", "buchung_abschliessen", "freigabe_aendern"];
+    const AENDERT_MESSWERTE = ["auswahl_vorlegen", "buchung_vorbereiten", "formular_ausfuellen", "buchung_abschliessen", "freigabe_aendern"];
     /* Gesperrt wird nur, wenn die Person sicher nichts angewiesen hat.
        Eine Fehleinordnung von "buch das" als "sonstiges" wuerde sonst die
        Buchung verhindern - also genau die Hauptmessgroesse kosten, die die
@@ -1202,12 +1217,7 @@ const Werkzeugkasten = {
 
   // Passt das Haus zur Gruppe (Zimmergroesse bzw. Hoechstbelegung)?
   passtGruppe(item, profil) {
-    const personen = (profil.erwachsene || 0) + (profil.kinder || 0);
-    if (!personen) return true;
-    if (item.type === "apartment") return (item.maxGuests || 0) >= personen;
-    if (!item.rooms?.length) return true;
-    const zimmer = Math.max(1, profil.zimmer || 1);
-    return Math.max(...item.rooms.map((r) => r.maxGuests || 0)) * zimmer >= personen;
+    return Auswahl.passtGruppe(item, profil);
   },
 
   /* Was der Agent ueber ein Haus wissen darf, haengt daran, was er
@@ -1874,11 +1884,15 @@ const Werkzeugkasten = {
       }
       if (a.beratung) { setze("beratung", a.beratung); kern.notieren("beratung", { wahl: a.beratung }); }
       if (a.vorgehen) { setze("vorgehen", a.vorgehen); kern.notieren("vorgehen", { wahl: a.vorgehen, freigabe: kern.freigabe(), anzahl: p.anzahlVorschlaege || 3 }); }
-      // Budget fuer die ganze Reise in einen Preis pro Nacht umrechnen,
-      // wie auf der Seite gerechnet wird (Servicegebuehr 35 Euro)
-      if (p.budgetGesamt && p.naechte && !a.maxPreis) {
-        p.maxPreis = Math.floor((p.budgetGesamt - 35 * Math.max(1, p.zimmer || 1)) / (p.naechte * Math.max(1, p.zimmer || 1)));
-      }
+      /* Kein abgeleiteter Nachtpreis mehr.
+         ----------------------------------------------------------------
+         Hier wurde aus einem Gesamtbudget ein Preis pro Nacht gerechnet,
+         damit der Agent den Nachtregler ziehen konnte. Die Rechnung liess
+         Zimmer- und Verpflegungsaufschlag und den Flug weg, waehrend
+         `Auswahl.pruefe` mit dem echten Gesamtpreis filtert. Die Folge war
+         eine Liste, die weder zur Aussage noch zur Zaehlung passte. Seit
+         es den Gesamtregler gibt, geht die Grenze dorthin, wo sie
+         hingehoert. */
       kern.standAnzeigen();
       // Was gerade neu hereinkam - der Kern prueft danach, ob das Modell
       // es auch aufgenommen hat
@@ -1964,6 +1978,34 @@ const Werkzeugkasten = {
        Filter, und die Person schaut. */
     async suchen(a, kern, stufe) {
       const p = kern.lauf.profil;
+      /* Wer schon im Formular steht, will keine neue Suche.
+         ----------------------------------------------------------------
+         Gemeldet am 02.10.2026: "Ich bin dann einfach auf ein Hotel
+         gegangen und auf das Kontaktformular schon gegangen und habe dann
+         geschrieben, fuell mir das aus. Und dann hat er einfach nochmal
+         genau die Suche neu gemacht mit neuen Hotels, was halt auch
+         voellig falsch ist, weil er eigentlich haette wissen muessen, dass
+         er das schon gemacht hat, er haette fragen muessen, was genau
+         meinst du."
+
+         Genau so. Eine Suche auf der Buchungsseite wirft alles weg, was
+         die Person dort gerade vor sich hat - und sie hat nie darum
+         gebeten. Der Agent fragt stattdessen, was gemeint ist. Eine echte
+         Bitte um eine andere Auswahl geht weiter durch: "andere Haeuser",
+         "neue Suche", "zurueck zur Liste". */
+      const wo = typeof Werkzeuge !== "undefined" ? Werkzeuge.seite() : null;
+      if (wo === "checkout" || wo === "stay") {
+        const letzte = [...(kern.lauf.gespraech || [])].reverse().find((n) => n.role === "user")?.content || "";
+        const willNeu = /andere[nrs]? (haus|häuser|hotel|unterkunft|vorschläge|auswahl)|neue suche|nochmal suchen|zurück zur liste|weitere vorschläge|was anderes/i.test(String(letzte));
+        if (!willNeu) {
+          kern.notieren("suche_am_formular_abgelehnt", { wo, satz: String(letzte).slice(0, 120) });
+          return { ergebnis: { hinweis: `Du stehst gerade ${wo === "checkout" ? "im Buchungsformular" : "auf der Hausseite"}, `
+            + "und die Person hat nicht um eine neue Auswahl gebeten. Eine neue Suche wuerde wegwerfen, was sie vor sich hat. "
+            + "Frag in einem Satz, was sie meint - soll du hier weitermachen (Formular ausfuellen, Buchung vorbereiten) "
+            + "oder zurueck zur Liste und neu suchen? Suche nicht, bevor sie geantwortet hat." },
+            log: `Keine neue Suche: Die Person steht ${wo === "checkout" ? "im Formular" : "auf der Hausseite"}` };
+        }
+      }
       // Filter aus dem Aufruf in den Stand uebernehmen
       // Filter kommen nur aus dem Stand (stand_merken) - was die Person
       // gesagt hat. Der Aufruf bringt hoechstens Ziel und Sortierung.
@@ -2022,7 +2064,10 @@ const Werkzeugkasten = {
         // Bei einer Richtung (warm, Meer) zaehlt der eingegrenzte Katalog, nicht
         // die Seite - die kennt nur eine Region auf einmal
         const eingegrenzt = !p.zielId && p.zieleErlaubt?.length;
-        const basis = { weg, gesuchtMit: Werkzeugkasten.filterText(p), zeitraum: zeitText, trefferGesamt: eingegrenzt ? liste.length : (gesamt ?? liste.length), lage: umfang,
+        /* Die Zahl, die gesagt wird, wird vorher gegen die Karten geprueft -
+           steht die Liste vor der Person, gilt die Liste. */
+        const gerechnet = eingegrenzt ? liste.length : (gesamt ?? liste.length);
+        const basis = { weg, gesuchtMit: Werkzeugkasten.filterText(p), zeitraum: zeitText, trefferGesamt: Werkzeugkasten.kartenAbgleich(p, kern, gerechnet), lage: umfang,
           ...(p.typ !== "apartment" ? { verpflegungsLage: Werkzeugkasten.verpflegungsLage(liste) } : {}) };
         // Der Kern braucht den Aufpreis fuer seine Verpflegungsfrage
         if (p.typ !== "apartment") kern.lauf.verpflegungsLage = basis.verpflegungsLage;
@@ -2360,6 +2405,8 @@ const Werkzeugkasten = {
       const aktiv = document.querySelectorAll("#filterPanel input:checked:not([value=''])").length;
       if (reset && aktiv > 0 && (kern.lauf.runde || 0) > 0) { await Zeiger.klicke(reset, { hinweis: "Filter zurücksetzen" }); await Zeiger.warte(250); }
       const gesetzt = await Werkzeuge.filterSetzen(Werkzeugkasten.filterWerte(p));
+      // Woran ein Abgleich scheitern kann: was die Spalte nicht hergab
+      kern.lauf.nichtGesetzt = gesetzt?.daten?.nichtGesetzt?.length ? gesetzt.daten.nichtGesetzt : null;
       // Womit die Spalte jetzt wirklich dasteht - der Vergleichspunkt fuer
       // spaeter, wenn jemand anderes die Seite angefasst hat
       kern.lauf.filterAbdruck = gesetzt?.daten?.abdruck || Werkzeuge.filterAbdruck();
@@ -2878,11 +2925,29 @@ const Werkzeugkasten = {
              er die Bewertungen nicht durchgegangen waere - und das, was
              eine Zusammenfassung glaubwuerdig macht. Der Kern waehlt es
              aus den Daten, das Modell fasst es nicht an. */
+          /* Das Zitat muss zu dem passen, was darueber steht.
+             ------------------------------------------------------------
+             Vorher nahm der Kern die erste Stimme, die lang genug war.
+             Damit stand am 02.10.2026 ein Lob fuer das Essen unter einem
+             Satz, der das Essen bemaengelte. Jetzt wird nach dem Aspekt
+             gesucht, von dem die Zeile spricht, und nach dem Vorzeichen,
+             das zur Teilnote passt: Ueber 60 Prozent Zustimmung sucht er
+             eine zustimmende Stimme, darunter eine kritische. Findet er
+             keine, laesst er das Zitat weg - ein unpassender Beleg ist
+             schlechter als keiner. */
           (() => {
-            const z = (e.daten?.stimmen || []).find((x) => x.text && x.text.length > 30);
-            if (!z) return null;
-            const kurz = z.text.length > 110 ? `${z.text.slice(0, 107).trim()}...` : z.text;
-            return `Eine Stimme: „${kurz}"`;
+            const stimmen = (e.daten?.stimmen || []).filter((x) => x.text && x.text.length > 30);
+            if (!stimmen.length) return null;
+            const lang = (x) => (x.text.length > 110 ? `${x.text.slice(0, 107).trim()}...` : x.text);
+            if (!teil) {
+              // Ohne genannten Aspekt steht keine Bewertung darueber, die
+              // ein Zitat stuetzen muesste - dann ist jede Stimme ehrlich.
+              return `Eine Stimme: „${lang(stimmen[0])}"`;
+            }
+            const wollen = teil.anteilPositiv >= 0.6 ? 1 : -1;
+            const passend = stimmen.find((x) => (x.aspekte || {})[wunsch.label] === wollen);
+            if (!passend) return null;
+            return `Dazu eine Stimme: „${lang(passend)}"`;
           })(),
           weiter,
         ].filter(Boolean).join(" "));
@@ -3148,6 +3213,12 @@ const Werkzeugkasten = {
               : "Nenn Haus, Zeitraum und Gesamtpreis und frag, ob du abschliessen sollst. Erst nach einem klaren Ja buchung_abschliessen rufen.") },
         log: `Buchung vorbereitet: ${z?.titel || item.name}, ${z?.gesamt || ""}${getan.length ? ` · ausgefuellt: ${getan.join(", ")}` : ""}`,
       };
+    },
+
+    // Dasselbe wie buchung_vorbereiten, nur unter dem Namen, den die
+    // Person benutzt - siehe die Begruendung an der Werkzeugliste.
+    async formular_ausfuellen(a, kern, stufe) {
+      return this.buchung_vorbereiten(a, kern, stufe);
     },
 
     async buchung_abschliessen(a, kern) {
@@ -3957,7 +4028,23 @@ const Werkzeugkasten = {
       if (eigen) {
         const vorsicht = (lauf.nichtVerstanden?.[t] || 0) >= 2
           ? "Deine Angabe konnte ich nicht sicher lesen. " : "";
-        (lauf.annahmeOffen ||= []).push(`${vorsicht}${eigen}`);
+        /* Der Satz merkt sich, wofuer er gilt.
+           --------------------------------------------------------------
+           Gemeldet am 02.10.2026: "Da steht, okay, festes Budget, 8000
+           Euro merke ich mir. Und dann in der naechsten Nachricht steht,
+           okay, erstmal legst du dich anscheinend noch nicht fest. Das
+           widerspricht sich doch."
+
+           Genau so war es. Der Satz wurde in einem Zug beschlossen und
+           erst im naechsten gesagt - und dazwischen hatte die Person die
+           Zahl genannt. Ein Satz ueber einen Wert ist nur so lange wahr,
+           wie der Wert noch so im Stand steht. Deshalb reist er mit
+           seinem Grund: Thema und die Felder samt Werten, die die Annahme
+           geschrieben hat. Wer ihn sagen will, prueft erst, ob er noch
+           gilt (`Werkzeugkasten.annahmeGilt`). */
+        const geschrieben = {};
+        for (const f of a.schreibt || []) geschrieben[f] = p[f] ?? null;
+        (lauf.annahmeOffen ||= []).push({ thema: t, text: `${vorsicht}${eigen}`, felder: geschrieben });
       }
     }
 
@@ -4490,24 +4577,9 @@ const Werkzeugkasten = {
      Reisenden, hin und zurueck. Was erst an der Kasse dazukommt
      (Gepaeck, Versicherung, Kartengebuehr), gehoert nicht dazu: Das sind
      Entscheidungen der Person, keine Eigenschaft der Reise. */
+  // Eine Rechnung fuer Karte, Regler, Agent und Kasse - siehe data/auswahl.js
   reisepreis(item, p) {
-    if (!item || !p) return null;
-    const nacht = this.preis(item, p.monat);
-    if (nacht == null) return null;
-    const a = typeof Politik !== "undefined" && Politik.aufenthaltspreis
-      ? Politik.aufenthaltspreis(item, p, nacht) : null;
-    const unterkunft = a ? a.gesamt : nacht * (p.naechte || 7);
-    if (unterkunft == null) return null;
-    const personen = (p.erwachsene || 0) + (p.kinder || 0);
-    /* Der Flugteil darf die Rechnung nicht zum Absturz bringen: `paket`
-       liest die Adresse und den Speicher der Seite. Faellt er aus, ist
-       der Preis die Unterkunft - und das Feld `mitFlug` sagt, dass die
-       Zahl unvollstaendig ist, statt sie als ganze auszugeben. */
-    let paket = null;
-    if (p.flug && item.type !== "apartment" && typeof Flug !== "undefined") {
-      try { paket = Flug.paket(item, personen || 1, p.flugKlasse || null); } catch { paket = null; }
-    }
-    return { unterkunft, flug: paket ? paket.gesamt : 0, gesamt: unterkunft + (paket ? paket.gesamt : 0), mitFlug: !!paket };
+    return Auswahl.reisepreis(item, this.vorgaben(p));
   },
 
   mindestpreis(p) {
@@ -4694,30 +4766,41 @@ const Werkzeugkasten = {
      Frage vorarbeitet ("warm oder kalt?"). Ist sie schon entschieden,
      waere sie nur Ballast. */
   warmKaltTeilung(liste, p) {
-    if (p.richtung || p.zielId || typeof Politik === "undefined") return null;
-    const warm = new Set((Politik.THEMEN.find((t) => t.id === "warm") || {}).ziele || []);
-    const kalt = new Set((Politik.THEMEN.find((t) => t.id === "kalt") || {}).ziele || []);
-    let w = 0, k = 0;
-    for (const h of liste) {
-      if (warm.has(h.ziel)) w += 1;
-      else if (kalt.has(h.ziel)) k += 1;
-    }
-    /* Keine Aufteilung, sondern zwei Auswahlmengen.
+    if (p.richtung || p.zielId) return null;
+    if (!p.monat || typeof grad !== "function" || typeof ZIEL_NACH_ID === "undefined") return null;
+    /* Warm oder kalt, und nichts dazwischen.
        ------------------------------------------------------------------
-       Erst stand hier ein dritter Topf "Staedte", damit die Summe aufgeht.
-       Einwand des Nutzers am 30.09.2026, und er trifft: "Staedte koennen
-       auch in warmen oder kaelteren Regionen liegen" - Barcelona und
-       Lissabon sind warm, Wien ist es nicht. Klima und Siedlungsform sind
-       zwei verschiedene Dinge, und ein Topf, der beides mischt, erklaert
-       nichts.
+       Gemeldet am 02.10.2026: "Die kalten und warmen Regionen summieren
+       sich nicht auf die insgesamten Regionen. Das wuerde ich schon
+       wollen, dass du quasi es immer in warm oder kalt einordnest. Es ist
+       ja einfach so, liegt es in der Spanne, die du ausgewaehlt hast oder
+       nicht? Deswegen muss es immer entweder warm oder kalt sein."
 
-       Deshalb steht hier keine Aufteilung mehr. Die beiden Zahlen sind
-       das, was bei "eher warm" beziehungsweise "eher kalt" uebrig bliebe
-       - genau die Frage, die als naechste kommt. Dass sie zusammen
-       weniger ergeben als die Gesamtzahl, ist dann kein Widerspruch,
-       sondern selbstverstaendlich: Es sind zwei Antworten auf eine Frage,
-       keine Torte. */
-    return w && k ? { warm: w, kalt: k } : null;
+       Er hat recht, und der alte Weg konnte das nicht leisten: Gezaehlt
+       wurde gegen zwei gepflegte Listen in `Politik.THEMEN`, und wer in
+       keiner von beiden stand, fiel aus der Rechnung. Im Oktober ergab
+       das 60 warme und 25 kalte bei 91 buchbaren - sechs Haeuser ohne
+       Zuordnung, und die Person zaehlt nach.
+
+       Jetzt entscheidet dieselbe Grenze, die auch "eher warm" bestimmt
+       (`regionenFuerRichtung`): die Temperatur der Region im gewaehlten
+       Monat gegen 22 Grad, oder was die Person genannt hat. Darueber ist
+       warm, darunter kalt. Alle 18 Regionen haben eine vollstaendige
+       Temperaturreihe, also bleibt kein Haus uebrig - die Summe geht
+       immer auf. */
+    const grenze = p.mindestGrad != null ? p.mindestGrad : 22;
+    let w = 0, k = 0, ohne = 0;
+    for (const h of liste) {
+      const z = ZIEL_NACH_ID[h.ziel];
+      const t = z ? grad(z, p.monat) : null;
+      if (t == null) ohne += 1;
+      else if (t >= grenze) w += 1;
+      else k += 1;
+    }
+    // Eine Zahl ohne Gegenstueck erklaert nichts - und eine Aufteilung,
+    // die nicht aufgeht, waere genau der Fehler von vorher.
+    if (ohne || !w || !k) return null;
+    return { warm: w, kalt: k, grenze };
   },
 
   lageSatz(liste, p, umfang, aufDerSeite = null) {
@@ -4786,7 +4869,7 @@ const Werkzeugkasten = {
     /* Warm gegen kuehl - die Zahl, die der naechsten Frage vorarbeitet.
        Steht die Richtung schon fest, faellt sie weg. */
     const wk = this.warmKaltTeilung(liste, p);
-    if (wk) teile.push(`In eine warme Gegend kämen davon ${wk.warm} in Frage, in eine kalte ${wk.kalt}.`);
+    if (wk) teile.push(`Davon liegen ${wk.warm} in einer Gegend mit ${wk.grenze} Grad oder mehr, ${wk.kalt} darunter.`);
 
     // "Die meisten Mallorca (26)" fehlte eine Praeposition, und "in
     // Mallorca" waere falsch - der Doppelpunkt loest beides.
@@ -4818,7 +4901,22 @@ const Werkzeugkasten = {
     /* Bei einem festen Ziel ist die Rechnung ueber den ganzen Katalog
        kein Gewinn: Dass in Lappland Haeuser stehen, die nicht auf
        Mallorca liegen, muss niemandem erklaert werden. */
-    if (kette.katalog > liste.length && !p.zielId) {
+    /* Die Rechnung erst, wenn es etwas zu erklaeren gibt.
+       ------------------------------------------------------------------
+       Gemeldet am 02.10.2026: "Ausserdem ist die Nachricht in Bezug auf
+       die warmen und kalten Regionen wieder sehr, sehr lang geworden."
+       Sieben Saetze, davon drei ueber eine Grundmenge, nach der niemand
+       gefragt hatte.
+
+       Im ersten Ueberblick steht noch keine Vorgabe im Raum, die eine
+       kleinere Zahl erklaeren muesste - da ist die Kette Ballast. Sobald
+       die Person eine Richtung, ein Ziel, eine Verpflegung oder einen
+       Preis genannt hat, wird sie wieder gesagt: Dann ist die Zahl die
+       Folge einer eigenen Entscheidung, und das gehoert dazu. */
+    const etwasVorgegeben = !!(p.richtung || p.zielId || p.verpflegung || p.maxPreis
+      || p.budgetGesamt || p.maxStrand != null || p.mindestbewertung || p.mindestSterne
+      || (p.kriterien || []).length || p.nurAngebote || p.wlanInklusive);
+    if (kette.katalog > liste.length && !p.zielId && etwasVorgegeben) {
       const gruende = [];
       if (kette.woanders) {
         gruende.push(p.richtung === "warm" ? `${kette.woanders} liegen nicht in einer warmen Region`
@@ -4914,7 +5012,12 @@ const Werkzeugkasten = {
       merkmale.push(`${umfang.mitKinderclub} haben einen Kinderclub`);
     }
     if (umfang.mitWellness && genannt(/wellness|spa|sauna/)) merkmale.push(`${umfang.mitWellness} haben Wellness`);
-    if (umfang.gaestenoteAb4_5) merkmale.push(`${umfang.gaestenoteAb4_5} davon sind mit 4,5 oder besser bewertet`);
+    /* Die Gaestenote nur, wenn sie zur Sprache kam - wie Pool und
+       Kinderclub. Sie stand bisher in jedem Ueberblick und machte die
+       Nachricht um einen Satz laenger, ohne gefragt zu sein. */
+    if (umfang.gaestenoteAb4_5 && (p.mindestbewertung || genannt(/bewert|note|gut bewertet|rezension/))) {
+      merkmale.push(`${umfang.gaestenoteAb4_5} davon sind mit 4,5 oder besser bewertet`);
+    }
     // "10 haben einen Pool, 10 haben einen Kinderclub" - beim zweiten Mal
     // reicht die Zahl, solange das Verb dasselbe ist
     const gekuerzt = merkmale.slice(0, 3).map((m, i, alle) => {
@@ -4993,7 +5096,15 @@ const Werkzeugkasten = {
       : (p.zieleErlaubt?.length ? p.zieleErlaubt.filter(inSaison) : []);
     return {
       ziele,
-      maxPreis: p.maxPreis || undefined,
+      /* Ein Gesamtbudget gehoert an den Gesamtregler.
+         ----------------------------------------------------------------
+         Bis zum 02.10.2026 rechnete der Kern aus "8.000 Euro gesamt"
+         einen Nachtpreis und zog damit den Nachtregler. Seine eigene
+         Zaehlung benutzte aber den echten Gesamtpreis mit Zimmer-,
+         Verpflegungsaufschlag und Flug. Zwei verschiedene Grenzen fuer
+         dieselbe Aussage - und damit zwei verschiedene Listen. */
+      maxPreis: p.budgetGesamt ? undefined : (p.maxPreis || undefined),
+      budgetGesamt: p.budgetGesamt || undefined,
       maxStrand: p.maxStrand != null ? ([0.2, 1, 5].find((s) => s >= p.maxStrand) ?? 5) : undefined,
       ausstattung: filter.ausstattung,
       verpflegung: p.verpflegung ? [p.verpflegung] : undefined,
@@ -5340,79 +5451,102 @@ const Werkzeugkasten = {
     return t.filter(Boolean).join(", ") || "ohne Filter";
   },
 
-  katalogTreffer(p, filter) {
-    return this.katalog(p).filter((h) => {
-      if (p.zielId && h.ziel !== p.zielId) return false;
-      if (!p.zielId && p.zieleErlaubt?.length && !p.zieleErlaubt.includes(h.ziel)) return false;
-      // Regionen ausserhalb ihrer Saison fallen weg. Im Test lag "Lanta
-      // Family Bay" auf Platz drei der Vorschlaege - Koh Lanta hat im
-      // August Monsun, die Liste schrieb "Ausserhalb der Saison" an die
-      // Karte, der Agent sagte nichts dazu. Wer die Region selbst nennt,
-      // bekommt sie weiter.
-      /* Ausserhalb der Saison gilt jetzt ueberall.
-         ----------------------------------------------------------------
-         Hier stand `!p.zielId`: Wer die Region selbst nannte, bekam sie
-         auch ausserhalb ihrer Saison zu sehen. Seit die Trefferliste
-         diese Haeuser nicht mehr zeigt (30.09.2026), waere das ein
-         Widerspruch - der Agent zaehlte 17 Hotels auf Kreta im Maerz, die
-         Seite zeigte keins. Eine Regel, zwei Orte: Ausserhalb der Saison
-         heisst nicht buchbar, egal wer die Region genannt hat. Der Agent
-         sagt es und schlaegt einen anderen Monat oder eine andere Region
-         vor. */
-      if (p.monat && typeof saisonPassung === "function"
-        && typeof ZIEL_NACH_ID !== "undefined" && ZIEL_NACH_ID[h.ziel]
-        && saisonPassung(ZIEL_NACH_ID[h.ziel], p.monat) < 0.5) return false;
-      if (filter.ausstattung.some((x) => !(h.amenities || []).includes(x))) return false;
-      if (!this.passtGruppe(h, p)) return false;
-      const preis = this.preis(h, p.monat);
-      // Ein Gesamtbudget gilt fuer den ganzen Aufenthalt, wie die Kasse ihn
-      // rechnet (Zimmer fuer die Gruppe, Verpflegung, Gebuehr) - sonst lag
-      // ein Vorschlag mit 1.512 Euro im "Budget bis 1.500"
-      // Das Gesamtbudget gilt fuer die ganze Reise, also mit Flug - siehe reisepreis
-      if (p.budgetGesamt && p.naechte) {
-        const r = this.reisepreis(h, p);
-        if (r && r.gesamt > p.budgetGesamt) return false;
-      }
-      if (!p.budgetGesamt && p.maxPreis && preis > p.maxPreis) return false;
-      if (p.maxStrand != null && (h.distanceToBeach ?? 99) > p.maxStrand) return false;
-      if (p.mindestbewertung && (h.rating || 0) < p.mindestbewertung) return false;
-      if (p.mindestSterne && (h.stars || 0) < p.mindestSterne) return false;
-      /* Der Mindestaufenthalt stand nur da, er galt nicht.
-         ----------------------------------------------------------------
-         Auf der Hausseite steht seit jeher "Mindestaufenthalt 5 Naechte",
-         gefiltert wurde nie danach - eine Wohnung mit fuenf Naechten
-         Minimum erschien auch bei drei gesuchten. Der Nutzer am
-         28.09.2026 ging davon aus, dass die Dauer die Verfuegbarkeit
-         beeinflusst; sie tat es nicht. Hotels haben kein Minimum, das ist
-         so auch realistisch. */
-      if (p.naechte && h.minNights && p.naechte < h.minNights) return false;
-      /* Fester Anreisetag mit Flug: nur, was an dem Tag erreichbar ist.
-         ----------------------------------------------------------------
-         Der Nutzer am 28.09.2026: "Was ist, wenn ich direkt sage, ich
-         moechte am 20. Mai ankommen? Sucht er dann auch nur Hotels, wo
-         das ueberhaupt moeglich ist, mit dem entsprechenden Flug?"
-
-         Tat er nicht. Gemessen an diesem Datum: 70 von 128 Haeusern
-         hatten am 20. Mai keine passende Verbindung - sie standen
-         trotzdem in der Auswahl, und erst die Buchungsstrecke haette
-         gesagt "kein Flugtag". Eine Empfehlung, die man nicht buchen
-         kann, ist keine.
-
-         Geprueft wird Hin- UND Rueckflug: Nach sieben Naechten muss auch
-         wieder einer gehen. Ohne festes Datum greift die Regel nicht -
-         dann sucht der Agent spaeter einen Flugtag aus. */
-      if (p.flug && p.von && h.type !== "apartment" && typeof Flug !== "undefined") {
-        const f = Flug.wahl(h.ziel);
-        if (!f || Flug.passtTag(f, p.von, p.naechte || 7) === false) return false;
-      }
-      // "Nur was im Angebot ist": reduziert heisst, es steht ein alter
-      // Preis daran - dasselbe Merkmal, nach dem die Liste filtert.
-      if (p.nurAngebote && !h.oldPrice) return false;
-      if (p.wlanInklusive && typeof wlanGebuehr === "function" && wlanGebuehr(h) > 0) return false;
-      if (p.verpflegung && h.type !== "apartment" && !(h.boards || []).some((b) => b.key === p.verpflegung)) return false;
-      return true;
-    });
+  /* Die Vorgaben, mit denen gefiltert wird - in der Form, die auch die
+     Seite baut (data/auswahl.js). Vorher stand die Filterregel hier ein
+     zweites Mal, und sie wich von der Liste ab; gemessen am 02.10.2026
+     sagte der Agent 22 Haeuser, die Seite zeigte 34. */
+  vorgaben(p, filter = null) {
+    const f = filter || this.filterAusStand(p);
+    const zielIds = p.zielId ? [p.zielId] : (p.zieleErlaubt?.length ? [...p.zieleErlaubt] : []);
+    return {
+      monat: p.monat || null,
+      naechte: p.naechte || null,
+      erwachsene: p.erwachsene || 0,
+      kinder: p.kinder || 0,
+      zimmer: p.zimmer || 1,
+      zimmerTyp: p.zimmerTyp || null,
+      typ: p.typ || null,
+      zielIds,
+      ausstattung: f.ausstattung || [],
+      verpflegung: p.verpflegung ? [p.verpflegung] : [],
+      maxPreis: p.budgetGesamt ? null : (p.maxPreis ?? null),
+      budgetGesamt: p.budgetGesamt ?? null,
+      maxStrand: p.maxStrand ?? null,
+      mindestbewertung: p.mindestbewertung || null,
+      mindestSterne: p.mindestSterne || null,
+      nurAngebote: !!p.nurAngebote,
+      wlanInklusive: !!p.wlanInklusive,
+      flug: !!p.flug,
+      flugKlasse: p.flugKlasse || null,
+      /* Der Anreisetag zaehlt nur mit Flug - ohne festen Tag sucht der
+         Agent spaeter selbst einen Flugtag aus. */
+      flugAnreise: p.flug ? (p.von || p.anreise || null) : null,
+    };
   },
+
+  /* Was die Person sieht, ist die Wahrheit.
+     ------------------------------------------------------------------
+     Gemeldet am 02.10.2026: "Es wird gesagt, ja, das sind 33 Hotels
+     buchbar, die Filter sind gesetzt. Dann gucke ich rechts, zaehle die
+     Hotels und da sind 60." Seit `Auswahl` die einzige Filterregel ist,
+     kann das nur noch eine Ursache haben: Die Seite traegt eine Vorgabe
+     nicht, die der Agent zaehlt - weil die Spalte sie nicht hergibt oder
+     ein Haken nicht sass.
+
+     Dann gilt die Liste, nicht die Rechnung. Der Agent nennt die Zahl der
+     Karten, und die Abweichung wird notiert, damit sie in den Daten steht
+     und nicht im Text. Ein Erklaersatz waere hier falsch: Die Person
+     zaehlt nach, und sie hat immer recht.
+
+     Verglichen wird nur, wenn die Trefferliste wirklich vor ihr steht und
+     der Agent die Filter dieses Mal gesetzt hat. */
+  /* Gilt ein abgelegter Annahmesatz noch?
+     ------------------------------------------------------------------
+     Nein, wenn die Person seit der Annahme etwas zu dem Feld gesagt hat,
+     oder wenn der Wert nicht mehr der angenommene ist. Dann faellt der
+     Satz weg, statt im Chat einer Angabe zu widersprechen, die zwei
+     Zeilen darueber steht. */
+  annahmeGilt(eintrag, p) {
+    if (!eintrag) return false;
+    // Alte Form: ein reiner Satz ohne Grund - der wird noch gesagt
+    if (typeof eintrag === "string") return true;
+    for (const [feld, wert] of Object.entries(eintrag.felder || {})) {
+      if (p?.vonPerson?.[feld]) return false;
+      if ((p?.[feld] ?? null) !== wert) return false;
+    }
+    return true;
+  },
+
+  // Die Saetze, die noch gelten - in der Reihenfolge, in der sie
+  // beschlossen wurden, hoechstens zwei.
+  annahmeSaetze(lauf, p, wieViele = 2) {
+    const alle = lauf?.annahmeOffen || [];
+    return alle.filter((e) => this.annahmeGilt(e, p))
+      .map((e) => (typeof e === "string" ? e : e.text))
+      .filter(Boolean).slice(0, wieViele);
+  },
+
+  kartenAbgleich(p, kern, gezaehlt) {
+    if (typeof document === "undefined") return gezaehlt;
+    if (typeof Werkzeuge === "undefined" || Werkzeuge.seite() !== "results") return gezaehlt;
+    const liste = document.querySelector(".results-list, #resultsList, .result-card");
+    if (!liste) return gezaehlt;
+    const karten = document.querySelectorAll(".result-card").length;
+    if (karten === gezaehlt) return gezaehlt;
+    kern?.notieren?.("zahl_abweichung", {
+      agent: gezaehlt, karten, unterschied: gezaehlt - karten,
+      filter: this.filterText(p),
+      /* Welche Vorgabe die Seite nicht traegt, laesst sich benennen: Die
+         Spalte meldet, was sie nicht einstellen konnte. */
+      nichtEinstellbar: kern?.lauf?.nichtGesetzt || null,
+    });
+    return karten;
+  },
+
+  katalogTreffer(p, filter) {
+    return Auswahl.treffer(this.katalog(p), this.vorgaben(p, filter));
+  },
+
 };
 
 if (typeof module !== "undefined" && module.exports) module.exports = { Werkzeugkasten };

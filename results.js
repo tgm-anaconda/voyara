@@ -117,19 +117,9 @@ function hausLink(id) {
    Eine Zahl, drei Orte. */
 function gesamtpreisFuer(item) {
   if (!item || (item.type !== "hotel" && item.type !== "apartment")) return null;
-  const b = typeof Belegung !== "undefined" ? Belegung.get() : { personen: 2, zimmer: 1 };
-  const naechte = typeof Reisedaten !== "undefined" ? Reisedaten.naechte(7) : 7;
-  const proNacht = saisonpreis(item);
-  if (proNacht == null) return null;
-  const unterkunft = item.type === "apartment"
-    ? proNacht * naechte + (item.cleaningFee || 0)
-    : proNacht * naechte * Math.max(1, b.zimmer) + 35 * Math.max(1, b.zimmer);
-  let flug = 0;
-  if (state.withFlight && item.type === "hotel" && typeof Flug !== "undefined") {
-    try { flug = Flug.paket(item, b.personen || 1)?.gesamt || 0; } catch { flug = 0; }
-  }
-  return unterkunft + flug;
+  return Auswahl.reisepreis(item, seitenVorgaben())?.gesamt ?? null;
 }
+
 
 // Paketpreis mit Flug in der Trefferkarte (nur Hotels, nur mit Flug dazu)
 function paketZeile(item, preisProNacht) {
@@ -190,6 +180,42 @@ function saisonpreis(item) {
    bestimmen, also welche tatsaechlich aus dieser Region angezeigt
    werden." Vorher zaehlten die Zahlen ueber den ganzen Vorrat und
    aenderten sich nie. */
+/* Die Vorgaben der Seite in der Form, die auch der Agent baut.
+   ------------------------------------------------------------------
+   Hier stand bis zum 02.10.2026 eine zweite, eigene Filterregel. Sie
+   kannte die Flugtag-Regel des Agenten nicht und rechnete den
+   Gesamtpreis ohne Zimmer- und Verpflegungsaufschlag. Der Agent sagte
+   22 Haeuser, die Liste zeigte 34. Gemeinsame Regel: data/auswahl.js. */
+function seitenVorgaben() {
+  const b = typeof Belegung !== "undefined" ? Belegung.get() : { erwachsene: 2, kinder: 0, zimmer: 1 };
+  const roh = typeof Reisedaten !== "undefined" ? Reisedaten.roh() : { von: "" };
+  return {
+    monat: reisemonat(),
+    naechte: (typeof Reisedaten !== "undefined" ? Reisedaten.naechte(0) : 0) || null,
+    erwachsene: b.erwachsene, kinder: b.kinder, zimmer: b.zimmer,
+    zimmerTyp: null,
+    typ: state.type,
+    zielIds: [...state.ziele],
+    suchtext: state.q.trim(),
+    ausstattung: [...state.amenities],
+    verpflegung: [...state.boards],
+    sterne: [...state.stars],
+    kategorien: [...state.categories],
+    maxPreis: state.priceMax,
+    budgetGesamt: state.gesamtMax,
+    maxStrand: state.maxBeach,
+    mindestbewertung: state.minRating || null,
+    nurAngebote: state.onlyDeals,
+    wlanInklusive: state.wlanFrei,
+    mindestSchlafzimmer: state.minBedrooms || null,
+    flug: state.withFlight,
+    flugKlasse: typeof Flug !== "undefined" ? (Flug.get().klasse || null) : null,
+    /* Ein fester Anreisetag zaehlt nur, wenn er auch in der Adresse steht -
+       flexibel im Monat sucht die Buchungsstrecke selbst einen Flugtag. */
+    flugAnreise: state.withFlight ? (roh.von || null) : null,
+  };
+}
+
 function matches(item, ausser = null) {
   const q = state.q.trim().toLowerCase();
 
@@ -215,74 +241,13 @@ function matches(item, ausser = null) {
     return true;
   }
 
-  // Unterkuenfte - Zielname und Land gehoeren mit in die Suche, sonst findet
-  // "Kreta" oder "Portugal" nichts
-  const ziel = typeof ZIEL_NACH_ID !== "undefined" ? ZIEL_NACH_ID[item.ziel] : null;
-  const suchtext = `${item.name} ${item.location} ${item.region} ${ziel ? ziel.name + " " + ziel.land : ""}`.toLowerCase();
-  if (q && !suchtext.includes(q)) return false;
-  if (ausser !== "ziel" && state.ziele.size && !state.ziele.has(item.ziel)) return false;
-  /* Ausserhalb der Saison heisst: nicht im Angebot.
+  /* Unterkuenfte: eine Regel fuer Seite und Agent.
      ------------------------------------------------------------------
-     Bis zum 30.09.2026 standen diese Haeuser in der Liste, mit dem
-     Vermerk "Ausserhalb der Saison" auf der Karte. Der Agent zaehlte sie
-     nie mit - er sagte 125, die Liste zeigte 177, und der Unterschied
-     brauchte jedes Mal einen Erklaersatz, den niemand verstand.
-
-     Nutzer am 30.09.2026: "Zeig einfach die Menge von den Ausgegrauten
-     nicht mehr, dann ist es gefixt." Genau so. Seite und Agent zeigen
-     jetzt dieselbe Zahl.
-
-     Ohne Ausnahme, auch wenn die Region angehakt ist. Erst gab es eine:
-     Wer sie ausdruecklich waehlte, bekam sie zu sehen. Damit haette aber
-     ein ausgegrauter Haken doch noch etwas bewirken muessen, und der
-     Agent haette Haeuser zaehlen koennen, die die Liste nicht zeigt.
-     Eine Regel an beiden Orten ist mehr wert als eine Hintertuer. */
-  if (ziel && typeof saisonPassung === "function"
-    && saisonPassung(ziel, reisemonat()) < 0.5) return false;
-  // Reisegruppe muss hineinpassen - vorher wurde die Personenzahl ignoriert
-  if (!Belegung.passt(item)) return false;
-  if (ausser !== "preis" && saisonpreis(item) > state.priceMax) return false;
-  // Das Gesamtbudget gilt fuer die ganze Reise, mit Flug
-  if (ausser !== "gesamt" && state.gesamtMax != null) {
-    const g = gesamtpreisFuer(item);
-    if (g != null && g > state.gesamtMax) return false;
-  }
-  if (ausser !== "bewertung" && state.minRating && item.rating < state.minRating) return false;
-  // Binnenziele haben distanceToBeach null - sie erfuellen keinen Strandfilter
-  if (ausser !== "strand" && state.maxBeach !== null
-      && (item.distanceToBeach === null || item.distanceToBeach > state.maxBeach)) return false;
-  if (ausser !== "ausstattung") for (const a of state.amenities) if (!item.amenities.includes(a)) return false;
-
-  /* Im gemeinsamen Reiter gelten die Filter, die auf beides passen.
-     ------------------------------------------------------------------
-     Sterne, Unterkunftsart und Verpflegung kennt nur ein Hotel,
-     Schlafzimmer nur eine Wohnung. Wuerde man sie im gemeinsamen Reiter
-     anwenden, fiele jeweils die andere Haelfte heraus, ohne dass jemand
-     das gewollt haette. Der Angebotsfilter gilt fuer beide - dort ist
-     "kein alter Preis" eine Aussage und kein fehlendes Merkmal. */
-  if (ausser !== "angebote" && state.onlyDeals && !item.oldPrice) return false;
-  // WLAN hat jedes Haus, aber nicht ueberall ohne Aufpreis. Gilt wie der
-  // Angebotsfilter fuer Hotels und Wohnungen gleichermassen.
-  if (ausser !== "wlan" && state.wlanFrei && typeof wlanGebuehr === "function" && wlanGebuehr(item) > 0) return false;
-  if (state.type === "hotel") {
-    if (ausser !== "sterne" && state.stars.size && !state.stars.has(String(item.stars))) return false;
-    if (ausser !== "kategorie" && state.categories.size && !state.categories.has(item.category)) return false;
-    if (ausser !== "verpflegung" && state.boards.size) {
-      const keys = item.boards.map((b) => b.key);
-      if (![...state.boards].some((b) => keys.includes(b))) return false;
-    }
-  } else if (state.type === "apartment") {
-    if (ausser !== "schlafzimmer" && state.minBedrooms && item.bedrooms < state.minBedrooms) return false;
-  }
-  /* Der Mindestaufenthalt gilt fuer beide Reiter.
-     ------------------------------------------------------------------
-     Er stand bisher nur als Text auf der Hausseite. Damit konnte man
-     eine Wohnung mit fuenf Naechten Minimum fuer drei Naechte in der
-     Liste sehen - und erst in der Kasse merken, dass es nicht geht.
-     Agent und Seite rechnen ihn jetzt gleich. */
-  const gesuchteNaechte = typeof Reisedaten !== "undefined" ? Reisedaten.naechte(0) : 0;
-  if (gesuchteNaechte && item.minNights && gesuchteNaechte < item.minNights) return false;
-  return true;
+     Die Namen der Bedingungen sind dieselben wie in `Auswahl.FELDER`;
+     `ausser` laesst genau eine aus, damit neben "Mallorca" stehen kann,
+     wie viele Haeuser dort unter allen anderen Filtern in der Liste
+     staenden. */
+  return Auswahl.passt(item, seitenVorgaben(), ausser);
 }
 
 function sortItems(list) {

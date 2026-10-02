@@ -229,6 +229,132 @@ const Seitenpruefung = {
     }
   },
 
+  /* ==================================================================
+     1b. Eine Auswahlregel - sagt der Agent, was die Liste zeigt?
+     ==================================================================
+     Der schwerste Befund vom 02.10.2026: "Es wird gesagt, ja, das sind 33
+     Hotels buchbar, die Filter sind gesetzt. Dann gucke ich rechts, zaehle
+     die Hotels und da sind 60 Hotels vorgeschlagen." Ursache waren zwei
+     getrennte Filterregeln - `matches()` fuer die Liste,
+     `katalogTreffer()` fuer den Agenten.
+
+     Die Pruefung `zahlen()` darunter konnte das nicht finden: Sie
+     vergleicht mit einem Profil, das sie aus der Seite liest, und traf
+     damit nur Faelle, die die Seite selbst ausdruecken kann. Genau die
+     Vorgaben, die nur der Agent kennt - Flugtag und Gesamtbudget - fielen
+     durch das Raster.
+
+     Also wird hier ohne die Seite verglichen: derselbe Stand einmal durch
+     die Augen des Agenten, einmal durch die der Liste. Gemessen am
+     02.10.2026 wichen 134 von 1.620 Staenden ab, bis zu 22 Haeuser weit;
+     mit einer gemeinsamen Regel sind es 0. Gerechnet statt geklickt - das
+     laeuft in einer Sekunde durch und kostet nichts. */
+
+  async eineRegel() {
+    const g = "Eine Regel";
+    if (typeof Auswahl === "undefined" || typeof seitenVorgaben !== "function"
+      || typeof pool !== "function" || typeof Werkzeugkasten === "undefined") return;
+
+    // Den Seitenzustand sichern - die Pruefung stellt ihn gleich um
+    const sicherung = {
+      type: state.type, q: state.q, ziele: [...state.ziele], amenities: [...state.amenities],
+      boards: [...state.boards], stars: [...state.stars], categories: [...state.categories],
+      minRating: state.minRating, maxBeach: state.maxBeach, onlyDeals: state.onlyDeals,
+      wlanFrei: state.wlanFrei, minBedrooms: state.minBedrooms, priceMax: state.priceMax,
+      gesamtMax: state.gesamtMax, withFlight: state.withFlight,
+    };
+
+    const stellen = (p) => {
+      const f = Werkzeugkasten.filterWerte(p);
+      state.type = p.typ || "hotel";
+      state.q = "";
+      state.ziele = new Set(f.ziele || []);
+      state.amenities = new Set(f.ausstattung || []);
+      state.boards = new Set(f.verpflegung || []);
+      state.stars = new Set((f.sterne || []).map(String));
+      state.categories = new Set();
+      state.minRating = f.mindestbewertung || 0;
+      state.maxBeach = f.maxStrand !== undefined ? f.maxStrand : null;
+      state.onlyDeals = !!f.nurAngebote;
+      state.wlanFrei = !!f.wlanInklusive;
+      state.minBedrooms = 0;
+      state.priceMax = f.maxPreis || 99999;
+      state.gesamtMax = f.budgetGesamt !== undefined ? f.budgetGesamt : null;
+      state.withFlight = !!p.flug;
+    };
+
+    /* Die Vorgaben der Seite kommen aus Belegung und Reisedaten, und die
+       lesen die Adresse. Fuer die Pruefung werden sie hier vertreten, damit
+       der Stand des Agenten vollstaendig ankommt - ohne die Adresse
+       anzufassen, die die Person gerade vor sich hat. */
+    const echt = { belegung: Belegung.get, roh: Reisedaten.roh,
+      naechte: Reisedaten.naechte, monat: Reisedaten.monat };
+    let abweichungen = 0, schlimmste = null, gezaehlt = 0;
+    try {
+      for (const p of this.regelStaende()) {
+        Belegung.get = () => ({ erwachsene: p.erwachsene || 0, kinder: p.kinder || 0,
+          zimmer: p.zimmer || 1, personen: (p.erwachsene || 0) + (p.kinder || 0), alter: [] });
+        Reisedaten.roh = () => ({ von: p.anreise || "", bis: "" });
+        Reisedaten.naechte = () => p.naechte || 7;
+        Reisedaten.monat = () => p.monat || 1;
+        stellen(p);
+        const agent = Werkzeugkasten.katalogTreffer(p, Werkzeugkasten.filterAusStand(p)).length;
+        const seite = pool().filter((h) => matches(h)).length;
+        gezaehlt++;
+        if (agent !== seite) {
+          abweichungen++;
+          if (!schlimmste || Math.abs(agent - seite) > Math.abs(schlimmste.agent - schlimmste.seite)) {
+            schlimmste = { agent, seite, stand: { monat: p.monat, naechte: p.naechte, typ: p.typ,
+              flug: p.flug, verpflegung: p.verpflegung, budgetGesamt: p.budgetGesamt,
+              erwachsene: p.erwachsene, kinder: p.kinder } };
+          }
+        }
+      }
+    } finally {
+      Belegung.get = echt.belegung; Reisedaten.roh = echt.roh;
+      Reisedaten.naechte = echt.naechte; Reisedaten.monat = echt.monat;
+      Object.assign(state, sicherung);
+      state.ziele = new Set(sicherung.ziele); state.amenities = new Set(sicherung.amenities);
+      state.boards = new Set(sicherung.boards); state.stars = new Set(sicherung.stars);
+      state.categories = new Set(sicherung.categories);
+    }
+
+    if (abweichungen) {
+      this.befund(g, "Agent und Liste zaehlen verschieden",
+        { staende: gezaehlt, abweichungen, schlimmste });
+    } else {
+      this.bestanden();
+      console.info(`[${g}] ${gezaehlt} Staende geprueft, Agent und Liste zaehlen gleich.`);
+    }
+  },
+
+  // Die Staende fuer den Vergleich: Monat, Gruppe, Dauer, Flug,
+  // Verpflegung, Budget und Art - die Achsen, an denen sich Seite und
+  // Agent ueberhaupt unterscheiden koennen.
+  regelStaende() {
+    const raus = [];
+    for (const monat of [1, 5, 8, 10, 12]) {
+      for (const gruppe of [{ erwachsene: 2, kinder: 0, zimmer: 1 },
+        { erwachsene: 4, kinder: 0, zimmer: 1 }, { erwachsene: 2, kinder: 2, zimmer: 2 }]) {
+        for (const naechte of [3, 7, 12]) {
+          for (const flug of [false, true]) {
+            for (const verpflegung of [null, "ai", "hp"]) {
+              for (const budgetGesamt of [null, 4000, 8000]) {
+                for (const typ of ["hotel", "apartment"]) {
+                  const p = { monat, naechte, typ, ...gruppe, flug, flugAb: "München",
+                    flugKlasse: "economy", verpflegung, budgetGesamt };
+                  if (flug) p.anreise = `2027-${String(monat).padStart(2, "0")}-13`;
+                  raus.push(p);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    return raus;
+  },
+
   /* Die Zahl im Chat gegen die Karten auf der Seite.
      ------------------------------------------------------------------
      Der Agent nennt Zahlen aus `katalogTreffer`, die Person sieht Karten.
@@ -418,7 +544,7 @@ const Seitenpruefung = {
     const seite = typeof Werkzeuge !== "undefined" ? Werkzeuge.seite() : "?";
     console.info(`Seitenpruefung auf "${seite}" gestartet`);
     try {
-      if (seite === "results") { await this.schema(); await this.filterspalte(); await this.zahlen(); await this.scrollen(); }
+      if (seite === "results") { await this.schema(); await this.filterspalte(); await this.eineRegel(); await this.zahlen(); await this.scrollen(); }
       if (seite === "stay") { await this.hausseite(); }
       if (seite === "checkout") { await this.kasse(); }
       this.fragebogen();

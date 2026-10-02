@@ -710,6 +710,28 @@ const Kern = {
   },
 
   sagen(text, rolle = "bot", links = null, extra = null) {
+    /* Nichts zweimal hintereinander.
+       ----------------------------------------------------------------
+       Gemeldet am 02.10.2026, mit Bild: "Ich sehe mir die 4 Haeuser jetzt
+       der Reihe nach an: Bewertungen, Zimmer, Verpflegung." stand zweimal
+       untereinander im Chat. "Ausserdem muss das immer unbedingt
+       aufhoeren, dass er manche Sachen einfach doppelt macht."
+
+       Der Schutz dagegen stand nur an einer Stelle - beim Text des
+       Modells. Ansagen des Kerns gingen daran vorbei, und wenn ein
+       Werkzeug zweimal anlief (etwa weil das Modell es wiederholt
+       aufrief), stand die Ansage auch zweimal da. Hier ist die Stelle, an
+       der jeder Satz vorbeikommt, also gehoert die Regel hierher. Dass es
+       passiert ist, wird notiert - ein doppelter Aufruf ist ein Fehler,
+       auch wenn man ihn nicht mehr sieht. */
+    if (rolle === "bot" && text) {
+      const letzte = [...(this.lauf.verlauf || [])].reverse().find((x) => x.rolle === "bot");
+      const gleichLaut = (a, b) => String(a).replace(/\s+/g, " ").trim() === String(b).replace(/\s+/g, " ").trim();
+      if (letzte && gleichLaut(letzte.text, text)) {
+        this.notieren("doppelte_nachricht", { satz: String(text).slice(0, 120) });
+        return;
+      }
+    }
     const n = { rolle, text, zeit: Date.now() };
     if (links && links.length) n.links = links;
     // Wer den Satz geschrieben hat. Saetze des Kerns (Lage, Buchungsansage,
@@ -1515,7 +1537,8 @@ const Kern = {
              eine Frage antwortet - und bis dahin stuende ein Wert in der
              Uebersicht, ueber den niemand gesprochen hat. */
           if (freierZug && ((this.lauf.annahmeOffen || []).length || this.lauf.uebernahmeSatz)) {
-            const offen = [this.lauf.uebernahmeSatz, ...(this.lauf.annahmeOffen || []).slice(0, 2)].filter(Boolean).join(" ");
+            const offen = [this.lauf.uebernahmeSatz,
+              ...Werkzeugkasten.annahmeSaetze(this.lauf, this.lauf.profil)].filter(Boolean).join(" ");
             this.lauf.annahmeOffen = [];
             this.lauf.uebernahmeSatz = null;
             this.notieren("annahme_gesagt", { satz: offen.slice(0, 120), frei: true });
@@ -1534,7 +1557,11 @@ const Kern = {
             // Auch das, was der Kern in diesem Zug schon selbst gesagt hat
             // (etwa die Begruendung einer eigenen Entscheidung), faellt
             // aus dem Vorspann des Modells - sonst steht es zweimal da.
-            const annahmen = [this.lauf.uebernahmeSatz, ...(this.lauf.annahmeOffen || []).slice(0, 2)]
+            /* Nur Annahmen, die noch gelten. Ein Satz, der in einem
+               frueheren Zug beschlossen wurde, ist hinfaellig, sobald die
+               Person den Wert selbst genannt hat. */
+            const annahmen = [this.lauf.uebernahmeSatz,
+              ...Werkzeugkasten.annahmeSaetze(this.lauf, this.lauf.profil)]
               .filter(Boolean).join(" ");
             const frageNorm = norm(`${(this.lauf.abgeleitet || []).map((x) => x.satz).join(" ")} ${annahmen} ${fpJetzt.satz}`);
             /* Auch die Umschreibung faellt weg, nicht nur die Kopie.
@@ -1624,12 +1651,34 @@ const Kern = {
                Sagt der Kern ohnehin, was er aufgenommen hat, faellt das
                Quittieren des Modells weg. Es ist dieselbe Funktion in
                anderen Worten, und zwei davon klingen nach Schluckauf. */
-            if (nachtrag) {
-              vorspann = vorspann.split(/(?<=[.!?])\s+/)
-                .filter((x) => !/merke ich mir|notiere ich|habe ich (mir )?gemerkt|nehme ich (so )?auf|ist notiert/i.test(x))
-                .join(" ").trim();
-              vorspann = `${nachtrag} ${vorspann}`.trim();
+            /* Quittieren darf nur der Kern.
+               ----------------------------------------------------------
+               Gemeldet am 02.10.2026: Die Person sagte "gerne 12 naechte",
+               im Chat stand "12 Naechte merke ich mir" - und in der
+               Uebersicht stand "Dauer 7 Naechte". Das Modell hatte die Zahl
+               nur ausgesprochen, ohne sie ablegen zu lassen; der Kern wusste
+               nichts von zwoelf und nahm nach zwei offenen Anlaeufen eine
+               Woche an.
+
+               Die Pruefung lief bisher nur, wenn der Kern selbst etwas zu
+               quittieren hatte (`nachtrag`). Genau im schlimmen Fall hatte
+               er nichts - und die falsche Zusage blieb stehen. Jetzt faellt
+               jede Quittung des Modells weg, immer. Was wirklich im Stand
+               liegt, sagt der Kern, und nur er kann es wissen.
+
+               Dass das Modell einen Wert behauptet hat, den der Kern nicht
+               hat, ist kein Schoenheitsfehler, sondern ein Messwert: Der
+               Agent hat der Person etwas zugesagt, was nicht passiert ist. */
+            const quittung = /merke ich mir|notiere ich|habe ich (mir )?gemerkt|nehme ich (so )?auf|ist notiert|halte ich fest/i;
+            const behauptet = vorspann.split(/(?<=[.!?])\s+/).filter((x) => quittung.test(x));
+            if (behauptet.length) {
+              vorspann = vorspann.split(/(?<=[.!?])\s+/).filter((x) => !quittung.test(x)).join(" ").trim();
+              if (!nachtrag) {
+                this.notieren("quittung_ohne_stand", { satz: behauptet.join(" ").slice(0, 160),
+                  gemerkt: this.lauf.zuletztGemerkt || [] });
+              }
             }
+            if (nachtrag) vorspann = `${nachtrag} ${vorspann}`.trim();
             /* Die Annahme steht zwischen dem Anschluss und der Frage.
                ----------------------------------------------------------
                Erst aufnehmen, was die Person gerade gesagt hat, dann
