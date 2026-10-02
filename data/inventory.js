@@ -2732,6 +2732,108 @@ FLIGHTS.push(
   {"id":"f120","type":"flight","airline":"Ryanair","from":"Hamburg","fromCode":"HAM","to":"Osaka","toCode":"KIX","ziel":"kyoto","depart":"10:00","arrive":"01:55","duration":"15h 55m","stops":0,"price":750,"baggage":"Handgepäck inkl.","aircraft":"A330-300"}
 );
 
+/* Mehr als eine Verbindung je Flughafen.
+   ==================================================================
+   Gemessen am 02.10.2026: 120 Fluege, 18 Ziele, 9 Flughaefen - aber
+   109 von 123 Paaren aus Ziel und Flughafen hatten genau EINE
+   Verbindung. Das Flugfenster (agent/fluege.js) braucht mindestens
+   zwei, sonst gibt es nichts zu waehlen. Es waere also fast nie
+   aufgegangen, und die Partner-Airline - das zweite Objekt der
+   Erhebung - haette so gut wie nie stattgefunden.
+
+   Deshalb bekommt jedes Paar drei Verbindungen, und sie unterscheiden
+   sich in dem, worin sich Fluege wirklich unterscheiden: direkt gegen
+   einen Stopp, Gepaeck inklusive gegen Handgepaeck, frueh gegen spaet,
+   und der Preis dazu. Damit ist die Wahl eine echte Abwaegung und
+   nicht eine Liste mit einem Gewinner - genau das, was die Erhebung
+   braucht, um eine Kennzeichnung ueberhaupt wirken zu lassen.
+
+   Alles abgeleitet: Die Zusatzfluege haengen am guenstigsten
+   vorhandenen Flug des Paares, und ihre Kennung tragt dessen Nummer.
+   Dieselbe Seite zeigt nach dem Neuladen dieselben Fluege.
+   ================================================================== */
+(() => {
+  // Preisfaktor und Gepaeck je Airline - teurer heisst mehr inklusive
+  const AIRLINES = [
+    { name: "Lufthansa", gepaeck: "23 kg inkl.", faktor: 1.19 },
+    { name: "Condor", gepaeck: "23 kg inkl.", faktor: 1.07 },
+    { name: "TUIfly", gepaeck: "20 kg inkl.", faktor: 1.01 },
+    { name: "Eurowings", gepaeck: "Handgepäck inkl.", faktor: 0.95 },
+    { name: "easyJet", gepaeck: "Handgepäck inkl.", faktor: 0.90 },
+    { name: "Ryanair", gepaeck: "nur kleines Handgepäck", faktor: 0.84 },
+  ];
+
+  const minuten = (dauer) => {
+    const m = String(dauer).match(/(\d+)h\s*(\d+)?m?/);
+    if (!m) return 150;
+    return parseInt(m[1], 10) * 60 + (parseInt(m[2], 10) || 0);
+  };
+  const dauerText = (min) => `${Math.floor(min / 60)}h ${String(min % 60).padStart(2, "0")}m`;
+  const uhrText = (min) => {
+    const t = ((min % 1440) + 1440) % 1440;
+    return `${String(Math.floor(t / 60)).padStart(2, "0")}:${String(t % 60).padStart(2, "0")}`;
+  };
+  const alsMinuten = (uhr) => {
+    const [h, m] = String(uhr).split(":").map((x) => parseInt(x, 10));
+    return (h || 0) * 60 + (m || 0);
+  };
+
+  // Paare aus Ziel und Flughafen, jeweils der guenstigste vorhandene Flug
+  const paare = new Map();
+  for (const f of FLIGHTS) {
+    const k = `${f.ziel}|${f.fromCode}`;
+    const da = paare.get(k);
+    if (!da || f.price < da.price) paare.set(k, f);
+  }
+
+  const dazu = [];
+  for (const [k, basis] of paare) {
+    const vorhanden = FLIGHTS.filter((f) => `${f.ziel}|${f.fromCode}` === k);
+    if (vorhanden.length >= 3) continue;
+    const nummer = parseInt(String(basis.id).replace(/\D/g, ""), 10) || 1;
+    const genutzt = new Set(vorhanden.map((f) => f.airline));
+    const basisMin = minuten(basis.duration);
+    const abflug = alsMinuten(basis.depart);
+
+    /* Zwei Rollen, damit die Wahl eine Abwaegung ist:
+       - "guenstig": ein Stopp mehr, deutlich billiger, wenig Gepaeck
+       - "bequem":   direkt, frueher oder spaeter, teurer, Gepaeck dabei
+       Welche Airline sie fliegt, haengt an der Nummer des Basisflugs -
+       also fest, aber je Paar verschieden. */
+    const rollen = [
+      { art: "guenstig", stops: Math.min(2, (basis.stops || 0) + 1), extra: Math.round(basisMin * 0.45) + 40, versatz: -195 },
+      { art: "bequem", stops: 0, extra: basis.stops > 0 ? -Math.round(basisMin * 0.3) : 10, versatz: 240 },
+    ];
+
+    for (let i = 0; i < rollen.length && vorhanden.length + dazu.filter((d) => `${d.ziel}|${d.fromCode}` === k).length < 3; i++) {
+      const r = rollen[i];
+      // Eine Airline, die hier noch nicht fliegt, und die zur Rolle passt
+      const kandidaten = AIRLINES.filter((a) => !genutzt.has(a.name)
+        && (r.art === "guenstig" ? a.faktor < 1 : a.faktor >= 1));
+      const pool = kandidaten.length ? kandidaten : AIRLINES.filter((a) => !genutzt.has(a.name));
+      if (!pool.length) continue;
+      const a = pool[(nummer + i * 3) % pool.length];
+      genutzt.add(a.name);
+
+      const dauerMin = Math.max(45, basisMin + r.extra);
+      const ab = abflug + r.versatz + (nummer % 5) * 15;
+      /* Der Preis folgt der Airline und der Rolle. Ein Stopp drueckt ihn
+         zusaetzlich - sonst waere die unbequeme Verbindung auch noch die
+         teure, und niemand wuerde sie je waehlen. */
+      const stopAbschlag = r.stops > (basis.stops || 0) ? 0.88 : 1;
+      const preis = Math.max(39, Math.round(basis.price * a.faktor * stopAbschlag));
+      dazu.push({
+        id: `f${nummer}v${i + 2}`, type: "flight", airline: a.name,
+        from: basis.from, fromCode: basis.fromCode, to: basis.to, toCode: basis.toCode,
+        ziel: basis.ziel, depart: uhrText(ab), arrive: uhrText(ab + dauerMin),
+        duration: dauerText(dauerMin), stops: r.stops, price: preis,
+        baggage: a.gepaeck, aircraft: basis.aircraft,
+      });
+    }
+  }
+  FLIGHTS.push(...dazu);
+})();
+
 
 // Ausstattungs-Labels, die es nur bei Ferienwohnungen gibt
 Object.assign(AMENITY_LABELS, {

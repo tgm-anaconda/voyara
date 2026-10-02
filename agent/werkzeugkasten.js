@@ -727,13 +727,36 @@ const Werkzeugkasten = {
      und auf derselben Rangfolge, die hier herauskommt. */
   flugAuswahl(item, p) {
     if (!item || item.type === "apartment" || !p?.flug || typeof Flug === "undefined") return [];
+    /* Name gegen Kennung - daran scheiterte das ganze Fenster.
+       ----------------------------------------------------------------
+       Im Stand steht der Flughafen als Name ("München", oder "Hamburg,
+       München" bei mehreren). `Flug.optionen` vergleicht aber gegen
+       `fromCode`, also "MUC". Der Abgleich ging nie auf, die Liste kam
+       leer zurueck, `flugRueckfrage` brauchte zwei Eintraege - und das
+       Flugfenster oeffnete nie. Gemeldet am 02.10.2026: "Weiss ich auch
+       nicht, warum das nicht richtig umgesetzt wurde." Genau deshalb.
+
+       Gemessen: 0 Verbindungen fuer ein Haus auf Mallorca mit Flughafen
+       "München" im Stand, 3 mit "MUC". */
+    const codes = String(p.flugAb || "").split(",").map((x) => Flug.code(x.trim())).filter(Boolean);
     let liste = [];
-    try { liste = Flug.optionen(item.ziel, p.flugAb || null) || []; } catch { liste = []; }
+    try { liste = Flug.optionen(item.ziel, codes.length ? codes.join(",") : null) || []; } catch { liste = []; }
     if (!liste.length) return [];
     const personen = Math.max(1, (p.erwachsene || 0) + (p.kinder || 0));
+    const proPers = (f) => Flug.preisProPerson(f, p.flugKlasse || null);
     const sortiert = liste.slice().sort((a, b) => (a.stops || 0) - (b.stops || 0)
-      || Flug.preisProPerson(a, p.flugKlasse || null) - Flug.preisProPerson(b, p.flugKlasse || null));
-    return sortiert.slice(0, 4).map((f) => {
+      || proPers(a) - proPers(b));
+    /* Die guenstigste Verbindung ist immer dabei.
+       ----------------------------------------------------------------
+       Sortiert wird direkt vor billig, wie ein Mensch vergleicht. Bei
+       mehreren Flughaefen standen danach vier Direktfluege im Fenster und
+       der billige mit einem Stopp fiel heraus - damit gab es nichts
+       abzuwaegen, nur eine Rangfolge. Die Wahl soll eine Entscheidung
+       sein: schneller oder guenstiger. */
+    const gewaehlt = sortiert.slice(0, 3);
+    const billigster = liste.slice().sort((a, b) => proPers(a) - proPers(b))[0];
+    if (billigster && !gewaehlt.includes(billigster)) gewaehlt.push(billigster);
+    return gewaehlt.map((f) => {
       const proPerson = Flug.preisProPerson(f, p.flugKlasse || null);
       const gesamt = proPerson * personen;
       return {
