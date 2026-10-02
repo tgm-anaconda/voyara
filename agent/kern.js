@@ -999,6 +999,51 @@ const Kern = {
        Werkzeuge rief. */
     this.lauf.zuletztGemerkt = [];
     this.lauf.selbstGelesen = [];
+    /* Die Antwort auf "November umstellen oder doch Oktober?".
+       ------------------------------------------------------------------
+       Der Kern hat beide Lesarten in die Frage geschrieben, also muss er
+       beide Antworten auch selbst auswerten koennen - ueber das Modell
+       waere es derselbe Weg, auf dem die Angabe schon einmal verloren
+       ging. Wer stattdessen einen dritten Tag nennt, loest den
+       Widerspruch ebenfalls auf: Der Leser unten nimmt ihn. */
+    if (this.lauf.datumWiderspruch) {
+      const w = this.lauf.datumWiderspruch;
+      const p3 = this.lauf.profil || {};
+      const name = (m) => (typeof MONATSNAMEN !== "undefined" ? MONATSNAMEN[m - 1] : String(m));
+      const nenntNeu = new RegExp(name(w.genannt), "i").test(t);
+      const nenntAlt = new RegExp(name(w.gesucht), "i").test(t);
+      const zahl = `${w.tag}`;
+      if (nenntNeu && !nenntAlt) {
+        p3.monat = w.genannt;
+        p3.von = null; p3.bis = null;
+        p3.anreise = null;
+        (p3.vonPerson ||= {}).monat = true;
+        const fw = Werkzeugkasten.flexWahl(p3);
+        if (fw) {
+          p3.anreise = `${fw.monat}-${String(w.tag).padStart(2, "0")}`;
+          p3.vonPerson.anreise = true;
+          this.lauf.zuletztGemerkt = ["monat", "anreise"];
+          this.lauf.selbstGelesen = ["monat", "anreise"];
+        }
+        this.notieren("datum_widerspruch_geloest", { wahl: "monat_umgestellt", monat: w.genannt, tag: w.tag });
+        this.lauf.datumWiderspruch = null;
+        this.standAnzeigen?.();
+      } else if (nenntAlt || new RegExp(`\\b${zahl}\\b`).test(t)) {
+        const fw = Werkzeugkasten.flexWahl(p3);
+        if (fw) {
+          p3.anreise = `${fw.monat}-${String(w.tag).padStart(2, "0")}`;
+          (p3.vonPerson ||= {}).anreise = true;
+          this.lauf.zuletztGemerkt = ["anreise"];
+          this.lauf.selbstGelesen = ["anreise"];
+        }
+        this.notieren("datum_widerspruch_geloest", { wahl: "monat_bleibt", monat: w.gesucht, tag: w.tag });
+        this.lauf.datumWiderspruch = null;
+        this.standAnzeigen?.();
+      } else {
+        // Nichts davon: der Widerspruch bleibt offen, die Frage kommt wieder
+        this.notieren("datum_widerspruch_offen", { text: String(t).slice(0, 60) });
+      }
+    }
     if (this.lauf.gefragt) {
       (this.lauf.besprochen ||= {})[this.lauf.gefragt] = true;
       this.notieren("thema_beantwortet", { thema: this.lauf.gefragt });
@@ -1017,6 +1062,19 @@ const Kern = {
          den neuen Stand zeigt und das Thema nicht mehr als offen fuehrt. */
       Werkzeugkasten.antwortSelbstLesen(this, this.lauf.gefragt, t);
       this.lauf.gefragt = null;
+    }
+    /* Ein Tag in einem anderen Monat: nicht raten, fragen.
+       ------------------------------------------------------------------
+       Lief die Datumsfrage und steht in der Antwort ein Datum, das nicht
+       in den gesuchten Monat gehoert, hat der Leser oben nichts
+       aufgenommen - mit Absicht. Hier wird der Widerspruch vermerkt; die
+       Frage dazu stellt der Zug weiter unten. */
+    if (!this.lauf.datumWiderspruch && [2, 3].includes(this.lauf.datumFrage)) {
+      const w = Werkzeugkasten.datumWiderspruch(this.lauf.profil || {}, t);
+      if (w) {
+        this.lauf.datumWiderspruch = w;
+        this.notieren("datum_widerspruch", { tag: w.tag, genannt: w.genannt, gesucht: w.gesucht });
+      }
     }
     /* Der Stand vor diesem Zug.
        ------------------------------------------------------------------
@@ -1167,11 +1225,23 @@ const Kern = {
         if (text && this.lauf.lageImZug) {
           const zahlen = new Set((this.lauf.lageImZug.match(/\d+/g) || []).filter((z) => +z >= 5));
           const saetze = text.split(/(?<=[.!?])\s+/);
-          // Fragen bleiben stehen, auch wenn Zahlen darin vorkommen. Sonst
-          // frass dieser Filter die Frage nach dem Anreisetag ("am 1., 6.
-          // oder 11. Oktober?"), weil 6 und 11 auch in der Lage standen -
-          // uebrig blieb "oder 11.?".
-          const rest = saetze.filter((x) => /\?/.test(x) || !(x.match(/\d+/g) || []).some((z) => zahlen.has(z)));
+          /* Wie viel es gibt, sagt der Kern - und nur er.
+             ------------------------------------------------------------
+             Bis hierher fielen nur Saetze weg, die dieselben Zahlen
+             enthielten wie die Lage. Gemeldet am 02.10.2026: Der Kern
+             sagte "Im Oktober sind 91 Unterkuenfte buchbar", das Modell
+             direkt darunter "Ich habe eine Auswahl von 182 Unterkuenften
+             fuer Oktober gefunden". Die 182 stand irgendwo in einem
+             Werkzeugergebnis und galt damit als belegt - nur bedeutet sie
+             etwas anderes. Zwei Antworten, zwei Zahlen, und eine davon
+             falsch.
+
+             Deshalb faellt nach der Lage jede eigene Aussage des Modells
+             ueber das Angebot weg, mit Zahl oder ohne. Die Frage bleibt
+             stehen, der Anschluss ohne Mengenangabe auch. */
+          const ANGEBOT = Werkzeugkasten.ANGEBOT_AUSSAGE;
+          const rest = saetze.filter((x) => /\?/.test(x)
+            || (!(x.match(/\d+/g) || []).some((z) => zahlen.has(z)) && !ANGEBOT.test(x)));
           if (rest.length !== saetze.length) {
             text = rest.length ? rest.join(" ") : "Möchtest du die Filter so einstellen und selbst schauen, oder soll ich dir drei Häuser raussuchen?";
             nachricht.content = text;
@@ -1520,16 +1590,48 @@ const Kern = {
              koennte Zuege spaeter aus dem Nichts zuschlagen. */
           if (!freierZug && !tippGestellt && !artFrage) {
             const p2 = this.lauf.profil || {};
-            const datumFrage = Werkzeugkasten.datumRueckfrage(p2, this.lauf, letzteNachricht);
+            /* Der Widerspruch geht vor: Erst klaeren, welcher Monat
+               gemeint ist, dann wieder nach dem Tag fragen. Zweimal, dann
+               laeuft die Suche flexibel weiter - eine Rueckfrage, die
+               sich nicht aufloest, darf das Gespraech nicht blockieren. */
+            const wid = this.lauf.datumWiderspruch;
+            if (wid) {
+              const mal = (this.lauf.datumWiderspruchMal || 0) + 1;
+              if (mal > 2) {
+                this.lauf.datumWiderspruch = null;
+                this.lauf.datumFrage = 9;
+                this.notieren("datum_widerspruch_aufgegeben", { tag: wid.tag, genannt: wid.genannt });
+              } else {
+                this.lauf.datumWiderspruchMal = mal;
+                this.notieren("datum_widerspruch_gefragt", { tag: wid.tag, genannt: wid.genannt, mal });
+                fpJetzt = { ...fpJetzt, satz: wid.satz, chips: (wid.chips || []).join(" | "),
+                  naechstes: null, fragtThema: "anreise" };
+              }
+            }
+            const datumFrage = this.lauf.datumWiderspruch ? null
+              : Werkzeugkasten.datumRueckfrage(p2, this.lauf, letzteNachricht);
             if (datumFrage) {
               this.lauf.datumFrage = datumFrage.stufe;
               this.notieren("datum_rueckfrage", { stufe: datumFrage.stufe, monat: p2.monat || null });
               fpJetzt = { ...fpJetzt, satz: datumFrage.satz,
-                chips: (datumFrage.chips || []).join(" | "), naechstes: null };
-            } else if (this.lauf.datumFrage === 1 || this.lauf.datumFrage === 2) {
+                chips: (datumFrage.chips || []).join(" | "), naechstes: null, fragtThema: "anreise" };
+            } else if (!this.lauf.datumWiderspruch && [1, 2, 3].includes(this.lauf.datumFrage)) {
               // Beantwortet - und ob ein Tag dabei herauskam, ist ein Messwert
+              const hatDatum = !!(p2.anreise || (p2.von && p2.bis));
               this.lauf.datumFrage = 9;
-              this.notieren("datum_geklaert", { hatDatum: !!(p2.anreise || (p2.von && p2.bis)) });
+              this.notieren("datum_geklaert", { hatDatum });
+              /* Kam nach zwei Anlaeufen kein Tag, wird nicht einer
+                 angenommen und auch nicht geschwiegen: Der Agent sagt,
+                 dass er flexibel im Monat weitersucht. Sonst stand die
+                 Person vor einer Suche ohne Tag und vor einem gesperrten
+                 Buchungsknopf, ohne zu wissen, warum. */
+              if (!hatDatum && !p2.flug) {
+                const monatWort = typeof MONATSNAMEN !== "undefined" && p2.monat ? MONATSNAMEN[p2.monat - 1] : null;
+                if (monatWort) {
+                  Werkzeugkasten.ableiten(this, "anreise",
+                    `Ich suche dann flexibel im ${monatWort} weiter. Den genauen Tag können wir vor der Buchung festlegen.`);
+                }
+              }
             }
             /* Die Temperaturgrenze: einmal fragen statt vorgeben.
                ----------------------------------------------------------
@@ -1756,6 +1858,18 @@ const Kern = {
             if (this.lauf.uebersprungenNotiert[t]) continue;
             this.lauf.uebersprungenNotiert[t] = true;
             this.notieren("thema_uebersprungen", { thema: t });
+          }
+          /* Eine Rueckfrage des Kerns zu einem Thema, das der Fahrplan
+             nicht als offen fuehrt - der Anreisetag nach dem Monat.
+             Sie zaehlt NICHT in gefragtWie: Die Annahme nach zwei
+             Anlaeufen wuerde sonst mitten in die Nachfrage greifen und
+             den 1. des Monats eintragen. Als gestellt gilt sie trotzdem,
+             damit der Kern die naechste Nachricht als ihre Antwort liest
+             (das war die Luecke vom 02.10.2026: "01.11" fiel ins
+             Nichts, weil niemand die Frage als gestellt fuehrte). */
+          if (!fp.naechstes && fp.fragtThema && /\?/.test(text)) {
+            this.lauf.gefragt = fp.fragtThema;
+            this.notieren("rueckfrage_gestellt", { thema: fp.fragtThema });
           }
           if (fp.naechstes && /\?/.test(text)) {
             this.lauf.gefragt = fp.naechstes;

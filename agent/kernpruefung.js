@@ -469,8 +469,12 @@ const Kernpruefung = {
     { name: "Anreisetag steht", p: { monat: 8, vonPerson: { monat: true }, anreise: "2027-08-10" }, lauf: {}, letzte: "", stufe: null },
     { name: "Frist genannt", p: { monat: 8, vonPerson: { monat: true }, anreiseBis: "2027-08-20" }, lauf: {}, letzte: "", stufe: null },
     { name: "kein Monat", p: { vonPerson: {} }, lauf: {}, letzte: "", stufe: null },
-    // Zweimal gefragt ist genug
-    { name: "zweite Stufe war schon", p: { monat: 8, vonPerson: { monat: true } }, lauf: { datumFrage: 2 }, letzte: "hm", stufe: null },
+    /* Nach der zweiten Stufe noch ein Anlauf, der sagt, woran es lag -
+       seit dem Befund vom 02.10.2026 ("01.11" fiel ins Nichts). Danach
+       ist Schluss: zwei Anlaeufe sind Nachfragen, fuenf ein Verhoer. */
+    { name: "dritter Anlauf nach unlesbarer Antwort", p: { monat: 8, vonPerson: { monat: true } }, lauf: { datumFrage: 2 }, letzte: "hm", stufe: 3 },
+    { name: "abgewunken nach dem zweiten Anlauf", p: { monat: 8, vonPerson: { monat: true } }, lauf: { datumFrage: 2 }, letzte: "ist mir egal", stufe: null },
+    { name: "dritter Anlauf war schon", p: { monat: 8, vonPerson: { monat: true } }, lauf: { datumFrage: 3 }, letzte: "hm", stufe: null },
     { name: "erledigt", p: { monat: 8, vonPerson: { monat: true } }, lauf: { datumFrage: 9 }, letzte: "hm", stufe: null },
   ],
 
@@ -1405,6 +1409,163 @@ const Kernpruefung = {
     }
     return fehler;
   },
+
+  /* Datum und Preis: zwei Angaben, die der Agent falsch gelesen hat.
+     ------------------------------------------------------------------
+     Beide gemeldet am 02.10.2026. Auf "An welchem Tag im Oktober?" kam
+     "01.11" und verschwand; auf "Hast du eine feste Grenze fuer die
+     ganze Reise?" kam "5000 Euro" und wurde zu 5.000 Euro pro Nacht. */
+  TAG_FAELLE: [
+    { text: "01.11", tag: 1, monat: 11 },
+    { text: "1.11.", tag: 1, monat: 11 },
+    { text: "3.12.2027", tag: 3, monat: 12 },
+    { text: "2027-10-09", tag: 9, monat: 10 },
+    { text: "15. Oktober", tag: 15, monat: 10 },
+    { text: "15. Okt", tag: 15, monat: 10 },
+    { text: "14", tag: 14, monat: null },
+    { text: "14.", tag: 14, monat: null },
+    { text: "am 14.", tag: 14, monat: null },
+    { text: "den 9.", tag: 9, monat: null },
+    // Kein Tag: daraus darf nichts werden
+    { text: "ich bin flexibel", tag: null },
+    { text: "9 nächte", tag: null },
+    { text: "zwischen dem 10. und 20.", tag: null },
+    { text: "egal", tag: null },
+    { text: "40", tag: null },
+  ],
+
+  PREIS_FAELLE: [
+    { betrag: 5000, text: "5000 Euro", feld: "budgetGesamt" },
+    { betrag: 5000, text: "5000", feld: "budgetGesamt" },
+    { betrag: 3000, text: "3000 für die ganze Reise", feld: "budgetGesamt" },
+    { betrag: 2000, text: "insgesamt 2000", feld: "budgetGesamt" },
+    { betrag: 150, text: "150 pro Nacht", feld: "maxPreis" },
+    { betrag: 150, text: "150", feld: "maxPreis" },
+    { betrag: 120, text: "höchstens 120 € die Nacht", feld: "maxPreis" },
+    // Was die Person sagt, schlaegt die Hoehe
+    { betrag: 900, text: "900 pro Nacht", feld: "maxPreis" },
+  ],
+
+  datumUndPreis() {
+    const fehler = [];
+    const melde = (art, text, thema) => fehler.push({ art, text, thema: thema || null, satz: "" });
+    for (const f of this.TAG_FAELLE) {
+      let d = null;
+      try { d = Werkzeugkasten.tagAusText(f.text); }
+      catch (e) { melde("tag_absturz", `"${f.text}": ${e && e.message}`, "anreise"); continue; }
+      const ist = d ? { tag: d.tag, monat: d.monat == null ? null : d.monat } : null;
+      const soll = f.tag == null ? null : { tag: f.tag, monat: f.monat == null ? null : f.monat };
+      if (JSON.stringify(ist) !== JSON.stringify(soll)) {
+        melde("tag_falsch", `"${f.text}" ergab ${JSON.stringify(ist)}, erwartet ${JSON.stringify(soll)}`, "anreise");
+      }
+    }
+    /* Der Widerspruch, und dass er nur dort entsteht, wo er hingehoert. */
+    const wid = (stand, text) => { try { return Werkzeugkasten.datumWiderspruch(stand, text); } catch { return undefined; } };
+    const w1 = wid({ monat: 10 }, "01.11");
+    if (!w1 || w1.tag !== 1 || w1.genannt !== 11 || w1.gesucht !== 10) {
+      melde("widerspruch_fehlt", `"01.11" im Oktober ergab keinen Widerspruch (${JSON.stringify(w1)})`, "anreise");
+    } else if (!/November/.test(w1.satz) || !/Oktober/.test(w1.satz)) {
+      melde("widerspruch_ohne_lesarten", `Der Satz nennt nicht beide Monate: "${w1.satz}"`, "anreise");
+    } else if ((w1.satz.match(/\?/g) || []).length !== 1) {
+      melde("widerspruch_zwei_fragen", `Nicht genau ein Fragezeichen: "${w1.satz}"`, "anreise");
+    }
+    for (const f of [{ stand: { monat: 10 }, text: "14" }, { stand: { monat: 10 }, text: "14.10" },
+      { stand: { monat: 10 }, text: "ich bin flexibel" },
+      { stand: { monat: 10, anreise: "2027-10-05" }, text: "01.11" }]) {
+      const w = wid(f.stand, f.text);
+      if (w) melde("widerspruch_zu_viel", `"${f.text}" ergab einen Widerspruch, obwohl keiner vorliegt`, "anreise");
+    }
+    /* Der dritte Anlauf nach der Datumsfrage - und dass er anders klingt
+       als der zweite. Wortgleich waere er das Zeichen, dass der Agent
+       nicht zuhoert; genau das war der Befund. */
+    const zwei = Werkzeugkasten.datumRueckfrage({ monat: 10, vonPerson: { monat: true } }, { datumFrage: 1 }, "ich habe ein Datum");
+    const drei = Werkzeugkasten.datumRueckfrage({ monat: 10, vonPerson: { monat: true } }, { datumFrage: 2 }, "01.11");
+    if (!zwei || zwei.stufe !== 2) melde("datumfrage_fehlt", `Stufe 2 fehlt (${JSON.stringify(zwei)})`, "anreise");
+    if (!drei || drei.stufe !== 3) {
+      melde("datumfrage_kein_dritter", "Nach einer unlesbaren Antwort kommt kein dritter Anlauf", "anreise");
+    } else {
+      if (zwei && drei.satz === zwei.satz) melde("datumfrage_wortgleich", "Dritter Anlauf wortgleich wie der zweite", "anreise");
+      if ((drei.satz.match(/\?/g) || []).length !== 1) melde("datumfrage_zwei_fragen", `Nicht genau ein Fragezeichen: "${drei.satz}"`, "anreise");
+    }
+    if (Werkzeugkasten.datumRueckfrage({ monat: 10, vonPerson: { monat: true } }, { datumFrage: 3 }, "01.11")) {
+      melde("datumfrage_endlos", "Nach dem dritten Anlauf kommt die Frage noch einmal", "anreise");
+    }
+    if (Werkzeugkasten.datumRueckfrage({ monat: 10, vonPerson: { monat: true } }, { datumFrage: 2 }, "ich bin flexibel")) {
+      melde("datumfrage_trotz_abwinken", "Dritter Anlauf, obwohl die Person abgewunken hat", "anreise");
+    }
+    /* Die Preisdeutung. Die Grenze kommt aus den Daten, deshalb wird sie
+       hier mitgeprueft: Liegt die teuerste Nacht ueber 1.000 Euro, waere
+       die Regel wirkungslos, und das soll auffallen. */
+    const decke = Werkzeugkasten.nachtpreisDecke({ monat: 10 });
+    if (!(decke > 50 && decke < 1000)) {
+      melde("nachtpreis_decke", `Die teuerste Nacht im Oktober liegt bei ${decke} € - die Preisregel braucht einen Wert dazwischen`, "preis");
+    }
+    for (const f of this.PREIS_FAELLE) {
+      let d = null;
+      try { d = Werkzeugkasten.preisDeutung(f.betrag, f.text, { monat: 10 }); }
+      catch (e) { melde("preis_absturz", `"${f.text}": ${e && e.message}`, "preis"); continue; }
+      if (!d || d.feld !== f.feld) {
+        melde("preis_falsch_gedeutet", `"${f.text}" wurde als ${d ? d.feld : "nichts"} gelesen, erwartet ${f.feld}`, "preis");
+      }
+    }
+    for (const f of [{ text: "5000 Euro", feld: "budgetGesamt", wert: 5000 },
+      { text: "150 pro Nacht", feld: "maxPreis", wert: 150 },
+      { text: "da bin ich offen", feld: "preisEgal", wert: true }]) {
+      const p = { monat: 10 };
+      const kern = { lauf: { profil: p, gespraech: [], uebersprungen: {}, nichtVerstanden: {},
+        selbstGelesen: [], zuletztGemerkt: [] }, notieren() {}, standAnzeigen() {}, sichern() {} };
+      Werkzeugkasten.antwortSelbstLesen(kern, "preis", f.text);
+      if (JSON.stringify(p[f.feld] == null ? null : p[f.feld]) !== JSON.stringify(f.wert)) {
+        melde("preis_nicht_gelesen", `"${f.text}" ergab ${f.feld}=${JSON.stringify(p[f.feld])}, erwartet ${JSON.stringify(f.wert)}`, "preis");
+      }
+    }
+    /* Der Anreisetag im Leser: der gesuchte Monat kommt aus dem Stand,
+       nicht aus der Antwort. */
+    {
+      const p = { monat: 10 };
+      const f = Werkzeugkasten.flexWahl(p);
+      const kern = { lauf: { profil: p, gespraech: [], uebersprungen: {}, nichtVerstanden: {},
+        selbstGelesen: [], zuletztGemerkt: [] }, notieren() {}, standAnzeigen() {}, sichern() {} };
+      Werkzeugkasten.antwortSelbstLesen(kern, "anreise", "14");
+      const soll = f ? `${f.monat}-14` : null;
+      if (p.anreise !== soll) melde("anreise_nicht_gelesen", `"14" ergab ${p.anreise}, erwartet ${soll}`, "anreise");
+    }
+    {
+      const p = { monat: 10 };
+      const kern = { lauf: { profil: p, gespraech: [], uebersprungen: {}, nichtVerstanden: {},
+        selbstGelesen: [], zuletztGemerkt: [] }, notieren() {}, standAnzeigen() {}, sichern() {} };
+      Werkzeugkasten.antwortSelbstLesen(kern, "anreise", "01.11");
+      if (p.anreise) melde("anreise_geraten", `"01.11" im Oktober wurde zu ${p.anreise} - der Widerspruch gehoert gefragt, nicht geraten`, "anreise");
+    }
+    /* Die doppelte Antwort nach der Lage.
+       ----------------------------------------------------------------
+       Gemeldet am 02.10.2026 mit beiden Saetzen untereinander: Der Kern
+       sagte "Im Oktober sind 91 Unterkuenfte buchbar", das Modell direkt
+       darunter "Ich habe eine Auswahl von 182 Unterkuenften fuer Oktober
+       gefunden". Die 182 stand irgendwo in einem Werkzeugergebnis und
+       galt damit als belegt - nur bedeutet sie etwas anderes.
+
+       Geprueft wird die Regel, nach der der Kern solche Saetze
+       wegstreicht: Jede eigene Mengenangabe faellt, die Frage und der
+       blosse Anschluss bleiben. */
+    for (const f of [
+      { text: "Ich habe eine Auswahl von 182 Unterkünften für Oktober gefunden.", weg: true },
+      { text: "Es sind 91 Hotels buchbar.", weg: true },
+      { text: "Ich habe eine große Auswahl gefunden.", weg: true },
+      { text: "Davon sind viele Ferienwohnungen dabei.", weg: true },
+      // Das darf stehen bleiben
+      { text: "Oktober ist eine gute Zeit für viele Reiseziele.", weg: false },
+      { text: "Alles klar.", weg: false },
+      { text: "Schauen wir, was dazu passt.", weg: false },
+    ]) {
+      const ist = Werkzeugkasten.ANGEBOT_AUSSAGE.test(f.text);
+      if (ist !== f.weg) {
+        melde(f.weg ? "angebot_nicht_erkannt" : "angebot_falsch_erkannt",
+          `"${f.text}" ${ist ? "faellt weg" : "bleibt stehen"}, erwartet ${f.weg ? "weg" : "bleibt"}`, "lage");
+      }
+    }
+    return fehler;
+  },
   lauf({ still = false } = {}) {
     const alle = [];
     const staende = this.staende();
@@ -1428,6 +1589,7 @@ const Kernpruefung = {
     for (const f of this.datum()) alle.push(f);
     for (const f of this.relativ()) alle.push(f);
     for (const f of this.selbstgelesen()) alle.push(f);
+    for (const f of this.datumUndPreis()) alle.push(f);
     for (const f of this.unsicher()) alle.push(f);
     for (const f of this.annahmen()) alle.push(f);
     for (const f of this.art()) alle.push(f);

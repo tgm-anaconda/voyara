@@ -1363,7 +1363,8 @@ const Werkzeugkasten = {
      Weg stehen - gelesen wird dann über sie hinweg. Was die Person
      selbst gesagt hat (`vonPerson`), bleibt unangetastet. */
   SELBST_ANNAHME: { dauer: ["naechte"], reisende: ["personen", "erwachsene", "kinder"],
-    kinderAlter: ["kinderAlter"], flug: ["flug"], flugKlasse: ["flugKlasse"] },
+    kinderAlter: ["kinderAlter"], flug: ["flug"], flugKlasse: ["flugKlasse"],
+    anreise: ["anreise"], preis: ["maxPreis", "budgetGesamt", "preisEgal"] },
 
   SELBST_LESEN: {
     /* "9", "neun", "9 Nächte", "neun Übernachtungen", "eine Woche",
@@ -1431,7 +1432,153 @@ const Werkzeugkasten = {
       if (/economy|g(?:ü|ue)nstigste|billigste|standard|normal/.test(t)) return { flugKlasse: "economy" };
       return null;
     },
+    /* Der Anreisetag. Ein Tag in einem anderen Monat wird hier nicht
+       gelesen - den behandelt `datumWiderspruch` mit einer Rueckfrage,
+       weil beide Lesarten moeglich sind. */
+    anreise(t, p, wk) {
+      if (p.anreise || (p.von && p.bis)) return null;
+      const f = wk.flexWahl(p);
+      if (!f) return null;
+      const d = wk.tagAusText(t);
+      if (!d) return null;
+      const [jahr, monat] = f.monat.split("-").map(Number);
+      if (d.monat && d.monat !== monat) return null;
+      const letzter = new Date(jahr, monat, 0).getDate();
+      if (d.tag < 1 || d.tag > letzter) return null;
+      return { anreise: `${f.monat}-${String(d.tag).padStart(2, "0")}` };
+    },
+    /* Der Preis. Welche Lesart es ist, entscheidet `preisDeutung` -
+       dieselbe Funktion, die auch die Angabe des Modells prueft. */
+    preis(t, p, wk) {
+      if (p.maxPreis || p.budgetGesamt || p.preisEgal) return null;
+      if (/\b(offen|egal|kein(e|en)? (grenze|limit|budget)|nach oben offen|spielt keine rolle)\b/.test(t)) {
+        return { preisEgal: true };
+      }
+      const betrag = wk.betragAusText(t);
+      if (betrag == null) return null;
+      const d = wk.preisDeutung(betrag, t, p);
+      if (!d) return null;
+      return { [d.feld]: betrag };
+    },
   },
+
+
+  /* Einen Tag aus dem Satz lesen.
+     ------------------------------------------------------------------
+     Gebraucht an zwei Stellen (Lesen und Widerspruch), deshalb hier und
+     nicht zweimal. Zurueck kommt der Tag und, falls genannt, der Monat -
+     ob der zum gesuchten passt, entscheidet der Aufrufer. */
+  MONATSWORT: { januar: 1, jan: 1, februar: 2, feb: 2, "märz": 3, maerz: 3, "mär": 3, april: 4, apr: 4,
+    mai: 5, juni: 6, jun: 6, juli: 7, jul: 7, august: 8, aug: 8, september: 9, sept: 9, sep: 9,
+    oktober: 10, okt: 10, november: 11, nov: 11, dezember: 12, dez: 12 },
+
+  tagAusText(text) {
+    const t = String(text == null ? "" : text).toLowerCase().trim();
+    if (!t) return null;
+    let m = t.match(/\b(\d{4})-(\d{2})-(\d{2})\b/);
+    if (m) return { tag: +m[3], monat: +m[2] };
+    // 1.11. / 01.11 / 1.11.2027
+    m = t.match(/\b(0?[1-9]|[12]\d|3[01])\.\s*(0?[1-9]|1[0-2])\.?(?!\d)/);
+    if (m) return { tag: +m[1], monat: +m[2] };
+    // 15. Oktober, 15 Okt
+    m = t.match(/\b(0?[1-9]|[12]\d|3[01])\.?\s*(januar|jan|februar|feb|märz|maerz|mär|april|apr|mai|juni|jun|juli|jul|august|aug|september|sept|sep|oktober|okt|november|nov|dezember|dez)\b/);
+    if (m) return { tag: +m[1], monat: this.MONATSWORT[m[2]] || null };
+    // Nur ein Tag: "14", "14.", "am 14.", "den 14."
+    m = t.match(/^\s*(?:am\s+|ab\s+dem\s+|ab\s+|den\s+|der\s+)?(0?[1-9]|[12]\d|3[01])\.?\s*$/);
+    if (m) return { tag: +m[1], monat: null };
+    return null;
+  },
+
+  /* Ein Tag in einem anderen Monat als dem gesuchten.
+     ------------------------------------------------------------------
+     Gemeldet am 02.10.2026: Gesucht war Oktober, die Frage lautete "An
+     welchem Tag im Oktober wollt ihr anreisen?", die Antwort war "01.11".
+     Der Agent ging ohne ein Wort zur naechsten Frage, im Stand stand
+     kein Tag, und in der Suche fehlte er auch.
+
+     Zwei Lesarten sind moeglich (der 1. November, oder der 1. im
+     gesuchten Monat), und der Kern darf keine davon raten: Ein Tag, der
+     nicht in den gesuchten Monat gehoert, verschiebt entweder die ganze
+     Reise oder ist ein Zahlendreher. Also fragt er, mit beiden Lesarten
+     im Satz. */
+  datumWiderspruch(p, text) {
+    if (p.anreise || (p.von && p.bis)) return null;
+    const f = this.flexWahl(p);
+    if (!f) return null;
+    const d = this.tagAusText(text);
+    if (!d || !d.monat) return null;
+    const monat = Number(f.monat.split("-")[1]);
+    if (d.monat === monat) return null;
+    const name = (m) => (typeof MONATSNAMEN !== "undefined" ? MONATSNAMEN[m - 1] : `Monat ${m}`);
+    return {
+      tag: d.tag, genannt: d.monat, gesucht: monat,
+      satz: `Der ${d.tag}. ${name(d.monat)} liegt nicht im ${name(monat)}, in dem ich bisher suche. `
+        + `Soll ich auf ${name(d.monat)} umstellen, oder meinst du den ${d.tag}. ${name(monat)}?`,
+      chips: [`Auf ${name(d.monat)} umstellen`, `${d.tag}. ${name(monat)}`],
+    };
+  },
+
+  /* Die hoechste Nacht im Katalog.
+     ------------------------------------------------------------------
+     Die Grenze zwischen "pro Nacht" und "fuer die ganze Reise" kommt
+     aus den Daten, nicht aus einer geratenen Zahl: Eine Obergrenze
+     oberhalb des teuersten Nachtpreises waere keine Grenze, sie liesse
+     alles durch. Wer so eine Zahl nennt, meint die Reise. */
+  nachtpreisDecke(p) {
+    const monat = p && p.monat ? p.monat : null;
+    const alle = [...(typeof HOTELS !== "undefined" ? HOTELS : []),
+      ...(typeof APARTMENTS !== "undefined" ? APARTMENTS : [])];
+    let hoch = 0;
+    for (const h of alle) {
+      const n = typeof preisImMonat === "function" ? preisImMonat(h, monat) : (h.pricePerNight || 0);
+      if (Number.isFinite(n) && n > hoch) hoch = n;
+    }
+    return hoch || 400;
+  },
+
+  /* Gilt der Betrag pro Nacht oder fuer die ganze Reise?
+     ------------------------------------------------------------------
+     Gemeldet am 02.10.2026: Auf "Hast du beim Preis eine feste Grenze
+     fuer die ganze Reise?" antwortete der Nutzer "5000 Euro", und der
+     Agent merkte sich 5.000 Euro pro Nacht. Sein Kommentar: "Bei so
+     hohen Betraegen ist es ja logisch, dass es fuer die gesamte Zeit
+     gilt. Sowas erwarte ich schon von einem KI-Agenten."
+
+     Entschieden wird in dieser Reihenfolge: Was die Person sagt, gilt
+     ("pro Nacht", "insgesamt"). Sagt sie nichts dazu, entscheidet die
+     Hoehe gegen die Daten - oberhalb des teuersten Nachtpreises kann es
+     keine Nachtgrenze sein. Welche Lesart es wurde, sagt der Agent im
+     naechsten Satz ("hoechstens 5000 € insgesamt"), damit ein Irrtum
+     sofort auffaellt und nicht erst in der Trefferliste. */
+  PRO_NACHT_WORT: /pro nacht|je nacht|die nacht|pro übernachtung|pro uebernachtung|je übernachtung|je uebernachtung|nachtpreis|pro tag|je tag|am tag|\/ ?nacht/i,
+  GESAMT_WORT: /insgesamt|gesamt|zusammen|komplett|alles in allem|all ?in|maximal ausgeben|höchstens ausgeben|für (?:die )?(?:ganze )?(?:reise|woche|wochenende|zeit|urlaub)|fürs? (?:hotel|unterkunft|ganze)/i,
+
+  preisDeutung(betrag, text, p) {
+    if (!Number.isFinite(betrag) || betrag <= 0) return null;
+    const t = String(text == null ? "" : text);
+    if (this.PRO_NACHT_WORT.test(t)) return { feld: "maxPreis", grund: "pro Nacht gesagt" };
+    if (this.GESAMT_WORT.test(t)) return { feld: "budgetGesamt", grund: "gesamt gesagt" };
+    const decke = this.nachtpreisDecke(p);
+    if (betrag > decke) return { feld: "budgetGesamt", grund: `über dem teuersten Nachtpreis (${Math.round(decke)} €)` };
+    return { feld: "maxPreis", grund: "im Bereich der Nachtpreise" };
+  },
+
+  // Einen Betrag aus dem Satz lesen: "5000", "5.000 Euro", "5000€", "ca. 3500"
+  betragAusText(text) {
+    const t = String(text == null ? "" : text).toLowerCase();
+    const treffer = [...t.matchAll(/(\d{1,3}(?:[.\s]\d{3})+|\d+)(?:\s*(?:€|euro|eur\b))?/g)]
+      .map((m) => parseInt(String(m[1]).replace(/[^\d]/g, ""), 10))
+      .filter((n) => Number.isFinite(n) && n > 0);
+    if (!treffer.length) return null;
+    return treffer[treffer.length - 1];
+  },
+
+  /* Eine eigene Aussage des Modells ueber das Angebot.
+     ------------------------------------------------------------------
+     Gebraucht vom Kern, geprueft von der Kernpruefung - deshalb hier und
+     nicht inline. Nach der Lage faellt jeder Satz des Modells weg, der
+     darauf passt: Wie viel es gibt, sagt der Kern. */
+  ANGEBOT_AUSSAGE: /\b(unterk(ü|ue)nfte|unterkunft|h(ä|ae)user|hotels?|ferienwohnungen?|wohnungen?|objekte?|angebote?|auswahl|treffer|buchbar|verf(ü|ue)gbar|gefunden)\b/i,
 
   antwortSelbstLesen(kern, thema, text) {
     const leser = thema ? this.SELBST_LESEN[thema] : null;
@@ -1636,6 +1783,28 @@ const Werkzeugkasten = {
         stufe: 2,
         satz: `An welchem Tag im ${monat} wollt ihr anreisen? Es ist jeder Tag frei, und der Preis bleibt im Monat gleich.`,
         chips: null,
+      };
+    }
+    /* Noch ein Anlauf, und der sagt, woran es lag.
+       ------------------------------------------------------------------
+       Gemeldet am 02.10.2026: Auf "An welchem Tag im Oktober wollt ihr
+       anreisen?" kam "01.11", und der Agent stellte einfach die naechste
+       Frage. Im Stand lag kein Tag, in der Suche fehlte er auch. Der
+       Nutzer dazu: "Das ist ja auch schlecht, wenn er quasi nicht so
+       lange fragt, bis er es auch wirklich verstanden hat."
+
+       Also wird noch einmal gefragt, mit dem Hinweis, dass nichts
+       angekommen ist, und mit Tagen als Vorschlag. Danach ist Schluss:
+       Die Suche laeuft flexibel im Monat weiter, und auch das wird
+       gesagt. Zwei Anlaeufe sind Nachfragen, fuenf sind ein Verhoer. */
+    if (stufe === 2 && !this.DATUM_ABWINKEN.test(String(letzte || ""))) {
+      const tage = this.anreiseTage(p);
+      const bsp = tage.length > 1 ? tage[1] : (tage[0] || null);
+      return {
+        stufe: 3,
+        satz: `Einen Tag im ${monat} konnte ich aus deiner Antwort nicht lesen. `
+          + `Welcher soll es sein${bsp ? `, zum Beispiel der ${bsp}` : ""}?`,
+        chips: tage.length ? [...tage.slice(0, 3), "Ich bin flexibel"] : ["Ich bin flexibel"],
       };
     }
     return null;
@@ -2063,20 +2232,25 @@ const Werkzeugkasten = {
       // ein einziges Haus uebrig. Gerechnet wird deshalb nicht mehr: Der
       // Betrag aus der Nachricht zaehlt, und die Worte entscheiden, ob er
       // fuer die Nacht oder fuer den ganzen Aufenthalt gilt.
-      const GESAMT_WORT = /insgesamt|gesamt|zusammen|komplett|alles in allem|maximal ausgeben|für(s| das| die)?\s*(hotel|unterkunft|reise|woche|wochenende)/i;
+      /* Welche Lesart, entscheidet der Kern - mit derselben Regel, die
+         auch gilt, wenn er den Betrag selbst aus der Antwort liest
+         (`preisDeutung`). Vorher brauchte die Gesamt-Lesart ein Wort wie
+         "insgesamt"; ein blankes "5000 Euro" blieb beim Modell, und das
+         machte daraus 5.000 Euro pro Nacht - gemeldet am 02.10.2026.
+         Jetzt entscheidet bei fehlendem Wort die Hoehe gegen die Daten. */
       if (a.maxPreis || a.budgetGesamt) {
         const letzteTexte = (kern.lauf.gespraech || []).filter((n) => n.role === "user").slice(-1).map((n) => String(n.content)).join(" ");
-        const genannt = (letzteTexte.match(/(\d{1,3}(?:[.\s]\d{3})+|\d+)\s*(?:€|euro|eur\b)/gi) || [])
-          .map((x) => parseInt(x.replace(/[^\d]/g, ""), 10)).filter((n) => n > 0);
-        const wert = genannt.length ? genannt[genannt.length - 1] : null;
-        const proNachtGesagt = /pro nacht|je nacht|die nacht|nachtpreis|pro übernachtung|pro uebernachtung/i.test(letzteTexte);
-        if (wert && GESAMT_WORT.test(letzteTexte) && !proNachtGesagt) {
-          if (a.budgetGesamt !== wert || a.maxPreis) kern.notieren("budget_umgedeutet", { gesagt: wert, modell: a.budgetGesamt || a.maxPreis });
-          a.budgetGesamt = wert; delete a.maxPreis;
-        } else if (wert && a.maxPreis && a.maxPreis !== wert && !a.budgetGesamt) {
-          // Das Modell hat gerechnet, wo nichts zu rechnen war
-          kern.notieren("preis_korrigiert", { gesagt: wert, modell: a.maxPreis });
-          a.maxPreis = wert;
+        const wert = Werkzeugkasten.betragAusText(letzteTexte);
+        const deutung = wert ? Werkzeugkasten.preisDeutung(wert, letzteTexte, p) : null;
+        if (wert && deutung) {
+          const anders = deutung.feld === "budgetGesamt" ? !!a.maxPreis : !!a.budgetGesamt;
+          const zahlAnders = (a[deutung.feld] || null) !== wert;
+          if (anders || zahlAnders) {
+            kern.notieren("preis_gedeutet", { gesagt: wert, feld: deutung.feld, grund: deutung.grund,
+              modellMaxPreis: a.maxPreis || null, modellBudget: a.budgetGesamt || null });
+          }
+          if (deutung.feld === "budgetGesamt") { a.budgetGesamt = wert; delete a.maxPreis; }
+          else { a.maxPreis = wert; delete a.budgetGesamt; }
         }
       }
       setze("maxPreis", a.maxPreis); setze("budgetGesamt", a.budgetGesamt);
