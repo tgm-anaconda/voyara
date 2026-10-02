@@ -566,7 +566,31 @@ const Werkzeuge = {
     }
     const { von, bis } = mass;
     const gesamt = elemente.length;
-    const schritt = Math.max(220, Math.round(window.innerHeight * 0.8));
+    /* Die Oberkante jeder Karte, einmal gemessen.
+       ------------------------------------------------------------------
+       Daran haengt der Zaehler. Bis zum 02.10.2026 rechnete er mit dem
+       Anteil der SCROLLSTRECKE: `Math.round(gesamt * anteil)`. Das ist
+       eine Schaetzung, und man sieht sie - die Zahl sprang, bevor sich
+       etwas bewegte, und bei verschieden hohen Karten passte sie nie.
+       Der Nutzer: "Es muss ja wirklich pro Kachel, die er ueberfliegt,
+       eine Zahl hochgehen. Das kann man doch bestimmt auch echt
+       einbauen, ohne dass man es so schlecht faken muss."
+
+       Jetzt zaehlt, was wirklich durch das Fenster gelaufen ist: Eine
+       Karte zaehlt, sobald ihre Oberkante den unteren Rand erreicht hat.
+       Die Zahl kann damit gar nicht mehr von der Bewegung abweichen. */
+    const kanten = elemente.map((el) => window.scrollY + el.getBoundingClientRect().top);
+    const gesehen = (bisY) => {
+      const rand = bisY + window.innerHeight;
+      let n = 0;
+      for (const k of kanten) if (k <= rand) n++;
+      return Math.min(gesamt, n);
+    };
+    /* Kleinere Schritte als bisher (0,8 Fensterhoehen): Bei 0,35 wirkt es
+       wie Lesen statt wie Blaettern, und zwischen zwei Schritten aendert
+       sich der Zaehler um wenige Karten statt um ein Dutzend. Die
+       Gesamtdauer bleibt gleich, der Takt passt sich an. */
+    const schritt = Math.max(140, Math.round(window.innerHeight * 0.35));
     /* Der Durchlauf soll ueberall gleich lang wirken, egal ob 100 oder
        253 Karten darunterliegen - sonst zieht sich eine lange Liste
        ueber sechs Sekunden hin und wirkt zaeh statt schnell. Angepeilt
@@ -594,10 +618,7 @@ const Werkzeuge = {
       }
       window.scrollTo({ top: y, behavior: "auto" });
       weiteste = Math.max(weiteste, window.scrollY);
-      if (zaehlwort) {
-        const anteil = bis > von ? Math.min(1, (y - von) / (bis - von)) : 1;
-        Zeiger.beschrifte?.(`${Math.max(1, Math.round(gesamt * anteil))} von ${gesamt} ${zaehlwort}`);
-      }
+      if (zaehlwort) Zeiger.beschrifte?.(`${Math.max(1, gesehen(y))} von ${gesamt} ${zaehlwort}`);
       await Zeiger.warte(takt);
     }
     // Was noch offen ist, weil die Strecke vorher zu Ende war
@@ -652,24 +673,55 @@ const Werkzeuge = {
   async listeUeberfliegen() {
     const liste = this.finde("#resultList");
     if (!liste) return this.fehlt("Die Trefferliste");
-    const karten = [...liste.querySelectorAll(".result-card")];
+    /* Nur, was wirklich buchbar in der Liste steht.
+       ------------------------------------------------------------------
+       Gemeldet am 02.10.2026: "Er zaehlt von 0 bis 205 Hotels hoch,
+       obwohl er die Filter schon gesetzt hatte und am Ende nur 125
+       rauskamen. Die Zahl darf dann halt auch nur maximal die Zahl sein,
+       die auch buchbar sind. Und auch nur die Hotels darf man dann dort
+       runterscrollen."
+
+       Karten, die die Seite ausgeblendet hat (ausserhalb der Saison,
+       weggefiltert), zaehlen nicht mehr mit und werden auch nicht mehr
+       abgefahren. Eine Zahl, eine Quelle - dieselbe Regel wie bei den
+       Regionenzahlen in der Filterspalte. */
+    const sichtbar = (el) => !!el.offsetParent && !el.hidden && el.getBoundingClientRect().height > 0;
+    const alleKarten = [...liste.querySelectorAll(".result-card")];
+    const karten = alleKarten.filter(sichtbar);
+    if (karten.length !== alleKarten.length && typeof Kern !== "undefined") {
+      Kern.notieren?.("karten_ausgeblendet", { sichtbar: karten.length, gesamt: alleKarten.length });
+    }
     if (!karten.length) return { ok: true, text: "Keine Treffer zum Durchsehen.", daten: { karten: 0, gescrollt: false } };
 
-    /* Drei Haeuser aus der Tiefe der Liste.
+    /* Vier Halte, von oben nach unten, und er merkt sie sich.
        ----------------------------------------------------------------
-       Nicht die ersten drei: Wer oben anfaengt, haette nicht scrollen
-       muessen, und genau das hat der Nutzer bei den Bewertungen schon
-       beanstandet. Die Halte sind ueber die Liste verteilt und werden
-       markiert - danach ist sichtbar, wo er hingesehen hat. */
-    const halte = karten.length >= 12
-      ? [0.3, 0.6, 0.88].map((a) => karten[Math.round(a * (karten.length - 1))]).filter(Boolean)
-      : [];
+       Der Nutzer am 02.10.2026 beschreibt den Ablauf, den er erwartet:
+       "Dass er einfach wirklich von oben bis unten runtergeht und dann
+       bei manchen Hotels stoppt" - und weiter, als besserer Vorschlag
+       als der bisherige: "dass er quasi, waehrend er die Hotels
+       durchgeht und immer stoppt, dass da dann steht: speichere Hotel
+       fuer spaetere Ansicht. Dann kann er nachher auch zwischen den
+       Product Detail Pages springen."
+
+       Genau so: Beim Halt wird gemerkt, nicht geoeffnet. Erst nach dem
+       Durchgang geht er die gemerkten Haeuser auf (haeuser_ansehen).
+       Damit hat der Durchgang eine erkennbare Aufgabe, und der Wechsel
+       zwischen Liste und Hausseite passiert nicht mehr mittendrin.
+
+       Die Halte liegen jetzt auch im ersten Drittel: Der frueheste lag
+       bei 30 Prozent, und davor lief die Liste ohne jeden Halt durch -
+       das war der Teil, der wirr wirkte. */
+    const anteile = karten.length >= 20 ? [0.12, 0.38, 0.64, 0.88]
+      : karten.length >= 8 ? [0.15, 0.5, 0.85] : [];
+    const halte = anteile.map((a) => karten[Math.round(a * (karten.length - 1))])
+      .filter((el, i, liste) => el && liste.indexOf(el) === i);
     const gesehen = [];
-    const beiHalt = async (el) => {
+    const beiHalt = async (el, nr) => {
       el.classList.add("agent-gelesen");
       const name = el.querySelector(".hotel-name")?.textContent?.trim() || "";
-      await Zeiger.lies(el, { dauer: 420, hinweis: name ? `sieht ${name} an` : "sieht nach" });
+      await Zeiger.lies(el, { dauer: 520, hinweis: name ? `merkt sich ${name}` : "merkt sich dieses Haus" });
       if (name) gesehen.push(name);
+      if (typeof Kern !== "undefined") Kern.notieren?.("haus_gemerkt", { name, nr });
     };
 
     const r = await this.scrollDurch({ elemente: karten, halte, beiHalt, zaehlwort: "Häusern", tempoMs: 22 });
