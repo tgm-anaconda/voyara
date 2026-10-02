@@ -64,6 +64,15 @@ const Fluege = {
       </div>`;
     document.body.appendChild(el);
     document.body.classList.add("vorschlag-offen");
+    /* Sichtbar wird das Fenster erst mit der Klasse `da`.
+       ----------------------------------------------------------------
+       `.vorschlag-schirm` steht in style.css auf `opacity: 0`, und erst
+       `.da` blendet es ein - so macht es die Vorschlagsansicht seit jeher
+       (agent/vorschlaege.js). Hier fehlte die Zeile: Das Fenster lag mit
+       allen drei Verbindungen im Dokument und war unsichtbar. Gemessen am
+       02.10.2026 auf der Hausseite - opacity 0 bei offenem Schirm.
+       Im naechsten Bild, damit der Uebergang laeuft. */
+    requestAnimationFrame(() => el.classList.add("da"));
 
     el.querySelectorAll("[data-flug]").forEach((z) =>
       z.addEventListener("click", (e) => {
