@@ -87,7 +87,10 @@ for (const quelle of bilder) {
 // haben keine Aussenansicht und behalten ihre Reihenfolge.
 // Sechs Haeuser aus der ersten Runde haben auf Position 2 kein Gebaeude,
 // sondern Pool, Zimmer oder Strand. Bei ihnen bleibt Position 1 vorn.
-const TITEL_BLEIBT_EINS = new Set(["h02", "h03", "h07", "h08", "h10", "h12"]);
+// Die Haeuser vom 02.10.2026 (h185 bis h218) haben keine KI-Aussenansicht,
+// sondern fuenf Stockbilder. Bei ihnen bleibt der Ort das Titelbild.
+const OHNE_AUSSENANSICHT = Array.from({ length: 34 }, (_, i) => `h${185 + i}`);
+const TITEL_BLEIBT_EINS = new Set(["h02", "h03", "h07", "h08", "h10", "h12", ...OHNE_AUSSENANSICHT]);
 
 function galerieOrdnung(bereich, id, dateien) {
   if (bereich !== "hotels" || TITEL_BLEIBT_EINS.has(id)) return dateien;

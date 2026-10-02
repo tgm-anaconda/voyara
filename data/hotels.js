@@ -6069,6 +6069,1085 @@ const HOTELS = [
     ],
     ratingBreakdown: { lage: 4, sauberkeit: 3.8, service: 3.6, preis: 4.4, ausstattung: 3.2, essen: 3.4 },
   },
+
+  /* ==================================================================
+     Nachtrag 02.10.2026: Haeuser fuer die Wintermonate
+     ------------------------------------------------------------------
+     Gemessen nach dem Testlauf: Im Dezember sind nur drei Regionen
+     waermer als 22 Grad, und in ihnen standen 35 Hotels - in acht davon
+     passte eine Familie zu fuenft. Am Ende blieb ein einziges Haus im
+     Vergleichsset. Der Nutzer dazu: "Dann ist ja nur ein Hotel da, das
+     ist dann das Partnerhotel und dann funktioniert es ja nicht. Ich
+     muss ja auch noch welche zum Vergleich geben."
+
+     Damit ist der Katalog nicht nur unbequem, sondern fuer die Messung
+     unbrauchbar: Eine Wahl ohne Alternative sagt nichts darueber, ob
+     die Kennzeichnung gewirkt hat.
+
+     Die duennsten Ziele bekommen deshalb Zuwachs - Kapstadt und
+     Marrakesch hatten je vier Haeuser, Krabi zehn. Wie viele es sein
+     konnten, hat der Bildvorrat entschieden: Jedes Haus braucht fuenf
+     echte Bilder, und die knappste Bildsorte je Ziel setzt die Grenze.
+     ================================================================== */
+  {
+    id: "h185",
+    ziel: "kapstadt",
+    name: "Camps Bay Family Suites",
+    location: "Camps Bay",
+    region: "Kapstadt",
+    category: "familie",
+    stars: 4,
+    pricePerNight: 188,
+    rating: 4.4,
+    reviewCount: 967,
+    shortDescription:
+      "Suitenhaus am Hang über der Bucht, mit Pool auf zwei Ebenen.",
+    description:
+      "Das Haus steht am Hang über Camps Bay, die Zimmer sind durchweg Suiten mit getrennten Schlafbereichen. Der Pool liegt auf zwei Ebenen, die untere ist flach und beheizt. Zum Strand sind es vier Minuten zu Fuß, bergab; zurück nimmt man die Treppen oder den Shuttle. Vom Frühstücksraum sieht man die Zwölf Apostel, die am Morgen oft noch im Dunst stehen.",
+    highlights: ["4 Minuten zum Strand", "Flacher beheizter Kinderpool", "Suiten mit getrennten Schlafbereichen"],
+    distanceToBeach: 0.3,
+    distanceToCenter: 7.4,
+    distanceToAirport: 26,
+    amenities: ["wifi", "pool", "restaurant", "bar", "aircon", "parking", "kidsClub", "familyFriendly", "seaView"],
+    boards: [
+      { key: "ohne", priceDelta: 0 },
+      { key: "fruehstueck", priceDelta: 21 },
+      { key: "halb", priceDelta: 42 },
+    ],
+    rooms: [
+      { name: "Juniorsuite", size: 38, maxGuests: 3, priceDelta: 0, features: ["Balkon zur Bucht", "Sitzecke"] },
+      { name: "Familiensuite", size: 56, maxGuests: 5, priceDelta: 74, features: ["Zwei Schlafbereiche", "Zwei Bäder"] },
+      { name: "Familiensuite groß", size: 72, maxGuests: 6, priceDelta: 128, features: ["Zwei Schlafzimmer", "Wohnraum mit Schlafsofa"] },
+    ],
+    ratingBreakdown: { lage: 4.8, sauberkeit: 4.5, service: 4.4, preis: 3.9, ausstattung: 4.5, essen: 4.2 },
+  },
+  {
+    id: "h186",
+    ziel: "kapstadt",
+    name: "Blaauwberg Beach Resort",
+    location: "Bloubergstrand",
+    region: "Kapstadt",
+    category: "strand",
+    stars: 4,
+    pricePerNight: 164,
+    rating: 4.2,
+    reviewCount: 1342,
+    shortDescription:
+      "Großes Strandresort mit dem bekannten Blick über die Bucht zum Tafelberg.",
+    description:
+      "Das Resort liegt direkt an der langen Sandbucht von Bloubergstrand, von der aus der Tafelberg über dem Wasser steht - der Blick, den man von Postkarten kennt. Zwei Pools, ein Buffetrestaurant, ein Grill am Strand. Der Wind ist hier fast immer da, was Kitesurfer anzieht und Sonnenschirme beschäftigt. Bis in die Innenstadt fährt man zwanzig Minuten.",
+    highlights: ["Direkt am Strand", "Blick auf den Tafelberg über der Bucht", "Zwei Pools"],
+    distanceToBeach: 0.05,
+    distanceToCenter: 18.6,
+    distanceToAirport: 31,
+    amenities: ["wifi", "pool", "restaurant", "bar", "aircon", "parking", "beachfront", "kidsClub", "familyFriendly", "gym"],
+    boards: [
+      { key: "fruehstueck", priceDelta: 0 },
+      { key: "halb", priceDelta: 34 },
+      { key: "ai", priceDelta: 78 },
+    ],
+    rooms: [
+      { name: "Doppelzimmer Gartenseite", size: 26, maxGuests: 2, priceDelta: 0, features: ["Terrasse", "Klimaanlage"] },
+      { name: "Doppelzimmer Meerblick", size: 28, maxGuests: 3, priceDelta: 32, features: ["Balkon zum Wasser", "Sitzgruppe"] },
+      { name: "Familienzimmer", size: 44, maxGuests: 5, priceDelta: 68, features: ["Durchgangszimmer für die Kinder", "Zwei Waschbecken"] },
+    ],
+    ratingBreakdown: { lage: 4.6, sauberkeit: 4.2, service: 4.1, preis: 4.3, ausstattung: 4.2, essen: 3.9 },
+  },
+  {
+    id: "h187",
+    ziel: "kapstadt",
+    name: "Kirstenbosch Garden Lodge",
+    location: "Newlands",
+    region: "Kapstadt",
+    category: "boutique",
+    stars: 4,
+    pricePerNight: 198,
+    rating: 4.7,
+    reviewCount: 418,
+    shortDescription:
+      "Zwölf Zimmer am Rand des botanischen Gartens, unter alten Bäumen.",
+    description:
+      "Ein niedriges Haus am Zaun des Kirstenbosch-Gartens, zwölf Zimmer, alle mit Blick ins Grüne. Morgens hört man Vögel und sonst nichts; der Verkehr liegt zwei Straßen weiter. Vom Tor bis zum Garteneingang sind es sieben Minuten, und wer früh losgeht, hat die Wege noch für sich. Die Küche kocht abends ein wechselndes Menü mit drei Gängen.",
+    highlights: ["7 Minuten zum botanischen Garten", "Nur zwölf Zimmer", "Abendmenü aus der eigenen Küche"],
+    distanceToBeach: 11.2,
+    distanceToCenter: 9.8,
+    distanceToAirport: 17,
+    amenities: ["wifi", "restaurant", "bar", "terrace", "parking", "spa", "adultsOnly"],
+    boards: [
+      { key: "fruehstueck", priceDelta: 0 },
+      { key: "halb", priceDelta: 46 },
+    ],
+    rooms: [
+      { name: "Gartenzimmer", size: 28, maxGuests: 2, priceDelta: 0, features: ["Blick in den Garten", "Leseecke"] },
+      { name: "Gartenzimmer groß", size: 36, maxGuests: 2, priceDelta: 38, features: ["Eigene Terrasse", "Wanne"] },
+    ],
+    ratingBreakdown: { lage: 4.7, sauberkeit: 4.8, service: 4.8, preis: 4.2, ausstattung: 4.6, essen: 4.7 },
+  },
+  {
+    id: "h188",
+    ziel: "kapstadt",
+    name: "Sea Point Aparthotel",
+    location: "Sea Point",
+    region: "Kapstadt",
+    category: "apart",
+    stars: 3,
+    pricePerNight: 116,
+    rating: 4.1,
+    reviewCount: 736,
+    shortDescription:
+      "Apartments mit Küche an der Promenade, zum Selbstversorgen.",
+    description:
+      "Wohnungen mit eigener Küche in einem Wohnblock einen Block hinter der Promenade. Nichts Besonderes an der Ausstattung, aber viel Platz und ein Supermarkt an der Ecke. Die Promenade geht von hier aus kilometerweit am Wasser entlang, morgens laufen halb Sea Point und ihre Hunde dort. Baden kann man im Meerwasserbecken, der Atlantik selbst ist kalt.",
+    highlights: ["Eigene Küche in jeder Wohnung", "Ein Block zur Promenade", "Meerwasserbecken in Laufweite"],
+    distanceToBeach: 0.6,
+    distanceToCenter: 3.4,
+    distanceToAirport: 23,
+    amenities: ["wifi", "parking", "aircon", "familyFriendly", "petsAllowed"],
+    boards: [
+      { key: "ohne", priceDelta: 0 },
+      { key: "fruehstueck", priceDelta: 14 },
+    ],
+    rooms: [
+      { name: "Studio", size: 32, maxGuests: 2, priceDelta: 0, features: ["Küchenzeile", "Balkon"] },
+      { name: "Apartment 2 Schlafzimmer", size: 58, maxGuests: 5, priceDelta: 44, features: ["Zwei Schlafzimmer", "Waschmaschine"] },
+      { name: "Apartment 3 Schlafzimmer", size: 76, maxGuests: 6, priceDelta: 82, features: ["Drei Schlafzimmer", "Großer Essplatz"] },
+    ],
+    ratingBreakdown: { lage: 4.5, sauberkeit: 4.0, service: 3.8, preis: 4.5, ausstattung: 4.0, essen: 3.6 },
+  },
+  {
+    id: "h189",
+    ziel: "kapstadt",
+    name: "Noordhoek Dune Hotel",
+    location: "Noordhoek",
+    region: "Kapstadt",
+    category: "strand",
+    stars: 3,
+    pricePerNight: 132,
+    rating: 4.3,
+    reviewCount: 524,
+    shortDescription:
+      "Hinter den Dünen am acht Kilometer langen Strand von Noordhoek.",
+    description:
+      "Ein flaches Haus hinter den Dünen, von der Terrasse führt ein Sandweg zum Strand. Noordhoek Beach ist acht Kilometer lang und selbst in der Hauptsaison leer, weil das Wasser kalt ist und der Wind geht. Reiter kommen hier morgens vorbei. Die Weingüter von Constantia liegen eine Viertelstunde entfernt, der Chapman's Peak Drive beginnt gleich hinter dem Ort.",
+    highlights: ["Sandweg zum leeren Strand", "15 Minuten zu den Weingütern", "Am Chapman's Peak Drive"],
+    distanceToBeach: 0.2,
+    distanceToCenter: 26.4,
+    distanceToAirport: 34,
+    amenities: ["wifi", "restaurant", "bar", "parking", "terrace", "petsAllowed", "familyFriendly", "bikeRental"],
+    boards: [
+      { key: "fruehstueck", priceDelta: 0 },
+      { key: "halb", priceDelta: 32 },
+    ],
+    rooms: [
+      { name: "Dünenzimmer", size: 26, maxGuests: 2, priceDelta: 0, features: ["Terrasse zum Sandweg", "Kamin"] },
+      { name: "Familienzimmer", size: 42, maxGuests: 5, priceDelta: 54, features: ["Zwei verbundene Räume", "Platz für ein Zustellbett"] },
+    ],
+    ratingBreakdown: { lage: 4.6, sauberkeit: 4.3, service: 4.4, preis: 4.4, ausstattung: 4.0, essen: 4.3 },
+  },
+  {
+    id: "h190",
+    ziel: "kapstadt",
+    name: "Stellenbosch Weinhof",
+    location: "Stellenbosch",
+    region: "Kapstadt",
+    category: "finca",
+    stars: 4,
+    pricePerNight: 178,
+    rating: 4.6,
+    reviewCount: 389,
+    shortDescription:
+      "Gästehaus auf einem arbeitenden Weingut, Reben bis an die Terrasse.",
+    description:
+      "Das Gästehaus gehört zu einem Weingut, das seit vier Generationen in derselben Familie ist. Die Reben stehen bis an die Terrasse, dahinter die Berge des Jonkershoek-Tals. Zur Ernte im Februar und März riecht der ganze Hof nach Most. Abends gibt es eine Verkostung im Keller, und wer will, isst danach im Hofrestaurant weiter. Nach Stellenbosch sind es zehn Minuten, nach Kapstadt fünfzig.",
+    highlights: ["Mitten in den Reben", "Verkostung im eigenen Keller", "Blick ins Jonkershoek-Tal"],
+    distanceToBeach: null,
+    distanceToCenter: 48.2,
+    distanceToAirport: 36,
+    amenities: ["wifi", "pool", "restaurant", "bar", "parking", "terrace", "petsAllowed", "bikeRental"],
+    boards: [
+      { key: "fruehstueck", priceDelta: 0 },
+      { key: "halb", priceDelta: 44 },
+      { key: "voll", priceDelta: 76 },
+    ],
+    rooms: [
+      { name: "Hofzimmer", size: 30, maxGuests: 2, priceDelta: 0, features: ["Blick in den Hof", "Alte Holzbalken"] },
+      { name: "Rebenzimmer", size: 34, maxGuests: 3, priceDelta: 36, features: ["Terrasse zu den Reben", "Sitzgruppe"] },
+      { name: "Familienhaus", size: 68, maxGuests: 6, priceDelta: 104, features: ["Zwei Schlafzimmer", "Eigene Terrasse", "Küchenzeile"] },
+    ],
+    ratingBreakdown: { lage: 4.7, sauberkeit: 4.6, service: 4.7, preis: 4.3, ausstattung: 4.4, essen: 4.8 },
+  },
+  {
+    id: "h191",
+    ziel: "kapstadt",
+    name: "Bo-Kaap Guesthouse",
+    location: "Bo-Kaap",
+    region: "Kapstadt",
+    category: "budget",
+    stars: 2,
+    pricePerNight: 72,
+    rating: 4.0,
+    reviewCount: 1128,
+    shortDescription:
+      "Einfache Zimmer in einem der bunten Häuser am Hang über der Stadt.",
+    description:
+      "Ein schmales Haus in einer der steilen Gassen des Bo-Kaap, außen türkis, innen schmucklos und sauber. Die Zimmer sind klein, das Frühstück steht auf einem Tisch im Flur, und die Lage ist für das Geld nicht zu schlagen: Zur Long Street sind es acht Minuten bergab, zum Signal Hill zwanzig bergauf. Freitags hört man den Muezzin der Moschee an der Ecke.",
+    highlights: ["8 Minuten in die Innenstadt", "Mitten im Bo-Kaap", "Günstigstes Haus der Stadt"],
+    distanceToBeach: 2.8,
+    distanceToCenter: 0.7,
+    distanceToAirport: 21,
+    amenities: ["wifi", "terrace"],
+    boards: [
+      { key: "ohne", priceDelta: 0 },
+      { key: "fruehstueck", priceDelta: 11 },
+    ],
+    rooms: [
+      { name: "Einzelzimmer", size: 12, maxGuests: 1, priceDelta: 0, features: ["Bad auf der Etage"] },
+      { name: "Doppelzimmer", size: 18, maxGuests: 2, priceDelta: 16, features: ["Eigenes Bad", "Fenster zur Gasse"] },
+      { name: "Mehrbettzimmer", size: 26, maxGuests: 4, priceDelta: 34, features: ["Vier Betten", "Eigenes Bad"] },
+    ],
+    ratingBreakdown: { lage: 4.6, sauberkeit: 3.9, service: 4.0, preis: 4.8, ausstattung: 3.4, essen: 3.5 },
+  },
+  {
+    id: "h192",
+    ziel: "kapstadt",
+    name: "Twelve Apostles Cliff",
+    location: "Oudekraal",
+    region: "Kapstadt",
+    category: "luxus",
+    stars: 5,
+    pricePerNight: 332,
+    rating: 4.8,
+    reviewCount: 612,
+    shortDescription:
+      "Auf dem Fels zwischen Bergkette und Atlantik, mit eigenem Spa.",
+    description:
+      "Das Haus steht allein auf dem Fels über der Küstenstraße, hinter sich die Zwölf Apostel, vor sich den offenen Atlantik. Es gibt keinen Strand und keinen Nachbarn, dafür einen Infinity-Pool über der Brandung und ein Spa mit Blick nach Westen - Sonnenuntergang inklusive, der Grund, warum hier um sieben niemand im Zimmer ist. Nach Camps Bay sind es fünf Autominuten.",
+    highlights: ["Infinity-Pool über der Brandung", "Spa mit Blick nach Westen", "Alleinlage auf dem Fels"],
+    distanceToBeach: 1.4,
+    distanceToCenter: 11.8,
+    distanceToAirport: 29,
+    amenities: ["wifi", "pool", "spa", "restaurant", "bar", "aircon", "parking", "gym", "seaView", "terrace"],
+    boards: [
+      { key: "fruehstueck", priceDelta: 0 },
+      { key: "halb", priceDelta: 68 },
+    ],
+    rooms: [
+      { name: "Deluxe Bergseite", size: 38, maxGuests: 2, priceDelta: 0, features: ["Blick auf die Apostel", "Regendusche"] },
+      { name: "Deluxe Meerseite", size: 40, maxGuests: 2, priceDelta: 72, features: ["Balkon über dem Wasser", "Freistehende Wanne"] },
+      { name: "Suite", size: 64, maxGuests: 4, priceDelta: 168, features: ["Separates Wohnzimmer", "Zwei Balkone"] },
+    ],
+    ratingBreakdown: { lage: 4.9, sauberkeit: 4.9, service: 4.8, preis: 3.8, ausstattung: 4.8, essen: 4.7 },
+  },
+  {
+    id: "h193",
+    ziel: "kapstadt",
+    name: "Simon's Town Harbour Hotel",
+    location: "Simon's Town",
+    region: "Kapstadt",
+    category: "stadt",
+    stars: 3,
+    pricePerNight: 104,
+    rating: 4.2,
+    reviewCount: 847,
+    shortDescription:
+      "Am alten Hafen, zwanzig Minuten von den Pinguinen am Boulders Beach.",
+    description:
+      "Ein Haus aus der Zeit der britischen Marine, direkt an der Hafenmauer von Simon's Town. Die Zimmer gehen nach vorn auf die Boote oder nach hinten an den Hang. Das Wasser auf dieser Seite der Halbinsel ist deutlich wärmer als im Westen, man kann hier wirklich baden. Zu den Pinguinen am Boulders Beach läuft man zwanzig Minuten, zum Kap der Guten Hoffnung fährt man eine halbe Stunde.",
+    highlights: ["20 Minuten zu den Pinguinen", "Warmes Wasser auf der False-Bay-Seite", "Direkt am Hafen"],
+    distanceToBeach: 1.1,
+    distanceToCenter: 38.6,
+    distanceToAirport: 32,
+    amenities: ["wifi", "restaurant", "bar", "parking", "terrace", "bikeRental"],
+    boards: [
+      { key: "fruehstueck", priceDelta: 0 },
+      { key: "halb", priceDelta: 28 },
+    ],
+    rooms: [
+      { name: "Zimmer Hangseite", size: 22, maxGuests: 2, priceDelta: 0, features: ["Ruhig nach hinten", "Schreibtisch"] },
+      { name: "Zimmer Hafenseite", size: 24, maxGuests: 3, priceDelta: 22, features: ["Blick auf die Boote", "Erker"] },
+      { name: "Familienzimmer", size: 38, maxGuests: 5, priceDelta: 46, features: ["Zwei verbundene Räume", "Extra Stauraum"] },
+    ],
+    ratingBreakdown: { lage: 4.5, sauberkeit: 4.2, service: 4.3, preis: 4.5, ausstattung: 3.9, essen: 4.1 },
+  },
+  {
+    id: "h194",
+    ziel: "kapstadt",
+    name: "Constantia Family Estate",
+    location: "Constantia",
+    region: "Kapstadt",
+    category: "familie",
+    stars: 4,
+    pricePerNight: 186,
+    rating: 4.5,
+    reviewCount: 1074,
+    shortDescription:
+      "Weitläufige Anlage zwischen Weinbergen, mit Kinderclub und Reitstall.",
+    description:
+      "Die Anlage liegt im Grünen zwischen den Weingütern von Constantia, mit viel Rasen, zwei Pools und einem Reitstall, in dem Kinder geführt ausreiten können. Der Kinderclub läuft ganztägig und wirklich mit Programm, nicht nur mit Aufsicht. Für die Eltern gibt es eine Weinkarte, die die Nachbarschaft abbildet. Zum Strand von Muizenberg fährt man zwanzig Minuten, in die Stadt fünfundzwanzig.",
+    highlights: ["Ganztägiger Kinderclub mit Programm", "Reitstall auf dem Gelände", "Zwischen den Weingütern"],
+    distanceToBeach: 14.8,
+    distanceToCenter: 15.2,
+    distanceToAirport: 19,
+    amenities: ["wifi", "pool", "restaurant", "bar", "parking", "kidsClub", "familyFriendly", "spa", "gym", "bikeRental"],
+    boards: [
+      { key: "fruehstueck", priceDelta: 0 },
+      { key: "halb", priceDelta: 38 },
+      { key: "ai", priceDelta: 86 },
+    ],
+    rooms: [
+      { name: "Doppelzimmer", size: 28, maxGuests: 2, priceDelta: 0, features: ["Terrasse zum Rasen", "Klimaanlage"] },
+      { name: "Familienzimmer", size: 46, maxGuests: 5, priceDelta: 62, features: ["Separater Schlafbereich für die Kinder", "Zwei Waschbecken"] },
+      { name: "Gartenhaus", size: 78, maxGuests: 6, priceDelta: 132, features: ["Zwei Schlafzimmer", "Eigener Gartenanteil", "Küchenzeile"] },
+    ],
+    ratingBreakdown: { lage: 4.3, sauberkeit: 4.5, service: 4.6, preis: 4.1, ausstattung: 4.7, essen: 4.4 },
+  },
+  {
+    id: "h195",
+    ziel: "kapstadt",
+    name: "Atlantic Dunes Resort",
+    location: "Milnerton",
+    region: "Kapstadt",
+    category: "strand",
+    stars: 4,
+    pricePerNight: 152,
+    rating: 4.0,
+    reviewCount: 1693,
+    shortDescription:
+      "Großes Resort am Dünenstrand, mit Golfplatz gleich dahinter.",
+    description:
+      "Ein Resort mit über zweihundert Zimmern am Dünenstrand von Milnerton, dahinter der Golfplatz und die Lagune. Die Anlage ist groß und auf Betrieb ausgelegt: Buffet, Animation am Pool, zwei Bars. Wer Ruhe sucht, ist hier falsch; wer mit Kindern kommt und abends nicht mehr fahren will, richtig. Der Blick über die Bucht zum Tafelberg gehört zu den bekanntesten der Stadt.",
+    highlights: ["Am Dünenstrand", "Golfplatz direkt dahinter", "Buffet und Animation"],
+    distanceToBeach: 0.1,
+    distanceToCenter: 12.4,
+    distanceToAirport: 24,
+    amenities: ["wifi", "pool", "restaurant", "bar", "aircon", "parking", "beachfront", "kidsClub", "familyFriendly", "gym", "spa"],
+    boards: [
+      { key: "fruehstueck", priceDelta: 0 },
+      { key: "halb", priceDelta: 30 },
+      { key: "ai", priceDelta: 72 },
+    ],
+    rooms: [
+      { name: "Standard", size: 24, maxGuests: 2, priceDelta: 0, features: ["Balkon", "Klimaanlage"] },
+      { name: "Superior Meerblick", size: 28, maxGuests: 3, priceDelta: 28, features: ["Balkon zum Wasser", "Sitzgruppe"] },
+      { name: "Familienzimmer", size: 42, maxGuests: 5, priceDelta: 58, features: ["Durchgangszimmer für die Kinder", "Zwei Bäder"] },
+    ],
+    ratingBreakdown: { lage: 4.4, sauberkeit: 4.0, service: 3.9, preis: 4.2, ausstattung: 4.1, essen: 3.7 },
+  },
+  {
+    id: "h196",
+    ziel: "kapstadt",
+    name: "Franschhoek Vineyard Rooms",
+    location: "Franschhoek",
+    region: "Kapstadt",
+    category: "finca",
+    stars: 4,
+    pricePerNight: 212,
+    rating: 4.7,
+    reviewCount: 296,
+    shortDescription:
+      "Acht Zimmer auf einem Weingut im Tal, mit eigener Küche im Hof.",
+    description:
+      "Franschhoek liegt in einem Talkessel, der auf drei Seiten von Bergen geschlossen ist, und dieses Weingut liegt am hinteren Ende, wo die Straße aufhört. Acht Zimmer in einem umgebauten Kelterhaus, der Hof ist der Speisesaal. Gekocht wird mit dem, was der Garten hergibt, und dazu ausgeschenkt, was hundert Meter weiter wächst. Zur Weinstraße des Ortes sind es zwölf Minuten mit dem Rad.",
+    highlights: ["Am Talende, Straße hört auf", "Küche aus dem eigenen Garten", "Nur acht Zimmer"],
+    distanceToBeach: null,
+    distanceToCenter: 72.6,
+    distanceToAirport: 54,
+    amenities: ["wifi", "pool", "restaurant", "bar", "parking", "terrace", "bikeRental", "adultsOnly"],
+    boards: [
+      { key: "fruehstueck", priceDelta: 0 },
+      { key: "halb", priceDelta: 58 },
+      { key: "voll", priceDelta: 94 },
+    ],
+    rooms: [
+      { name: "Kelterzimmer", size: 32, maxGuests: 2, priceDelta: 0, features: ["Dicke Mauern", "Blick in den Hof"] },
+      { name: "Rebenzimmer", size: 36, maxGuests: 2, priceDelta: 42, features: ["Eigene Terrasse", "Wanne"] },
+    ],
+    ratingBreakdown: { lage: 4.8, sauberkeit: 4.8, service: 4.8, preis: 4.1, ausstattung: 4.5, essen: 4.9 },
+  },
+  {
+    id: "h197",
+    ziel: "marrakesch",
+    name: "Riad Nejma",
+    location: "Medina",
+    region: "Marrakesch",
+    category: "boutique",
+    stars: 4,
+    pricePerNight: 126,
+    rating: 4.6,
+    reviewCount: 534,
+    shortDescription:
+      "Sieben Zimmer um einen Innenhof mit Orangenbäumen und Brunnen.",
+    description:
+      "Von der Gasse führt eine schmale Tür in einen Hof, in dem zwei Orangenbäume stehen und ein Brunnen läuft; der Lärm der Medina ist hier sofort weg. Sieben Zimmer gehen auf Galerien um den Hof, oben eine Dachterrasse mit Blick auf das Atlasgebirge. Zum Jemaa el-Fna sind es acht Minuten zu Fuß, aber man braucht die erste Mal Begleitung, sonst findet man die Tür nicht wieder.",
+    highlights: ["8 Minuten zum Jemaa el-Fna", "Dachterrasse mit Atlasblick", "Nur sieben Zimmer"],
+    distanceToBeach: null,
+    distanceToCenter: 0.6,
+    distanceToAirport: 6,
+    amenities: ["wifi", "pool", "restaurant", "terrace", "aircon", "spa"],
+    boards: [
+      { key: "fruehstueck", priceDelta: 0 },
+      { key: "halb", priceDelta: 34 },
+    ],
+    rooms: [
+      { name: "Hofzimmer", size: 22, maxGuests: 2, priceDelta: 0, features: ["Blick in den Hof", "Zellige-Bad"] },
+      { name: "Zimmer mit Alkoven", size: 28, maxGuests: 3, priceDelta: 26, features: ["Sitzalkoven", "Stuckdecke"] },
+    ],
+    ratingBreakdown: { lage: 4.7, sauberkeit: 4.6, service: 4.8, preis: 4.5, ausstattung: 4.4, essen: 4.5 },
+  },
+  {
+    id: "h198",
+    ziel: "marrakesch",
+    name: "Palmeraie Family Resort",
+    location: "Palmeraie",
+    region: "Marrakesch",
+    category: "familie",
+    stars: 4,
+    pricePerNight: 162,
+    rating: 4.3,
+    reviewCount: 1486,
+    shortDescription:
+      "Weitläufiges Resort im Palmenhain, mit Wasserpark und Kinderclub.",
+    description:
+      "Das Resort liegt im Palmenhain nördlich der Stadt, wo es deutlich kühler ist als in der Medina. Drei Pools, davon einer mit Rutschen, ein Kinderclub mit Betreuung ab vier Jahren und abends eine Bühne im Hof. Der Shuttle in die Stadt fährt alle zwei Stunden, was reicht - die meisten Gäste fahren zweimal in der Woche. Für Familien, die nicht jeden Tag Medina wollen.",
+    highlights: ["Pool mit Rutschen", "Kinderclub ab vier Jahren", "Shuttle in die Medina"],
+    distanceToBeach: null,
+    distanceToCenter: 12.4,
+    distanceToAirport: 16,
+    amenities: ["wifi", "pool", "restaurant", "bar", "aircon", "parking", "kidsClub", "familyFriendly", "spa", "gym"],
+    boards: [
+      { key: "fruehstueck", priceDelta: 0 },
+      { key: "halb", priceDelta: 32 },
+      { key: "ai", priceDelta: 74 },
+    ],
+    rooms: [
+      { name: "Doppelzimmer", size: 26, maxGuests: 2, priceDelta: 0, features: ["Balkon", "Klimaanlage"] },
+      { name: "Familienzimmer", size: 44, maxGuests: 5, priceDelta: 58, features: ["Zwei verbundene Räume", "Zwei Waschbecken"] },
+      { name: "Familiensuite", size: 64, maxGuests: 6, priceDelta: 112, features: ["Zwei Schlafzimmer", "Wohnraum mit Schlafsofa"] },
+    ],
+    ratingBreakdown: { lage: 4.0, sauberkeit: 4.3, service: 4.4, preis: 4.4, ausstattung: 4.6, essen: 4.0 },
+  },
+  {
+    id: "h199",
+    ziel: "marrakesch",
+    name: "Dar Tazi",
+    location: "Medina",
+    region: "Marrakesch",
+    category: "boutique",
+    stars: 3,
+    pricePerNight: 94,
+    rating: 4.4,
+    reviewCount: 712,
+    shortDescription:
+      "Kleines Riad im Handwerkerviertel, mit Küche zum Mitkochen.",
+    description:
+      "Ein Riad im Viertel der Färber und Schmiede, wo es morgens laut wird und mittags still. Fünf Zimmer, einfach eingerichtet, dafür eine offene Küche, in der die Gäste zweimal in der Woche mitkochen können - Tajine, Brot, Salate. Die Dachterrasse ist der eigentliche Aufenthaltsraum. Vom Haus bis zu den Gerbereien sind es vier Minuten, und man riecht sie auch.",
+    highlights: ["Kochen mit der Hausküche", "Mitten im Handwerkerviertel", "Dachterrasse als Wohnzimmer"],
+    distanceToBeach: null,
+    distanceToCenter: 0.9,
+    distanceToAirport: 7,
+    amenities: ["wifi", "terrace", "aircon"],
+    boards: [
+      { key: "fruehstueck", priceDelta: 0 },
+      { key: "halb", priceDelta: 24 },
+    ],
+    rooms: [
+      { name: "Kleines Zimmer", size: 16, maxGuests: 2, priceDelta: 0, features: ["Fenster zum Hof"] },
+      { name: "Zimmer mit Terrasse", size: 24, maxGuests: 3, priceDelta: 20, features: ["Eigener Terrassenanteil", "Sitzecke"] },
+    ],
+    ratingBreakdown: { lage: 4.5, sauberkeit: 4.3, service: 4.7, preis: 4.7, ausstattung: 3.9, essen: 4.6 },
+  },
+  {
+    id: "h200",
+    ziel: "marrakesch",
+    name: "Atlas Lodge Ourika",
+    location: "Ourika-Tal",
+    region: "Marrakesch",
+    category: "finca",
+    stars: 4,
+    pricePerNight: 146,
+    rating: 4.7,
+    reviewCount: 248,
+    shortDescription:
+      "Lehmbau am Fluss im Ourika-Tal, eine Stunde vor der Stadt.",
+    description:
+      "Das Haus steht am Fluss, wo das Ourika-Tal eng wird und die Dörfer an den Hang geklebt sind. Gebaut aus Stampflehm, innen kühl, die Terrassen liegen über dem Wasser. Im Winter liegt auf den Gipfeln darüber Schnee, unten blühen die Mandelbäume. Es gibt kein Programm außer Wandern, Essen und der Aussicht. Nach Marrakesch fährt man eine Stunde, und man merkt, dass man weg ist.",
+    highlights: ["Terrassen über dem Fluss", "Schnee auf den Gipfeln, Mandelblüte im Tal", "Wanderungen vom Haus aus"],
+    distanceToBeach: null,
+    distanceToCenter: 58.4,
+    distanceToAirport: 62,
+    amenities: ["wifi", "pool", "restaurant", "terrace", "parking", "petsAllowed", "bikeRental"],
+    boards: [
+      { key: "halb", priceDelta: 0 },
+      { key: "voll", priceDelta: 38 },
+    ],
+    rooms: [
+      { name: "Lehmzimmer", size: 26, maxGuests: 2, priceDelta: 0, features: ["Dicke Lehmwände", "Blick ins Tal"] },
+      { name: "Zimmer am Wasser", size: 30, maxGuests: 3, priceDelta: 30, features: ["Terrasse über dem Fluss", "Kamin"] },
+      { name: "Familienhaus", size: 62, maxGuests: 6, priceDelta: 96, features: ["Zwei Schlafzimmer", "Eigene Terrasse"] },
+    ],
+    ratingBreakdown: { lage: 4.9, sauberkeit: 4.6, service: 4.7, preis: 4.5, ausstattung: 4.3, essen: 4.8 },
+  },
+  {
+    id: "h201",
+    ziel: "marrakesch",
+    name: "Hotel Hivernage Park",
+    location: "Hivernage",
+    region: "Marrakesch",
+    category: "stadt",
+    stars: 4,
+    pricePerNight: 118,
+    rating: 4.2,
+    reviewCount: 1264,
+    shortDescription:
+      "Stadthotel am Park, zwischen Medina und Neustadt.",
+    description:
+      "Ein Haus aus den Siebzigern am Rand des Hivernage-Parks, zwischen der Medina und den Boulevards der Neustadt. Breite Flure, großer Pool im Garten, Frühstück unter Arkaden. Die Lage ist der Grund, hier zu wohnen: zehn Minuten zu Fuß an die Stadtmauer, fünf zu den Restaurants der Neustadt, und man muss sich nicht durch Gassen navigieren.",
+    highlights: ["10 Minuten zur Stadtmauer", "Großer Pool im Garten", "Keine Gassen zum Suchen"],
+    distanceToBeach: null,
+    distanceToCenter: 2.1,
+    distanceToAirport: 5,
+    amenities: ["wifi", "pool", "restaurant", "bar", "aircon", "parking", "gym"],
+    boards: [
+      { key: "fruehstueck", priceDelta: 0 },
+      { key: "halb", priceDelta: 28 },
+    ],
+    rooms: [
+      { name: "Standard", size: 24, maxGuests: 2, priceDelta: 0, features: ["Balkon zum Garten", "Klimaanlage"] },
+      { name: "Superior", size: 30, maxGuests: 3, priceDelta: 24, features: ["Blick auf den Park", "Sitzgruppe"] },
+      { name: "Familienzimmer", size: 40, maxGuests: 5, priceDelta: 48, features: ["Zwei verbundene Räume", "Extra Stauraum"] },
+    ],
+    ratingBreakdown: { lage: 4.6, sauberkeit: 4.2, service: 4.1, preis: 4.4, ausstattung: 4.0, essen: 3.9 },
+  },
+  {
+    id: "h202",
+    ziel: "marrakesch",
+    name: "Riad Dar Lalla",
+    location: "Medina",
+    region: "Marrakesch",
+    category: "luxus",
+    stars: 5,
+    pricePerNight: 298,
+    rating: 4.8,
+    reviewCount: 342,
+    shortDescription:
+      "Palastriad mit zwei Höfen, Hammam und eigenem Patio je Suite.",
+    description:
+      "Ein Riad, das früher einem Kaufmann gehörte: zwei Höfe, einer mit Wasserbecken, einer mit Zitronenbäumen, dazwischen ein Hammam aus Tadelakt. Jede Suite hat einen eigenen Patio, auf dem man frühstückt, ohne jemanden zu sehen. Das Haus liegt in einer Sackgasse, nachts hört man nichts. Der Koch macht abends ein Menü, für das Gäste aus anderen Häusern kommen.",
+    highlights: ["Eigener Patio je Suite", "Hammam aus Tadelakt", "Lage in einer Sackgasse"],
+    distanceToBeach: null,
+    distanceToCenter: 1.2,
+    distanceToAirport: 8,
+    amenities: ["wifi", "pool", "spa", "restaurant", "bar", "aircon", "terrace", "adultsOnly"],
+    boards: [
+      { key: "fruehstueck", priceDelta: 0 },
+      { key: "halb", priceDelta: 62 },
+    ],
+    rooms: [
+      { name: "Suite am Becken", size: 42, maxGuests: 2, priceDelta: 0, features: ["Eigener Patio", "Freistehende Wanne"] },
+      { name: "Suite Zitronenhof", size: 48, maxGuests: 3, priceDelta: 58, features: ["Zwei Räume", "Kamin"] },
+      { name: "Dachsuite", size: 56, maxGuests: 4, priceDelta: 124, features: ["Eigene Dachterrasse", "Atlasblick"] },
+    ],
+    ratingBreakdown: { lage: 4.7, sauberkeit: 4.9, service: 4.9, preis: 4.0, ausstattung: 4.8, essen: 4.8 },
+  },
+  {
+    id: "h203",
+    ziel: "marrakesch",
+    name: "Aparthotel Agdal",
+    location: "Agdal",
+    region: "Marrakesch",
+    category: "apart",
+    stars: 3,
+    pricePerNight: 88,
+    rating: 4.0,
+    reviewCount: 596,
+    shortDescription:
+      "Wohnungen mit Küche im Neubauviertel, mit Pool auf dem Dach.",
+    description:
+      "Ein Neubau im Viertel Agdal, wo Marrakesch aussieht wie eine normale Stadt: Supermärkte, Cafés, Leute auf dem Weg zur Arbeit. Die Wohnungen haben Küchen und Waschmaschinen, auf dem Dach ein kleiner Pool. Nicht schön, aber praktisch und günstig, besonders für längere Aufenthalte oder große Gruppen. In die Medina fährt das Taxi zwölf Minuten.",
+    highlights: ["Küche und Waschmaschine", "Pool auf dem Dach", "Günstig für große Gruppen"],
+    distanceToBeach: null,
+    distanceToCenter: 4.8,
+    distanceToAirport: 9,
+    amenities: ["wifi", "pool", "aircon", "parking", "familyFriendly", "petsAllowed"],
+    boards: [
+      { key: "ohne", priceDelta: 0 },
+      { key: "fruehstueck", priceDelta: 12 },
+    ],
+    rooms: [
+      { name: "Studio", size: 30, maxGuests: 2, priceDelta: 0, features: ["Küchenzeile", "Balkon"] },
+      { name: "Apartment 2 Schlafzimmer", size: 54, maxGuests: 5, priceDelta: 38, features: ["Zwei Schlafzimmer", "Waschmaschine"] },
+      { name: "Apartment 3 Schlafzimmer", size: 74, maxGuests: 6, priceDelta: 72, features: ["Drei Schlafzimmer", "Großer Essplatz"] },
+    ],
+    ratingBreakdown: { lage: 3.9, sauberkeit: 4.0, service: 3.8, preis: 4.7, ausstattung: 4.1, essen: 3.5 },
+  },
+  {
+    id: "h204",
+    ziel: "marrakesch",
+    name: "Kasbah Agafay",
+    location: "Agafay",
+    region: "Marrakesch",
+    category: "luxus",
+    stars: 5,
+    pricePerNight: 346,
+    rating: 4.7,
+    reviewCount: 214,
+    shortDescription:
+      "Kasbah in der Steinwüste, mit Blick auf den Hohen Atlas.",
+    description:
+      "Vierzig Minuten südlich der Stadt hört das Grün auf und die Steinwüste von Agafay beginnt - Hügel ohne Pflanzen, dahinter die Schneekette des Hohen Atlas. Die Kasbah ist aus demselben Lehm gebaut wie der Boden, auf dem sie steht. Abends wird draußen aufgetischt, nachts sieht man Sterne wie selten. Kein Internet in den Zimmern, mit Absicht; im Hof gibt es WLAN.",
+    highlights: ["Steinwüste mit Atlasblick", "Abendessen unter freiem Himmel", "Sternenhimmel ohne Streulicht"],
+    distanceToBeach: null,
+    distanceToCenter: 34.2,
+    distanceToAirport: 38,
+    amenities: ["wifi", "pool", "spa", "restaurant", "bar", "terrace", "parking", "adultsOnly"],
+    boards: [
+      { key: "halb", priceDelta: 0 },
+      { key: "voll", priceDelta: 54 },
+    ],
+    rooms: [
+      { name: "Lehmzimmer", size: 34, maxGuests: 2, priceDelta: 0, features: ["Blick in die Wüste", "Kamin"] },
+      { name: "Zeltsuite", size: 46, maxGuests: 3, priceDelta: 72, features: ["Festes Zelt mit Bad", "Eigene Terrasse"] },
+    ],
+    ratingBreakdown: { lage: 4.9, sauberkeit: 4.7, service: 4.8, preis: 3.9, ausstattung: 4.5, essen: 4.7 },
+  },
+  {
+    id: "h205",
+    ziel: "marrakesch",
+    name: "Hotel Bab Doukkala",
+    location: "Bab Doukkala",
+    region: "Marrakesch",
+    category: "budget",
+    stars: 2,
+    pricePerNight: 58,
+    rating: 3.9,
+    reviewCount: 1052,
+    shortDescription:
+      "Einfaches Haus am Stadttor, mit Dachterrasse und ohne Schnörkel.",
+    description:
+      "Direkt am Tor Bab Doukkala, wo die Busse halten und der Markt morgens aufbaut. Die Zimmer sind klein und einfach, die Betten gut, das Bad funktioniert. Auf der Dachterrasse steht Frühstück bereit, solange der Kaffee reicht. Für den Preis die beste Lage der Stadt: In die Medina geht man durch das Tor, in die Neustadt läuft man fünfzehn Minuten.",
+    highlights: ["Direkt am Stadttor", "Frühstück auf dem Dach", "Günstigstes Haus in der Medina"],
+    distanceToBeach: null,
+    distanceToCenter: 1.4,
+    distanceToAirport: 7,
+    amenities: ["wifi", "terrace"],
+    boards: [
+      { key: "ohne", priceDelta: 0 },
+      { key: "fruehstueck", priceDelta: 9 },
+    ],
+    rooms: [
+      { name: "Einzelzimmer", size: 11, maxGuests: 1, priceDelta: 0, features: ["Bad auf der Etage"] },
+      { name: "Doppelzimmer", size: 16, maxGuests: 2, priceDelta: 12, features: ["Eigenes Bad"] },
+      { name: "Dreibettzimmer", size: 22, maxGuests: 3, priceDelta: 22, features: ["Drei Betten", "Eigenes Bad"] },
+    ],
+    ratingBreakdown: { lage: 4.7, sauberkeit: 3.6, service: 4.0, preis: 4.8, ausstattung: 3.2, essen: 3.4 },
+  },
+  {
+    id: "h206",
+    ziel: "marrakesch",
+    name: "Les Jardins Famille",
+    location: "Targa",
+    region: "Marrakesch",
+    category: "familie",
+    stars: 4,
+    pricePerNight: 138,
+    rating: 4.4,
+    reviewCount: 824,
+    shortDescription:
+      "Gartenanlage am Stadtrand, mit flachem Pool und Betreuung.",
+    description:
+      "Eine Anlage im Viertel Targa, wo die Stadt in Gärten übergeht. Der Pool ist flach und über die ganze Länge begehbar, daneben ein Schattendach mit Spielzeug. Betreuung gibt es vormittags und nachmittags, dazwischen isst man gemeinsam. Die Zimmer liegen in zweigeschossigen Häusern um den Garten, der Weg zum Pool ist kurz genug für Kinder allein.",
+    highlights: ["Flacher Pool über die ganze Länge", "Betreuung vormittags und nachmittags", "Kurze Wege im Garten"],
+    distanceToBeach: null,
+    distanceToCenter: 7.2,
+    distanceToAirport: 11,
+    amenities: ["wifi", "pool", "restaurant", "bar", "aircon", "parking", "kidsClub", "familyFriendly"],
+    boards: [
+      { key: "fruehstueck", priceDelta: 0 },
+      { key: "halb", priceDelta: 26 },
+      { key: "ai", priceDelta: 64 },
+    ],
+    rooms: [
+      { name: "Gartenzimmer", size: 26, maxGuests: 2, priceDelta: 0, features: ["Terrasse zum Garten", "Klimaanlage"] },
+      { name: "Familienzimmer", size: 42, maxGuests: 5, priceDelta: 52, features: ["Separater Schlafbereich für die Kinder", "Zwei Waschbecken"] },
+      { name: "Familiensuite", size: 60, maxGuests: 6, priceDelta: 98, features: ["Zwei Schlafzimmer", "Wohnbereich mit Schlafsofa", "Zwei Bäder"] },
+    ],
+    ratingBreakdown: { lage: 4.1, sauberkeit: 4.4, service: 4.6, preis: 4.5, ausstattung: 4.4, essen: 4.2 },
+  },
+  {
+    id: "h207",
+    ziel: "marrakesch",
+    name: "Riad des Oliviers",
+    location: "Medina",
+    region: "Marrakesch",
+    category: "boutique",
+    stars: 4,
+    pricePerNight: 156,
+    rating: 4.5,
+    reviewCount: 468,
+    shortDescription:
+      "Riad mit Olivenbäumen im Hof und einem Becken zum Abkühlen.",
+    description:
+      "Drei alte Olivenbäume stehen im Hof, darunter ein Becken, das zum Schwimmen zu klein und zum Abkühlen genau richtig ist. Neun Zimmer, alle unterschiedlich, einige mit Galerie. Die Besitzerin führt das Haus selbst und weiß, wo man abends essen sollte, ohne in einer Touristenstraße zu landen. Zum Souk sind es drei Minuten, zum Platz zehn.",
+    highlights: ["Olivenbäume und Becken im Hof", "Neun Zimmer, jedes anders", "3 Minuten zum Souk"],
+    distanceToBeach: null,
+    distanceToCenter: 0.8,
+    distanceToAirport: 7,
+    amenities: ["wifi", "pool", "restaurant", "terrace", "aircon", "spa"],
+    boards: [
+      { key: "fruehstueck", priceDelta: 0 },
+      { key: "halb", priceDelta: 36 },
+    ],
+    rooms: [
+      { name: "Hofzimmer", size: 24, maxGuests: 2, priceDelta: 0, features: ["Blick auf die Oliven", "Zellige-Bad"] },
+      { name: "Galeriezimmer", size: 34, maxGuests: 4, priceDelta: 34, features: ["Galerie mit zwei Betten", "Sitzecke"] },
+    ],
+    ratingBreakdown: { lage: 4.6, sauberkeit: 4.5, service: 4.8, preis: 4.3, ausstattung: 4.3, essen: 4.4 },
+  },
+  {
+    id: "h208",
+    ziel: "marrakesch",
+    name: "Oasis Golf Resort",
+    location: "Amelkis",
+    region: "Marrakesch",
+    category: "strand",
+    stars: 5,
+    pricePerNight: 244,
+    rating: 4.4,
+    reviewCount: 738,
+    shortDescription:
+      "Resort am Golfplatz, mit großer Poollandschaft und Atlasblick.",
+    description:
+      "Das Resort liegt am Golfplatz von Amelkis, südöstlich der Stadt, mit der Atlaskette als Kulisse hinter dem achtzehnten Loch. Die Poollandschaft zieht sich über drei Ebenen, dazu ein Spa mit Hammam. Zur Medina fährt der Shuttle fünfzehn Minuten. Wer nicht Golf spielt, kommt wegen der Ruhe und der Anlage; wer spielt, wegen des Platzes.",
+    highlights: ["Am 18-Loch-Platz", "Poollandschaft über drei Ebenen", "Spa mit Hammam"],
+    distanceToBeach: null,
+    distanceToCenter: 9.6,
+    distanceToAirport: 12,
+    amenities: ["wifi", "pool", "spa", "restaurant", "bar", "aircon", "parking", "gym", "familyFriendly"],
+    boards: [
+      { key: "fruehstueck", priceDelta: 0 },
+      { key: "halb", priceDelta: 48 },
+      { key: "ai", priceDelta: 96 },
+    ],
+    rooms: [
+      { name: "Doppelzimmer Garten", size: 32, maxGuests: 2, priceDelta: 0, features: ["Terrasse", "Klimaanlage"] },
+      { name: "Doppelzimmer Atlasblick", size: 34, maxGuests: 3, priceDelta: 38, features: ["Balkon zur Bergseite", "Sitzgruppe"] },
+      { name: "Familiensuite", size: 58, maxGuests: 5, priceDelta: 86, features: ["Zwei Schlafzimmer", "Zwei Bäder"] },
+    ],
+    ratingBreakdown: { lage: 4.2, sauberkeit: 4.5, service: 4.5, preis: 4.0, ausstattung: 4.7, essen: 4.3 },
+  },
+  {
+    id: "h209",
+    ziel: "krabi",
+    name: "Tubkaek Family Bay",
+    location: "Tubkaek",
+    region: "Krabi",
+    category: "familie",
+    stars: 4,
+    pricePerNight: 142,
+    rating: 4.5,
+    reviewCount: 892,
+    shortDescription:
+      "Flache Bucht mit Blick auf die Kalkfelsen, Wasser bis weit draußen seicht.",
+    description:
+      "Die Bucht von Tubkaek fällt so flach ab, dass Kinder hundert Meter weit stehen können; draußen liegen die Kalkfelsen von Hong Island im Dunst. Die Anlage ist zweigeschossig und niedrig gehalten, der Pool liegt zum Strand hin. Betreuung gibt es vormittags, abends ein Buffet mit thailändischer und europäischer Seite. Nach Ao Nang fährt der Shuttle zwanzig Minuten.",
+    highlights: ["Seichtes Wasser bis weit draußen", "Blick auf die Kalkfelsen", "Betreuung am Vormittag"],
+    distanceToBeach: 0.05,
+    distanceToCenter: 18.2,
+    distanceToAirport: 28,
+    amenities: ["wifi", "pool", "restaurant", "bar", "aircon", "parking", "beachfront", "kidsClub", "familyFriendly", "spa"],
+    boards: [
+      { key: "fruehstueck", priceDelta: 0 },
+      { key: "halb", priceDelta: 30 },
+      { key: "ai", priceDelta: 68 },
+    ],
+    rooms: [
+      { name: "Doppelzimmer Garten", size: 28, maxGuests: 2, priceDelta: 0, features: ["Terrasse zum Garten", "Klimaanlage"] },
+      { name: "Doppelzimmer Meerblick", size: 30, maxGuests: 3, priceDelta: 30, features: ["Balkon zum Wasser", "Sitzgruppe"] },
+      { name: "Familienzimmer", size: 46, maxGuests: 5, priceDelta: 62, features: ["Zwei verbundene Räume", "Zwei Bäder"] },
+    ],
+    ratingBreakdown: { lage: 4.8, sauberkeit: 4.5, service: 4.6, preis: 4.4, ausstattung: 4.4, essen: 4.3 },
+  },
+  {
+    id: "h210",
+    ziel: "krabi",
+    name: "Klong Muang Beach Resort",
+    location: "Klong Muang",
+    region: "Krabi",
+    category: "strand",
+    stars: 4,
+    pricePerNight: 156,
+    rating: 4.3,
+    reviewCount: 1218,
+    shortDescription:
+      "Resort am ruhigen Strand von Klong Muang, mit Pool zum Meer hin.",
+    description:
+      "Klong Muang ist der stillere Strand nördlich von Ao Nang: wenig Betrieb, keine Boote, abends Lichter über dem Wasser. Das Resort hat zwei Pools, einer liegt so, dass die Kante mit dem Horizont verschwimmt. Der Strand davor ist bei Ebbe breit und bei Flut schmal, dafür immer sauber. Zum Trubel von Ao Nang fährt man eine Viertelstunde, wenn man ihn braucht.",
+    highlights: ["Ruhigster Strand der Küste", "Pool mit Blick ins Meer", "15 Minuten nach Ao Nang"],
+    distanceToBeach: 0.08,
+    distanceToCenter: 14.6,
+    distanceToAirport: 26,
+    amenities: ["wifi", "pool", "restaurant", "bar", "aircon", "parking", "beachfront", "spa", "gym", "seaView"],
+    boards: [
+      { key: "fruehstueck", priceDelta: 0 },
+      { key: "halb", priceDelta: 34 },
+    ],
+    rooms: [
+      { name: "Deluxe Garten", size: 30, maxGuests: 2, priceDelta: 0, features: ["Terrasse", "Regendusche"] },
+      { name: "Deluxe Meerblick", size: 32, maxGuests: 3, priceDelta: 36, features: ["Balkon zum Wasser", "Tagesbett"] },
+      { name: "Familienzimmer", size: 48, maxGuests: 5, priceDelta: 72, features: ["Separater Schlafbereich für die Kinder", "Zwei Waschbecken"] },
+    ],
+    ratingBreakdown: { lage: 4.6, sauberkeit: 4.4, service: 4.3, preis: 4.2, ausstattung: 4.4, essen: 4.1 },
+  },
+  {
+    id: "h211",
+    ziel: "krabi",
+    name: "Thalane Bay Villas",
+    location: "Ao Thalane",
+    region: "Krabi",
+    category: "luxus",
+    stars: 5,
+    pricePerNight: 276,
+    rating: 4.8,
+    reviewCount: 184,
+    shortDescription:
+      "Zwölf Villen in den Mangroven, jede mit eigenem Pool.",
+    description:
+      "Ao Thalane ist eine Mangrovenbucht, in der man mit dem Kajak zwischen Kalkfelsen hindurchfahren kann. Zwölf Villen stehen einzeln im Grünen, jede mit eigenem Pool und Blick auf das Wasser. Morgens hört man Gibbons aus dem Wald dahinter. Es gibt ein Restaurant und sonst nichts, und genau darum kommen die Gäste. Zum nächsten Ort sind es zehn Minuten.",
+    highlights: ["Eigener Pool je Villa", "Kajak durch die Mangroven", "Gibbons im Wald dahinter"],
+    distanceToBeach: 0.4,
+    distanceToCenter: 22.8,
+    distanceToAirport: 32,
+    amenities: ["wifi", "pool", "spa", "restaurant", "bar", "aircon", "parking", "terrace", "adultsOnly"],
+    boards: [
+      { key: "fruehstueck", priceDelta: 0 },
+      { key: "halb", priceDelta: 64 },
+    ],
+    rooms: [
+      { name: "Villa mit Pool", size: 68, maxGuests: 2, priceDelta: 0, features: ["Eigener Pool", "Außendusche"] },
+      { name: "Villa am Wasser", size: 76, maxGuests: 3, priceDelta: 88, features: ["Blick auf die Bucht", "Tagesbett am Pool"] },
+      { name: "Doppelvilla", size: 124, maxGuests: 5, priceDelta: 196, features: ["Zwei Schlafzimmer", "Zwei Bäder", "Großer Pool"] },
+    ],
+    ratingBreakdown: { lage: 4.9, sauberkeit: 4.9, service: 4.9, preis: 3.9, ausstattung: 4.9, essen: 4.6 },
+  },
+  {
+    id: "h212",
+    ziel: "krabi",
+    name: "Aonang Garden Rooms",
+    location: "Ao Nang",
+    region: "Krabi",
+    category: "budget",
+    stars: 2,
+    pricePerNight: 54,
+    rating: 4.1,
+    reviewCount: 1486,
+    shortDescription:
+      "Einfache Zimmer um einen Garten, fünf Minuten vom Strand.",
+    description:
+      "Ein Dutzend Zimmer in zwei Reihen um einen Garten mit Bananenstauden, fünf Minuten von der Strandstraße und damit weit genug weg von der Musik. Die Zimmer sind klein, die Klimaanlage laut, das Bad sauber. Vor dem Haus steht ein Verleih für Mopeds, daneben kocht eine Garküche, die besser ist als die Restaurants an der Promenade.",
+    highlights: ["5 Minuten zum Strand", "Garküche direkt daneben", "Günstigstes Haus in Ao Nang"],
+    distanceToBeach: 0.4,
+    distanceToCenter: 0.3,
+    distanceToAirport: 22,
+    amenities: ["wifi", "aircon", "parking"],
+    boards: [
+      { key: "ohne", priceDelta: 0 },
+      { key: "fruehstueck", priceDelta: 8 },
+    ],
+    rooms: [
+      { name: "Standardzimmer", size: 16, maxGuests: 2, priceDelta: 0, features: ["Klimaanlage", "Fenster zum Garten"] },
+      { name: "Familienzimmer", size: 28, maxGuests: 4, priceDelta: 22, features: ["Vier Betten", "Eigenes Bad"] },
+    ],
+    ratingBreakdown: { lage: 4.5, sauberkeit: 4.0, service: 4.2, preis: 4.8, ausstattung: 3.4, essen: 3.8 },
+  },
+  {
+    id: "h213",
+    ziel: "krabi",
+    name: "Nopparat Family Resort",
+    location: "Nopparat Thara",
+    region: "Krabi",
+    category: "familie",
+    stars: 4,
+    pricePerNight: 128,
+    rating: 4.2,
+    reviewCount: 1364,
+    shortDescription:
+      "Am langen Strand von Nopparat Thara, mit Wasserspielplatz.",
+    description:
+      "Der Strand von Nopparat Thara ist mehrere Kilometer lang und wird bei Ebbe so breit, dass man Muscheln sammeln kann, wo vorher Wasser war. Die Anlage hat einen Wasserspielplatz mit Rutschen und Fontänen, dazu einen normalen Pool für die Eltern. Das Essen ist Buffet und auf Kinder eingestellt. Nach Ao Nang läuft man am Wasser eine halbe Stunde.",
+    highlights: ["Wasserspielplatz mit Fontänen", "Kilometerlanger Strand", "Buffet auf Kinder eingestellt"],
+    distanceToBeach: 0.1,
+    distanceToCenter: 3.2,
+    distanceToAirport: 24,
+    amenities: ["wifi", "pool", "restaurant", "bar", "aircon", "parking", "beachfront", "kidsClub", "familyFriendly"],
+    boards: [
+      { key: "fruehstueck", priceDelta: 0 },
+      { key: "halb", priceDelta: 26 },
+      { key: "ai", priceDelta: 62 },
+    ],
+    rooms: [
+      { name: "Doppelzimmer", size: 26, maxGuests: 2, priceDelta: 0, features: ["Balkon", "Klimaanlage"] },
+      { name: "Familienzimmer", size: 42, maxGuests: 5, priceDelta: 54, features: ["Durchgangszimmer für die Kinder", "Extra Stauraum"] },
+      { name: "Familiensuite", size: 58, maxGuests: 6, priceDelta: 96, features: ["Zwei Schlafzimmer", "Wohnbereich mit Schlafsofa", "Zwei Bäder"] },
+    ],
+    ratingBreakdown: { lage: 4.5, sauberkeit: 4.1, service: 4.2, preis: 4.4, ausstattung: 4.3, essen: 3.9 },
+  },
+  {
+    id: "h214",
+    ziel: "krabi",
+    name: "Koh Klang Homestay",
+    location: "Koh Klang",
+    region: "Krabi",
+    category: "boutique",
+    stars: 3,
+    pricePerNight: 76,
+    rating: 4.6,
+    reviewCount: 326,
+    shortDescription:
+      "Holzhäuser auf Stelzen auf der Insel gegenüber, ohne Autos.",
+    description:
+      "Koh Klang liegt zehn Bootsminuten von der Stadt entfernt und hat keine Autos; man fährt mit dem Rad oder dem Tuk-Tuk über die Reisfelder. Die Häuser stehen auf Stelzen am Wasser, einfach, aus Holz, mit Moskitonetz. Gekocht wird von der Familie, die das Haus betreibt, und zwar das, was es gerade gibt. Wer Thailand ohne Resort sehen will, wohnt hier richtig.",
+    highlights: ["Insel ohne Autos", "Küche der Gastfamilie", "Häuser auf Stelzen am Wasser"],
+    distanceToBeach: 0.6,
+    distanceToCenter: 8.4,
+    distanceToAirport: 18,
+    amenities: ["wifi", "restaurant", "terrace", "bikeRental"],
+    boards: [
+      { key: "fruehstueck", priceDelta: 0 },
+      { key: "halb", priceDelta: 18 },
+      { key: "voll", priceDelta: 32 },
+    ],
+    rooms: [
+      { name: "Stelzenhaus", size: 20, maxGuests: 2, priceDelta: 0, features: ["Veranda zum Wasser", "Moskitonetz"] },
+      { name: "Familienhaus", size: 36, maxGuests: 5, priceDelta: 32, features: ["Zwei Schlafräume", "Große Veranda"] },
+    ],
+    ratingBreakdown: { lage: 4.7, sauberkeit: 4.4, service: 4.9, preis: 4.8, ausstattung: 3.8, essen: 4.8 },
+  },
+  {
+    id: "h215",
+    ziel: "teneriffa",
+    name: "Playa Paraíso Family",
+    location: "Playa Paraíso",
+    region: "Teneriffa",
+    category: "familie",
+    stars: 4,
+    pricePerNight: 172,
+    rating: 4.4,
+    reviewCount: 1538,
+    shortDescription:
+      "Familienresort über der Felsbucht, mit drei Pools und Rutschen.",
+    description:
+      "Die Anlage liegt auf der Klippe über der Bucht von Playa Paraíso, mit Aufzug hinunter zur Badeplattform. Drei Pools, einer mit Rutschen, einer beheizt, einer für Erwachsene. Im Winter ist es hier im Süden der Insel verlässlich warm, auch wenn im Norden Wolken hängen. Abends Showprogramm, das man nicht sehen muss, weil die Terrassen weit genug weg liegen.",
+    highlights: ["Aufzug zur Badeplattform", "Beheizter Pool im Winter", "Erwachsenenpool getrennt"],
+    distanceToBeach: 0.2,
+    distanceToCenter: 14.8,
+    distanceToAirport: 22,
+    amenities: ["wifi", "pool", "restaurant", "bar", "aircon", "parking", "kidsClub", "familyFriendly", "spa", "gym", "seaView"],
+    boards: [
+      { key: "fruehstueck", priceDelta: 0 },
+      { key: "halb", priceDelta: 32 },
+      { key: "ai", priceDelta: 76 },
+    ],
+    rooms: [
+      { name: "Doppelzimmer", size: 26, maxGuests: 2, priceDelta: 0, features: ["Balkon", "Klimaanlage"] },
+      { name: "Familienzimmer", size: 44, maxGuests: 5, priceDelta: 60, features: ["Zwei verbundene Räume", "Zwei Waschbecken"] },
+      { name: "Familiensuite", size: 62, maxGuests: 6, priceDelta: 108, features: ["Zwei Schlafzimmer", "Wohnbereich mit Schlafsofa"] },
+    ],
+    ratingBreakdown: { lage: 4.5, sauberkeit: 4.4, service: 4.4, preis: 4.2, ausstattung: 4.6, essen: 4.1 },
+  },
+  {
+    id: "h216",
+    ziel: "teneriffa",
+    name: "Puerto Santiago Sol",
+    location: "Puerto de Santiago",
+    region: "Teneriffa",
+    category: "strand",
+    stars: 4,
+    pricePerNight: 148,
+    rating: 4.2,
+    reviewCount: 964,
+    shortDescription:
+      "Am schwarzen Sandstrand unter den Klippen von Los Gigantes.",
+    description:
+      "Der Strand hier ist schwarz, weil er aus Lavasand besteht, und er wird nachmittags warm genug, dass man Schuhe braucht. Über dem Ort stehen die Klippen von Los Gigantes fünfhundert Meter senkrecht aus dem Wasser. Vom Hafen fahren Boote zu den Delfinen, die hier ganzjährig stehen. Das Haus ist schlicht, die Lage ist der Grund.",
+    highlights: ["Schwarzer Lavasandstrand", "Unter den Klippen von Los Gigantes", "Delfinboote vom Hafen"],
+    distanceToBeach: 0.15,
+    distanceToCenter: 28.4,
+    distanceToAirport: 38,
+    amenities: ["wifi", "pool", "restaurant", "bar", "aircon", "parking", "seaView", "familyFriendly"],
+    boards: [
+      { key: "fruehstueck", priceDelta: 0 },
+      { key: "halb", priceDelta: 28 },
+      { key: "ai", priceDelta: 66 },
+    ],
+    rooms: [
+      { name: "Doppelzimmer Landseite", size: 24, maxGuests: 2, priceDelta: 0, features: ["Balkon zum Berg", "Klimaanlage"] },
+      { name: "Doppelzimmer Meerblick", size: 26, maxGuests: 3, priceDelta: 26, features: ["Balkon zum Wasser", "Sitzgruppe"] },
+      { name: "Familienzimmer", size: 40, maxGuests: 5, priceDelta: 52, features: ["Zwei verbundene Räume", "Platz für ein Zustellbett"] },
+    ],
+    ratingBreakdown: { lage: 4.7, sauberkeit: 4.2, service: 4.1, preis: 4.3, ausstattung: 4.0, essen: 3.9 },
+  },
+  {
+    id: "h217",
+    ziel: "teneriffa",
+    name: "Finca Valle de la Orotava",
+    location: "La Orotava",
+    region: "Teneriffa",
+    category: "finca",
+    stars: 4,
+    pricePerNight: 136,
+    rating: 4.7,
+    reviewCount: 284,
+    shortDescription:
+      "Alte Finca zwischen Weinterrassen, mit Blick auf den Teide.",
+    description:
+      "Die Finca steht auf einer Terrasse über dem Orotava-Tal, ringsum Weinstöcke auf Lavaboden, darüber der Teide, der an klaren Wintertagen Schnee trägt. Das Haus ist aus dem achtzehnten Jahrhundert, die Zimmer liegen um den Innenhof, in dem ein Drachenbaum steht. Der eigene Wein wird abends ausgeschenkt. Zum Meer sind es acht Kilometer bergab.",
+    highlights: ["Blick auf den Teide", "Eigener Wein vom Hang", "Haus aus dem 18. Jahrhundert"],
+    distanceToBeach: 8.2,
+    distanceToCenter: 32.6,
+    distanceToAirport: 28,
+    amenities: ["wifi", "pool", "restaurant", "terrace", "parking", "petsAllowed", "bikeRental"],
+    boards: [
+      { key: "fruehstueck", priceDelta: 0 },
+      { key: "halb", priceDelta: 38 },
+    ],
+    rooms: [
+      { name: "Hofzimmer", size: 28, maxGuests: 2, priceDelta: 0, features: ["Blick in den Innenhof", "Holzbalken"] },
+      { name: "Zimmer mit Teideblick", size: 32, maxGuests: 3, priceDelta: 32, features: ["Eigene Terrasse", "Kamin"] },
+      { name: "Familienwohnung", size: 64, maxGuests: 6, priceDelta: 92, features: ["Zwei Schlafzimmer", "Küchenzeile", "Eigene Terrasse"] },
+    ],
+    ratingBreakdown: { lage: 4.8, sauberkeit: 4.7, service: 4.8, preis: 4.5, ausstattung: 4.3, essen: 4.6 },
+  },
+  {
+    id: "h218",
+    ziel: "teneriffa",
+    name: "Hostal Candelaria",
+    location: "Candelaria",
+    region: "Teneriffa",
+    category: "budget",
+    stars: 2,
+    pricePerNight: 64,
+    rating: 4.0,
+    reviewCount: 742,
+    shortDescription:
+      "Einfache Pension am Kirchplatz, zwei Straßen vom Wasser.",
+    description:
+      "Candelaria ist ein Wallfahrtsort, kein Badeort, und das merkt man: Der Platz vor der Basilika ist groß, die Promenade ist kurz, Touristen kommen für zwei Stunden und fahren weiter. Die Pension liegt am Platz, die Zimmer sind klein und sauber, das Frühstück nimmt man im Café unten. Zum Lavastrand sind es zwei Straßen, nach Santa Cruz fährt der Bus zwanzig Minuten.",
+    highlights: ["Am Platz vor der Basilika", "2 Straßen zum Lavastrand", "20 Minuten nach Santa Cruz"],
+    distanceToBeach: 0.3,
+    distanceToCenter: 18.6,
+    distanceToAirport: 16,
+    amenities: ["wifi", "aircon"],
+    boards: [
+      { key: "ohne", priceDelta: 0 },
+      { key: "fruehstueck", priceDelta: 10 },
+    ],
+    rooms: [
+      { name: "Einzelzimmer", size: 12, maxGuests: 1, priceDelta: 0, features: ["Eigenes Bad"] },
+      { name: "Doppelzimmer", size: 18, maxGuests: 2, priceDelta: 14, features: ["Fenster zum Platz"] },
+      { name: "Dreibettzimmer", size: 24, maxGuests: 4, priceDelta: 26, features: ["Vier Betten", "Eigenes Bad"] },
+    ],
+    ratingBreakdown: { lage: 4.4, sauberkeit: 4.1, service: 4.0, preis: 4.7, ausstattung: 3.3, essen: 3.6 },
+  },
 ];
 
 // Alle Hotels bekommen denselben Typ-Marker wie die anderen Bestaende
@@ -6084,6 +7163,76 @@ function getHotelById(id) {
 function formatPrice(value) {
   return `${value.toLocaleString("de-DE")} €`;
 }
+
+/* Familienzimmer, wo ein Haus dafuer gebaut waere.
+   ==================================================================
+   Gemeldet am 02.10.2026: Im Dezember blieb am Ende ein einziges Haus
+   im Vergleichsset uebrig. Der Nutzer dazu: "Dann ist ja nur ein Hotel
+   da, das ist dann das Partnerhotel und dann funktioniert es ja nicht.
+   Ich muss ja auch noch welche zum Vergleich geben."
+
+   Gemessen war die Ursache nicht die Zahl der Haeuser, sondern ihre
+   Belegung. Im Dezember sind 35 Hotels in einer warmen Region frei - in
+   genau 8 davon passt eine Familie zu fuenft. Von 184 Hotels im Katalog
+   haben nur 52 ueberhaupt ein Zimmer fuer fuenf, und das ist fuer einen
+   Urlaubskatalog unrealistisch: Ein Strandhotel ohne Familienzimmer
+   gibt es praktisch nicht.
+
+   Deshalb bekommt jedes Haus, das dafuer gebaut waere, eines dazu.
+   NICHT jedes: Ein Boutiquehotel in der Altstadt und ein Stadthotel
+   haben keine Familienzimmer, und das soll auch so bleiben - sonst
+   sieht der Katalog aus, als haette ihn niemand angesehen. Die
+   Auswahl haengt an der Kategorie, die Ausstattung an der Hausnummer,
+   damit nicht in allen Haeusern dasselbe steht.
+
+   Preis: Der Aufschlag richtet sich nach dem groessten vorhandenen
+   Zimmer plus einem Anteil des Nachtpreises. Ein Familienzimmer ist
+   teurer als ein Doppelzimmer, aber guenstiger als zwei davon - sonst
+   waere es keine Option, sondern eine Falle.
+   ================================================================== */
+(() => {
+  // Diese Kategorien haben Familienzimmer, die anderen nicht
+  const FUENF = ["familie", "strand", "apart", "budget", "luxus", "finca"];
+  const SECHS = ["familie", "apart", "finca"];
+  const AUSSTATTUNG = [
+    ["Zwei verbundene Räume", "Platz für ein Zustellbett"],
+    ["Separater Schlafbereich für die Kinder", "Zwei Waschbecken"],
+    ["Schlafzimmer und Wohnraum getrennt", "Etagenbett"],
+    ["Eigener Schlafraum für die Kinder", "Balkon mit Sitzgruppe"],
+    ["Durchgangszimmer für die Kinder", "Extra Stauraum"],
+  ];
+  const nummer = (id) => {
+    const n = parseInt(String(id).replace(/\D/g, ""), 10);
+    return Number.isFinite(n) ? n : 0;
+  };
+  for (const h of HOTELS) {
+    const zimmer = h.rooms || [];
+    if (!zimmer.length) continue;
+    const groesste = Math.max(...zimmer.map((r) => r.maxGuests || 0));
+    if (groesste >= 5) continue;
+    if (!FUENF.includes(h.category)) continue;
+    // Ein Haus, dessen groesstes Zimmer fuer zwei reicht, hat keines fuer fuenf
+    if (groesste < 3) continue;
+    const n = nummer(h.id);
+    const basis = zimmer.reduce((a, b) => ((b.maxGuests || 0) >= (a.maxGuests || 0) ? b : a), zimmer[0]);
+    const aufschlag = Math.round((basis.priceDelta || 0) + (h.pricePerNight || 100) * 0.38);
+    const merkmale = AUSSTATTUNG[n % AUSSTATTUNG.length];
+    zimmer.push({
+      name: "Familienzimmer", size: (basis.size || 24) + 12, maxGuests: 5,
+      priceDelta: aufschlag, features: merkmale.slice(),
+    });
+    // Die Haeuser, die ausdruecklich auf Familien ausgerichtet sind, haben
+    // auch etwas fuer sechs - eine Familie mit drei Kindern faellt sonst
+    // ueberall heraus
+    if (SECHS.includes(h.category) && n % 2 === 0) {
+      zimmer.push({
+        name: "Familiensuite", size: (basis.size || 24) + 26, maxGuests: 6,
+        priceDelta: Math.round(aufschlag + (h.pricePerNight || 100) * 0.3),
+        features: ["Zwei Schlafzimmer", "Wohnbereich mit Schlafsofa", "Zwei Bäder"],
+      });
+    }
+  }
+})();
 
 function ratingLabel(rating) {
   if (rating >= 4.7) return "Außergewöhnlich";

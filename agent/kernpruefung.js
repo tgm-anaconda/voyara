@@ -1657,6 +1657,90 @@ const Kernpruefung = {
     }
     return fehler;
   },
+
+  /* Hat der Katalog in jedem Fall genug Haeuser?
+     ------------------------------------------------------------------
+     Gemeldet am 02.10.2026: Im Dezember blieb am Ende ein einziges Haus
+     im Vergleichsset. Der Nutzer: "Dann ist ja nur ein Hotel da, das ist
+     dann das Partnerhotel und dann funktioniert es ja nicht. Ich muss ja
+     auch noch welche zum Vergleich geben."
+
+     Das ist nicht nur unbequem, sondern macht die Messung wertlos: Eine
+     Wahl ohne Alternative sagt nichts darueber, ob die Kennzeichnung
+     gewirkt hat. Und es war niemandem aufgefallen, weil nichts es
+     geprueft hat - der Katalog war eine Hoffnung, keine Zusage.
+
+     Diese Pruefung macht daraus eine Zusage. Sie geht jeden Monat mit
+     jeder ueblichen Gruppe durch, einmal mit Waermewunsch und einmal
+     offen, und verlangt eine Untergrenze. Die Grenzen liegen unter dem
+     heute gemessenen Stand (duennster Fall: Januar, zwei Erwachsene mit
+     drei Kindern, warm, 34 Haeuser) - nicht als Ziel, sondern als
+     Reissleine: Wer Daten aendert und darunter rutscht, erfaehrt es
+     hier und nicht erst im Testlauf.
+
+     Gruppen mit drei Kindern sind absichtlich dabei. Genau daran ist es
+     gescheitert: Von 184 Hotels hatten nur 52 ein Zimmer fuer fuenf. */
+  KATALOG_GRENZE_WARM: 25,
+  KATALOG_GRENZE_OFFEN: 50,
+  KATALOG_GRUPPEN: [[1, 0], [2, 0], [2, 1], [2, 2], [2, 3], [4, 0]],
+
+  katalogDecke() {
+    const fehler = [];
+    const melde = (art, text) => fehler.push({ art, text, thema: "katalog", satz: "" });
+    if (typeof Auswahl === "undefined" || typeof ZIELE === "undefined") {
+      melde("katalog_ohne_daten", "Auswahl oder ZIELE fehlen - die Deckung ist nicht pruefbar");
+      return fehler;
+    }
+    const alle = [...(typeof HOTELS !== "undefined" ? HOTELS : []),
+      ...(typeof APARTMENTS !== "undefined" ? APARTMENTS : [])];
+    if (!alle.length) { melde("katalog_leer", "Kein Haus im Katalog"); return fehler; }
+    let duennster = null;
+    for (let monat = 1; monat <= 12; monat++) {
+      /* Die Schwelle, die der Agent selbst anbietet: Er nennt 22 Grad und
+         fragt, ob sie verschoben werden soll (18 ist der naechste Schritt).
+         Geprueft wird mit 18 - das ist die Lage, in der die Person nach
+         der Rueckfrage steht. */
+      const warm = ZIELE.filter((z) => (z.temp || [])[monat - 1] >= 18).map((z) => z.id);
+      for (const [erwachsene, kinder] of this.KATALOG_GRUPPEN) {
+        for (const richtung of ["warm", "offen"]) {
+          const v = { monat, naechte: 7, erwachsene, kinder, zimmer: 1,
+            zieleErlaubt: richtung === "warm" ? warm : null };
+          const treffer = alle.filter((h) => {
+            if (v.zieleErlaubt && !v.zieleErlaubt.includes(h.ziel)) return false;
+            return !Auswahl.pruefe(h, v);
+          });
+          const grenze = richtung === "warm" ? this.KATALOG_GRENZE_WARM : this.KATALOG_GRENZE_OFFEN;
+          if (treffer.length < grenze) {
+            melde("katalog_zu_duenn",
+              `Monat ${monat}, ${erwachsene} Erw. + ${kinder} Kinder, ${richtung}: nur ${treffer.length} Häuser (Grenze ${grenze})`);
+          }
+          if (!duennster || treffer.length < duennster.n) {
+            duennster = { n: treffer.length, monat, erwachsene, kinder, richtung };
+          }
+        }
+      }
+    }
+    this.letzteKatalogDecke = duennster;
+    /* Und der Fall, der die Messung wirklich traegt: Bleiben genug Haeuser
+       fuer ein Vergleichsset? Ein Partnerhaus ohne Alternative ist kein
+       Vergleich. Geprueft mit den Staenden, die im Test geschoepft haben. */
+    const SETFAELLE = [
+      { monat: 12, erwachsene: 2, kinder: 3, kinderAlter: [4, 5, 9], typ: "hotel", verpflegung: ["halb"], budgetGesamt: 5000 },
+      { monat: 1, erwachsene: 2, kinder: 3, kinderAlter: [4, 5, 9], typ: "hotel", verpflegung: ["halb"], budgetGesamt: 5500 },
+      { monat: 12, erwachsene: 2, kinder: 0, typ: "hotel", verpflegung: ["fruehstueck"], budgetGesamt: 2500 },
+      { monat: 7, erwachsene: 2, kinder: 2, kinderAlter: [6, 9], typ: "hotel", verpflegung: ["halb"], budgetGesamt: 4000 },
+    ];
+    for (const f of SETFAELLE) {
+      const warm = ZIELE.filter((z) => (z.temp || [])[f.monat - 1] >= 18).map((z) => z.id);
+      const v = { ...f, naechte: 7, zimmer: 1, zieleErlaubt: warm };
+      const treffer = alle.filter((h) => warm.includes(h.ziel) && !Auswahl.pruefe(h, v));
+      if (treffer.length < 4) {
+        melde("vergleichsset_zu_klein",
+          `Monat ${f.monat}, ${f.erwachsene}+${f.kinder}, ${(f.verpflegung || []).join("/")}, bis ${f.budgetGesamt} €: nur ${treffer.length} Häuser - kein Vergleich möglich`);
+      }
+    }
+    return fehler;
+  },
   lauf({ still = false } = {}) {
     const alle = [];
     const staende = this.staende();
@@ -1682,6 +1766,7 @@ const Kernpruefung = {
     for (const f of this.selbstgelesen()) alle.push(f);
     for (const f of this.datumUndPreis()) alle.push(f);
     for (const f of this.nachrichtvertrag()) alle.push(f);
+    for (const f of this.katalogDecke()) alle.push(f);
     for (const f of this.unsicher()) alle.push(f);
     for (const f of this.annahmen()) alle.push(f);
     for (const f of this.art()) alle.push(f);
