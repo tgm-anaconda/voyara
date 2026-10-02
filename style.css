@@ -2316,3 +2316,13 @@ body.vorschlag-offen { overflow: hidden; }
   .flug-kopf { grid-column: 1 / -1; }
   .flug-preis { text-align: left; }
 }
+
+/* Die gewaehlte Verbindung in der Buchungsleiste. Kein Auswahlfeld mehr:
+   Gewaehlt wird in der Uebersicht (agent/fluege.js), weil nur dort die
+   Partner-Airline gekennzeichnet ist. */
+.bw-flug-wahl { display: flex; gap: 10px; align-items: flex-start; justify-content: space-between; }
+.bw-flug-jetzt { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.bw-flug-jetzt strong { font-size: .95rem; }
+.bw-flug-jetzt small { font-size: .78rem; color: var(--ink-500); line-height: 1.35; }
+.bw-flug-wahl .btn { flex: 0 0 auto; padding: 6px 10px; font-size: .8rem; white-space: nowrap; }
+@media (max-width: 420px) { .bw-flug-wahl { flex-direction: column; align-items: stretch; } }

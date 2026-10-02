@@ -435,11 +435,24 @@ function renderWidget() {
     <div class="bw-flight">
       <div class="bw-flight-head">${ICONS.plane} Flug dazu</div>
       ${flug ? `
+      <!-- Kein Auswahlfeld fuer die Verbindung.
+           Wunsch des Nutzers am 02.10.2026: "Dass man es in keinem
+           Dropdown bestimmen kann, welchen Flug man nimmt, sondern nur in
+           so einer Uebersichtskarte. Genau wie auch bei den Hotels."
+           Der Grund ist nicht Geschmack: Im Auswahlfeld steht keine
+           Kennzeichnung der Partner-Airline. Wer dort waehlt, bekaeme die
+           Manipulation gar nicht zu sehen und waere fuer die Erhebung
+           verloren. -->
       <div class="field">
-        <label for="bwFlug">Verbindung</label>
-        <select class="select" id="bwFlug">
-          ${flugOptionen.map((f) => `<option value="${f.id}" ${f.id === flug.id ? "selected" : ""}>${f.airline} · ${f.from} → ${f.to} · ${f.depart}–${f.arrive} · ${f.stops === 0 ? "direkt" : `${f.stops} Stopp`} · ${formatPrice(Flug.preisProPerson(f))} p. P.</option>`).join("")}
-        </select>
+        <label>Verbindung</label>
+        <div class="bw-flug-wahl">
+          <div class="bw-flug-jetzt">
+            <strong>${flug.airline}</strong>
+            <small>${flug.depart}–${flug.arrive} · ${flug.stops === 0 ? "direkt" : `${flug.stops} Stopp`}${flug.baggage ? ` · ${flug.baggage}` : ""}</small>
+            <small>${formatPrice(Flug.preisProPerson(flug))} pro Person</small>
+          </div>
+          ${flugOptionen.length > 1 ? `<button type="button" class="btn btn-ghost" id="bwFlugWahl">Andere Verbindung</button>` : ""}
+        </div>
       </div>
       <div class="field" style="margin-bottom:0">
         <label for="bwKlasse">Klasse</label>
@@ -533,67 +546,77 @@ function renderWidget() {
 
   document.getElementById("bwNights").addEventListener("change", (e) => { nights = +e.target.value; if (flug) anreise = ""; renderWidget(); });
   document.getElementById("bwAnreise")?.addEventListener("change", (e) => { anreise = e.target.value; renderWidget(); });
-  document.getElementById("bwFlug")?.addEventListener("change", (e) => { Flug.set({ flugId: e.target.value }); anreise = anreise === null ? null : ""; renderWidget(); });
   document.getElementById("bwKlasse")?.addEventListener("change", (e) => { Flug.set({ klasse: e.target.value }); renderWidget(); });
 
-  /* Vor dem Buchen der Flug - als eigenes Fenster.
+  /* Die Verbindung waehlt man in der Uebersicht - an zwei Stellen.
      ------------------------------------------------------------------
-     Der Nutzer am 02.10.2026: "Das muss so sein, dass wenn ich mich fuer
-     ein Hotel entschieden habe und auf Buchen klicke, dass dann das
-     Flugpop-up noch kommt. Dass es nicht da rechts ueber dem Buchen
-     rausfliegt, sondern dass es dann nochmal ein eigenes Pop-up dafuer
-     gibt."
+     Der Nutzer am 02.10.2026: "Wenn ich mich fuer ein Hotel entschieden
+     habe und auf Buchen klicke, dass dann das Flugpop-up noch kommt" -
+     und: "Dass man es in keinem Dropdown bestimmen kann, sondern nur in
+     so einer Uebersichtskarte. Genau wie auch bei den Hotels."
 
-     Das Fenster gab es schon (agent/fluege.js), nur oeffnete es
-     ausschliesslich der Agent. Wer selbst bis hierher geklickt hat, sah
-     die Verbindung nur als schmale Zeile in der Leiste. Jetzt oeffnet es
-     derselbe Klick, mit denselben Zeilen und derselben Kennzeichnung der
-     Partner-Airline - sonst waere die Manipulation davon abhaengig, ob
-     jemand den Agenten benutzt.
+     Beides fuehrt hierher: der Klick auf "Jetzt buchen", solange noch
+     keine Verbindung gewaehlt ist, und der Knopf "Andere Verbindung" in
+     der Leiste. Dieselben Zeilen, dieselbe Kennzeichnung der
+     Partner-Airline wie beim Agenten - sonst haenge die Manipulation
+     davon ab, ob jemand den Agenten benutzt oder selbst klickt. */
+  function flugKandidaten() {
+    if (!flug || typeof Fluege === "undefined" || typeof Werkzeugkasten === "undefined") return [];
+    const b = Belegung.get();
+    // flugAb bleibt null: Flug.optionen nimmt dann den gemerkten
+    // Flughafen - dieselbe Quelle, aus der die Leiste rechnet.
+    try {
+      return Werkzeugkasten.flugAuswahl(item, { flug: true, flugAb: null,
+        flugKlasse: Flug.get().klasse || null, erwachsene: b.erwachsene, kinder: b.kinder });
+    } catch { return []; }
+  }
 
-     Einmal je Haus: Wer gewaehlt hat, kommt beim naechsten Klick direkt
-     weiter. */
-  const knopf = document.getElementById("bwBook");
-  if (knopf && knopf.tagName === "A" && flug && typeof Fluege !== "undefined"
-    && typeof Werkzeugkasten !== "undefined") {
-    knopf.addEventListener("click", (e) => {
-      if (Flug.get().flugId) return;            // schon gewaehlt
-      const b = Belegung.get();
-      // flugAb bleibt null: `Flug.optionen` nimmt dann den gemerkten
-      // Flughafen - dieselbe Quelle, aus der die Leiste rechnet.
-      const p = { flug: true, flugAb: null, flugKlasse: Flug.get().klasse || null,
-        erwachsene: b.erwachsene, kinder: b.kinder };
-      let kandidaten = [];
-      try { kandidaten = Werkzeugkasten.flugAuswahl(item, p); } catch { kandidaten = []; }
-      if (kandidaten.length < 2) return;        // nichts zu waehlen
-      e.preventDefault();
-      const ziel = knopf.getAttribute("href");
-      const ids = kandidaten.map((k) => k.id);
-      const partnerId = typeof Studie !== "undefined" && Studie.partnerflug ? Studie.partnerflug(ids) : null;
-      /* Dieselbe Kennzeichnung wie beim Partnerhaus und beim Agenten -
-         die Logik steht in Studie.gruppe(), damit es nicht zwei Wahrheiten
-         gibt (siehe Kern.kennzeichnung). */
-      const feste = ["ohne", "etikett", "text"];
-      let stufe = typeof STELLSCHRAUBEN !== "undefined" && feste.includes(STELLSCHRAUBEN.kennzeichnung)
-        ? STELLSCHRAUBEN.kennzeichnung : null;
-      if (!stufe && typeof Studie !== "undefined" && Studie.daten && Studie.gruppe) {
-        stufe = Studie.gruppe().kennzeichnung || null;
-      }
-      Fluege.zeigen(kandidaten.map((k) => ({ ...k, partner: k.id === partnerId })), null, {
-        kennzeichnung: feste.includes(stufe) ? stufe : "etikett",
-        kontext: `${item.name} · ${kandidaten.length} Verbindungen`,
-        nachWahl: (id, gewaehlt) => {
-          if (typeof Studie !== "undefined" && Studie.notieren) {
-            Studie.notieren("flug_gewaehlt_selbst", { id, partner: id === partnerId,
-              airline: gewaehlt?.flug?.airline || null, haus: item.id });
-          }
+  function flugFensterOeffnen(weiterZu) {
+    const kandidaten = flugKandidaten();
+    if (kandidaten.length < 2) return false;
+    const ids = kandidaten.map((k) => k.id);
+    const partnerId = typeof Studie !== "undefined" && Studie.partnerflug ? Studie.partnerflug(ids) : null;
+    /* Dieselbe Kennzeichnung wie beim Partnerhaus und beim Agenten - die
+       Logik steht in Studie.gruppe(), damit es nicht zwei Wahrheiten gibt
+       (siehe Kern.kennzeichnung). */
+    const feste = ["ohne", "etikett", "text"];
+    let stufe = typeof STELLSCHRAUBEN !== "undefined" && feste.includes(STELLSCHRAUBEN.kennzeichnung)
+      ? STELLSCHRAUBEN.kennzeichnung : null;
+    if (!stufe && typeof Studie !== "undefined" && Studie.daten && Studie.gruppe) {
+      stufe = Studie.gruppe().kennzeichnung || null;
+    }
+    Fluege.zeigen(kandidaten.map((k) => ({ ...k, partner: k.id === partnerId })), null, {
+      kennzeichnung: feste.includes(stufe) ? stufe : "etikett",
+      kontext: `${item.name} · ${kandidaten.length} Verbindungen`,
+      nachWahl: (id, gewaehlt) => {
+        if (typeof Studie !== "undefined" && Studie.notieren) {
+          Studie.notieren("flug_gewaehlt_selbst", { id, partner: id === partnerId,
+            airline: gewaehlt?.flug?.airline || null, haus: item.id, wo: weiterZu ? "buchen" : "leiste" });
+        }
+        if (weiterZu) {
           /* Mit der Wahl im Gepaeck weiter zur Kasse. Der Link wurde ohne
              Flugkennung gebaut (es war keine gewaehlt), also kommt sie
              jetzt dazu - nicht noch einmal anLink, das wuerde ab und
              klasse doppelt anhaengen. */
-          location.href = `${ziel}${ziel.includes("?") ? "&" : "?"}flug=${encodeURIComponent(id)}`;
-        },
-      });
+          location.href = `${weiterZu}${weiterZu.includes("?") ? "&" : "?"}flug=${encodeURIComponent(id)}`;
+          return;
+        }
+        // Aus der Leiste heraus: Flugtage und Preise neu rechnen
+        anreise = anreise === null ? null : "";
+        renderWidget();
+      },
+    });
+    return true;
+  }
+
+  document.getElementById("bwFlugWahl")?.addEventListener("click", () => flugFensterOeffnen(null));
+
+  const knopf = document.getElementById("bwBook");
+  if (knopf && knopf.tagName === "A" && flug) {
+    knopf.addEventListener("click", (e) => {
+      if (Flug.get().flugId) return;            // schon gewaehlt
+      const ziel = knopf.getAttribute("href");
+      if (flugFensterOeffnen(ziel)) e.preventDefault();
     });
   }
 }

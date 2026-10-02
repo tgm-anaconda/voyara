@@ -926,6 +926,68 @@ const Kernpruefung = {
     { text: "ist mir egal", soll: false },
   ],
 
+  /* Schreibt der Agent in die Maske, was er danach erwartet?
+     ------------------------------------------------------------------
+     Gefunden am 02.10.2026 durch den Bericht des Nutzers: "Er setzt oben
+     die Zeit, die Personen und die Naechte, drueckt auf Suchen - und
+     anstatt dann die Hotels anzusehen, setzt er nochmal die Filter. Er
+     geht wieder ins Dropdown Oktober, wieder ins Dropdown Naechte,
+     wieder ins Dropdown Person und drueckt nochmal auf Suchen."
+
+     Die Ursache war eine Zeile: Geschrieben wurde `abListe(...).join(",")`
+     - "HAMBURG,MUENCHEN" -, verglichen wurde mit `Flug.code(...)` -
+     "HAM". Der Vergleich konnte nie aufgehen, also galt die Maske in
+     jedem Zug als falsch und wurde neu ausgefuellt.
+
+     Diese Pruefung haelt beides zusammen: Was in die Adresse geschrieben
+     wird, muss dasselbe sein, womit nachher verglichen wird - sonst
+     laeuft der Agent im Kreis. Sie greift auch, wenn jemand spaeter eine
+     dritte Schreibweise einfuehrt.
+
+     Warum das zaehlt, hat der Nutzer selbst gesagt: "Wenn der Bot bei
+     manchen Leuten kaputt wirkt, dann verliert man Glaubwuerdigkeit und
+     wuerde dann eher das Partnerhaus nicht waehlen." Ein Stoerfaktor,
+     der zufaellig auftritt, verschiebt genau die Groesse, die gemessen
+     wird. */
+  KENNUNG_FAELLE: [
+    { text: "München", soll: "MUC" },
+    { text: "Hamburg, München", soll: "HAM,MUC" },
+    { text: "Hamburg oder München", soll: "HAM,MUC" },
+    { text: "Hamburg und München", soll: "HAM,MUC" },
+    { text: "Berlin/Frankfurt", soll: "BER,FRA" },
+    { text: "HAM,MUC", soll: "HAM,MUC" },
+    { text: "MUC", soll: "MUC" },
+    { text: "Köln", soll: "CGN" },
+    { text: "München, München", soll: "MUC" },
+    { text: "", soll: "" },
+  ],
+
+  kennungen() {
+    const fehler = [];
+    if (typeof Flug === "undefined" || !Flug.codeText) return fehler;
+    for (const f of this.KENNUNG_FAELLE) {
+      const ist = Flug.codeText(f.text);
+      if (ist !== f.soll) {
+        fehler.push({ art: "kennung_falsch", thema: "flugAb", satz: f.text,
+          text: `"${f.text}" wird zu "${ist}", erwartet "${f.soll}"` });
+      }
+      /* Zweimal uebersetzen muss dasselbe ergeben. Sonst schreibt der
+         Agent einmal so und vergleicht beim naechsten Mal anders. */
+      if (Flug.codeText(ist) !== ist) {
+        fehler.push({ art: "kennung_nicht_stabil", thema: "flugAb", satz: f.text,
+          text: `"${ist}" wird beim zweiten Durchgang zu "${Flug.codeText(ist)}"` });
+      }
+      // Und jede Kennung muss es wirklich geben
+      for (const c of Flug.codeListe(f.text)) {
+        if (!Flug.flughaefen().some((h) => h.code === c)) {
+          fehler.push({ art: "kennung_unbekannt", thema: "flugAb", satz: f.text,
+            text: `"${c}" ist kein Flughafen aus der Liste` });
+        }
+      }
+    }
+    return fehler;
+  },
+
   flughaefen() {
     const fehler = [];
     for (const f of this.MEHRERE_FAELLE) {
@@ -1179,6 +1241,7 @@ const Kernpruefung = {
     for (const f of this.budget()) alle.push(f);
     for (const f of this.vorschlagsset()) alle.push(f);
     for (const f of this.flughaefen()) alle.push(f);
+    for (const f of this.kennungen()) alle.push(f);
     for (const f of this.namen()) alle.push(f);
     for (const f of this.korrektur()) alle.push(f);
     for (const f of this.riegel()) alle.push(f);

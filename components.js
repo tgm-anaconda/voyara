@@ -266,6 +266,37 @@ const Flug = {
      Technisch bleibt `ab` ein String, damit Adresse, Speicher und alle
      Aufrufer unveraendert weiterlaufen; mehrere Codes stehen darin mit
      Komma ("BER,FRA"). Alles, was vergleicht, geht durch `abListe`. */
+  /* Aus dem, was im Gespraech steht, die Kennungen machen.
+     ------------------------------------------------------------------
+     Gefunden am 02.10.2026, und es waren zwei Fehler in einer Zeile.
+     Nannte jemand zwei Flughaefen ("Hamburg oder Muenchen", Chip "beide
+     offen lassen"), stand im Stand "Hamburg, Muenchen". Daraus machte
+     der Agent fuer die Suchmaske `abListe(...).join(",")` - und das
+     liefert "HAMBURG,MUENCHEN", also Grossbuchstaben statt Kennungen.
+
+     Folge eins: In der Adresse stand `ab=HAMBURG,MUENCHEN`, und kein
+     Flug hat `fromCode` "HAMBURG". Die Flugsuche lief also ins Leere.
+
+     Folge zwei, die sichtbare: Die Pruefung "steht die Maske schon
+     richtig?" verglich mit `Flug.code(p.flugAb)`, also "HAM". Das war
+     nie gleich - der Agent hielt die Maske fuer falsch und fuellte sie
+     bei JEDEM Zug neu aus. Genau das hat der Nutzer gesehen: "Er geht
+     wieder ins Dropdown Oktober, geht wieder ins Dropdown Naechte, geht
+     wieder ins Dropdown Person und drueckt nochmal auf Suchen."
+
+     `codeListe` ist jetzt die eine Stelle, die uebersetzt. Wer schreibt
+     und wer vergleicht, benutzt sie - sonst entsteht derselbe
+     Unterschied an anderer Stelle wieder. */
+  codeListe(text) {
+    /* Getrennt wird an allem, womit Menschen aufzaehlen - "Hamburg oder
+       Muenchen" steht im Stand genauso oft wie "Hamburg, Muenchen". */
+    return String(text || "").split(/\s*(?:,|\/|\boder\b|\bund\b)\s*/i)
+      .map((x) => this.code(x.trim())).filter(Boolean)
+      .filter((c, i, alle) => alle.indexOf(c) === i);
+  },
+  // Dasselbe als String, so wie es in Adresse und Speicher steht
+  codeText(text) { return this.codeListe(text).join(","); },
+
   abListe(wert = null) {
     const roh = wert === null ? this.lesen().ab : wert;
     return String(roh || "").split(",").map((x) => x.trim().toUpperCase()).filter(Boolean);

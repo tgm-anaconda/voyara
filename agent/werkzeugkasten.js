@@ -2601,7 +2601,11 @@ const Werkzeugkasten = {
           && +(q.get("adults") || 2) === +p.erwachsene && +(q.get("children") || 0) === +p.kinder
           && (!p.kinder || (q.get("ages") || "") === alter)
           && (p.flug == null || (q.get("flight") || "0") === (p.flug ? "1" : "0"))
-          && (!p.flug || !p.flugAb || (q.get("ab") || "") === (typeof Flug !== "undefined" ? Flug.code(p.flugAb) : ""));
+          /* Verglichen wird mit derselben Uebersetzung, die auch schreibt
+             (`Flug.codeText`). Stand hier `Flug.code`, war der Vergleich
+             bei zwei Flughaefen nie gleich - und der Agent fuellte die
+             Maske in jedem Zug neu aus. */
+          && (!p.flug || !p.flugAb || (q.get("ab") || "") === (typeof Flug !== "undefined" ? Flug.codeText(p.flugAb) : ""));
       };
       const maskeText = () => [zielName, Werkzeugkasten.artWort(p, false).replace(/^eine? /, ""),
         fest ? `${zeitraum.von} bis ${zeitraum.bis}` : `${flex.monat}, ${flex.naechte} Nächte, Datum offen`,
@@ -2622,10 +2626,9 @@ const Werkzeugkasten = {
         // einmal ausgefuellt (sonst lief der Agent zweimal durch die Leiste)
         if (!passtJetzt()) {
           kern.sperreAn();
-          /* Mehrere Abflughaefen kommen als "BER,FRA" - `Flug.code` kann
-             nur einen und haette daraus einen gemacht. */
-          const abFuerMaske = typeof Flug === "undefined" ? ""
-            : (Flug.abListe(p.flugAb).length > 1 ? Flug.abListe(p.flugAb).join(",") : Flug.code(p.flugAb));
+          // Mehrere Abflughaefen kommen als "Hamburg, Muenchen" - codeText
+          // macht daraus "HAM,MUC". Dieselbe Funktion prueft oben nach.
+          const abFuerMaske = typeof Flug === "undefined" ? "" : Flug.codeText(p.flugAb);
           const flug = p.flug != null ? { mit: !!p.flug, ab: abFuerMaske, klasse: p.flugKlasse || "economy" } : null;
           if (flug && typeof Flug !== "undefined") Flug.set(flug);
           const e = await Werkzeuge.suchen({ typ: Werkzeugkasten.seitenTyp(p), ziel: zielName || "", von: zeitraum.von, bis: zeitraum.bis,
