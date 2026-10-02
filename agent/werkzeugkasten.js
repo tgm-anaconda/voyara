@@ -193,6 +193,30 @@ const Werkzeugkasten = {
           id: text("Haus-id"),
           aspekt: text("Worum es der Person geht, als Wort: Essen, Lage, Sauberkeit, Service, Ausstattung, Ruhe, Pool, Preis-Leistung. Leer lassen, wenn es um den Gesamteindruck geht."),
         }, ["id"]),
+      /* Gezielt suchen statt alles noch einmal lesen.
+         ----------------------------------------------------------------
+         Der Nutzer am 02.10.2026: "Da ist er einfach wieder genau die
+         gleichen Bewertungen durchgegangen, was ich irgendwie nicht so
+         sinnvoll fand. Er koennte zum Beispiel fragen, soll ich nach
+         bestimmten Gesichtspunkten da die Bewertungen durchgehen, und
+         dass er dann wirklich bei Kommentaren anhaelt, die passen."
+
+         Und zum Inhalt: "Mir ist wichtig, dass das Hotel Rutschen hat
+         und dass es nah am Strand ist und dass die echten Alkohol
+         haben. Aktuell wuerdest du darauf keine Antwort haben koennen."
+
+         Jetzt schon: Die Bewertungen tragen seit dem 02.10.2026 auch
+         Rutschen, Getraenke, Strand, Betreuung, Wellness und Parken
+         (data/bewertungen.js), und dieses Werkzeug durchsucht sie nach
+         dem Wort, das die Person benutzt hat. */
+      f("bewertungen_durchsuchen",
+        "Durchsucht die Bewertungen eines Hauses nach einem Begriff, den die Person genannt hat "
+        + "(etwa 'Rutschen', 'Alkohol', 'Strand', 'Kinderbetreuung', 'Parken', 'Sauberkeit'), und liefert, "
+        + "wie viele Stimmen ihn erwaehnen, wie sie sich verteilen und echte Zitate dazu. "
+        + "Nimm das, wenn jemand nach etwas Bestimmtem fragt, statt bewertungen_lesen noch einmal zu rufen. "
+        + "Steht nichts dazu in den Bewertungen, sag genau das - leite nichts aus der Gesamtnote ab.",
+        { id: text("Haus-id"), begriff: text("Das Wort, nach dem gesucht wird - so, wie die Person es gesagt hat") },
+        ["id", "begriff"]),
       f("zurueck_zur_liste",
         "Geht von einer Hausseite zurueck zur Trefferliste (Freigabe ab 'suchen').",
         {}),
@@ -232,6 +256,7 @@ const Werkzeugkasten = {
   BRAUCHT: {
     haus_oeffnen: "suchen", zurueck_zur_liste: "suchen", merken: "suchen",
     haeuser_ansehen: "suchen", stichprobe_nehmen: "suchen", monate_vergleichen: "suchen",
+    bewertungen_durchsuchen: "suchen",
     buchung_vorbereiten: "vorbereiten", buchung_abschliessen: "vorbereiten",
     formular_ausfuellen: "vorbereiten",
   },
@@ -279,6 +304,7 @@ const Werkzeugkasten = {
       case "zurueck_zur_liste": return "Gehe zurück zur Trefferliste";
       case "merken": return `Setze ${haus(a.id)} auf den Merkzettel`;
       case "buchung_vorbereiten": return `Bereite die Buchung für ${haus(a.id)} vor`;
+      case "bewertungen_durchsuchen": return `Suche in den Bewertungen nach „${a?.begriff || "dem Stichwort"}“`;
       case "formular_ausfuellen": return "Fülle das Buchungsformular aus";
       case "buchung_abschliessen": return "Schließe die Buchung ab";
       case "freigabe_aendern": return `Freigabe geändert: ${a.stufe}`;
@@ -2642,6 +2668,71 @@ const Werkzeugkasten = {
       };
     },
 
+    /* Gezielt in den Bewertungen suchen.
+       ----------------------------------------------------------------
+       Zwei Stufen wie beim Lesen: erst auf die Hausseite, dann sichtbar
+       durch die Bewertungen - und zwar an den Stimmen entlang, die den
+       Begriff enthalten. Die Zahlen kommen aus den Daten, die Zitate
+       aus den Stimmen, die wirklich davon sprechen. */
+    async bewertungen_durchsuchen(a, kern, stufe) {
+      const item = typeof getItemById === "function" ? getItemById(a.id) : null;
+      if (!item) return { ergebnis: { fehler: `${a.id} kenne ich nicht.` } };
+      const begriff = String(a.begriff || "").trim();
+      if (begriff.length < 3) {
+        return { ergebnis: { fehler: "Ohne Begriff kann ich nicht suchen",
+          hinweis: "Frag die Person in einem Satz, worauf genau sie achtet." } };
+      }
+      if (typeof bewertungenSuchen !== "function") {
+        return { ergebnis: { fehler: "Die Bewertungssuche steht hier nicht bereit" } };
+      }
+
+      const aufDerHausseite = Werkzeuge.seite() === "stay"
+        && new URLSearchParams(location.search).get("id") === a.id;
+      if (stufe === 1 && kern.darf("suchen") && !aufDerHausseite) {
+        kern.lauf.gewaehlt = a.id;
+        kern.sperreAn();
+        const e = await Werkzeuge.unterkunftOeffnen(a.id);
+        if (!e.ok) { await Zeiger.warte(300); location.href = kern.linkZu(a.id, item.name).href; }
+        return { navigiert: true, stufe: 2 };
+      }
+
+      const fund = bewertungenSuchen(item, begriff);
+      /* Sichtbar durchgehen - mit dem Aspekt, den der Begriff getroffen
+         hat. Ohne das waere die Suche eine Behauptung, und genau darum
+         geht es bei diesem Agenten nicht. */
+      if (aufDerHausseite || Werkzeuge.seite() === "stay") {
+        kern.sperreAn();
+        await Werkzeuge.bewertungenLesen(a.id, { aspekt: fund?.label || begriff, anzahl: 3 });
+        kern.sperreAus();
+        kern.lauf.gelesen = kern.lauf.gelesen || {};
+        kern.lauf.gelesen[a.id] = "hausseite";
+      }
+      kern.notieren("bewertungen_durchsucht", { id: a.id, begriff,
+        aspekt: fund?.aspekt || null, treffer: fund?.erwaehnungen || 0 });
+
+      if (!fund || !fund.erwaehnungen) {
+        return {
+          ergebnis: { haus: item.name, begriff, erwaehnungen: 0,
+            hinweis: `In den ${fund?.durchgesehen || 0} durchgesehenen Bewertungen von ${item.name} spricht niemand davon. `
+              + "Sag genau das, in einem Satz, und biete an, in einem anderen Haus nachzusehen. "
+              + "Leite nichts aus der Gesamtnote ab und erfinde nichts." },
+          log: `${item.name}: nichts zu „${begriff}“ in ${fund?.durchgesehen || 0} Bewertungen`,
+        };
+      }
+      return {
+        ergebnis: {
+          haus: item.name, id: item.id, begriff, thema: fund.label || null,
+          durchgesehen: fund.durchgesehen, erwaehnungen: fund.erwaehnungen,
+          lobend: fund.lobend, kritisch: fund.kritisch,
+          stimmen: fund.stimmen.map((x) => ({ gast: x.autor, note: x.note, tendenz: x.tendenz, text: x.text })),
+          hinweis: "Nenn die Zahl der Stimmen, die davon sprechen, und wie sie sich verteilen. "
+            + "Gib ein Zitat wieder, das wirklich in stimmen steht - erfinde nichts dazu. "
+            + "Wenn Lob und Kritik nah beieinander liegen, sag das auch.",
+        },
+        log: `${item.name}: ${fund.erwaehnungen} von ${fund.durchgesehen} Bewertungen nennen „${begriff}“ (${fund.lobend} lobend, ${fund.kritisch} kritisch)`,
+      };
+    },
+
     /* Der Monatsvergleich.
        ----------------------------------------------------------------
        Wunsch des Nutzers vom 27.09.2026: Sagt jemand "im Sommer" und
@@ -4083,8 +4174,23 @@ const Werkzeugkasten = {
        der Zielwahl helfen ("im Juni die meisten Haeuser auf Mallorca").
        Die Art nicht - sie entscheidet, worueber ueberhaupt gezaehlt
        wird. */
-    const KERN = ["zeit", "reisende", "kinderAlter", "art", "ziel"];
-    const ECKDATEN = ["dauer", "flug", "flugAb", "flugKlasse"];
+    /* Die Dauer gehoert zum Monat, nicht hinter die erste Suche.
+       ------------------------------------------------------------------
+       Der Nutzer am 02.10.2026: "Nachdem gefragt wurde, wann und wie viele
+       Leute, da wurde dann schon eine Suche gemacht. Was ja auch okay ist.
+       Man koennte ueberlegen, dass man da dann schon fragt, wie viele
+       Naechte. Macht ja eigentlich auch Sinn."
+
+       Es macht Sinn, und zwar aus einem handfesten Grund: Der erste
+       Ueberblick nennt Preise, und ohne Dauer stand dort "gerechnet mit
+       einer Woche" - eine Annahme in der ersten Zahl, die die Person
+       bekommt. Mit der Dauer davor ist die Spanne echt. Ausserdem haengt
+       der Mindestaufenthalt daran, also auch, was ueberhaupt buchbar ist.
+
+       Eine Frage mehr vor der ersten Suche, und zwar genau die, die die
+       Zahlen traegt. */
+    const KERN = ["zeit", "dauer", "reisende", "kinderAlter", "art", "ziel"];
+    const ECKDATEN = ["flug", "flugAb", "flugKlasse"];
     // Verpflegung nur bei Hotels - eine Ferienwohnung hat keine
     // Wer gleich eine Auswahl sehen will, bekommt sie - der Anreisetag
     // bleibt trotzdem, ohne ihn laesst die Seite nicht buchen.
@@ -4348,7 +4454,18 @@ const Werkzeugkasten = {
     if (naechstes === "dauer") {
       const gesagt = (lauf.gespraech || []).filter((n) => n.role === "user").map((n) => String(n.content).toLowerCase()).join(" ");
       if (/wochenende/.test(gesagt)) {
-        satz = "Ein langes Wochenende - sollen es zwei, drei oder vier Nächte werden?";
+        /* Auch dieser Zweig braucht einen zweiten Wortlaut.
+           --------------------------------------------------------------
+           Gefunden von der Kernpruefung am 02.10.2026, nachdem die Dauer
+           vor die erste Suche gerueckt ist: In 80 Staenden stand der
+           zweite Anlauf Wort fuer Wort wie der erste. Vorher fiel es nicht
+           auf, weil die Frage spaeter kam und seltener zweimal.
+           Wortgleiche Wiederholung ist das, was den Agenten taub wirken
+           laesst - der Hauptzweig hat deshalb laengst zwei Fassungen. */
+        const zweiter = (lauf.gefragtWie?.dauer || 0) >= 1;
+        satz = zweiter
+          ? "Sag mir einfach die Zahl der Nächte, dann rechne ich damit - zwei, drei oder vier?"
+          : "Ein langes Wochenende - sollen es zwei, drei oder vier Nächte werden?";
         frage = "Sie hat von einem Wochenende gesprochen - frag, ob zwei, drei oder vier Naechte gemeint sind.";
         chips = "2 Nächte | 3 Nächte | 4 Nächte";
       }
@@ -5305,7 +5422,19 @@ const Werkzeugkasten = {
        kommen ueberhaupt in Frage - sonst stuenden sechs vergleichbare,
        aber unpassende Haeuser in der Ansicht. Die Reihenfolge von
        `liste` ist die Passung aus dem Gespraech. */
-    const vorrat = liste.slice(0, Math.max(wieViele * 4, 20));
+    /* Mit einem Budget ist der Vorrat groesser.
+       ------------------------------------------------------------------
+       Er umfasst sonst die ersten 20 nach Passung, und die Passung
+       bevorzugt guenstige Haeuser. Gemessen am 02.10.2026: Bei 8.000 Euro
+       lagen im Vorrat 19 Haeuser unter 4.000 und genau eines darueber -
+       ein Fenster nahe der Grenze war damit gar nicht bildbar, obwohl es
+       im Katalog vier Haeuser zwischen 4.855 und 4.953 gab.
+
+       Wer eine Grenze nennt, meint sie als Rahmen und nicht als Ziel,
+       nach unten zu optimieren. Also reicht der Vorrat dann weiter, und
+       die Gueteregeln darunter entscheiden wie immer. */
+    const vorrat = liste.slice(0, p.budgetGesamt
+      ? Math.max(wieViele * 8, 40) : Math.max(wieViele * 4, 20));
     const kandidaten = vorrat
       .map((h) => ({ h, preis: this.reisepreis(h, p)?.gesamt ?? null, note: h.rating || 0 }))
       .filter((x) => x.preis != null && x.preis > 0)
@@ -5364,10 +5493,58 @@ const Werkzeugkasten = {
     for (const stufe of stufen) {
       for (let groesse = Math.min(wieViele, kandidaten.length); groesse >= kleinste; groesse--) {
         for (const grenze of this.VERGLEICH_GRENZEN) {
-          const passend = fenster(groesse).filter((f) => f.spanne <= grenze && stufe(f));
+          let passend = fenster(groesse).filter((f) => f.spanne <= grenze && stufe(f));
           if (!passend.length) continue;
+          /* Innerhalb derselben Guetestufe das Set, das das Budget nutzt.
+             ------------------------------------------------------------
+             Der Nutzer am 02.10.2026: "Wenn man sagt, feste Grenze 8000,
+             dann waere es ja schon auch sinnvoll, wenn dann auch Hotels
+             angeboten werden, die einigermassen an dieser Grenze liegen
+             und nicht alle 5000 Euro kosten." Gemessen: Bei 8.000 Euro
+             lagen die vier Vorschlaege bei rund 3.100 - die Angabe hatte
+             also keinerlei Wirkung.
+
+             Die Einschraenkung steht hier und nicht in der Sortierung:
+             Als blosses Entscheidungskriterium bei Gleichstand griff sie
+             nie, weil Gleichlauf und Notenspanne stetige Groessen sind
+             und praktisch nie genau gleich ausfallen.
+
+             Die Stufe ist vorher schon angewandt, die Spanne auch - es
+             werden also nur gleich gute Fenster gegeneinander gestellt.
+             Fuehrt die Einschraenkung zu nichts, gilt wieder die ganze
+             Auswahl: lieber ein guenstigeres Set als gar keines. */
+          if (p.budgetGesamt) {
+            const oben = (f) => f.w[f.w.length - 1].preis;
+            const nah = passend.filter((f) => oben(f) <= p.budgetGesamt
+              && oben(f) >= p.budgetGesamt * 0.6);
+            if (nah.length) passend = nah;
+          }
+          /* Bei gleicher Guete das Set, das das Budget nutzt.
+             ------------------------------------------------------------
+             Der Nutzer am 02.10.2026: "Wenn man sagt, feste Grenze 8000,
+             dann waere es ja schon auch sinnvoll, wenn dann auch Hotels
+             angeboten werden, die einigermassen an dieser Grenze liegen
+             und nicht alle 5000 Euro kosten."
+
+             Die Kandidaten sind nach Preis sortiert, und gewonnen hat
+             bisher irgendein Fenster - meistens ein guenstiges, weil es
+             dort mehr aehnliche Haeuser gibt. Wer 8.000 Euro nennt und
+             6.000er bekommt, denkt zu Recht, dass seine Angabe nichts
+             bewirkt hat.
+
+             Die Naehe zum Budget steht BEWUSST hinter Notenspanne und
+             Gleichlauf: Die Vergleichbarkeit ist der Reiz, den die
+             Erhebung misst, und sie darf dem Geld nicht weichen. Nur
+             unter gleich guten Sets gewinnt jetzt das teurere. */
+          const budget = p.budgetGesamt || null;
+          const abstand = (f) => {
+            if (!budget) return 0;
+            const oben = f.w[f.w.length - 1].preis;
+            return oben > budget ? 1 : (budget - oben) / budget;
+          };
           passend.sort((a2, b2) => (a2.billigstesBestes ? 1 : 0) - (b2.billigstesBestes ? 1 : 0)
-            || b2.gleichlauf - a2.gleichlauf || a2.notenSpanne - b2.notenSpanne || a2.spanne - b2.spanne);
+            || b2.gleichlauf - a2.gleichlauf || a2.notenSpanne - b2.notenSpanne
+            || abstand(a2) - abstand(b2) || a2.spanne - b2.spanne);
           const beste = passend[0];
           return { haeuser: beste.w.map((x) => x.h), spanne: beste.spanne, grenze,
             gleichlauf: beste.gleichlauf, notenSpanne: beste.notenSpanne, billigstesBestes: beste.billigstesBestes };

@@ -297,6 +297,161 @@ const ASPEKTE = [
       "Morgens um sechs beginnt der Lieferverkehr vor dem Fenster.",
     ],
   },
+  /* Themen, nach denen Leute wirklich fragen.
+     ==================================================================
+     Der Nutzer am 02.10.2026: "Zum Beispiel koennte ich mir vorstellen,
+     dass die Personen dann sagen, ja, mir ist wichtig, dass das Hotel
+     Rutschen hat und mir ist wichtig, dass es nah am Strand ist und mir
+     ist wichtig, dass die echten Alkohol haben. Und aktuell wuerdest du
+     darauf keine Antwort haben koennen."
+
+     Stimmt: Es gab elf Aspekte, und keiner davon deckte Rutschen,
+     Getraenke, Wellness, Parken, Strand oder Betreuung ab. Der Agent
+     konnte diese Fragen also nur mit der Gesamtnote beantworten, und das
+     ist keine Antwort.
+
+     Jeder neue Aspekt haengt an einem Merkmal, das im Katalog wirklich
+     steht (Pool, Kinderclub, Spa, Parkplatz, Strandentfernung, All
+     Inclusive). Nur dann sind die Stimmen ein Befund und keine
+     Erfindung: Ueber Rutschen schreibt nur, wer in einem Haus mit Pool
+     und Familienausstattung war. Die Verteilung von Lob und Kritik
+     folgt wie bei allen anderen der Teilnote des Hauses. */
+  {
+    id: "wasserspass", label: "Rutschen & Wasserspaß", gewicht: 1.1,
+    gilt: (item) => (item.amenities || []).includes("pool")
+      && ((item.amenities || []).includes("familyFriendly") || (item.amenities || []).includes("kidsClub")),
+    titelPlus: "Rutschen top", titelMinus: "Wenig für Wasserratten",
+    plus: [
+      "Es gibt zwei Rutschen, die großen Kinder waren den halben Tag dort.",
+      "Die Rutsche ist auch für Kleinere machbar, es steht jemand am Becken.",
+      "Neben dem Hauptbecken gibt es einen kleinen Wasserspielplatz mit Fontänen.",
+      "Die Rutschen laufen durchgehend, nicht nur zu bestimmten Zeiten.",
+    ],
+    minus: [
+      "Eine Rutsche für das ganze Haus, entsprechend lang war die Schlange.",
+      "Die Rutsche war an drei von sieben Tagen gesperrt.",
+      "Für Wasserspaß ist das hier der falsche Ort, es gibt nur das eine Becken.",
+      "Ab einer Körpergröße unter 1,20 m darf man nicht rutschen, das stand vorher nirgends.",
+    ],
+    detailPlus: [
+      "Unsere beiden sind morgens hin und mittags kaum herauszubekommen gewesen, allein wegen der Rutschen.",
+      "Es gibt eine Breitrutsche, da können zwei nebeneinander, das haben sie geliebt.",
+    ],
+    detailMinus: [
+      "Die Rutsche öffnet erst um elf und schließt um siebzehn Uhr, mitten in der Siesta also zu.",
+      "Wir hatten mit mehr gerechnet, am Ende war es eine kurze Rutsche ins Hauptbecken.",
+    ],
+  },
+  {
+    id: "getraenke", label: "Getränke & Bar", gewicht: 1.2,
+    // Nur wo All Inclusive ueberhaupt buchbar ist - sonst ist die Frage
+    // nach dem, was im Preis steckt, gegenstandslos
+    gilt: (item) => (item.boards || []).some((b) => b.key === "ai" || b.key === "voll"),
+    titelPlus: "Getränke ohne Abstriche", titelMinus: "Bei den Getränken geknausert",
+    plus: [
+      "Bei All Inclusive waren auch Markenspirituosen dabei, nicht nur das Hauseigene.",
+      "Wein und Bier gab es den ganzen Tag, ohne dass jemand schief geschaut hat.",
+      "Cocktails waren inklusive und wurden frisch gemixt, nicht aus dem Automaten.",
+      "Auch alkoholfrei war die Auswahl ordentlich, frisch gepresster Saft am Morgen.",
+    ],
+    minus: [
+      "Im All Inclusive sind nur lokale Spirituosen drin, alles andere kostet extra.",
+      "Die Getränke kamen aus dem Automaten, Wein wie Saft.",
+      "Ab zehn Uhr abends ist die Bar zu, das war uns zu früh.",
+      "Importierte Getränke werden extra abgerechnet, das stand im Kleingedruckten.",
+    ],
+    detailPlus: [
+      "Wir haben nachgefragt: Gin, Rum und Whisky waren Marken, die man kennt, und zwar ohne Aufpreis.",
+      "An der Poolbar musste man nicht anstehen, es kam jemand herum.",
+    ],
+    detailMinus: [
+      "Für einen Gin Tonic mit ordentlichem Gin wurden acht Euro extra fällig, trotz All Inclusive.",
+      "Das Bier kam aus dem Zapfhahn im Selbstbedienungsbereich und war meist warm.",
+    ],
+  },
+  {
+    id: "strand", label: "Strand", gewicht: 1.3,
+    // Nur Haeuser, die wirklich am Wasser liegen (bis 1,5 km)
+    gilt: (item) => (item.distanceToBeach ?? 99) <= 1.5,
+    titelPlus: "Strand direkt vor der Tür", titelMinus: "Strand enttäuschend",
+    plus: [
+      "Der Strand ist in fünf Minuten zu Fuß erreicht, Handtücher bekommt man im Haus.",
+      "Feiner Sand, flach ins Wasser, für Kinder genau richtig.",
+      "Der Strandabschnitt vor dem Haus war selbst mittags nie überfüllt.",
+      "Liegen und Schirme am Strand waren im Preis enthalten.",
+    ],
+    minus: [
+      "Bis zum Strand sind es laut Beschreibung fünf Minuten, wir haben zwölf gebraucht.",
+      "Der Strand ist steinig, Badeschuhe sind Pflicht.",
+      "Liegen am Strand kosten extra, und zwar pro Tag und Person.",
+      "Der Zugang zum Wasser geht über eine steile Treppe, mit Gepäck oder Kindern mühsam.",
+    ],
+    detailPlus: [
+      "Wir waren jeden Morgen vor dem Frühstück unten, um die Zeit hat man den Strand fast für sich.",
+      "Das Wasser fällt sehr flach ab, unsere Dreijährige konnte zwanzig Meter weit stehen.",
+    ],
+    detailMinus: [
+      "Bei Westwind lag Seegras am Ufer, das wurde in der Woche einmal geräumt.",
+      "Der Weg zum Strand führt über die Küstenstraße, ohne Ampel, das war uns mit Kind zu unsicher.",
+    ],
+  },
+  {
+    id: "betreuung", label: "Kinderbetreuung", gewicht: 1.2,
+    gilt: (item) => (item.amenities || []).includes("kidsClub"),
+    titelPlus: "Kinderclub richtig gut", titelMinus: "Betreuung nur auf dem Papier",
+    plus: [
+      "Der Kinderclub hat feste Zeiten und das Team ist deutschsprachig.",
+      "Unsere Tochter wollte jeden Tag hin, das sagt mehr als jede Beschreibung.",
+      "Es gab ein eigenes Abendprogramm, so hatten wir zweimal in Ruhe essen können.",
+      "Die Betreuung nimmt schon ab drei Jahren, das ist selten.",
+    ],
+    minus: [
+      "Der Kinderclub öffnet nur zwei Stunden am Vormittag.",
+      "Betreut wurde ab vier Jahren, unsere Kleine war damit außen vor.",
+      "Das Programm bestand im Wesentlichen aus Malen am Tisch.",
+      "In der Nebensaison fand der Kinderclub gar nicht statt, obwohl er beworben war.",
+    ],
+    detailPlus: [
+      "Morgens Basteln, nachmittags Pool, abends Kino - und immer dieselben zwei Betreuerinnen, das schafft Vertrauen.",
+      "Beim Abholen gab es jedes Mal eine kurze Rückmeldung, was gemacht wurde.",
+    ],
+    detailMinus: [
+      "Wir haben am zweiten Tag aufgehört, die Kinder hinzubringen, weil niemand sich zuständig fühlte.",
+      "Der Club war mit fünfzehn Kindern und einer Betreuerin klar überfüllt.",
+    ],
+  },
+  {
+    id: "wellness", label: "Wellness & Spa", gewicht: 1.1,
+    gilt: (item) => (item.amenities || []).includes("spa"),
+    titelPlus: "Spa lohnt sich", titelMinus: "Spa nicht der Rede wert",
+    plus: [
+      "Sauna und Dampfbad waren sauber und selten voll.",
+      "Die Massage war ihr Geld wert, Termine bekam man am Vortag.",
+      "Der Ruhebereich ist wirklich ruhig, kein Durchgangsverkehr.",
+      "Bademantel und Slipper lagen im Zimmer bereit.",
+    ],
+    minus: [
+      "Der Spa-Bereich kostet extra, das war aus der Beschreibung nicht ersichtlich.",
+      "Zwei Liegen im Ruheraum für ein Haus dieser Größe sind zu wenig.",
+      "Die Sauna war an zwei Tagen wegen Wartung geschlossen.",
+      "Massagetermine waren für die ganze Woche ausgebucht.",
+    ],
+  },
+  {
+    id: "parken", label: "Parken", gewicht: 1.0,
+    gilt: (item) => (item.amenities || []).includes("parking"),
+    titelPlus: "Parken unkompliziert", titelMinus: "Parkplatzsuche nervig",
+    plus: [
+      "Der Parkplatz am Haus ist kostenlos und es war immer etwas frei.",
+      "Die Tiefgarage ist breit genug, auch für einen Kombi mit Dachbox.",
+      "Parken war im Zimmerpreis enthalten, das spart in der Stadt einiges.",
+    ],
+    minus: [
+      "Der Parkplatz kostet achtzehn Euro am Tag, das kam oben drauf.",
+      "Ab dem frühen Abend war der Parkplatz voll, dann hieß es Straße suchen.",
+      "Die Einfahrt zur Garage ist so eng, dass wir zweimal rangieren mussten.",
+    ],
+  },
   {
     id: "kueche", label: "Küche", gewicht: 1.3,
     // Nur Ferienwohnungen - in einem Hotel mit Kochnische ist die Kueche
@@ -801,6 +956,18 @@ const STICHWORTE = {
   kueche: ["kochen", "spülmaschine", "kühlschrank", "geschirr", "kochnische", "herd"],
   kommunikation: ["antwort", "nachricht", "kommunikation", "abgesprochen"],
   checkin: ["schlüssel", "check-in", "übergabe", "anreise war"],
+  /* Stichwoerter fuer die Aspekte, die am 02.10.2026 dazugekommen sind.
+     Danach durchsucht `bewertungenSuchen` den Text, wenn jemand nach
+     Rutschen, echtem Alkohol oder dem Strand fragt. */
+  wasserspass: ["rutsch", "wasserspielplatz", "fontän", "breitrutsche", "wasserspaß", "wasserspass"],
+  /* Kurze Woerter mit Wortgrenze. "gin" ohne sie trifft "beginnt" und
+     "ging" - zu "Alkohol" stand dann ein Satz ueber den Lieferverkehr. */
+  getraenke: ["getränk", "\\bbar\\b", "cocktail", "alkohol", "spirituos", "\\bwein",
+    "\\bbier", "\\bgin\\b", "all inclusive", "zapfhahn", "\\bsaft"],
+  strand: ["strand", "sand", "meer", "ufer", "badeschuh", "seegras", "liegen am strand"],
+  betreuung: ["kinderclub", "kids club", "betreu", "animation", "kinderprogramm", "abendprogramm"],
+  wellness: ["wellness", "spa\b", "sauna", "massage", "dampfbad", "ruhebereich", "ruheraum"],
+  parken: ["park", "garage", "stellplatz", "einfahrt"],
 };
 
 // Positiv oder negativ? Grobe, aber ausreichende Heuristik ueber die Note
@@ -1119,5 +1286,96 @@ function bewertungsbild(item, { stichprobe = 200, wunschIds = [] } = {}) {
     grundlage: roh.length,
     staerken: kurz.staerken || [], schwaechen: kurz.schwaechen || [],
     bilanz, hinweise: gemischt, stimmen,
+  };
+}
+
+/* Bewertungen nach einem Stichwort durchsuchen.
+   ==================================================================
+   Der Nutzer am 02.10.2026: "Es kann nicht einfach so sein, dass es
+   ganz viele Kommentare unter den Hotels gibt. Und das Modell sucht
+   dann einfach mit einem Suchbegriff unter diesen Haeusern nach den
+   Begriffen, die die Person nennt und bleibt dann da stehen."
+
+   Genau das macht diese Funktion: Sie geht die Bewertungen eines Hauses
+   durch, sammelt die, die den Begriff enthalten, und sagt, wie sie sich
+   verteilen. Die Tendenz kommt nicht aus dem Text, sondern aus den
+   Aspektmarkern, die jede Bewertung ohnehin traegt - damit ist sie
+   nachpruefbar und nicht geraten.
+
+   Zurueck kommt, was der Agent sagen darf: wie viele von wie vielen,
+   wie viele davon lobend, und bis zu drei echte Stimmen. Findet sich
+   nichts, steht das da - "dazu steht in den Bewertungen nichts" ist
+   eine richtige Antwort und besser als eine aus der Gesamtnote
+   abgeleitete. */
+function bewertungenSuchen(item, begriff, max = 120) {
+  const wort = String(begriff || "").trim().toLowerCase();
+  if (!item || wort.length < 3) return null;
+
+  /* Erst nachsehen, ob der Begriff zu einem Aspekt gehoert - dann wird
+     mit dessen Stichwortliste gesucht statt nur mit dem einen Wort.
+     "Alkohol" findet so auch "Spirituosen" und "Cocktail". */
+  /* Erst der genaue Name des Aspekts, dann die Stichwoerter.
+     ----------------------------------------------------------------
+     In einem Durchgang gewann sonst der erste Treffer: "Strand" landete
+     beim Aspekt Lage, weil dessen Stichwortliste das Wort enthaelt - und
+     der eigene Strand-Aspekt kam nie zum Zug. */
+  const eintraege = Object.entries(STICHWORTE || {});
+  const ausAspekt = eintraege.find(([id]) => id === wort)
+    || eintraege.find(([, worte]) => worte.some((w) => {
+      const rein = String(w).replace(/\\b/g, "");
+      return rein.length >= 3 && (wort.includes(rein) || rein.includes(wort));
+    }));
+  const muster = ausAspekt
+    ? new RegExp(ausAspekt[1].join("|"), "i")
+    : new RegExp(wort.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
+  const aspektId = ausAspekt ? ausAspekt[0] : null;
+  const label = aspektId ? (ASPEKT_LABELS[aspektId] || null) : null;
+
+  const menge = Math.min(item.reviewCount || 0, max);
+  const liste = bewertungenFuer(item, 0, menge);
+  const treffer = liste.filter((r) => muster.test(`${r.title || ""} ${r.text || ""}`));
+  let positiv = 0, negativ = 0;
+  for (const r of treffer) {
+    const w = aspektId ? (r.aspekte || {})[aspektId] : null;
+    if (w > 0) positiv += 1;
+    else if (w < 0) negativ += 1;
+    else if ((r.rating || 0) >= 4) positiv += 1;
+    else negativ += 1;
+  }
+  // Je eine lobende und eine kritische Stimme zuerst - eine Auswahl, die
+  // nur Lob zeigt, waere keine Auskunft, sondern Werbung
+  const lob = treffer.filter((r) => (r.rating || 0) >= 4);
+  const kritik = treffer.filter((r) => (r.rating || 0) < 4);
+  /* Zitiert wird der Satz, in dem der Begriff steht.
+     ----------------------------------------------------------------
+     Eine Bewertung hat bis zu fuenf Saetze ueber verschiedene Dinge. Wer
+     nach Rutschen fragt und einen Absatz ueber den Schrank bekommt, hat
+     keine Antwort - auch wenn das Wort irgendwo darin vorkommt. */
+  const satzMitBegriff = (text) => {
+    const saetze = String(text || "").split(/(?<=[.!?])\s+/);
+    return saetze.find((x) => muster.test(x)) || saetze[0] || "";
+  };
+  /* Nur Stimmen, bei denen wirklich ein Satz passt.
+     ----------------------------------------------------------------
+     Traf der Begriff nur im Titel, stand vorher der erste Satz der
+     Bewertung da - zu "Alkohol" also "Morgens um sechs beginnt der
+     Lieferverkehr". Ein Zitat, das nicht zur Frage gehoert, ist
+     schlechter als keines. */
+  const mitSatz = (r) => {
+    const satz = satzMitBegriff(r.text);
+    return muster.test(satz) ? satz : null;
+  };
+  const stimmen = [lob[0], kritik[0], lob[1], kritik[1], lob[2]].filter(Boolean)
+    .map((r) => ({ r, satz: mitSatz(r) })).filter((x) => x.satz).slice(0, 3)
+    .map(({ r, satz }) => ({ autor: r.author, note: r.rating, titel: r.title,
+      text: satz, ganz: r.text,
+      tendenz: (r.rating || 0) >= 4 ? "lobend" : "kritisch" }));
+
+  return {
+    begriff: wort, aspekt: aspektId, label,
+    durchgesehen: liste.length, erwaehnungen: treffer.length,
+    lobend: positiv, kritisch: negativ,
+    anteilPositiv: treffer.length ? Math.round((positiv / treffer.length) * 100) / 100 : null,
+    stimmen,
   };
 }
