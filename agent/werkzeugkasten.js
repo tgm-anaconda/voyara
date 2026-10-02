@@ -3315,9 +3315,26 @@ const Werkzeugkasten = {
 
     preis: {
 
-      erklaerung: "Eine Grenze hilft mir beim Aussortieren. Wenn du offen bist, ist das auch eine Antwort - dann zeige ich die ganze Spanne.",      satz: ["Hast du beim Preis eine feste Grenze, oder bist du da offen?",
-        "Gibt es eine Obergrenze, die ich einhalten soll?"],
-      frage: "Ob sie beim Preis eine feste Grenze hat (pro Nacht oder gesamt) oder offen ist. Offen heisst preisEgal true.", chips: "Feste Grenze | Offen" },
+      erklaerung: "Eine Grenze hilft mir beim Aussortieren. Wenn du offen bist, ist das auch eine Antwort - dann zeige ich die ganze Spanne.",
+      /* Die Grenze gilt fuer die ganze Reise, und das muss dastehen.
+         ----------------------------------------------------------------
+         Der Nutzer am 02.10.2026 nannte 5.000 Euro Gesamtbudget, und kein
+         Vorschlag lag darunter - der Flug zaehlte nicht mit. Seit v=366
+         rechnet der Kern richtig; hier steht jetzt auch im Satz, was in
+         der Grenze steckt, damit die Zahl von vornherein die richtige
+         Bedeutung hat. */
+      satz: (p) => {
+        const v = { fruehstueck: "Frühstück", halb: "Halbpension", voll: "Vollpension", ai: "All Inclusive" }[p?.verpflegung];
+        // Einzeln mit Artikel ("der Flug"), zu zweit ohne - sonst stuende
+        // da "Da sind der Flug und Halbpension drin".
+        let zusatz = "";
+        if (p?.flug && v) zusatz = ` Da sind Flug und ${v} schon mit drin.`;
+        else if (p?.flug) zusatz = " Da ist der Flug schon mit drin.";
+        else if (v) zusatz = ` Da ist ${v} schon mit drin.`;
+        return `Hast du beim Preis eine feste Grenze für die ganze Reise, oder bist du da offen?${zusatz}`;
+      },
+      nochmal: "Gibt es eine Obergrenze für die ganze Reise, die ich einhalten soll?",
+      frage: "Ob sie beim Preis eine feste Grenze hat (gesamt fuer die Reise, oder pro Nacht, wenn sie das sagt) oder offen ist. Offen heisst preisEgal true. Eine Zahl ohne Zusatz ist das Gesamtbudget.", chips: "Feste Grenze | Offen" },
 
     verpflegung: {
 
@@ -3900,7 +3917,24 @@ const Werkzeugkasten = {
     // Verpflegung nur bei Hotels - eine Ferienwohnung hat keine
     // Wer gleich eine Auswahl sehen will, bekommt sie - der Anreisetag
     // bleibt trotzdem, ohne ihn laesst die Seite nicht buchen.
-    const BESPRECHEN = (p.typ === "apartment" ? ["preis", "wuensche"] : ["preis", "verpflegung", "wuensche"]).concat("anzahl");
+    /* Alles, was den Preis bewegt, kommt vor den Preis.
+       ------------------------------------------------------------------
+       Der Nutzer am 02.10.2026: "Es muessen die Sachen, die den Preis
+       beeinflussen, eigentlich vorher geklaert werden." Eine Grenze von
+       5.000 Euro ist sonst eine Zahl auf etwas, das noch gar nicht
+       feststeht - und genau so kam im Testlauf ein Budget zustande, das
+       nachher niemand einhalten konnte.
+
+       Flug und Klasse stehen ohnehin davor (ECKDATEN). Die Verpflegung
+       stand bisher dahinter und wechselt jetzt davor. Die Wuensche
+       bleiben dahinter: Sie entscheiden, WELCHE Haeuser in Frage kommen,
+       nicht was sie kosten.
+
+       Das Zimmer laesst sich nicht vorziehen - welche es gibt und was sie
+       kosten, haengt am Haus, und das steht erst nach der Auswahl fest.
+       Dort fragt der Agent danach und kennzeichnet, welches Zimmer die
+       Grenze sprengen wuerde. */
+    const BESPRECHEN = (p.typ === "apartment" ? ["preis", "wuensche"] : ["verpflegung", "preis", "wuensche"]).concat("anzahl");
     // Wer selbst schaut, wird nicht ausgefragt; wer raussuchen laesst, schon
     const BERATUNG = (p.vorgehen === "selbst" ? [] : BESPRECHEN).concat("anreise");
     const kernFertig = KERN.every((t) => fertig[t]);

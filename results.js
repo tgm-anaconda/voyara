@@ -54,6 +54,7 @@ const state = {
      nennen musste - die Treffer der Seite und die, die wirklich passen. */
   ziele: new Set(),
   priceMax: 999,
+  gesamtMax: null,     // Grenze fuer die ganze Reise; null = kein Gesamtbudget gesetzt
   stars: new Set(),
   categories: new Set(),
   amenities: new Set(),
@@ -101,6 +102,33 @@ function hausLink(id) {
   let href = Reisedaten.anLink(Belegung.anLink(`stay.html?id=${id}`));
   if (typeof Flug !== "undefined" && state.type === "hotel") href = Flug.anLink(href);
   return href;
+}
+
+/* Was die ganze Reise kostet - dieselbe Summe, die auf der Karte steht.
+   ------------------------------------------------------------------
+   Wunsch des Nutzers am 02.10.2026: "Wir brauchen einen Preisregler fuer
+   das Gesamtbudget auch. Nicht nur Preis pro Nacht." Grund: Wer 5.000
+   Euro sagt, meint die Reise, nicht die Nacht - und ohne Regler dafuer
+   ist nicht nachvollziehbar, was die Liste eigentlich zeigt.
+
+   Gerechnet wird wie in der Karte und wie im Agenten (`reisepreis` im
+   Werkzeugkasten): Unterkunft fuer alle Zimmer und Naechte plus
+   Endreinigung, dazu der Flug fuer alle Reisenden, wenn einer dabei ist.
+   Eine Zahl, drei Orte. */
+function gesamtpreisFuer(item) {
+  if (!item || (item.type !== "hotel" && item.type !== "apartment")) return null;
+  const b = typeof Belegung !== "undefined" ? Belegung.get() : { personen: 2, zimmer: 1 };
+  const naechte = typeof Reisedaten !== "undefined" ? Reisedaten.naechte(7) : 7;
+  const proNacht = saisonpreis(item);
+  if (proNacht == null) return null;
+  const unterkunft = item.type === "apartment"
+    ? proNacht * naechte + (item.cleaningFee || 0)
+    : proNacht * naechte * Math.max(1, b.zimmer) + 35 * Math.max(1, b.zimmer);
+  let flug = 0;
+  if (state.withFlight && item.type === "hotel" && typeof Flug !== "undefined") {
+    try { flug = Flug.paket(item, b.personen || 1)?.gesamt || 0; } catch { flug = 0; }
+  }
+  return unterkunft + flug;
 }
 
 // Paketpreis mit Flug in der Trefferkarte (nur Hotels, nur mit Flug dazu)
@@ -214,6 +242,11 @@ function matches(item, ausser = null) {
   // Reisegruppe muss hineinpassen - vorher wurde die Personenzahl ignoriert
   if (!Belegung.passt(item)) return false;
   if (ausser !== "preis" && saisonpreis(item) > state.priceMax) return false;
+  // Das Gesamtbudget gilt fuer die ganze Reise, mit Flug
+  if (ausser !== "gesamt" && state.gesamtMax != null) {
+    const g = gesamtpreisFuer(item);
+    if (g != null && g > state.gesamtMax) return false;
+  }
   if (ausser !== "bewertung" && state.minRating && item.rating < state.minRating) return false;
   // Binnenziele haben distanceToBeach null - sie erfuellen keinen Strandfilter
   if (ausser !== "strand" && state.maxBeach !== null
@@ -315,6 +348,27 @@ function renderFilters() {
      <div style="font-size:.84rem;color:var(--ink-500);margin-top:6px">bis <strong id="fPriceOut">${formatPrice(state.priceMax)}</strong></div>`);
 
   const istUnterkunft = ["unterkunft", "hotel", "apartment"].includes(state.type);
+  /* Der zweite Regler: die ganze Reise.
+     ------------------------------------------------------------------
+     Er steht direkt unter dem Nachtpreis, weil beide dasselbe meinen und
+     sich nur im Bezug unterscheiden. Die Spanne kommt aus den Haeusern,
+     die ueberhaupt in der Liste stehen - sonst stuende ein Regler da,
+     dessen rechtes Ende niemand erreicht. Ganz rechts heisst "keine
+     Grenze"; dann faellt der Filter weg. */
+  if (istUnterkunft) {
+    const summen = alleHaeuser().map(gesamtpreisFuer).filter((x) => x != null && x > 0);
+    if (summen.length > 1) {
+      const gMin = Math.floor(Math.min(...summen) / 50) * 50;
+      const gMax = Math.ceil(Math.max(...summen) / 50) * 50;
+      const wert = state.gesamtMax == null ? gMax : Math.min(gMax, Math.max(gMin, state.gesamtMax));
+      const naechte = typeof Reisedaten !== "undefined" ? Reisedaten.naechte(7) : 7;
+      const mitFlug = state.withFlight && state.type === "hotel";
+      html += group("Gesamt für die Reise",
+        `<div class="range-row"><input type="range" id="fGesamt" min="${gMin}" max="${gMax}" step="50" value="${wert}" /></div>
+         <div style="font-size:.84rem;color:var(--ink-500);margin-top:6px">bis <strong id="fGesamtOut">${wert >= gMax ? "ohne Grenze" : formatPrice(wert)}</strong>
+         <span style="display:block;margin-top:2px">${naechte} Nächte${mitFlug ? ", mit Flug" : ""}</span></div>`);
+    }
+  }
   if (istUnterkunft) {
     const monat = reisemonat();
     /* Die Liste zeigt Haeuser ausserhalb ihrer Saison nicht mehr - also
@@ -460,6 +514,16 @@ function renderFilters() {
     renderResults();
   });
 
+  const gesamt = panel.querySelector("#fGesamt");
+  if (gesamt) {
+    gesamt.addEventListener("input", () => {
+      const max = +gesamt.max;
+      state.gesamtMax = +gesamt.value >= max ? null : +gesamt.value;
+      panel.querySelector("#fGesamtOut").textContent = state.gesamtMax == null ? "ohne Grenze" : formatPrice(state.gesamtMax);
+      renderResults();
+    });
+  }
+
   const bindSet = (cls, target) => panel.querySelectorAll(cls).forEach((el) =>
     el.addEventListener("change", () => { el.checked ? target.add(el.value) : target.delete(el.value); renderResults(); }));
 
@@ -488,6 +552,7 @@ function renderFilters() {
     state.directOnly = false; state.freeCancel = false; state.onlyDeals = false; state.wlanFrei = false;
     state.ziel = ""; state.ziele.clear();
     state.priceMax = priceBounds().max;
+    state.gesamtMax = null;
     renderFilters(); renderResults();
   });
 }
@@ -722,6 +787,7 @@ function switchType(type) {
   state.minRating = 0; state.maxBeach = null; state.minBedrooms = 0;
   state.directOnly = false; state.freeCancel = false; state.onlyDeals = false;
   state.priceMax = priceBounds().max;
+  state.gesamtMax = null;
   state.sort = "empfehlung";
 
   document.querySelectorAll(".header-nav a").forEach((a) =>
@@ -737,6 +803,7 @@ document.addEventListener("DOMContentLoaded", () => {
   readUrl();
   mountChrome(state.type);
   state.priceMax = priceBounds().max;
+  state.gesamtMax = null;
 
   SearchBox.mount("#searchBox", {
     onSubmit: (query) => {
