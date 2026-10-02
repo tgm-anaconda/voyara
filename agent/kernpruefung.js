@@ -1241,6 +1241,170 @@ const Kernpruefung = {
     }
     return fehler;
   },
+
+  /* Liest der Kern die Antwort auf seine eigene Frage?
+     ------------------------------------------------------------------
+     Der Befund vom 02.10.2026: Auf "Wie lange soll die Reise werden?"
+     kam "9", dann "9 Nächte", und der Agent fragte beide Male noch
+     einmal. Dass es daran lag, dass das Modell kein Werkzeug rief, ist
+     kein Trost - die Person sieht nur, dass ihre Antwort nicht ankommt.
+
+     Geprüft wird deshalb beides: dass der Kern den Wert aus dem Satz
+     holt, und dass das Thema danach abgehakt ist. Der zweite Teil ist
+     der wichtigere - er ist genau das, was im Test schiefging. */
+  SELBST_FAELLE: [
+    { thema: "dauer", text: "9", feld: "naechte", wert: 9 },
+    { thema: "dauer", text: "9 Nächte", feld: "naechte", wert: 9 },
+    { thema: "dauer", text: "neun nächte", feld: "naechte", wert: 9 },
+    { thema: "dauer", text: "neun", feld: "naechte", wert: 9 },
+    { thema: "dauer", text: "eine Woche", feld: "naechte", wert: 7 },
+    { thema: "dauer", text: "zwei Wochen", feld: "naechte", wert: 14 },
+    { thema: "dauer", text: "10 Tage", feld: "naechte", wert: 10 },
+    { thema: "dauer", text: "12 Übernachtungen", feld: "naechte", wert: 12 },
+    { thema: "dauer", text: "gerne 12 naechte", feld: "naechte", wert: 12 },
+    // Keine Dauer: daraus darf nichts werden
+    { thema: "dauer", text: "ich bin flexibel", feld: "naechte", wert: null },
+    { thema: "dauer", text: "weiß ich noch nicht", feld: "naechte", wert: null },
+    { thema: "dauer", text: "egal", feld: "naechte", wert: null },
+    { thema: "dauer", text: "99", feld: "naechte", wert: null },
+    // Was die Person selbst gesagt hat, wird nicht ueberschrieben
+    { thema: "dauer", text: "9 Nächte", stand: { naechte: 7, vonPerson: { naechte: true } }, feld: "naechte", wert: 7 },
+    // Eine Annahme des Kerns schon
+    { thema: "dauer", text: "9 Nächte", stand: { naechte: 7 }, angenommen: true, feld: "naechte", wert: 9 },
+    { thema: "reisende", text: "4", feld: "personen", wert: 4 },
+    { thema: "reisende", text: "wir sind 3 Personen", feld: "personen", wert: 3 },
+    { thema: "reisende", text: "zwei Erwachsene", feld: "erwachsene", wert: 2 },
+    { thema: "reisende", text: "keine Ahnung", feld: "personen", wert: null },
+    { thema: "kinderAlter", text: "6 und 9", stand: { kinder: 2 }, feld: "kinderAlter", wert: [6, 9] },
+    { thema: "kinderAlter", text: "sechs", stand: { kinder: 1 }, feld: "kinderAlter", wert: [6] },
+    // Zahlen, die kein Alter sein koennen: dann lieber nichts
+    { thema: "kinderAlter", text: "geboren 2019", stand: { kinder: 1 }, feld: "kinderAlter", wert: null },
+    { thema: "flugKlasse", text: "Premium Economy", stand: { flug: true }, feld: "flugKlasse", wert: "premium" },
+    { thema: "flugKlasse", text: "Business bitte", stand: { flug: true }, feld: "flugKlasse", wert: "business" },
+    { thema: "flugKlasse", text: "Economy", stand: { flug: true }, feld: "flugKlasse", wert: "economy" },
+    { thema: "flug", text: "nur die Unterkunft", feld: "flug", wert: false },
+    { thema: "flug", text: "mit Flug", feld: "flug", wert: true },
+    /* "Ja" bleibt liegen, und das ist Absicht: Die zweite Fassung der
+       Frage lautet "Bucht ihr den Flug selbst, oder soll ich ihn
+       mitsuchen?" - dort heisst ja das Gegenteil. Lieber noch einmal
+       fragen als die Reise falsch bauen. */
+    { thema: "flug", text: "ja", feld: "flug", wert: null },
+  ],
+
+  QUITTUNG_FAELLE: [
+    { text: "Ich merke mir 9 Nächte.", quittung: true },
+    { text: "9 Nächte merke ich mir.", quittung: true },
+    { text: "Das notiere ich.", quittung: true },
+    { text: "Ich notiere Juni.", quittung: true },
+    { text: "Juni ist notiert.", quittung: true },
+    { text: "Das habe ich mir gemerkt.", quittung: true },
+    { text: "Ich halte zwei Zimmer fest.", quittung: true },
+    { text: "Ich speichere das so.", quittung: true },
+    { text: "Ich trage Business ein.", quittung: true },
+    { text: "Das nehme ich so auf.", quittung: true },
+    // Kein Quittieren - diese Saetze darf der Kern nicht wegstreichen
+    { text: "Juni ist eine gute Zeit für Kreta.", quittung: false },
+    { text: "Ich suche dir drei Häuser heraus.", quittung: false },
+    { text: "Alles klar.", quittung: false },
+    { text: "Die Filter sind gesetzt.", quittung: false },
+  ],
+
+  selbstgelesen() {
+    const fehler = [];
+    const melde = (art, text, thema) => fehler.push({ art, text, thema: thema || null, satz: "" });
+    const kernFuer = (p, angenommen, thema) => ({
+      lauf: { profil: p, gespraech: [], uebersprungen: angenommen ? { [thema]: true } : {},
+        nichtVerstanden: {}, selbstGelesen: [], zuletztGemerkt: [] },
+      notieren() {}, standAnzeigen() {}, sichern() {},
+    });
+    for (const f of this.SELBST_FAELLE) {
+      const p = JSON.parse(JSON.stringify(f.stand || {}));
+      const kern = kernFuer(p, f.angenommen, f.thema);
+      try { Werkzeugkasten.antwortSelbstLesen(kern, f.thema, f.text); }
+      catch (e) { melde("selbst_absturz", `"${f.text}": ${e && e.message}`, f.thema); continue; }
+      const ist = p[f.feld] === undefined ? null : p[f.feld];
+      if (JSON.stringify(ist) !== JSON.stringify(f.wert === undefined ? null : f.wert)) {
+        melde("selbst_falsch", `${f.thema}: "${f.text}" ergab ${f.feld}=${JSON.stringify(ist)}, erwartet ${JSON.stringify(f.wert)}`, f.thema);
+      }
+      /* Was der Kern aufnimmt, muss er auch quittieren koennen - und nur
+         das. Bleibt der Stand wie er war (weil die Person den Wert selbst
+         genannt hat), gibt es nichts zu quittieren. */
+      const vorWert = (f.stand || {})[f.feld] === undefined ? null : (f.stand || {})[f.feld];
+      const veraendert = JSON.stringify(ist) !== JSON.stringify(vorWert);
+      if (veraendert && !(kern.lauf.zuletztGemerkt || []).includes(f.feld)) {
+        melde("selbst_ohne_quittung", `${f.thema}: "${f.text}" wurde gesetzt, steht aber nicht in zuletztGemerkt`, f.thema);
+      }
+    }
+    /* Der eigentliche Befund: Nach einer klaren Antwort darf dieselbe
+       Frage nicht wieder kommen. Geprueft am vollen Fahrplan, einmal mit
+       jedem Zaehlerstand - beim zweiten Anlauf war der Wortlaut im Test
+       Wort fuer Wort derselbe. */
+    const GRUND = { monat: 6, zielOffen: true, artEgal: true, flug: false, vorgehen: "selbst",
+      erwachsene: 2, kinder: 0, naechte: 7 };
+    const WIEDER = [
+      { thema: "dauer", text: "9 Nächte", offen: { naechte: null }, feld: "naechte" },
+      { thema: "dauer", text: "9", offen: { naechte: null }, feld: "naechte" },
+      { thema: "flug", text: "nur die Unterkunft", offen: { flug: null }, feld: "flug" },
+      { thema: "flugKlasse", text: "Business", offen: { flug: true, flugAb: "Köln", flugKlasse: null }, feld: "flugKlasse" },
+      { thema: "kinderAlter", text: "6 und 9", offen: { kinder: 2, kinderAlter: null }, feld: "kinderAlter" },
+    ];
+    for (const w of WIEDER) {
+      for (const mal of [0, 1, 2]) {
+        const p = { ...GRUND, ...w.offen };
+        for (const k of Object.keys(w.offen)) if (w.offen[k] === null) delete p[k];
+        const lauf = { gespraech: [{ role: "user", content: w.text }], gefragtWie: { [w.thema]: mal },
+          besprochen: {}, uebersprungen: {}, nichtVerstanden: {}, profil: p,
+          selbstGelesen: [], zuletztGemerkt: [] };
+        const kern = { lauf, notieren() {}, standAnzeigen() {}, sichern() {} };
+        let vorher = null;
+        try { vorher = Werkzeugkasten.fahrplan(JSON.parse(JSON.stringify(p)), { ...lauf, profil: undefined }); } catch { vorher = null; }
+        try { Werkzeugkasten.antwortSelbstLesen(kern, w.thema, w.text); }
+        catch (e) { melde("selbst_absturz", `${w.thema}: ${e && e.message}`, w.thema); continue; }
+        if (p[w.feld] === undefined || p[w.feld] === null) {
+          melde("antwort_nicht_gelesen", `${w.thema}: "${w.text}" kam nicht im Stand an (Zähler ${mal})`, w.thema);
+          continue;
+        }
+        let fp = null;
+        try { fp = Werkzeugkasten.fahrplan(p, lauf); }
+        catch (e) { melde("selbst_absturz", `${w.thema} Fahrplan: ${e && e.message}`, w.thema); continue; }
+        if (fp.naechstes === w.thema) {
+          melde("frage_nach_antwort", `${w.thema}: "${w.text}" beantwortet, der Fahrplan fragt es trotzdem wieder (Zähler ${mal})`, w.thema);
+        }
+        if (vorher && vorher.satz && fp.satz && vorher.satz === fp.satz) {
+          melde("frage_wortgleich", `${w.thema}: derselbe Satz vor und nach der Antwort (Zähler ${mal})`, w.thema);
+        }
+      }
+    }
+    /* Irgendwer muss es quittieren.
+       ----------------------------------------------------------------
+       Der Kern laesst in seinem Satz weg, was im Vorspann des Modells
+       schon steht - und das Modell sagt "Ich merke mir 9 Naechte.",
+       was gleich danach weggestrichen wird. Laeuft das in der falschen
+       Reihenfolge, verdraengt ein Satz, den niemand liest, den Satz,
+       der die Aufnahme bestaetigt: Die Zahl steht dann im Stand, und
+       gesagt hat es keiner. */
+    {
+      const p = {};
+      const lauf = { profil: p, gespraech: [], uebersprungen: {}, nichtVerstanden: {},
+        selbstGelesen: [], zuletztGemerkt: [], gefragt: null };
+      const kern = { lauf, notieren() {}, standAnzeigen() {}, sichern() {} };
+      Werkzeugkasten.antwortSelbstLesen(kern, "dauer", "9 Nächte");
+      const modell = "Ich merke mir 9 Nächte.";
+      const uebrig = modell.split(/(?<=[.!?])\s+/).filter((x) => !Werkzeugkasten.QUITTUNG.test(x)).join(" ").trim();
+      const satz = Werkzeugkasten.aufnahmeSatz(kern, uebrig);
+      if (!satz || !/9/.test(satz)) {
+        melde("aufnahme_ohne_satz", `Nach "9 Nächte" quittiert niemand: Kern sagt ${satz ? `"${satz}"` : "nichts"}`, "dauer");
+      }
+    }
+    for (const f of this.QUITTUNG_FAELLE) {
+      const ist = Werkzeugkasten.QUITTUNG.test(f.text);
+      if (ist !== f.quittung) {
+        melde(f.quittung ? "quittung_nicht_erkannt" : "quittung_falsch_erkannt",
+          `"${f.text}" ${ist ? "gilt" : "gilt nicht"} als Quittung, erwartet ${f.quittung ? "ja" : "nein"}`);
+      }
+    }
+    return fehler;
+  },
   lauf({ still = false } = {}) {
     const alle = [];
     const staende = this.staende();
@@ -1263,6 +1427,7 @@ const Kernpruefung = {
     for (const f of this.tippfehler()) alle.push(f);
     for (const f of this.datum()) alle.push(f);
     for (const f of this.relativ()) alle.push(f);
+    for (const f of this.selbstgelesen()) alle.push(f);
     for (const f of this.unsicher()) alle.push(f);
     for (const f of this.annahmen()) alle.push(f);
     for (const f of this.art()) alle.push(f);

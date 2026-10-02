@@ -1319,6 +1319,176 @@ const Werkzeugkasten = {
     return new Date(heute.getFullYear(), heute.getMonth() + monate, 1).getMonth() + 1;
   },
 
+  /* Der Kern liest die Antwort auf seine eigene Frage.
+     ------------------------------------------------------------------
+     Gemeldet am 02.10.2026, und nicht zum ersten Mal: Auf "Wie lange
+     soll die Reise werden?" schrieb der Nutzer "9", dann "9 Nächte".
+     Im Chat stand "Ich merke mir 9 Nächte." - und direkt dahinter
+     dieselbe Frage noch einmal. Im Stand lagen keine Nächte.
+
+     Die Ursache ist die Arbeitsteilung selbst. Der Kern stellt die
+     Frage, aber ob die Antwort ankommt, hing bisher allein daran, dass
+     das Modell `stand_merken` aufruft. Tut es das nicht - und bei einer
+     nackten Zahl tut es das nicht zuverlässig -, bleibt das Feld leer,
+     das Thema offen, und die Frage kommt wieder. Dass das Modell den
+     Wert im Satz nennt, macht es schlimmer, nicht besser: Der Agent
+     bestätigt dann etwas, das er nicht hat.
+
+     Wer die Frage stellt, muss die Antwort auch lesen können. Der Kern
+     weiß, welches Thema er zuletzt gefragt hat, und für die Themen
+     hier ist die Antwort eine Zahl oder ein Wort aus einer kurzen
+     Liste. Das liest er selbst, bevor das Modell dran ist. Gelesen
+     wird nur in ein leeres Feld (oder über eine eigene Annahme), und
+     nur im Zug direkt nach der Frage - alles andere bleibt beim
+     Modell.
+
+     Derselbe Gedanke wie bei `relativerMonat` eine Funktion weiter
+     oben, nur eine Stufe früher: dort im Werkzeug, hier noch davor.
+     Ein Werkzeug, das nicht gerufen wird, kann nichts retten. */
+  SELBST_ZAHL: { ein: 1, eine: 1, einer: 1, einem: 1, eins: 1, zwei: 2, drei: 3, vier: 4,
+    "fünf": 5, fuenf: 5, sechs: 6, sieben: 7, acht: 8, neun: 9, zehn: 10, elf: 11,
+    "zwölf": 12, zwoelf: 12, dreizehn: 13, vierzehn: 14, "fünfzehn": 15, fuenfzehn: 15,
+    sechzehn: 16, siebzehn: 17, achtzehn: 18, neunzehn: 19, zwanzig: 20, einundzwanzig: 21 },
+
+  selbstZahl(w) {
+    const s = String(w == null ? "" : w).toLowerCase().trim();
+    if (/^\d{1,2}$/.test(s)) return parseInt(s, 10);
+    const n = this.SELBST_ZAHL[s];
+    return n == null ? null : n;
+  },
+
+  /* Die Felder, die eine Annahme des Kerns je Thema geschrieben haben
+     kann. Hat er nach zwei offenen Anläufen selbst eine Woche angesetzt
+     und die Person sagt danach "9 Nächte", darf die Annahme nicht im
+     Weg stehen - gelesen wird dann über sie hinweg. Was die Person
+     selbst gesagt hat (`vonPerson`), bleibt unangetastet. */
+  SELBST_ANNAHME: { dauer: ["naechte"], reisende: ["personen", "erwachsene", "kinder"],
+    kinderAlter: ["kinderAlter"], flug: ["flug"], flugKlasse: ["flugKlasse"] },
+
+  SELBST_LESEN: {
+    /* "9", "neun", "9 Nächte", "neun Übernachtungen", "eine Woche",
+       "zwei Wochen", "10 Tage". Tage zählen wie Nächte: Der Agent sagt
+       die Zahl gleich danach zurück, und wer es anders meint, korrigiert
+       einen Satz später - das ist besser als dieselbe Frage noch einmal. */
+    dauer(t, p, wk) {
+      if (p.naechte) return null;
+      let m = t.match(/\b(\d{1,2}|[a-zäöüß]+)\s*wochen\b/);
+      if (m) { const n = wk.selbstZahl(m[1]); if (n >= 1 && n <= 8) return { naechte: n * 7 }; }
+      if (/\b(eine|1)\s*woche\b/.test(t) || /^\s*woche\s*$/.test(t)) return { naechte: 7 };
+      m = t.match(/\b(\d{1,2}|[a-zäöüß]+)\s*(n(?:ä|ae)chte?|(?:ü|ue)bernachtungen?|tage?)\b/);
+      if (m) { const n = wk.selbstZahl(m[1]); if (n >= 1 && n <= 40) return { naechte: n }; }
+      m = t.match(/^\s*(\d{1,2}|[a-zäöüß]+)\s*$/);
+      if (m) { const n = wk.selbstZahl(m[1]); if (n >= 1 && n <= 40) return { naechte: n }; }
+      return null;
+    },
+    /* Eine nackte Zahl auf "Wer reist mit?" ist die Gesamtzahl - genau
+       das, was auch im Auftrag an das Modell steht. Wie sie sich auf
+       Erwachsene und Kinder aufteilt, fragt der Fahrplan danach; das
+       Thema bleibt also offen, aber die Zahl ist drin und die Frage
+       wiederholt sich nicht wörtlich. */
+    reisende(t, p, wk) {
+      if (p.personen != null || p.erwachsene != null || p.kinder != null) return null;
+      let m = t.match(/\b(\d{1,2}|[a-zäöüß]+)\s*erwachsene[nr]?\b/);
+      if (m) { const n = wk.selbstZahl(m[1]); if (n >= 1 && n <= 12) return { erwachsene: n }; }
+      m = t.match(/\b(\d{1,2}|[a-zäöüß]+)\s*(personen|person|leute|g(?:ä|ae)ste)\b/);
+      if (m) { const n = wk.selbstZahl(m[1]); if (n >= 1 && n <= 12) return { personen: n }; }
+      m = t.match(/^\s*(\d{1,2})\s*$/);
+      if (m) { const n = +m[1]; if (n >= 1 && n <= 12) return { personen: n }; }
+      return null;
+    },
+    /* "6 und 9", "sechs, neun". Gelesen wird nur, wenn jede Zahl im
+       Satz ein mögliches Alter ist und nicht mehr Zahlen dastehen als
+       Kinder mitreisen - sonst ist es kein Alter, sondern etwas
+       anderes mit Zahlen drin. */
+    kinderAlter(t, p, wk) {
+      const n = p.kinder || 0;
+      if (!n || (p.kinderAlter || []).length >= n) return null;
+      const ziffern = t.match(/\d{1,2}/g) || [];
+      let alter = ziffern.map(Number);
+      if (!alter.length) {
+        alter = (t.match(/[a-zäöüß]+/g) || []).map((w) => wk.selbstZahl(w)).filter((x) => x != null);
+        if (!alter.length) return null;
+      } else if (alter.length !== ziffern.length) return null;
+      if (alter.length > n) return null;
+      if (alter.some((x) => !Number.isFinite(x) || x < 0 || x > 17)) return null;
+      return { kinderAlter: alter };
+    },
+    /* Kein "ja" und kein "nein": Die zweite Fassung der Frage lautet
+       "Bucht ihr den Flug selbst, oder soll ich ihn mitsuchen?" - dort
+       heißt ja das Gegenteil von dem, was es in der ersten Fassung
+       heißt. Gelesen wird nur, was in sich eindeutig ist; die Chips
+       schicken genau diese Wörter. */
+    flug(t, p) {
+      if (p.flug != null) return null;
+      if (/ohne flug|kein(en)? flug|nur (die )?unterkunft|selbst buch|buche ich selbst|buchen wir selbst|flug (haben|habe) (wir|ich)/.test(t)) return { flug: false };
+      if (/mit flug|flug dazu|flug mitsuch|such(e|st|t)? (mir |uns )?(auch |bitte )?(den |einen )?flug|flug bitte/.test(t)) return { flug: true };
+      return null;
+    },
+    flugKlasse(t, p) {
+      if (p.flugKlasse) return null;
+      if (/business/.test(t)) return { flugKlasse: "business" };
+      if (/premium/.test(t)) return { flugKlasse: "premium" };
+      if (/economy|g(?:ü|ue)nstigste|billigste|standard|normal/.test(t)) return { flugKlasse: "economy" };
+      return null;
+    },
+  },
+
+  antwortSelbstLesen(kern, thema, text) {
+    const leser = thema ? this.SELBST_LESEN[thema] : null;
+    if (!leser) return null;
+    const t = String(text == null ? "" : text).toLowerCase().trim();
+    if (!t) return null;
+    const p = kern.lauf.profil || (kern.lauf.profil = {});
+    /* Über eine eigene Annahme hinweg lesen, aber auf einer Kopie: Hat
+       der Leser nichts zu bieten, bleibt der Stand unberührt und das
+       Thema abgehakt - sonst würde eine unverständliche Antwort die
+       Annahme wieder aufreißen und die Frage zurückholen. */
+    let sicht = p;
+    if (kern.lauf.uebersprungen && kern.lauf.uebersprungen[thema]) {
+      sicht = { ...p };
+      for (const f of this.SELBST_ANNAHME[thema] || []) {
+        if (!(p.vonPerson || {})[f]) delete sicht[f];
+      }
+    }
+    let werte = null;
+    try { werte = leser(t, sicht, this); } catch { werte = null; }
+    if (!werte) return null;
+    const gesetzt = [];
+    for (const f of Object.keys(werte)) {
+      const w = werte[f];
+      if (w === undefined || w === null || w === "") continue;
+      if (JSON.stringify(p[f] == null ? null : p[f]) === JSON.stringify(w)) continue;
+      p[f] = w;
+      gesetzt.push(f);
+    }
+    if (!gesetzt.length) return null;
+    p.vonPerson = p.vonPerson || {};
+    for (const f of gesetzt) p.vonPerson[f] = true;
+    /* Quittiert wird das wie jede andere Aufnahme, vom Kern: `aufnahmeSatz`
+       liest `zuletztGemerkt`. Ohne diesen Eintrag stünde der Wert still
+       im Stand, und die Person wüsste nicht, ob er angekommen ist. */
+    const dazu = (liste) => [...new Set([...(liste || []), ...gesetzt])];
+    kern.lauf.selbstGelesen = dazu(kern.lauf.selbstGelesen);
+    kern.lauf.zuletztGemerkt = dazu(kern.lauf.zuletztGemerkt);
+    // Eine Annahme und ein Nichtverstehen zu diesem Thema sind hinfällig
+    if (kern.lauf.uebersprungen) delete kern.lauf.uebersprungen[thema];
+    if (kern.lauf.nichtVerstanden) delete kern.lauf.nichtVerstanden[thema];
+    kern.notieren?.("antwort_selbst_gelesen", { thema, felder: gesetzt, text: t.slice(0, 60) });
+    kern.standAnzeigen?.();
+    kern.sichern?.();
+    return { thema, felder: gesetzt };
+  },
+
+  /* Eine Quittung des Modells - an einer Stelle, damit die Pruefung
+     dieselbe Liste sieht wie der Kern.
+     ------------------------------------------------------------------
+     Am 02.10.2026 stand "Ich merke mir 9 Nächte." im Chat, obwohl im
+     Stand nichts lag. Der Riegel dagegen war längst eingebaut, nur
+     kannte er "merke ich mir" und nicht "ich merke mir" - dieselbe
+     Zusage in der anderen Wortstellung. Deshalb jetzt beide Richtungen
+     und die üblichen Verwandten dazu. */
+  QUITTUNG: /\b(?:merke?|merk) ich mir\b|\bich (?:merke?|merk) (?:mir|es|das)\b|\bnotiere ich\b|\bich notiere\b|\bhabe ich (?:mir )?(?:gemerkt|notiert)\b|\bnehme ich (?:so )?auf\b|\b(?:ist|sind|hab ich|habe ich) (?:schon )?(?:notiert|gemerkt|vermerkt|aufgenommen)\b|\bhalte ich fest\b|\bich halte\b[^.!?]*\bfest\b|\bspeichere ich\b|\bich speichere\b|\btrage ich\b[^.!?]*\bein\b|\bich trage\b[^.!?]*\bein\b|\bvermerke ich\b|\bich vermerke\b/i,
+
   /* Hat das Modell selbst gesagt, worum es geht?
      ------------------------------------------------------------------
      Die Gegenprobe zur Rueckfrage "das habe ich nicht verstanden".
@@ -1583,7 +1753,19 @@ const Werkzeugkasten = {
          werden Werte, nicht Objekte. */
       const vorStand = { ...p };
       const geaendert = [];
-      const setze = (feld, wert) => { if (wert !== undefined && wert !== null && wert !== "") { if (p[feld] !== wert) geaendert.push(feld); p[feld] = wert; } };
+      const setze = (feld, wert) => {
+        if (wert === undefined || wert === null || wert === "") return;
+        /* Hat der Kern die Antwort in diesem Zug selbst gelesen, gilt sein
+           Wert. Sonst koennte das Modell die Zahl, die die Person gerade
+           genannt hat, mit einer anderen ueberschreiben - und zwar
+           unbemerkt, weil beide Werte aus demselben Zug stammen. */
+        if ((kern.lauf.selbstGelesen || []).includes(feld) && p[feld] !== wert) {
+          kern.notieren("modell_ueberschreibt_nicht", { feld, modell: wert, kern: p[feld] });
+          return;
+        }
+        if (p[feld] !== wert) geaendert.push(feld);
+        p[feld] = wert;
+      };
       // Das Modell schickt Zahlenfelder gelegentlich als true oder als Text.
       // Ohne diese Pruefung stand in der Leiste "Wer true Kinder".
       for (const f of ["monat", "naechte", "personenGesamt", "erwachsene", "kinder", "zimmer", "maxPreis", "budgetGesamt", "maxStrandMeter", "mindestSterne"]) {
@@ -2223,7 +2405,7 @@ const Werkzeugkasten = {
       kern.standAnzeigen();
       // Was gerade neu hereinkam - der Kern prueft danach, ob das Modell
       // es auch aufgenommen hat
-      kern.lauf.zuletztGemerkt = geaendert;
+      kern.lauf.zuletztGemerkt = [...new Set([...(kern.lauf.selbstGelesen || []), ...geaendert])];
       /* Was von der Person kommt, ist unantastbar.
          ----------------------------------------------------------------
          Am 27.09.2026 sagte jemand "Mit Flug", nannte auf die Frage nach

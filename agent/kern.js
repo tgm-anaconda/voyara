@@ -993,12 +993,29 @@ const Kern = {
     if (this.lauf.abschlussFaellig && !/^\s*(ja|jap|jo|okay|ok|gern|bitte|mach|klar|passt|genau)\b/i.test(t)) this.lauf.abschlussFaellig = false;
     // Die Antwort auf ein gefragtes Thema zaehlt als besprochen - was die
     // Person dazu gesagt hat, traegt das Modell mit stand_merken ein
+    /* Was in diesem Zug aufgenommen wurde, sammelt sich erst. Ohne das
+       Zuruecksetzen stand die Quittung eines frueheren Zuges ("Juni merke
+       ich mir.") noch einmal da, sobald das Modell irgendwann keine
+       Werkzeuge rief. */
+    this.lauf.zuletztGemerkt = [];
+    this.lauf.selbstGelesen = [];
     if (this.lauf.gefragt) {
       (this.lauf.besprochen ||= {})[this.lauf.gefragt] = true;
       this.notieren("thema_beantwortet", { thema: this.lauf.gefragt });
       // Fuer den Abgleich weiter unten: Worauf hat sie gerade geantwortet?
       // Kommt davon nichts im Stand an, hat der Agent sie nicht verstanden.
       this.lauf.zuletztGefragt = this.lauf.gefragt;
+      /* Die Antwort auf die eben gestellte Frage liest der Kern selbst.
+         ----------------------------------------------------------------
+         Hier und nicht im Werkzeug: Auf "9" ruft das Modell kein
+         `stand_merken`, und dann half auch die beste Behandlung dort
+         nichts - die Zahl war weg und die Frage kam wieder (gemeldet am
+         02.10.2026). Nur in diesem Zweig, also genau im Zug nach der
+         Frage: Dass die Person gerade auf dieses Thema geantwortet hat,
+         ist die Voraussetzung dafuer, eine nackte Zahl so zu lesen.
+         Gelesen wird vor dem Modell, damit der Fahrplan im Auftrag schon
+         den neuen Stand zeigt und das Thema nicht mehr als offen fuehrt. */
+      Werkzeugkasten.antwortSelbstLesen(this, this.lauf.gefragt, t);
       this.lauf.gefragt = null;
     }
     /* Der Stand vor diesem Zug.
@@ -1655,7 +1672,6 @@ const Kern = {
               .filter((x) => !sagtDasselbe(x))
               .filter((x) => !schonGesagt(x))
               .slice(0, 2).join(" ").trim();
-            const nachtrag = Werkzeugkasten.aufnahmeSatz(this, vorspann);
             /* Zweimal dasselbe Quittieren.
                ----------------------------------------------------------
                Gemeldet am 02.10.2026: "Hoechstens 5000 Euro insgesamt
@@ -1686,14 +1702,24 @@ const Kern = {
                Dass das Modell einen Wert behauptet hat, den der Kern nicht
                hat, ist kein Schoenheitsfehler, sondern ein Messwert: Der
                Agent hat der Person etwas zugesagt, was nicht passiert ist. */
-            const quittung = /merke ich mir|notiere ich|habe ich (mir )?gemerkt|nehme ich (so )?auf|ist notiert|halte ich fest/i;
-            const behauptet = vorspann.split(/(?<=[.!?])\s+/).filter((x) => quittung.test(x));
-            if (behauptet.length) {
-              vorspann = vorspann.split(/(?<=[.!?])\s+/).filter((x) => !quittung.test(x)).join(" ").trim();
-              if (!nachtrag) {
-                this.notieren("quittung_ohne_stand", { satz: behauptet.join(" ").slice(0, 160),
-                  gemerkt: this.lauf.zuletztGemerkt || [] });
-              }
+            // Die Liste steht bei Werkzeugkasten.QUITTUNG - eine Regel, eine Stelle
+            const quittung = Werkzeugkasten.QUITTUNG;
+            const stuecke = vorspann.split(/(?<=[.!?])\s+/);
+            const behauptet = stuecke.filter((x) => quittung.test(x));
+            if (behauptet.length) vorspann = stuecke.filter((x) => !quittung.test(x)).join(" ").trim();
+            /* Erst streichen, dann den eigenen Satz bauen - in dieser
+               Reihenfolge.
+               ----------------------------------------------------------
+               `aufnahmeSatz` laesst weg, was im Vorspann schon steht. Lief
+               es vor dem Streichen, trat das Modell mit "Ich merke mir 9
+               Naechte." den Satz des Kerns beiseite - und wurde dann selbst
+               gestrichen. Uebrig blieb die Zahl im Stand, von der niemand
+               mehr etwas sagte. Was weggestrichen wird, darf nichts
+               verdraengen. */
+            const nachtrag = Werkzeugkasten.aufnahmeSatz(this, vorspann);
+            if (behauptet.length && !nachtrag) {
+              this.notieren("quittung_ohne_stand", { satz: behauptet.join(" ").slice(0, 160),
+                gemerkt: this.lauf.zuletztGemerkt || [] });
             }
             if (nachtrag) vorspann = `${nachtrag} ${vorspann}`.trim();
             /* Die Annahme steht zwischen dem Anschluss und der Frage.
