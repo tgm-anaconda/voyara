@@ -891,6 +891,39 @@ const Kernpruefung = {
     return fehler;
   },
 
+  /* Die Vorbelegung der Suchmaske ist keine Angabe der Person.
+     ------------------------------------------------------------------
+     Gemeldet am 03.10.2026: Chat "12. August, 9 Naechte", Leiste
+     "02.11. bis 09.11., 7 Naechte" - die Vorbelegung (in 30 Tagen, eine
+     Woche) wurde beim Oeffnen der Hausseite als Wahl uebernommen. */
+  seitenstand() {
+    const fehler = [];
+    const melde = (art, text) => fehler.push({ art, text, thema: "zeit", satz: "" });
+    if (typeof Kern === "undefined" || typeof Reisedaten === "undefined" || typeof Werkzeuge === "undefined") return fehler;
+    const alt = { seite: Werkzeuge.seite, roh: Reisedaten.roh, flex: Reisedaten.flex };
+    const lauf = (adresse) => {
+      const k = Object.create(Kern);
+      k.lauf = { profil: { monat: 8, anreise: "2027-08-12", naechte: 9, vonPerson: { naechte: true, anreise: true } }, protokoll: [] };
+      k.sichern = () => {}; k.standAnzeigen = () => {};
+      Werkzeuge.seite = () => "stay";
+      Reisedaten.roh = () => adresse;
+      Reisedaten.flex = () => null;
+      try { k.seitenstandUebernehmen(); } finally { Object.assign(Werkzeuge, { seite: alt.seite }); Object.assign(Reisedaten, { roh: alt.roh, flex: alt.flex }); }
+      return k.lauf.profil;
+    };
+    // Nichts gesetzt: Die Vorbelegung darf nichts aendern
+    const p1 = lauf({ von: "", bis: "" });
+    if (p1.anreise !== "2027-08-12" || p1.naechte !== 9 || p1.von) {
+      melde("vorbelegung_uebernommen", `Ohne gesetzte Daten wurde der Stand geaendert: Anreise ${p1.anreise}, ${p1.naechte} Naechte, von ${p1.von || "-"}`);
+    }
+    // Wirklich gesetzt, anderer Monat: uebernommen, und der Monat zieht mit
+    const p2 = lauf({ von: "2027-11-02", bis: "2027-11-09" });
+    if (p2.von !== "2027-11-02") melde("zeitraum_nicht_uebernommen", "Ein gesetzter Zeitraum wurde nicht uebernommen");
+    const rest = Werkzeugkasten.zeitWidersprueche(JSON.parse(JSON.stringify(p2)), false);
+    if (rest.length) melde("zeitraum_widerspricht_monat", `Nach der Uebernahme widerspricht sich der Stand: ${rest.map((x) => x.art).join(", ")}`);
+    return fehler;
+  },
+
   filterbitte() {
     const fehler = [];
     for (const f of this.FILTER_FAELLE) {
@@ -2003,6 +2036,7 @@ const Kernpruefung = {
     for (const f of this.wortwahl()) alle.push(f);
     for (const f of this.filterbitte()) alle.push(f);
     for (const f of this.anhalt()) alle.push(f);
+    for (const f of this.seitenstand()) alle.push(f);
     for (const f of this.budget()) alle.push(f);
     for (const f of this.vorschlagsset()) alle.push(f);
     for (const f of this.flughaefen()) alle.push(f);

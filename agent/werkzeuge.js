@@ -26,7 +26,13 @@ const Werkzeuge = {
   zustand() {
     const bericht = { seite: this.seite() };
 
-    if (typeof Reisedaten !== "undefined") bericht.reisezeitraum = Reisedaten.get();
+    // Nur, was gesetzt ist - die Vorbelegung der Maske (in 30 Tagen, eine
+    // Woche) ist keine Angabe der Person und wurde sonst als solche gelesen
+    if (typeof Reisedaten !== "undefined") {
+      const f = Reisedaten.flex?.(), r = Reisedaten.roh();
+      bericht.reisezeitraum = f ? { flexibel: true, monat: f.monat, naechte: f.naechte }
+        : (r.von && r.bis ? r : null);
+    }
     if (typeof Belegung !== "undefined") bericht.belegung = Belegung.get();
 
     if (this.seite() === "results" && typeof state !== "undefined") {

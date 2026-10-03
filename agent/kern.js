@@ -501,12 +501,28 @@ const Kern = {
       neu.push(ausVorlage ? `${item.name} aus meiner Auswahl` : item.name);
     }
 
-    if (typeof Reisedaten !== "undefined") {
-      const r = Reisedaten.get();
+    /* Nur Daten, die wirklich gesetzt sind.
+       ------------------------------------------------------------------
+       Hier stand `Reisedaten.get()`. Das liefert ohne gesetzte Daten die
+       Vorbelegung der Suchmaske - in 30 Tagen, eine Woche lang. Gemeldet
+       am 03.10.2026: Im Chat "12. August" und "9 Naechte", in der Leiste
+       "02.11. bis 09.11." und "7 Naechte". Die Vorbelegung galt als Wahl
+       der Person, ueberschrieb Anreisetag und Dauer, und die Monatspruefung
+       warf danach den November weg - und mit ihm den 12. August. Beim
+       Buchen hiess es dann "kein festes Datum".
+
+       Jetzt zaehlt nur, was in der Adresse steht (`roh`), und im
+       flexiblen Monat gar kein Zeitraum. Und ein uebernommener Zeitraum
+       nimmt seinen Monat mit: Wer auf der Seite den Monat wechselt, hat
+       den Monat gewechselt. */
+    if (typeof Reisedaten !== "undefined" && !Reisedaten.flex?.()) {
+      const r = Reisedaten.roh();
       if (r?.von && r?.bis && (p.von !== r.von || p.bis !== r.bis)) {
         p.von = r.von; p.bis = r.bis;
         const n = Math.round((new Date(r.bis) - new Date(r.von)) / 86400000);
         if (n > 0 && n < 60) p.naechte = n;
+        const m = new Date(r.von).getMonth() + 1;
+        if (m >= 1 && m <= 12) p.monat = m;
         p.flexibel = false;
         p.anreise = r.von;
         neu.push(`den ${new Date(r.von).getDate()}. als Anreisetag`);
