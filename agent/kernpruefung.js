@@ -1194,9 +1194,11 @@ const Kernpruefung = {
   komma() {
     const fehler = [];
     if (typeof Kern === "undefined" || !Kern.kommaFrage) return fehler;
-    for (const [text, vorher, soll] of [["11,5 Nächte", "dauer", "11|12"], ["11.5", "dauer", "11|12"], ["1,5 Wochen", "dauer", "10|11"],
-      ["2,5 Personen", "reisende", "2|3"], ["3,4", "kinderAlter", null], ["12 Nächte", "dauer", null], ["11,50 Euro pro Nacht", "preis", null]]) {
-      const f = Kern.kommaFrage(text, vorher);
+    for (const [text, vorher, soll, profilFall] of [["11,5 Nächte", "dauer", "11|12"], ["11.5", "dauer", "11|12"], ["1,5 Wochen", "dauer", "10|11"],
+      ["2,5 Personen", "reisende", "2|3"], ["3,4", "kinderAlter", null], ["12 Nächte", "dauer", null], ["11,50 Euro pro Nacht", "preis", null],
+      // Gemeldet am 03.10.2026: Altersfrage vom Modell, Stand noch "reisende"
+      ["5,6", "reisende", null, { kinder: 2 }], ["5,6 Jahre", "reisende", null], ["5,6", "reisende", "5|6", { kinder: 2, kinderAlter: [5, 6] }]]) {
+      const f = Kern.kommaFrage(text, vorher, profilFall || null);
       const ist = f ? f.chips.map((c) => parseInt(c, 10)).join("|") : null;
       if (ist !== soll) fehler.push({ art: "komma", thema: "eckdaten", satz: text, text: `"${text}" ergibt ${ist}, erwartet ${soll}` });
       if (f && (f.satz.match(/\?/g) || []).length !== 1) fehler.push({ art: "komma_fragen", thema: "eckdaten", satz: f.satz, text: "nicht genau eine Frage" });

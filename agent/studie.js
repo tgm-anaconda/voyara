@@ -1085,6 +1085,8 @@ const Studie = {
         [p + "anhaltSelbst"]: zaehle(protokoll, "anhalt_selbst"),
         [p + "anhaltAendern"]: zaehle(protokoll, "anhalt_aendern"),
         [p + "verlaufGeflickt"]: zaehle(protokoll, "verlauf_geflickt"),
+        // Nachrichten ohne jede Antwort, die der Kern aufgefangen hat (03.10.2026)
+        [p + "keineAntwort"]: zaehle(protokoll, "keine_antwort_aufgefangen"),
         /* Kasse ueber den Agenten (seit 03.10.2026): Wer die vorausgewaehlte
            Versicherung ueber den Agenten abwaehlt, hat sie bemerkt - das
            Gegenstueck zum blinden Fleck, den H2 misst. */

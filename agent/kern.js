@@ -1022,7 +1022,38 @@ const Kern = {
   /* ==================================================================
      Eingang aus dem Panel
      ================================================================== */
+  /* Nie ohne Antwort.
+     ------------------------------------------------------------------
+     Gemeldet am 03.10.2026: "teilweise antwortet der Bot gar nicht,
+     obwohl man die Nachricht abschickt." Ursachen gab es mehrere (eine
+     Rueckfrage, die als Doppel verschluckt wurde; ein Modelltext, den
+     die Pruefung ganz strich). Statt jede einzeln zu jagen, gilt jetzt
+     eine Regel am Ausgang: Hat eine Nachricht der Person keine einzige
+     Zeile des Agenten bekommen, obwohl nichts mehr laeuft, nichts
+     angehalten ist und keine Seite wechselt, sagt der Kern etwas - die
+     offene Frage noch einmal, sonst die Bitte um Wiederholung. Jedes Mal
+     notiert, damit die Ursache sichtbar bleibt. */
   async eingabe(text, opts = {}) {
+    const zaehle = () => (this.lauf.verlauf || []).filter((x) => x.rolle === "bot").length;
+    const vorher = zaehle();
+    const liefSchon = this.laeuft;
+    await this.eingabeInnen(text, opts);
+    if (!String(text || "").trim() || liefSchon) return;
+    if (zaehle() > vorher) return;
+    if (this.laeuft || this.lauf.ausstehend || this.istAngehalten() || this.lauf.stumm) return;
+    const letzte = [...(this.lauf.verlauf || [])].reverse().find((x) => x.rolle === "bot");
+    const fragen = String(letzte?.text || "").match(/[^.!?]*\?/g) || [];
+    const frage = fragen.length ? fragen.at(-1).trim() : null;
+    this.notieren("keine_antwort_aufgefangen", { text: String(text).slice(0, 40), frage: frage ? frage.slice(0, 80) : null });
+    const schonEntschuldigt = /^Entschuldige, das habe ich nicht ganz/.test(String(letzte?.text || ""));
+    this.sagenUndMerken(schonEntschuldigt
+      ? (frage ? `Noch einmal anders gefragt: ${frage}` : "Magst du es mir mit anderen Worten sagen?")
+      : frage
+        ? `Entschuldige, das habe ich nicht ganz einordnen können. ${frage}`
+        : "Entschuldige, das habe ich nicht ganz einordnen können. Sag es mir bitte noch einmal anders.");
+  },
+
+  async eingabeInnen(text, opts = {}) {
     const t = String(text || "").trim();
     if (!t) return;
     // Was die Person seit dem Laden auf der Seite gewaehlt hat (Zimmer,
@@ -3115,11 +3146,21 @@ const Kern = {
      Jetzt wird nichts aufgenommen, und der Kern fragt mit beiden
      Moeglichkeiten. "3,4" auf die Altersfrage ist keine Kommazahl,
      sondern eine Aufzaehlung - dort greift das nicht. */
-  kommaFrage(t, zuletztGefragt = null) {
+  kommaFrage(t, zuletztGefragt = null, profil = null) {
     const satz = String(t).toLowerCase();
     const m = satz.match(/\b(\d{1,2})[,.](\d)\b/);
     if (!m) return null;
     if (zuletztGefragt === "kinderAlter") return null;
+    /* Gemeldet am 03.10.2026: Auf "Wie alt sind die beiden Kinder?"
+       kam "5,6" - und der Kern fragte "Meinst du 5 oder 6 Personen?".
+       Die Altersfrage hatte das Modell gestellt, im Stand stand noch
+       "reisende". Deshalb: Wer Jahre oder Alter nennt, zaehlt auf. Und
+       sind Kinder dabei, deren Alter noch fehlt, ist "5,6" ohne Einheit
+       eine Aufzaehlung der Alter, keine halbe Person. */
+    if (/jahr|\balt\b|\balter\b/.test(satz)) return null;
+    const kinder = Number(profil?.kinder || 0);
+    const alter = Array.isArray(profil?.kinderAlter) ? profil.kinderAlter.length : 0;
+    if (kinder > 0 && alter < kinder && !/n(ä|ae)cht|\btag|woche|person|erwachsen|leute|reisende/.test(satz)) return null;
     const woche = /woche/.test(satz);
     const thema = /n(ä|ae)cht|\btag|woche/.test(satz) ? "dauer"
       : /person|erwachsen|leute|reisende/.test(satz) ? "reisende"
@@ -3136,8 +3177,14 @@ const Kern = {
     return { thema, satz: `Meinst du ${a} oder ${b} Personen?`, chips: [`${a} Personen`, `${b} Personen`] };
   },
   kommaPruefen(t, opts = {}) {
-    const f = this.kommaFrage(t, this.lauf.zuletztGefragt || null);
+    // Das Thema der Frage, die gerade offen ist - nicht das davor
+    const f = this.kommaFrage(t, this.lauf.gefragt || this.lauf.zuletztGefragt || null, this.lauf.profil || {});
     if (!f) return false;
+    // Dieselbe Rueckfrage nicht zweimal hintereinander: Beim zweiten Mal
+    // stand sie gleichlautend im Chat, der Kern verschluckte sie als
+    // Doppel - und die Person bekam gar keine Antwort.
+    if (this.lauf.kommaGefragt === f.satz) { this.lauf.kommaGefragt = null; return false; }
+    this.lauf.kommaGefragt = f.satz;
     if (!opts.gezeigt) this.sagen(t, "user");
     this.gespraechPush({ role: "user", content: t });
     this.sagenUndMerken(f.satz);
