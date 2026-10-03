@@ -192,9 +192,27 @@ const Zeiger = {
      Sichtfeld
      ================================================================== */
 
+  /* Was "im Blick" heisst.
+     ------------------------------------------------------------------
+     Hier stand ein Rand von 60 Pixeln oben und 40 unten: Alles
+     dazwischen galt als sichtbar, also auch ein Knopf, der gerade noch
+     am unteren Rand klebt. Der Zeiger scrollte dann nicht, klickte am
+     Bildrand, und man sah ihm nicht zu. Gemeldet am 02.10.2026:
+     "Manchmal waehlt er Filter aus, und dann sieht man die Maus quasi
+     gar nicht, waehrend er diese Filter auswaehlt."
+
+     Jetzt ein Komfortband um die Mitte. Was ausserhalb liegt, wird in
+     die Mitte geholt - die Kamera geht also mit dem Zeiger mit. Ein
+     Element, das hoeher ist als das Band (eine ganze Filterspalte),
+     kann nicht hineinpassen; bei ihm zaehlt, dass sein Anfang im oberen
+     Halbbild steht. */
   imBlick(el) {
     const k = el.getBoundingClientRect();
-    return k.top >= 60 && k.bottom <= window.innerHeight - 40;
+    const h = window.innerHeight || 800;
+    const oben = Math.max(60, h * 0.2);
+    const unten = h * 0.82;
+    if (k.height > unten - oben) return k.top >= 0 && k.top <= h * 0.5;
+    return k.top >= oben && k.bottom <= unten;
   },
 
   // Ein Element, das nicht gezeichnet ist (display none, ausgeblendeter
@@ -214,6 +232,18 @@ const Zeiger = {
     if (this.imBlick(el)) return;
     el.scrollIntoView({ behavior: "smooth", block: "center" });
     await this.warteAufScrollende();
+    /* Zweiter Anlauf, wenn das Element in einem eigenen Scrollbereich
+       sitzt: `scrollIntoView` bewegt dann nur diesen Bereich, und das
+       Fenster bleibt stehen - der Zeiger faehrt trotzdem ans Ziel, nur
+       sieht man ihn nicht. Dann wird das Fenster selbst nachgezogen. */
+    if (this.imBlick(el) || this.abbruch) return;
+    const k = el.getBoundingClientRect();
+    const h = window.innerHeight || 800;
+    const versatz = (k.top + k.height / 2) - h / 2;
+    if (Math.abs(versatz) > 30) {
+      window.scrollBy({ top: versatz, behavior: "smooth" });
+      await this.warteAufScrollende();
+    }
   },
 
   warteAufScrollende() {

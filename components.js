@@ -501,6 +501,72 @@ const Account = {
   },
   login(name) { this.setzen({ vorname: name.split(" ")[0] || name, nachname: name.split(" ").slice(1).join(" "), mail: "" }); },
   logout() { sessionStorage.removeItem(this.key); this.refresh(); },
+
+  /* Gespeicherte Mitreisende - wie bei jedem Buchungsportal.
+     ==================================================================
+     Gemeldet am 02.10.2026: Der Agent fragte nacheinander nach fuenf
+     Geburtsdaten und fuenf Namen und kam trotzdem nicht ans Ende. Der
+     Nutzer: "Das wird halt echt sehr, sehr schnell sehr, sehr nervig
+     ... und bringt wirklich fast gar keinen Mehrwert."
+
+     Er hat recht. Gemessen wird, ob das Partnerhaus gewaehlt wird und
+     wie der Agent wahrgenommen wird - fuenf Geburtsdaten zu tippen
+     beeinflusst davon nichts, es kostet nur Geduld, und wer hier
+     abbricht, fehlt in den Daten.
+
+     Also liegen die Mitreisenden im Konto, so wie bei jedem Portal, bei
+     dem man angemeldet ist. Der Teilnehmer traegt dafuer nichts ein: Er
+     hat seinen Namen beim Anmelden genannt, alles Weitere leitet sich
+     daraus ab. Die Vornamen haengen am eigenen Namen (gleiche Person,
+     gleiche Familie), die Geburtsdaten der Kinder am Alter, das im
+     Gespraech gefallen ist. Nichts davon ist geraten: Das Alter hat die
+     Person selbst gesagt, der Rest ist ihr eigenes Konto.
+
+     Was dadurch NICHT wegfaellt: der Buchungsschritt selbst. Dass am
+     Ende wirklich jemand auf "Buchen" drueckt, ist der Moment, der die
+     Wahl verbindlich macht. */
+  PARTNER_NAMEN: ["Nina", "Jonas", "Clara", "Mika", "Sophie", "Elias", "Lena", "Paul"],
+  KIND_NAMEN: ["Emil", "Mila", "Theo", "Lia", "Noah", "Ida", "Finn", "Ella", "Luis", "Mia"],
+
+  zahlAus(text) {
+    let h = 2166136261;
+    const t = String(text || "x");
+    for (let i = 0; i < t.length; i++) { h ^= t.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return (h >>> 0);
+  },
+
+  // Geburtstag aus Alter und Startwert: fester Tag, plausibles Datum
+  geburtstag(alter, startwert) {
+    const heute = new Date();
+    const jahr = heute.getFullYear() - Math.max(0, Math.round(alter));
+    const monat = (startwert % 12) + 1;
+    const tag = ((startwert >> 4) % 27) + 1;
+    return `${jahr}-${String(monat).padStart(2, "0")}-${String(tag).padStart(2, "0")}`;
+  },
+
+  /* Die Reisenden fuer eine Gruppe. Der erste ist immer die angemeldete
+     Person selbst. `kinderAlter` kommt aus der Belegung der Suche. */
+  mitreisende(erwachsene = 1, kinderAlter = []) {
+    const k = this.konto();
+    if (!k) return [];
+    const nachname = (k.nachname || "").trim() || "Berger";
+    const start = this.zahlAus(`${k.vorname}|${nachname}`);
+    const raus = [];
+    for (let i = 0; i < Math.max(1, erwachsene); i++) {
+      const vorname = i === 0
+        ? (k.vorname || "Alex")
+        : this.PARTNER_NAMEN[(start + i * 3) % this.PARTNER_NAMEN.length];
+      // Erwachsene zwischen 32 und 47, fest je Person
+      const alter = 32 + ((start >> (i * 2)) % 16);
+      raus.push({ name: `${vorname} ${nachname}`.trim(), geburt: this.geburtstag(alter, start + i * 7), kind: false });
+    }
+    (kinderAlter || []).forEach((alter, i) => {
+      const vorname = this.KIND_NAMEN[(start + i * 5) % this.KIND_NAMEN.length];
+      raus.push({ name: `${vorname} ${nachname}`.trim(),
+        geburt: this.geburtstag(alter ?? 8, start + 100 + i * 11), kind: true });
+    });
+    return raus;
+  },
   refresh() {
     const el = document.getElementById("accountLabel");
     const k = this.konto();
@@ -1393,6 +1459,14 @@ function mountChrome(activeNav) {
         openModal(
           "Dein Konto",
           `<p>Angemeldet als <strong>${Account.get()}</strong>${k?.mail ? `, ${k.mail}` : ""}.</p>
+           ${(() => {
+             // Die gespeicherten Mitreisenden sichtbar machen - sonst taucht
+             // beim Buchen ein Name auf, den die Person nie gesehen hat
+             const b = typeof Belegung !== "undefined" ? Belegung.get() : null;
+             const liste = b ? Account.mitreisende(b.erwachsene, b.alter || []) : [];
+             if (liste.length < 2) return "";
+             return `<p><strong>Gespeicherte Mitreisende</strong><br>${liste.slice(1).map((r) => `${r.name}, geboren ${new Date(r.geburt).toLocaleDateString("de-DE")}`).join("<br>")}</p>`;
+           })()}
            <p>Diese Angaben nutzt der Assistent, wenn er für dich bucht. Sie bleiben in diesem Browser und verschwinden, sobald du das Fenster schließt.</p>
            <p>Dein Merkzettel enthält aktuell ${Wishlist.count()} ${Wishlist.count() === 1 ? "Eintrag" : "Einträge"}.</p>`,
           `<a class="btn btn-ghost" href="merkzettel.html">Merkzettel öffnen</a>

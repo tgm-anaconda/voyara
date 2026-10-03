@@ -1756,6 +1756,55 @@ const Kernpruefung = {
     return fehler;
   },
 
+  /* Keine echte Fluggesellschaft im Katalog.
+     ------------------------------------------------------------------
+     Der Nutzer am 02.10.2026: "Ich glaube, es waere besser, wenn es
+     quasi ausgedachte Marken sind, weil sonst habe ich das Gefuehl, ist
+     halt schon so ein Vorwissen ueber die Marken da und dann wuerde man
+     vielleicht einfach nehmen, ja, ich nehme die, die ich immer nehme."
+
+     Gemessen werden soll die Wirkung der Partnerkennzeichnung. Eine
+     bekannte Marke ist ein zweiter Grund zur Wahl und verwischt genau
+     das. Diese Pruefung haelt den Katalog frei davon - auch dann, wenn
+     spaeter jemand einen Flug von Hand ergaenzt. */
+  ECHTE_AIRLINES: ["lufthansa", "condor", "tuifly", "eurowings", "easyjet", "ryanair",
+    "aegean", "austrian", "ita airways", "iberia", "tap", "norwegian", "finnair",
+    "turkish", "emirates", "qatar", "thai airways", "united", "swiss", "klm",
+    "air france", "british airways", "wizz", "vueling", "transavia", "sunexpress"],
+
+  airlineMarken() {
+    const fehler = [];
+    const melde = (art, text) => fehler.push({ art, text, thema: "flug", satz: "" });
+    const fluege = typeof FLIGHTS !== "undefined" ? FLIGHTS : [];
+    if (!fluege.length) { melde("fluege_fehlen", "Keine Fluege im Katalog"); return fehler; }
+    const namen = [...new Set(fluege.map((f) => String(f.airline || "")).filter(Boolean))];
+    for (const n of namen) {
+      const flach = n.toLowerCase();
+      if (this.ECHTE_AIRLINES.some((e) => flach.includes(e))) {
+        melde("echte_airline", `"${n}" ist eine echte Fluggesellschaft - Markenwissen verfaelscht die Wahl`);
+      }
+    }
+    /* Und die zweite Haelfte derselben Regel: Die Verbindungen zu einem
+       Ziel muessen sich im Preis aehneln. Unterscheiden sie sich stark,
+       entscheidet der Preis und nicht die Kennzeichnung. */
+    const paare = {};
+    for (const f of fluege) (paare[`${f.fromCode}|${f.ziel}`] ||= []).push(f);
+    let groesste = 0, wo = null;
+    for (const [k, liste] of Object.entries(paare)) {
+      if (liste.length < 2) continue;
+      const preise = liste.map((f) => f.price || 0).filter(Boolean);
+      if (preise.length < 2) continue;
+      const spanne = Math.max(...preise) / Math.min(...preise) - 1;
+      if (spanne > groesste) { groesste = spanne; wo = k; }
+    }
+    this.letzteFlugSpanne = { spanne: Math.round(groesste * 1000) / 10, wo };
+    if (groesste > 0.15) {
+      melde("flugpreise_zu_verschieden",
+        `${wo}: ${Math.round(groesste * 100)} % Unterschied zwischen den Verbindungen - dann entscheidet der Preis, nicht das Etikett`);
+    }
+    return fehler;
+  },
+
   katalogDecke() {
     const fehler = [];
     const melde = (art, text) => fehler.push({ art, text, thema: "katalog", satz: "" });
@@ -1840,6 +1889,7 @@ const Kernpruefung = {
     for (const f of this.nachrichtvertrag()) alle.push(f);
     for (const f of this.katalogDecke()) alle.push(f);
     for (const f of this.standStimmig()) alle.push(f);
+    for (const f of this.airlineMarken()) alle.push(f);
     for (const f of this.unsicher()) alle.push(f);
     for (const f of this.annahmen()) alle.push(f);
     for (const f of this.art()) alle.push(f);

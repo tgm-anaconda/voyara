@@ -2567,6 +2567,23 @@ const Werkzeugkasten = {
         const ids = [...new Set(a.wuensche.map((w) => ALIAS[String(w).toLowerCase()] || String(w).toLowerCase()))]
           .filter((w) => typeof Politik !== "undefined" && Politik.kriterium(w))
           .filter((w) => alt.has(w) || gesagt(new RegExp((Politik.kriterium(w).woerter || [w]).map((x) => x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|"), "i"), 99));
+        /* Was die Seite nicht kann, wird gesagt - nicht verschluckt.
+           --------------------------------------------------------------
+           Gemeldet am 02.10.2026: "Wir muessen unseren Hund mitnehmen
+           koennen. Und ich wuerde gerne in die Naehe von einem Weinfeld."
+           Darauf kam "Gibt es sonst noch etwas, worauf ich achten soll?" -
+           kein Wort dazu, dass das eine geht und das andere nicht. Wer
+           einen Wunsch nennt und keine Antwort bekommt, nimmt an, er sei
+           beruecksichtigt. */
+        const unbekannt = [...new Set(a.wuensche.map((w) => String(w).trim()).filter(Boolean))]
+          .filter((w) => {
+            const id = ALIAS[w.toLowerCase()] || w.toLowerCase();
+            return !(typeof Politik !== "undefined" && Politik.kriterium(id));
+          });
+        if (unbekannt.length) {
+          kern.lauf.wunschOhneFeld = unbekannt.slice(0, 3);
+          kern.notieren("wunsch_ohne_feld", { wuensche: unbekannt.slice(0, 3) });
+        }
         p.kriterien = ids.map((id) => ({ id, gewicht: 1 }));
         geaendert.push("wuensche");
         for (const id of ids) {
@@ -2575,11 +2592,36 @@ const Werkzeugkasten = {
         }
       }
       if (Array.isArray(a.ausstattung)) {
-        const ERLAUBT = ["pool", "spa", "kidsClub", "familyFriendly", "beachfront", "parking", "restaurant", "gym", "seaView"];
-        // "Nicht weit zum Strand" ist nicht "direkt am Strand" - die
-        // schaerfere Bedingung braucht ein klares Wort der Person
-        p.ausstattung = a.ausstattung.filter((x) => ERLAUBT.includes(x))
-          .filter((x) => x !== "beachfront" || gesagt(/direkt am strand|erste reihe|strandlage|am strand liegen|direkt ans meer|direkt am meer/i, 99));
+        /* Jedes Merkmal braucht ein Wort der Person.
+           --------------------------------------------------------------
+           Bis zum 02.10.2026 brauchte nur "direkt am Strand" einen Beleg,
+           alles andere setzte das Modell frei. Gemeldet an diesem Tag: In
+           der Uebersicht stand "Muss Parkplatz", und der Nutzer hatte nie
+           von einem Parkplatz gesprochen - er hatte einen Hund erwaehnt.
+           Ein Filter, den niemand gewollt hat, wirft Haeuser heraus, ohne
+           dass jemand davon erfaehrt.
+
+           Und andersherum: "Wir muessen unseren Hund mitnehmen koennen"
+           war filterbar (petsAllowed steht an jedem Haus), stand aber
+           nicht in der Liste und fiel deshalb unter den Tisch. Jetzt
+           steht es drin. */
+        const WORT = {
+          pool: /pool|schwimmbad|schwimmen|baden/i,
+          spa: /spa|wellness|sauna|massage|therme/i,
+          kidsClub: /kinderclub|kinderbetreuung|animation|betreuung|miniclub/i,
+          familyFriendly: /famili|kinderfreundlich|mit (den )?kindern|kindgerecht/i,
+          beachfront: /direkt am strand|erste reihe|strandlage|am strand liegen|direkt ans meer|direkt am meer/i,
+          parking: /parkplatz|parken|stellplatz|garage|mit dem auto|eigenen wagen|mietwagen/i,
+          restaurant: /restaurant|essen im haus|abendessen|halbpension|vollpension|kueche im haus/i,
+          gym: /fitness|\bgym\b|sport|trainieren|kraftraum/i,
+          seaView: /meerblick|blick aufs meer|blick auf das meer|seeblick|aufs wasser/i,
+          petsAllowed: /hund|haustier|katze|vierbeiner|tier mitnehmen|mit dem tier/i,
+        };
+        const ERLAUBT = Object.keys(WORT);
+        const gewollt = a.ausstattung.filter((x) => ERLAUBT.includes(x));
+        const ohneBeleg = gewollt.filter((x) => !gesagt(WORT[x], 99));
+        if (ohneBeleg.length) kern.notieren("ausstattung_verworfen", { felder: ohneBeleg });
+        p.ausstattung = gewollt.filter((x) => gesagt(WORT[x], 99));
         geaendert.push("ausstattung");
       }
       /* Reisende fuer die Buchungsstrecke - aber nur, wenn die Zahl aufgeht.
@@ -2834,7 +2876,28 @@ const Werkzeugkasten = {
       // Lage auch ohne die restlichen Eckdaten.
       const letzte = [...kern.lauf.gespraech].reverse().find((n) => n.role === "user")?.content || "";
       const frage = /\?\s*$|^(habt|gibt|wie|was|wo|wann|welche|ist|sind|kann|könnt|koennt|hat)\b/i.test(String(letzte).trim()) ? String(letzte).trim() : null;
+      /* Zwei Monate auf einmal gehen nicht - und das muss er sagen.
+         ----------------------------------------------------------------
+         Gemeldet am 02.10.2026: "Ich haette gerne sowohl die Hotels fuer
+         Juni als auch fuer August gesehen." Antwort: "Juni merke ich
+         mir." Die Haelfte der Bitte verschwand wortlos. Die Seite sucht
+         immer in einem Monat; das ist in Ordnung, aber es gehoert gesagt. */
+      let zweiterMonat = null;
+      {
+        const letzteNachricht = (kern.lauf.gespraech || []).filter((n) => n.role === "user").slice(-1)
+          .map((n) => String(n.content)).join(" ");
+        const MON = ["januar", "februar", "märz|maerz", "april", "mai", "juni", "juli", "august", "september", "oktober", "november", "dezember"];
+        const genannt = MON.map((m, i) => (new RegExp(`\\b(${m})\\b`, "i").test(letzteNachricht) ? i + 1 : null)).filter(Boolean);
+        if (genannt.length > 1 && p.monat) {
+          zweiterMonat = genannt.find((m) => m !== p.monat) || null;
+          if (zweiterMonat) kern.notieren("zwei_monate_genannt", { gemerkt: p.monat, auch: zweiterMonat });
+        }
+      }
+      const wunschOffen = kern.lauf.wunschOhneFeld || null;
+      kern.lauf.wunschOhneFeld = null;
       return { ergebnis: { gemerkt: geaendert.length ? geaendert : "nichts Neues", stand: kern.standKurz(),
+        ...(zweiterMonat && typeof MONATSNAMEN !== "undefined" ? { nurEinMonat: `Die Person hat zwei Monate genannt. Die Seite sucht immer nur in einem. Sag in einem Halbsatz, dass du mit ${MONATSNAMEN[p.monat - 1]} anfaengst und ${MONATSNAMEN[zweiterMonat - 1]} danach ansehen kannst - verschweige es NICHT.` } : {}),
+        ...(wunschOffen ? { wunschOhneFeld: `Dafuer gibt es auf dieser Seite kein Merkmal: ${wunschOffen.join(", ")}. Sag in einem Halbsatz, dass du danach nicht filtern kannst - nicht uebergehen, nichts erfinden.` } : {}),
         ...(frage ? { zuerst: `Die Person hat gefragt: "${frage}". Beantworte das zuerst - geht es um das Angebot der Seite (Haeuser, Regionen, Preise), ruf suchen oder regionen_zaehlen und antworte mit Zahlen; geht es um Klima oder Reisetipps, aus deinem Wissen. Dann erst das Thema.` } : {}),
         ...Werkzeugkasten.fahrplanFuerModell(fp, p, kern.lauf) } };
     },
@@ -4539,7 +4602,20 @@ const Werkzeugkasten = {
 
     flugAb: {
 
-      erklaerung: "Ich brauche den Flughafen, weil davon abhängt, welche Verbindungen es gibt und was sie kosten.",      satz: ["Von welchem Flughafen soll es losgehen? Hamburg, Stuttgart, Düsseldorf, Hannover, München, Köln, Frankfurt oder Berlin.",
+      erklaerung: "Ich brauche den Flughafen, weil davon abhängt, welche Verbindungen es gibt und was sie kosten.",
+      /* Die Liste kommt aus den Daten, nicht aus diesem Satz.
+         ----------------------------------------------------------------
+         Hier standen acht Namen fest eingetippt, waehrend der Katalog
+         neun Flughaefen kennt - Zuerich fehlte in der Frage, stand aber
+         in der Maske. Wer "welche gibt es zur Auswahl" fragte, bekam
+         eine Liste, die nicht stimmte. Eine Aufzaehlung, die anderswo
+         gepflegt wird, geht irgendwann auseinander; also wird sie
+         gerechnet. */
+      satz: [(p, wk) => {
+        const h = typeof Flug !== "undefined" ? Flug.flughaefen().map((x) => x.name) : [];
+        if (!h.length) return "Von welchem Flughafen soll es losgehen?";
+        return `Von welchem Flughafen soll es losgehen? ${h.slice(0, -1).join(", ")} oder ${h[h.length - 1]}.`;
+      },
         "Und ab welchem Flughafen?"],
       frage: "Von welchem Flughafen.", chips: null },
 
@@ -4891,7 +4967,12 @@ const Werkzeugkasten = {
     if (!t) return null;
     const mal = lauf.gefragtWie?.[thema] || 0;
     if (typeof t.satz === "function") return (mal >= 1 && t.nochmal) ? t.nochmal : t.satz(p, this, lauf);
-    if (Array.isArray(t.satz)) return t.satz[Math.min(mal, t.satz.length - 1)];
+    if (Array.isArray(t.satz)) {
+      // Ein Eintrag darf auch eine Funktion sein, wenn der Satz aus den
+      // Daten kommt (die Liste der Flughaefen)
+      const e = t.satz[Math.min(mal, t.satz.length - 1)];
+      return typeof e === "function" ? e(p, this, lauf) : e;
+    }
     return t.satz || null;
   },
 
@@ -5724,7 +5805,35 @@ const Werkzeugkasten = {
        nach dem Flughafen eine Suche, nach der Klasse noch eine. Der
        Fahrplan setzt die Phase "suche" laengst selbst, wenn die Seite vor
        einer Behauptung veraltet ist; die Regel darueber greift dann. */
-    if ((fp.phase === "vorschlaege" || fp.phase === "selbst") && lauf.vorgehenFuer !== fp.schluessel + p.vorgehen) return "suchen";
+    if ((fp.phase === "vorschlaege" || fp.phase === "selbst") && lauf.vorgehenFuer !== fp.schluessel + p.vorgehen) {
+      /* Steht die Seite schon genau so, wird nicht noch einmal gesucht.
+         --------------------------------------------------------------
+         Gemeldet am 02.10.2026: "Ich habe geschrieben, ich schaue selbst,
+         und dann ist er doch noch mal rübergegangen und hat, obwohl die
+         Filter ja schon alle eingestellt waren, noch mal alle Filter
+         gesetzt. Das macht echt keinen Sinn."
+
+         Er hat recht. Die Antwort auf die Vorgehensfrage aendert den
+         Schluessel (er enthaelt `vorgehen`), und daran haengte die Suche -
+         obwohl sich an Ziel, Zeit, Gruppe und Filtern nichts geaendert
+         hatte. Die Suche laedt die Seite neu, und danach steht die
+         Filterspalte wieder auf Standard, also wird alles noch einmal
+         angeklickt. Fuer die Person sieht das aus, als haette der Agent
+         vergessen, was er gerade getan hat.
+
+         Also: Wer selbst schauen will und eine Liste vor sich hat, die
+         zum Stand passt, bekommt sie - und keinen zweiten Durchgang. Fuer
+         die Vorlage (top3) bleibt es bei der Suche: Dort entsteht mit ihr
+         auch die Auswahl. */
+      const seiteSteht = lauf.gesuchtMit === fp.schluessel
+        && (!lauf.gefiltertMit || lauf.gefiltertMit === this.filterSchluessel(p));
+      if (fp.phase === "selbst" && seiteSteht) {
+        lauf.vorgehenFuer = fp.schluessel + p.vorgehen;
+        lauf.filterStandSchon = true;
+        return null;
+      }
+      return "suchen";
+    }
     return null;
   },
 

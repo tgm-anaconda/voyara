@@ -70,6 +70,16 @@ const STELLSCHRAUBEN = {
   begruendung: "ausfuehrlich",  // knapp | ausfuehrlich
   initiative: "abwartend",      // abwartend | vorschlagend
   eingangsfrage: true,
+  /* Der Eckpunkte-Bildschirm vor der freien Aufgabe.
+     ------------------------------------------------------------------
+     Aus am 02.10.2026. Er fragte Monat, Gruppe und Budget ab, die im
+     Gespraech ohnehin fallen, und seine Budgetstufen passten nicht mehr
+     zum Katalog: Die oberste hiess "mehr als 2.500 Euro", waehrend eine
+     Familienreise mit Flug bei 4.300 Euro beginnt - jede Buchung lag
+     damit ueber dem angeklickten Rahmen. Der Massstab kommt jetzt aus
+     dem Stand (Aufgaben.ausGespraech). Auf true gestellt kommt der
+     Bildschirm zurueck, dann mit Stufen aus den echten Preisen. */
+  eckpunkte: false,
   startbildschirm: true,   // Wahl der Freigabestufe vor dem ersten Kontakt          // false = springt ohne Rueckfrage in die Suche
 
   /* Aufbau der Erhebung (Stand 18.09.2026), siehe AGENT-KONZEPT Abschnitt 25.
@@ -1001,6 +1011,10 @@ const Kern = {
        Werkzeuge rief. */
     this.lauf.zuletztGemerkt = [];
     this.lauf.selbstGelesen = [];
+    if (this.lauf.filterStandSchon) {
+      this.lauf.filterStandSchon = false;
+      this.notieren("filter_standen_schon", {});
+    }
     /* Die Antwort auf "November umstellen oder doch Oktober?".
        ------------------------------------------------------------------
        Der Kern hat beide Lesarten in die Frage geschrieben, also muss er

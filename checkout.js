@@ -56,15 +56,26 @@ function readParams() {
 
   /* Eine Zeile je Reisendem, aus der Belegung der Suche.
      ----------------------------------------------------------------
-     Vorbelegt wird nur die erste - die Person, die angemeldet ist. Alle
-     anderen Namen kennt weder die Seite noch der Agent; sie muessen aus
-     dem Gespraech kommen. Genau das ist die Stelle, an der sich zeigt,
-     ob jemand den Agenten fuer etwas Laestiges benutzt. */
+     Bis zum 02.10.2026 war nur die erste Zeile vorbelegt; alle anderen
+     Namen und alle Geburtsdaten mussten aus dem Gespraech kommen. Das
+     war als Pruefstein gedacht ("zeigt sich, ob jemand den Agenten fuer
+     etwas Laestiges benutzt") und war in der Praxis nur laestig: Im
+     Testlauf fragte der Agent fuenf Geburtsdaten und fuenf Namen ab und
+     kam trotzdem nicht ans Ende.
+
+     Jetzt kommen die Reisenden aus dem Konto, so wie bei jedem Portal,
+     bei dem man angemeldet ist (Account.mitreisende). Die Geburtsdaten
+     der Kinder rechnet die Seite aus dem Alter, das in der Belegung
+     steht - also aus dem, was die Person im Gespraech gesagt hat. Wer
+     etwas aendern will, kann jedes Feld weiter ueberschreiben. */
   const b = Belegung.get();
   const kinder = (b.alter || []).slice();
+  const ausKonto = typeof Account !== "undefined" && Account.mitreisende
+    ? Account.mitreisende(b.erwachsene, kinder)
+    : [];
   reisende = Array.from({ length: b.personen }, (_, i) => ({
-    name: i === 0 ? guest.name : "",
-    geburt: "",
+    name: ausKonto[i]?.name || (i === 0 ? guest.name : ""),
+    geburt: ausKonto[i]?.geburt || "",
     gepaeck: "hand",
     // Ab dem letzten Platz aufwaerts sind es die Kinder
     kind: i >= b.erwachsene,

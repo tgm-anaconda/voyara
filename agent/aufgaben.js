@@ -187,14 +187,26 @@ const ECKPUNKTE = {
     { id: "familie", label: "Mit Familie", personen: 4 },
     { id: "freunde", label: "Mit Freunden", personen: 4 },
   ],
-  // Nach unten begrenzt: Unter 400 Euro fuer eine Woche bleibt im
+  // Nach unten begrenzt: Unter 1.000 Euro fuer eine Woche bleibt im
   // Katalog fast nichts uebrig, und eine leere Liste ist keine Aufgabe.
   budget: [
-    { id: 1, label: "bis 600 €", wert: 600 },
-    { id: 2, label: "bis 1.000 €", wert: 1000 },
-    { id: 3, label: "bis 1.500 €", wert: 1500 },
-    { id: 4, label: "bis 2.500 €", wert: 2500 },
-    { id: 5, label: "mehr als 2.500 €", wert: 9000 },
+    { id: 1, label: "bis 1.000 €", wert: 1000 },
+    { id: 2, label: "bis 1.500 €", wert: 1500 },
+    /* Die Stufen passten nicht mehr zum Katalog.
+       ----------------------------------------------------------------
+       Gemeldet am 02.10.2026: "Auf der ersten Karte ist der Preis mehr
+       als 2.500 Euro, was ein bisschen komisch ist, weil die meisten
+       Hotels wesentlich mehr kosten." Stimmt: Eine Familienreise mit
+       Flug und Halbpension beginnt bei rund 4.300 Euro, die teuerste
+       buchbare liegt knapp unter 5.000. Mit der alten obersten Stufe
+       lag praktisch jede Buchung ueber dem angeklickten Rahmen, und die
+       Auswertung "hat mehr ausgegeben als geplant" stand damit vorher
+       fest. Die Stufen decken jetzt die Spanne ab, die der Katalog
+       wirklich hergibt. */
+    { id: 3, label: "bis 2.000 €", wert: 2000 },
+    { id: 4, label: "bis 3.500 €", wert: 3500 },
+    { id: 5, label: "bis 5.000 €", wert: 5000 },
+    { id: 6, label: "mehr als 5.000 €", wert: 12000 },
   ],
 };
 
@@ -209,10 +221,55 @@ const Aufgaben = {
      fehlen bewusst: Es gibt keine Rangfolge, die jemand vorgegeben
      haette. An ihre Stelle tritt in der Auswertung die Dominanz - gab
      es eine Unterkunft, die guenstiger UND besser bewertet war? */
+  /* Dieselbe Aufgabe aus dem Gespraech statt aus der Karte.
+     ------------------------------------------------------------------
+     Der Nutzer am 02.10.2026 zu den Eckpunkte-Karten: "Ich bin mir immer
+     noch nicht genau sicher, ob wir das ueberhaupt drin lassen wollen,
+     weil es nicht so viel Mehrwert bringt." Monat, Gruppe und Budget
+     nennt er dem Agenten ohnehin; die Karte davor fragt dasselbe noch
+     einmal und kostet einen Schritt vor der eigentlichen Aufgabe.
+
+     Der Massstab wird deshalb aus dem Stand gebaut. Was dabei verloren
+     geht, ist die Unabhaengigkeit der Zahl: Ein Budget, das im Gespraech
+     faellt, kann vom Agenten beeinflusst sein. Was bleibt, ist das
+     staerkere Mass, das ohne Budget auskommt - gab es eine Unterkunft,
+     die guenstiger UND besser bewertet war?
+
+     Umschaltbar ueber STELLSCHRAUBEN.eckpunkte. */
+  ausGespraech(p) {
+    /* Der Stand des Gespraechs zuerst - er ist das, was die Person dem
+       Agenten gesagt hat. Wer den Agenten gar nicht benutzt, hat kein
+       Profil; dann zaehlt die Maske der Seite, die jeder ausfuellt.
+       Ohne diesen Rueckfall haette genau die Haelfte, auf die es
+       ankommt (die ohne Agent), keinen Massstab. */
+    const seite = () => {
+      const b = typeof Belegung !== "undefined" ? Belegung.get() : null;
+      // Dieselbe Quelle, mit der die Seite auch ihre Preise rechnet
+      const r = typeof Reisedaten !== "undefined" ? Reisedaten : null;
+      return {
+        monat: r?.monat ? r.monat() : null,
+        naechte: r?.naechte ? r.naechte(7) : 7,
+        personen: b ? b.personen : 0,
+      };
+    };
+    const s = seite();
+    const monat = p?.monat || s.monat;
+    const personen = ((p?.erwachsene ?? 0) + (p?.kinder ?? 0)) || p?.personen || s.personen || 0;
+    if (!monat || !personen) return null;
+    return this.ausEckpunkten({
+      monat,
+      naechte: p?.naechte || s.naechte || 7,
+      personen,
+      budget: p?.budgetGesamt || null,
+      ausGespraech: true,
+    });
+  },
+
   ausEckpunkten(e) {
-    if (!e || !e.monat || !e.budget || !e.personen) return null;
+    if (!e || !e.monat || !e.personen) return null;
+    if (!e.budget && !e.ausGespraech) return null;
     const personen = Math.max(1, Math.min(8, e.personen));
-    const budget = e.budget;
+    const budget = e.budget || null;
     return {
       id: "frei",
       frei: true,
@@ -230,7 +287,9 @@ const Aufgaben = {
 
       pruefen(h, gesamt) {
         const gruende = [];
-        if (gesamt > budget) gruende.push(`${Math.round(gesamt)} Euro, über dem Budget`);
+        // Ohne genanntes Budget gibt es keine Budgetverletzung - dann
+        // traegt die Auswertung allein die Dominanz
+        if (budget && gesamt > budget) gruende.push(`${Math.round(gesamt)} Euro, über dem Budget`);
         /* Der Massstab darf nur enthalten, was die Person haette buchen
            koennen.
            --------------------------------------------------------------

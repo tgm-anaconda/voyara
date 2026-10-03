@@ -226,9 +226,16 @@ const Studie = {
      zeigt der Ablauf erst den Eckpunkte-Bildschirm. */
   aufgabe() {
     if (this.daten?.reihenfolge?.[this.daten.aktuelle] === "frei") {
-      if (!this.daten.eckpunkte) return null;
-      if (!this._freieAufgabe) this._freieAufgabe = Aufgaben.ausEckpunkten(this.daten.eckpunkte);
-      return this._freieAufgabe;
+      if (this.daten.eckpunkte) {
+        if (!this._freieAufgabe) this._freieAufgabe = Aufgaben.ausEckpunkten(this.daten.eckpunkte);
+        return this._freieAufgabe;
+      }
+      /* Ohne Eckpunkte-Bildschirm kommt der Massstab aus dem Gespraech -
+         und zwar bei jedem Aufruf neu, weil er mit dem Stand waechst. Vor
+         Monat und Gruppe gibt es keinen, und das ist richtig so: Vorher
+         kann der Agent auch nichts vorlegen. */
+      const p = typeof Kern !== "undefined" ? (Kern.lauf?.profil || null) : null;
+      return Aufgaben.ausGespraech(p);
     }
     return this.aufgabeAlt();
   },
@@ -245,7 +252,9 @@ const Studie = {
   durchlaufAnlegen() {
     const a = this.aufgabe();
     this.daten.durchlaeufe[this.daten.aktuelle] = {
-      aufgabe: a.id,
+      // Ohne Eckpunkte steht der Massstab der freien Aufgabe erst spaeter
+      // fest; die Kennung ist trotzdem schon klar
+      aufgabe: a?.id || this.daten.reihenfolge[this.daten.aktuelle],
       nummer: this.daten.aktuelle + 1,
       gestartet: Date.now(),
       beendet: null,
@@ -404,9 +413,30 @@ const Studie = {
      ================================================================== */
 
   aufgabeHtml(a, nummer) {
-    /* Die freie Aufgabe hat keine Szene - sie zeigt, was die Person
-       selbst angegeben hat. Das ist auch der Inhalt des Reiters am
-       rechten Rand, damit sie ihre eigenen Eckpunkte nachlesen kann. */
+    /* Die freie Aufgabe ohne Eckpunkte-Bildschirm.
+       ----------------------------------------------------------------
+       Seit dem 02.10.2026 die Regel: Es gibt keine Angaben, die vorher
+       abgefragt wurden, also kann der Reiter auch keine zeigen. Was er
+       zeigt, ist die Aufgabe selbst - und die lautet, sich eine Reise zu
+       suchen, die man wirklich machen wuerde. */
+    const freiOhneKarte = this.daten?.reihenfolge?.[this.daten.aktuelle] === "frei"
+      && !this.daten?.eckpunkte;
+    if (freiOhneKarte) {
+      return `
+        <p class="einstieg-etikett">Deine Aufgabe</p>
+        <h1>Such dir eine Reise aus</h1>
+        <p class="einstieg-vorspann">Keine Vorgaben von uns. Such auf Voyara eine Reise,
+          die du dir wirklich vorstellen könntest, und buche sie.</p>
+        <div class="aufgabe-vorgaben">
+          <ul>
+            <li>Wohin, wann, wie lange und mit wem entscheidest du</li>
+            <li>Nimm etwas, das du zu Hause auch buchen würdest</li>
+            <li>Den Assistenten am rechten Rand kannst du nutzen - musst du aber nicht</li>
+          </ul>
+        </div>`;
+    }
+    /* Die freie Aufgabe mit Eckpunkten zeigt, was die Person selbst
+       angegeben hat. */
     if (a?.frei) {
       const e = a.eckpunkte || {};
       const mitWem = ECKPUNKTE.mitWem.find((m) => m.id === e.mitWem)?.label || "";
@@ -530,8 +560,10 @@ const Studie = {
   },
 
   aufgabeZeigen() {
-    /* Freie Aufgabe ohne Eckpunkte: erst die drei Fragen. */
-    if (this.daten?.reihenfolge?.[this.daten.aktuelle] === "frei" && !this.daten.eckpunkte) {
+    /* Freie Aufgabe ohne Eckpunkte: erst die drei Fragen - sofern der
+       Bildschirm ueberhaupt noch vorgesehen ist (STELLSCHRAUBEN.eckpunkte). */
+    if (this.daten?.reihenfolge?.[this.daten.aktuelle] === "frei" && !this.daten.eckpunkte
+      && typeof STELLSCHRAUBEN !== "undefined" && STELLSCHRAUBEN.eckpunkte) {
       this.eckpunkteZeigen();
       return;
     }
@@ -587,7 +619,12 @@ const Studie = {
   reiterZeigen() {
     if (document.getElementById("aufgabeReiter")) return;
     const a = this.aufgabe();
-    if (!a) return;
+    /* Bei der freien Aufgabe ohne Eckpunkte gibt es den Massstab erst,
+       wenn Monat und Gruppe im Gespraech stehen. Der Reiter muss trotzdem
+       da sein: Ueber ihn beendet man die Aufgabe, wenn man nicht bucht. */
+    const freiOhneKarte = this.daten?.reihenfolge?.[this.daten.aktuelle] === "frei"
+      && !this.daten?.eckpunkte;
+    if (!a && !freiOhneKarte) return;
     const knopf = document.createElement("button");
     knopf.type = "button";
     knopf.id = "aufgabeReiter";
@@ -656,7 +693,13 @@ const Studie = {
   aufgabeAbschliessen(grund) {
     const d = this.durchlauf();
     const a = this.aufgabe();
-    if (!d || !a || d.beendet) return;
+    /* Ohne Aufgabe wurde der Durchlauf frueher gar nicht beendet. Bei der
+       freien Variante ohne Eckpunkte kann der Massstab aber fehlen (wer
+       weder den Agenten benutzt noch die Maske anfasst), und dann waere
+       die Buchung verloren. Erfasst wird sie trotzdem; nur die Bewertung
+       dagegen faellt aus, und das steht so in den Daten. */
+    if (!d || d.beendet) return;
+    if (!a) this.notieren("aufgabe_ohne_massstab", { grund });
     // Zweiter Netzanschluss: Wurde gebucht, aber nichts erfasst, wird die
     // Buchung hier aus der Seite nachgetragen, statt sie zu verlieren.
     // Nachgetragen wird nur, wenn die Bestaetigungsseite wirklich dasteht.
@@ -689,8 +732,8 @@ const Studie = {
       d.buchung.ohneRueckfrage = g ? !!g.autonom : false;
     }
     d.verlauf = (this.kern?.lauf?.verlauf || []).map((n) => ({ rolle: n.rolle, text: n.text, zeit: n.zeit }));
-    d.uebergeben = Aufgaben.uebergeben(a, d.verlauf, this.kern?.lauf?.profil || null);
-    if (d.buchung) d.bewertung = Aufgaben.bewerten(a, d.buchung.id, d.buchung.gesamt);
+    d.uebergeben = a ? Aufgaben.uebergeben(a, d.verlauf, this.kern?.lauf?.profil || null) : null;
+    if (d.buchung && a) d.bewertung = Aufgaben.bewerten(a, d.buchung.id, d.buchung.gesamt);
     this.notieren("aufgabe_beendet", { grund, gebucht: d.buchung?.id || null });
     document.getElementById("aufgabeReiter")?.remove();
 
