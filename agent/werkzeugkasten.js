@@ -106,7 +106,15 @@ const Werkzeugkasten = {
              abgibt, ist eine Bedeutungsfrage - also Sache des Modells.
              Was daraus folgt, ist Sache des Kerns: Er vergleicht die
              Monate sichtbar und begruendet seine Wahl. */
-          monatUeberlassen: { type: "boolean", description: "true, wenn die Person dir die Wahl des Monats ueberlaesst - egal in welchen Worten ('egal', 'such du aus', 'der guenstigste', 'wo am meisten frei ist', 'wo ich die meisten Moeglichkeiten habe'). Setz monat dann NICHT selbst." },
+          monatUeberlassen: { type: "boolean", description: "true, wenn die Person dir die Wahl des Monats ueberlaesst - egal in welchen Worten ('egal', 'such du aus', 'der guenstigste', 'wo am meisten frei ist', 'wo ich die meisten Moeglichkeiten habe'), auch ein schlichtes 'nein', 'ne', 'nicht wirklich' auf die Frage, ob sie einen bestimmten Monat im Kopf hat. Ein 'nein' heisst dort NICHT, dass die genannte Jahreszeit nicht mehr gilt. Setz monat dann NICHT selbst." },
+          /* Die Jahreszeit versteht das Modell, nicht ein Wortvergleich.
+             ----------------------------------------------------------
+             Gemeldet am 03.10.2026: "gerne im somme" - das Modell verstand
+             Sommer, der Kern suchte das Wort "sommer" im Text, fand es
+             nicht und rechnete spaeter mit November. Arbeitsteilung seit
+             diesem Tag: Das Modell meldet, was gemeint ist, der Kern
+             rechnet damit. */
+          jahreszeit: { type: "string", enum: ["fruehling", "sommer", "herbst", "winter"], description: "Jahreszeit, wenn die Person eine nennt oder meint ('im Sommer', 'gerne im somme', 'wenn es warm ist im Juli/August-Zeitraum', 'Sommerferien' = sommer). Bleibt gesetzt, bis sie eine andere nennt." },
           von: text("Anreise als YYYY-MM-DD - nur, wenn die Person einen Tag nennt ('vom 12. bis 26.'). Aus 'im Oktober' wird kein Datum."),
           bis: text("Abreise als YYYY-MM-DD - nur bei genannten Tagen"),
           anreise: text("Anreisetag als YYYY-MM-DD, wenn die Person ihn fuer die Buchung nennt (bei flexibler Suche)"),
@@ -135,7 +143,7 @@ const Werkzeugkasten = {
           kinderAlter: { type: "array", items: { type: "integer" }, description: "Alter der Kinder in Jahren" },
           typ: { type: "string", enum: ["hotel", "apartment"], description: "Hotel oder Ferienwohnung" },
           zimmer: zahl("Zahl der Zimmer (Hotel)"),
-          maxPreis: zahl("Hoechstpreis pro Nacht in Euro"),
+          maxPreis: zahl("Hoechstpreis pro Nacht in Euro, fuer alle zusammen. Ob der Betrag pro Person, fuer alle oder fuer die ganze Reise gilt, klaert der Kern selbst mit einer Rueckfrage - rechne nicht um."),
           budgetGesamt: zahl("Budget fuer die ganze Reise in Euro"),
           maxStrandMeter: zahl("Hoechstens so viele Meter zum Strand"),
           mindestbewertung: { type: "number", description: "Mindest-Gaestenote, z.B. 4.5 (nur wenn die Person das sagt)" },
@@ -1591,6 +1599,27 @@ const Werkzeugkasten = {
     return { feld: "maxPreis", grund: "im Bereich der Nachtpreise" };
   },
 
+  /* Was die guenstigste Reise fuer diese Gruppe kostet (03.10.2026).
+     Gemeldet: Gefragt war die Grenze "fuer die ganze Reise, mit Flug",
+     geantwortet "50" - und der Agent merkte sich 50 € pro Nacht. 50 €
+     fuer vier mit Flug gibt es nicht; dann muss er nachfragen, statt
+     still umzudeuten. */
+  reiseMinimum(p) {
+    if (typeof Auswahl === "undefined") return null;
+    const v = this.vorgaben(p);
+    let min = null;
+    for (const h of this.katalog(p)) {
+      if (!Auswahl.passtGruppe(h, v)) continue;
+      if (v.flug && h.type === "apartment") continue;
+      const r = Auswahl.reisepreis(h, v);
+      if (r && Number.isFinite(r.gesamt) && (min == null || r.gesamt < min)) min = r.gesamt;
+    }
+    return min;
+  },
+
+  PRO_PERSON_WORT: /pro person|pro kopf|je person|pro nase|f(ü|ue)r jede[nr]?\b|jeweils/i,
+  FUER_ALLE_WORT: /f(ü|ue)r (uns )?alle|zusammen|f(ü|ue)r uns|gesamt pro nacht|insgesamt pro nacht|f(ü|ue)r die (ganze )?familie|f(ü|ue)r beide/i,
+
   // Einen Betrag aus dem Satz lesen: "5000", "5.000 Euro", "5000€", "ca. 3500"
   betragAusText(text) {
     const t = String(text == null ? "" : text).toLowerCase();
@@ -2286,6 +2315,7 @@ const Werkzeugkasten = {
       // Jahreszeit) - auf "hauptsache warm" hatte das Modell Oktober gesetzt
       // Eine Jahreszeit ("im Winter") ist noch kein Monat - dann fragt der
       // Agent nach dem Monat; "egal" darf er selbst aufloesen
+      const monatGenanntJetzt = gesagt(/januar|februar|märz|maerz|april|\bmai\b|juni|juli|august|september|oktober|november|dezember|\bjan\b|\bfeb\b|\bokt\b|\bnov\b|\bdez\b/i, 1);
       if (a.monat && !p.monat && !gesagt(/januar|februar|märz|maerz|april|\bmai\b|juni|juli|august|september|oktober|november|dezember|\bjan\b|\bfeb\b|\bokt\b|\bnov\b|\bdez\b|ostern|pfingsten|weihnachten|silvester|nächsten monat|naechsten monat|\d{1,2}\.\s*\d{1,2}\.|\d{4}-\d{2}|egal|gleich|such du|du entscheid|dein vorschlag|nimm/i)) {
         kern.notieren("monat_verworfen", { monat: a.monat }); delete a.monat;
       }
@@ -2301,6 +2331,15 @@ const Werkzeugkasten = {
         kern.notieren("monat_relativ", { monat: relativ });
       }
       setze("monat", a.monat);
+      if (a.jahreszeit && Werkzeugkasten.JAHRESZEITEN[a.jahreszeit]) setze("jahreszeit", a.jahreszeit);
+      /* Ein genannter Monat gilt - ein angesetzter Vergleich nicht mehr.
+         Gemeldet am 03.10.2026: Nach "doch lieber im August" lief der
+         vorher angesetzte Vergleich November bis Februar trotzdem, und
+         der Kern schrieb "Dann nehme ich November". */
+      if (a.monat && monatGenanntJetzt && kern.lauf.monatsvergleich) {
+        kern.notieren("monatsvergleich_verworfen", { monat: a.monat });
+        kern.lauf.monatsvergleich = null;
+      }
       /* "Im Sommer." - "Juni, Juli oder August?" - "Egal."
          ----------------------------------------------------------------
          Am 27.09.2026 gemeldet: Danach fragte der Agent noch einmal. Das
@@ -2327,7 +2366,10 @@ const Werkzeugkasten = {
            greift die Regel nicht. */
         const monatGenannt = gesagt(/januar|februar|märz|maerz|april|\bmai\b|juni|juli|august|september|oktober|november|dezember|\bjan\b|\bfeb\b|\bokt\b|\bnov\b|\bdez\b|ostern|pfingsten|weihnachten|silvester/i, 1);
         // Das Modell urteilt, das Muster faengt auf, was es uebersieht
+        // "ne" auf "Hast du einen bestimmten Monat im Kopf?" (03.10.2026)
+        const zeitGefragt = [kern.lauf.gefragt, kern.lauf.zuletztGefragt].includes("zeit");
         const abgegeben = a.monatUeberlassen === true
+          || (zeitGefragt && !p.monat && gesagt(/^\s*(ne+|nein|n[öo]e?|nicht wirklich|eigentlich nicht|noch nicht)\b/i, 1))
           || gesagt(/egal|gleich|such du|suchst du|du entscheid|dein vorschlag|nimm du|nimm einfach|weißt du|weisst du|was (du )?meinst|keine ahnung|weiß nicht|weiss nicht|wie du meinst|aussuchen|überlass|ueberlass|meisten|g[üu]nstigst|billigst|besten preis|beste[nr]? monat|am wenigsten|wo.*(frei|verf[üu]gbar|auswahl|m[öo]glichkeit)/i, 1);
         /* Ohne genannte Jahreszeit die naechsten vier Monate.
            --------------------------------------------------------------
@@ -3180,7 +3222,12 @@ const Werkzeugkasten = {
             return { ...basis, haeuser: "noch nicht - erst der Monatsvergleich",
               hinweis: "Sag jetzt nichts ueber Zahlen und stell keine Frage. Du vergleichst gleich die Monate (monate_vergleichen); hoechstens ein Halbsatz, dass du dir das ansiehst." };
           }
-          if (fp.suchbereit && kern.lauf.lageFuer !== fp.schluessel && liste.length) {
+          /* Gefragtes zuerst (03.10.2026). Gemeldet: Auf "wie viel kostet
+             Premium Economy?" kam zuerst die Lage der Suche ("Im November
+             sind 96 Hotels buchbar ...") und erst dann die Antwort. Hat
+             die Person gerade etwas gefragt, wartet die Lage auf den
+             naechsten Zug. */
+          if (fp.suchbereit && kern.lauf.lageFuer !== fp.schluessel && liste.length && kern.lauf.nachrichtArt !== "frage") {
             kern.lauf.lageFuer = fp.schluessel;
             const fertigJetzt = fp.fertig || {};
             await kern.denkpause(600, "fasst zusammen…");
@@ -3944,6 +3991,11 @@ const Werkzeugkasten = {
       const roh = (kern.lauf.monatsvergleich?.monate?.length ? kern.lauf.monatsvergleich.monate : a?.monate) || [];
       const monate = [...new Set(roh.map(Number).filter((m) => Number.isInteger(m) && m >= 1 && m <= 12))].slice(0, 4);
       const aufgeben = (grund) => { kern.lauf.monatsvergleich = null; kern.sichern(); return grund; };
+      // Hat die Person inzwischen selbst einen Monat genannt, entfaellt der
+      // Vergleich, den der Kern fuer sie angesetzt hatte
+      if (kern.lauf.monatsvergleich?.entscheiden && p.vonPerson?.monat && p.monat) {
+        return { ergebnis: aufgeben({ ok: true, hinweis: `Die Person hat selbst ${typeof MONATSNAMEN !== "undefined" ? MONATSNAMEN[p.monat - 1] : p.monat} genannt - kein Vergleich noetig. Mach mit diesem Monat weiter.` }) };
+      }
       if (monate.length < 2) return { ergebnis: aufgeben({ fehler: "Zum Vergleichen brauche ich mindestens zwei Monate." }) };
       if (Werkzeuge.seite() !== "results" || !Werkzeuge.hatSuchmaske()) {
         return { ergebnis: aufgeben({ fehler: "Der Vergleich geht nur auf der Trefferliste.",
@@ -3953,7 +4005,15 @@ const Werkzeugkasten = {
 
       kern.notieren("monatsvergleich_start", { monate });
       kern.logZeile(`Vergleiche ${monate.length} Monate in der Liste`, "schritt");
-      kern.sagen(`Ich stelle die Liste einmal auf ${monate.map(name).join(", ")} um und sehe mir an, was sich unterscheidet.`);
+      /* Erst sagen, was er tut und warum (03.10.2026: "Das haette er
+         einmal ankuendigen koennen"). */
+      const jzV = Werkzeugkasten.jahreszeitGenannt(kern.lauf);
+      const JZV = { fruehling: "Frühling", sommer: "Sommer", herbst: "Herbst", winter: "Winter" };
+      const liste = monate.map(name).join(", ").replace(/, ([^,]*)$/, " und $1");
+      kern.sagen(kern.lauf.monatsvergleich?.entscheiden
+        ? (jzV ? `Du bist im ${JZV[jzV.name] || jzV.name} flexibel, also stelle ich die Liste auf ${liste} um und sehe, wo am meisten für euch passt.`
+          : `Du bist beim Monat flexibel, also stelle ich die Liste auf ${liste} um und sehe, wo am meisten für euch passt.`)
+        : `Ich stelle die Liste einmal auf ${liste} um und sehe mir an, was sich unterscheidet.`);
 
       const ergebnisse = [];
       for (const m of monate) {
@@ -4991,7 +5051,9 @@ const Werkzeugkasten = {
   FELDWORT: {
     wuensche: { thema: "wuensche", wort: (p) => (p.kriterien || []).map((k) => (typeof Politik !== "undefined" ? Politik.kriterium(k.id)?.label : null)).filter(Boolean).slice(-2).join(" und ") },
     budgetGesamt: { thema: "preis", wort: (p) => `höchstens ${p.budgetGesamt} € insgesamt` },
-    maxPreis: { thema: "preis", wort: (p) => `höchstens ${p.maxPreis} € pro Nacht` },
+    maxPreis: { thema: "preis", wort: (p) => (p.preisProPerson
+      ? `${p.preisProPerson} € pro Person, also höchstens ${p.maxPreis} € pro Nacht für euch alle`
+      : `höchstens ${p.maxPreis} € pro Nacht${((p.erwachsene || 0) + (p.kinder || 0)) > 1 ? " für euch alle" : ""}`) },
     verpflegung: { thema: "verpflegung", wort: (p) => (typeof BOARD_LABELS !== "undefined" ? BOARD_LABELS[p.verpflegung] : p.verpflegung) },
     // "Haustiere erlaubt merke ich mir" - die Ausstattung, die die Person verlangt hat
     ausstattung: { thema: "wuensche", wort: (p) => (p.ausstattung || []).map((a) => (typeof AMENITY_LABELS !== "undefined" ? AMENITY_LABELS[a] : a)).filter(Boolean).slice(-2).join(" und ") },
@@ -5096,10 +5158,23 @@ const Werkzeugkasten = {
 
   // Welche Jahreszeit die Person im Gespraech genannt hat
   jahreszeitGenannt(lauf) {
-    const gesagt = (lauf.gespraech || []).filter((n) => n.role === "user").map((n) => String(n.content).toLowerCase()).join(" ");
-    const name = Object.keys(this.JAHRESZEITEN).find((k) => gesagt.includes(k));
-    return name ? { name, monate: this.JAHRESZEITEN[name] } : null;
+    // Zuerst, was das Modell verstanden hat (auch bei Tippfehlern)
+    const gemeldet = lauf?.profil?.jahreszeit;
+    if (gemeldet && this.JAHRESZEITEN[gemeldet]) return { name: gemeldet, monate: this.JAHRESZEITEN[gemeldet] };
+    /* Rueckfall ohne Meldung des Modells: der Wortanfang reicht, damit
+       "somme" oder "sommmer" nicht durchfallen (03.10.2026). Die neueste
+       Nennung gilt, nicht die erste. */
+    const ANFANG = [["sommer", /\bsom+e?r?\b|\bsom+er/], ["winter", /\bwint/], ["herbst", /\bherbs?t?/],
+      ["fruehling", /\bfr(ü|ue)hl|\bfr(ü|ue)hj/]];
+    const nutzer = (lauf.gespraech || []).filter((n) => n.role === "user").map((n) => String(n.content).toLowerCase());
+    for (let k = nutzer.length - 1; k >= 0; k--) {
+      const t = nutzer[k];
+      const treffer = ANFANG.find(([, re]) => re.test(t));
+      if (treffer) return { name: treffer[0], monate: this.JAHRESZEITEN[treffer[0]] };
+    }
+    return null;
   },
+
 
   /* Welcher Monat einer Jahreszeit, wenn es der Person gleich ist.
      ------------------------------------------------------------------
@@ -5487,13 +5562,30 @@ const Werkzeugkasten = {
          `monatWaehlen` - dieselbe Rechnung, die auch der sichtbare
          Vergleich benutzt. Nur eben still, weil es hier nicht um eine
          abgegebene Wahl geht, sondern darum, dass keine Antwort kam. */
+      /* Kein Notfallmonat mehr (03.10.2026).
+         ----------------------------------------------------------------
+         Hier stand "aktueller Monat plus zwei". Gemeldet: "Sommer" - "ne"
+         (kein bestimmter Monat) - "Ich rechne erst mal mit November".
+         Ein Monat, den niemand genannt hat und den keine Rechnung traegt,
+         darf nicht still in den Stand rutschen. Jetzt waehlt der Kern
+         unter den Monaten der genannten Jahreszeit, ohne Jahreszeit unter
+         den naechsten vier, und sagt, warum. */
       zeit: { schreibt: ["monat", "von", "bis"], setzen: (x, wk) => {
         const jz = wk.jahreszeitGenannt?.(lauf);
-        const monate = jz ? jz.monate : null;
-        const w = monate ? wk.monatWaehlen(x, monate) : null;
-        x.monat = w ? w.monat : (new Date().getMonth() + 2 > 12 ? 1 : new Date().getMonth() + 2);
-      }, satz: "mit welchem Monat du rechnest und dass sie ihn jederzeit aendern kann",
-        selbst: (x) => `Ich rechne erst mal mit ${typeof MONATSNAMEN !== "undefined" ? MONATSNAMEN[x.monat - 1] : "diesem Monat"}. Sag gern Bescheid, wenn ein anderer Monat besser passt.` },
+        const monate = jz ? jz.monate : Array.from({ length: 4 }, (_, i) => ((new Date().getMonth() + 1 + i) % 12) + 1);
+        const w = wk.monatWaehlen(x, monate);
+        x.monat = w ? w.monat : monate[0];
+        lauf.monatGrund = { satz: w ? w.satz : null, jahreszeit: jz ? jz.name : null, monate };
+      }, satz: "mit welchem Monat du rechnest, warum, und dass sie ihn jederzeit aendern kann",
+        selbst: (x) => {
+          const g = lauf.monatGrund || {};
+          const M = (m) => (typeof MONATSNAMEN !== "undefined" ? MONATSNAMEN[m - 1] : `Monat ${m}`);
+          const JZ = { fruehling: "Frühling", sommer: "Sommer", herbst: "Herbst", winter: "Winter" };
+          const vorne = g.jahreszeit
+            ? `Dann bist du im ${JZ[g.jahreszeit] || g.jahreszeit} flexibel. Ich habe ${(g.monate || []).map(M).join(", ").replace(/, ([^,]*)$/, " und $1")} verglichen.`
+            : `Dann bist du beim Monat flexibel. Ich habe die nächsten Monate verglichen.`;
+          return `${vorne} ${g.satz || `Ich rechne erst mal mit ${M(x.monat)}.`} Sag gern Bescheid, wenn ein anderer Monat besser passt.`;
+        } },
       weiter: { schreibt: ["weiter"], setzen: (x) => { x.weiter = "schauen"; } },
       beratung: { schreibt: ["beratung"], setzen: (x) => { x.beratung = "auswahl"; } },
       vorgehen: { schreibt: ["vorgehen"], setzen: (x) => { x.vorgehen = "top3"; } },

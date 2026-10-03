@@ -1099,6 +1099,7 @@ const Kern = {
     if (await this.kasseBedienen(t, opts)) return;
     if (this.welchesHaus(t, opts)) return;
     if (this.kommaPruefen(t, opts)) return;
+    if (this.budgetPruefen(t, opts)) return;
     this.ankunftLesen(t);
     this.zimmerAntwort(t);
     this.abschlussAntwort(t);
@@ -1180,6 +1181,7 @@ const Kern = {
     // Nach dem Zuruecksetzen, sonst ginge die Quittung verloren
     this.haustierLesen(t);
     this.lauf.selbstGelesen = [];
+    this.budgetUebernehmen();
     if (this.lauf.filterStandSchon) {
       this.lauf.filterStandSchon = false;
       this.notieren("filter_standen_schon", {});
@@ -3193,6 +3195,113 @@ const Kern = {
     this.notieren("komma_rueckfrage", { thema: f.thema, text: String(t).slice(0, 40) });
     this.sichern();
     return true;
+  },
+
+  /* Wofuer gilt der Betrag? Nachfragen statt umdeuten (03.10.2026).
+     ------------------------------------------------------------------
+     Gemeldet: "Wie hoch ist deine Grenze fuer die ganze Reise, mit
+     Flug?" - "50" - "Hoechstens 50 € pro Nacht merke ich mir." Und:
+     "Er hat nicht gefragt, ob es 50 Euro pro Nacht pro Person ist oder
+     einfach nur pro Nacht fuer alle."
+
+     Der Kern fragt jetzt in zwei Faellen nach, bevor er etwas aufnimmt:
+     - Der Betrag soll fuer die ganze Reise gelten, liegt aber unter dem,
+       was die guenstigste Reise fuer diese Gruppe kostet.
+     - Er gilt pro Nacht, es reisen mehrere, und es steht nicht da, ob er
+       fuer alle oder pro Person gemeint ist.
+     Die Antwort liest er selbst; uebernommen wird sie in
+     budgetUebernehmen, nach dem Zuruecksetzen der Quittungen. */
+  budgetPruefen(t, opts = {}) {
+    const p = this.lauf.profil || {};
+    const satz = String(t);
+    const zeigenUndFragen = (frage, chips, art) => {
+      if (!opts.gezeigt) this.sagen(t, "user");
+      this.gespraechPush({ role: "user", content: t });
+      this.sagenUndMerken(frage);
+      this.lauf.chips = chips;
+      AgentPanel.setSuggestions(chips);
+      this.notieren("budget_rueckfrage", { art, text: satz.slice(0, 40) });
+      this.sichern();
+      return true;
+    };
+    const personen = (p.erwachsene || 0) + (p.kinder || 0);
+
+    // Die Antwort auf die eigene Rueckfrage
+    const offen = this.lauf.preisFrage;
+    if (offen) {
+      this.lauf.preisFrage = null;
+      const neuerBetrag = Werkzeugkasten.betragAusText(satz);
+      const betrag = neuerBetrag || offen.betrag;
+      let feld = null, wert = null, proPerson = null;
+      if (Werkzeugkasten.PRO_PERSON_WORT.test(satz) && personen > 0) { feld = "maxPreis"; wert = betrag * personen; proPerson = betrag; }
+      else if (/ganze reise|insgesamt|f(ü|ue)r alles|gesamt(?! pro nacht)/i.test(satz) && !Werkzeugkasten.PRO_NACHT_WORT.test(satz)) { feld = "budgetGesamt"; wert = betrag; }
+      else if (Werkzeugkasten.FUER_ALLE_WORT.test(satz) || Werkzeugkasten.PRO_NACHT_WORT.test(satz)) { feld = "maxPreis"; wert = betrag; }
+      if (feld) {
+        this.lauf.preisDirekt = { feld, wert, proPerson };
+        this.notieren("budget_geklaert", { feld, wert, proPerson });
+      }
+      return false;   // weiter im normalen Zug, die Werte kommen gleich
+    }
+
+    // Nur, wenn es gerade um den Preis geht oder ein Betrag in Euro dasteht
+    const betrag = Werkzeugkasten.betragAusText(satz);
+    if (betrag == null) return false;
+    const umPreis = this.lauf.gefragt === "preis" || /€|euro|budget|preis|ausgeben|kosten/i.test(satz);
+    if (!umPreis || p.preisEgal) return false;
+    // Zahlen, die etwas anderes meinen (Naechte, Personen, Alter, Datum)
+    if (/n(ä|ae)cht|tage?\b|woche|person(en)?\b(?!.*€)|jahre?\b|kind|erwachsen|\d{1,2}\.\s*\d{1,2}\./i.test(satz)
+      && !/€|euro/i.test(satz) && !Werkzeugkasten.PRO_PERSON_WORT.test(satz)) return false;
+    const letzteBot = [...(this.lauf.verlauf || [])].reverse().find((x) => x.rolle === "bot")?.text || "";
+    const gesamtGefragt = /ganze reise|insgesamt|gesamt|mit flug/i.test(letzteBot) && this.lauf.gefragt === "preis";
+    const gesamtGesagt = Werkzeugkasten.GESAMT_WORT.test(satz) && !Werkzeugkasten.FUER_ALLE_WORT.test(satz);
+    const nachtGesagt = Werkzeugkasten.PRO_NACHT_WORT.test(satz);
+    const personGesagt = Werkzeugkasten.PRO_PERSON_WORT.test(satz);
+    const alleGesagt = Werkzeugkasten.FUER_ALLE_WORT.test(satz);
+    const euro = (n) => `${Number(n).toLocaleString("de-DE")} €`;
+
+    // Fall 1: fuer die ganze Reise, aber unter dem Moeglichen
+    if ((gesamtGesagt || (gesamtGefragt && !nachtGesagt)) && !personGesagt) {
+      const min = Werkzeugkasten.reiseMinimum(p);
+      if (min != null && betrag < min) {
+        this.lauf.preisFrage = { betrag, art: "unter_minimum", min };
+        const wer = personen > 1 ? `für ${personen} Personen` : "";
+        return zeigenUndFragen(
+          `${euro(betrag)} für die ganze Reise reichen ${wer}${p.flug ? " mit Flug" : ""} leider nicht, die günstigste kostet ab ${euro(min)}. Meinst du ${euro(betrag)} pro Nacht?`.replace(/\s+/g, " "),
+          personen > 1 ? [`${euro(betrag)} pro Nacht für alle`, `${euro(betrag)} pro Nacht pro Person`, "Anderer Betrag"] : [`${euro(betrag)} pro Nacht`, "Anderer Betrag"],
+          "unter_minimum");
+      }
+      return false;
+    }
+    // Fall 2: pro Nacht, mehrere Reisende, Bezug offen
+    const proNacht = nachtGesagt || (!gesamtGesagt && Werkzeugkasten.preisDeutung(betrag, satz, p)?.feld === "maxPreis");
+    if (proNacht && personen > 1 && !personGesagt && !alleGesagt) {
+      this.lauf.preisFrage = { betrag, art: "bezug" };
+      return zeigenUndFragen(`Gelten die ${euro(betrag)} pro Nacht für euch alle zusammen oder pro Person?`,
+        ["Für alle zusammen", "Pro Person"], "bezug");
+    }
+    // Pro Person gesagt: gleich umrechnen
+    if (proNacht && personGesagt && personen > 0) {
+      this.lauf.preisDirekt = { feld: "maxPreis", wert: betrag * personen, proPerson: betrag };
+    }
+    return false;
+  },
+
+  // Uebernimmt einen geklaerten Betrag - nach dem Zuruecksetzen der Quittungen
+  budgetUebernehmen() {
+    const d = this.lauf.preisDirekt;
+    if (!d) return;
+    this.lauf.preisDirekt = null;
+    const p = this.lauf.profil || (this.lauf.profil = {});
+    if (d.feld === "maxPreis") { p.maxPreis = d.wert; delete p.budgetGesamt; }
+    else { p.budgetGesamt = d.wert; delete p.maxPreis; }
+    if (d.proPerson) p.preisProPerson = d.proPerson; else delete p.preisProPerson;
+    p.preisEgal = false;
+    (p.vonPerson ||= {})[d.feld] = true;
+    this.lauf.zuletztGemerkt = [...(this.lauf.zuletztGemerkt || []), d.feld];
+    this.lauf.selbstGelesen = [...(this.lauf.selbstGelesen || []), "maxPreis", "budgetGesamt"];
+    (this.lauf.besprochen ||= {}).preis = true;
+    this.standAnzeigen?.();
+    this.sichern();
   },
 
   // Was die Person in der Kasse will - nur die Erkennung, ohne zu handeln
