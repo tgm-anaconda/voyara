@@ -431,13 +431,25 @@ const Flug = {
     [1, 3, 4, 6],
     [0, 2, 3, 4, 6],
   ],
+  /* Taeglich, seit dem 03.10.2026.
+     ----------------------------------------------------------------
+     Bis dahin flog jede Verbindung nur an bestimmten Wochentagen
+     (MUSTER), und ein Haus galt nur als buchbar, wenn seine erste
+     Verbindung am Anreise- UND am Rueckreisetag flog. Im Testlauf vom
+     03.10.2026 fielen so im September 66 Hotels weg ("dorthin fliegt am
+     So, 12.9. nichts"), und uebrig blieben Teneriffa und Marrakesch.
+     Entscheidung des Nutzers: taeglich fliegen. Fuer eine Studie ueber
+     die Kennzeichnung bringen Flugtage nichts und kosten Auswahl. Die
+     Muster bleiben stehen; TAEGLICH = false holt sie zurueck. */
+  TAEGLICH: true,
   tage(flug) {
-    if (!flug) return [0, 1, 2, 3, 4, 5, 6];
+    if (!flug || this.TAEGLICH) return [0, 1, 2, 3, 4, 5, 6];
     const n = parseInt(String(flug.id).replace(/\D/g, ""), 10) || 0;
     return this.MUSTER[n % this.MUSTER.length];
   },
   tageText(flug, lang = false) {
     const t = this.tage(flug);
+    if (t.length === 7) return "täglich";
     const namen = t.map((d) => (lang ? this.WOCHENTAGE_LANG : this.WOCHENTAGE)[d]);
     return namen.length > 1 ? `${namen.slice(0, -1).join(", ")} und ${namen[namen.length - 1]}` : namen[0];
   },

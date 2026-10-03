@@ -7234,6 +7234,41 @@ function formatPrice(value) {
   }
 })();
 
+/* Verpflegung nach festen Regeln ergaenzt (03.10.2026).
+   ------------------------------------------------------------------
+   Wunsch des Nutzers: Bei ueblichen Filtern sollen mindestens 40 Haeuser
+   uebrig bleiben, damit das Vergleichsset nie aus zwei, drei Haeusern
+   gebaut werden muss. Gemessen fehlte es vor allem an der Verpflegung:
+   Halbpension hatten 143 von 218 Hotels, All Inclusive nur 56 - und nur
+   in Strand- und Familienhotels.
+
+   Ergaenzt wird, was ein solches Haus ueblicherweise anbietet, nicht
+   alles ueberall:
+   - Halbpension, wo es ein Restaurant gibt.
+   - All Inclusive bei Resort-Kategorien an den Sonnenzielen. Kein All
+     Inclusive in Staedten, in den Bergen oder im Norden - das gibt es
+     dort auch sonst kaum.
+   Die Aufpreise folgen den vorhandenen Haeusern derselben Art. */
+(function verpflegungErgaenzen() {
+  const SONNE = ["mallorca", "kreta", "algarve", "sardinien", "teneriffa", "krabi", "marrakesch"];
+  const RESORT = ["luxus", "budget", "finca", "strand", "familie"];
+  for (const h of HOTELS) {
+    const boards = h.boards || (h.boards = []);
+    const hat = (k) => boards.some((b) => b.key === k);
+    const fruehstueck = boards.find((b) => b.key === "fruehstueck")?.priceDelta || Math.round((h.pricePerNight || 100) * 0.1);
+    if (!hat("halb") && (h.amenities || []).includes("restaurant")) {
+      boards.push({ key: "halb", priceDelta: Math.max(18, Math.round(fruehstueck * 2.2)) });
+    }
+    if (!hat("ai") && SONNE.includes(h.ziel) && RESORT.includes(h.category)) {
+      const halb = boards.find((b) => b.key === "halb")?.priceDelta || Math.round(fruehstueck * 2.2);
+      boards.push({ key: "ai", priceDelta: Math.max(38, Math.round(halb * 1.7)) });
+    }
+    // Reihenfolge wie im Katalog: ohne, Fruehstueck, Halbpension, Vollpension, All Inclusive
+    const ORDNUNG = ["ohne", "fruehstueck", "halb", "voll", "ai"];
+    boards.sort((a, b) => ORDNUNG.indexOf(a.key) - ORDNUNG.indexOf(b.key));
+  }
+})();
+
 function ratingLabel(rating) {
   if (rating >= 4.7) return "Außergewöhnlich";
   if (rating >= 4.4) return "Hervorragend";

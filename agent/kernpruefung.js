@@ -1120,6 +1120,40 @@ const Kernpruefung = {
     return fehler;
   },
 
+  /* Auswahl bei ueblichen Filtern (03.10.2026).
+     ------------------------------------------------------------------
+     Wunsch des Nutzers: mindestens 40 Haeuser bei normalen Filtern. Das
+     Raster: 12 Monate x 6 Gruppen x warm/offen x mit/ohne Flug (fester
+     Anreisetag) x Verpflegung. Befund ist, was unter 20 faellt; wie
+     viele unter 40 liegen, steht als Zahl dabei (letzteDecke). "Eher
+     kalt" ist bewusst nicht im Raster: Dort fehlen Haeuser im Katalog
+     (Lappland, Island, Ostsee, Tirol, Suedtirol je 10 bis 11), und das
+     laesst sich nur mit neuen Haeusern loesen, nicht mit Regeln. */
+  deckeRaster() {
+    const fehler = [];
+    if (typeof Werkzeugkasten === "undefined" || typeof Politik === "undefined") return fehler;
+    const gruppen = [[1, 0, []], [2, 0, []], [2, 1, [8]], [2, 2, [3, 4]], [4, 0, []], [2, 3, [4, 8, 12]]];
+    let unter40 = 0, gesamt = 0, duennster = null;
+    for (let m = 1; m <= 12; m++) for (const [e, k, alter] of gruppen) for (const ri of ["warm", null]) for (const flug of [true, false])
+      for (const v of [null, "fruehstueck", "halb", "ai"]) {
+        const pp = { monat: m, naechte: 7, erwachsene: e, kinder: k, kinderAlter: alter, personenGesamt: e + k, zimmer: 1 };
+        if (flug) Object.assign(pp, { typ: "hotel", artGenannt: true, flug: true, flugAb: "Frankfurt", flugKlasse: "economy", anreise: `2027-${String(m).padStart(2, "0")}-12` });
+        else Object.assign(pp, { artEgal: true, flug: false, flexibel: true });
+        if (v) pp.verpflegung = v;
+        if (ri) { pp.richtung = ri; pp.zieleErlaubt = Werkzeugkasten.regionenFuerRichtung(Politik.THEMEN.find((x) => x.id === ri), pp); }
+        let n = 0;
+        try { n = Werkzeugkasten.katalogTreffer(pp, Werkzeugkasten.filterAusStand(pp)).length; } catch { n = 0; }
+        gesamt += 1;
+        if (n < 40) unter40 += 1;
+        const name = `${m}/${e}+${k}/${ri || "offen"}/${flug ? "Flug" : "ohne"}/${v || "-"}`;
+        if (!duennster || n < duennster.n) duennster = { name, n };
+        if (n < 20) fehler.push({ art: "auswahl_zu_duenn", thema: "katalog", satz: "", text: `${name}: nur ${n} Haeuser` });
+      }
+    this.letzteDecke = { gesamt, unter40, duennster };
+    console.info(`Auswahl-Raster: ${gesamt} Kombinationen, ${unter40} unter 40, duennste: ${duennster?.name} mit ${duennster?.n}`);
+    return fehler;
+  },
+
   filterbitte() {
     const fehler = [];
     for (const f of this.FILTER_FAELLE) {
@@ -2240,6 +2274,7 @@ const Kernpruefung = {
     for (const f of this.kasse()) alle.push(f);
     for (const f of this.welchesHausPruefen()) alle.push(f);
     for (const f of this.ehrlichkeit()) alle.push(f);
+    for (const f of this.deckeRaster()) alle.push(f);
     for (const f of this.budget()) alle.push(f);
     for (const f of this.vorschlagsset()) alle.push(f);
     for (const f of this.flughaefen()) alle.push(f);

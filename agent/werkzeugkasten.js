@@ -589,7 +589,9 @@ const Werkzeugkasten = {
          Krabi, Kapstadt und Teneriffa; alles darunter waere im Januar
          nicht mehr "warm", sondern nur noch das Beste, was da ist. */
       let liste = alle.filter((z) => grad(z, p.monat) >= grenze);
-      for (let g = grenze - 2; liste.length < 3 && g >= 18; g -= 2) {
+      /* Mindestens fuenf Regionen statt drei (03.10.2026): Mit drei
+         Regionen blieben im Januar keine 40 Haeuser uebrig. */
+      for (let g = grenze - 2; liste.length < 5 && g >= 18; g -= 2) {
         liste = alle.filter((z) => grad(z, p.monat) >= g);
       }
       return liste.sort((a, b) => grad(b, p.monat) - grad(a, p.monat)).map((z) => z.id);
@@ -599,7 +601,7 @@ const Werkzeugkasten = {
       // Dasselbe von der anderen Seite: im Juli ist nirgends unter zwoelf
       // Grad, dann steigt die Grenze schrittweise - hoechstens bis 22.
       let liste = alle.filter((z) => grad(z, p.monat) <= grenze);
-      for (let g = grenze + 2; liste.length < 3 && g <= 22; g += 2) {
+      for (let g = grenze + 2; liste.length < 5 && g <= 22; g += 2) {
         liste = alle.filter((z) => grad(z, p.monat) <= g);
       }
       return liste.sort((a, b) => grad(a, p.monat) - grad(b, p.monat)).map((z) => z.id);
