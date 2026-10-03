@@ -1385,6 +1385,66 @@ const Werkzeuge = {
   // Bis wohin er geht, regelt die Freigabestufe in agent/kern.js:
   // "vorbereiten" endet vor dem letzten Klick mit einer Zusammenfassung,
   // "buchen" schliesst ab.
+  /* ==================================================================
+     Die Kasse bedienen: zuruecknehmen, umstellen, nachsehen
+     ------------------------------------------------------------------
+     Wunsch des Nutzers vom 03.10.2026: "Ich moechte bitte keine
+     Reiseruecktrittsversicherung, und kann man auch anders als mit
+     Kreditkarte zahlen?" - der Agent soll zurueckgehen, abwaehlen, das
+     Feld der Zahlungsart sichtbar ansehen und sagen, was moeglich ist.
+     Alles hier ist sichtbar: Zeiger, Klick, Scrollen. Gelesen wird aus
+     der Seite (Kasse.stand), nicht aus dem Weltwissen des Modells.
+     ================================================================== */
+  async kasseSchrittEins() {
+    if (this.seite() !== "checkout") return false;
+    if (this.finde("#guestForm")) return true;
+    const zurueck = this.finde("#backBtn");
+    if (!zurueck) return false;
+    await Zeiger.klicke(zurueck, { hinweis: "zurück zu deinen Daten" });
+    await Zeiger.warte(350);
+    return !!this.finde("#guestForm");
+  },
+
+  async kasseAendern({ versicherung = null, zahlung = null } = {}) {
+    if (this.seite() !== "checkout" || typeof Kasse === "undefined") return this.fehlt("Die Kasse");
+    const vorher = Kasse.stand();
+    const getan = [];
+    if (!(await this.kasseSchrittEins())) return this.fehlt("Das Formular der Kasse");
+    if (versicherung !== null) {
+      const el = this.finde("#cVersicherung");
+      if (el && el.checked !== !!versicherung) {
+        await Zeiger.klicke(el, { hinweis: versicherung ? "Versicherung dazu" : "Versicherung abwählen" });
+        await Zeiger.warte(250);
+        getan.push(versicherung ? "versicherung_an" : "versicherung_aus");
+      }
+    }
+    if (zahlung) {
+      const el = this.finde(`.js-zahlung[value="${zahlung}"]`);
+      if (el && !el.checked) {
+        await Zeiger.klicke(el, { hinweis: zahlung === "karte" ? "Kreditkarte" : "Lastschrift" });
+        await Zeiger.warte(250);
+        getan.push(`zahlung_${zahlung}`);
+      }
+    }
+    const nachher = Kasse.stand();
+    return { ok: true, text: getan.length ? "In der Kasse umgestellt." : "In der Kasse war schon alles so eingestellt.",
+      daten: { getan, vorher, nachher } };
+  },
+
+  // Die Felder sichtbar ansehen, bevor er etwas dazu sagt
+  async kasseAnsehen(was = "zahlung") {
+    if (this.seite() !== "checkout" || typeof Kasse === "undefined") return this.fehlt("Die Kasse");
+    await this.kasseSchrittEins();
+    const ziel = was === "versicherung" ? this.finde("#cVersicherung")?.closest("label")
+      : this.finde(".js-zahlung")?.closest("label");
+    if (ziel) await Zeiger.lies(ziel, { dauer: 900, hinweis: was === "versicherung" ? "Versicherung" : "Zahlungsarten" });
+    if (was !== "versicherung") {
+      const zweite = [...document.querySelectorAll(".js-zahlung")][1]?.closest("label");
+      if (zweite) await Zeiger.lies(zweite, { dauer: 600, hinweis: "Zahlungsarten" });
+    }
+    return { ok: true, text: "Kasse angesehen.", daten: Kasse.stand() };
+  },
+
   async buchungAbschliessen({ nurVorbereiten = false, daten = {} } = {}) {
     // Schritt 2 oder 3: Bestaetigungsknopf liegt schon vor
     let knopf = this.finde("#confirmBtn");

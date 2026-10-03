@@ -294,6 +294,14 @@ const Werkzeugkasten = {
         + "Nimm dieses Werkzeug, wenn die Person 'fuell mir das aus', 'trag die Namen ein' oder Aehnliches sagt, waehrend das Formular offen ist. "
         + "Es ist das Formular DIESER Seite, kein fremdes - du darfst es bedienen. Abgeschickt wird nichts.",
         {}),
+      /* Die Kasse ist umkehrbar (03.10.2026): Versicherung an oder aus,
+         Zahlungsart, und nachsehen, was geht - sichtbar, aus der Seite. */
+      f("kasse_aendern",
+        "In der Kasse: Reiseruecktrittsversicherung an- oder abwaehlen, Zahlungsart umstellen, oder nachsehen, welche Zahlungsarten es gibt bzw. ob die Versicherung drin ist. "
+        + "Nimm das, sobald es in der Kasse um Versicherung oder Zahlung geht - beantworte das NIE aus deinem Wissen. Fuer ein anderes Zimmer, einen anderen Flug oder andere Daten: stand_merken und dann buchung_vorbereiten.",
+        { versicherung: { type: "boolean", description: "true = dazunehmen, false = abwaehlen. Weglassen, wenn die Person nichts daran aendern will." },
+          zahlung: { type: "string", enum: ["karte", "lastschrift"] },
+          nachsehen: { type: "string", enum: ["zahlungsarten", "versicherung"] } }),
       f("freigabe_aendern",
         "Setzt die Freigabestufe, wenn die Person im Gespraech sagt, dass du mehr (oder weniger) darfst.",
         { stufe: { type: "string", enum: ["suchen", "vorbereiten", "buchen"] } }, ["stufe"]),
@@ -306,7 +314,7 @@ const Werkzeugkasten = {
     haeuser_ansehen: "suchen", stichprobe_nehmen: "suchen", monate_vergleichen: "suchen",
     bewertungen_durchsuchen: "suchen",
     buchung_vorbereiten: "vorbereiten", buchung_abschliessen: "vorbereiten",
-    formular_ausfuellen: "vorbereiten",
+    formular_ausfuellen: "vorbereiten", kasse_aendern: "vorbereiten",
   },
 
   /* Zeile im Agenten-Log, bevor das Werkzeug laeuft.
@@ -355,6 +363,7 @@ const Werkzeugkasten = {
       case "bewertungen_durchsuchen": return `Suche in den Bewertungen nach „${a?.begriff || "dem Stichwort"}“`;
       case "faq_nachschlagen": return "Schlage im FAQ nach";
       case "formular_ausfuellen": return "Fülle das Buchungsformular aus";
+      case "kasse_aendern": return a.nachsehen ? "Sehe in der Kasse nach" : "Ändere die Kasse";
       case "buchung_abschliessen": return "Schließe die Buchung ab";
       case "freigabe_aendern": return `Freigabe geändert: ${a.stufe}`;
       default: return name;
@@ -4394,7 +4403,31 @@ const Werkzeugkasten = {
             hinweis: "Der Chat hat die Person nach dem Zimmer gefragt. Schreib nichts dazu." } };
         }
         kern.notieren("zur_buchung", { id: a.id });
-        if (seite === "checkout" && idHier === a.id) return this.werkzeuge.buchung_vorbereiten.call(this, a, kern, 3);
+        /* Steht die Kasse noch so, wie es besprochen ist?
+           --------------------------------------------------------------
+           Zimmer, Verpflegung und Gruppe kommen aus der Adresse der
+           Kasse, nicht aus dem Gespraech. Am 03.10.2026 stand dort
+           "2 Erwachsene" und ein Zimmer fuer zwei, bei vier Reisenden.
+           Weicht etwas ab - oder hat die Person gerade ein anderes Zimmer
+           gewollt -, geht der Weg ueber die Hausseite: Dort stellt
+           zurBuchung sichtbar ein, und die Kasse baut sich mit allem
+           wieder auf, was schon eingetragen war (Sitzungsspeicher). */
+        if (seite === "checkout" && idHier === a.id && typeof Kasse !== "undefined") {
+          const st = Kasse.stand() || {};
+          const pf = kern.lauf.profil || {};
+          const personen = (pf.erwachsene || 0) + (pf.kinder || 0);
+          const abweichung = [
+            pf.zimmerTyp && st.zimmer && st.zimmer !== pf.zimmerTyp ? "zimmer" : null,
+            pf.verpflegung && st.board && st.board !== pf.verpflegung ? "verpflegung" : null,
+            personen && st.belegung && st.belegung.personen !== personen ? "gruppe" : null,
+          ].filter(Boolean);
+          if (!abweichung.length) return this.werkzeuge.buchung_vorbereiten.call(this, a, kern, 3);
+          kern.notieren("kasse_abweichung", { id: a.id, was: abweichung });
+          kern.sperreAn();
+          await Zeiger.warte(250);
+          location.href = kern.linkZu(a.id, item.name).href;
+          return { navigiert: true, stufe: 2 };
+        }
         if (seite === "stay" && idHier === a.id) return this.werkzeuge.buchung_vorbereiten.call(this, a, kern, 2);
         kern.lauf.buchungUmweg = false;
         kern.sperreAn();
@@ -4490,6 +4523,31 @@ const Werkzeugkasten = {
               : "Nenn Haus, Zeitraum und Gesamtpreis und frag, ob du abschliessen sollst. Erst nach einem klaren Ja buchung_abschliessen rufen.") },
         log: `Buchung vorbereitet: ${z?.titel || item.name}, ${z?.gesamt || ""}${getan.length ? ` · ausgefuellt: ${getan.join(", ")}` : ""}`,
       };
+    },
+
+    async kasse_aendern(a, kern) {
+      if (Werkzeuge.seite() !== "checkout") return { ergebnis: { fehler: "Die Kasse ist nicht offen. Erst buchung_vorbereiten." } };
+      /* Auf eine blosse Frage wird nur nachgesehen, nicht geaendert: Die
+         Versicherung ist ein Messwert (H2), und ein "geht es auch ohne?"
+         ist noch kein Auftrag, sie abzuwaehlen. */
+      if (["frage", "unklar"].includes(kern.lauf.nachrichtArt) && (a.versicherung != null || a.zahlung)) {
+        kern.notieren("kasse_nur_nachsehen", { wollte: { versicherung: a.versicherung ?? null, zahlung: a.zahlung || null } });
+        a = { nachsehen: a.versicherung != null ? "versicherung" : "zahlungsarten" };
+      }
+      kern.sperreAn();
+      let e = null;
+      if (a.versicherung != null || a.zahlung) e = await Werkzeuge.kasseAendern({ versicherung: a.versicherung ?? null, zahlung: a.zahlung || null });
+      if (a.nachsehen) await Werkzeuge.kasseAnsehen(a.nachsehen === "versicherung" ? "versicherung" : "zahlung");
+      kern.sperreAus();
+      const st = Kasse.stand();
+      if (a.versicherung != null) kern.notieren("kasse_versicherung", { an: !!a.versicherung, ueber: "modell" });
+      if (a.zahlung) kern.notieren("kasse_zahlung", { zahlung: a.zahlung, ueber: "modell" });
+      return { ergebnis: {
+        versicherungGewaehlt: st.versicherung, versicherungPreis: st.versicherungPreis,
+        zahlung: st.zahlung, zahlungsarten: st.zahlungsarten, gesamt: st.gesamt,
+        vorher: e?.daten?.vorher ? { gesamt: e.daten.vorher.gesamt, versicherung: e.daten.vorher.versicherung, zahlung: e.daten.vorher.zahlung } : null,
+        hinweis: "Sag genau das, was hier steht - nichts anderes ueber Versicherung oder Zahlung. Danach frag, ob du abschliessen sollst." },
+        log: `Kasse: Versicherung ${st.versicherung ? "drin" : "nicht drin"}, ${st.zahlung === "karte" ? "Kreditkarte" : "Lastschrift"}, ${st.gesamt} €` };
     },
 
     // Dasselbe wie buchung_vorbereiten, nur unter dem Namen, den die

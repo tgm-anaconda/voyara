@@ -1085,6 +1085,12 @@ const Studie = {
         [p + "anhaltSelbst"]: zaehle(protokoll, "anhalt_selbst"),
         [p + "anhaltAendern"]: zaehle(protokoll, "anhalt_aendern"),
         [p + "verlaufGeflickt"]: zaehle(protokoll, "verlauf_geflickt"),
+        /* Kasse ueber den Agenten (seit 03.10.2026): Wer die vorausgewaehlte
+           Versicherung ueber den Agenten abwaehlt, hat sie bemerkt - das
+           Gegenstueck zum blinden Fleck, den H2 misst. */
+        [p + "versicherungAgentAus"]: protokoll.filter((e) => e.ereignis === "kasse_versicherung" && e.an === false).length,
+        [p + "kasseFragen"]: zaehle(protokoll, "kasse_frage"),
+        [p + "kasseZurueck"]: zaehle(protokoll, "kasse_zurueck"),
         // Fahrplan (seit 20.09.2026): gefragte Themen, Wahl zwischen Top 3
         // und Selbst-Schauen, Korrekturen der Suchmaske
         [p + "themenGefragt"]: protokoll.filter((e) => e.ereignis === "thema_gefragt").map((e) => e.thema).join(","),

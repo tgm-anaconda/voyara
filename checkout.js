@@ -98,7 +98,68 @@ function readParams() {
     kind: i >= b.erwachsene,
     alter: i >= b.erwachsene ? kinder[i - b.erwachsene] ?? null : null,
   }));
+  kasseHolen();
 }
+
+/* Die Kasse behaelt, was eingetragen ist.
+   ------------------------------------------------------------------
+   Wunsch des Nutzers vom 03.10.2026: Der Agent soll jeden Schritt
+   zuruecknehmen koennen - ein anderes Zimmer, die Versicherung weg - und
+   dabei behalten, was schon gewaehlt ist. Wer fuer ein anderes Zimmer
+   zurueck auf die Hausseite geht, verlor bisher Namen, Ankunft,
+   Versicherung und Zahlungsart. Jetzt stehen sie je Haus im
+   Sitzungsspeicher. */
+function kasseSchluessel() { return `voyara_kasse_${entry.id}`; }
+function kasseMerken() {
+  try {
+    sessionStorage.setItem(kasseSchluessel(), JSON.stringify({
+      reisende: reisende.map((r) => ({ name: r.name, geburt: r.geburt, gepaeck: r.gepaeck })),
+      ankunft, versicherung, zahlung, mail: guest.mail, phone: guest.phone, note: guest.note,
+    }));
+  } catch { /* ohne Speicher */ }
+}
+function kasseHolen() {
+  let g = null;
+  try { g = JSON.parse(sessionStorage.getItem(kasseSchluessel()) || "null"); } catch { g = null; }
+  if (!g) return;
+  (g.reisende || []).forEach((alt, i) => {
+    const r = reisende[i];
+    if (!r) return;
+    if (alt.name) r.name = alt.name;
+    if (alt.geburt) r.geburt = alt.geburt;
+    if (alt.gepaeck) r.gepaeck = alt.gepaeck;
+  });
+  if (g.ankunft) ankunft = g.ankunft;
+  if (typeof g.versicherung === "boolean") versicherung = g.versicherung;
+  if (g.zahlung) zahlung = g.zahlung;
+  if (g.mail) guest.mail = g.mail;
+  if (g.phone) guest.phone = g.phone;
+  if (g.note) guest.note = g.note;
+}
+
+/* Was der Agent ueber die Kasse wissen darf: genau das, was dasteht.
+   Am 03.10.2026 sagte er, die Versicherung sei "nicht automatisch
+   dabei" - sie war vorausgewaehlt. Fragen dazu beantwortet der Kern
+   jetzt aus diesem Stand, nicht das Modell aus seinem Weltwissen. */
+const Kasse = {
+  stand() {
+    if (!entry) return null;
+    const p = priceLines();
+    const gebuehr = kartengebuehr(p.total);
+    const zimmer = entry.rooms?.[roomIdx]?.name || null;
+    const board = entry.boards?.[boardIdx]?.key || null;
+    return {
+      id: entry.id, schritt: step, versicherung, versicherungPreis: VERSICHERUNG_PREIS, zahlung,
+      zahlungsarten: [
+        { wert: "karte", label: "Kreditkarte", zusatz: `2 % Gebühr, hier ${formatPrice(kartengebuehr(p.total) || Math.round(p.total * KARTENGEBUEHR))}`, hinweis: "sofortige Bestätigung" },
+        { wert: "lastschrift", label: "Lastschrift", zusatz: "ohne Gebühr", hinweis: "Bestätigung nach einem Werktag" },
+      ],
+      gesamt: p.total + gebuehr, kartengebuehr: gebuehr, zimmer, board, naechte: nights,
+      belegung: Belegung.get(), flugId: p.flug?.id || null,
+    };
+  },
+  zeichnen() { render(); },
+};
 
 function isStay() { return entry.type === "hotel" || entry.type === "apartment"; }
 
@@ -264,15 +325,20 @@ function renderStep1() {
       const r = reisende[+el.dataset.r];
       if (!r) return;
       r[el.dataset.feld] = el.value;
+      kasseMerken();
       if (el.dataset.feld === "gepaeck") renderSummary();
     };
     el.addEventListener("input", uebernehmen);
     el.addEventListener("change", uebernehmen);
   });
-  document.getElementById("cAnkunft").addEventListener("change", (e) => { ankunft = e.target.value; });
-  document.getElementById("cVersicherung").addEventListener("change", (e) => { versicherung = e.target.checked; renderSummary(); });
+  document.getElementById("cAnkunft").addEventListener("change", (e) => { ankunft = e.target.value; kasseMerken(); });
+  document.getElementById("cVersicherung").addEventListener("change", (e) => { versicherung = e.target.checked; kasseMerken(); renderSummary(); });
   main.querySelectorAll(".js-zahlung").forEach((el) =>
-    el.addEventListener("change", () => { zahlung = el.value; renderSummary(); }));
+    el.addEventListener("change", () => { zahlung = el.value; kasseMerken(); renderSummary(); }));
+  ["gMail", "gPhone", "gNote"].forEach((id) => document.getElementById(id)?.addEventListener("input", (e) => {
+    guest[{ gMail: "mail", gPhone: "phone", gNote: "note" }[id]] = e.target.value.trim();
+    kasseMerken();
+  }));
 
   document.getElementById("guestForm").addEventListener("submit", (e) => {
     e.preventDefault();
@@ -282,6 +348,7 @@ function renderStep1() {
       phone: document.getElementById("gPhone").value.trim(),
       note: document.getElementById("gNote").value.trim(),
     };
+    kasseMerken();
     step = 2;
     render();
     window.scrollTo({ top: 0, behavior: "smooth" });

@@ -1036,6 +1036,40 @@ const Kernpruefung = {
     return fehler;
   },
 
+  /* Kasse: was die Person will (03.10.2026). */
+  KASSE_FAELLE: [
+    { text: "ich möchte bitte keine reiserücktritt versicherung und kann man auch anders als mit kreditkarte zahlen?", versicherung: false, zahlFrage: true },
+    { text: "Bitte ohne Versicherung", versicherung: false },
+    { text: "Versicherung bitte abwählen", versicherung: false },
+    { text: "Die Versicherung will ich nicht haben", versicherung: false },
+    { text: "Nimm die Versicherung doch mit dazu", versicherung: true },
+    { text: "Ist die Versicherung schon drin?", versFrage: true },
+    { text: "Ist die Versicherung nicht schon gebucht?", versFrage: true },
+    { text: "Welche Zahlungsarten gibt es?", zahlFrage: true },
+    { text: "Kann man auch per Lastschrift zahlen?", zahlFrage: true },
+    { text: "Lastschrift", zahlung: "lastschrift", nachFrage: true },
+    { text: "Kreditkarte", zahlung: "karte", nachFrage: true },
+    { text: "dann bitte per Lastschrift", zahlung: "lastschrift" },
+    { text: "Ich hätte doch gerne ein anderes Zimmer", zimmer: true },
+    { text: "Kann ich einen anderen Flug nehmen?", flug: true },
+    { text: "Ja, abschließen" },
+    { text: "Wie viele Nächte sind es nochmal?" },
+  ],
+  kasse() {
+    const fehler = [];
+    if (typeof Kern === "undefined" || !Kern.kasseAbsicht) return fehler;
+    for (const f of this.KASSE_FAELLE) {
+      const ist = Kern.kasseAbsicht(f.text, !!f.nachFrage);
+      const soll = { versicherung: f.versicherung ?? null, zahlung: f.zahlung ?? null, zahlFrage: !!f.zahlFrage,
+        versFrage: !!f.versFrage, zimmer: !!f.zimmer, flug: !!f.flug };
+      for (const k of Object.keys(soll)) {
+        if (ist[k] !== soll[k]) fehler.push({ art: "kasse_falsch_gelesen", thema: "kasse", satz: f.text,
+          text: `"${f.text}": ${k} ist ${ist[k]}, erwartet ${soll[k]}` });
+      }
+    }
+    return fehler;
+  },
+
   filterbitte() {
     const fehler = [];
     for (const f of this.FILTER_FAELLE) {
@@ -2153,6 +2187,7 @@ const Kernpruefung = {
     for (const f of this.ankunft()) alle.push(f);
     for (const f of this.kernAntworten()) alle.push(f);
     for (const f of this.katalogArt()) alle.push(f);
+    for (const f of this.kasse()) alle.push(f);
     for (const f of this.budget()) alle.push(f);
     for (const f of this.vorschlagsset()) alle.push(f);
     for (const f of this.flughaefen()) alle.push(f);

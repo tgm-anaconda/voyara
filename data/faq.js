@@ -40,10 +40,10 @@ const FAQ = [
     antwort: "Sofort nach dem Abschluss per E-Mail, meist innerhalb weniger Minuten. Kommt nach einer Stunde nichts an, sieh im Spam-Ordner nach.",
     stichworte: ["bestätigung", "bestaetigung", "email", "mail", "voucher", "beleg"] },
   { id: "f-buchung-zahlung", thema: "buchung", frage: "Welche Zahlungsarten gibt es?",
-    antwort: "Kreditkarte (Visa, Mastercard, American Express), PayPal, SEPA-Lastschrift und Sofortüberweisung. Bei vielen Häusern kannst du auch erst vor Ort bezahlen.",
+    antwort: "Zwei: Kreditkarte mit sofortiger Bestätigung (dafür kommen 2 Prozent Kartengebühr dazu) oder Lastschrift ohne Gebühr, die Bestätigung kommt dann nach einem Werktag. Beides wählst du in der Kasse.",
     stichworte: ["zahlen", "zahlung", "bezahlen", "kreditkarte", "paypal", "lastschrift", "rechnung", "überweisung"] },
   { id: "f-buchung-anzahlung", thema: "buchung", frage: "Muss ich alles sofort bezahlen?",
-    antwort: "Bei den meisten Häusern wird eine Anzahlung von 20 Prozent fällig, der Rest 14 Tage vor Anreise. Steht an der Unterkunft „Zahlung vor Ort“, zahlst du erst im Hotel.",
+    antwort: "Ja, der Gesamtbetrag wird mit der Buchung fällig. Eine Anzahlung oder Zahlung vor Ort bieten wir nicht an.",
     stichworte: ["anzahlung", "sofort", "raten", "teilzahlung", "vorkasse"] },
   { id: "f-buchung-ohne-konto", thema: "buchung", frage: "Brauche ich ein Kundenkonto?",
     antwort: "Nein. Du kannst ohne Konto buchen, es reicht eine E-Mail-Adresse für die Bestätigung.",
@@ -52,12 +52,12 @@ const FAQ = [
     antwort: "Ja. Stell die Zimmerzahl in der Suche ein, dann rechnet die Seite den Preis für alle Zimmer zusammen. Die Zimmer liegen nicht automatisch nebeneinander - das kannst du im Bemerkungsfeld anfragen.",
     stichworte: ["mehrere zimmer", "zwei zimmer", "gruppe", "nebeneinander"] },
   { id: "f-buchung-gutschein", thema: "buchung", frage: "Kann ich einen Gutschein einlösen?",
-    antwort: "Ja, im letzten Schritt vor dem Bestätigen gibt es ein Feld für Gutschein- und Aktionscodes. Pro Buchung lässt sich ein Code einlösen.",
+    antwort: "Im Moment nicht. Die Kasse hat kein Feld für Gutschein- oder Aktionscodes.",
     stichworte: ["gutschein", "code", "rabattcode", "aktionscode", "promo"] },
 
   /* ---------- Ändern und Stornieren ---------- */
   { id: "f-storno-frist", thema: "aendern", frage: "Bis wann kann ich kostenlos stornieren?",
-    antwort: "Bei den meisten Unterkünften bis 24 Stunden vor Anreise kostenlos. Die Frist steht auf jeder Unterkunftsseite unter dem Preis. Bei Angeboten mit dem Hinweis „nicht erstattbar“ ist keine Stornierung möglich.",
+    antwort: "Bis 24 Stunden vor Anreise kostenlos. Das steht auf jeder Unterkunftsseite unter dem Preis.",
     stichworte: ["stornieren", "storno", "absagen", "kündigen", "zurücktreten", "kostenlos"] },
   { id: "f-storno-wie", thema: "aendern", frage: "Wie storniere ich?",
     antwort: "Über den Link in der Buchungsbestätigung oder telefonisch unter der Nummer im Impressum. Die Stornierung wird dir noch einmal per E-Mail bestätigt.",
@@ -147,12 +147,17 @@ const FAQ = [
     antwort: "Bei manchen Häusern gibt es einen Einzelzimmerzuschlag, weil das Zimmer sonst zu zweit belegt wäre. Er ist im angezeigten Preis schon enthalten.",
     stichworte: ["allein", "einzelzimmer", "single", "alleinreisend", "zuschlag"] },
 
-  /* ---------- Preise und Gebühren ---------- */
+  /* ---------- Preise und Gebühren ----------
+     Am 03.10.2026 mit der Seite abgeglichen: Zahlungsarten, Anzahlung,
+     Gutscheinfeld, Servicegebuehr, Preisbestandteile und Merkzettel
+     standen hier anders, als die Seite es tut. Das FAQ ist die Quelle,
+     aus der der Agent Servicefragen beantwortet - es darf nichts sagen,
+     was die Kasse nicht kann. */
   { id: "f-preis-enthalten", thema: "preise", frage: "Was ist im angezeigten Preis enthalten?",
-    antwort: "Die Übernachtung für die gewählten Zimmer und Nächte, die gewählte Verpflegung und die Servicegebühr. Bei Ferienwohnungen die Endreinigung, mit „Flug dazu“ auch der Flug für alle Reisenden. Nicht enthalten sind Kurtaxe und alles, was du vor Ort dazubuchst.",
+    antwort: "Die Übernachtung für die gewählten Zimmer und Nächte und die gewählte Verpflegung, mit „Flug dazu“ auch der Flug für alle Reisenden. In der Kasse kommen die Endreinigung und die Extras dazu, die du dort wählst (Gepäck, Reiserücktrittsversicherung, Kartengebühr bei Kreditkarte). Nicht enthalten ist die Kurtaxe, die das Haus vor Ort erhebt.",
     stichworte: ["preis enthalten", "inklusive", "gesamtpreis", "was kostet", "endpreis"] },
   { id: "f-servicegebuehr", thema: "preise", frage: "Was ist die Servicegebühr?",
-    antwort: "Eine einmalige Gebühr von 35 Euro pro Zimmer für Buchung und Service. Sie steht in der Kasse einzeln ausgewiesen.",
+    antwort: "Eine Servicegebühr gibt es nicht, in der Kasse steht sie mit 0 Euro. Dazu kommt einmalig die Endreinigung: bei Hotels 35 Euro pro Zimmer, bei Ferienwohnungen der Betrag des Hauses. Beides steht in der Kasse einzeln.",
     stichworte: ["servicegebühr", "gebühr", "buchungsgebühr", "aufschlag"] },
   { id: "f-preis-saison", thema: "preise", frage: "Warum ändert sich der Preis je nach Monat?",
     antwort: "Weil Unterkünfte in der Hauptsaison mehr kosten als in der Nebensaison. Auf jeder Karte steht, ob dein Zeitraum in der Haupt- oder Nebensaison liegt.",
@@ -161,7 +166,7 @@ const FAQ = [
     antwort: "Wir zeigen den Preis, den das Haus uns für deinen Zeitraum gibt. Ein reduzierter Preis ist mit „Angebot“ gekennzeichnet, und links lässt sich nach reduzierten Häusern filtern.",
     stichworte: ["bestpreis", "günstiger", "angebot", "rabatt", "reduziert", "billiger"] },
   { id: "f-versicherung", thema: "preise", frage: "Brauche ich eine Reiserücktrittsversicherung?",
-    antwort: "Nötig ist sie nicht. Sie lohnt sich, wenn du weit im Voraus buchst oder die Stornofrist knapp ist. In der Kasse kannst du sie dazunehmen oder abwählen.",
+    antwort: "Nötig ist sie nicht. Sie lohnt sich, wenn du weit im Voraus buchst oder die Stornofrist knapp ist. In der Kasse steht sie als Extra für 49 Euro; dort kannst du sie an- oder abwählen.",
     stichworte: ["versicherung", "reiserücktritt", "rücktrittsversicherung", "absicherung"] },
 
   /* ---------- Die Seite und der Assistent ---------- */
@@ -175,7 +180,7 @@ const FAQ = [
     antwort: "Ein Haus, für dessen Buchung Voyara eine Provision vom Betreiber bekommt. Preis, Bewertungen und Verfügbarkeit sind davon unberührt - sie stammen aus denselben Daten wie bei allen anderen Häusern.",
     stichworte: ["partner", "partnerhaus", "provision", "werbung", "bezahlt", "gesponsert"] },
   { id: "f-merkzettel", thema: "seite", frage: "Wie funktioniert der Merkzettel?",
-    antwort: "Über das Herz auf jeder Karte legst du Häuser auf den Merkzettel und vergleichst sie später in Ruhe. Er bleibt erhalten, solange du den Browser nicht schließt.",
+    antwort: "Über das Herz auf jeder Karte legst du Häuser auf den Merkzettel und vergleichst sie später in Ruhe. Er bleibt in diesem Browser gespeichert.",
     stichworte: ["merkzettel", "merken", "favoriten", "herz", "vormerken", "wunschliste"] },
   { id: "f-filter", thema: "seite", frage: "Wie filtere ich die Trefferliste?",
     antwort: "Links neben der Liste stehen die Filter: Region, Preis pro Nacht, Gesamtpreis, Bewertung, Sterne, Ausstattung, Verpflegung und Strandnähe. Die Zahl neben jedem Filter sagt, wie viele Häuser danach übrig blieben.",

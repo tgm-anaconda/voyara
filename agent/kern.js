@@ -849,7 +849,15 @@ const Kern = {
     const zim = (p0.zimmerTyp && hausZimmer.some((r) => r.name === p0.zimmerTyp))
       ? p0.zimmerTyp : (this.lauf.zimmerWahl || {})[id];
     if (zim) href += `&zimmerart=${encodeURIComponent(zim)}`;
-    if (typeof Belegung !== "undefined") href = Belegung.anLink(href);
+    /* Die Gruppe aus dem Gespraech, nicht von der Seite: Stand dort
+       gerade die Vorgabe (2 Erwachsene), ging sie bisher mit in die Kasse
+       (03.10.2026, "2 Erwachsene" statt 2 + 2). */
+    if (p0.erwachsene) {
+      const kinder = p0.kinder || 0;
+      const alter = (p0.kinderAlter || []).slice(0, kinder);
+      while (alter.length < kinder) alter.push(6);
+      href += `&adults=${p0.erwachsene}&children=${kinder}&rooms=${p0.zimmer || 1}${kinder ? `&ages=${alter.join(",")}` : ""}`;
+    } else if (typeof Belegung !== "undefined") href = Belegung.anLink(href);
     if (typeof Reisedaten !== "undefined") href = Reisedaten.anLink(href);
     const p = this.lauf.profil || {};
     if (!/[?&](from|flex)=/.test(href)) {
@@ -1033,6 +1041,7 @@ const Kern = {
     this.lauf.stumm = false;
     if (this.lauf.anhalt?.gesagt && this.anhaltAntwort(t, opts)) return;
     if (this.lauf.budgetHalt && this.budgetAntwort(t, opts)) return;
+    if (await this.kasseBedienen(t, opts)) return;
     this.ankunftLesen(t);
     this.zimmerAntwort(t);
     this.abschlussAntwort(t);
@@ -2923,6 +2932,141 @@ const Kern = {
     if (!(this.lauf.profil || {}).flugId) return;
     this.lauf.flugWartet = null;
     this.lauf.fortsetzenMit = "buchung_vorbereiten";
+  },
+
+  /* In der Kasse: aendern, zuruecknehmen, nachsehen.
+     ------------------------------------------------------------------
+     Gemeldet am 03.10.2026: Auf "ich moechte bitte keine
+     Reiseruecktrittsversicherung und kann man auch anders als mit
+     Kreditkarte zahlen?" antwortete das Modell, die Versicherung sei
+     "nicht automatisch dabei" (sie war vorausgewaehlt) und andere
+     Zahlungsarten seien "oft moeglich, das haengt vom Anbieter ab". Beides
+     aus dem Weltwissen, beides falsch fuer diese Seite.
+
+     Diese Faelle erkennt jetzt der Kern, so wie die Bitte um neue Filter:
+     Versicherung an oder aus, Zahlungsart fragen oder waehlen, ein
+     anderes Zimmer, ein anderer Flug. Was sich am Formular aendern
+     laesst, stellt er sichtbar um und sagt, was sich am Preis tut; was
+     an der Hausseite haengt (Zimmer, Flug), schickt er durch
+     buchung_vorbereiten, das die Kasse mit allem Eingetragenen wieder
+     aufbaut. Liefert true, wenn er die Nachricht ganz erledigt hat. */
+  async kasseBedienen(t, opts = {}) {
+    if (typeof Werkzeuge === "undefined" || Werkzeuge.seite() !== "checkout" || typeof Kasse === "undefined") return false;
+    if (this.laeuft) return false;
+    const p = (this.lauf.profil ||= {});
+    const id = Kasse.stand()?.id || this.lauf.gewaehlt;
+    const ab = this.kasseAbsicht(t, !!this.lauf.zahlungFrage);
+    // Zimmer oder Flug: ueber die Hausseite, mit allem, was schon dasteht
+    if (ab.zimmer) {
+      if (p.zimmerWahl) delete p.zimmerWahl[id];
+      if (p.zimmerTyp) delete p.zimmerTyp;
+      this.lauf.zimmerGefragt = false;
+      this.lauf.fortsetzenMit = "buchung_vorbereiten";
+      this.notieren("kasse_zurueck", { was: "zimmer", id });
+      return false;
+    }
+    if (ab.flug) {
+      delete p.flugId;
+      try { Flug.set({ flugId: null }); } catch { /* ohne Flugmodul */ }
+      this.lauf.flugGefragt = false;
+      this.lauf.fortsetzenMit = "buchung_vorbereiten";
+      this.notieren("kasse_zurueck", { was: "flug", id });
+      return false;
+    }
+    const { versicherung, zahlung, zahlFrage, versFrage } = ab;
+    if (versicherung === null && zahlung === null && !zahlFrage && !versFrage) return false;
+
+    if (!opts.gezeigt) this.sagen(t, "user");
+    this.gespraechPush({ role: "user", content: t });
+    this.lauf.zahlungFrage = false;
+    this.laeuft = true;
+    AgentPanel.arbeitetAn?.();
+    this.sperreAn();
+    const euro = (x) => Politik.euro(x);
+    const teile = [];
+    let chips = [];
+    try {
+      const vorher = Kasse.stand();
+      if (versicherung !== null || zahlung) {
+        const e = await Werkzeuge.kasseAendern({ versicherung, zahlung });
+        const n = e.daten?.nachher || Kasse.stand();
+        if (versicherung === false) {
+          teile.push(vorher.versicherung
+            ? `Ich habe die Reiserücktrittsversicherung abgewählt, das spart ${euro(vorher.versicherungPreis)}.`
+            : "Die Reiserücktrittsversicherung ist nicht gebucht.");
+          this.notieren("kasse_versicherung", { an: false, vorher: vorher.versicherung, ueber: "agent" });
+        }
+        if (versicherung === true) {
+          teile.push(vorher.versicherung ? "Die Reiserücktrittsversicherung ist schon drin."
+            : `Ich habe die Reiserücktrittsversicherung dazugenommen, sie kostet ${euro(vorher.versicherungPreis)}.`);
+          this.notieren("kasse_versicherung", { an: true, vorher: vorher.versicherung, ueber: "agent" });
+        }
+        if (zahlung) {
+          teile.push(zahlung === "lastschrift" ? "Gezahlt wird jetzt per Lastschrift, ohne Kartengebühr."
+            : "Gezahlt wird jetzt mit Kreditkarte, dafür kommen 2 % Gebühr dazu.");
+          this.notieren("kasse_zahlung", { zahlung, vorher: vorher.zahlung, ueber: "agent" });
+        }
+        if (n.gesamt !== vorher.gesamt) teile.push(`Der Gesamtpreis ist jetzt ${euro(n.gesamt)} statt ${euro(vorher.gesamt)}.`);
+      }
+      if (versFrage) {
+        await Werkzeuge.kasseAnsehen("versicherung");
+        const st = Kasse.stand();
+        teile.push(st.versicherung
+          ? `Die Reiserücktrittsversicherung ist gerade ausgewählt, sie kostet ${euro(st.versicherungPreis)}.`
+          : "Die Reiserücktrittsversicherung ist gerade nicht ausgewählt.");
+        this.notieren("kasse_frage", { was: "versicherung", an: st.versicherung });
+      }
+      if (zahlFrage) {
+        await Werkzeuge.kasseAnsehen("zahlung");
+        const st = Kasse.stand();
+        const arten = st.zahlungsarten.map((z) => `${z.label} (${z.zusatz}, ${z.hinweis})`);
+        const jetzt = st.zahlungsarten.find((z) => z.wert === st.zahlung)?.label;
+        teile.push(`Hier geht ${arten.join(" oder ")}. Gerade ist ${jetzt} gewählt. Welche soll ich nehmen?`);
+        chips = st.zahlungsarten.map((z) => z.label);
+        this.lauf.zahlungFrage = true;
+        this.notieren("kasse_frage", { was: "zahlung", zahlung: st.zahlung });
+      }
+      if (!this.lauf.zahlungFrage) {
+        teile.push("Soll ich die Buchung abschließen?");
+        chips = ["Ja, abschließen", "Noch nicht"];
+        this.lauf.abschlussFrage = id;
+      }
+    } finally {
+      this.laeuft = false;
+      this.sperreAus();
+      AgentPanel.arbeitetAus?.();
+    }
+    this.sagenUndMerken(teile.join(" "));
+    this.lauf.chips = chips;
+    AgentPanel.setSuggestions(chips);
+    this.sichern();
+    return true;
+  },
+
+  // Was die Person in der Kasse will - nur die Erkennung, ohne zu handeln
+  kasseAbsicht(t, zahlungGefragt = false) {
+    const satz = String(t).toLowerCase().trim();
+    const raus = { versicherung: null, zahlung: null, zahlFrage: false, versFrage: false, zimmer: false, flug: false };
+    if (/(anderes?n?|ein anderes) zimmer|zimmer (ä|ae)ndern|zimmer wechseln|zimmer tauschen/.test(satz)) { raus.zimmer = true; return raus; }
+    if (/(anderen?r?|einen anderen) flug|flug (ä|ae)ndern|flug wechseln|andere verbindung/.test(satz)) { raus.flug = true; return raus; }
+    const VERS = /versicherung|rücktritt|ruecktritt|storno-?schutz/;
+    const WEG = /\b(kein|keine|keinen|ohne|weg|raus|abw(ä|ae)hl\w*|entfern\w*|streich\w*)\b|\bnicht (haben|nehmen|buchen|mehr)\b|\bnicht\b(?!.*\b(drin|dabei|gebucht|schon)\b)/;
+    const DAZU = /\b(doch|mit|dazu|hinzu|rein)\b/;
+    const ZAHL = /zahl|bezahl|kreditkarte|\bkarte\b|lastschrift|paypal|(ü|ue)berweis|rechnung|\bbar\b/;
+    const fragt = /\?/.test(satz) || /\b(welche|wie kann|kann man|geht auch|gibt es|m(ö|oe)glich)\b/.test(satz);
+    // "Ist die Versicherung (nicht) schon drin?" fragt nach dem Stand
+    const standFrage = fragt && /\b(ist|sind|hab|habe)\b.*\b(drin|dabei|gebucht|ausgew(ä|ae)hlt|schon)\b/.test(satz);
+    if (VERS.test(satz) && !standFrage) {
+      if (WEG.test(satz)) raus.versicherung = false;
+      else if (DAZU.test(satz) && !fragt) raus.versicherung = true;
+    }
+    raus.zahlFrage = ZAHL.test(satz) && fragt && !/^(per |mit )?(lastschrift|kreditkarte|karte)\.?$/.test(satz);
+    if (!raus.zahlFrage && (zahlungGefragt || ZAHL.test(satz))) {
+      if (/lastschrift/.test(satz)) raus.zahlung = "lastschrift";
+      else if (/kreditkarte|\bkarte\b/.test(satz)) raus.zahlung = "karte";
+    }
+    raus.versFrage = VERS.test(satz) && raus.versicherung === null;
+    return raus;
   },
 
   /* Die Antwort auf die Budgetfrage vor der Vorlage. true: erledigt. */

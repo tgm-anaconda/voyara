@@ -91,13 +91,34 @@ const UNTERKUNFT_TYPEN = ["unterkunft", "hotel", "apartment"];
    Buchung gemeinsam genutzt, damit die Angabe durchgaengig wirkt.
    ================================================================== */
 const Belegung = {
+  SCHLUESSEL: "voyara_belegung",
+  /* Die letzte gesetzte Belegung gilt weiter.
+     ----------------------------------------------------------------
+     Gemeldet am 03.10.2026: Vier Reisende (2 + 2 Kinder), und in der
+     Kasse stand "2 Erwachsene" - der Preis galt fuer zwei Personen. Die
+     Belegung kam nur aus der Adresse, und jeder Link ohne adults=...
+     (Vorschlagskarte, Merkzettel, FAQ) setzte sie still auf die
+     Vorgabe zurueck. Jetzt merkt sich die Seite die letzte, die in einer
+     Adresse stand, fuer die Sitzung. */
   get() {
     const p = new URLSearchParams(window.location.search);
-    const erwachsene = Math.max(1, +(p.get("adults") || 2));
-    const kinder = Math.max(0, +(p.get("children") || 0));
-    const zimmer = Math.max(1, +(p.get("rooms") || 1));
+    let quelle = p;
+    if (p.get("adults")) {
+      try {
+        sessionStorage.setItem(this.SCHLUESSEL, JSON.stringify({ adults: p.get("adults"), children: p.get("children") || "0",
+          rooms: p.get("rooms") || "1", ages: p.get("ages") || "" }));
+      } catch { /* ohne Speicher */ }
+    } else {
+      try {
+        const g = JSON.parse(sessionStorage.getItem(this.SCHLUESSEL) || "null");
+        if (g) quelle = new URLSearchParams(g);
+      } catch { /* ohne Speicher */ }
+    }
+    const erwachsene = Math.max(1, +(quelle.get("adults") || 2));
+    const kinder = Math.max(0, +(quelle.get("children") || 0));
+    const zimmer = Math.max(1, +(quelle.get("rooms") || 1));
     // Alter der Kinder, "10,6" - fehlt es, gilt wie in der Maske 6
-    const alter = (p.get("ages") || "").split(",").map((a) => parseInt(a, 10)).filter((a) => !Number.isNaN(a)).slice(0, kinder);
+    const alter = (quelle.get("ages") || "").split(",").map((a) => parseInt(a, 10)).filter((a) => !Number.isNaN(a)).slice(0, kinder);
     while (alter.length < kinder) alter.push(6);
     return { erwachsene, kinder, zimmer, personen: erwachsene + kinder, alter };
   },
