@@ -7249,23 +7249,34 @@ function formatPrice(value) {
      Inclusive in Staedten, in den Bergen oder im Norden - das gibt es
      dort auch sonst kaum.
    Die Aufpreise folgen den vorhandenen Haeusern derselben Art. */
-(function verpflegungErgaenzen() {
-  const SONNE = ["mallorca", "kreta", "algarve", "sardinien", "teneriffa", "krabi", "marrakesch"];
-  const RESORT = ["luxus", "budget", "finca", "strand", "familie"];
+/* Alle fuenf Verpflegungsstufen in jedem Hotel, Preis pro Person (03.10.2026).
+   ------------------------------------------------------------------
+   Gemeldet: "Halbpension" gewuenscht, und der Agent musste sie lockern,
+   weil die Haeuser im Budget keine hatten - es gab sieben verschiedene
+   Zusammenstellungen. Der Nutzer: "Bei solchen unwichtigen Sachen
+   koennen wir es dem Agenten ja auch wirklich einfach machen, dass jedes
+   Hotel dort die gleichen Verpflegungsstufen hat."
+
+   Und: Verpflegung kostet pro Person, nicht pro Zimmer - Halbpension
+   fuer vier kostet mehr als fuer zwei (Entscheidung vom selben Tag).
+
+   Der Grundpreis bleibt, was er war (der Zimmerpreis); "ohne" kostet
+   nichts. Die Aufschlaege pro Person und Nacht folgen dem Fruehstueck
+   des Hauses, wo es eins gab, sonst zehn Prozent des Grundpreises -
+   zwischen 8 und 30 Euro. Daraus: Halbpension das 2,2-fache,
+   Vollpension das 3,2-fache, All Inclusive das 4,2-fache. Ferienwohnungen
+   bleiben Selbstversorger. */
+(function verpflegungVereinheitlichen() {
   for (const h of HOTELS) {
-    const boards = h.boards || (h.boards = []);
-    const hat = (k) => boards.some((b) => b.key === k);
-    const fruehstueck = boards.find((b) => b.key === "fruehstueck")?.priceDelta || Math.round((h.pricePerNight || 100) * 0.1);
-    if (!hat("halb") && (h.amenities || []).includes("restaurant")) {
-      boards.push({ key: "halb", priceDelta: Math.max(18, Math.round(fruehstueck * 2.2)) });
-    }
-    if (!hat("ai") && SONNE.includes(h.ziel) && RESORT.includes(h.category)) {
-      const halb = boards.find((b) => b.key === "halb")?.priceDelta || Math.round(fruehstueck * 2.2);
-      boards.push({ key: "ai", priceDelta: Math.max(38, Math.round(halb * 1.7)) });
-    }
-    // Reihenfolge wie im Katalog: ohne, Fruehstueck, Halbpension, Vollpension, All Inclusive
-    const ORDNUNG = ["ohne", "fruehstueck", "halb", "voll", "ai"];
-    boards.sort((a, b) => ORDNUNG.indexOf(a.key) - ORDNUNG.indexOf(b.key));
+    const alt = (h.boards || []).find((b) => b.key === "fruehstueck")?.priceDelta;
+    const fr = Math.min(30, Math.max(8, alt || Math.round((h.pricePerNight || 100) * 0.1)));
+    h.boards = [
+      { key: "ohne", priceDelta: 0 },
+      { key: "fruehstueck", priceDelta: fr },
+      { key: "halb", priceDelta: Math.round(fr * 2.2) },
+      { key: "voll", priceDelta: Math.round(fr * 3.2) },
+      { key: "ai", priceDelta: Math.round(fr * 4.2) },
+    ];
   }
 })();
 

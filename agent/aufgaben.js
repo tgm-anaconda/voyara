@@ -340,6 +340,11 @@ const Aufgaben = {
     }
     const zimmer = aufgabe.zimmerWahl(h);
     if (!zimmer) return null;
+    // Dieselbe Rechnung wie Seite und Kasse (aufenthaltKosten, data/ziele.js)
+    if (typeof aufenthaltKosten === "function") {
+      return aufenthaltKosten(h, aufgabe.monat, aufgabe, aufgabe.naechte,
+        { zimmer, board: aufgabe.verpflegung || "ohne" }).gesamt;
+    }
     const board = h.boards?.find((b) => b.key === aufgabe.verpflegung)
       || h.boards?.find((b) => b.key === "ohne") || h.boards?.[0];
     const nacht = basis + zimmer.priceDelta + (board?.priceDelta || 0);

@@ -2792,6 +2792,51 @@ FLIGHTS.push(
     return (h || 0) * 60 + (m || 0);
   };
 
+  /* Jeder Flughafen fliegt jedes Ziel an (03.10.2026).
+     ----------------------------------------------------------------
+     Gemeldet: "Flug ab Zuerich" - und der Agent legte Haeuser auf Kreta
+     und Mallorca vor, wohin ab Zuerich nichts flog; auf der Hausseite
+     stand dann "Ab Zuerich gibt es keinen Flug zu diesem Ziel". Von 162
+     Paaren aus Flughafen und Ziel fehlten 48. Der Nutzer: Ein Flug muss
+     immer gewaehrleistet sein, sonst laesst sich das Partneretikett beim
+     Flug gar nicht messen.
+
+     Fuer jedes fehlende Paar entsteht ein Basisflug aus den vorhandenen
+     Fluegen zum selben Ziel: mittlere Dauer und Stopps, mittlerer Preis
+     mit wenigen Prozent Abweichung je Flughafen. Daraus macht der
+     Schritt darunter wie bei allen anderen Paaren drei eng beieinander
+     liegende Verbindungen. */
+  {
+    const flughaefen = new Map();
+    for (const f of FLIGHTS) if (!flughaefen.has(f.fromCode)) flughaefen.set(f.fromCode, f.from);
+    const nachZiel = new Map();
+    for (const f of FLIGHTS) {
+      if (!nachZiel.has(f.ziel)) nachZiel.set(f.ziel, []);
+      nachZiel.get(f.ziel).push(f);
+    }
+    const streu = (text) => { let h = 0; for (const c of text) h = (h * 31 + c.charCodeAt(0)) >>> 0; return h; };
+    let nr = 500;
+    for (const [ziel, liste] of nachZiel) {
+      const nachPreis = liste.slice().sort((a, b) => a.price - b.price);
+      const mitte = nachPreis[Math.floor(nachPreis.length / 2)];
+      const nachDauer = liste.map((f) => minuten(f.duration)).sort((a, b) => a - b);
+      const dauer = nachDauer[Math.floor(nachDauer.length / 2)];
+      for (const [code, name] of flughaefen) {
+        if (liste.some((f) => f.fromCode === code)) continue;
+        const h = streu(`${ziel}|${code}`);
+        const ab = 6 * 60 + (h % 12) * 60 + (h % 4) * 15;
+        nr += 1;
+        FLIGHTS.push({
+          id: `f${nr}`, type: "flight", airline: mitte.airline,
+          from: name, fromCode: code, to: mitte.to, toCode: mitte.toCode, ziel,
+          depart: uhrText(ab), arrive: uhrText(ab + dauer), duration: dauerText(dauer),
+          stops: mitte.stops || 0, price: Math.max(39, Math.round(mitte.price * (0.96 + (h % 9) / 100))),
+          baggage: mitte.baggage, aircraft: mitte.aircraft, ergaenzt: true,
+        });
+      }
+    }
+  }
+
   // Paare aus Ziel und Flughafen, jeweils der guenstigste vorhandene Flug
   const paare = new Map();
   for (const f of FLIGHTS) {

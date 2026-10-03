@@ -40,7 +40,7 @@ const Auswahl = {
   /* Die Reihenfolge ist die Reihenfolge der Begründung: Was zuerst
      scheitert, wird genannt. Grob nach außen und innen sortiert - erst
      Ort und Zeit, dann die Gruppe, dann Geld, dann Wünsche. */
-  FELDER: ["art", "suchtext", "monat", "ziel", "saison", "gruppe", "dauer", "flugtag",
+  FELDER: ["art", "suchtext", "monat", "ziel", "saison", "gruppe", "dauer", "flug", "flugtag",
     "preis", "gesamt", "strand", "bewertung", "sterne", "kategorie", "ausstattung",
     "verpflegung", "angebote", "wlan", "schlafzimmer"],
 
@@ -63,9 +63,10 @@ const Auswahl = {
     if (!h || !v) return null;
     const nacht = typeof preisImMonat === "function" ? preisImMonat(h, v.monat || null) : null;
     if (nacht == null) return null;
-    const a = typeof Politik !== "undefined" && Politik.aufenthaltspreis
-      ? Politik.aufenthaltspreis(h, v, nacht) : null;
-    const unterkunft = a ? a.gesamt : nacht * (v.naechte || 7);
+    // Eine Rechnung fuer alle Seiten (aufenthaltKosten in data/ziele.js)
+    const unterkunft = typeof aufenthaltKosten === "function"
+      ? aufenthaltKosten(h, v.monat || null, v, v.naechte || 7).gesamt
+      : nacht * (v.naechte || 7);
     if (unterkunft == null) return null;
     const personen = (v.erwachsene || 0) + (v.kinder || 0) || v.personen || 0;
     /* Der Flugteil darf die Rechnung nicht zum Absturz bringen: `paket`
@@ -126,7 +127,15 @@ const Auswahl = {
       if (!f || Flug.passtTag(f, v.flugAnreise, v.naechte || 7) === false) return "flugtag";
     }
 
-    const nacht = typeof preisImMonat === "function" ? preisImMonat(h, v.monat || null) : null;
+    /* Mit Flug nur, wohin ab dem gewaehlten Flughafen etwas fliegt.
+       Gemeldet am 03.10.2026: "ab Zuerich" - und Haeuser auf Kreta. */
+    if (!aus("flug") && v.flug && h.type !== "apartment" && typeof Flug !== "undefined"
+      && !Flug.optionen(h.ziel).length) return "flug";
+
+    /* Der Nachtpreis fuer DIESE Gruppe: passendes Zimmer, Zahl der
+       Zimmer, gewuenschte Verpflegung pro Person (03.10.2026). */
+    const nacht = typeof nachtpreisGruppe === "function" ? nachtpreisGruppe(h, v.monat || null, v)
+      : (typeof preisImMonat === "function" ? preisImMonat(h, v.monat || null) : null);
     if (!aus("preis") && v.maxPreis != null && nacht != null && nacht > v.maxPreis) return "preis";
     if (!aus("gesamt") && v.budgetGesamt != null) {
       const r = this.reisepreis(h, v);

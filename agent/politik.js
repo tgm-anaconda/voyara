@@ -688,7 +688,12 @@ const Politik = {
     const teile = [];
     const genannt = (k.belege || []).filter((b) => b.erwaehnungen).sort((a, b) => b.gewicht - a.gewicht)[0];
     if (genannt) {
-      teile.push(`${genannt.kriterium}: ${this.teilnoteText(genannt.anteil)}${einordnung && einordnung.id === genannt.kriterium && einordnung.best ? ", der beste Wert in dieser Auswahl" : ""}.`);
+      /* Ohne "der beste Wert in dieser Auswahl" (03.10.2026): Mit den
+         konstruierten Teilnoten (data/teilnoten.js) stand der Zusatz
+         immer beim Partnerhaus - ein zweiter Hinweis neben dem Etikett,
+         und dann liesse sich nicht mehr sagen, was gewirkt hat. Die Zahl
+         allein zeigt den kleinen Vorsprung. */
+      teile.push(`${genannt.kriterium}: ${this.teilnoteText(genannt.anteil)}.`);
     }
     const ausstattung = (profil.kriterien || []).map((x) => this.kriterium(x.id)).filter((kr) => kr?.filter?.ausstattung);
     const hat = ausstattung.filter((kr) => (item.amenities || []).includes(kr.filter.ausstattung)).map((kr) => kr.label);
@@ -726,27 +731,14 @@ const Politik = {
      plus Aufpreis des Zimmers, in das die Gruppe passt, plus die erste
      Verpflegung, mal Naechte mal Zimmer, plus Gebuehr je Zimmer (Hotel 35,
      Wohnung Endreinigung). Liefert auch das gewaehlte Zimmer. */
-  aufenthaltspreis(item, profil, preisProNacht) {
-    const naechte = profil.naechte || 7;
-    const zimmerZahl = Math.max(1, profil.zimmer || 1);
-    if (item.type === "apartment") return { zimmer: null, board: null, gesamt: preisProNacht * naechte + (item.cleaningFee || 0) };
-    const personen = (profil.erwachsene || 0) + (profil.kinder || 0);
-    const jeZimmer = personen ? Math.ceil(personen / zimmerZahl) : 0;
-    /* Hat die Person ein Zimmer gewaehlt, gilt ihres.
-       ----------------------------------------------------------------
-       Bis zum 02.10.2026 nahm der Agent immer das erste passende, also
-       in aller Regel das guenstigste - gefragt wurde nie. Der Nutzer:
-       "Die Wahl des Zimmers muss noch eine Frage sein, die man
-       beantworten muss." Seitdem steht ihre Wahl in `zimmerTyp`, und der
-       Preis muss ihr folgen, sonst stuende auf der Karte etwas anderes
-       als in der Kasse. */
-    const passend = (item.rooms || []).filter((r) => (r.maxGuests || 0) >= jeZimmer);
-    const gewaehlt = profil.zimmerTyp
-      ? (item.rooms || []).find((r) => r.name === profil.zimmerTyp) : null;
-    const zimmer = gewaehlt || passend[0] || (item.rooms || [])[0] || null;
-    const board = (item.boards || []).find((b) => b.key === profil.verpflegung) || (item.boards || [])[0] || null;
-    const nacht = preisProNacht + (zimmer?.priceDelta || 0) + (board?.priceDelta || 0);
-    return { zimmer, board, gesamt: nacht * naechte * zimmerZahl + 35 * zimmerZahl };
+  /* Seit dem 03.10.2026 eine Rechnung fuer alle (aufenthaltKosten in
+     data/ziele.js): guenstigstes passendes oder gewaehltes Zimmer, die
+     Verpflegung pro Person. Der dritte Parameter bleibt fuer die Aufrufer
+     stehen, zaehlt aber nicht mehr - er war der Grundpreis, und mit ihm
+     rechnete der Agent an der Gruppe vorbei. */
+  aufenthaltspreis(item, profil, _preisProNacht = null) {
+    const k = aufenthaltKosten(item, profil.monat || null, profil, profil.naechte || 7);
+    return { zimmer: k.zimmer, board: k.board, gesamt: k.gesamt, kosten: k };
   },
 
   /* Begruendung fuer den Partnervorschlag in der offenen Bedingung.
@@ -834,7 +826,7 @@ const Politik = {
           case "kinderclub": punkte.kinderclub = (it.amenities || []).includes("kidsClub"); break;
           case "familie": punkte.familienfreundlich = (it.amenities || []).includes("familyFriendly"); break;
           case "strand": punkte.meterZumStrand = it.distanceToBeach != null ? Math.round(it.distanceToBeach * 1000) : null; break;
-          case "verpflegung": punkte.verpflegung = (it.boards || []).map((b) => `${typeof BOARD_LABELS !== "undefined" ? BOARD_LABELS[b.key] || b.key : b.key}${b.priceDelta ? ` (+${b.priceDelta} €/Nacht)` : ""}`); break;
+          case "verpflegung": punkte.verpflegung = (it.boards || []).map((b) => `${typeof BOARD_LABELS !== "undefined" ? BOARD_LABELS[b.key] || b.key : b.key}${b.priceDelta ? ` (+${b.priceDelta} € pro Person und Nacht)` : ""}`); break;
           case "sterne": punkte.sterne = it.stars ?? null; break;
           case "bewertung": punkte.bewertung = { note: it.rating, anzahl: it.reviewCount }; break;
           case "zimmer": punkte.zimmer = (it.rooms || []).map((r) => `${r.name || r.key}: bis ${r.maxGuests} Pers.${r.priceDelta ? `, +${r.priceDelta} €` : ""}`); break;
@@ -1941,7 +1933,7 @@ const Politik = {
         .map((k) => (k.belege || []).find((b) => b.kriterium === beleg.kriterium))
         .filter(Boolean);
       const bester = andere.every((b) => b.anteil <= beleg.anteil);
-      teile.push(`${erster.item.name} steht vorn, weil ${beleg.kriterium} dort bei ${this.teilnoteText(beleg.anteil)} liegt, aus ${beleg.erwaehnungen} Rückmeldungen${bester && andere.length ? ", der beste Wert der Auswahl" : ""}.`);
+      teile.push(`${erster.item.name} steht vorn, weil ${beleg.kriterium} dort bei ${this.teilnoteText(beleg.anteil)} liegt, aus ${beleg.erwaehnungen} Rückmeldungen.`);
     } else if (erster) {
       teile.push(`${erster.item.name} steht vorn wegen der Gesamtnote von ${erster.item.rating.toFixed(1).replace(".", ",")} bei ${erster.item.reviewCount} Bewertungen.`);
     }

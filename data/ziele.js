@@ -198,6 +198,85 @@ function preisImMonat(item, monat) {
   return Math.round(item.pricePerNight * saisonFaktor(ziel, monat));
 }
 
+/* Der Preis pro Nacht fuer DIESE Gruppe (03.10.2026).
+   ------------------------------------------------------------------
+   Gemeldet: "bis 50 € pro Nacht" - die Liste zeigte 48 €, auf der
+   Hausseite standen 88 €. Die 48 waren das Doppelzimmer; vier Personen
+   passen nur ins Familienzimmer. Filter, Karte, Agent und Budgetwarnung
+   rechneten alle mit dem Grundpreis und lagen deshalb gemeinsam falsch.
+
+   Jetzt rechnen alle mit dem, was diese Gruppe pro Nacht zahlt:
+   - das guenstigste Zimmer, das fuer die Personen je Zimmer reicht
+     (oder das gewaehlte), mal die Zahl der Zimmer;
+   - ist genau eine Verpflegung gewuenscht, ihr Preis pro Person mal
+     die Personen (Verpflegung kostet pro Person - Entscheidung des
+     Nutzers vom selben Tag).
+   Ohne Angaben zur Gruppe bleibt es der Grundpreis. Ferienwohnungen
+   werden ganz gebucht, dort aendert sich nichts. */
+function personenDerGruppe(g) {
+  if (!g) return 0;
+  return (g.erwachsene || 0) + (g.kinder || 0) || g.personen || 0;
+}
+
+function zimmerFuerGruppe(item, g) {
+  if (!item || item.type === "apartment" || !(item.rooms || []).length) return null;
+  const personen = personenDerGruppe(g);
+  const zimmerZahl = Math.max(1, (g && g.zimmer) || 1);
+  const jeZimmer = personen ? Math.ceil(personen / zimmerZahl) : 1;
+  if (g && g.zimmerTyp) {
+    const gewaehlt = item.rooms.find((r) => r.name === g.zimmerTyp && (r.maxGuests || 0) >= jeZimmer);
+    if (gewaehlt) return gewaehlt;
+  }
+  const passend = item.rooms.filter((r) => (r.maxGuests || 0) >= jeZimmer)
+    .sort((a, b) => (a.priceDelta || 0) - (b.priceDelta || 0));
+  return passend[0] || null;
+}
+
+// Gewuenschte Verpflegung als Schluessel - nur wenn es genau eine ist
+function verpflegungDerGruppe(g) {
+  if (!g || !g.verpflegung) return null;
+  const v = Array.isArray(g.verpflegung) ? g.verpflegung : [g.verpflegung];
+  return v.length === 1 ? v[0] : null;
+}
+
+function nachtpreisGruppe(item, monat, g = null) {
+  const basis = preisImMonat(item, monat);
+  if (!g || !item || item.type === "apartment" || !(item.rooms || []).length) return basis;
+  const zimmer = zimmerFuerGruppe(item, g);
+  const zimmerZahl = Math.max(1, g.zimmer || 1);
+  const raum = (basis + (zimmer ? zimmer.priceDelta || 0 : 0)) * zimmerZahl;
+  const vk = verpflegungDerGruppe(g);
+  const board = vk ? (item.boards || []).find((b) => b.key === vk) : null;
+  return raum + (board ? (board.priceDelta || 0) * Math.max(1, personenDerGruppe(g)) : 0);
+}
+
+/* Was der Aufenthalt kostet - eine Rechnung fuer Hausseite, Kasse,
+   Karte und Agent. `wahl` setzt Zimmer (Objekt) und Verpflegung
+   (Schluessel), wenn sie schon gewaehlt sind; sonst gelten das
+   guenstigste passende Zimmer und die gewuenschte Verpflegung. */
+function aufenthaltKosten(item, monat, g, naechte, wahl = {}) {
+  const n = Math.max(1, naechte || 7);
+  const basis = preisImMonat(item, monat);
+  if (!item || item.type === "apartment") {
+    const reinigung = (item && item.cleaningFee) || 0;
+    return { zimmer: null, board: null, zimmerProNacht: basis, zimmerZahl: 1, verpflegungProPerson: 0,
+      personen: personenDerGruppe(g), proNacht: basis, unterkunft: basis * n, verpflegung: 0, reinigung, gesamt: basis * n + reinigung };
+  }
+  const zimmerZahl = Math.max(1, (g && g.zimmer) || 1);
+  const personen = Math.max(1, personenDerGruppe(g) || 2);
+  const zimmer = wahl.zimmer || zimmerFuerGruppe(item, g) || (item.rooms || [])[0] || null;
+  const vk = wahl.board || verpflegungDerGruppe(g);
+  const board = (item.boards || []).find((b) => b.key === vk) || (item.boards || [])[0] || null;
+  const zimmerProNacht = basis + (zimmer ? zimmer.priceDelta || 0 : 0);
+  const verpflegungProPerson = board ? board.priceDelta || 0 : 0;
+  const proNacht = zimmerProNacht * zimmerZahl + verpflegungProPerson * personen;
+  const unterkunft = zimmerProNacht * zimmerZahl * n;
+  const verpflegung = verpflegungProPerson * personen * n;
+  const reinigung = 35 * zimmerZahl;
+  return { zimmer, board, zimmerProNacht, zimmerZahl, verpflegungProPerson, personen,
+    proNacht, unterkunft, verpflegung, reinigung, gesamt: unterkunft + verpflegung + reinigung };
+}
+
 /* ==================================================================
    Belegung je Monat
    ------------------------------------------------------------------

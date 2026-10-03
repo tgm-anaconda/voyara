@@ -2498,7 +2498,7 @@ const Kern = {
      ================================================================== */
   async auswahlVorlegen(ids) {
     const p = this.lauf.profil || {};
-    const preisVon = (item) => Werkzeugkasten.preis(item, p.monat);
+    const preisVon = (item) => Werkzeugkasten.preis(item, p.monat, p);
     const alsTreffer = (id) => ({ id, preis: preisVon(getItemById(id)) });
     // Nur die Wuensche gewichten - die harten Vorgaben hat das Modell beim
     // Suchen schon angelegt (und vielleicht bewusst gelockert)
@@ -2885,7 +2885,7 @@ const Kern = {
     const naechte = p.naechte || null;
     if (!naechte || !item) return null;
     const personen = (p.erwachsene || 0) + (p.kinder || 0);
-    const preis = Werkzeugkasten.preis(item, p.monat);
+    const preis = Werkzeugkasten.preis(item, p.monat, p);
     const aufenthalt = Politik.aufenthaltspreis(item, p, preis).gesamt;
     const paket = p.flug && item.type !== "apartment" && typeof Flug !== "undefined" ? Flug.paket(item, personen || 1, p.flugKlasse || null) : null;
     return aufenthalt + (paket?.gesamt || 0);
@@ -3319,7 +3319,7 @@ const Kern = {
     this.kandidatenAuffrischen();
     const p = this.lauf.profil || {};
     const weich = { kriterien: p.kriterien || [], budget: p.budget || null };
-    const kandidaten = Politik.bewerten(ids.map((id) => ({ id, preis: Werkzeugkasten.preis(getItemById(id), p.monat) })), weich);
+    const kandidaten = Politik.bewerten(ids.map((id) => ({ id, preis: Werkzeugkasten.preis(getItemById(id), p.monat, p) })), weich);
     kandidaten.sort((x, y) => ids.indexOf(x.id) - ids.indexOf(y.id));
     for (const k of kandidaten) if (k.id === this.lauf.partnerId) k.partner = true;
     this.notieren("vorschlaege_erneut", { ueber, ids });

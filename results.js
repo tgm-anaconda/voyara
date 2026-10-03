@@ -89,6 +89,9 @@ function pool() {
 }
 
 function priceOf(item) {
+  // Unterkuenfte: was diese Gruppe pro Nacht zahlt - dieselbe Zahl wie
+  // auf der Karte und im Filter (03.10.2026)
+  if (item.pricePerNight != null && typeof nachtpreisGruppe === "function") return nachtpreisGruppe(item, reisemonat(), seitenVorgaben());
   return item.pricePerNight ?? item.pricePerDay ?? item.price ?? 0;
 }
 
@@ -128,7 +131,8 @@ function paketZeile(item, preisProNacht) {
   const paket = Flug.paket(item, b.personen);
   if (!paket) return `<div class="price-flight"><small>Kein Flug ab ${Flug.abText(null, "deinem Flughafen")} zu diesem Ziel</small></div>`;
   const naechte = Reisedaten.naechte(7);
-  const unterkunft = preisProNacht * naechte * b.zimmer + 35 * b.zimmer;
+  // Dieselbe Rechnung wie Hausseite und Kasse
+  const unterkunft = aufenthaltKosten(item, reisemonat(), seitenVorgaben(), naechte).gesamt;
   return `<div class="price-flight">
     <strong>${formatPrice(unterkunft + paket.gesamt)} mit Flug</strong>
     <small>${naechte} Nächte + ${paket.flug.airline} ab ${paket.flug.from}, ${paket.klasse}, Hin und zurück, ${b.personen} ${b.personen === 1 ? "Person" : "Personen"}</small>
@@ -221,9 +225,27 @@ function reisemonat() {
   return Reisedaten.monat();
 }
 
-// Preis einer Unterkunft im gewaehlten Zeitraum
+/* Preis einer Unterkunft im gewaehlten Zeitraum - fuer DIESE Gruppe.
+   Gemeldet am 03.10.2026: Die Karte zeigte 48 € (Doppelzimmer), vier
+   Personen passen nur ins Familienzimmer fuer 88 €. Jetzt steht hier,
+   was die Gruppe pro Nacht zahlt (nachtpreisGruppe, data/ziele.js). */
 function saisonpreis(item) {
-  return preisImMonat(item, reisemonat());
+  return typeof nachtpreisGruppe === "function"
+    ? nachtpreisGruppe(item, reisemonat(), seitenVorgaben())
+    : preisImMonat(item, reisemonat());
+}
+
+// Wofuer der Preis auf der Karte gilt: Personen, Zimmer, Verpflegung
+function preisFuerText(item) {
+  const v = seitenVorgaben();
+  const personen = (v.erwachsene || 0) + (v.kinder || 0);
+  if (item.type === "apartment") return `für die ganze Wohnung`;
+  const z = typeof zimmerFuerGruppe === "function" ? zimmerFuerGruppe(item, v) : null;
+  const vk = typeof verpflegungDerGruppe === "function" ? verpflegungDerGruppe(v) : null;
+  const teile = [`${personen} ${personen === 1 ? "Person" : "Personen"}`];
+  if (z) teile.push(`${v.zimmer > 1 ? `${v.zimmer} × ` : ""}${z.name}`);
+  if (vk && vk !== "ohne") teile.push(`mit ${BOARD_LABELS[vk]}`);
+  return `für ${teile.join(", ")}`;
 }
 
 /* ---------- Filter-Logik ---------- */
@@ -638,10 +660,10 @@ function stayResultCard(item) {
         <span class="rating-score">${item.rating.toFixed(1)}</span>
       </div>
       <div class="result-price">
-        ${preis < item.pricePerNight ? `<div class="price-old">${formatPrice(item.pricePerNight)}</div>`
-          : item.oldPrice ? `<div class="price-old">${formatPrice(item.oldPrice)}</div>` : ""}
+        ${preisImMonat(item, reisemonat()) < item.pricePerNight ? `<div class="price-old">${formatPrice(preis + item.pricePerNight - preisImMonat(item, reisemonat()))}</div>`
+          : item.oldPrice ? `<div class="price-old">${formatPrice(preis + item.oldPrice - item.pricePerNight)}</div>` : ""}
         <div class="price-main">${formatPrice(preis)}</div>
-        <div class="price-note">pro Nacht${Reisedaten.flex() ? ` im ${Reisedaten.MONATSNAMEN[Reisedaten.flex().monat - 1]}` : ""} inkl. Steuern</div>
+        <div class="price-note">pro Nacht${Reisedaten.flex() ? ` im ${Reisedaten.MONATSNAMEN[Reisedaten.flex().monat - 1]}` : ""} ${preisFuerText(item)}</div>
         ${paketZeile(item, preis)}
         <a class="btn btn-primary btn-sm" style="margin-top:8px" href="${hausLink(item.id)}">Details ansehen</a>
       </div>

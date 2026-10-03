@@ -1558,7 +1558,7 @@ const Werkzeugkasten = {
       ...(typeof APARTMENTS !== "undefined" ? APARTMENTS : [])];
     let hoch = 0;
     for (const h of alle) {
-      const n = typeof preisImMonat === "function" ? preisImMonat(h, monat) : (h.pricePerNight || 0);
+      const n = typeof nachtpreisGruppe === "function" ? nachtpreisGruppe(h, monat, p) : (h.pricePerNight || 0);
       if (Number.isFinite(n) && n > hoch) hoch = n;
     }
     return hoch || 400;
@@ -2106,8 +2106,12 @@ const Werkzeugkasten = {
     return alle.filter((h) => freiImMonat(h, profil.monat));
   },
 
-  // Preis pro Nacht im Reisemonat (Saisonfaktor wie auf der Seite)
-  preis(item, monat) {
+  /* Preis pro Nacht im Reisemonat fuer die Gruppe (03.10.2026): das
+     passende Zimmer mal die Zimmer, dazu die gewuenschte Verpflegung pro
+     Person - dieselbe Zahl wie auf Karte und Filter (nachtpreisGruppe in
+     data/ziele.js). Ohne Profil der Grundpreis. */
+  preis(item, monat, profil = null) {
+    if (typeof nachtpreisGruppe === "function") return nachtpreisGruppe(item, monat, profil);
     return typeof preisImMonat === "function" ? preisImMonat(item, monat) : item.pricePerNight;
   },
 
@@ -2137,7 +2141,7 @@ const Werkzeugkasten = {
       id: item.id, name: item.name, ort: item.location, region: item.region || null,
       art: item.type === "apartment" ? "Ferienwohnung" : (typeof CATEGORY_LABELS !== "undefined" ? CATEGORY_LABELS[item.category] : item.category) || "Hotel",
       sterne: item.stars ?? null,
-      preisProNacht: this.preis(item, monat),
+      preisProNacht: this.preis(item, monat, profil),
       note: item.rating, bewertungen: item.reviewCount,
       meterZumStrand: item.distanceToBeach != null ? Math.round(item.distanceToBeach * 1000) : null,
       ausstattung: (item.amenities || []).slice(0, 8),
@@ -2157,7 +2161,7 @@ const Werkzeugkasten = {
     if (!paket) return { flug: `kein Flug ab ${Flug.code(profil.flugAb) || "dem gewuenschten Flughafen"} zu diesem Ziel` };
     const naechte = profil.naechte || null;
     const zimmer = Math.max(1, profil.zimmer || 1);
-    const unterkunft = naechte ? this.preis(item, profil.monat) * naechte * zimmer + 35 * zimmer : null;
+    const unterkunft = naechte && typeof aufenthaltKosten === "function" ? aufenthaltKosten(item, profil.monat, profil, naechte).gesamt : null;
     const festPasst = profil.von && naechte ? Flug.passtTag(paket.flug, profil.von, naechte) : null;
     return {
       flug: { verbindung: `${paket.flug.airline} ${paket.flug.from} nach ${paket.flug.to}, ${paket.flug.depart} bis ${paket.flug.arrive}, ${paket.flug.stops === 0 ? "direkt" : `${paket.flug.stops} Stopp`}`, flugtage: Flug.tageText(paket.flug), klasse: paket.klasse, proPersonHinUndZurueck: paket.proPerson, personen: paket.personen, gesamt: paket.gesamt,
@@ -3116,10 +3120,10 @@ const Werkzeugkasten = {
       const treffer = (liste) => liste.slice(0, 8).map((h) => Werkzeugkasten.kompakt(h, p, kern.lauf.gelesen || {}));
       const sortiere = (liste) => {
         const nach = p.sortierung || "passung";
-        if (nach === "preis") return liste.sort((x, y) => Werkzeugkasten.preis(x, p.monat) - Werkzeugkasten.preis(y, p.monat));
+        if (nach === "preis") return liste.sort((x, y) => Werkzeugkasten.preis(x, p.monat, p) - Werkzeugkasten.preis(y, p.monat, p));
         if (nach === "bewertung") return liste.sort((x, y) => (y.rating || 0) - (x.rating || 0));
         const weich = { kriterien: p.kriterien || [], budget: p.budget || null };
-        const bewertet = typeof Politik !== "undefined" ? Politik.bewerten(liste.map((h) => ({ id: h.id, preis: Werkzeugkasten.preis(h, p.monat) })), weich) : [];
+        const bewertet = typeof Politik !== "undefined" ? Politik.bewerten(liste.map((h) => ({ id: h.id, preis: Werkzeugkasten.preis(h, p.monat, p) })), weich) : [];
         const rang = new Map(bewertet.map((k, i) => [k.id, i]));
         return liste.sort((x, y) => (rang.get(x.id) ?? 99) - (rang.get(y.id) ?? 99));
       };
@@ -3613,23 +3617,23 @@ const Werkzeugkasten = {
       const zimmer = Math.max(1, p.zimmer || 1);
       const gebuehr = item.type === "apartment" ? (item.cleaningFee || 0) : 35 * zimmer;
       const proNacht = k.preisProNacht;
-      // Das Zimmer, das zur Gruppe passt (wie die Seite es vorbelegt):
-      // das erste, in das alle passen - bei mehreren Zimmern je Zimmer
+      /* Eine Rechnung mit Seite und Kasse (aufenthaltKosten): das
+         guenstigste passende Zimmer, die Verpflegung pro Person. */
       const personen = (p.erwachsene || 0) + (p.kinder || 0);
-      const jeZimmer = personen ? Math.ceil(personen / zimmer) : 0;
-      const passend = (item.rooms || []).find((r) => (r.maxGuests || 0) >= jeZimmer) || (item.rooms || [])[0] || null;
-      const zimmerAufpreis = passend?.priceDelta || 0;
+      const basisK = aufenthaltKosten(item, p.monat || null, p, naechte || 7);
+      const passend = basisK.zimmer;
       const preise = item.type === "apartment"
-        ? { proNacht, ...(naechte ? { gesamtInklEndreinigung: proNacht * naechte + gebuehr } : {}) }
-        : { zimmer: passend ? `${passend.name} (bis ${passend.maxGuests} Personen${zimmerAufpreis ? `, +${zimmerAufpreis} € je Nacht` : ""})` : null,
+        ? { proNacht, ...(naechte ? { gesamtInklEndreinigung: basisK.gesamt } : {}) }
+        : { zimmer: passend ? `${passend.name} (bis ${passend.maxGuests} Personen, ${basisK.zimmerProNacht} € pro Nacht${zimmer > 1 ? ` je Zimmer, ${zimmer} Zimmer` : ""})` : null,
             jeVerpflegung: (item.boards || []).map((b) => {
-            const gesamt = naechte ? (proNacht + zimmerAufpreis + (b.priceDelta || 0)) * naechte * zimmer + gebuehr : null;
+            const kb = aufenthaltKosten(item, p.monat || null, p, naechte || 7, { zimmer: passend, board: b.key });
             const flugGesamt = p.flug && typeof Flug !== "undefined" ? (Flug.paket(item, personen || 1, p.flugKlasse || null)?.gesamt ?? null) : null;
             return {
               verpflegung: (typeof BOARD_LABELS !== "undefined" && BOARD_LABELS[b.key]) || b.key,
-              proNachtUndZimmer: proNacht + zimmerAufpreis + (b.priceDelta || 0),
-              ...(gesamt != null ? { unterkunftGesamt: gesamt } : {}),
-              ...(gesamt != null && flugGesamt != null ? { flugGesamt, gesamtMitFlug: gesamt + flugGesamt } : {}),
+              proPersonUndNacht: b.priceDelta || 0,
+              proNachtFuerAlle: kb.proNacht,
+              ...(naechte ? { unterkunftGesamt: kb.gesamt } : {}),
+              ...(naechte && flugGesamt != null ? { flugGesamt, gesamtMitFlug: kb.gesamt + flugGesamt } : {}),
             };
           }), weitereZimmer: (item.rooms || []).filter((r) => r !== passend).map((r) => ({ name: r.name, bisPersonen: r.maxGuests, aufpreisProNacht: r.priceDelta })) };
       const kurz = typeof aspektKurzfassung === "function" ? aspektKurzfassung(item) : null;
@@ -5112,7 +5116,7 @@ const Werkzeugkasten = {
     const bewertet = (monate || []).map((m) => {
       const probe = { ...p, monat: m };
       const treffer = this.katalogTreffer(probe, this.filterAusStand(probe));
-      const preise = treffer.map((h) => this.preis(h, m));
+      const preise = treffer.map((h) => this.preis(h, m, probe));
       return { monat: m, anzahl: treffer.length,
         schnitt: preise.length ? Math.round(preise.reduce((a, b) => a + b, 0) / preise.length) : null };
     });
@@ -6230,7 +6234,7 @@ const Werkzeugkasten = {
     if (!treffer.length) return null;
     const gesamtGrenze = !!p.budgetGesamt;
     const betrag = (h) => {
-      if (!gesamtGrenze) return this.preis(h, p.monat);
+      if (!gesamtGrenze) return this.preis(h, p.monat, p);
       return this.reisepreis(h, p)?.gesamt ?? null;
     };
     let bestes = null;
@@ -6678,14 +6682,14 @@ const Werkzeugkasten = {
   // Haeuser, solange noch nicht alles besprochen ist
   umfang(liste, p) {
     const monat = p.monat || null;
-    const preise = liste.map((h) => this.preis(h, monat));
+    const preise = liste.map((h) => this.preis(h, monat, p));
     const spanne = (xs) => (xs.length ? { von: Math.min(...xs), bis: Math.max(...xs) } : null);
     const regionen = {};
     for (const h of liste) regionen[h.ziel] = (regionen[h.ziel] || 0) + 1;
     const sterne = {};
     for (const h of liste) {
       const s = h.stars ?? 0;
-      (sterne[s] ||= []).push(this.preis(h, monat));
+      (sterne[s] ||= []).push(this.preis(h, monat, p));
     }
     return {
       haeuser: liste.length,
@@ -6785,7 +6789,8 @@ const Werkzeugkasten = {
       haeuserMitAllInclusive: je.ai?.length || 0,
       haeuserMitHalbpension: je.halb?.length || 0,
       haeuserMitFruehstueck: je.fruehstueck?.length || 0,
-      ...(aufpreis != null ? { allInclusiveAufpreisProNachtUndZimmer: aufpreis } : {}),
+      // Verpflegung kostet pro Person (seit 03.10.2026)
+      ...(aufpreis != null ? { allInclusiveAufpreisProPersonUndNacht: aufpreis } : {}),
     };
   },
 

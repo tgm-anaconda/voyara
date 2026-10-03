@@ -180,22 +180,25 @@ function priceLines() {
   const b = Belegung.get();
   const zimmerAnzahl = entry.type === "apartment" ? 1 : b.zimmer;
   // Nachtpreis im Reisemonat (Saison), dieselbe Formel wie Liste und Hausseite
-  const basis = preisImMonat(entry, Reisedaten.monat());
-  const perNight = entry.type === "apartment"
-    ? basis
-    : basis + entry.rooms[roomIdx].priceDelta + entry.boards[boardIdx].priceDelta;
-  const base = perNight * nights * zimmerAnzahl;
-  const cleaning = (entry.type === "apartment" ? entry.cleaningFee : 35) * zimmerAnzahl;
+  // Eine Rechnung mit Hausseite, Karte und Agent (aufenthaltKosten in
+  // data/ziele.js); die Verpflegung kostet pro Person (03.10.2026)
+  const kosten = aufenthaltKosten(entry, Reisedaten.monat(), b, nights,
+    entry.type === "apartment" ? {} : { zimmer: entry.rooms[roomIdx], board: entry.boards[boardIdx].key });
+  const perNight = kosten.zimmerProNacht;
+  const base = kosten.unterkunft;
+  const verpflegung = kosten.verpflegung;
+  const cleaning = kosten.reinigung;
   // Flug dazu (nur Hotels): gewaehlte Verbindung, Hin- und Rueckflug, alle Reisenden
   const f = flugDazu();
   const zusatz = zusatzkosten(f);
   return {
     unit: `${formatPrice(perNight)} × ${nights} Nächte${zimmerAnzahl > 1 ? ` × ${zimmerAnzahl} Zimmer` : ""}`,
     base, extraLabel: "Endreinigung", extra: cleaning,
-    unterkunft: base + cleaning,
+    ...(verpflegung ? { verpflegung, verpflegungText: `${BOARD_LABELS[kosten.board.key]} ${formatPrice(kosten.verpflegungProPerson)} × ${kosten.personen} ${kosten.personen === 1 ? "Person" : "Personen"} × ${nights} Nächte` } : {}),
+    unterkunft: base + verpflegung + cleaning,
     flug: f,
     ...zusatz,
-    total: base + cleaning + (f ? f.gesamt : 0) + zusatz.zusatzGesamt,
+    total: base + verpflegung + cleaning + (f ? f.gesamt : 0) + zusatz.zusatzGesamt,
   };
 }
 
@@ -479,6 +482,7 @@ function renderSummary() {
     <div class="bw-note">${subtitle()}</div>
     <div class="bw-lines">
       <div class="bw-line"><span>${p.unit}</span><span>${formatPrice(p.base)}</span></div>
+      ${p.verpflegung ? `<div class="bw-line"><span>${p.verpflegungText}</span><span>${formatPrice(p.verpflegung)}</span></div>` : ""}
       <div class="bw-line"><span>${p.extraLabel}</span><span>${formatPrice(p.extra)}</span></div>
       <div class="bw-line" style="color:var(--ok)"><span>Servicegebühr</span><span>0 €</span></div>
       ${p.flug ? `<div class="bw-line"><span>Flug ${formatPrice(p.flug.proPerson)} × ${p.flug.personen} (Hin und zurück)</span><span>${formatPrice(p.flug.gesamt)}</span></div>` : ""}

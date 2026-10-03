@@ -211,7 +211,7 @@ function renderRooms() {
       ${item.boards.map((b, i) => `
         <button type="button" class="board-chip ${i === selectedBoard ? "active" : ""} js-board" data-board="${i}">
           ${BOARD_LABELS[b.key]}
-          <small>${b.priceDelta === 0 ? "im Preis enthalten" : `+ ${formatPrice(b.priceDelta)} / Nacht`}</small>
+          <small>${b.priceDelta === 0 ? "im Preis enthalten" : `+ ${formatPrice(b.priceDelta)} pro Person / Nacht`}</small>
         </button>`).join("")}
     </div>`;
 
@@ -414,10 +414,16 @@ function renderWidget() {
   const b = Belegung.get();
   // Bei Hotels wird je gebuchtem Zimmer berechnet, eine Wohnung wird ganz gebucht
   const zimmerAnzahl = isApartment ? 1 : b.zimmer;
-  const perNight = isApartment ? basisPreis() : roomPrice(selectedRoom) + boardPrice(selectedBoard);
-  const stay = perNight * nights * zimmerAnzahl;
-  const cleaning = isApartment ? item.cleaningFee : 35 * zimmerAnzahl;
-  const total = stay + cleaning;
+  /* Eine Rechnung mit Kasse, Karte und Agent (aufenthaltKosten in
+     data/ziele.js). Seit dem 03.10.2026 kostet die Verpflegung pro
+     Person - deshalb steht sie als eigene Zeile da. */
+  const kosten = aufenthaltKosten(item, Reisedaten.monat(), b, nights,
+    isApartment ? {} : { zimmer: item.rooms[selectedRoom], board: item.boards[selectedBoard].key });
+  const perNight = isApartment ? basisPreis() : kosten.zimmerProNacht;
+  const stay = kosten.unterkunft;
+  const verpflegungKosten = kosten.verpflegung;
+  const cleaning = kosten.reinigung;
+  const total = kosten.gesamt;
   // Die gesuchte Dauer muss dabei sein, sonst steht im Feld etwas anderes,
   // als die Person gesucht hat (11 Naechte fielen so auf 7 zurueck)
   const nightOptions = [...new Set((isApartment
@@ -541,6 +547,7 @@ function renderWidget() {
     </div>
     <div class="bw-lines">
       <div class="bw-line"><span>${formatPrice(perNight)} × ${nights} Nächte${zimmerAnzahl > 1 ? ` × ${zimmerAnzahl} Zimmer` : ""}</span><span>${formatPrice(stay)}</span></div>
+      ${verpflegungKosten ? `<div class="bw-line"><span>${BOARD_LABELS[kosten.board.key]} ${formatPrice(kosten.verpflegungProPerson)} × ${kosten.personen} ${kosten.personen === 1 ? "Person" : "Personen"} × ${nights} Nächte</span><span>${formatPrice(verpflegungKosten)}</span></div>` : ""}
       <div class="bw-line"><span>Endreinigung</span><span>${formatPrice(cleaning)}</span></div>
       <div class="bw-line" style="color:var(--ok)"><span>Servicegebühr</span><span>0 €</span></div>
       ${flug ? `<div class="bw-line"><span>Flug ${formatPrice(flugProPerson)} × ${b.personen} ${b.personen === 1 ? "Person" : "Personen"} (Hin und zurück)</span><span>${formatPrice(flugGesamt)}</span></div>` : ""}
