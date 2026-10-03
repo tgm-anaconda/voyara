@@ -736,6 +736,16 @@ const Kern = {
   },
 
   sagen(text, rolle = "bot", links = null, extra = null) {
+    /* Nach dem Anhalten spricht nur noch die Person.
+       ----------------------------------------------------------------
+       Gemeldet am 03.10.2026: Die Meldung zum Anhalten kam erst nach der
+       Lage und der naechsten Frage - der angehaltene Zug lief noch zu
+       Ende und redete. Die Meldung kommt jetzt sofort beim Klick, und
+       bis die Person antwortet, faellt alles andere weg (protokolliert). */
+    if (rolle === "bot" && this.lauf?.stumm && !this.anhaltSpricht) {
+      this.notieren("nach_anhalt_verschluckt", { text: String(text).slice(0, 80) });
+      return;
+    }
     /* Nichts zweimal hintereinander.
        ----------------------------------------------------------------
        Gemeldet am 02.10.2026, mit Bild: "Ich sehe mir die 4 Haeuser jetzt
@@ -967,6 +977,7 @@ const Kern = {
       this.sichern();
       return;
     }
+    this.lauf.stumm = false;
     if (this.lauf.anhalt?.gesagt && this.anhaltAntwort(t, opts)) return;
     if (this.lauf.budgetHalt && this.budgetAntwort(t, opts)) return;
     this.ankunftLesen(t);
@@ -2099,7 +2110,7 @@ const Kern = {
         this.lauf.chips = [];
         AgentPanel.setSuggestions([]);
         this.lauf.ausstehend = { calls: antwort.tool_calls, i: 0, stufe: 1 };
-        this.lauf.phase = "arbeitet";
+        if (this.lauf.phase !== "angehalten") this.lauf.phase = "arbeitet";
         this.sichern();
         const fertig = await this.werkzeugeAusfuehren();
         if (!fertig) return;   // Seite laedt neu, dort geht es weiter
@@ -2199,6 +2210,14 @@ const Kern = {
     setTimeout(() => { if (!this.laeuft) Zeiger.verbergen(); }, 900);
     this.lauf.fortsetzenHinweis = null;
     if (this.lauf.anhalt && !this.lauf.anhalt.gesagt && !this.lauf.ausstehend) this.anhaltMelden();
+    if (this.lauf.anhaltNachtrag && !this.lauf.ausstehend) {
+      const n = this.lauf.anhaltNachtrag;
+      if (n.text) this.gespraechPush({ role: "user", content: n.text });
+      this.gespraechPush({ role: "assistant", content: n.satz });
+      this.lauf.anhaltNachtrag = null;
+      // Die Karten der Meldung gelten weiter - der Zug darf sie nicht leeren
+      if (this.lauf.stumm) AgentPanel.setSuggestions(this.lauf.chips || []);
+    }
     // Nachricht, die waehrend der Arbeit kam
     const nachtrag = this.lauf.nachtrag || [];
     if (nachtrag.length && this.lauf.anhalt?.gesagt) {
@@ -3071,9 +3090,9 @@ const Kern = {
     this.lauf.phase = "angehalten";
     AgentPanel.status("angehalten · du hast übernommen");
     this.sichern();
-    // Arbeitet gerade nichts (und wartet keine Kette auf das Laden der
-    // Seite), meldet sich der Kern sofort - sonst am Ende des Zuges.
-    if (!this.laeuft && !this.lauf.ausstehend) this.anhaltMelden();
+    // Die Meldung kommt sofort - nicht erst, wenn der angehaltene Zug zu
+    // Ende ist. Bis zur Antwort der Person ist der Agent danach stumm.
+    this.anhaltMelden();
   },
 
   ANHALT_TAETIGKEIT: {
@@ -3097,7 +3116,8 @@ const Kern = {
     const h = this.lauf.anhalt;
     if (!h || h.gesagt) return;
     h.gesagt = true;
-    if (h.text) this.gespraechPush({ role: "user", content: h.text });
+    const mitten = !!(this.lauf.ausstehend || this.laeuft);
+    if (h.text && !mitten) this.gespraechPush({ role: "user", content: h.text });
     const buchung = h.werkzeug === "buchung_abschliessen";
     const taetigkeit = this.ANHALT_TAETIGKEIT[h.werkzeug] || "gearbeitet habe";
     const satz = buchung
@@ -3108,8 +3128,13 @@ const Kern = {
     this.lauf.chips = buchung
       ? ["Doch buchen", "Nicht buchen", "Ich möchte etwas ändern"]
       : ["Weitermachen", "Ich suche selbst weiter", "Ich möchte etwas ändern"];
-    this.sagen(satz);
-    this.gespraechPush({ role: "assistant", content: satz });
+    this.anhaltSpricht = true;
+    try { this.sagen(satz); } finally { this.anhaltSpricht = false; }
+    this.lauf.stumm = true;
+    // Steht noch ein Werkzeugaufruf ohne Ergebnis im Verlauf, kommt die
+    // Meldung erst danach hinein (verlaufReparieren raeumt sonst auf)
+    if (mitten) this.lauf.anhaltNachtrag = { satz, text: h.text || null };
+    else this.gespraechPush({ role: "assistant", content: satz });
     AgentPanel.setSuggestions(this.lauf.chips);
     this.notieren("anhalt_gemeldet", { werkzeug: h.werkzeug, seite: h.seite, quelle: h.quelle });
     this.sichern();
