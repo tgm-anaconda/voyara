@@ -1882,8 +1882,13 @@ const Kern = {
                 lageGesagt: !!this.lauf.lageGesagtImZug,
                 // Was der Kern in diesem Zug schon gesagt hat, darf nicht
                 // noch einmal kommen - auch nicht umschrieben
+                // Dazu die letzten Nachrichten des Agenten: Am 03.10.2026
+                // stand "Warm heisst im August fuer mich 14 Regionen ..." in
+                // zwei Nachrichten hintereinander - verschiedene Zuege, also
+                // sah der Vergleich nur einen davon
                 schonGesagt: [...(this.lauf.abgeleitet || []).map((x) => x.satz),
-                  this.lauf.lageImZug, this.lauf.lageSatzImZug].filter(Boolean),
+                  this.lauf.lageImZug, this.lauf.lageSatzImZug,
+                  ...(this.lauf.verlauf || []).filter((n) => n.rolle === "bot").slice(-3).map((n) => n.text)].filter(Boolean),
               });
               if (pr.ok) {
                 ausDemModell = String(text).replace(/\s+/g, " ").trim();

@@ -552,6 +552,8 @@ const Kernpruefung = {
     { name: "Ende des Jahres, Monat verworfen", thema: "zeit",
       lauf: { verworfenImZug: { ereignis: "monat_verworfen", monat: 12 } },
       letzte: "so gegen Ende des Jahres", modell: "", label: "Dezember" },
+    // Eine Jahreszeit: alle ihre Monate zur Wahl, kein geratener (03.10.2026)
+    { name: "im Sommer", thema: "zeit", lauf: {}, letzte: "im Sommer", modell: "Juni ist schoen.", label: "Sommer" },
     { name: "Modell sagt den Monat nur", thema: "zeit", lauf: {},
       letzte: "in den Herbstferien", modell: "Oktober passt dafuer gut.", label: "Oktober" },
     // Die Person hat ueber die Zeit nichts gesagt: dann waere es ein Vorschlag des Agenten
@@ -589,7 +591,10 @@ const Kernpruefung = {
       if (!raus) continue;
       if ((raus.satz.match(/\?/g) || []).length !== 1) melde("unsicher_zwei_fragen", `${f.name}: "${raus.satz}"`, f.thema);
       if (!raus.satz.includes(label)) melde("unsicher_ohne_wort", `${f.name}: der Wert steht nicht im Satz`, f.thema);
-      if ((raus.chips || []).length !== 2) melde("unsicher_ohne_chips", `${f.name}: beide Antworten muessen zur Wahl stehen`, f.thema);
+      // Ja/Nein hat zwei Antworten; eine Jahreszeit ihre drei Monate und "Egal"
+      const jahreszeit = typeof Werkzeugkasten !== "undefined" && Werkzeugkasten.JAHRESZEITEN[String(label).toLowerCase()];
+      const sollChips = jahreszeit ? jahreszeit.length + 1 : 2;
+      if ((raus.chips || []).length !== sollChips) melde("unsicher_ohne_chips", `${f.name}: alle Antworten muessen zur Wahl stehen`, f.thema);
     }
     return fehler;
   },

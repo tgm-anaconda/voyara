@@ -624,7 +624,13 @@ const Werkzeugkasten = {
       .sort((a, b) => (warm ? grad(b, p.monat) - grad(a, p.monat) : grad(a, p.monat) - grad(b, p.monat)))
       .map((z) => `${z.name} (${grad(z, p.monat)} Grad)`);
     const monat = MONATSNAMEN[p.monat - 1];
-    return `${warm ? "Warm" : "Kalt"} heißt im ${monat} für mich ${mit.length} Regionen mit ${von} bis ${bis} Grad, darunter ${namen.join(", ")}. Sag Bescheid, wenn dir eine andere Grenze lieber ist.`;
+    /* Grenze und Spanne getrennt. "Davon liegen 78 in einer Gegend mit 22
+       Grad oder mehr" und danach "14 Regionen mit 23 bis 38 Grad" las
+       sich am 03.10.2026 wie ein Widerspruch - 22 ist die Grenze, 23 die
+       kaelteste Region darueber. Jetzt steht beides da, und was was ist. */
+    const basis = p.mindestGrad != null ? p.mindestGrad : (warm ? 22 : 12);
+    const grenze = warm ? Math.min(basis, von) : Math.max(basis, bis);
+    return `${warm ? "Warm" : "Kalt"} heißt für mich ${warm ? "ab" : "bis"} ${grenze} Grad. Im ${monat} sind das ${mit.length} Regionen mit ${von} bis ${bis} Grad, darunter ${namen.join(", ")}. Sag Bescheid, wenn dir eine andere Grenze lieber ist.`;
   },
 
   /* Gesagt wird es einmal je Stand - und wieder, wenn die Person die
@@ -1611,11 +1617,16 @@ const Werkzeugkasten = {
   FRAGEWORT: /\b(wie|was|wo|wer|wen|wem|worauf|wofür|wofuer|womit|wohin|woran|wobei|wann|welche[rsnm]?|warum|wieso|ob|soll|sollen|möchte|moechte|möchtest|moechtest|möchtet|moechtet|willst|wollt|hast|habt|haben|ist|sind|seid|bist|gibt|kann|kannst|könnt|koennt|darf|brauchst|braucht|passt|interessiert)\b/i,
 
   fragenZaehlen(text) {
-    return String(text).split(/(?<=[.!?])\s+/)
+    const saetze = String(text).split(/(?<=[.!?])\s+/)
       .filter((s) => /\?\s*$/.test(s))
       .filter((s) => !/^(oder|bzw\.?|beziehungsweise|also|und wenn|zum beispiel|etwa|z\. ?b\.?)\b/i.test(s.trim()))
-      .filter((s) => this.FRAGEWORT.test(s))
-      .length;
+      .filter((s) => this.FRAGEWORT.test(s));
+    /* "Sind das drei Erwachsene, oder sind Kinder dabei, und wenn ja, wie
+       alt sind sie?" hat ein Fragezeichen und stellt zwei Fragen (gemeldet
+       am 03.10.2026). Ein angehaengtes "und wenn ja, wie ..." zaehlt
+       deshalb als zweite. */
+    const angehaengt = saetze.filter((s) => /,\s*(und\s+)?wenn ja,?\s+(wie|was|wann|wo|welche)/i.test(s)).length;
+    return saetze.length + angehaengt;
   },
 
   /* Woran man erkennt, dass eine Frage zu einem Thema gehoert. Dieselbe
@@ -1870,6 +1881,20 @@ const Werkzeugkasten = {
     // Die Person muss ueber die Zeit gesprochen haben - sonst waere die
     // Vermutung nicht ihre, sondern die des Agenten
     if (!this.ZEITBEZUG.test(String(letzte || ""))) return null;
+    /* Eine Jahreszeit ist kein Monat.
+       ------------------------------------------------------------------
+       Gemeldet am 03.10.2026: "im Sommer" - "Meinst du Juni?". Den Juni
+       hatte das Modell geraten, und der Kern machte daraus eine
+       Vermutung, als haette die Person ihn halb gesagt. Bei einer
+       Jahreszeit stehen jetzt alle ihre Monate zur Wahl, und "Egal"
+       ueberlaesst die Wahl dem Kern (jahreszeitGenannt rechnet dann). */
+    const jz = Object.keys(this.JAHRESZEITEN).find((w) => new RegExp(`\\b${w}\\b`, "i").test(String(letzte || "")));
+    if (jz && typeof MONATSNAMEN !== "undefined") {
+      const monate = this.JAHRESZEITEN[jz].map((m) => MONATSNAMEN[m - 1]);
+      const name = jz.charAt(0).toUpperCase() + jz.slice(1);
+      return { label: name, satz: `${name} heißt für mich ${monate.slice(0, -1).join(", ")} oder ${monate.at(-1)}. Welcher Monat soll es sein?`,
+        chips: [...monate, "Egal, such du aus"] };
+    }
     const v = lauf.verworfenImZug;
     let label = null;
     if (v && v.ereignis === "monat_verworfen" && v.monat >= 1 && v.monat <= 12) {
@@ -5619,8 +5644,15 @@ const Werkzeugkasten = {
        Antwort nicht gehoert. Also fasst er konkret nach. */
     if (naechstes === "preis" && lauf.besprochen?.preis
       && !p.maxPreis && !p.budgetGesamt && !p.preisEgal) {
-      satz = "Welche Grenze soll ich einhalten - pro Nacht oder für die ganze Unterkunft?";
-      frage = "Sie hat gesagt, dass sie eine feste Grenze hat, aber noch keinen Betrag genannt. Frag nach der Zahl und danach, ob sie pro Nacht oder fuer die ganze Unterkunft gilt.";
+      /* Dieselbe Bezugsgroesse wie in der Frage davor. Am 03.10.2026
+         stand dort "fuer die ganze Reise mit Flug und All Inclusive", und
+         die Nachfrage fragte "fuer die ganze Unterkunft oder pro Nacht?".
+         Ob ein Betrag pro Nacht gemeint ist, entscheidet preisDeutung an
+         der Antwort ("pro Nacht" gesagt, oder die Hoehe gegen die Daten). */
+      satz = p.flug
+        ? "Wie hoch ist deine Grenze für die ganze Reise, mit Flug?"
+        : "Wie hoch ist deine Grenze für die ganze Reise?";
+      frage = "Sie hat gesagt, dass sie eine feste Grenze hat, aber noch keinen Betrag genannt. Frag nur nach der Zahl fuer die ganze Reise - nicht, ob pro Nacht oder gesamt.";
       chips = null;
     }
 
@@ -5756,13 +5788,13 @@ const Werkzeugkasten = {
       const zweiter = (lauf.gefragtWie?.reisende || 0) >= 1;
       if (p.personen != null && p.erwachsene == null && p.kinder == null) {
         satz = zweiter
-          ? `Wie teilt sich das bei euch ${p.personen} auf - nur Erwachsene, oder sind Kinder dabei (mit Alter)?`
-          : `Sind von den ${p.personen} Kinder dabei - und wenn ja, wie viele und wie alt?`;
+          ? `Wie teilt sich das bei euch ${p.personen} auf: nur Erwachsene oder auch Kinder?`
+          : `Sind von den ${p.personen} auch Kinder dabei?`;
         chips = kindChips(p.personen - 1);
       } else if (p.erwachsene != null && p.kinder == null) {
         satz = zweiter
-          ? "Kommen Kinder mit, und wenn ja, wie alt sind sie?"
-          : "Sind Kinder dabei - und wenn ja, wie viele und wie alt?";
+          ? "Kommen auch Kinder mit?"
+          : "Sind Kinder dabei?";
         chips = kindChips(null);
       } else if (p.kinder != null && p.erwachsene == null) {
         satz = zweiter ? "Und wie viele Erwachsene sind dabei?" : "Und wie viele Erwachsene reisen mit?";
