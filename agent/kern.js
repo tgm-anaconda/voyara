@@ -529,6 +529,18 @@ const Kern = {
       }
     }
 
+    /* Das Zimmer, das die Person auf der Hausseite angeklickt hat. Ohne
+       diesen Weg fragte der Agent beim Buchen noch einmal - oder nahm das
+       vorausgewaehlte. */
+    try {
+      const z = JSON.parse(sessionStorage.getItem("voyara_zimmerwahl") || "null");
+      if (z && z.id && z.name && item && z.id === item.id && p.zimmerTyp !== z.name) {
+        p.zimmerTyp = z.name;
+        this.lauf.zimmerGefragt = true;
+        neu.push(`das Zimmer „${z.name}“`);
+      }
+    } catch { /* ohne Speicher */ }
+
     if (typeof Flug !== "undefined") {
       try {
         const f = Flug.lesen();
@@ -587,9 +599,7 @@ const Kern = {
     const kasten = document.getElementById("agentMessages");
     if (kasten) kasten.innerHTML = "";
     for (const n of this.lauf.verlauf) {
-      const aktionen = (n.aktionen || []).map((a) => a.warumFuer
-        ? { text: a.text, ausklappen: () => this.warumText(a.warumFuer) }
-        : (a.vorschlaegeZeigen ? { text: a.text, tun: () => this.vorschlaegeNochmal("verlauf") } : a));
+      const aktionen = this.aktionenBinden(n.aktionen || []);
       AgentPanel.say(n.text, n.rolle, { still: true, links: n.links, aktionen, etikett: n.etikett || null });
     }
 
@@ -776,8 +786,48 @@ const Kern = {
     // bewertet nur die zweiten.
     if (extra) Object.assign(n, extra);
     this.lauf.verlauf.push(n);
-    AgentPanel.say(text, rolle, { links });
+    AgentPanel.say(text, rolle, { links, aktionen: n.aktionen ? this.aktionenBinden(n.aktionen) : undefined });
     this.sichern();
+  },
+
+  /* Knoepfe in einer Nachricht.
+     ------------------------------------------------------------------
+     Im Verlauf stehen sie als Daten (sie muessen einen Seitenwechsel
+     ueberstehen), gebunden werden sie hier - an einer Stelle fuer das
+     erste Anzeigen und fuer das Wiederherstellen. */
+  aktionenBinden(liste) {
+    return (liste || []).map((a) => {
+      if (a.warumFuer) return { text: a.text, ausklappen: () => this.warumText(a.warumFuer) };
+      if (a.vorschlaegeZeigen) return { text: a.text, tun: () => this.vorschlaegeNochmal("verlauf") };
+      if (a.mehrErfahren) return { text: a.text, tun: () => this.mehrErfahren(a.mehrErfahren) };
+      if (a.zimmerWaehlen) return { text: a.text, tun: () => this.zimmerWaehlenOeffnen(a.zimmerWaehlen) };
+      return a;
+    });
+  },
+
+  /* "Mehr erfahren" unter einem Haus des Rundgangs.
+     ------------------------------------------------------------------
+     Wunsch des Nutzers vom 03.10.2026: Der Agent soll die Hausseite
+     sichtbar oeffnen, so aussehen, als schaue er kurz hin, und dann im
+     Chat antworten. Die Bitte geht als Nachricht der Person ins
+     Gespraech, und der naechste Zug ruft haus_oeffnen (fortsetzenMit) -
+     danach liest das Modell die Seite und antwortet. */
+  mehrErfahren(id) {
+    const item = typeof getItemById === "function" ? getItemById(id) : null;
+    if (!item) return;
+    this.notieren("mehr_erfahren", { id, ausVorlage: (this.lauf.letzteVorlage || []).includes(id) });
+    this.lauf.fortsetzenMit = "haus_oeffnen";
+    this.eingabe(`Erzähl mir mehr über ${item.name}.`);
+  },
+
+  // "Zimmer auswählen": die Hausseite bei den Zimmern - die Wahl trifft die
+  // Person dort selbst, und seitenstandUebernehmen liest sie
+  zimmerWaehlenOeffnen(id) {
+    const item = typeof getItemById === "function" ? getItemById(id) : null;
+    if (!item) return;
+    this.notieren("zimmer_waehlen_geoeffnet", { id });
+    this.sichern();
+    location.href = `${this.linkZu(id, item.name).href}#roomPanel`;
   },
 
   /* Der Link auf eine Hausseite - mit der gesuchten Reise daran.
@@ -955,6 +1005,9 @@ const Kern = {
   async eingabe(text, opts = {}) {
     const t = String(text || "").trim();
     if (!t) return;
+    // Was die Person seit dem Laden auf der Seite gewaehlt hat (Zimmer,
+    // Flug, Daten) - nicht erst beim naechsten Seitenaufbau
+    if (!this.laeuft) { try { this.seitenstandUebernehmen(); } catch { /* Seite ohne Stand */ } }
     if (/^stopp?$/i.test(t)) {
       if (!opts.gezeigt) this.sagen(t, "user");
       this.notieren("stopp", { seite: Werkzeuge.seite() });

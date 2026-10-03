@@ -4131,43 +4131,26 @@ const Werkzeugkasten = {
         const weiter = naechstes
           ? `Weiter mit ${getItemById(naechstes)?.name || naechstes}.`
           : "Das war das letzte, ich stelle die Auswahl zusammen.";
+        /* Kurz, mit Knoepfen statt Zitaten.
+           --------------------------------------------------------------
+           Wunsch des Nutzers vom 03.10.2026: Unter jedem Haus standen
+           Bewertungszahl, Zimmer, Teilnote und ein Zitat - zu viel, und
+           das Zitat war oft abgeschnitten oder passte nicht. Jetzt: Name
+           und Gaestenote, dazu "Mehr erfahren" (der Agent oeffnet die
+           Hausseite und antwortet) und "Zimmer auswaehlen". Passt kein
+           Zimmer fuer die Gruppe, steht das dabei - das ist ein Befund,
+           kein Detail. */
+        const haus = getItemById(id);
+        const note = haus?.rating ? `${String(haus.rating.toFixed(1)).replace(".", ",")} von 5 bei ${(haus.reviewCount || 0).toLocaleString("de-DE")} Bewertungen` : null;
+        const keinZimmer = (e.daten?.schritte || []).find((x) => /^kein Zimmer/.test(x));
         kern.sagen([
-          `${nr} von ${r.ids.length}: ${name} angesehen.`,
-          (e.daten?.schritte || []).length ? `${(e.daten.schritte || []).join(", ")}.` : null,
-          teil ? `${wunsch.label}: ${Politik.teilnoteText(teil.anteilPositiv)}.` : null,
-          /* Ein echtes Zitat.
-             ------------------------------------------------------------
-             Eine Zahl kann man ausrechnen, ein Zitat nur lesen. Es ist
-             damit der einzige Beleg, den der Agent gar nicht haette, wenn
-             er die Bewertungen nicht durchgegangen waere - und das, was
-             eine Zusammenfassung glaubwuerdig macht. Der Kern waehlt es
-             aus den Daten, das Modell fasst es nicht an. */
-          /* Das Zitat muss zu dem passen, was darueber steht.
-             ------------------------------------------------------------
-             Vorher nahm der Kern die erste Stimme, die lang genug war.
-             Damit stand am 02.10.2026 ein Lob fuer das Essen unter einem
-             Satz, der das Essen bemaengelte. Jetzt wird nach dem Aspekt
-             gesucht, von dem die Zeile spricht, und nach dem Vorzeichen,
-             das zur Teilnote passt: Ueber 60 Prozent Zustimmung sucht er
-             eine zustimmende Stimme, darunter eine kritische. Findet er
-             keine, laesst er das Zitat weg - ein unpassender Beleg ist
-             schlechter als keiner. */
-          (() => {
-            const stimmen = (e.daten?.stimmen || []).filter((x) => x.text && x.text.length > 30);
-            if (!stimmen.length) return null;
-            const lang = (x) => (x.text.length > 110 ? `${x.text.slice(0, 107).trim()}...` : x.text);
-            if (!teil) {
-              // Ohne genannten Aspekt steht keine Bewertung darueber, die
-              // ein Zitat stuetzen muesste - dann ist jede Stimme ehrlich.
-              return `Eine Stimme: „${lang(stimmen[0])}"`;
-            }
-            const wollen = teil.anteilPositiv >= 0.6 ? 1 : -1;
-            const passend = stimmen.find((x) => (x.aspekte || {})[wunsch.label] === wollen);
-            if (!passend) return null;
-            return `Dazu eine Stimme: „${lang(passend)}"`;
-          })(),
+          `${nr} von ${r.ids.length}: ${name}${note ? `, ${note}` : ""}.`,
+          keinZimmer ? `Achtung: ${keinZimmer}.` : null,
           weiter,
-        ].filter(Boolean).join(" "));
+        ].filter(Boolean).join(" "), "bot", null, { aktionen: [
+          { text: "Mehr erfahren", mehrErfahren: id },
+          ...(haus?.type !== "apartment" ? [{ text: "Zimmer auswählen", zimmerWaehlen: id }] : []),
+        ] });
 
         r.i += 1;
         kern.sichern();

@@ -216,7 +216,12 @@ function renderRooms() {
     </div>`;
 
   panel.querySelectorAll(".js-room").forEach((btn) =>
-    btn.addEventListener("click", () => { selectedRoom = +btn.dataset.room; renderRooms(); renderWidget(); }));
+    btn.addEventListener("click", () => {
+      selectedRoom = +btn.dataset.room;
+      // Fuer den Agenten: Diese Wahl hat die Person getroffen (03.10.2026)
+      try { sessionStorage.setItem("voyara_zimmerwahl", JSON.stringify({ id: item.id, name: item.rooms[selectedRoom]?.name })); } catch { /* ohne Speicher */ }
+      renderRooms(); renderWidget();
+    }));
   panel.querySelectorAll(".js-board").forEach((btn) =>
     btn.addEventListener("click", () => { selectedBoard = +btn.dataset.board; renderRooms(); renderWidget(); }));
 }
