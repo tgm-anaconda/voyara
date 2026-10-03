@@ -576,6 +576,9 @@ const Werkzeuge = {
      das Element und die laufende Nummer. Rueckgabe sagt, ob sich
      wirklich etwas bewegt hat. */
   async scrollDurch({ elemente, halte = [], beiHalt = null, zaehlwort = "", tempoMs = 24 }) {
+    // Gezaehlt wird nur, was auf der Seite zu sehen ist - ausgeblendete
+    // Karten (Filter, Saison) liefen sonst im Zaehler mit
+    elemente = elemente.filter((el) => el.offsetParent !== null || el.getClientRects().length);
     const mass = await this.strecke(elemente);
     if (!mass) {
       // Zu kurz zum Scrollen: dann nur die Haltepunkte ansehen
@@ -647,9 +650,18 @@ const Werkzeuge = {
       hoechste = Math.max(hoechste, gesehen(window.scrollY));
       Zeiger.beschrifte?.(`${Math.max(1, hoechste)} von ${gesamt} ${zaehlwort}`);
     };
-    window.scrollTo({ top: von, behavior: "auto" });
+    window.scrollTo({ top: von, behavior: "instant" });
     await Zeiger.warte(120);
     beschriften();
+    /* Die Zahl folgt jeder Bewegung, nicht nur den Schritten.
+       ----------------------------------------------------------------
+       Gemeldet am 03.10.2026: Die Zahl springt, und danach scrollt er.
+       Beschriftet wurde nur nach jedem Schritt und nach jedem Halt; das
+       weiche Scrollen zu einem Haltepunkt lief ohne Zahl, und am Ende
+       stand der Sprung. Jetzt liest ein Takt alle 40 ms die echte
+       Position - die Zahl laeuft mit, Karte fuer Karte. */
+    const ticker = zaehlwort ? setInterval(beschriften, 40) : null;
+    try {
     while (y < bis && !Zeiger.abbruch) {
       y = Math.min(bis, y + schritt);
       // Liegt der naechste Haltepunkt in diesem Abschnitt, haelt er dort
@@ -666,7 +678,7 @@ const Werkzeuge = {
         // "Bewertung 3 von 5" statt des Zaehlers.
         beschriften();
       }
-      window.scrollTo({ top: y, behavior: "auto" });
+      window.scrollTo({ top: y, behavior: "instant" });   // "instant": style.css setzt scroll-behavior: smooth, und mit "auto" lief die Seite dem Zaehler hinterher
       weiteste = Math.max(weiteste, window.scrollY);
       beschriften();
       await Zeiger.warte(takt);
@@ -676,14 +688,21 @@ const Werkzeuge = {
       if (beiHalt) await beiHalt(halte[naechstes], naechstes + 1);
       naechstes += 1;
     }
-    if (zaehlwort) {
-      Zeiger.beschrifte?.(`${gesamt} von ${gesamt} ${zaehlwort}`);
+    } finally { if (ticker) clearInterval(ticker); }
+    if (zaehlwort && !Zeiger.abbruch) {
+      // Am Ende steht unten die letzte Karte im Bild - die Zahl kommt
+      // dort von selbst an; gesetzt wird sie nur, falls die letzte Karte
+      // niedriger ist als der Rand
+      beschriften();
+      if (hoechste < gesamt) Zeiger.beschrifte?.(`${gesamt} von ${gesamt} ${zaehlwort}`);
       await Zeiger.warte(160);
     }
     const gescrollt = Math.abs(weiteste - startY) > 8;
     Zeiger.beschrifte?.("");
-    window.scrollTo({ top: von, behavior: "auto" });
-    await Zeiger.warte(180);
+    // Zurueck nach oben sichtbar statt mit einem Sprung - der Sprung war
+    // das "super schnell wieder nach oben" vom 02.10.2026
+    window.scrollTo({ top: von, behavior: "smooth" });
+    await Zeiger.warte(450);
     return { gescrollt, strecke: bis - von, gesamt };
   },
 

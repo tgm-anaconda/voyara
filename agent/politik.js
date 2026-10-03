@@ -1530,7 +1530,7 @@ const Politik = {
       raus.push({ feld: "Ziel", wert: "alle Regionen" });
     }
     if (profil.artGenannt) raus.push({ feld: "Art", wert: profil.typ === "apartment" ? "Ferienwohnung" : "Hotel" });
-    else if (profil.artEgal) raus.push({ feld: "Art", wert: "offen, Hotels zuerst" });
+    else if (profil.artEgal) raus.push({ feld: "Art", wert: "Hotels und Ferienwohnungen" });
     // Dieselbe Falle wie anderswo: "Mai" hat drei Buchstaben und fiel
     // durch die Laengenpruefung, die Kurzformen aussortieren sollte
     if (profil.monat && typeof MONATSNAMEN !== "undefined") {

@@ -2010,7 +2010,13 @@ const Werkzeugkasten = {
   katalog(profil) {
     const H = typeof HOTELS !== "undefined" ? HOTELS : [];
     const W = typeof APARTMENTS !== "undefined" ? APARTMENTS : [];
-    const alle = profil?.typ === "apartment" ? W : (profil?.typ === "hotel" ? H : [...H, ...W]);
+    /* Dieselbe Frage wie die Seite: seitenTyp, nicht p.typ.
+       Gemeldet am 03.10.2026: "Beides zeigen" gewaehlt, der Zaehler lief
+       bis 148, gesagt wurden "88 Unterkuenfte". Die 88 waren nur die
+       Hotels - im Stand lag noch typ "hotel" aus einem frueheren Zug,
+       und der Katalog fragte p.typ, die Seite seitenTyp. */
+    const typ = this.seitenTyp(profil || {});
+    const alle = typ === "apartment" ? W : (typ === "hotel" ? H : [...H, ...W]);
     if (!profil?.monat || typeof freiImMonat !== "function") return alle;
     return alle.filter((h) => freiImMonat(h, profil.monat));
   },
@@ -6987,7 +6993,7 @@ const Werkzeugkasten = {
       kinder: p.kinder || 0,
       zimmer: p.zimmer || 1,
       zimmerTyp: p.zimmerTyp || null,
-      typ: p.typ || null,
+      typ: this.seitenTyp(p),   // nicht p.typ - siehe katalog()
       zielIds,
       ausstattung: f.ausstattung || [],
       verpflegung: p.verpflegung ? [p.verpflegung] : [],

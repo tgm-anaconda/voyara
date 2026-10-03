@@ -1016,6 +1016,21 @@ const Kernpruefung = {
     return fehler;
   },
 
+  /* "Beides" heisst beides, auch mit altem typ im Stand (03.10.2026:
+     Zaehler 148, gesagt 88 - die 88 waren nur die Hotels). */
+  katalogArt() {
+    const fehler = [];
+    const basis = { monat: 8, naechte: 9, erwachsene: 2, kinder: 1, kinderAlter: [9], zimmer: 1 };
+    const n = (p) => Werkzeugkasten.katalogTreffer(p, Werkzeugkasten.filterAusStand(p)).length;
+    const beides = n({ ...basis, artEgal: true });
+    const mitAltemTyp = n({ ...basis, artEgal: true, typ: "hotel" });
+    if (beides !== mitAltemTyp) {
+      fehler.push({ art: "art_alter_typ", thema: "art", satz: "",
+        text: `"Beides" mit altem typ hotel zaehlt ${mitAltemTyp} statt ${beides} - Agent und Seite fragen verschieden` });
+    }
+    return fehler;
+  },
+
   filterbitte() {
     const fehler = [];
     for (const f of this.FILTER_FAELLE) {
@@ -2132,6 +2147,7 @@ const Kernpruefung = {
     for (const f of this.budgetVorlage()) alle.push(f);
     for (const f of this.ankunft()) alle.push(f);
     for (const f of this.kernAntworten()) alle.push(f);
+    for (const f of this.katalogArt()) alle.push(f);
     for (const f of this.budget()) alle.push(f);
     for (const f of this.vorschlagsset()) alle.push(f);
     for (const f of this.flughaefen()) alle.push(f);
