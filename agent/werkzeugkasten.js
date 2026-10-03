@@ -613,7 +613,7 @@ const Werkzeugkasten = {
      Ohne ihn waere "eher warm" eine Auswahl, die niemand nachpruefen
      kann - und die Person koennte die Grenze nicht verschieben, weil sie
      sie nicht kennt. */
-  richtungSatz(p) {
+  richtungSatz(p, ohneSchluss = false) {
     if (!p?.richtung || !p.monat || !p.zieleErlaubt?.length || typeof grad !== "function") return null;
     if (typeof MONATSNAMEN === "undefined" || typeof ZIEL_NACH_ID === "undefined") return null;
     const mit = p.zieleErlaubt.map((id) => ZIEL_NACH_ID[id]).filter((z) => z && grad(z, p.monat) != null);
@@ -641,7 +641,8 @@ const Werkzeugkasten = {
        kaelteste Region darueber. Jetzt steht beides da, und was was ist. */
     const basis = p.mindestGrad != null ? p.mindestGrad : (warm ? 22 : 12);
     const grenze = warm ? Math.min(basis, von) : Math.max(basis, bis);
-    return `${warm ? "Warm" : "Kalt"} heißt für mich ${warm ? "ab" : "bis"} ${grenze} Grad. Im ${monat} sind das ${mit.length} Regionen mit ${von} bis ${bis} Grad, darunter ${namen.join(", ")}. Sag Bescheid, wenn dir eine andere Grenze lieber ist.`;
+    return `${warm ? "Warm" : "Kalt"} heißt für mich ${warm ? "ab" : "bis"} ${grenze} Grad. Im ${monat} sind das ${mit.length} Regionen mit ${von} bis ${bis} Grad, darunter ${namen.join(", ")}.`
+      + (ohneSchluss ? "" : " Sag Bescheid, wenn dir eine andere Grenze lieber ist.");
   },
 
   /* Gesagt wird es einmal je Stand - und wieder, wenn die Person die
@@ -767,11 +768,18 @@ const Werkzeugkasten = {
       .filter((z) => grad(z, p.monat) != null && (typeof saisonPassung !== "function" || saisonPassung(z, p.monat) >= 0.5));
     const weiter = warm ? grenze - 4 : grenze + 4;
     const jetzt = p.zieleErlaubt.length;
-    const dann = alle.filter((z) => (warm ? grad(z, p.monat) >= weiter : grad(z, p.monat) <= weiter)).length;
-    if (dann <= jetzt) return null;                  // nichts zu gewinnen, nicht fragen
+    /* Dieselbe Zaehlung wie nach der Antwort: regionenFuerRichtung mit der
+       neuen Grenze. Vorher zaehlte die Frage nur Regionen in Saison ("wären
+       es 13"), die Auswahl danach alle ("jetzt 15 statt 12"). */
+    const thema = typeof Politik !== "undefined" ? (Politik.THEMEN || []).find((t) => t.id === p.richtung) : null;
+    const dannIds = thema ? this.regionenFuerRichtung(thema, { ...p, mindestGrad: weiter }) : [];
+    const dazu = dannIds.filter((id) => !p.zieleErlaubt.includes(id)).map((id) => ZIEL_NACH_ID[id]?.name).filter(Boolean);
+    const dann = dannIds.length;
+    if (dann <= jetzt || !dazu.length) return null;  // nichts zu gewinnen, nicht fragen
+    void alle;
+    const liste = dazu.length > 3 ? `${dazu.slice(0, 3).join(", ")} und ${dazu.length - 3} weitere` : (dazu.length > 1 ? `${dazu.slice(0, -1).join(", ")} und ${dazu.at(-1)}` : dazu[0]);
     return {
-      satz: `Ich rechne ${warm ? "ab" : "bis"} ${grenze} Grad - das sind die ${jetzt} Regionen von eben. `
-        + `${warm ? "Ab" : "Bis"} ${weiter} Grad wären es ${dann}. Soll ich bei ${grenze} bleiben oder die Grenze verschieben?`,
+      satz: `${warm ? "Ab" : "Bis"} ${weiter} Grad kämen ${liste} dazu. Bei ${grenze} Grad bleiben oder auf ${weiter} gehen?`,
       chips: [`Bei ${grenze} Grad bleiben`, `${warm ? "Ab" : "Bis"} ${weiter} Grad`],
       grenze, weiter, jetzt, dann,
     };
@@ -814,7 +822,10 @@ const Werkzeugkasten = {
         return;
       }
     }
-    const satz = this.richtungSatz(p);
+    /* Folgt gleich die Frage nach der Grenze, endet dieser Satz ohne
+       "Sag Bescheid ..." - sonst stand die Einladung da und direkt danach
+       die Frage zur selben Sache (03.10.2026, "sehr doppelt"). */
+    const satz = this.richtungSatz(p, !!this.spanneRueckfrage(p, kern.lauf));
     if (!satz) return;
     // Verglichen wird der Satz selbst: Verschiebt jemand die Grenze von 22
     // auf 20 und es aendert sich nichts, waere die Wiederholung nur Laerm.
@@ -2944,7 +2955,12 @@ const Werkzeugkasten = {
          mit den Namen der Regionen). Fuer alles andere nicht - und "das
          aendert die Auswahl" ist keine Auskunft, sondern eine Floskel.
          Jetzt rechnet der Kern beide Staende durch und nennt die Zahl. */
-      const aend = Werkzeugkasten.aenderungsSatz(p, vorStand, geaendert);
+      /* Erst nach dem ersten Ueberblick. Am 03.10.2026 kam "12 Naechte
+         statt 5 Naechte - damit kommen 2 Unterkuenfte dazu, jetzt 214 statt
+         212", bevor ueberhaupt gesucht war, und kurz danach "179 buchbar".
+         Vorher gibt es keine Zahl, an der sich eine Aenderung messen liesse,
+         die die Person schon kennt. */
+      const aend = kern.lauf.lageFuer ? Werkzeugkasten.aenderungsSatz(p, vorStand, geaendert) : null;
       if (aend) {
         kern.lauf.aenderungSatz = aend;
         kern.notieren("aenderung_erklaert", { felder: geaendert, satz: aend.slice(0, 120) });
@@ -4145,8 +4161,8 @@ const Werkzeugkasten = {
         // und immer da sein, auch wenn das Modell gerade nichts schreibt.
         // "die 1 Häuser" stand so im Chat, als nur ein Haus uebrigblieb
         kern.sagen(r.ids.length === 1
-          ? `Ich sehe mir das Haus jetzt an: Bewertungen, Zimmer, Verpflegung.`
-          : `Ich sehe mir die ${r.ids.length} Häuser jetzt der Reihe nach an: Bewertungen, Zimmer, Verpflegung. Nach jedem sage ich dir Bescheid.`);
+          ? `Ich sehe mir das Haus jetzt genauer an.`
+          : `Ich sehe mir die ${r.ids.length} Häuser jetzt der Reihe nach genauer an. Nach jedem sage ich dir Bescheid.`);
         // Die Adresse der Liste festhalten. Der Brotkrumenpfad auf der
         // Hausseite fuehrt zu "results.html?type=hotel" - ohne Monat,
         // Dauer und Reisende. Danach stand die Liste auf 184 von 184
@@ -4719,8 +4735,10 @@ const Werkzeugkasten = {
          nie als gestellt gezaehlt worden - also waere auch nie die dritte
          Fassung gekommen und nie die Annahme nach zwei Anlaeufen. Eine
          fehlende Interpunktion haette eine Endlosschleife tragen koennen. */
-      satz: ["Wie viele seid ihr, und sind Kinder dabei?",
-        "Wie viele seid ihr denn, und kommen Kinder mit?"],
+      // Eine Frage, nicht zwei (03.10.2026): Kinder und Alter fragt der
+      // Fahrplan danach ohnehin einzeln
+      satz: ["Wer reist mit?",
+        "Wie viele seid ihr denn insgesamt?"],
       frage: "Mit wem sie reist - in einem Fragesatz. Nicht zwei Fragesaetze daraus machen.", chips: "1 | 2 | 3 | 4 | mehr" },
 
     kinderAlter: {
@@ -4856,7 +4874,9 @@ const Werkzeugkasten = {
        hingehoert: Man weiss dann, worum es geht. */
     anzahl: {
       erklaerung: "Je mehr ich raussuche, desto laenger dauert es - ich gehe jedes Haus einzeln durch und lese die Bewertungen.",
-      satz: ["Wie viele soll ich dir zusammenstellen? Drei reichen meistens, mehr gehen auch.",
+      // Ohne den Hinweis "Drei reichen meistens": den schrieb das Modell
+      // ohnehin davor, und er stand am 03.10.2026 zweimal in einer Nachricht
+      satz: ["Wie viele Häuser soll ich dir zusammenstellen?",
         "Und wie viele Häuser soll ich dir vorlegen?"],
       frage: "Wie viele Haeuser sie vorgelegt haben will (2 bis 6). Ohne klare Zahl nimmst du drei.", chips: "Drei | Vier | Sechs" },
 

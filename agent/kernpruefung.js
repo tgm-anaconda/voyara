@@ -1190,6 +1190,20 @@ const Kernpruefung = {
     return fehler;
   },
 
+  // Kommazahlen (03.10.2026): fragen statt "5 Naechte"
+  komma() {
+    const fehler = [];
+    if (typeof Kern === "undefined" || !Kern.kommaFrage) return fehler;
+    for (const [text, vorher, soll] of [["11,5 Nächte", "dauer", "11|12"], ["11.5", "dauer", "11|12"], ["1,5 Wochen", "dauer", "10|11"],
+      ["2,5 Personen", "reisende", "2|3"], ["3,4", "kinderAlter", null], ["12 Nächte", "dauer", null], ["11,50 Euro pro Nacht", "preis", null]]) {
+      const f = Kern.kommaFrage(text, vorher);
+      const ist = f ? f.chips.map((c) => parseInt(c, 10)).join("|") : null;
+      if (ist !== soll) fehler.push({ art: "komma", thema: "eckdaten", satz: text, text: `"${text}" ergibt ${ist}, erwartet ${soll}` });
+      if (f && (f.satz.match(/\?/g) || []).length !== 1) fehler.push({ art: "komma_fragen", thema: "eckdaten", satz: f.satz, text: "nicht genau eine Frage" });
+    }
+    return fehler;
+  },
+
   filterbitte() {
     const fehler = [];
     for (const f of this.FILTER_FAELLE) {
@@ -2312,6 +2326,7 @@ const Kernpruefung = {
     for (const f of this.ehrlichkeit()) alle.push(f);
     for (const f of this.deckeRaster()) alle.push(f);
     for (const f of this.reiz()) alle.push(f);
+    for (const f of this.komma()) alle.push(f);
     for (const f of this.budget()) alle.push(f);
     for (const f of this.vorschlagsset()) alle.push(f);
     for (const f of this.flughaefen()) alle.push(f);

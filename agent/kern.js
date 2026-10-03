@@ -1067,6 +1067,7 @@ const Kern = {
     if (this.lauf.budgetHalt && this.budgetAntwort(t, opts)) return;
     if (await this.kasseBedienen(t, opts)) return;
     if (this.welchesHaus(t, opts)) return;
+    if (this.kommaPruefen(t, opts)) return;
     this.ankunftLesen(t);
     this.zimmerAntwort(t);
     this.abschlussAntwort(t);
@@ -3102,6 +3103,47 @@ const Kern = {
     this.lauf.chips = namen.map((n) => `${n} buchen`);
     AgentPanel.setSuggestions(this.lauf.chips);
     this.notieren("haus_rueckfrage", { kandidaten: imSatz.map((it) => it.id) });
+    this.sichern();
+    return true;
+  },
+
+  /* Eine Kommazahl bei Naechten oder Personen.
+     ------------------------------------------------------------------
+     Gemeldet am 03.10.2026: "11,5 Naechte" - der Leser fand "5 Naechte"
+     und quittierte sie. Der Nutzer: Das wirkt, als waere das Modell
+     schlecht, und genau das darf waehrend der Nutzung nicht passieren.
+     Jetzt wird nichts aufgenommen, und der Kern fragt mit beiden
+     Moeglichkeiten. "3,4" auf die Altersfrage ist keine Kommazahl,
+     sondern eine Aufzaehlung - dort greift das nicht. */
+  kommaFrage(t, zuletztGefragt = null) {
+    const satz = String(t).toLowerCase();
+    const m = satz.match(/\b(\d{1,2})[,.](\d)\b/);
+    if (!m) return null;
+    if (zuletztGefragt === "kinderAlter") return null;
+    const woche = /woche/.test(satz);
+    const thema = /n(ä|ae)cht|\btag|woche/.test(satz) ? "dauer"
+      : /person|erwachsen|leute|reisende/.test(satz) ? "reisende"
+        : (["dauer", "reisende"].includes(zuletztGefragt) ? zuletztGefragt : null);
+    if (!thema) return null;
+    const wert = parseFloat(`${m[1]}.${m[2]}`);
+    if (thema === "dauer") {
+      const naechte = woche ? wert * 7 : wert;
+      const a = Math.floor(naechte), b = Math.ceil(naechte) === a ? a + 1 : Math.ceil(naechte);
+      return { thema, satz: `${woche ? `${String(wert).replace(".", ",")} Wochen sind ${String(naechte).replace(".", ",")} Nächte, und halbe Nächte gibt es leider nicht.` : "Halbe Nächte gibt es leider nicht."} Meinst du ${a} oder ${b} Nächte?`,
+        chips: [`${a} Nächte`, `${b} Nächte`] };
+    }
+    const a = Math.floor(wert), b = a + 1;
+    return { thema, satz: `Meinst du ${a} oder ${b} Personen?`, chips: [`${a} Personen`, `${b} Personen`] };
+  },
+  kommaPruefen(t, opts = {}) {
+    const f = this.kommaFrage(t, this.lauf.zuletztGefragt || null);
+    if (!f) return false;
+    if (!opts.gezeigt) this.sagen(t, "user");
+    this.gespraechPush({ role: "user", content: t });
+    this.sagenUndMerken(f.satz);
+    this.lauf.chips = f.chips;
+    AgentPanel.setSuggestions(f.chips);
+    this.notieren("komma_rueckfrage", { thema: f.thema, text: String(t).slice(0, 40) });
     this.sichern();
     return true;
   },
