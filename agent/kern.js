@@ -536,6 +536,7 @@ const Kern = {
       const z = JSON.parse(sessionStorage.getItem("voyara_zimmerwahl") || "null");
       if (z && z.id && z.name && item && z.id === item.id && p.zimmerTyp !== z.name) {
         p.zimmerTyp = z.name;
+        p.zimmerFuer = item.id;
         this.lauf.zimmerGefragt = true;
         neu.push(`das Zimmer „${z.name}“`);
       }
@@ -562,6 +563,7 @@ const Kern = {
        wieder verlassen hat. Deshalb ein eigener Platz statt der Liste:
        Ein neuer Seitenstand ersetzt den alten. */
     this.lauf.uebernahmeSatz = `Du hast ${neu.join(" und ")} schon ausgewählt - das übernehme ich.`;
+    this.lauf.uebernahmeAlter = 0;
     this.standAnzeigen?.();
     this.sichern();
   },
@@ -1015,6 +1017,18 @@ const Kern = {
     if (!t) return;
     // Was die Person seit dem Laden auf der Seite gewaehlt hat (Zimmer,
     // Flug, Daten) - nicht erst beim naechsten Seitenaufbau
+    /* Ein Uebernahmesatz gilt fuer die naechste Antwort, nicht laenger.
+       Am 03.10.2026 kam "Du hast Hotel Hivernage Park aus meiner Auswahl
+       schon ausgewaehlt" Seiten spaeter unter einer Antwort in der Kasse
+       eines anderen Hauses - der Satz hatte gewartet, bis wieder eine
+       Nachricht des Modells kam. */
+    if (this.lauf.uebernahmeSatz) {
+      this.lauf.uebernahmeAlter = (this.lauf.uebernahmeAlter || 0) + 1;
+      if (this.lauf.uebernahmeAlter >= 2) {
+        this.notieren("uebernahme_verfallen", { satz: this.lauf.uebernahmeSatz.slice(0, 80) });
+        this.lauf.uebernahmeSatz = null;
+      }
+    }
     if (!this.laeuft) { try { this.seitenstandUebernehmen(); } catch { /* Seite ohne Stand */ } }
     if (/^stopp?$/i.test(t)) {
       if (!opts.gezeigt) this.sagen(t, "user");
@@ -1042,6 +1056,7 @@ const Kern = {
     if (this.lauf.anhalt?.gesagt && this.anhaltAntwort(t, opts)) return;
     if (this.lauf.budgetHalt && this.budgetAntwort(t, opts)) return;
     if (await this.kasseBedienen(t, opts)) return;
+    if (this.welchesHaus(t, opts)) return;
     this.ankunftLesen(t);
     this.zimmerAntwort(t);
     this.abschlussAntwort(t);
@@ -2910,6 +2925,7 @@ const Kern = {
     this.lauf.zimmerFrage = null;
     if (!treffer) { this.notieren("zimmer_antwort_unklar", { text: String(t).slice(0, 60) }); return; }
     (this.lauf.profil ||= {}).zimmerTyp = treffer;
+    this.lauf.profil.zimmerFuer = f.id;
     this.lauf.zimmerGefragt = true;
     this.lauf.fortsetzenMit = "buchung_vorbereiten";
     this.notieren("zimmer_gewaehlt", { id: f.id, zimmer: treffer });
@@ -3039,6 +3055,36 @@ const Kern = {
     this.sagenUndMerken(teile.join(" "));
     this.lauf.chips = chips;
     AgentPanel.setSuggestions(chips);
+    this.sichern();
+    return true;
+  },
+
+  /* "Das wuerde ich gerne buchen" - aber welches?
+     ------------------------------------------------------------------
+     Am 03.10.2026: Der Agent hatte zwei Haeuser verglichen und gefragt,
+     ob eines davon gebucht werden soll. "Ja das wuerde ich dann gerne
+     buchen" - und er buchte das, das er selbst vorne gesehen hatte. Was
+     gebucht wird, ist die Hauptmessgroesse; geraten werden darf hier
+     nicht. Stehen in der letzten Nachricht des Agenten zwei oder mehr
+     Haeuser und nennt die Person keines, fragt der Kern. */
+  welchesHaus(t, opts = {}) {
+    const satz = String(t).toLowerCase();
+    if (!/\b(buch\w*|nehm\w*|nimm)\b/.test(satz)) return false;
+    if (typeof getItemById !== "function") return false;
+    const ids = [...new Set([...(this.lauf.letzteVorlage || []), ...(typeof Wishlist !== "undefined" && Wishlist.read ? Wishlist.read() : [])])];
+    const items = ids.map((id) => getItemById(id)).filter(Boolean);
+    const genannt = items.filter((it) => satz.includes(it.name.toLowerCase()) || satz.includes(it.name.toLowerCase().split(" ").slice(-1)[0]));
+    if (genannt.length) return false;
+    const letzte = [...(this.lauf.verlauf || [])].reverse().find((n) => n.rolle === "bot")?.text || "";
+    const imSatz = items.filter((it) => letzte.includes(it.name));
+    if (imSatz.length < 2) return false;
+    if (!opts.gezeigt) this.sagen(t, "user");
+    this.gespraechPush({ role: "user", content: t });
+    const namen = imSatz.map((it) => it.name);
+    this.sagenUndMerken(`Gern. Welches soll ich buchen: ${namen.slice(0, -1).join(", ")} oder ${namen.at(-1)}?`);
+    this.lauf.chips = namen.map((n) => `${n} buchen`);
+    AgentPanel.setSuggestions(this.lauf.chips);
+    this.notieren("haus_rueckfrage", { kandidaten: imSatz.map((it) => it.id) });
     this.sichern();
     return true;
   },

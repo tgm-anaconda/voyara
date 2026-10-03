@@ -1070,6 +1070,24 @@ const Kernpruefung = {
     return fehler;
   },
 
+  /* Welches Haus? (03.10.2026) */
+  welchesHausPruefen() {
+    const fehler = [];
+    if (typeof Kern === "undefined" || !Kern.welchesHaus || typeof HOTELS === "undefined") return fehler;
+    const [a, b] = [HOTELS[0], HOTELS[1]];
+    const lauf = (text, letzte) => {
+      const k = Object.create(Kern);
+      k.lauf = { letzteVorlage: [a.id, b.id], verlauf: [{ rolle: "bot", text: letzte }], gespraech: [], protokoll: [] };
+      k.sagen = () => {}; k.sichern = () => {}; k.gespraechPush = () => {};
+      return k.welchesHaus(text, { gezeigt: true });
+    };
+    const zwei = `${a.name} hat den besseren Service, ${b.name} die bessere Lage. Möchtest du eines der beiden buchen?`;
+    if (!lauf("Ja das würde ich dann gerne buchen.", zwei)) fehler.push({ art: "haus_geraten", thema: "buchung", satz: "", text: "Zwei Haeuser im Satz, keines genannt - es wurde nicht nachgefragt" });
+    if (lauf(`Ja, ${a.name} buchen`, zwei)) fehler.push({ art: "haus_unnoetig_gefragt", thema: "buchung", satz: "", text: "Haus genannt, trotzdem nachgefragt" });
+    if (lauf("Ja, buchen", `${a.name} ist frei.`)) fehler.push({ art: "haus_unnoetig_gefragt", thema: "buchung", satz: "", text: "Nur ein Haus im Satz, trotzdem nachgefragt" });
+    return fehler;
+  },
+
   filterbitte() {
     const fehler = [];
     for (const f of this.FILTER_FAELLE) {
@@ -2188,6 +2206,7 @@ const Kernpruefung = {
     for (const f of this.kernAntworten()) alle.push(f);
     for (const f of this.katalogArt()) alle.push(f);
     for (const f of this.kasse()) alle.push(f);
+    for (const f of this.welchesHausPruefen()) alle.push(f);
     for (const f of this.budget()) alle.push(f);
     for (const f of this.vorschlagsset()) alle.push(f);
     for (const f of this.flughaefen()) alle.push(f);

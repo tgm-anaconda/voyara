@@ -2697,7 +2697,7 @@ const Werkzeugkasten = {
       if (a.zimmerTyp) {
         const haus = typeof getItemById === "function" ? getItemById(kern.lauf.gewaehlt) : null;
         const treffer = (haus?.rooms || []).find((r) => String(r.name).toLowerCase() === String(a.zimmerTyp).trim().toLowerCase());
-        if (treffer) { setze("zimmerTyp", treffer.name); kern.lauf.zimmerGefragt = true; }
+        if (treffer) { setze("zimmerTyp", treffer.name); p.zimmerFuer = kern.lauf.gewaehlt || null; kern.lauf.zimmerGefragt = true; }
         else kern.notieren("zimmer_verworfen", { genannt: a.zimmerTyp, haus: kern.lauf.gewaehlt || null });
       }
       if (a.gepaeck) setze("gepaeck", a.gepaeck);
@@ -4352,6 +4352,17 @@ const Werkzeugkasten = {
          gebucht wird, ist die Hauptmessgroesse; hier darf nichts
          verrutschen. */
       if (stufe === 1) {
+        /* Eine Zimmerwahl gehoert zu ihrem Haus. Am 03.10.2026 galt
+           "Apartment 2 Schlafzimmer" (gewaehlt in einem anderen Haus) beim
+           Buchen von Riad des Oliviers: Die Zimmerfrage fiel aus, und die
+           Kasse nahm das vorausgewaehlte Hofzimmer. */
+        {
+          const pz = kern.lauf.profil || {};
+          if (pz.zimmerTyp && pz.zimmerFuer && pz.zimmerFuer !== a.id) {
+            kern.notieren("zimmer_anderes_haus", { zimmer: pz.zimmerTyp, war: pz.zimmerFuer, jetzt: a.id });
+            delete pz.zimmerTyp; delete pz.zimmerFuer;
+            kern.lauf.zimmerGefragt = false;
+          }
         /* Der Flug wird gewaehlt, nicht gesetzt - und er ist das zweite
            Objekt der Erhebung.
            --------------------------------------------------------------
@@ -4403,6 +4414,8 @@ const Werkzeugkasten = {
             hinweis: "Der Chat hat die Person nach dem Zimmer gefragt. Schreib nichts dazu." } };
         }
         kern.notieren("zur_buchung", { id: a.id });
+
+        }
         /* Steht die Kasse noch so, wie es besprochen ist?
            --------------------------------------------------------------
            Zimmer, Verpflegung und Gruppe kommen aus der Adresse der
