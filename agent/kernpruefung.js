@@ -1088,6 +1088,38 @@ const Kernpruefung = {
     return fehler;
   },
 
+  /* Ehrlichkeit (03.10.2026): kein Urteil, keine unbelegte Ausstattung,
+     Haustier vom Kern gelesen. */
+  ehrlichkeit() {
+    const fehler = [];
+    const melde = (art, text, satz = "") => fehler.push({ art, text, thema: "ehrlich", satz });
+    const W = Werkzeugkasten;
+    for (const [satz, weg] of [
+      ["Insgesamt ist das Riad des Oliviers etwas besser bewertet, wenn dir Service und Lage wichtig sind.", true],
+      ["Ich würde dir das Riad empfehlen.", true],
+      ["Mein Favorit wäre Les Jardins.", true],
+      ["Der Service ist beim Riad mit 9,4 besser als bei Les Jardins mit 9,1.", false],
+      ["Es kommt darauf an, was dir wichtiger ist.", false],
+    ]) {
+      const u = W.urteilStreichen(satz);
+      if (!!u.gestrichen !== weg) melde("urteil", `"${satz}" ${weg ? "bleibt stehen" : "wird gestrichen"}`, satz);
+    }
+    const ohne = { ausstattung: [] }, mit = { ausstattung: ["petsAllowed"] };
+    const t = "Ich habe dir vier passende Hotels zusammengestellt, die alle hundefreundlich sind.";
+    if (!W.urteilStreichen(t, ohne).gestrichen) melde("ausstattung_unbelegt", "Hundefreundlich ohne Stand wird nicht gestrichen", t);
+    if (W.urteilStreichen(t, mit).gestrichen) melde("ausstattung_zu_streng", "Hundefreundlich mit Stand wird gestrichen", t);
+    if (typeof Kern !== "undefined" && Kern.haustierLesen) {
+      for (const [satz, soll] of [["Es muss hunde freundlich sein und eine gute Lage haben", true], ["wir haben einen Hund", true],
+        ["Haustiere sollten erlaubt sein", true], ["ohne Hund diesmal", false], ["keine Haustiere bitte", false], ["gute Lage", false]]) {
+        const k = Object.create(Kern); k.lauf = { profil: {}, protokoll: [] };
+        k.haustierLesen(satz);
+        const ist = (k.lauf.profil.ausstattung || []).includes("petsAllowed");
+        if (ist !== soll) melde("haustier", `"${satz}" ${soll ? "nicht erkannt" : "faelschlich erkannt"}`, satz);
+      }
+    }
+    return fehler;
+  },
+
   filterbitte() {
     const fehler = [];
     for (const f of this.FILTER_FAELLE) {
@@ -2207,6 +2239,7 @@ const Kernpruefung = {
     for (const f of this.katalogArt()) alle.push(f);
     for (const f of this.kasse()) alle.push(f);
     for (const f of this.welchesHausPruefen()) alle.push(f);
+    for (const f of this.ehrlichkeit()) alle.push(f);
     for (const f of this.budget()) alle.push(f);
     for (const f of this.vorschlagsset()) alle.push(f);
     for (const f of this.flughaefen()) alle.push(f);

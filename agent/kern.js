@@ -934,6 +934,7 @@ const Kern = {
     const grenzen = Werkzeugkasten.grenzenText(this.lauf.profil || {});
     if (grenzen) zeilen.push(grenzen);
     for (const block of this.regelnJetzt()) zeilen.push(block);
+    zeilen.push("VERGLEICH: Vergleichst du Haeuser, nenn Unterschiede mit Zahlen - aber kuer keinen Sieger und sprich keine Empfehlung aus, auch nicht auf 'welches findest du besser?'. Sag dann, worin sie sich unterscheiden und dass es darauf ankommt, was der Person wichtiger ist.");
     if (this.lauf.phase === "angehalten") zeilen.push("Die Person hat waehrend deiner Arbeit selbst geklickt; du hast angehalten.");
     if (this.lauf.fortsetzenHinweis) zeilen.push(`Die Person hatte dich angehalten und jetzt gesagt, dass du weitermachen sollst. Mach dort weiter, wo du warst (${this.lauf.fortsetzenHinweis}); sag nicht noch einmal, was du vorher schon gesagt hast.`);
     zeilen.push("Fuer deine naechste Antwort: hoechstens drei Saetze, genau eine Frage (nie zwei), und wenn du fragst, als letzte Zeile CHIPS: mit zwei bis vier Antworten.");
@@ -1135,6 +1136,8 @@ const Kern = {
        ich mir.") noch einmal da, sobald das Modell irgendwann keine
        Werkzeuge rief. */
     this.lauf.zuletztGemerkt = [];
+    // Nach dem Zuruecksetzen, sonst ginge die Quittung verloren
+    this.haustierLesen(t);
     this.lauf.selbstGelesen = [];
     if (this.lauf.filterStandSchon) {
       this.lauf.filterStandSchon = false;
@@ -1363,6 +1366,10 @@ const Kern = {
           nachricht.tool_calls = antwort.tool_calls.map((c) => ({ id: c.id, type: "function", function: { name: c.function.name, arguments: c.function.arguments || "{}" } }));
         }
         let text = antwort.text || "";
+        if (text) {
+          const u = Werkzeugkasten.urteilStreichen(text, this.lauf.profil || {});
+          if (u.gestrichen) { this.notieren("urteil_gestrichen", { saetze: u.gestrichen }); text = u.text; antwort.text = u.text; nachricht.content = u.text || null; }
+        }
         if (text && !nachricht.tool_calls) {
           // Zwei Leitplanken, je einmal neu schreiben lassen: Zahlen, die
           // nirgends belegt sind, und mehr als eine Frage in einer Nachricht
@@ -1953,6 +1960,7 @@ const Kern = {
                erfuellt. */
             if (!fpJetzt.nurKern && !fpJetzt.kernFragt && !annahmen && planThema) {
               const pr = Werkzeugkasten.nachrichtPruefen(text, {
+                profil: this.lauf.profil || {},
                 thema: planThema,
                 quittungWorte,
                 etwasGemerkt: (this.lauf.zuletztGemerkt || []).length > 0,
@@ -3113,6 +3121,25 @@ const Kern = {
     }
     raus.versFrage = VERS.test(satz) && raus.versicherung === null;
     return raus;
+  },
+
+  /* Hund, Katze, Haustier: liest der Kern selbst.
+     Am 03.10.2026 fiel "Es muss hunde freundlich sein" unter den Tisch -
+     das Schema des Werkzeugs kannte das Feld nicht, und das Modell
+     quittierte nur die Lage. Ein Haustier ist eine harte Bedingung: Ohne
+     sie stehen Haeuser in der Auswahl, die man nicht buchen kann. */
+  haustierLesen(t) {
+    const satz = String(t).toLowerCase();
+    if (!/hund|haustier|katze|vierbeiner/.test(satz)) return;
+    if (/\b(kein|keine|keinen|ohne)\s+(hund|haustier|katze|tier)/.test(satz)) return;
+    const p = (this.lauf.profil ||= {});
+    const liste = new Set(p.ausstattung || []);
+    if (liste.has("petsAllowed")) return;
+    liste.add("petsAllowed");
+    p.ausstattung = [...liste];
+    (p.vonPerson ||= {}).ausstattung = true;
+    this.lauf.zuletztGemerkt = [...new Set([...(this.lauf.zuletztGemerkt || []), "ausstattung"])];
+    this.notieren("haustier_gelesen", { text: satz.slice(0, 60) });
   },
 
   /* Die Antwort auf die Budgetfrage vor der Vorlage. true: erledigt. */

@@ -156,7 +156,7 @@ const Werkzeugkasten = {
              gibt es in der Spalte bewusst keinen Haken dafuer. Ein Wert im
              Schema, den die Seite nicht kennt, fuehrt nur dazu, dass der
              Agent einen Filter verspricht, den er nicht setzen kann. */
-          ausstattung: { type: "array", items: { type: "string", enum: ["pool", "spa", "kidsClub", "familyFriendly", "beachfront", "parking", "restaurant", "gym", "seaView"] }, description: "Nur, wenn die Person etwas als Bedingung nennt ('muss einen Pool haben', 'direkt am Strand' = beachfront). Ein Wunsch gehoert in wuensche, nicht hierher." },
+          ausstattung: { type: "array", items: { type: "string", enum: ["pool", "spa", "kidsClub", "familyFriendly", "beachfront", "parking", "restaurant", "gym", "seaView", "petsAllowed"] }, description: "petsAllowed = Haustiere erlaubt (Hund, Katze). Nur, wenn die Person etwas als Bedingung nennt ('muss einen Pool haben', 'direkt am Strand' = beachfront). Ein Wunsch gehoert in wuensche, nicht hierher." },
           verpflegung: { type: "string", enum: ["ohne", "fruehstueck", "halb", "voll", "ai"], description: "Gewuenschte Verpflegung" },
           zimmerTyp: text("Name des Zimmers, das die Person gewaehlt hat (genau so, wie er auf der Hausseite steht). Nur, wenn sie sich entschieden hat - nicht selbst auswaehlen."),
           flug: { type: "boolean", description: "true, wenn ein Flug dazu gewuenscht ist; false, wenn nur die Unterkunft" },
@@ -1696,6 +1696,38 @@ const Werkzeugkasten = {
     return new RegExp(lang.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i").test(t);
   },
 
+  /* Behauptungen ueber Ausstattung, die nicht im Stand stehen.
+     Am 03.10.2026: "vier passende Hotels ..., die alle hundefreundlich
+     sind" - im Stand stand kein Haustier, gefiltert war nicht danach. */
+  AUSSTATTUNG_BEHAUPTUNG: {
+    petsAllowed: /hundefreundlich|haustierfreundlich|haustiere (sind )?(erlaubt|willkommen)|hunde (sind )?(erlaubt|willkommen)/i,
+    pool: /\b(alle|jedes|beide|s(ä|ae)mtliche)\b[^.]{0,40}\bpool/i,
+    spa: /\b(alle|jedes|beide|s(ä|ae)mtliche)\b[^.]{0,40}\b(spa|wellness|sauna)/i,
+    kidsClub: /\b(alle|jedes|beide|s(ä|ae)mtliche)\b[^.]{0,40}\bkinderclub/i,
+    parking: /\b(alle|jedes|beide|s(ä|ae)mtliche)\b[^.]{0,40}\bpark(platz|pl(ä|ae)tze)/i,
+    beachfront: /\b(alle|jedes|beide|s(ä|ae)mtliche)\b[^.]{0,40}\bdirekt am (strand|meer)/i,
+  },
+
+  /* Kein Gesamturteil ueber Haeuser.
+     ------------------------------------------------------------------
+     Entscheidung des Nutzers vom 03.10.2026: Beim Vergleich bleibt der
+     Agent neutral. Gemeldet: "Insgesamt ist das Riad des Oliviers etwas
+     besser bewertet, wenn dir Service und Lage wichtig sind." Ein Urteil
+     des Agenten ist ein zweiter Einfluss neben der Kennzeichnung - es
+     kann gegen das Partnerhaus sprechen oder dafuer, und beides
+     verschiebt die Messung. Zahlen nennen ja, Sieger kueren nein. Auch
+     auf "Welches findest du besser?" - dann sagt er, worin sich die
+     Haeuser unterscheiden und dass es darauf ankommt, was ihr wichtig
+     ist. */
+  URTEIL: /\b(insgesamt|alles in allem|unterm strich|unter dem strich|im gesamtbild|zusammengefasst)\b[^.!?]{0,80}\b(besser|vorn|vorne|empfehlenswerter|die bessere wahl|ueberzeugender|überzeugender)\b|\bich (w(ü|ue)rde|empfehle|rate)\b[^.!?]{0,60}\b(nehmen|buchen|empfehlen|w(ä|ae)hlen|dir raten|zu)\b|\b(meine empfehlung|mein favorit|klarer favorit|die bessere wahl)\b/i,
+  urteilStreichen(text, profil = null) {
+    const hat = new Set(profil?.ausstattung || []);
+    const unbelegt = (s) => profil && Object.entries(this.AUSSTATTUNG_BEHAUPTUNG).some(([feld, re]) => re.test(s) && !hat.has(feld));
+    const saetze = String(text || "").split(/(?<=[.!?])\s+/);
+    const bleiben = saetze.filter((s) => !this.URTEIL.test(s) && !unbelegt(s));
+    return { text: bleiben.join(" ").trim(), gestrichen: saetze.length - bleiben.length };
+  },
+
   nachrichtPruefen(text, plan = {}) {
     const t = String(text == null ? "" : text).replace(/\s+/g, " ").trim();
     if (!t) return { ok: false, grund: "leer" };
@@ -1764,6 +1796,12 @@ const Werkzeugkasten = {
             return { ok: false, grund: "schon_gesagt" };
           }
         }
+      }
+    }
+    if (plan.profil) {
+      const hat = new Set(plan.profil.ausstattung || []);
+      for (const [feld, re] of Object.entries(this.AUSSTATTUNG_BEHAUPTUNG)) {
+        if (re.test(t) && !hat.has(feld)) return { ok: false, grund: "ausstattung_unbelegt" };
       }
     }
     if (t.length > 420) return { ok: false, grund: "zu_lang" };
@@ -4331,12 +4369,18 @@ const Werkzeugkasten = {
 
          Der Satz kommt vom Kern und aus den Flugdaten, einmal je Haus und
          Tag. Er steht vor dem Klick auf "Buchen", nicht danach. */
-      if (flug && pf.anreise && kern.lauf.flugGesagtFuer !== `${a.id}|${pf.anreise}`) {
-        kern.lauf.flugGesagtFuer = `${a.id}|${pf.anreise}`;
+      /* Erst nach der Wahl. Am 03.10.2026 stand "Der Hinflug waere am So,
+         12.9.: Marenta ab Frankfurt" VOR dem Flugfenster - Marenta war der
+         vorausgewaehlte Partnerflug. Der Chat nannte damit das
+         Partnerangebot als Vorgabe, in jeder Gruppe. Jetzt kommt der Satz
+         nur fuer den Flug, den die Person gewaehlt hat. */
+      if (flug && pf.anreise && pf.flugId && flug.id === pf.flugId
+        && kern.lauf.flugGesagtFuer !== `${a.id}|${pf.anreise}|${flug.id}`) {
+        kern.lauf.flugGesagtFuer = `${a.id}|${pf.anreise}|${flug.id}`;
         const rueck = pf.naechte ? new Date(new Date(pf.anreise).getTime() + pf.naechte * 86400000) : null;
         kern.sagen([
           `Der Hinflug wäre am ${Flug.datumText(pf.anreise)}: ${flug.airline} ab ${flug.from} um ${flug.depart}${flug.stops === 0 ? ", direkt" : `, ${flug.stops} Stopp`}.`,
-          rueck ? `Zurück am ${Flug.datumText(Werkzeugkasten.alsIso(rueck))}.` : null,
+          rueck ? `Zurück am ${Flug.datumText(Werkzeugkasten.alsIso(rueck)).replace(/\.$/, "")}.` : null,
         ].filter(Boolean).join(" "));
         kern.notieren("flug_genannt", { id: a.id, anreise: pf.anreise, airline: flug.airline, ab: flug.from });
       }
@@ -4862,6 +4906,8 @@ const Werkzeugkasten = {
     budgetGesamt: { thema: "preis", wort: (p) => `höchstens ${p.budgetGesamt} € insgesamt` },
     maxPreis: { thema: "preis", wort: (p) => `höchstens ${p.maxPreis} € pro Nacht` },
     verpflegung: { thema: "verpflegung", wort: (p) => (typeof BOARD_LABELS !== "undefined" ? BOARD_LABELS[p.verpflegung] : p.verpflegung) },
+    // "Haustiere erlaubt merke ich mir" - die Ausstattung, die die Person verlangt hat
+    ausstattung: { thema: "wuensche", wort: (p) => (p.ausstattung || []).map((a) => (typeof AMENITY_LABELS !== "undefined" ? AMENITY_LABELS[a] : a)).filter(Boolean).slice(-2).join(" und ") },
     maxStrand: { thema: "wuensche", wort: (p) => `höchstens ${p.maxStrand < 1 ? `${Math.round(p.maxStrand * 1000)} Meter` : `${p.maxStrand} km`} zum Strand` },
     mindestbewertung: { thema: "wuensche", wort: (p) => `mindestens ${String(p.mindestbewertung).replace(".", ",")} als Note` },
     naechte: { thema: "dauer", wort: (p) => `${p.naechte} Nächte` },
