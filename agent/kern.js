@@ -2512,7 +2512,7 @@ const Kern = {
     if (wunsch && typeof aspektbilanz === "function" && (this.lauf.letzteTreffer || []).length > 2) {
       const werte = this.lauf.letzteTreffer.map((id) => {
         const item = getItemById?.(id);
-        const e = item ? (aspektbilanz(item, 400) || []).find((x) => x.id === wunsch.aspekt) : null;
+        const e = item ? (aspektbilanz(item) || []).find((x) => x.id === wunsch.aspekt) : null;
         return e ? e.anteilPositiv : null;
       }).filter((x) => x != null);
       const best = werte.length ? Math.max(...werte) : null;
@@ -2600,7 +2600,7 @@ const Kern = {
     if (wunsch && typeof aspektbilanz === "function") {
       const werte = (this.lauf.letzteTreffer || []).map((id) => {
         const item = getItemById?.(id);
-        const e = item ? (aspektbilanz(item, 400) || []).find((x) => x.id === wunsch.aspekt) : null;
+        const e = item ? (aspektbilanz(item) || []).find((x) => x.id === wunsch.aspekt) : null;
         return e ? e.anteilPositiv : null;
       }).filter((x) => x != null);
       if (werte.length) einordnung = { id: wunsch.label, best: Math.max(...werte) };
@@ -2621,7 +2621,7 @@ const Kern = {
        er fuer alle weg - sonst waere die Zeile bei einem Haus leer und
        der Vergleich wieder schief. */
     const bilanzen = new Map(kandidaten.map((k) => [k.id,
-      (typeof aspektbilanz === "function" ? (aspektbilanz(k.item, 400) || []) : [])]));
+      (typeof aspektbilanz === "function" ? (aspektbilanz(k.item) || []) : [])]));
     const gemeinsam = (() => {
       const listen = [...bilanzen.values()];
       if (!listen.length) return [];

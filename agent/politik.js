@@ -457,7 +457,7 @@ const Politik = {
 
         // Aspektbilanz: was steht in den Bewertungen dazu?
         if (k.aspekt && typeof aspektbilanz === "function") {
-          const eintrag = (aspektbilanz(item, 400) || []).find((a) => a.id === k.aspekt);
+          const eintrag = (aspektbilanz(item) || []).find((a) => a.id === k.aspekt);
           if (eintrag && eintrag.erwaehnungen >= 12) {
             punkte += (eintrag.anteilPositiv - 0.75) * 8 * gewicht;
             belege.push({
@@ -817,7 +817,7 @@ const Politik = {
     const alle = aspekte && aspekte.length ? aspekte : ["bewertung", "preis"];
     return kandidaten.map((k, i) => {
       const it = k.item || {};
-      const bilanz = typeof aspektbilanz === "function" ? (aspektbilanz(it, 400) || []) : [];
+      const bilanz = typeof aspektbilanz === "function" ? (aspektbilanz(it) || []) : [];
       const eintrag = (id) => bilanz.find((a) => a.id === id) || null;
       const punkte = {};
       for (const a of alle) {
@@ -2082,7 +2082,7 @@ const Politik = {
   faktenWarum(kandidat, kandidaten, profil) {
     const k = kandidat;
     const platz = kandidaten.findIndex((x) => x.id === k.id) + 1;
-    const bilanz = typeof aspektbilanz === "function" ? (aspektbilanz(k.item, 400) || []) : [];
+    const bilanz = typeof aspektbilanz === "function" ? (aspektbilanz(k.item) || []) : [];
 
     return {
       lage: "Die Person hat nachgefragt, warum du gerade dieses Haus vorschlaegst. Antworte ausfuehrlicher als vorher, nenne auch, was dagegen spricht, und wo es im Vergleich zu den anderen steht.",
@@ -2114,7 +2114,7 @@ const Politik = {
   warumSatz(kandidat, kandidaten, profil) {
     const k = kandidat;
     const platz = kandidaten.findIndex((x) => x.id === k.id) + 1;
-    const bilanz = typeof aspektbilanz === "function" ? (aspektbilanz(k.item, 400) || []) : [];
+    const bilanz = typeof aspektbilanz === "function" ? (aspektbilanz(k.item) || []) : [];
     const teile = [`${k.item.name} steht bei mir auf Platz ${platz} von ${kandidaten.length}.`];
 
     const oben = bilanz.slice(0, 2);

@@ -1092,7 +1092,21 @@ function notenverteilung(item) {
  * @param {object} item
  * @param {number} stichprobe  hoechstens so viele Bewertungen ansehen
  */
+// Eine Stichprobe fuer alle: Karten und Agent rechneten mit 400, der
+// Rundgang mit 800 - im Testlauf vom 03.10.2026 stand "Lage 9,4" im Chat
+// und "Lage 9,7" auf der Karte desselben Hauses.
+const ASPEKTBILANZ_SPEICHER = new Map();
 function aspektbilanz(item, stichprobe = 800) {
+  // Zwischengespeichert: Dieselbe Rechnung lief beim Bewerten vieler
+  // Haeuser immer wieder. Die Teilnoten stehen im Schluessel - werden sie
+  // angepasst, wird neu gerechnet.
+  const schluessel = `${item.id}|${stichprobe}|${item.reviewCount}|${JSON.stringify(item.ratingBreakdown || {})}`;
+  if (ASPEKTBILANZ_SPEICHER.has(schluessel)) return ASPEKTBILANZ_SPEICHER.get(schluessel).slice();
+  const raus = aspektbilanzRechnen(item, stichprobe);
+  ASPEKTBILANZ_SPEICHER.set(schluessel, raus);
+  return raus.slice();
+}
+function aspektbilanzRechnen(item, stichprobe) {
   const gesamt = item.reviewCount;
   const wie = Math.min(gesamt, stichprobe);
   const bewertungen = bewertungenFuer(item, 0, wie);
