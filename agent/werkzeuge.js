@@ -854,8 +854,12 @@ const Werkzeuge = {
   },
 
   async unterkunftOeffnen(id) {
-    const knopf = this.finde(`a.btn-primary[href*="id=${id}"]`)
-      || this.finde(`a.hotel-name[href*="id=${id}"]`);
+    /* Genau dieses Haus: "id=h18" steckt auch in "id=h185". Deshalb die
+       Adresse lesen statt nur den Anfang vergleichen. */
+    const genau = (sel) => [...document.querySelectorAll(sel)].find((a) => {
+      try { return new URL(a.getAttribute("href"), location.href).searchParams.get("id") === id; } catch { return false; }
+    }) || null;
+    const knopf = genau(`a.btn-primary[href*="id=${id}"]`) || genau(`a.hotel-name[href*="id=${id}"]`);
     if (!knopf) return { ok: false, text: `${id} ist in der Liste gerade nicht sichtbar.` };
 
     const item = typeof getItemById === "function" ? getItemById(id) : null;

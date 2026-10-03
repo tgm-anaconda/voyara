@@ -239,7 +239,7 @@ const Werkzeugkasten = {
          dem Wort, das die Person benutzt hat. */
       f("bewertungen_durchsuchen",
         "Durchsucht die Bewertungen eines Hauses nach einem Begriff, den die Person genannt hat "
-        + "(etwa 'Rutschen', 'Alkohol', 'Strand', 'Kinderbetreuung', 'Parken', 'Sauberkeit'), und liefert, "
+        + "(etwa 'Rutschen', 'Alkohol', 'Strand', 'Hund', 'WLAN', 'Fitnessraum', 'Ausfluege', 'Parken', 'Sauberkeit'), und liefert, "
         + "wie viele Stimmen ihn erwaehnen, wie sie sich verteilen und echte Zitate dazu. "
         + "Nimm das, wenn jemand nach etwas Bestimmtem fragt, statt bewertungen_lesen noch einmal zu rufen. "
         + "Steht nichts dazu in den Bewertungen, sag genau das - leite nichts aus der Gesamtnote ab.",
@@ -4088,6 +4088,23 @@ const Werkzeugkasten = {
         return { navigiert: true, stufe: 2 };
       }
 
+      /* Zwischen zwei Haeusern ueber die Liste.
+         --------------------------------------------------------------
+         Wunsch des Nutzers vom 03.10.2026: Der Agent sprang von Hausseite
+         zu Hausseite, ohne dass man sah, woher das naechste kam. Jetzt
+         geht er zurueck zur Trefferliste, faehrt zur Karte des naechsten
+         Hauses und klickt dort "Details ansehen" - so, wie man es selbst
+         tun wuerde. Fehlt die Karte (etwa weil die Person einen Filter
+         geaendert hat), oeffnet hin() die Seite direkt. */
+      if (stufe === 2 && Werkzeuge.seite() === "results" && r.i < r.ids.length) {
+        kern.sperreAn();
+        await Zeiger.warte(350);
+        if (Zeiger.abbruch) { kern.sperreAus(); kern.notieren("rundgang_abgebrochen", { bei: r.i }); return vorlegen(); }
+        kern.notieren("rundgang_ueber_liste", { naechstes: r.ids[r.i] });
+        await hin(r.ids[r.i]);
+        return { navigiert: true, stufe: 2 };
+      }
+
       if (stufe === 2) {
         const id = r.ids[r.i];
         kern.sperreAn();
@@ -4143,8 +4160,20 @@ const Werkzeugkasten = {
         const v = await kern.auswahlVorlegen(r.ids);
         return { ergebnis: v.ergebnis ?? v, log: v.log ?? null };
       };
+      /* Die naechste Stufe steht fest, BEVOR die Seite wechselt.
+         --------------------------------------------------------------
+         Gemessen am 03.10.2026 (lokal, schneller Server): Der Klick auf
+         "Details ansehen" laedt die Hausseite, bevor der Kern die Stufe
+         sichern konnte. Auf der Hausseite lief dann Stufe 1 noch einmal,
+         die Liste galt als "zurueck" - und der Rundgang blieb auf dem
+         ersten Haus stehen. */
+      const stufeVorab = (n) => {
+        if (kern.lauf.ausstehend) kern.lauf.ausstehend.stufe = n;
+        kern.sichern();
+      };
       const hin = async (id) => {
         kern.sperreAn();
+        stufeVorab(2);
         const e = await Werkzeuge.unterkunftOeffnen(id);
         if (!e.ok) {
           await Zeiger.warte(250);
@@ -4170,6 +4199,23 @@ const Werkzeugkasten = {
         r.zurueck = location.href;
         kern.sichern();
         await hin(r.ids[0]);
+        return { navigiert: true, stufe: 2 };
+      }
+
+      /* Zwischen zwei Haeusern ueber die Liste.
+         --------------------------------------------------------------
+         Wunsch des Nutzers vom 03.10.2026: Der Agent sprang von Hausseite
+         zu Hausseite, ohne dass man sah, woher das naechste kam. Jetzt
+         geht er zurueck zur Trefferliste, faehrt zur Karte des naechsten
+         Hauses und klickt dort "Details ansehen" - so, wie man es selbst
+         tun wuerde. Fehlt die Karte (etwa weil die Person einen Filter
+         geaendert hat), oeffnet hin() die Seite direkt. */
+      if (stufe === 2 && Werkzeuge.seite() === "results" && r.i < r.ids.length) {
+        kern.sperreAn();
+        await Zeiger.warte(350);
+        if (Zeiger.abbruch) { kern.sperreAus(); kern.notieren("rundgang_abgebrochen", { bei: r.i }); return vorlegen(); }
+        kern.notieren("rundgang_ueber_liste", { naechstes: r.ids[r.i] });
+        await hin(r.ids[r.i]);
         return { navigiert: true, stufe: 2 };
       }
 
@@ -4228,8 +4274,15 @@ const Werkzeugkasten = {
         r.i += 1;
         kern.sichern();
         if (Zeiger.abbruch) { kern.notieren("rundgang_abgebrochen", { bei: r.i }); return vorlegen(); }
-        if (r.i < r.ids.length) { await hin(r.ids[r.i]); return { navigiert: true, stufe: 2 }; }
+        if (r.i < r.ids.length) {
+          kern.sperreAn();
+          stufeVorab(2);
+          if (r.zurueck) { await Zeiger.warte(250); location.href = r.zurueck; }
+          else await Werkzeuge.zurueckZurListe();
+          return { navigiert: true, stufe: 2 };
+        }
         kern.sperreAn();
+        stufeVorab(3);
         if (r.zurueck) { await Zeiger.warte(250); location.href = r.zurueck; }
         else await Werkzeuge.zurueckZurListe();
         return { navigiert: true, stufe: 3 };

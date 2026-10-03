@@ -499,6 +499,187 @@ const ASPEKTE = [
       "Der Treffpunkt war schlecht beschrieben, wir sind zweimal vorbeigefahren.",
     ],
   },
+  /* Feste Zusatzthemen ("Wunsch-Stimmen").
+     ==================================================================
+     Entscheidung des Nutzers vom 03.10.2026: Wer nach etwas Bestimmtem
+     fragt (Hund, Fitnessraum, WLAN, Ausfluege), soll eine Antwort aus den
+     Bewertungen bekommen. Zwei Wege standen zur Wahl - Stimmen erst bei
+     der Frage erzeugen oder eine feste, groessere Themenliste. Gewaehlt
+     ist die feste Liste: weniger, das schiefgehen kann, und jede Stimme
+     steht schon da, bevor jemand fragt - dieselbe fuer jede Person.
+
+     Wie bei den Themen vom 02.10.: Jedes haengt an einem Merkmal, das im
+     Katalog steht. Saetze mit einer Bedingung stehen nur, wo sie stimmen
+     (WLAN kostenlos nur ohne Gebuehr, kurzer Transfer nur bei kurzem Weg).
+     Jede Liste hat mindestens einen Satz ohne Bedingung, weil saetzeFuer
+     sonst auf die ganze Liste zurueckfaellt. Das Gewicht ist niedriger
+     als bei den Grundthemen: Gaeste schreiben ueber Zimmer und Essen
+     oefter als ueber den Fitnessraum. */
+  {
+    id: "haustiere", label: "Haustiere", gewicht: 0.7,
+    gilt: (item) => (item.amenities || []).includes("petsAllowed"),
+    titelPlus: "Mit Hund willkommen", titelMinus: "Mit Hund nur geduldet",
+    plus: [
+      "Unser Hund war hier wirklich willkommen, es gab sogar einen Napf im Zimmer.",
+      "Mit Hund unkompliziert, das Personal kannte ihn nach einem Tag beim Namen.",
+      ["Für Spaziergänge mit dem Hund ist der Strand am frühen Morgen ideal.", amMeer],
+      "Die Gebühr für den Hund war fair und vorher klar angegeben.",
+    ],
+    minus: [
+      "Mit Hund durften wir nicht in den Frühstücksraum, das war vorher nicht klar.",
+      "Für den Hund wird pro Nacht eine Gebühr fällig, die sich über die Woche läppert.",
+      "Das Zimmer für Gäste mit Hund lag ganz hinten neben dem Lieferhof.",
+    ],
+  },
+  {
+    id: "fitness", label: "Fitnessraum", gewicht: 0.6,
+    gilt: (item) => (item.amenities || []).includes("gym"),
+    titelPlus: "Fitnessraum gut ausgestattet", titelMinus: "Fitnessraum eher Abstellkammer",
+    plus: [
+      "Der Fitnessraum hat Laufbänder, Hanteln und ist rund um die Uhr offen.",
+      "Morgens um sieben hatte ich den Fitnessraum fast für mich allein.",
+      "Die Geräte im Fitnessraum sind neu und gepflegt.",
+    ],
+    minus: [
+      "Der Fitnessraum ist winzig, zwei Geräte und ein Ventilator.",
+      "Im Fitnessraum war ein Laufband die ganze Woche defekt.",
+      "Der Fitnessraum ist erst ab neun Uhr geöffnet, für Frühsportler zu spät.",
+    ],
+  },
+  {
+    id: "wlan", label: "WLAN", gewicht: 0.7,
+    gilt: (item) => (item.amenities || []).includes("wifi"),
+    titelPlus: "WLAN stabil", titelMinus: "WLAN schwach",
+    plus: [
+      "Das WLAN war stabil genug für Videotelefonate.",
+      "Auch auf dem Zimmer hatten wir durchgehend gutes WLAN.",
+      [ "WLAN ist kostenlos und man muss sich nicht jeden Tag neu anmelden.", (item) => typeof wlanGebuehr !== "function" || wlanGebuehr(item) === 0 ],
+    ],
+    minus: [
+      "Das WLAN ging nur in der Lobby richtig, im Zimmer kaum.",
+      "Abends brach das WLAN regelmäßig ein, wenn alle online waren.",
+      [ "Für das WLAN wird pro Tag extra berechnet, das finde ich nicht mehr zeitgemäß.", (item) => typeof wlanGebuehr === "function" && wlanGebuehr(item) > 0 ],
+    ],
+  },
+  {
+    id: "fahrrad", label: "Fahrradverleih", gewicht: 0.6,
+    gilt: (item) => (item.amenities || []).includes("bikeRental"),
+    titelPlus: "Mit dem Rad unterwegs", titelMinus: "Leihräder enttäuschend",
+    plus: [
+      "Wir haben uns Räder am Haus geliehen und die Gegend erkundet, sehr zu empfehlen.",
+      "Die Leihräder sind in gutem Zustand, Helme gab es dazu.",
+      "Mit den Rädern vom Haus waren wir in einer Viertelstunde im nächsten Ort.",
+    ],
+    minus: [
+      "Die Leihräder waren alt, bei einem sprang ständig die Kette ab.",
+      "Es gibt nur wenige Räder, am Wochenende waren alle weg.",
+      "Kindersitze für die Räder gab es nicht.",
+    ],
+  },
+  {
+    id: "aussicht", label: "Meerblick", gewicht: 0.8,
+    gilt: (item) => (item.amenities || []).includes("seaView"),
+    titelPlus: "Blick zum Verlieben", titelMinus: "Meerblick nur seitlich",
+    plus: [
+      "Der Blick aufs Meer vom Balkon ist unbezahlbar.",
+      "Zum Sonnenuntergang saßen wir jeden Abend auf dem Balkon und haben aufs Wasser geschaut.",
+      "Schon beim Aufwachen das Meer zu sehen, macht den Urlaub.",
+    ],
+    minus: [
+      "Unser Zimmer mit Meerblick hatte den Blick nur schräg über den Parkplatz.",
+      "Meerblick haben nur die oberen Etagen, unten sieht man auf die Hecke.",
+      "Für den Aufpreis für Meerblick war die Sicht zu eingeschränkt.",
+    ],
+  },
+  {
+    id: "klima", label: "Klimaanlage", gewicht: 0.7,
+    gilt: (item) => (item.amenities || []).includes("aircon") && draussenWarm(item),
+    titelPlus: "Angenehm kühl", titelMinus: "Klimaanlage schwach",
+    plus: [
+      "Die Klimaanlage ist leise und kühlt das Zimmer schnell herunter.",
+      "Auch an heißen Tagen konnten wir dank Klimaanlage gut schlafen.",
+      "Die Klimaanlage lässt sich im Zimmer selbst regeln, das ist nicht überall so.",
+    ],
+    minus: [
+      "Die Klimaanlage war laut und hat nachts gerattert.",
+      "Die Klimaanlage schafft es mittags kaum gegen die Hitze.",
+      "Die Klimaanlage läuft zentral, im Zimmer kann man sie kaum verstellen.",
+    ],
+  },
+  {
+    id: "terrasse", label: "Terrasse & Balkon", gewicht: 0.6,
+    gilt: (item) => (item.amenities || []).includes("terrace"),
+    titelPlus: "Schöne Terrasse", titelMinus: "Terrasse ohne Schatten",
+    plus: [
+      "Auf der Terrasse haben wir jeden Abend noch etwas getrunken, sehr gemütlich.",
+      "Die Terrasse ist groß genug, dass man sich nicht auf den Füßen steht.",
+      "Frühstück auf der Terrasse war jeden Morgen ein Höhepunkt.",
+    ],
+    minus: [
+      "Auf der Terrasse gibt es kaum Schatten, mittags war es dort nicht auszuhalten.",
+      "Die Terrassenmöbel sind in die Jahre gekommen.",
+      "Die Terrasse ist ab dem späten Nachmittag voll, man findet kaum einen Platz.",
+    ],
+  },
+  {
+    id: "erwachsene", label: "Nur Erwachsene", gewicht: 0.8,
+    gilt: (item) => (item.amenities || []).includes("adultsOnly"),
+    titelPlus: "Herrlich ruhig ohne Trubel", titelMinus: "Erwachsenenhotel, aber laut",
+    plus: [
+      "Ein Haus nur für Erwachsene, und das merkt man: ruhig, entspannt, kein Geschrei am Pool.",
+      "Genau richtig für eine Auszeit zu zweit.",
+      "Viele Paare, angenehm ruhige Stimmung den ganzen Tag.",
+    ],
+    minus: [
+      "Trotz nur Erwachsene war es am Pool durch Junggesellengruppen ziemlich laut.",
+      "Für ein Erwachsenenhotel war abends erstaunlich wenig los, eher etwas steif.",
+    ],
+  },
+  {
+    id: "spielplatz", label: "Spielplatz", gewicht: 0.7,
+    gilt: (item) => (item.amenities || []).includes("familyFriendly") || (item.amenities || []).includes("kidsClub"),
+    titelPlus: "Toller Spielplatz", titelMinus: "Spielplatz in die Jahre gekommen",
+    plus: [
+      "Der Spielplatz liegt im Schatten und man sieht ihn von den Liegen aus.",
+      "Klettergerüst, Schaukeln und ein Sandkasten, die Kinder waren dort jeden Tag.",
+      "Der Spielplatz ist eingezäunt, so konnten wir entspannt danebensitzen.",
+    ],
+    minus: [
+      "Der Spielplatz ist klein und liegt in der prallen Sonne.",
+      "Am Spielplatz waren einige Geräte abgesperrt.",
+      "Für ältere Kinder gibt es auf dem Spielplatz kaum etwas.",
+    ],
+  },
+  {
+    id: "umgebung", label: "Ausflüge & Umgebung", gewicht: 0.8,
+    titelPlus: "Viel zu entdecken", titelMinus: "Drumherum wenig los",
+    plus: [
+      "Von hier aus haben wir mehrere Ausflüge gemacht, die Rezeption hatte gute Tipps.",
+      "In der Umgebung gibt es einiges zu sehen, wir hätten noch eine Woche gebraucht.",
+      ["Die Altstadt ist zu Fuß erreichbar, abends sind wir oft noch durch die Gassen gelaufen.", (item) => (item.distanceToCenter ?? 99) <= 1.5],
+      ["Mit dem Mietwagen sind die schönsten Orte der Insel gut zu erreichen.", aufInsel],
+    ],
+    minus: [
+      "Ohne eigenes Auto ist man für Ausflüge auf teure Touren angewiesen.",
+      "Direkt in der Umgebung gibt es wenig zu sehen, für Ausflüge muss man weiter fahren.",
+      ["Abends ist im Ort nicht viel los, man bleibt eher im Hotel.", (item) => (item.distanceToCenter ?? 0) > 2],
+    ],
+  },
+  {
+    id: "transfer", label: "Anreise vom Flughafen", gewicht: 0.6,
+    gilt: (item) => item.distanceToAirport != null,
+    titelPlus: "Schnell angekommen", titelMinus: "Transfer zieht sich",
+    plus: [
+      "Die Anreise vom Flughafen war unkompliziert.",
+      ["Vom Flughafen waren wir in einer knappen halben Stunde da.", (item) => item.distanceToAirport <= 25],
+      "Die Wegbeschreibung vom Haus war genau, wir haben sofort hingefunden.",
+    ],
+    minus: [
+      "Ein Shuttle vom Flughafen gibt es nicht, man muss selbst organisieren.",
+      ["Vom Flughafen zieht sich die Fahrt, mit Kindern war das nach dem Flug anstrengend.", (item) => item.distanceToAirport >= 45],
+      "Die Zufahrt ist schlecht ausgeschildert, wir sind einmal vorbeigefahren.",
+    ],
+  },
 ];
 
 const ASPEKT_NACH_ID = Object.fromEntries(ASPEKTE.map((a) => [a.id, a]));
@@ -966,8 +1147,20 @@ const STICHWORTE = {
     "\\bbier", "\\bgin\\b", "all inclusive", "zapfhahn", "\\bsaft"],
   strand: ["strand", "sand", "meer", "ufer", "badeschuh", "seegras", "liegen am strand"],
   betreuung: ["kinderclub", "kids club", "betreu", "animation", "kinderprogramm", "abendprogramm"],
-  wellness: ["wellness", "spa\b", "sauna", "massage", "dampfbad", "ruhebereich", "ruheraum"],
+  wellness: ["wellness", "\\bspa\\b", "sauna", "massage", "dampfbad", "ruhebereich", "ruheraum"],
   parken: ["park", "garage", "stellplatz", "einfahrt"],
+  /* Feste Zusatzthemen vom 03.10.2026 (siehe ASPEKTE) */
+  haustiere: ["hund", "haustier", "katze", "napf", "vierbeiner"],
+  fitness: ["fitness", "laufband", "hantel", "\\bgym\\b", "trainingsraum"],
+  wlan: ["wlan", "wifi", "internet"],
+  fahrrad: ["fahrrad", "\\bräder", "\\brad\\b", "leihr"],
+  aussicht: ["meerblick", "blick aufs meer", "aufs wasser", "\\bsicht\\b"],
+  klima: ["klimaanlage", "\\bklima"],
+  terrasse: ["terrasse", "balkon"],
+  erwachsene: ["nur für erwachsene", "nur erwachsene", "erwachsenenhotel", "ohne kinder", "adults only"],
+  spielplatz: ["spielplatz", "schaukel", "klettergerüst", "sandkasten"],
+  umgebung: ["ausflug", "ausflüge", "umgebung", "sehenswürdig", "altstadt", "\\btour", "entdecken"],
+  transfer: ["flughafen", "transfer", "shuttle", "anreise vom"],
 };
 
 // Positiv oder negativ? Grobe, aber ausreichende Heuristik ueber die Note
@@ -1336,11 +1529,16 @@ function bewertungenSuchen(item, begriff, max = 120) {
      beim Aspekt Lage, weil dessen Stichwortliste das Wort enthaelt - und
      der eigene Strand-Aspekt kam nie zum Zug. */
   const eintraege = Object.entries(STICHWORTE || {});
+  /* Unter mehreren Treffern gewinnt die kuerzeste Liste - sie ist die
+     genaueste. "Klimaanlage" steht auch bei Ausstattung (mit Zimmer,
+     Bett, Bad ...); gesucht werden soll aber im Thema Klimaanlage,
+     sonst zaehlen Stimmen ueber das Bett mit (03.10.2026). */
+  const kandidaten = eintraege.filter(([, worte]) => worte.some((w) => {
+    const rein = String(w).replace(/\\b/g, "");
+    return rein.length >= 3 && (wort.includes(rein) || rein.includes(wort));
+  }));
   const ausAspekt = eintraege.find(([id]) => id === wort)
-    || eintraege.find(([, worte]) => worte.some((w) => {
-      const rein = String(w).replace(/\\b/g, "");
-      return rein.length >= 3 && (wort.includes(rein) || rein.includes(wort));
-    }));
+    || kandidaten.sort((x, y) => x[1].length - y[1].length)[0];
   const muster = ausAspekt
     ? new RegExp(ausAspekt[1].join("|"), "i")
     : new RegExp(wort.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
