@@ -231,7 +231,7 @@ const Politik = {
     { id: "sauberkeit", label: "Sauberkeit", aspekt: "sauberkeit", note: "sauberkeit",
       woerter: ["sauber", "sauberkeit", "hygiene", "gepflegt", "schmutz", "dreck"] },
     { id: "ruhe", label: "Ruhe", aspekt: "ruhe",
-      woerter: ["ruhig", "ruhe", "leise", "still", "nicht laut", "keine party", "erholung"] },
+      woerter: ["ruhig", "ruhe", "leise", "still", "nicht laut", "keine party", "erholung", "entspann", "abschalten"] },
     { id: "essen", label: "Essen", aspekt: "essen", note: "essen",
       woerter: ["essen", "küche", "kueche", "frühstück", "fruehstueck", "buffet", "kulinar", "restaurant"] },
     { id: "lage", label: "Lage", aspekt: "lage", note: "lage",
@@ -240,6 +240,10 @@ const Politik = {
       woerter: ["service", "personal", "freundlich", "betreuung", "gastgeber"] },
     { id: "preis", label: "Preis-Leistung", aspekt: "preis", note: "preis",
       woerter: ["preis", "preis-leistung", "günstig", "guenstig", "billig", "sparen", "budget"] },
+    // Seit dem 03.10.2026: "Alkohol ist wichtig" hatte kein Kriterium
+    { id: "getraenke", label: "Getränke & Bar", aspekt: "getraenke",
+      // Ohne "bar" und "wein": sie stecken in "Barcelona" und "Weinfeld"
+      woerter: ["alkohol", "getränk", "getraenk", "cocktail", "drinks"] },
     { id: "pool", label: "Pool", aspekt: "pool", filter: { ausstattung: "pool" },
       woerter: ["pool", "schwimmbad", "schwimmen", "planschen"] },
     { id: "wellness", label: "Wellness", filter: { ausstattung: "spa" },

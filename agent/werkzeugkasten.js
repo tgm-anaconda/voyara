@@ -158,7 +158,7 @@ const Werkzeugkasten = {
           strandEgal: { type: "boolean", description: "true, wenn die Person sagt, dass die Naehe zum Strand egal ist" },
           verpflegungEgal: { type: "boolean", description: "true, wenn Verpflegung egal ist" },
           ausstattungEgal: { type: "boolean", description: "true, wenn die Person auf die Frage nach ihren Wuenschen sagt, dass sie nichts Besonderes braucht" },
-          wuensche: { type: "array", items: { type: "string", enum: ["pool", "strand", "strandnah", "meerblick", "kinderclub", "familie", "wellness", "ruhe", "essen", "sauberkeit", "lage", "service", "preis", "bewertung"] }, description: "Was der Person wichtig ist (alle bisher genannten, nicht nur die neuen)" },
+          wuensche: { type: "array", items: { type: "string", enum: ["pool", "strand", "strandnah", "meerblick", "kinderclub", "familie", "wellness", "ruhe", "essen", "sauberkeit", "lage", "service", "preis", "bewertung", "getraenke"] }, description: "Was der Person wichtig ist (alle bisher genannten, nicht nur die neuen). getraenke = Alkohol, Drinks, Bar, gute Getraenke; ruhe = auch Entspannung, Erholung." },
           /* "wifi" stand hier bis zum 29.09.2026 und war nicht einstellbar:
              Alle 184 Hotels und alle 160 Ferienwohnungen haben WLAN, also
              gibt es in der Spalte bewusst keinen Haken dafuer. Ein Wert im
@@ -791,7 +791,13 @@ const Werkzeugkasten = {
     if (p.zielId) return null;                       // ein festes Ziel braucht keine Spanne
     if (typeof grad !== "function" || typeof ZIEL_NACH_ID === "undefined") return null;
     const warm = p.richtung === "warm";
-    const grenze = warm ? 22 : 12;
+    /* Dieselbe Grenze wie im Satz davor (richtungSatz). Gemeldet am
+       03.10.2026: "Warm heisst fuer mich ab 21 Grad" und direkt danach
+       "Bei 22 Grad bleiben?" - reichten bei 22 Grad zu wenige Regionen,
+       war die Grenze schon gesunken, die Frage wusste davon nichts. */
+    const tempsJetzt = p.zieleErlaubt.map((id) => ZIEL_NACH_ID[id]).filter(Boolean).map((z) => grad(z, p.monat)).filter((g) => g != null);
+    const basisGrenze = warm ? 22 : 12;
+    const grenze = tempsJetzt.length ? (warm ? Math.min(basisGrenze, ...tempsJetzt) : Math.max(basisGrenze, ...tempsJetzt)) : basisGrenze;
     /* Was eine andere Grenze braechte - sonst ist die Frage so abstrakt
        wie die Vorgabe vorher. Zwei Grad weiter in die offene Richtung. */
     const alle = (typeof ZIELE !== "undefined" ? ZIELE : [])
@@ -1422,9 +1428,18 @@ const Werkzeugkasten = {
      selbst gesagt hat (`vonPerson`), bleibt unangetastet. */
   SELBST_ANNAHME: { dauer: ["naechte"], reisende: ["personen", "erwachsene", "kinder"],
     kinderAlter: ["kinderAlter"], flug: ["flug"], flugKlasse: ["flugKlasse"],
-    anreise: ["anreise"], preis: ["maxPreis", "budgetGesamt", "preisEgal"], zeit: ["monat"] },
+    anreise: ["anreise"], preis: ["maxPreis", "budgetGesamt", "preisEgal"], zeit: ["monat"], anzahl: ["anzahlVorschlaege"] },
 
   SELBST_LESEN: {
+    /* "Vier" auf "Wie viele Haeuser soll ich dir zusammenstellen?"
+       (03.10.2026: vier gewuenscht, drei vorgelegt). */
+    anzahl(t, p) {
+      const WZ = { zwei: 2, drei: 3, vier: 4, "fünf": 5, fuenf: 5, sechs: 6 };
+      const m = t.match(/^\s*(?:gerne\s+|bitte\s+|so\s+)?(\d|zwei|drei|vier|fünf|fuenf|sechs)\b/);
+      if (!m) return null;
+      const n = WZ[m[1]] ?? parseInt(m[1], 10);
+      return Number.isFinite(n) && n >= 2 && n <= 6 ? { anzahlVorschlaege: n } : null;
+    },
     /* Ein Monatsname auf die Frage nach der Zeit (03.10.2026).
        Eindeutig genug, um ihn ohne Modell zu lesen: genau ein Monat,
        keine Verneinung. Sonst bleibt es beim Modell. Eine Jahreszeit
@@ -2761,7 +2776,8 @@ const Werkzeugkasten = {
       if (a.nurAngebote !== undefined) { if (p.nurAngebote !== !!a.nurAngebote) geaendert.push("nurAngebote"); p.nurAngebote = !!a.nurAngebote; }
       if (a.wlanInklusive !== undefined) { if (p.wlanInklusive !== !!a.wlanInklusive) geaendert.push("wlanInklusive"); p.wlanInklusive = !!a.wlanInklusive; }
       if (Array.isArray(a.wuensche)) {
-        const ALIAS = { strand: "strandnah", meer: "strandnah", beach: "strandnah", kids: "kinderclub", kinder: "familie", spa: "wellness", bewertungen: "bewertung", essen: "essen" };
+        const ALIAS = { strand: "strandnah", meer: "strandnah", beach: "strandnah", kids: "kinderclub", kinder: "familie", spa: "wellness", bewertungen: "bewertung", essen: "essen",
+          alkohol: "getraenke", drinks: "getraenke", bar: "getraenke", "getränke": "getraenke", entspannung: "ruhe", erholung: "ruhe" };
         // Ein Wunsch zaehlt nur, wenn die Person ein passendes Wort gesagt
         // hat (Wortlisten der Kriterien) - sonst wurde aus "warm" Strand und Pool
         const alt = new Set((p.kriterien || []).map((k) => k.id));
@@ -2787,6 +2803,7 @@ const Werkzeugkasten = {
         }
         p.kriterien = ids.map((id) => ({ id, gewicht: 1 }));
         geaendert.push("wuensche");
+        Werkzeugkasten.getraenkeHinweis(kern, p);
         for (const id of ids) {
           const k = Politik.kriterium(id);
           if (k?.filter?.maxStrand && p.maxStrand == null) p.maxStrand = k.filter.maxStrand;
@@ -2863,6 +2880,7 @@ const Werkzeugkasten = {
       }
       if (a.gepaeck) setze("gepaeck", a.gepaeck);
       setze("verpflegung", a.verpflegung);
+      Werkzeugkasten.getraenkeHinweis(kern, p);
       /* Ein Flug zur Ferienwohnung ist keine Frage des Wollens.
          ----------------------------------------------------------------
          Am 27.09.2026 fragte jemand bei einer Ferienwohnung nach einem
@@ -4450,9 +4468,15 @@ const Werkzeugkasten = {
         // Die Ansage kommt vom Kern, nicht vom Modell - sie soll stimmen
         // und immer da sein, auch wenn das Modell gerade nichts schreibt.
         // "die 1 Häuser" stand so im Chat, als nur ein Haus uebrigblieb
-        kern.sagen(r.ids.length === 1
+        // Weniger als gewuenscht wird gesagt, nicht verschwiegen (03.10.2026)
+        const gewuenscht = p.anzahlVorschlaege || 3;
+        const weniger = r.ids.length < gewuenscht
+          ? `Du wolltest ${gewuenscht} Häuser, mit deinen Vorgaben passen aber nur ${r.ids.length}. `
+          : "";
+        kern.sagen(weniger + (r.ids.length === 1
           ? `Ich sehe mir das Haus jetzt genauer an.`
-          : `Ich sehe mir die ${r.ids.length} Häuser jetzt der Reihe nach genauer an. Nach jedem sage ich dir Bescheid.`);
+          : `Ich sehe mir die ${r.ids.length} Häuser jetzt der Reihe nach genauer an. Nach jedem sage ich dir Bescheid.`));
+        if (weniger) kern.notieren("weniger_als_gewuenscht", { gewuenscht, vorgelegt: r.ids.length });
         // Die Adresse der Liste festhalten. Der Brotkrumenpfad auf der
         // Hausseite fuehrt zu "results.html?type=hotel" - ohne Monat,
         // Dauer und Reisende. Danach stand die Liste auf 184 von 184
@@ -5109,7 +5133,9 @@ const Werkzeugkasten = {
 
     flug: {
 
-      erklaerung: "Wenn ein Flug dazukommt, suche ich nur Häuser, die sich mit einer passenden Verbindung erreichen lassen, und der Anreisetag hängt dann an den Flugtagen.",      satz: ["Soll ein Flug dazu, oder nur die Unterkunft? Mit Flug hängt der Anreisetag von den Flugtagen der Verbindung ab.",
+      // Seit dem 03.10.2026 fliegt jede Verbindung taeglich - der Satz
+      // ueber Flugtage war damit falsch und ist weg.
+      erklaerung: "Wenn ein Flug dazukommt, rechne ich ihn für alle Reisenden in den Preis ein; geflogen wird täglich.",      satz: ["Soll ein Flug dazu, oder nur die Unterkunft?",
         "Bucht ihr den Flug selbst, oder soll ich ihn mitsuchen?"],
       frage: "Ob ein Flug dazu soll oder nur die Unterkunft.", chips: "Mit Flug | Nur die Unterkunft" },
 
@@ -5311,6 +5337,19 @@ const Werkzeugkasten = {
      alles geschoben, was in diesem Zug sonst noch passiert - "ich nehme
      Juni" nach "im Juli stehen 184 Hotels" liest sich wie ein Fehler.
      ================================================================== */
+  /* Getraenke gewuenscht, aber keine All Inclusive (03.10.2026).
+     Gemeldet: "Alkohol und Entspannung ist wichtig" bei Halbpension -
+     kein Wort dazu, dass Getraenke nur bei All Inclusive dabei sind. */
+  getraenkeHinweis(kern, p) {
+    if (kern.lauf.getraenkeHinweis) return;
+    const will = (p.kriterien || []).some((k) => k.id === "getraenke");
+    if (!will || !p.verpflegung || p.verpflegung === "ai") return;
+    kern.lauf.getraenkeHinweis = true;
+    const B = typeof BOARD_LABELS !== "undefined" ? BOARD_LABELS[p.verpflegung] : p.verpflegung;
+    kern.notieren("getraenke_hinweis", { verpflegung: p.verpflegung });
+    this.ableiten(kern, "verpflegung", `Kurz zu den Getränken: Bei ${B} zahlt ihr Getränke vor Ort, nur bei All Inclusive sind sie dabei. Wenn du magst, stelle ich auf All Inclusive um.`);
+  },
+
   ableiten(kern, feld, satz) {
     (kern.lauf.abgeleitet ||= []).push({ feld, satz });
     kern.sagen(satz);
@@ -7246,7 +7285,9 @@ const Werkzeugkasten = {
       const partnerNote = kandidaten.find((x) => x.h.id === pflichtId)?.note;
       if (partnerNote != null) {
         const ohne = kandidaten.filter((x) => x.h.id === pflichtId || x.note <= partnerNote);
-        if (ohne.length >= Math.min(3, kandidaten.length)) { kandidaten = ohne; this.letzteNoteRegel = "gehalten"; }
+        // Genug fuer die gewuenschte Zahl - nicht nur fuer drei (03.10.2026:
+        // vier gewuenscht, drei vorgelegt)
+        if (ohne.length >= Math.min(Math.max(3, wieViele), kandidaten.length)) { kandidaten = ohne; this.letzteNoteRegel = "gehalten"; }
         else this.letzteNoteRegel = "nicht_haltbar";
       }
     }
@@ -7422,8 +7463,8 @@ const Werkzeugkasten = {
       gilt: "Flug zu einer Ferienwohnung",
       satz: "Zu Ferienwohnungen bietet Voyara keine Fluege an - das geht nur bei Hotels. Wenn ein Flug dazu soll, kannst du auf ein Hotel wechseln; sonst buchst du die Wohnung und den Flug getrennt." },
     { wenn: () => true,
-      gilt: "Mietwagen oder Flug zusammen mit einer Unterkunft in einem Vorgang buchen",
-      satz: "Mietwagen und Fluege gibt es auf Voyara als eigene Suche, nicht als Zusatz zur Unterkunft - ausser dem Flug zum Hotel." },
+      gilt: "Mietwagen zusammen mit der Unterkunft in einem Vorgang buchen",
+      satz: "Den Mietwagen buchst du getrennt von der Unterkunft. Ich kann dir aber gern drei passende Wagen am Ziel heraussuchen." },
     { wenn: () => true,
       gilt: "Zeitraum ueber mehrere Monate suchen",
       satz: "Die Suche kennt entweder feste Daten oder einen Monat. Eine Spanne ueber mehrere Monate kann ich nicht eingeben - ich kann die Monate aber nacheinander durchgehen und vergleichen." },
@@ -7433,10 +7474,23 @@ const Werkzeugkasten = {
   ],
 
   // Die Grenzen, die im aktuellen Stand ueberhaupt greifen
+  /* Was der Agent kann - eine feste Liste (03.10.2026).
+     Der Nutzer: Der Agent "hat zu wenig kommuniziert ueber seine eigenen
+     Faehigkeiten" und soll auf moeglichst viele Wuensche vorbereitet
+     sein. Die Liste steht in jedem Zug beim Modell, damit es auf "kannst
+     du ...?" richtig antwortet und nichts verneint, was ein Werkzeug
+     kann. */
+  FAEHIGKEITEN: "DAS KANNST DU (sag es so, wenn danach gefragt wird, und tu es mit dem Werkzeug in Klammern): "
+    + "Unterkuenfte suchen und filtern (suchen); Regionen und Monate vergleichen (regionen_vergleichen, monate_vergleichen); "
+    + "Haeuser oeffnen und der Reihe nach ansehen (haus_oeffnen, haeuser_ansehen); Bewertungen lesen und nach Stichworten durchsuchen, z.B. Hund, WLAN, Rutschen, Alkohol (bewertungen_lesen, bewertungen_durchsuchen); "
+    + "Monat, Anreisetag oder Naechte aendern, auch auf der Hausseite und in der Kasse (reisedaten_aendern); Fragen zu Ablauf, Zahlung, Storno, Flugklassen, Gepaeck nachschlagen (faq_nachschlagen); "
+    + "Flug zum Hotel dazurechnen (alle Flughaefen, alle Ziele, taeglich); auf Wunsch einen Mietwagen suchen (mietwagen_suchen); "
+    + "merken (merken); Zimmer, Verpflegung und Flug fuer die Buchung waehlen und die Buchung vorbereiten oder abschliessen, je nach Freigabe (buchung_vorbereiten, kasse_aendern, buchung_abschliessen).",
+
   grenzenText(p) {
     const gilt = this.GRENZEN.filter((g) => g.wenn(p));
-    if (!gilt.length) return null;
-    return `Was diese Seite NICHT kann (sag es genau so, wenn danach gefragt wird - nie etwas anderes probieren, nie ein Werkzeug raten):\n`
+    if (!gilt.length) return this.FAEHIGKEITEN;
+    return `${this.FAEHIGKEITEN}\nWas diese Seite NICHT kann (sag es genau so, wenn danach gefragt wird - nie etwas anderes probieren, nie ein Werkzeug raten):\n`
       + gilt.map((g) => `- ${g.gilt}: "${g.satz}"`).join("\n")
       + `\nWirst du nach etwas gefragt, das hier nicht steht und fuer das du auch kein Werkzeug hast: sag in einem Satz, dass Voyara das nicht anbietet, warum du es nicht kannst, und was stattdessen geht. Rate nie, und ruf kein Werkzeug auf gut Glueck.`;
   },

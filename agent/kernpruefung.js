@@ -1206,6 +1206,23 @@ const Kernpruefung = {
     // Die guenstigste Reise muss ueber 50 € liegen, sonst greift die Rueckfrage nie
     const min = Werkzeugkasten.reiseMinimum({ monat: 8, naechte: 4, erwachsene: 2, kinder: 2, kinderAlter: [3, 9], flug: true });
     if (!(min > 50)) fehler.push({ art: "reise_minimum", thema: "preis", text: `Guenstigste Reise ${min} - unplausibel` });
+    // Leser des Kerns aus dem Verlauf vom 03.10.2026
+    const L = Werkzeugkasten.SELBST_LESEN;
+    const lesen = [["anzahl", "vier", { anzahlVorschlaege: 4 }], ["anzahl", "gerne 5", { anzahlVorschlaege: 5 }], ["anzahl", "4 nächte", { anzahlVorschlaege: 4 }],
+      ["zeit", "im januar", { monat: 1 }], ["zeit", "nicht im januar", null], ["zeit", "januar oder februar", null]];
+    for (const [thema, satz, soll] of lesen) {
+      let ist = null;
+      try { ist = L[thema](satz, {}, Werkzeugkasten); } catch { ist = "fehler"; }
+      // "4 nächte" auf die Anzahlfrage ist eine Fehllesung, die hier
+      // bewusst durchgeht: Die Frage war die nach der Anzahl
+      if (JSON.stringify(ist) !== JSON.stringify(soll)) fehler.push({ art: "leser", thema, satz, text: `"${satz}" ergibt ${JSON.stringify(ist)}, erwartet ${JSON.stringify(soll)}` });
+    }
+    // Wunsch Getraenke: ja bei Alkohol, nein bei Barcelona
+    const gk = typeof Politik !== "undefined" ? Politik.kriterium("getraenke") : null;
+    const trifft = (t) => (gk?.woerter || []).some((w) => t.toLowerCase().includes(w));
+    if (!gk || !trifft("alkohol und entspannung ist wichtig") || trifft("ab nach barcelona") || trifft("in der nähe von einem weinfeld")) {
+      fehler.push({ art: "wunsch_getraenke", thema: "wuensche", text: "Kriterium Getraenke trifft falsch" });
+    }
     // Jahreszeit mit Tippfehler
     const jz = Werkzeugkasten.jahreszeitGenannt({ gespraech: [{ role: "user", content: "gerne im somme" }] });
     if (jz?.name !== "sommer") fehler.push({ art: "jahreszeit", thema: "zeit", satz: "gerne im somme", text: `ergibt ${jz?.name || "nichts"}` });

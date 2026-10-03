@@ -989,7 +989,7 @@ const Kern = {
 
     // Flug: sobald er im Gespraech ist oder gleich gefragt wird
     if (p.flug || fp.naechstes === "flug" || fp.naechstes === "flugAb" || (p.flug == null && p.typ !== "apartment")) {
-      bloecke.push("FLUG: Bei Hotels kann die Seite einen Flug dazubuchen (Hin- und Rueckflug fuer alle Reisenden; Abflughaefen Hamburg, Stuttgart, Duesseldorf, Hannover, Muenchen, Koeln, Frankfurt, Berlin; Klassen Economy, Premium Economy, Business, gerechnet ist Economy). Nicht jede Verbindung fliegt taeglich: Mit Flug haengt der Anreisetag von den Flugtagen ab, und nach der Reisedauer muss wieder ein Flugtag sein. Welche Tage gehen, sagen dir die Werkzeuge - erfinde keine. Bei Ferienwohnungen gibt es keinen Flug.");
+      bloecke.push("FLUG: Bei Hotels kann die Seite einen Flug dazubuchen (Hin- und Rueckflug fuer alle Reisenden; Abflughaefen Hamburg, Stuttgart, Duesseldorf, Hannover, Muenchen, Koeln, Frankfurt, Berlin, Zuerich; jeder Flughafen fliegt jedes Ziel an, taeglich; Klassen Economy, Premium Economy (1,5-fach), Business (2,6-fach), gerechnet ist Economy - die Klasse betrifft nur den Flugpreis pro Person, nie die Nacht). Bei Ferienwohnungen gibt es keinen Flug.");
     }
     // Vorlage und Vergleiche: sobald Haeuser im Spiel sind
     if (this.lauf.letzteVorlage?.length || fp.phase === "vorschlaege" || this.lauf.gewaehlt || seite === "stay") {
@@ -1439,6 +1439,24 @@ const Kern = {
         if (text) {
           const u = Werkzeugkasten.urteilStreichen(text, this.lauf.profil || {});
           if (u.gestrichen) { this.notieren("urteil_gestrichen", { saetze: u.gestrichen }); text = u.text; antwort.text = u.text; nachricht.content = u.text || null; }
+          /* Eine Zahl Haeuser, die nicht stimmt (03.10.2026): Vorgelegt
+             waren drei, das Modell schrieb "Ich habe dir vier passende
+             Hotels gefunden". Der Satz faellt weg. */
+          const n = this.lauf.letzteVorlage?.length || 0;
+          if (n && text) {
+            const WZ = { ein: 1, eine: 1, zwei: 2, drei: 3, vier: 4, "fünf": 5, fuenf: 5, sechs: 6 };
+            const saetze = text.split(/(?<=[.!?])\s+/);
+            const bleiben = saetze.filter((x) => {
+              const m = x.match(/\b(\d|zwei|drei|vier|f(ü|ue)nf|sechs)\s+(passende[nr]?\s+|schöne[nr]?\s+)?(hotels|häuser|haeuser|unterkünfte|unterkuenfte|vorschläge|vorschlaege|optionen)\b/i);
+              if (!m) return true;
+              const zahl = WZ[m[1].toLowerCase()] ?? parseInt(m[1], 10);
+              return zahl === n;
+            });
+            if (bleiben.length < saetze.length) {
+              this.notieren("anzahl_gestrichen", { vorgelegt: n, saetze: saetze.length - bleiben.length });
+              text = bleiben.join(" ").trim(); antwort.text = text; nachricht.content = text || null;
+            }
+          }
         }
         if (text && !nachricht.tool_calls) {
           // Zwei Leitplanken, je einmal neu schreiben lassen: Zahlen, die
@@ -2872,10 +2890,12 @@ const Kern = {
        Absicht hin oder her: Wer eine Beratung durchlaeuft und nie gefragt
        wird, wann er faehrt, haelt das fuer vergessen. Also steht es hier,
        einmal, mit Grund. */
+    // Seit dem 03.10.2026 fliegt jede Verbindung taeglich: kein Wort mehr
+    // von Flugtagen, nur, dass der Tag beim Buchen festgelegt wird
     if (p.flug && !p.anreise && !(p.von && p.bis) && !this.lauf.anreiseErklaert) {
       this.lauf.anreiseErklaert = true;
-      this.sagen("Den Anreisetag legen wir beim Buchen fest - er hängt von den Flugtagen der Verbindung ab, und die sind je Haus verschieden.");
-      this.notieren("anreise_vertagt", { grund: "flugtage" });
+      this.sagen("Den genauen Anreisetag legen wir beim Buchen fest, geflogen wird täglich.");
+      this.notieren("anreise_vertagt", { grund: "beim_buchen" });
     }
 
     /* Die Offenlegung faellt genau einmal.
