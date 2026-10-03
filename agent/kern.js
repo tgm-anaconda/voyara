@@ -783,7 +783,11 @@ const Kern = {
     // steht auf der Hausseite ein anderer Preis als auf seiner Karte
     const p0 = this.lauf.profil || {};
     if (p0.verpflegung) href += `&board=${encodeURIComponent(p0.verpflegung)}`;
-    const zim = (this.lauf.zimmerWahl || {})[id];
+    // Die Wahl der Person geht vor - vorher gewann das Zimmer aus dem
+    // Rundgang, und die Kasse zeigte das falsche (03.10.2026)
+    const hausZimmer = (typeof getItemById === "function" ? getItemById(id)?.rooms : null) || [];
+    const zim = (p0.zimmerTyp && hausZimmer.some((r) => r.name === p0.zimmerTyp))
+      ? p0.zimmerTyp : (this.lauf.zimmerWahl || {})[id];
     if (zim) href += `&zimmerart=${encodeURIComponent(zim)}`;
     if (typeof Belegung !== "undefined") href = Belegung.anLink(href);
     if (typeof Reisedaten !== "undefined") href = Reisedaten.anLink(href);
@@ -966,6 +970,9 @@ const Kern = {
     if (this.lauf.anhalt?.gesagt && this.anhaltAntwort(t, opts)) return;
     if (this.lauf.budgetHalt && this.budgetAntwort(t, opts)) return;
     this.ankunftLesen(t);
+    this.zimmerAntwort(t);
+    this.abschlussAntwort(t);
+    this.flugAntwort(t);
     /* Jede neue Nachricht beendet das Anhalten - die Person spricht wieder
        mit dem Agenten. Ohne das liefe ein Zug, der ueber einen Sonderweg
        startet (Filter neu, Vorschlaege zeigen), sofort in den Halt. */
@@ -2786,6 +2793,59 @@ const Kern = {
     stunde = Math.max(12, stunde);
     p.ankunft = stunde >= 23 ? "nach 22:00" : `${String(stunde).padStart(2, "0")}:00`;
     this.notieren("ankunft_gesagt", { wert: p.ankunft });
+  },
+
+  // Ein Satz des Kerns, der auch im Verlauf fuer das Modell steht
+  sagenUndMerken(satz) {
+    this.sagen(satz);
+    this.gespraechPush({ role: "assistant", content: satz });
+    this.sichern();
+  },
+
+  // Eine Nachricht, als haette die Person sie geschrieben - fuer Klicks in
+  // Fenstern (Flugwahl). Fehlte bis zum 03.10.2026: Fluege.waehlen rief
+  // nachricht() auf, und es gab sie nicht. Die Wahl kam nie im Gespraech an.
+  nachricht(text) {
+    return this.eingabe(text);
+  },
+
+  /* Antworten auf Fragen, die der Kern selbst gestellt hat.
+     ------------------------------------------------------------------
+     Wer fragt, muss die Antwort lesen koennen - dieselbe Regel wie bei
+     den Eckdaten. Nach der Antwort ruft der naechste Zug genau das
+     Werkzeug, das wartet (fortsetzenMit), statt zu hoffen, dass das
+     Modell sich erinnert. */
+  zimmerAntwort(t) {
+    const f = this.lauf.zimmerFrage;
+    if (!f) return;
+    const satz = String(t).toLowerCase();
+    const treffer = (f.namen || []).find((n) => satz.includes(String(n).toLowerCase()))
+      || (f.namen || []).find((n) => String(n).toLowerCase().split(/\s+/).some((w) => w.length >= 5 && satz.includes(w)));
+    this.lauf.zimmerFrage = null;
+    if (!treffer) { this.notieren("zimmer_antwort_unklar", { text: String(t).slice(0, 60) }); return; }
+    (this.lauf.profil ||= {}).zimmerTyp = treffer;
+    this.lauf.zimmerGefragt = true;
+    this.lauf.fortsetzenMit = "buchung_vorbereiten";
+    this.notieren("zimmer_gewaehlt", { id: f.id, zimmer: treffer });
+  },
+
+  abschlussAntwort(t) {
+    if (!this.lauf.abschlussFrage) return;
+    const satz = String(t).toLowerCase().trim();
+    this.lauf.abschlussFrage = null;
+    if (/^(ja|jap|jo|ok|okay|gerne|bitte)\b|abschlie|buch(e|en)? (sie|es|jetzt)|mach(s| es)? fertig/.test(satz) && !/\b(nein|nicht|noch nicht|warte)\b/.test(satz)) {
+      this.lauf.fortsetzenMit = "buchung_abschliessen";
+      this.notieren("abschluss_ja", {});
+    }
+  },
+
+  flugAntwort(t) {
+    // "fahre fort" nach der Flugwahl: Ist ein Flug gewaehlt, geht es mit
+    // der Buchung weiter, statt noch einmal um die Wahl zu bitten
+    if (!this.lauf.flugWartet) return;
+    if (!(this.lauf.profil || {}).flugId) return;
+    this.lauf.flugWartet = null;
+    this.lauf.fortsetzenMit = "buchung_vorbereiten";
   },
 
   /* Die Antwort auf die Budgetfrage vor der Vorlage. true: erledigt. */

@@ -4348,8 +4348,14 @@ const Werkzeugkasten = {
             kennzeichnung: kern.kennzeichnung ? kern.kennzeichnung() : "etikett",
             kontext: `${item.name} · ${kandidaten.length} Verbindungen`,
           });
+          /* Der Satz kommt vom Kern, und der Zug endet hier. Vorher sollte
+             das Modell "in einem Satz" sagen, dass gewaehlt werden kann -
+             und nach der Wahl ging es nicht weiter (03.10.2026). */
+          kern.sagenUndMerken(`Ich habe dir die Flüge zu ${item.name} geöffnet. Wähl einfach einen aus, dann mache ich mit der Buchung weiter.`);
+          kern.lauf.flugWartet = a.id;
+          kern.lauf.kernWartet = true;
           return { ergebnis: { fehler: "Flug noch nicht gewaehlt",
-            hinweis: "Die Flugauswahl steht jetzt offen vor der Person. Sag in einem Satz, dass sie waehlen kann, und warte. Stell keine weitere Frage. Erst nach ihrer Wahl buchung_vorbereiten noch einmal rufen." } };
+            hinweis: "Der Chat hat die Person gebeten, den Flug zu waehlen. Schreib nichts dazu." } };
         }
 
         /* Das Zimmer waehlt die Person, nicht der Agent.
@@ -4362,8 +4368,17 @@ const Werkzeugkasten = {
           kern.lauf.zimmerGefragt = true;
           kern.lauf.anreiseChips = zr.chips;
           kern.notieren("zimmer_rueckfrage", { id: a.id, zimmer: zr.chips });
-          return { ergebnis: { fehler: "Zimmer noch nicht gewaehlt", frage: zr.satz,
-            hinweis: "Sag genau diesen Satz, Wort fuer Wort, und warte auf die Antwort. Erst danach buchung_vorbereiten noch einmal rufen." } };
+          /* Die Frage stellt der Kern selbst. Das Modell sollte sie "Wort
+             fuer Wort" sagen - im Chat stand am 03.10.2026 nur "Welches
+             soll es sein?", ohne die Zimmer. Die Antwort liest der Kern
+             (zimmerAntwort) und macht danach mit der Buchung weiter. */
+          kern.sagenUndMerken(zr.satz);
+          kern.lauf.chips = zr.chips;
+          AgentPanel.setSuggestions?.(zr.chips);
+          kern.lauf.zimmerFrage = { id: a.id, namen: zr.chips };
+          kern.lauf.kernWartet = true;
+          return { ergebnis: { fehler: "Zimmer noch nicht gewaehlt",
+            hinweis: "Der Chat hat die Person nach dem Zimmer gefragt. Schreib nichts dazu." } };
         }
         kern.notieren("zur_buchung", { id: a.id });
         if (seite === "checkout" && idHier === a.id) return this.werkzeuge.buchung_vorbereiten.call(this, a, kern, 3);
@@ -4391,7 +4406,7 @@ const Werkzeugkasten = {
         }
         kern.lauf.buchungUmweg = false;
         kern.sperreAn();
-        const e = await Werkzeuge.zurBuchung(a.id, kern.lauf.profil.verpflegung || null, kern.lauf.profil.anreise || null);
+        const e = await Werkzeuge.zurBuchung(a.id, kern.lauf.profil.verpflegung || null, kern.lauf.profil.anreise || null, kern.lauf.profil.zimmerTyp || null);
         if (!e.ok) { kern.sperreAus(); return { ergebnis: { fehler: e.text } }; }
         return { navigiert: true, stufe: 3 };
       }
@@ -4426,6 +4441,34 @@ const Werkzeugkasten = {
          soll sichtbar werden, und zwar ohne dass irgendwo im Code steht,
          dass etwas verschwiegen werden soll. */
       const getan = vor.daten?.geaendert || [];
+      /* Ohne Freigabe zum Buchen sagt der Kern die Zusammenfassung selbst.
+         --------------------------------------------------------------
+         Am 03.10.2026 stand im Chat "Ich habe fuer das Hotel Cala Blanca
+         Mar vom 12. bis 21. Der Gesamtpreis betraegt 4.027 EUR" - ein Satz
+         des Modells, in der Mitte beschnitten, und ohne Hinweis, dass der
+         Preis ueber dem Budget lag. Haus, Zeitraum, Zimmer und Preis
+         stehen fest; dafuer braucht es kein Modell. */
+      if (!kern.darf("buchen")) {
+        const p0 = kern.lauf.profil || {};
+        const zahl = Number(String(z?.gesamt || "").replace(/[^\d]/g, "")) || null;
+        const ueber = p0.budgetGesamt && zahl && zahl > p0.budgetGesamt;
+        const teile = [
+          getan.length ? `Ich habe ausgefüllt: ${getan.join(", ")}.` : null,
+          `Gebucht würde ${z?.titel || item.name}, ${z?.zeitraum || ""}${z?.details ? `, ${z.details}` : ""}, insgesamt ${z?.gesamt || ""}.`
+            .replace(/, ,/g, ",").replace(/ ,/g, ","),
+          ueber ? `Das liegt über deinem Budget von ${Politik.euro(p0.budgetGesamt)}.` : null,
+          "Soll ich die Buchung abschließen?",
+        ].filter(Boolean);
+        kern.sagenUndMerken(teile.join(" "));
+        kern.lauf.chips = ["Ja, abschließen", "Noch nicht"];
+        AgentPanel.setSuggestions?.(kern.lauf.chips);
+        kern.lauf.abschlussFrage = a.id;
+        kern.lauf.kernWartet = true;
+        if (ueber) kern.notieren("kasse_ueber_budget", { gesamt: zahl, budget: p0.budgetGesamt });
+        return { ergebnis: { vorbereitet: true, zusammenfassung: z, ausgefuellt: getan,
+          hinweis: "Der Chat hat die Zusammenfassung gesagt und gefragt, ob abgeschlossen werden soll. Schreib nichts dazu." },
+          log: `Buchung vorbereitet: ${z?.titel || item.name}, ${z?.gesamt || ""}${getan.length ? ` · ausgefuellt: ${getan.join(", ")}` : ""}` };
+      }
       return {
         ergebnis: { vorbereitet: true, zusammenfassung: z, ausgefuellt: getan,
           hinweis: `${getan.length ? `Sag in einem kurzen Satz, was du ausgefuellt hast: ${getan.join(", ")}. Nur das - nichts, was du nicht selbst eingetragen hast. ` : ""}`

@@ -191,7 +191,7 @@ const Fluege = {
       /* Die Wahl geht als Nachricht der Person zurueck in das Gespraech.
          Sonst wuesste das Modell im naechsten Zug nicht, dass entschieden
          ist, und fragte noch einmal. */
-      k.nachricht?.(`Ich nehme den Flug mit ${gewaehlt?.flug?.airline || "dieser Verbindung"}.`);
+      k.nachricht?.(`Ich nehme den Flug mit ${gewaehlt?.flug?.airline || "dieser Verbindung"}.`);   // flugAntwort setzt die Buchung fort
     }
     /* Ohne Kern - die Person hat selbst auf "Jetzt buchen" geklickt und
        waehlt hier ihren Flug. Dann geht es nach der Wahl weiter, wohin sie

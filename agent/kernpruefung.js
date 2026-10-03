@@ -983,6 +983,39 @@ const Kernpruefung = {
     return fehler;
   },
 
+  /* Antworten auf Fragen des Kerns: Zimmer, Abschluss, Flug (03.10.2026).
+     Nach der Antwort muss der naechste Zug genau das wartende Werkzeug
+     rufen - vorher ging es nach der Flugwahl nicht weiter, und vom
+     Zimmersatz kam nur "Welches soll es sein?" an. */
+  kernAntworten() {
+    const fehler = [];
+    const melde = (art, text, satz = "") => fehler.push({ art, text, thema: "buchung", satz });
+    if (typeof Kern === "undefined" || !Kern.zimmerAntwort) return fehler;
+    const neu = (lauf) => { const k = Object.create(Kern); k.lauf = { profil: {}, protokoll: [], ...lauf }; return k; };
+    const namen = ["Doppelzimmer Meerblick", "Familienzimmer", "Juniorsuite"];
+    for (const [text, soll] of [["Familienzimmer", "Familienzimmer"], ["das familienzimmer bitte", "Familienzimmer"],
+      ["Juniorsuite", "Juniorsuite"], ["nimm das mit meerblick", "Doppelzimmer Meerblick"], ["keine Ahnung", null]]) {
+      const k = neu({ zimmerFrage: { id: "h1", namen } });
+      k.zimmerAntwort(text);
+      const ist = k.lauf.profil.zimmerTyp || null;
+      if (ist !== soll) melde("zimmer_antwort", `"${text}" ergibt ${ist}, erwartet ${soll}`, text);
+      if (soll && k.lauf.fortsetzenMit !== "buchung_vorbereiten") melde("zimmer_ohne_fortsetzen", `Nach "${text}" geht die Buchung nicht weiter`, text);
+    }
+    for (const [text, soll] of [["Ja, abschließen", true], ["ja", true], ["ok mach", true], ["Noch nicht", false], ["nein", false], ["ja, aber nicht jetzt", false]]) {
+      const k = neu({ abschlussFrage: "h1" });
+      k.abschlussAntwort(text);
+      if ((k.lauf.fortsetzenMit === "buchung_abschliessen") !== soll) melde("abschluss_antwort", `"${text}" ${soll ? "schliesst nicht ab" : "schliesst ab"}`, text);
+    }
+    const k = neu({ flugWartet: "h1", profil: { flugId: "f1" } });
+    k.flugAntwort("fahre fort");
+    if (k.lauf.fortsetzenMit !== "buchung_vorbereiten") melde("flug_ohne_fortsetzen", "Nach gewaehltem Flug geht die Buchung nicht weiter");
+    const k2 = neu({ flugWartet: "h1", profil: {} });
+    k2.flugAntwort("fahre fort");
+    if (k2.lauf.fortsetzenMit) melde("flug_ohne_wahl_weiter", "Ohne gewaehlten Flug wurde die Buchung fortgesetzt");
+    if (typeof Kern.nachricht !== "function") melde("nachricht_fehlt", "Kern.nachricht fehlt - die Flugwahl kaeme nie im Gespraech an");
+    return fehler;
+  },
+
   filterbitte() {
     const fehler = [];
     for (const f of this.FILTER_FAELLE) {
@@ -2098,6 +2131,7 @@ const Kernpruefung = {
     for (const f of this.seitenstand()) alle.push(f);
     for (const f of this.budgetVorlage()) alle.push(f);
     for (const f of this.ankunft()) alle.push(f);
+    for (const f of this.kernAntworten()) alle.push(f);
     for (const f of this.budget()) alle.push(f);
     for (const f of this.vorschlagsset()) alle.push(f);
     for (const f of this.flughaefen()) alle.push(f);

@@ -1074,24 +1074,27 @@ const Werkzeuge = {
     if (b.daten?.durchgesehen) schritte.push(`${b.daten.durchgesehen.toLocaleString("de-DE")} Bewertungen durchgesehen`);
     else if (b.daten?.sichtbarGelesen) schritte.push(`${b.daten.sichtbarGelesen} Bewertungen gelesen`);
 
-    // Zimmer: das erste, in das die Gruppe passt
-    if (!Zeiger.abbruch) {
+    /* Zimmer: nachsehen, nicht waehlen.
+       ----------------------------------------------------------------
+       Gemeldet am 03.10.2026: "Zimmer Doppelzimmer passt" - fuer drei
+       Personen, bei allen vier Haeusern. Geprueft wurde an der Klasse
+       `zu-klein` der Seite, und die haengt an der Belegung, die auf der
+       Seite steht, nicht an der Gruppe aus dem Gespraech. Ein schon
+       ausgewaehltes Zimmer galt ausserdem immer als passend.
+
+       Jetzt zaehlen die Daten: Zimmergroesse gegen Personen je Zimmer.
+       Und gewaehlt wird hier gar nichts mehr - das Zimmer waehlt die
+       Person, gefragt wird vor dem Buchen (zimmerRueckfrage). */
+    if (!Zeiger.abbruch && item.rooms?.length) {
       const zeilen = [...document.querySelectorAll(".room-row")];
-      const passend = zeilen.find((z) => !z.classList.contains("zu-klein")) || zeilen[0];
-      if (passend) {
-        gewaehltesZimmer = passend.querySelector("h4")?.textContent?.trim() || null;
-        await Zeiger.lies(passend, { dauer: 700, hinweis: "Zimmer prüfen" });
-        // "Zimmer Zimmer Standard" - die Zimmernamen tragen das Wort oft schon
-        const roh = passend.querySelector("h4")?.textContent?.trim() || "";
-        const zimmer = /^zimmer\b/i.test(roh) ? roh : `Zimmer ${roh}`.trim();
-        const knopf = passend.querySelector(".js-room:not([disabled])");
-        if (knopf && !passend.classList.contains("selected")) {
-          await Zeiger.klicke(knopf, { hinweis: "Zimmer wählen" });
-          schritte.push(`${zimmer} gewählt`);
-        } else if (roh) {
-          schritte.push(`${zimmer} passt`);
-        }
-      }
+      const proZimmer = personenProZimmer || 1;
+      const i = item.rooms.findIndex((r) => (r.maxGuests || 0) >= proZimmer);
+      const passend = i > -1 ? zeilen[i] : null;
+      if (passend) await Zeiger.lies(passend, { dauer: 700, hinweis: "Zimmer prüfen" });
+      const groesser = item.rooms.filter((r) => (r.maxGuests || 0) >= proZimmer).length;
+      schritte.push(groesser
+        ? `${groesser} ${groesser === 1 ? "Zimmer ist" : "Zimmer sind"} groß genug für ${proZimmer} ${proZimmer === 1 ? "Person" : "Personen"}`
+        : `kein Zimmer für ${proZimmer} Personen`);
     }
 
     // Verpflegung, wenn eine gewuenscht ist
@@ -1262,7 +1265,7 @@ const Werkzeuge = {
 
   // Fuehrt bis zur Buchungsseite. Ob der Agent dort auch abschliesst, regelt
   // die Autonomiestufe in agent/kern.js - nicht dieses Werkzeug.
-  async zurBuchung(id, verpflegung = null, anreise = null) {
+  async zurBuchung(id, verpflegung = null, anreise = null, zimmerTyp = null) {
     // Flexibel gesucht: erst den Anreisetag eintragen, sonst gibt es
     // keinen Buchungsknopf
     const feldAnreise = this.finde("#bwAnreise");
@@ -1287,6 +1290,17 @@ const Werkzeuge = {
         if (!chip.classList.contains("active")) await Zeiger.klicke(chip, { hinweis: label });
       } else {
         hinweis = ` ${label} gibt es hier nicht - ich habe die Standardverpflegung gelassen.`;
+      }
+    }
+    // Das Zimmer, das die Person gewaehlt hat - sichtbar eingestellt, sonst
+    // nimmt die Kasse das vorausgewaehlte (gemeldet am 03.10.2026)
+    if (zimmerTyp) {
+      const item = typeof getItemById === "function" ? getItemById(id) : null;
+      const i = (item?.rooms || []).findIndex((r) => String(r.name).toLowerCase() === String(zimmerTyp).toLowerCase());
+      const zk = i > -1 ? document.querySelector(`.js-room[data-room="${i}"]`) : null;
+      if (zk && !zk.closest(".room-row")?.classList.contains("selected")) {
+        await Zeiger.klicke(zk, { hinweis: zimmerTyp });
+        await Zeiger.warte(250);
       }
     }
     const knopf = this.finde("#bwBook, .bw-book, .booking-widget .btn-accent")
