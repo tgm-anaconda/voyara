@@ -956,6 +956,33 @@ const Kernpruefung = {
     return fehler;
   },
 
+  /* Ankunftszeit: nur was die Person sagt, auf die Auswahl gerundet. */
+  ANKUNFT_FAELLE: [
+    { text: "so gegen 15 Uhr", soll: "15:00" }, { text: "15:30", soll: "16:00" },
+    { text: "wir sind nach 22 Uhr da", soll: "nach 22:00" }, { text: "um 9 uhr morgens", soll: "12:00" },
+    { text: "keine Ahnung", soll: null }, { text: "wir sind 3 Personen", soll: null },
+    { text: "das Zimmer für 120 Euro", soll: null },
+  ],
+  ankunft() {
+    const fehler = [];
+    if (typeof Kern === "undefined" || !Kern.ankunftLesen || typeof Werkzeuge === "undefined") return fehler;
+    const alt = Werkzeuge.seite;
+    try {
+      Werkzeuge.seite = () => "checkout";
+      for (const f of this.ANKUNFT_FAELLE) {
+        const k = Object.create(Kern); k.lauf = { profil: {}, protokoll: [] };
+        k.ankunftLesen(f.text);
+        const ist = k.lauf.profil.ankunft || null;
+        if (ist !== f.soll) fehler.push({ art: "ankunft_falsch", thema: "kasse", satz: f.text, text: `"${f.text}" ergibt ${ist}, erwartet ${f.soll}` });
+      }
+      Werkzeuge.seite = () => "results";
+      const k = Object.create(Kern); k.lauf = { profil: {}, protokoll: [] };
+      k.ankunftLesen("15 Uhr");
+      if (k.lauf.profil.ankunft) fehler.push({ art: "ankunft_ausserhalb_kasse", thema: "kasse", satz: "15 Uhr", text: "Ausserhalb der Kasse wurde eine Ankunftszeit gelesen" });
+    } finally { Werkzeuge.seite = alt; }
+    return fehler;
+  },
+
   filterbitte() {
     const fehler = [];
     for (const f of this.FILTER_FAELLE) {
@@ -2070,6 +2097,7 @@ const Kernpruefung = {
     for (const f of this.anhalt()) alle.push(f);
     for (const f of this.seitenstand()) alle.push(f);
     for (const f of this.budgetVorlage()) alle.push(f);
+    for (const f of this.ankunft()) alle.push(f);
     for (const f of this.budget()) alle.push(f);
     for (const f of this.vorschlagsset()) alle.push(f);
     for (const f of this.flughaefen()) alle.push(f);

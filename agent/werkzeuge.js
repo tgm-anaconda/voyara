@@ -1389,6 +1389,8 @@ const Werkzeuge = {
         await Zeiger.setzeWert(feldAnkunft, treffer, { hinweis: "Ankunft am Haus" });
         geaendert.push(`Ankunft ${treffer}${daten.ankunftGrund ? ` (${daten.ankunftGrund})` : ""}`);
       }
+      // Ohne Landezeit keine Schaetzung: fragen statt raten
+      if (feldAnkunft && !feldAnkunft.value) fehlt.push("ungefähre Ankunftszeit am Haus");
 
       const feldTerms = this.finde("#gTerms");
       if (feldTerms && !feldTerms.checked) {

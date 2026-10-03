@@ -6883,9 +6883,20 @@ const Werkzeugkasten = {
       geburt: p.reisendeGeburt || [],
       gepaeck: p.gepaeck || null,
     };
+    // Hat die Person die Ankunftszeit selbst gesagt, gilt die - vor jeder Rechnung
+    if (p.ankunft) { daten.ankunft = p.ankunft; daten.ankunftGrund = "wie du gesagt hast"; return daten; }
     const item = typeof getItemById === "function" ? getItemById(kern.lauf.gewaehlt) : null;
     if (p.flug && item && item.type !== "apartment" && typeof Flug !== "undefined") {
-      const flug = Flug.wahl(item.ziel);
+      /* Nur aus dem Flug, den die Person gewaehlt hat.
+         ----------------------------------------------------------------
+         Hier stand `Flug.wahl`, und das liefert ohne Wahl die erste
+         Verbindung der Liste. Gemeldet am 03.10.2026: "Ankunft nach 22:00"
+         im Formular, obwohl der gewaehlte Flug um 04:45 startete. Ohne
+         gewaehlten Flug gibt es keine Landezeit - dann wird gefragt. */
+      const s = Flug.lesen();
+      const flug = s.flugId && typeof FLIGHTS !== "undefined"
+        ? FLIGHTS.find((f) => f.id === s.flugId && f.ziel === item.ziel) : null;
+      if (!flug) daten.ankunftOffen = true;
       const an = flug?.arrive && /^\d{1,2}:\d{2}$/.test(flug.arrive) ? flug.arrive : null;
       if (an) {
         const stunde = parseInt(an.split(":")[0], 10);
@@ -6893,7 +6904,7 @@ const Werkzeugkasten = {
         // Eine Stunde Transfer, auf die volle Stunde aufgerundet
         const ziel = Math.min(23, stunde + 1 + (minute > 0 ? 1 : 0));
         daten.ankunft = ziel >= 23 ? "nach 22:00" : `${String(ziel).padStart(2, "0")}:00`;
-        daten.ankunftGrund = `Landung ${an} plus Transfer`;
+        daten.ankunftGrund = `dein Flug landet um ${an}, dazu etwa eine Stunde Transfer`;
       }
     }
     return daten;

@@ -965,6 +965,7 @@ const Kern = {
     }
     if (this.lauf.anhalt?.gesagt && this.anhaltAntwort(t, opts)) return;
     if (this.lauf.budgetHalt && this.budgetAntwort(t, opts)) return;
+    this.ankunftLesen(t);
     /* Jede neue Nachricht beendet das Anhalten - die Person spricht wieder
        mit dem Agenten. Ohne das liefe ein Zug, der ueber einen Sonderweg
        startet (Filter neu, Vorschlaege zeigen), sofort in den Halt. */
@@ -2765,6 +2766,26 @@ const Kern = {
       this.notieren("budget_teilweise", { budget, ueber: ueber.map((x) => x.k.id) });
     }
     return null;
+  },
+
+  /* Die Ankunftszeit am Haus, wenn die Person sie in der Kasse sagt.
+     ------------------------------------------------------------------
+     Ohne gewaehlten Flug wird sie gefragt (formulardaten). Gelesen wird
+     sie vom Kern, nicht vom Modell - sonst haengt es wieder daran, ob das
+     Modell ein Feld fuellt, und die Frage kaeme ein zweites Mal. Nur auf
+     der Kasse und nur mit einer Uhrzeit ("15 Uhr", "gegen 15:30", "nach
+     22 Uhr"); auf die naechste volle Stunde der Auswahl gerundet. */
+  ankunftLesen(t) {
+    if (typeof Werkzeuge === "undefined" || Werkzeuge.seite() !== "checkout") return;
+    const p = (this.lauf.profil ||= {});
+    const satz = String(t).toLowerCase();
+    if (/nach\s*22/.test(satz)) { p.ankunft = "nach 22:00"; this.notieren("ankunft_gesagt", { wert: p.ankunft }); return; }
+    const m = satz.match(/\b([01]?\d|2[0-3])(?::([0-5]\d))?\s*(uhr|h)\b/) || satz.match(/\b([01]?\d|2[0-3]):([0-5]\d)\b/);
+    if (!m) return;
+    let stunde = parseInt(m[1], 10) + (parseInt(m[2] || "0", 10) > 0 ? 1 : 0);
+    stunde = Math.max(12, stunde);
+    p.ankunft = stunde >= 23 ? "nach 22:00" : `${String(stunde).padStart(2, "0")}:00`;
+    this.notieren("ankunft_gesagt", { wert: p.ankunft });
   },
 
   /* Die Antwort auf die Budgetfrage vor der Vorlage. true: erledigt. */
