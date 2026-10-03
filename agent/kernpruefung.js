@@ -1154,6 +1154,42 @@ const Kernpruefung = {
     return fehler;
   },
 
+  /* Der Reiz (03.10.2026): konstruierte Teilnoten, enge Fluege. */
+  reiz() {
+    const fehler = [];
+    const melde = (art, text) => fehler.push({ art, text, thema: "reiz", satz: "" });
+    if (typeof Teilnoten !== "undefined" && typeof HOTELS !== "undefined") {
+      const merk = Teilnoten.aktiv;
+      const ids = HOTELS.filter((h) => h.ziel === "mallorca").slice(0, 4).map((h) => h.id);
+      Teilnoten.aktiv = null;
+      try { sessionStorage.removeItem(Teilnoten.SCHLUESSEL); } catch { /* egal */ }
+      const info = Teilnoten.angleichen(ids, ids[1]);
+      const sicht = (id) => Object.fromEntries(aspektbilanz(getItemById(id)).filter((e) => e.konstruiert).map((e) => [e.id, Math.round(e.anteilPositiv * 1000) / 100]));
+      const p = sicht(ids[1]);
+      const andere = ids.filter((id) => id !== ids[1]).map(sicht);
+      for (const a of Object.keys(p)) {
+        if (andere.some((o) => o[a] >= p[a])) melde("teilnote_partner_nicht_vorn", `${a}: Partnerhaus nicht vorn`);
+        const w = andere.map((o) => o[a]);
+        if (Math.max(...w) - Math.min(...w) > 0.11) melde("teilnote_streut", `${a}: andere liegen ${Math.round((Math.max(...w) - Math.min(...w)) * 10) / 10} auseinander`);
+      }
+      if (!info || !Object.keys(p).length) melde("teilnote_wirkungslos", "Keine konstruierten Teilnoten");
+      Teilnoten.aktiv = merk;
+      try { if (merk) sessionStorage.setItem(Teilnoten.SCHLUESSEL, JSON.stringify(merk)); else sessionStorage.removeItem(Teilnoten.SCHLUESSEL); } catch { /* egal */ }
+    }
+    if (typeof FLIGHTS !== "undefined" && typeof Werkzeugkasten !== "undefined" && typeof HOTELS !== "undefined") {
+      const min = (u) => { const [h, m] = String(u).split(":").map(Number); return h * 60 + m; };
+      for (const ziel of ["mallorca", "kreta", "marrakesch", "krabi", "teneriffa"]) {
+        const it = HOTELS.find((h) => h.ziel === ziel);
+        const k = Werkzeugkasten.flugAuswahl(it, { flug: true, flugAb: "Frankfurt", flugKlasse: "economy", erwachsene: 2, kinder: 0 });
+        if (k.length < 2) continue;
+        const ab = k.map((x) => min(x.flug.depart));
+        if (Math.max(...ab) - Math.min(...ab) > 80) melde("flugzeiten_weit", `${ziel}: Abfluege ${Math.max(...ab) - Math.min(...ab)} Minuten auseinander`);
+        if (k.slice(1).some((x) => x.preis <= k[0].preis)) melde("partnerflug_nicht_guenstigster", `${ziel}: die erste Verbindung ist nicht die guenstigste`);
+      }
+    }
+    return fehler;
+  },
+
   filterbitte() {
     const fehler = [];
     for (const f of this.FILTER_FAELLE) {
@@ -2275,6 +2311,7 @@ const Kernpruefung = {
     for (const f of this.welchesHausPruefen()) alle.push(f);
     for (const f of this.ehrlichkeit()) alle.push(f);
     for (const f of this.deckeRaster()) alle.push(f);
+    for (const f of this.reiz()) alle.push(f);
     for (const f of this.budget()) alle.push(f);
     for (const f of this.vorschlagsset()) alle.push(f);
     for (const f of this.flughaefen()) alle.push(f);

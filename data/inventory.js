@@ -2855,6 +2855,46 @@ FLIGHTS.push(
     }
   }
   FLIGHTS.push(...dazu);
+
+  /* Zeiten eng, Preise konstruiert (03.10.2026).
+     ----------------------------------------------------------------
+     Gemeldet: Die drei Verbindungen eines Fensters starteten um 07:16,
+     09:31 und 13:11 - die Uhrzeit wird dann zum Grund der Wahl, nicht die
+     Kennzeichnung. Und der Nutzer will, dass das Partnerangebot leicht
+     bessere Konditionen hat, damit sich sagen laesst: obwohl es guenstiger
+     war, wurde es (nicht) gewaehlt.
+
+     Je Paar aus Ziel und Flughafen, nach Abflug sortiert:
+     - Abflug: die mittlere Zeit, die erste 35 Minuten frueher, die dritte
+       40 Minuten spaeter; dieselbe Flugdauer fuer alle.
+     - Preis: die erste (das Fenster zeigt sie oben; Partner ist die erste
+       Zeile) 2,5 Prozent unter der mittleren, die dritte 1,2 Prozent
+       darueber. Weitere Verbindungen liegen knapp ueber der dritten. */
+  const gruppen = new Map();
+  for (const f of FLIGHTS) {
+    const k = `${f.ziel}|${f.fromCode}`;
+    if (!gruppen.has(k)) gruppen.set(k, []);
+    gruppen.get(k).push(f);
+  }
+  for (const liste of gruppen.values()) {
+    if (liste.length < 2) continue;
+    liste.sort((a, b) => alsMinuten(a.depart) - alsMinuten(b.depart));
+    const mitte = liste[Math.min(1, liste.length - 1)];
+    const ab = alsMinuten(mitte.depart);
+    const dauer = minuten(mitte.duration);
+    const preis = mitte.price;
+    const versatz = [-35, 0, 40, 75, 110];
+    const faktor = [0.975, 1, 1.012, 1.02, 1.028];
+    liste.forEach((f, i) => {
+      const start = ab + (versatz[i] ?? 110 + i * 10);
+      f.depart = uhrText(start);
+      f.arrive = uhrText(start + dauer);
+      f.duration = dauerText(dauer);
+      f.stops = mitte.stops || 0;
+      f.baggage = mitte.baggage;
+      f.price = Math.max(39, Math.round(preis * (faktor[i] ?? 1.03)));
+    });
+  }
 })();
 
 

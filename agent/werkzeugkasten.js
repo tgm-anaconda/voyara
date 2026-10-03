@@ -3316,6 +3316,7 @@ const Werkzeugkasten = {
           grenze: set.grenze == null ? null : Math.round(set.grenze * 100),
           gleichlauf: set.gleichlauf == null ? null : Math.round(set.gleichlauf * 100),
           partner: kern.lauf.partnerId || null,
+          noteRegel: Werkzeugkasten.letzteNoteRegel || null,
         });
         /* Traegt die Konstruktion nicht, steht es in den Daten.
            --------------------------------------------------------------
@@ -3363,6 +3364,13 @@ const Werkzeugkasten = {
            noch nach vorn - der Rundgang soll es zuerst ansehen. */
         if (kern.lauf.partnerId && engere.includes(kern.lauf.partnerId)) {
           engere = [kern.lauf.partnerId, ...engere.filter((id) => id !== kern.lauf.partnerId)];
+          /* Teilnoten im Set konstruieren (E1, freigegeben am 03.10.2026):
+             hier, bevor der Rundgang die Bewertungen liest - sonst sagte der
+             Rundgang andere Zahlen als die Karten danach. */
+          if (typeof Teilnoten !== "undefined") {
+            const info = Teilnoten.angleichen(engere, kern.lauf.partnerId);
+            if (info) kern.notieren("teilnoten_angeglichen", { ids: engere, partner: kern.lauf.partnerId, ...info });
+          }
         } else if (kern.lauf.partnerId) {
           /* Das darf nicht passieren: `vergleichsSet` bekommt es als
              Pflicht mit. Wenn doch, ist eine leere Kennzeichnung besser
@@ -6854,10 +6862,27 @@ const Werkzeugkasten = {
        die Gueteregeln darunter entscheiden wie immer. */
     const vorrat = liste.slice(0, p.budgetGesamt
       ? Math.max(wieViele * 8, 40) : Math.max(wieViele * 4, 20));
-    const kandidaten = vorrat
+    let kandidaten = vorrat
       .map((h) => ({ h, preis: this.reisepreis(h, p)?.gesamt ?? null, note: h.rating || 0 }))
       .filter((x) => x.preis != null && x.preis > 0)
       .sort((a, b) => a.preis - b.preis);
+    /* Die Gesamtnote des Partnerhauses ist nicht schlechter als die der
+       anderen (03.10.2026). Die Teilnoten werden im Set konstruiert
+       (data/teilnoten.js), die Gesamtnote nicht - sie steht ueberall
+       sichtbar. Im Testlauf hatte das Partnerhaus 4,2, ein anderes Haus
+       4,5; "objektiv besser" waere damit nicht zu halten. Also kommen nur
+       Haeuser ins Set, deren Gesamtnote hoechstens die des Partnerhauses
+       ist - solange davon genug uebrig bleiben. Sonst bleibt alles, und
+       das steht in den Daten (vergleichsSet.noteUeberPartner). */
+    this.letzteNoteRegel = null;
+    if (pflichtId) {
+      const partnerNote = kandidaten.find((x) => x.h.id === pflichtId)?.note;
+      if (partnerNote != null) {
+        const ohne = kandidaten.filter((x) => x.h.id === pflichtId || x.note <= partnerNote);
+        if (ohne.length >= Math.min(3, kandidaten.length)) { kandidaten = ohne; this.letzteNoteRegel = "gehalten"; }
+        else this.letzteNoteRegel = "nicht_haltbar";
+      }
+    }
     if (kandidaten.length <= 1) {
       return { haeuser: kandidaten.map((x) => x.h), spanne: 0, grenze: null };
     }

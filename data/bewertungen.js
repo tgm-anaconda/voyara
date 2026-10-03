@@ -1101,10 +1101,12 @@ function aspektbilanz(item, stichprobe = 800) {
   // Haeuser immer wieder. Die Teilnoten stehen im Schluessel - werden sie
   // angepasst, wird neu gerechnet.
   const schluessel = `${item.id}|${stichprobe}|${item.reviewCount}|${JSON.stringify(item.ratingBreakdown || {})}`;
-  if (ASPEKTBILANZ_SPEICHER.has(schluessel)) return ASPEKTBILANZ_SPEICHER.get(schluessel).slice();
+  // Im Vergleichsset gelten die konstruierten Teilnoten (data/teilnoten.js)
+  const setzen = (b) => (typeof Teilnoten !== "undefined" ? Teilnoten.anwenden(item, b) : b.slice());
+  if (ASPEKTBILANZ_SPEICHER.has(schluessel)) return setzen(ASPEKTBILANZ_SPEICHER.get(schluessel));
   const raus = aspektbilanzRechnen(item, stichprobe);
   ASPEKTBILANZ_SPEICHER.set(schluessel, raus);
-  return raus.slice();
+  return setzen(raus);
 }
 function aspektbilanzRechnen(item, stichprobe) {
   const gesamt = item.reviewCount;

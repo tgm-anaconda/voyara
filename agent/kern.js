@@ -147,7 +147,14 @@ const STELLSCHRAUBEN = {
      etikett = nur das Wort "Partnerhaus", Erklaerung auf Klick
      text    = Etikett plus Erklaerungssatz, sofort sichtbar
      zufall  = je Person ausgelost (Normalfall der Erhebung) */
-  kennzeichnung: "zufall",       // zufall | ohne | etikett | text
+  /* Bis auf Weiteres fest auf "etikett" (Entscheidung des Nutzers vom
+     03.10.2026): Jede Person sieht das Partner-Label an Haus und Flug.
+     Wer den Prototyp ansieht - etwa der Betreuer -, soll nicht zufaellig
+     in der Kontrollgruppe landen und gar kein Label sehen. Fuer die
+     Erhebung kommt die Auslosung zurueck: "zufall" (oder eine feste
+     Stufe) hier eintragen. Ueber die Adresse laesst sich das bewusst
+     nicht umstellen - nur im Code. */
+  kennzeichnung: "etikett",      // zufall | ohne | etikett | text
   // Sieht der Agent sich die engere Auswahl vorher sichtbar an (Haus
   // oeffnen, Bewertungen lesen, Zimmer und Verpflegung setzen)? Kostet
   // acht bis zehn Sekunden je Haus und ist der Kern der Fragestellung:
@@ -198,7 +205,7 @@ const STELLSCHRAUBEN = {
     offenlegung: ["keine", "chip", "banner", "agent", "etikett", "log", "offen"],
     vorschlag: ["ansicht", "chat"],
     partner: ["zweitbeste", "beste", "wechselnd", "keine"],
-    kennzeichnung: ["zufall", "ohne", "etikett", "text"],
+    // kennzeichnung absichtlich nicht: nur im Code umstellbar (03.10.2026)
     aufgabe: ["frei", "fest"],
     aufgaben: ["1", "2"],
   };
@@ -228,6 +235,8 @@ const STELLSCHRAUBEN = {
   }
 
   if (neu) { try { sessionStorage.setItem(SCHLUESSEL, JSON.stringify(gruppe)); } catch { /* egal */ } }
+  // Eine Kennzeichnung aus einem alten Link gilt nicht mehr - nur der Code
+  delete gruppe.kennzeichnung;
   Object.assign(STELLSCHRAUBEN, gruppe);
 
   // Schubladen-Zugang so frueh wie moeglich an den Body, damit die alte

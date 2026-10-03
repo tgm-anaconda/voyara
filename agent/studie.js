@@ -1091,6 +1091,12 @@ const Studie = {
         [p + "versicherungAgentAus"]: protokoll.filter((e) => e.ereignis === "kasse_versicherung" && e.an === false).length,
         [p + "kasseFragen"]: zaehle(protokoll, "kasse_frage"),
         [p + "kasseZurueck"]: zaehle(protokoll, "kasse_zurueck"),
+        /* Konstruierte Teilnoten im Vergleichsset (seit 03.10.2026): wie
+           weit das Partnerhaus im Schnitt vorn lag (Zehnerskala), wie dicht
+           die anderen beieinander, in wie vielen Teilnoten es vorn lag. */
+        [p + "teilnotenVorsprung"]: z([...protokoll].reverse().find((e) => e.ereignis === "teilnoten_angeglichen")?.vorsprung),
+        [p + "teilnotenSpanneAndere"]: z([...protokoll].reverse().find((e) => e.ereignis === "teilnoten_angeglichen")?.spanneAndere),
+        [p + "teilnotenPartnerVorn"]: z([...protokoll].reverse().find((e) => e.ereignis === "teilnoten_angeglichen")?.partnerVornIn),
         // Fahrplan (seit 20.09.2026): gefragte Themen, Wahl zwischen Top 3
         // und Selbst-Schauen, Korrekturen der Suchmaske
         [p + "themenGefragt"]: protokoll.filter((e) => e.ereignis === "thema_gefragt").map((e) => e.thema).join(","),
