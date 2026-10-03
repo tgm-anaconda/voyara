@@ -338,6 +338,42 @@ const Werkzeuge = {
        gesetzt und redete ueber eine Liste, die es nicht gab. Jetzt steht
        am Ende, was nicht ging, im Text und in den Daten. */
     const nichtGesetzt = [];
+    const abgewaehlt = [];
+
+    /* Soll gegen Ist, je Gruppe.
+       ----------------------------------------------------------------
+       Gemeldet am 03.10.2026: Der Agent setzte die Filter bei jeder Suche
+       neu - "Filter zuruecksetzen", dann alles noch einmal anklicken -,
+       auch wenn sich nur der Preis geaendert hatte oder gar nichts. Der
+       Rueckschritt war noetig, weil diese Funktion ueberzaehlige Haken
+       nicht abnahm. Jetzt tut sie das selbst, Haken fuer Haken: Was
+       stimmt, bleibt unberuehrt; was fehlt, kommt dazu; was zu viel ist,
+       geht weg. */
+    const abwaehlen = async (selektor, soll, label) => {
+      const gewollt = new Set((soll || []).map(String));
+      for (const el of [...panel.querySelectorAll(selektor)]) {
+        if (!el.checked || gewollt.has(String(el.value)) || el.value === "") continue;
+        const name = label(el.value);
+        if (await this.klickeFilterZeile(el, name)) abgewaehlt.push(name);
+      }
+    };
+    await abwaehlen(".js-star", wunsch.sterne, (v) => `${v} Sterne`);
+    await abwaehlen(".js-cat", wunsch.kategorien, (v) => CATEGORY_LABELS?.[v] || v);
+    await abwaehlen(".js-amen", wunsch.ausstattung, (v) => AMENITY_LABELS?.[v] || v);
+    await abwaehlen(".js-board", wunsch.verpflegung, (v) => BOARD_LABELS?.[v] || v);
+    // Einzelauswahl: Steht etwas, das nicht mehr gewollt ist, zurueck auf "Alle"
+    for (const [sel, gewollt, alle, name] of [[".js-rating", wunsch.mindestbewertung, "0", "Bewertung"],
+      [".js-beach", wunsch.maxStrand, "", "Strandnähe"]]) {
+      const an = panel.querySelector(`${sel}:checked`);
+      if (gewollt == null && an && String(an.value) !== alle) {
+        const zurueck = this.finde(`${sel}[value="${alle}"]`, panel);
+        if (zurueck && await this.klickeFilterZeile(zurueck, `${name}: alle`)) abgewaehlt.push(name);
+      }
+    }
+    for (const [sel, an, name] of [[".js-deals", wunsch.nurAngebote, "nur Angebote"], [".js-wlan", wunsch.wlanInklusive, "WLAN ohne Aufpreis"]]) {
+      const el = this.finde(sel, panel);
+      if (el && el.checked && !an && await this.klickeFilterZeile(el, name)) abgewaehlt.push(name);
+    }
 
     for (const stern of wunsch.sterne || []) {
       const el = this.finde(`.js-star[value="${stern}"]`, panel);
@@ -436,9 +472,16 @@ const Werkzeuge = {
        meldete "bis 220 €", waehrend der Regler auf 448 stand - gefunden
        von der Seitenpruefung. Bei den Haken war das nie moeglich, dort
        wurde der Rueckgabewert immer geprueft. */
+    // Ein Regler, der nicht mehr gewollt ist, geht auf "ohne Grenze"
+    for (const [id, gewollt, name] of [["#fPrice", wunsch.maxPreis, "Preisgrenze"], ["#fGesamt", wunsch.budgetGesamt, "Gesamtbudget"]]) {
+      const r = this.finde(id, panel);
+      if (r && !gewollt && r.max && Number(r.value) < Number(r.max)
+        && await Zeiger.setzeWert(r, String(r.max), { hinweis: `${name} aufheben` })) abgewaehlt.push(name);
+    }
     if (wunsch.maxPreis) {
       const regler = this.finde("#fPrice", panel);
       if (!regler) nichtGesetzt.push(`Preisgrenze ${wunsch.maxPreis} €`);
+      else if (Number(regler.value) === Number(wunsch.maxPreis)) { /* steht schon */ }
       else if (await Zeiger.setzeWert(regler, String(wunsch.maxPreis), { hinweis: "Preisgrenze" })
         && Number(regler.value) === Number(wunsch.maxPreis)) {
         gesetzt.push(`bis ${wunsch.maxPreis} €`);
@@ -453,7 +496,8 @@ const Werkzeuge = {
       else {
         const max = Number(regler.max);
         const wert = Math.min(max, Number(wunsch.budgetGesamt));
-        if (await Zeiger.setzeWert(regler, String(wert), { hinweis: "Gesamtbudget" })
+        if (Number(regler.value) === wert) { /* steht schon */ }
+        else if (await Zeiger.setzeWert(regler, String(wert), { hinweis: "Gesamtbudget" })
           && Number(regler.value) === wert) gesetzt.push(`bis ${wert} € gesamt`);
         else nichtGesetzt.push(`Gesamtbudget ${wunsch.budgetGesamt} €`);
       }
@@ -464,8 +508,8 @@ const Werkzeuge = {
     const rest = nichtGesetzt.length ? ` · nicht einstellbar auf dieser Liste: ${nichtGesetzt.join(", ")}` : "";
     return {
       ok: true,
-      text: gesetzt.length
-        ? `Filter gesetzt: ${gesetzt.join(", ")} · noch ${treffer} Treffer${rest}`
+      text: (gesetzt.length || abgewaehlt.length)
+        ? `Filter ${[gesetzt.length ? `gesetzt: ${gesetzt.join(", ")}` : null, abgewaehlt.length ? `abgewählt: ${abgewaehlt.join(", ")}` : null].filter(Boolean).join(" · ")} · noch ${treffer} Treffer${rest}`
         : (nichtGesetzt.length
           ? `Nichts eingestellt: ${nichtGesetzt.join(", ")} gibt es auf dieser Liste nicht als Filter.`
           : "Es gab nichts zu filtern, die Auswahl stand schon."),

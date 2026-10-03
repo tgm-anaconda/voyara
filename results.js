@@ -162,7 +162,9 @@ function filterMerken() {
       categories: [...state.categories], minRating: state.minRating, maxBeach: state.maxBeach,
       minBedrooms: state.minBedrooms, onlyDeals: state.onlyDeals, wlanFrei: state.wlanFrei,
       gesamtMax: state.gesamtMax, priceMax: state.priceMax, sort: state.sort,
+      ziele: [...state.ziele],
     }));
+    if (typeof Rueckweg !== "undefined") Rueckweg.merken();
   } catch { /* ohne Speicher wie bisher */ }
 }
 
@@ -182,6 +184,8 @@ function filterHolen() {
     state.wlanFrei = !!g.wlanFrei;
     state.gesamtMax = g.gesamtMax ?? null;
     if (g.sort) state.sort = g.sort;
+    // Die Regionen nur, wenn die Adresse keine nennt - sonst gilt sie
+    if (!state.ziele.size && (g.ziele || []).length) state.ziele = new Set(g.ziele);
     /* Der Preisregler nur, wenn er in die Spanne dieses Monats passt -
        sonst stuende er bei einem Wechsel in einen teureren Monat am
        Anschlag und zeigte nichts. */
@@ -844,6 +848,7 @@ document.addEventListener("DOMContentLoaded", () => {
   /* Erst nach den Grenzen des Monats: `filterHolen` darf den Preisregler
      ueberschreiben, aber nur auf einen Wert, den es hier auch gibt. */
   filterHolen();
+  if (typeof Rueckweg !== "undefined") Rueckweg.merken();
   const grenzen = priceBounds();
   if (!(state.priceMax >= grenzen.min && state.priceMax <= grenzen.max)) state.priceMax = grenzen.max;
 

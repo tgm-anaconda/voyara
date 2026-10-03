@@ -68,9 +68,10 @@ function renderHead() {
   document.title = `${item.name} — Voyara`;
   const typeLabel = isApartment ? "Ferienwohnung" : CATEGORY_LABELS[item.category];
   const listHref = `results.html?type=${isApartment ? "apartment" : "hotel"}`;
+  const zurListe = typeof Rueckweg !== "undefined" ? Rueckweg.liste(isApartment ? "apartment" : "hotel") : listHref;
 
   document.getElementById("breadcrumb").innerHTML =
-    `<a href="index.html">Startseite</a> › <a href="${listHref}">${isApartment ? "Ferienwohnungen" : "Hotels"}</a> › <a href="${listHref}&q=${encodeURIComponent(item.region)}">${item.region}</a> › <span>${item.name}</span>`;
+    `<a href="index.html">Startseite</a> › <a href="${zurListe}">${isApartment ? "Ferienwohnungen" : "Hotels"}</a> › <a href="${listHref}&q=${encodeURIComponent(item.region)}">${item.region}</a> › <span>${item.name}</span>`;
 
   document.getElementById("detailHead").innerHTML = `
     <div>

@@ -3465,9 +3465,8 @@ const Werkzeugkasten = {
         kern.notieren("maske_abweichung", { soll: maskeText(), ist: location.search });
       }
       kern.sperreAn();
-      const reset = document.getElementById("fReset");
-      const aktiv = document.querySelectorAll("#filterPanel input:checked:not([value=''])").length;
-      if (reset && aktiv > 0 && (kern.lauf.runde || 0) > 0) { await Zeiger.klicke(reset, { hinweis: "Filter zurücksetzen" }); await Zeiger.warte(250); }
+      // Kein "Filter zuruecksetzen" mehr: filterSetzen gleicht Soll und Ist
+      // Haken fuer Haken ab und laesst stehen, was stimmt (03.10.2026)
       const gesetzt = await Werkzeuge.filterSetzen(Werkzeugkasten.filterWerte(p));
       // Woran ein Abgleich scheitern kann: was die Spalte nicht hergab
       kern.lauf.nichtGesetzt = gesetzt?.daten?.nichtGesetzt?.length ? gesetzt.daten.nichtGesetzt : null;

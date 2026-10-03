@@ -42,6 +42,23 @@ const VERSICHERUNG_PREIS = 49;
 const KARTENGEBUEHR = 0.02;
 const ANKUNFTSZEITEN = ["12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00", "20:00", "21:00", "22:00", "nach 22:00"];
 
+/* Zurueck mit allem, was gewaehlt ist: Zeitraum, Reisende, Zimmer und
+   Verpflegung - sonst stand auf der Hausseite das vorausgewaehlte Zimmer,
+   und wer nachpruefen wollte, sah etwas anderes, als er buchte. */
+function hausLink() {
+  let href = `stay.html?id=${encodeURIComponent(entry.id)}`;
+  const zimmer = entry.rooms?.[roomIdx]?.name;
+  const board = entry.boards?.[boardIdx]?.key;
+  if (board) href += `&board=${encodeURIComponent(board)}`;
+  if (zimmer) href += `&zimmerart=${encodeURIComponent(zimmer)}`;
+  if (typeof Belegung !== "undefined" && Belegung.anLink) href = Belegung.anLink(href);
+  if (typeof Reisedaten !== "undefined" && Reisedaten.anLink) href = Reisedaten.anLink(href);
+  return href;
+}
+function listeLink() {
+  return typeof Rueckweg !== "undefined" ? Rueckweg.liste(entry.type) : `results.html?type=${entry.type}`;
+}
+
 function readParams() {
   const p = new URLSearchParams(window.location.search);
   entry = getItemById(p.get("id")) || HOTELS[0];
@@ -233,7 +250,7 @@ function renderStep1() {
           <span>Ich habe die <a href="info.html?p=agb">Hinweise zur Studie</a> gelesen und weiß, dass keine echte Buchung erfolgt.</span>
         </label>
         <div style="display:flex;gap:10px;justify-content:flex-end">
-          <a class="btn btn-ghost" href="${isStay() ? `stay.html?id=${entry.id}` : `results.html?type=${entry.type}`}">Zurück</a>
+          <a class="btn btn-ghost" href="${isStay() ? hausLink() : listeLink()}">Zurück</a>
           <button type="submit" class="btn btn-primary">Weiter zur Prüfung</button>
         </div>
       </form>
@@ -420,6 +437,6 @@ document.addEventListener("DOMContentLoaded", () => {
   readParams();
   mountChrome(isStay() ? (entry.type === "apartment" ? "apartment" : "hotel") : entry.type);
   document.getElementById("breadcrumb").innerHTML =
-    `<a href="index.html">Startseite</a> › ${isStay() ? `<a href="stay.html?id=${entry.id}">${entry.name}</a>` : `<a href="results.html?type=${entry.type}">${TYPE_LABELS[entry.type]}</a>`} › <span>Buchung</span>`;
+    `<a href="index.html">Startseite</a> › ${isStay() ? `<a href="${hausLink()}">${entry.name}</a>` : `<a href="${listeLink()}">${TYPE_LABELS[entry.type]}</a>`} › <span>Buchung</span>`;
   render();
 });

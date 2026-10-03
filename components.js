@@ -225,6 +225,27 @@ const Reisedaten = {
    auch ohne Parameter erhalten bleibt. Preise: Hin- und Rueckflug je
    Person, Klasse als Faktor auf den Katalogpreis (eine Richtung).
    ================================================================== */
+/* ==================================================================
+   Zurueck zur Liste, so wie sie war
+   ------------------------------------------------------------------
+   Gemeldet am 03.10.2026: Wer aus der Kasse oder von der Hausseite
+   zurueckging, um nachzupruefen, was er buchen wollte, fand eine Liste
+   ohne Zeitraum, ohne Reisende und ohne Regionen - die Links trugen nur
+   den Reiter. Die Trefferliste merkt sich jetzt ihre Adresse, und die
+   Rueckwege fuehren dorthin.
+   ================================================================== */
+const Rueckweg = {
+  SCHLUESSEL: "voyara_letzte_suche",
+  merken() {
+    try { if (location.search) sessionStorage.setItem(this.SCHLUESSEL, location.search); } catch { /* ohne Speicher */ }
+  },
+  liste(typ = "hotel") {
+    let s = "";
+    try { s = sessionStorage.getItem(this.SCHLUESSEL) || ""; } catch { s = ""; }
+    return s ? `results.html${s}` : `results.html?type=${typ}`;
+  },
+};
+
 const Flug = {
   SCHLUESSEL: "voyara_flug",
   KLASSEN: {
