@@ -924,6 +924,38 @@ const Kernpruefung = {
     return fehler;
   },
 
+  /* Ueber dem Budget wird nichts still vorgelegt (03.10.2026). */
+  budgetVorlage() {
+    const fehler = [];
+    const melde = (art, text) => fehler.push({ art, text, thema: "preis", satz: "" });
+    if (typeof Kern === "undefined" || !Kern.budgetVorVorlage) return fehler;
+    const ids = (typeof HOTELS !== "undefined" ? HOTELS : []).slice(0, 3).map((h) => h.id);
+    const p0 = { monat: 8, naechte: 9, erwachsene: 2, kinder: 1, flug: false };
+    const k = Object.create(Kern);
+    k.lauf = { protokoll: [], gespraech: [] }; k.gesagt = [];
+    k.sagen = (t) => k.gesagt.push(t); k.sichern = () => {}; k.gespraechPush = (n) => k.lauf.gespraech.push(n);
+    const kand = ids.map((id) => ({ id, item: getItemById(id) }));
+    const preise = kand.map((x) => k.kartenGesamt(x.item, p0));
+    if (preise.some((x) => !Number.isFinite(x))) { melde("budget_preis_fehlt", "Kartenpreis nicht berechenbar"); return fehler; }
+    const lauf = (budget) => { k.lauf = { protokoll: [], gespraech: [] }; k.gesagt = []; return k.budgetVorVorlage(kand, { ...p0, budgetGesamt: budget }); };
+    // Alle darueber: fragen, nicht vorlegen
+    let r = lauf(Math.min(...preise) - 1);
+    if (!r?.ergebnis?.nichtVorgelegt || !k.lauf.kernWartet || (k.gesagt.join(" ").match(/\?/g) || []).length !== 1) melde("budget_still_vorgelegt", "Alle ueber dem Budget, aber keine Frage vor der Vorlage");
+    // Alle darunter: nichts sagen
+    r = lauf(Math.max(...preise) + 1);
+    if (r || k.gesagt.length) melde("budget_unnoetig", "Alle im Budget, trotzdem ein Satz oder Halt");
+    // Einige darueber: sagen, aber vorlegen
+    const mitte = [...preise].sort((a, b) => a - b)[1];
+    if (Math.min(...preise) < mitte) {
+      r = lauf(mitte - 1);
+      if (r || !/über deinem Budget/.test(k.gesagt.join(" "))) melde("budget_teilweise_still", "Einzelne ueber dem Budget, aber nicht genannt");
+    }
+    // Bestaetigt: kein zweites Mal fragen
+    k.lauf = { protokoll: [], gespraech: [], budgetBestaetigt: Math.min(...preise) - 1 }; k.gesagt = [];
+    if (k.budgetVorVorlage(kand, { ...p0, budgetGesamt: Math.min(...preise) - 1 })) melde("budget_doppelt_gefragt", "Nach 'Trotzdem zeigen' wurde noch einmal gefragt");
+    return fehler;
+  },
+
   filterbitte() {
     const fehler = [];
     for (const f of this.FILTER_FAELLE) {
@@ -2037,6 +2069,7 @@ const Kernpruefung = {
     for (const f of this.filterbitte()) alle.push(f);
     for (const f of this.anhalt()) alle.push(f);
     for (const f of this.seitenstand()) alle.push(f);
+    for (const f of this.budgetVorlage()) alle.push(f);
     for (const f of this.budget()) alle.push(f);
     for (const f of this.vorschlagsset()) alle.push(f);
     for (const f of this.flughaefen()) alle.push(f);

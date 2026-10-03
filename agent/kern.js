@@ -964,6 +964,7 @@ const Kern = {
       return;
     }
     if (this.lauf.anhalt?.gesagt && this.anhaltAntwort(t, opts)) return;
+    if (this.lauf.budgetHalt && this.budgetAntwort(t, opts)) return;
     /* Jede neue Nachricht beendet das Anhalten - die Person spricht wieder
        mit dem Agenten. Ohne das liefe ein Zug, der ueber einen Sonderweg
        startet (Filter neu, Vorschlaege zeigen), sofort in den Halt. */
@@ -1230,6 +1231,7 @@ const Kern = {
         // einmal pro Zug, damit ein Fehlschlag keine Schleife wird.
         const letzte = this.lauf.gespraech[this.lauf.gespraech.length - 1];
         if (this.istAngehalten()) break;   // angehalten: kein Modellaufruf mehr, der Kern meldet sich
+        if (this.lauf.kernWartet) { this.lauf.kernWartet = false; break; }   // der Kern hat selbst gefragt
         let pflicht = i === 0 && letzte?.role === "user" ? "stand_merken" : false;
         if (i === 0 && this.lauf.fortsetzenMit) {
           const w = this.lauf.fortsetzenMit;
@@ -2423,6 +2425,8 @@ const Kern = {
        Haus auf Platz eins landet, entscheidet weiter die Auslosung
        (beste oder zweitbeste Option). DASS Platz eins das Etikett traegt,
        entscheidet niemand mehr - es steht da. */
+    const budgetHalt = this.budgetVorVorlage(kandidaten, p);
+    if (budgetHalt) return budgetHalt;
     const gruppeJetzt = typeof Studie !== "undefined" && Studie.daten && Studie.gruppe ? Studie.gruppe() : null;
     const partnerVorgesehen = !!gruppeJetzt && gruppeJetzt.partnerBesteIn !== "ohne";
     if (partnerVorgesehen && kandidaten.length && !kandidaten.some((k) => k.partner)) {
@@ -2705,6 +2709,84 @@ const Kern = {
       }
     }
     return aufbereitet.map((k, i) => ({ platz: i + 1, id: k.id, name: k.item.name, gesamt: k.gesamtText, note: k.item.rating }));
+  },
+
+  /* Ueber dem Budget wird nichts still vorgelegt.
+     ------------------------------------------------------------------
+     Gemeldet am 03.10.2026: Budget 3.500 Euro, alle vier Vorschlaege
+     zwischen 3.635 und 3.899 Euro - und im Chat "vier passende Hotels,
+     die deinen Wuenschen entsprechen". Der Nutzer: Das haette gesagt
+     werden muessen und nicht einfach so erstellt werden duerfen.
+
+     Gerechnet wird mit genau der Zahl, die auf der Karte steht
+     (Aufenthalt plus Flug). Liegen alle darueber, fragt der Kern, bevor
+     etwas erscheint. Liegen nur einzelne darueber, sagt er welche, und
+     legt vor. Das Budget hebt er nie selbst an - es ist der Massstab der
+     Ergebnisguete. */
+  kartenGesamt(item, p) {
+    const naechte = p.naechte || null;
+    if (!naechte || !item) return null;
+    const personen = (p.erwachsene || 0) + (p.kinder || 0);
+    const preis = Werkzeugkasten.preis(item, p.monat);
+    const aufenthalt = Politik.aufenthaltspreis(item, p, preis).gesamt;
+    const paket = p.flug && item.type !== "apartment" && typeof Flug !== "undefined" ? Flug.paket(item, personen || 1, p.flugKlasse || null) : null;
+    return aufenthalt + (paket?.gesamt || 0);
+  },
+
+  budgetVorVorlage(kandidaten, p) {
+    const budget = p.budgetGesamt;
+    if (!budget || !p.naechte || !kandidaten.length) return null;
+    const preise = kandidaten.map((k) => ({ k, gesamt: this.kartenGesamt(k.item || getItemById(k.id), p) }))
+      .filter((x) => Number.isFinite(x.gesamt));
+    if (!preise.length) return null;
+    const ueber = preise.filter((x) => x.gesamt > budget);
+    if (!ueber.length) return null;
+    const euro = (x) => Politik.euro(Math.round(x));
+    const name = (x) => (x.k.item || getItemById(x.k.id))?.name || x.k.id;
+    if (ueber.length === preise.length && this.lauf.budgetBestaetigt !== budget) {
+      const billig = Math.min(...preise.map((x) => x.gesamt));
+      const satz = `Bevor ich dir die Vorschläge zeige: Keines der passenden Häuser liegt in deinem Budget von ${euro(budget)}. `
+        + `Das günstigste kostet ${euro(billig)} für ${p.naechte} Nächte${p.flug ? " mit Flug" : ""}. `
+        + "Soll ich sie dir trotzdem zeigen, oder ändern wir etwas am Budget oder an den Vorgaben?";
+      this.sagen(satz);
+      this.gespraechPush({ role: "assistant", content: satz });
+      this.lauf.budgetHalt = { ids: kandidaten.map((k) => k.id), budget };
+      this.lauf.chips = ["Trotzdem zeigen", "Budget erhöhen", "Vorgaben ändern"];
+      AgentPanel.setSuggestions(this.lauf.chips);
+      this.lauf.kernWartet = true;
+      this.notieren("budget_halt", { budget, guenstigstes: Math.round(billig), ids: this.lauf.budgetHalt.ids });
+      this.sichern();
+      return { ergebnis: { nichtVorgelegt: true, grund: "alle ueber dem Budget",
+        hinweis: "Der Chat hat die Person gefragt, ob sie die Haeuser trotzdem sehen will. Schreib nichts dazu." } };
+    }
+    if (ueber.length < preise.length) {
+      const namen = ueber.map(name);
+      this.sagen(`${namen.length === 1 ? namen[0] + " liegt" : namen.slice(0, -1).join(", ") + " und " + namen.at(-1) + " liegen"} über deinem Budget von ${euro(budget)}.`);
+      this.notieren("budget_teilweise", { budget, ueber: ueber.map((x) => x.k.id) });
+    }
+    return null;
+  },
+
+  /* Die Antwort auf die Budgetfrage vor der Vorlage. true: erledigt. */
+  budgetAntwort(t, opts = {}) {
+    const h = this.lauf.budgetHalt;
+    this.lauf.budgetHalt = null;
+    const satz = String(t).toLowerCase();
+    if (/trotzdem|zeig/.test(satz) && !/nicht/.test(satz)) {
+      if (!opts.gezeigt) this.sagen(t, "user");
+      this.gespraechPush({ role: "user", content: t });
+      this.lauf.budgetBestaetigt = h.budget;
+      this.notieren("budget_trotzdem", { budget: h.budget });
+      this.auswahlVorlegen(h.ids).then((v) => {
+        const liste = Array.isArray(v) ? v : [];
+        if (liste.length) this.gespraechPush({ role: "assistant", content: `Vorgelegt (über dem Budget, auf Wunsch): ${liste.map((x) => `${x.name} ${x.gesamt}`).join(", ")}.` });
+        this.vorschlaegeMerken?.();
+        this.sichern();
+      });
+      return true;
+    }
+    this.notieren("budget_halt_antwort", { text: String(t).slice(0, 60) });
+    return false;   // "Budget erhoehen", "Vorgaben aendern" oder etwas Neues: normaler Weg
   },
 
   /* Die Vorschlaege noch einmal zeigen.
