@@ -1400,9 +1400,24 @@ const Werkzeugkasten = {
      selbst gesagt hat (`vonPerson`), bleibt unangetastet. */
   SELBST_ANNAHME: { dauer: ["naechte"], reisende: ["personen", "erwachsene", "kinder"],
     kinderAlter: ["kinderAlter"], flug: ["flug"], flugKlasse: ["flugKlasse"],
-    anreise: ["anreise"], preis: ["maxPreis", "budgetGesamt", "preisEgal"] },
+    anreise: ["anreise"], preis: ["maxPreis", "budgetGesamt", "preisEgal"], zeit: ["monat"] },
 
   SELBST_LESEN: {
+    /* Ein Monatsname auf die Frage nach der Zeit (03.10.2026).
+       Eindeutig genug, um ihn ohne Modell zu lesen: genau ein Monat,
+       keine Verneinung. Sonst bleibt es beim Modell. Eine Jahreszeit
+       allein wird vermerkt, ein Monat ist sie noch nicht. */
+    zeit(t, p, wk) {
+      if (/\b(nicht|kein|keine|au(ß|ss)er|ohne)\b/.test(t)) return null;
+      const namen = Object.keys(wk.MONATSWORT).filter((w) => w.length >= 4 || w === "mai");
+      const gefunden = [...new Set(namen.filter((w) => new RegExp(`(^|[^a-zäöüß])${w}([^a-zäöüß]|$)`).test(t)).map((w) => wk.MONATSWORT[w]))];
+      if (gefunden.length === 1) return { monat: gefunden[0] };
+      if (!gefunden.length) {
+        const jz = wk.jahreszeitGenannt({ gespraech: [{ role: "user", content: t }] });
+        if (jz && !p.jahreszeit) return { jahreszeit: jz.name };
+      }
+      return null;
+    },
     /* "9", "neun", "9 Nächte", "neun Übernachtungen", "eine Woche",
        "zwei Wochen", "10 Tage". Tage zählen wie Nächte: Der Agent sagt
        die Zahl gleich danach zurück, und wer es anders meint, korrigiert
