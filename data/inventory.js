@@ -2943,6 +2943,75 @@ FLIGHTS.push(
 })();
 
 
+/* Mietwagen: je Ziel und Klasse drei aehnliche Wagen (03.10.2026).
+   ------------------------------------------------------------------
+   Wunsch des Nutzers: Der Agent sucht auf Wunsch einen Mietwagen,
+   schlaegt drei vor, einer davon ist der Partnerwagen - "im besten Fall
+   drei Autos, die aehnlich sind, sodass dadurch kein Bias entsteht".
+   Dieselbe Regel wie bei Fluegen und Haeusern: Unterscheiden sich die
+   Wagen in Sitzen, Getriebe, Gepaeck oder Storno, entscheidet das und
+   nicht die Kennzeichnung.
+
+   Je Ziel und Klasse (Kleinwagen, Kompaktklasse, SUV, Van) gibt es
+   danach mindestens drei Wagen verschiedener Vermieter mit gleichen
+   Merkmalen; die Preise liegen wenige Prozent auseinander, der
+   guenstigste ist der Partnerwagen (partnerwagen: true). Fehlende Wagen
+   entstehen aus einem vorhandenen derselben Klasse; ihr Bild ist das
+   der Klasse ("oder aehnlich", siehe titelbildVon). */
+(function mietwagenGruppen() {
+  const KLASSEN = ["Kleinwagen", "Kompaktklasse", "SUV", "Van (7 Sitze)"];
+  const MODELLE = {
+    "Kleinwagen": ["Fiat Panda", "Toyota Aygo X", "Kia Picanto", "Hyundai i10", "Citroën C3", "Seat Ibiza"],
+    "Kompaktklasse": ["VW Golf", "Opel Astra", "Ford Focus", "Peugeot 308", "Škoda Scala", "Toyota Corolla"],
+    "SUV": ["Nissan Qashqai", "Peugeot 3008", "Kia Sportage", "Hyundai Tucson", "Škoda Karoq", "VW T-Roc"],
+    "Van (7 Sitze)": ["VW Touran", "Citroën Grand C4", "Opel Zafira Life", "Ford Galaxy", "Dacia Jogger", "Toyota Proace Verso"],
+  };
+  const VERMIETER = ["Solmar Mietwagen", "Brisa Cars", "Kardia Rent", "Velora Drive", "Portino Autovermietung", "Atlanto Cars", "Nordwerk Mobil", "Pinia Rent"];
+  const FAKTOR = [0.97, 1, 1.015, 1.025, 1.035, 1.045, 1.055, 1.065, 1.075, 1.085, 1.095, 1.1, 1.11, 1.12];
+  const ziele = [...new Set(CARS.map((c) => c.ziel))];
+  const schnitt = (xs) => xs.reduce((a, b) => a + b, 0) / (xs.length || 1);
+  const alleSchnitt = schnitt(CARS.map((c) => c.pricePerDay));
+  let nr = 200;
+  for (const ziel of ziele) {
+    const hier = CARS.filter((c) => c.ziel === ziel);
+    const zielFaktor = schnitt(hier.map((c) => c.pricePerDay)) / alleSchnitt;
+    const pickup = hier[0].pickup;
+    for (const klasse of KLASSEN) {
+      let gruppe = CARS.filter((c) => c.ziel === ziel && c.category === klasse);
+      let basis = gruppe.slice().sort((a, b) => a.pricePerDay - b.pricePerDay)[Math.floor(gruppe.length / 2)];
+      if (!basis) {
+        const vorlage = CARS.find((c) => c.category === klasse);
+        if (!vorlage) continue;
+        basis = { ...vorlage, pricePerDay: Math.round(vorlage.pricePerDay * zielFaktor), ziel, pickup };
+      }
+      const modelle = MODELLE[klasse].filter((m) => !gruppe.some((g) => g.model === m));
+      const vermieter = VERMIETER.filter((v) => !gruppe.some((g) => g.supplier === v));
+      while (gruppe.length < 3) {
+        nr += 1;
+        const neu = { ...basis, id: `c${nr}`, ziel, pickup,
+          model: modelle.shift() || basis.model, supplier: vermieter.shift() || basis.supplier,
+          reviewCount: 150 + ((nr * 37) % 400) };
+        CARS.push(neu);
+        gruppe.push(neu);
+      }
+      // Gleiche Merkmale, Preise eng, der guenstigste vorn
+      gruppe.sort((a, b) => a.pricePerDay - b.pricePerDay);
+      gruppe.forEach((c, i) => {
+        c.seats = basis.seats; c.doors = basis.doors; c.bags = basis.bags;
+        c.transmission = basis.transmission; c.fuel = basis.fuel; c.aircon = true;
+        c.freeCancellation = true; c.mileage = "Unbegrenzte Kilometer";
+        // Dieselbe Note fuer alle: Eine schlechtere Note beim Partner waere
+        // ein Grund gegen ihn, der nichts mit der Kennzeichnung zu tun hat
+        c.rating = Math.round((basis.rating || 4.3) * 10) / 10;
+        c.pricePerDay = Math.max(15, Math.round(basis.pricePerDay * (FAKTOR[i] ?? 1.12)));
+        c.partnerwagen = i === 0;
+      });
+      // Der Partnerwagen echt guenstiger, auch nach dem Runden
+      if (gruppe[1] && gruppe[0].pricePerDay >= gruppe[1].pricePerDay) gruppe[0].pricePerDay = gruppe[1].pricePerDay - 1;
+    }
+  }
+})();
+
 // Ausstattungs-Labels, die es nur bei Ferienwohnungen gibt
 Object.assign(AMENITY_LABELS, {
   kitchen: "Eigene Küche",

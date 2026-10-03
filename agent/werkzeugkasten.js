@@ -286,6 +286,13 @@ const Werkzeugkasten = {
         { monat: zahl("Neuer Reisemonat 1-12"), anreise: text("Neuer Anreisetag als YYYY-MM-DD, nur wenn die Person einen Tag nennt"),
           naechte: zahl("Neue Zahl der Naechte"), id: text("Haus-id, wenn es um ein bestimmtes Haus geht (sonst das offene)"),
           nurPruefen: { type: "boolean", description: "true = nur nachsehen, ob und zu welchem Preis das Haus mit diesen Daten buchbar ist" } }),
+      /* Mietwagen auf Wunsch (03.10.2026): Reiter oeffnen, suchen, drei
+         aehnliche Wagen im Fenster, einer davon der Partnerwagen. */
+      f("mietwagen_suchen",
+        "Sucht auf Wunsch der Person einen Mietwagen am Reiseziel: oeffnet den Reiter Mietwagen, stellt die Klasse ein und zeigt drei aehnliche Wagen in einem Fenster, aus dem die Person waehlt. "
+        + "Nur, wenn die Person einen Mietwagen will oder auf dein einmaliges Angebot ja sagt. Der Wagen wird getrennt von der Unterkunft gebucht.",
+        { klasse: { type: "string", enum: ["Kleinwagen", "Kompaktklasse", "SUV", "Van (7 Sitze)"], description: "Nur, wenn die Person eine Klasse nennt; sonst waehlt der Kern nach der Zahl der Reisenden" },
+          ziel: text("Region-id, wenn noch kein Ziel feststeht und die Person eins nennt") }),
       f("zurueck_zur_liste",
         "Geht von einer Hausseite zurueck zur Trefferliste (Freigabe ab 'suchen').",
         {}),
@@ -333,7 +340,7 @@ const Werkzeugkasten = {
   BRAUCHT: {
     haus_oeffnen: "suchen", zurueck_zur_liste: "suchen", merken: "suchen",
     haeuser_ansehen: "suchen", stichprobe_nehmen: "suchen", monate_vergleichen: "suchen",
-    bewertungen_durchsuchen: "suchen", reisedaten_aendern: "suchen",
+    bewertungen_durchsuchen: "suchen", reisedaten_aendern: "suchen", mietwagen_suchen: "suchen",
     buchung_vorbereiten: "vorbereiten", buchung_abschliessen: "vorbereiten",
     formular_ausfuellen: "vorbereiten", kasse_aendern: "vorbereiten",
   },
@@ -383,6 +390,7 @@ const Werkzeugkasten = {
       case "buchung_vorbereiten": return `Bereite die Buchung für ${haus(a.id)} vor`;
       case "bewertungen_durchsuchen": return `Suche in den Bewertungen nach „${a?.begriff || "dem Stichwort"}“`;
       case "faq_nachschlagen": return "Schlage im FAQ nach";
+      case "mietwagen_suchen": return "Suche einen Mietwagen";
       case "reisedaten_aendern": return a?.nurPruefen ? "Prüfe die Reisedaten" : "Ändere die Reisedaten";
       case "formular_ausfuellen": return "Fülle das Buchungsformular aus";
       case "kasse_aendern": return a.nachsehen ? "Sehe in der Kasse nach" : "Ändere die Kasse";
@@ -3954,6 +3962,51 @@ const Werkzeugkasten = {
         },
         log: `Im FAQ nachgesehen: ${treffer.map((t) => t.frage).slice(0, 2).join(" / ")}`,
       };
+    },
+
+    /* Mietwagen suchen - siehe die Definition oben. Stufe 1 oeffnet den
+       Reiter am Ziel, Stufe 2 stellt die Klasse sichtbar ein, faehrt die
+       Liste ab und zeigt das Fenster mit drei Wagen. */
+    async mietwagen_suchen(a, kern, stufe) {
+      const p = kern.lauf.profil || {};
+      const urlId = new URLSearchParams(location.search).get("id");
+      const haus = (urlId && getItemById(urlId)) || (kern.lauf.gewaehlt && getItemById(kern.lauf.gewaehlt)) || null;
+      const ziel = a.ziel || haus?.ziel || p.zielId || (kern.lauf.letzteVorlage?.length ? getItemById(kern.lauf.letzteVorlage[0])?.ziel : null);
+      if (!ziel) return { ergebnis: { fehler: "Das Ziel steht noch nicht fest.", hinweis: "Frag, wohin es geht - erst dann gibt es Mietwagen dort." } };
+      const personen = Math.max(1, (p.erwachsene || 0) + (p.kinder || 0));
+      const klasse = a.klasse || (typeof Mietwagen !== "undefined" ? Mietwagen.klasseFuer(personen) : "Kompaktklasse");
+      const tage = p.naechte || 7;
+      if (stufe === 1 && !(Werkzeuge.seite() === "results" && new URLSearchParams(location.search).get("type") === "car")) {
+        kern.lauf.mietwagenSuche = { ziel, klasse, zurueck: location.href };
+        kern.notieren("mietwagen_suche", { ziel, klasse, personen });
+        kern.sperreAn();
+        kern.sichern();
+        await Zeiger.warte(300);
+        let href = `results.html?type=car&ziel=${encodeURIComponent(ziel)}`;
+        if (typeof Reisedaten !== "undefined") href = Reisedaten.anLink(href);
+        location.href = href;
+        return { navigiert: true, stufe: 2 };
+      }
+      // Auf dem Reiter: Klasse sichtbar ankreuzen, Liste ansehen
+      kern.sperreAn();
+      const box = [...document.querySelectorAll(".js-carcat")].find((x) => x.value === klasse || x.dataset.value === klasse);
+      if (box && !box.checked) await Werkzeuge.klickeFilterZeile(box, klasse);
+      await Zeiger.warte(400);
+      try { await Werkzeuge.ergebnisseLesen(3); } catch { /* Liste ohne Leser */ }
+      kern.sperreAus();
+      const wagen = typeof Mietwagen !== "undefined" ? Mietwagen.kandidaten(ziel, klasse) : [];
+      if (wagen.length < 2) return { ergebnis: { fehler: `Am Ziel gibt es in der Klasse ${klasse} gerade keine Auswahl.` } };
+      const kennzeichnung = kern.kennzeichnung();
+      const kandidaten = wagen.map((c) => ({ id: c.id, wagen: c, partner: !!c.partnerwagen,
+        preisText: `${(c.pricePerDay * tage).toLocaleString("de-DE")} €`, tageText: `${c.pricePerDay} € pro Tag` }));
+      const zName = (typeof ZIEL_NACH_ID !== "undefined" && ZIEL_NACH_ID[ziel]?.name) || ziel;
+      kern.sagen(`Ich habe dir drei ähnliche Wagen der Klasse ${klasse} in ${zName} herausgesucht, alle mit ${wagen[0].seats} Sitzen und ${wagen[0].transmission}. Wähl im Fenster einfach einen aus.`);
+      Mietwagen.zeigen(kandidaten, kern, { kennzeichnung, kontext: `${zName} · ${tage} Tage · ${klasse}`, tage });
+      kern.lauf.mietwagenSuche = null;
+      kern.sichern();
+      return { ergebnis: { gezeigt: kandidaten.map((k) => ({ id: k.id, modell: k.wagen.model, vermieter: k.wagen.supplier, proTag: k.wagen.pricePerDay })),
+        hinweis: "Die drei Wagen stehen im Fenster, und der Satz dazu steht schon im Chat. Schreib nichts dazu und empfiehl keinen - die Person waehlt selbst." },
+        log: `Mietwagen: ${klasse} in ${zName}, ${kandidaten.length} Wagen gezeigt` };
     },
 
     /* Reisedaten aendern - siehe die Definition oben. Zwei Stufen: erst

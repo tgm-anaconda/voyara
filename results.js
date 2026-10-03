@@ -672,6 +672,16 @@ function stayResultCard(item) {
 </div>`;
 }
 
+/* Der Partnerwagen traegt hier dasselbe Etikett wie im Fenster des
+   Agenten (agent/mietwagen.js) - sonst haenge die Kennzeichnung davon
+   ab, ob jemand den Agenten benutzt oder selbst in der Liste waehlt. */
+function carPartnerEtikett(car) {
+  if (!car.partnerwagen) return "";
+  const k = typeof Kern !== "undefined" && Kern.kennzeichnung ? Kern.kennzeichnung() : "etikett";
+  if (k === "ohne") return "";
+  return ` <span class="tag" style="background:#fdf3e1;border-color:#e0a94e;color:#8a5a12">Partner-Vermieter</span>`;
+}
+
 function carResultCard(car) {
   return `
 <div class="result-card compact">
@@ -679,7 +689,7 @@ function carResultCard(car) {
   <div class="result-body">
     <div class="result-main">
       <div class="hotel-name" style="font-size:1.08rem">${car.model}${typeof bildIstStellvertreter === "function" && bildIstStellvertreter(car.id) ? ` <span class="hint" style="font-weight:400">oder ähnlich</span>` : ""}</div>
-      <div class="hotel-loc">${ICONS.pin}${car.pickup} · ${car.supplier}</div>
+      <div class="hotel-loc">${ICONS.pin}${car.pickup} · ${car.supplier}${carPartnerEtikett(car)}</div>
       <div class="spec-row">
         <span>${ICONS.users}${car.seats} Sitze</span>
         <span>${ICONS.luggage}${car.bags} Koffer</span>
