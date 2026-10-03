@@ -1078,6 +1078,13 @@ const Studie = {
         [p + "warumKlicks"]: zaehle(protokoll, "warum"),
         [p + "gesperrt"]: zaehle(protokoll, "gesperrt"),
         [p + "uebernahmen"]: zaehle(protokoll, "uebernahme"),
+        /* Nach dem Anhalten (seit 03.10.2026): was die Person danach
+           waehlt - zurueck an den Agenten, selbst weiter, oder etwas
+           aendern. Dazu, wie oft ein kaputter Verlauf geflickt wurde. */
+        [p + "anhaltWeiter"]: zaehle(protokoll, "anhalt_weiter"),
+        [p + "anhaltSelbst"]: zaehle(protokoll, "anhalt_selbst"),
+        [p + "anhaltAendern"]: zaehle(protokoll, "anhalt_aendern"),
+        [p + "verlaufGeflickt"]: zaehle(protokoll, "verlauf_geflickt"),
         // Fahrplan (seit 20.09.2026): gefragte Themen, Wahl zwischen Top 3
         // und Selbst-Schauen, Korrekturen der Suchmaske
         [p + "themenGefragt"]: protokoll.filter((e) => e.ereignis === "thema_gefragt").map((e) => e.thema).join(","),

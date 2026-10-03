@@ -2345,13 +2345,20 @@ body.vorschlag-offen { overflow: hidden; }
 @media (max-width: 420px) { .bw-flug-wahl { flex-direction: column; align-items: stretch; } }
 
 /* ---------- FAQ-Seite ---------- */
+/* Feste Spalte. .wrap steht in einer Flex-Spalte und hat margin: auto -
+   damit nahm es nur so viel Breite, wie der Inhalt verlangte: zugeklappt
+   die Fragen (rund 520 px), aufgeklappt der Antworttext (rund 1.000 px).
+   Jedes Aufklappen baute die Seite um. Jetzt immer dieselbe Breite, und
+   eine Antwort oeffnet nur nach unten. */
+.wrap.faq-seite { width: 100%; max-width: 880px; }
 .faq-suche { margin: 0 0 18px; max-width: 460px; }
 .faq-gruppe { margin-bottom: 26px; }
 .faq-gruppe h2 {
   font-size: 1.02rem; color: var(--brand-900); margin: 0 0 10px;
   display: flex; align-items: center; gap: 8px;
 }
-.faq-gruppe h2 span { font-size: .95rem; opacity: .7; }
+.faq-gruppe h2 span { display: inline-flex; color: var(--brand-700); }
+.faq-gruppe h2 span svg { width: 17px; height: 17px; }
 .faq-eintrag {
   border: 1px solid var(--line); border-radius: 10px;
   padding: 11px 14px; margin-bottom: 7px; background: #fff;

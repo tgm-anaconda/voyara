@@ -784,6 +784,113 @@ const Kernpruefung = {
     { text: "", soll: false },
   ],
 
+  /* Angehalten - und die Antwort darauf.
+     ------------------------------------------------------------------
+     Gemeldet am 03.10.2026: Agent waehrend der Suche angehalten, danach
+     kein Wort, und "mach weiter" ergab "Da ist gerade etwas
+     schiefgegangen". Geprueft wird dreierlei: Jede Karte unter der
+     Meldung fuehrt in den Zweig, den sie verspricht; freie Antworten
+     werden richtig gelesen; und ein Verlauf mit fehlendem oder
+     dazwischengeratenem Werkzeugergebnis geht geflickt raus. */
+  ANHALT_FAELLE: [
+    { text: "Weitermachen", soll: "weiter" },
+    { text: "mach weiter", soll: "weiter" },
+    { text: "Mach bitte weiter!", soll: "weiter" },
+    { text: "ja, weiter", soll: "weiter" },
+    { text: "Suche fortsetzen", soll: "weiter" },
+    { text: "such weiter", soll: "weiter" },
+    { text: "Doch buchen", soll: "weiter" },
+    { text: "Ich suche selbst weiter", soll: "selbst" },
+    { text: "ich mach das lieber selber", soll: "selbst" },
+    { text: "ich schau allein", soll: "selbst" },
+    { text: "Ich möchte etwas ändern", soll: "aendern" },
+    { text: "Nicht buchen", soll: "aendern" },
+    { text: "nimm lieber Kreta", soll: "neu" },
+    { text: "warum hast du Mallorca genommen?", soll: "neu" },
+    { text: "das Budget ist doch 3000 Euro", soll: "neu" },
+  ],
+
+  anhalt() {
+    const fehler = [];
+    const melde = (art, text, satz = "") => fehler.push({ art, text, thema: "anhalt", satz });
+    if (typeof Kern === "undefined" || !Kern.anhaltAntwort) { melde("anhalt_fehlt", "Kern.anhaltAntwort fehlt"); return fehler; }
+    const attrappe = () => {
+      const k = Object.create(Kern);
+      k.lauf = { gespraech: [], anhalt: null, profil: {} };
+      k.laeuft = false;
+      k.gesagt = [];
+      k.sagen = (t, r = "bot") => { if (r === "bot") k.gesagt.push(t); };
+      k.notieren = () => {};
+      k.sichern = () => {};
+      k.gespraechPush = (n) => k.lauf.gespraech.push(n);
+      return k;
+    };
+    const lies = (text, werkzeug = "suchen") => {
+      const k = attrappe();
+      k.lauf.anhalt = { werkzeug, gesagt: true };
+      const erledigt = k.anhaltAntwort(text);
+      if (k.lauf.fortsetzenMit) return "weiter";
+      if (!erledigt) return "neu";
+      return /stattdessen|anders machen/.test(k.gesagt.join(" ")) ? "aendern" : "selbst";
+    };
+    for (const f of this.ANHALT_FAELLE) {
+      const ist = lies(f.text, f.text === "Doch buchen" ? "buchung_abschliessen" : "suchen");
+      if (ist !== f.soll) melde("anhalt_falsch_gelesen", `"${f.text}" wird als ${ist} gelesen, gemeint ist ${f.soll}`, f.text);
+    }
+    // Die Meldung selbst: genau eine Frage, und jede Karte haelt, was sie sagt
+    for (const werkzeug of ["suchen", "haeuser_ansehen", "buchung_abschliessen", null]) {
+      const k = attrappe();
+      k.lauf.anhalt = { werkzeug, gesagt: false, untaetig: werkzeug === null };
+      k.anhaltMelden();
+      const satz = k.gesagt.join(" ");
+      if ((satz.match(/\?/g) || []).length !== 1) melde("anhalt_fragen", `Meldung bei ${werkzeug} hat nicht genau ein Fragezeichen`, satz);
+      if (!(k.lauf.chips || []).length) melde("anhalt_ohne_karten", `Meldung bei ${werkzeug} ohne Karten`, satz);
+      if (k.lauf.gespraech.at(-1)?.role !== "assistant") melde("anhalt_nicht_im_verlauf", "Die Meldung steht nicht im Verlauf - das Modell wuesste nichts davon", satz);
+      const erwartet = { "Weitermachen": "weiter", "Doch buchen": "weiter", "Ich suche selbst weiter": "selbst",
+        "Ich möchte etwas ändern": "aendern", "Nicht buchen": "aendern" };
+      for (const chip of k.lauf.chips || []) {
+        const ist = lies(chip, werkzeug || "suchen");
+        if (erwartet[chip] && ist !== erwartet[chip]) melde("anhalt_karte_falsch", `Karte "${chip}" fuehrt zu ${ist} statt ${erwartet[chip]}`, chip);
+      }
+      // Zweites Melden darf nichts sagen
+      const vorher = k.gesagt.length;
+      k.anhaltMelden();
+      if (k.gesagt.length !== vorher) melde("anhalt_doppelt", "Das Anhalten wurde zweimal gemeldet", satz);
+    }
+    // Der Verlauf: was die Schnittstelle annimmt
+    const k = attrappe();
+    const gueltig = (liste) => {
+      for (let i = 0; i < liste.length; i++) {
+        const n = liste[i];
+        if (n.role === "tool" && !(liste[i - 1]?.role === "tool" || liste[i - 1]?.tool_calls)) return `verwaistes Ergebnis an Stelle ${i}`;
+        if (n.tool_calls?.length) {
+          const ids = n.tool_calls.map((c) => c.id);
+          const folgend = liste.slice(i + 1, i + 1 + ids.length);
+          if (folgend.length !== ids.length || folgend.some((m) => m.role !== "tool" || !ids.includes(m.tool_call_id))) return `Aufruf an Stelle ${i} ohne vollstaendige Ergebnisse direkt danach`;
+        }
+      }
+      return null;
+    };
+    const ruf = (id, name = "suchen") => ({ id, type: "function", function: { name, arguments: "{}" } });
+    const VERLAEUFE = [
+      { name: "fehlendes Ergebnis", liste: [{ role: "user", content: "a" }, { role: "assistant", content: null, tool_calls: [ruf("x1"), ruf("x2")] }, { role: "tool", tool_call_id: "x1", content: "{}" }] },
+      { name: "Stopp dazwischen", liste: [{ role: "user", content: "a" }, { role: "assistant", content: null, tool_calls: [ruf("y1")] }, { role: "user", content: "stopp" }, { role: "tool", tool_call_id: "y1", content: "{}" }] },
+      { name: "verwaistes Ergebnis", liste: [{ role: "user", content: "a" }, { role: "tool", tool_call_id: "z9", content: "{}" }, { role: "assistant", content: "ok" }] },
+      { name: "zwei Ketten, die erste offen", liste: [{ role: "assistant", content: null, tool_calls: [ruf("a1")] }, { role: "assistant", content: null, tool_calls: [ruf("b1")] }, { role: "tool", tool_call_id: "b1", content: "{}" }] },
+    ];
+    for (const v of VERLAEUFE) {
+      const raus = k.verlaufReparieren(v.liste);
+      const f = gueltig(raus);
+      if (f) melde("verlauf_ungueltig", `${v.name}: ${f}`);
+      const nutzer = (l) => l.filter((n) => n.role === "user").map((n) => n.content).join("|");
+      if (nutzer(raus) !== nutzer(v.liste)) melde("verlauf_nachricht_verloren", `${v.name}: eine Nachricht der Person ging verloren`);
+    }
+    // Ein heiler Verlauf bleibt, wie er ist
+    const heil = [{ role: "user", content: "a" }, { role: "assistant", content: null, tool_calls: [ruf("h1")] }, { role: "tool", tool_call_id: "h1", content: "{}" }, { role: "assistant", content: "fertig" }];
+    if (JSON.stringify(k.verlaufReparieren(heil)) !== JSON.stringify(heil)) melde("verlauf_veraendert", "Ein gueltiger Verlauf wurde veraendert");
+    return fehler;
+  },
+
   filterbitte() {
     const fehler = [];
     for (const f of this.FILTER_FAELLE) {
@@ -1895,6 +2002,7 @@ const Kernpruefung = {
     for (const f of this.art()) alle.push(f);
     for (const f of this.wortwahl()) alle.push(f);
     for (const f of this.filterbitte()) alle.push(f);
+    for (const f of this.anhalt()) alle.push(f);
     for (const f of this.budget()) alle.push(f);
     for (const f of this.vorschlagsset()) alle.push(f);
     for (const f of this.flughaefen()) alle.push(f);

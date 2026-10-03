@@ -845,6 +845,7 @@ const Kern = {
     if (grenzen) zeilen.push(grenzen);
     for (const block of this.regelnJetzt()) zeilen.push(block);
     if (this.lauf.phase === "angehalten") zeilen.push("Die Person hat waehrend deiner Arbeit selbst geklickt; du hast angehalten.");
+    if (this.lauf.fortsetzenHinweis) zeilen.push(`Die Person hatte dich angehalten und jetzt gesagt, dass du weitermachen sollst. Mach dort weiter, wo du warst (${this.lauf.fortsetzenHinweis}); sag nicht noch einmal, was du vorher schon gesagt hast.`);
     zeilen.push("Fuer deine naechste Antwort: hoechstens drei Saetze, genau eine Frage (nie zwei), und wenn du fragst, als letzte Zeile CHIPS: mit zwei bis vier Antworten.");
     return zeilen.join("\n");
   },
@@ -921,25 +922,36 @@ const Kern = {
   /* ==================================================================
      Eingang aus dem Panel
      ================================================================== */
-  async eingabe(text) {
+  async eingabe(text, opts = {}) {
     const t = String(text || "").trim();
     if (!t) return;
     if (/^stopp?$/i.test(t)) {
-      this.sagen(t, "user");
-      Zeiger.anhalten();
+      if (!opts.gezeigt) this.sagen(t, "user");
       this.notieren("stopp", { seite: Werkzeuge.seite() });
-      this.gespraechPush({ role: "user", content: t });
-      if (!this.laeuft) await this.zug();
+      /* Nicht sofort in den Verlauf.
+         ----------------------------------------------------------------
+         Waehrend der Agent arbeitet, steht im Verlauf ein Werkzeugaufruf,
+         dessen Ergebnis noch fehlt. Eine Nachricht der Person dazwischen
+         ergibt einen Verlauf, den die Schnittstelle ablehnt - bei jedem
+         weiteren Versuch, also endete jedes Gespraech danach mit "Da ist
+         gerade etwas schiefgegangen". Das "Stopp" kommt in den Verlauf,
+         wenn der Kern das Anhalten meldet (anhaltMelden). */
+      this.anhalten("stopp", t);
       return;
     }
     if (this.laeuft) {
       // Waehrend der Agent arbeitet, wird die Nachricht angehaengt und
       // nach dem laufenden Zug beantwortet
-      this.sagen(t, "user");
+      if (!opts.gezeigt) this.sagen(t, "user");
       this.lauf.nachtrag = (this.lauf.nachtrag || []).concat(t);
       this.sichern();
       return;
     }
+    if (this.lauf.anhalt?.gesagt && this.anhaltAntwort(t, opts)) return;
+    /* Jede neue Nachricht beendet das Anhalten - die Person spricht wieder
+       mit dem Agenten. Ohne das liefe ein Zug, der ueber einen Sonderweg
+       startet (Filter neu, Vorschlaege zeigen), sofort in den Halt. */
+    if (this.lauf.phase === "angehalten") { this.lauf.phase = "gespraech"; Zeiger.freigeben?.(); }
     if (!this.lauf.freigabeGewaehlt && STELLSCHRAUBEN.freigabeFrage === "erstoeffnung") {
       this.freigabeFragen();
       return;
@@ -949,12 +961,12 @@ const Kern = {
     const willSehen = (/(vorschl[aä]ge?|auswahl)\b/i.test(t) || /\bdie (drei|vier|fünf|fuenf|sechs)\b/i.test(t))
       && /(nochmal|noch einmal|wieder|zeig|sehen|ansehen|anschauen|zurück|zurueck|wo sind)/i.test(t);
     if (willSehen && (this.lauf.letzteVorlage || []).length) {
-      this.sagen(t, "user");
+      if (!opts.gezeigt) this.sagen(t, "user");
       this.gespraechPush({ role: "user", content: t });
       this.vorschlaegeNochmal("chip");
       return;
     }
-    this.sagen(t, "user");
+    if (!opts.gezeigt) this.sagen(t, "user");
     this.gespraechPush({ role: "user", content: t });
     // Merker des vorigen Zuges (Lage, Vorlage, Anreise-Chips) gelten nicht mehr.
     // Nicht am Anfang von zug() zuruecksetzen: die Suche wechselt die Seite,
@@ -1133,7 +1145,48 @@ const Kern = {
       liste = liste.slice(1);
       while (liste.length && (liste[0].role === "tool" || (liste[0].role === "assistant" && liste[0].tool_calls))) liste = liste.slice(1);
     }
-    return liste;
+    return this.verlaufReparieren(liste);
+  },
+
+  /* Ein Verlauf, den die Schnittstelle annimmt.
+     ------------------------------------------------------------------
+     Auf jeden Werkzeugaufruf muss sein Ergebnis folgen, bevor etwas
+     anderes kommt. Fehlt eines - ein Abbruch mitten in der Kette, eine
+     Nachricht, die dazwischengeriet -, lehnt die Schnittstelle den ganzen
+     Verlauf ab, und zwar bei jedem weiteren Versuch: Das Gespraech war
+     danach tot ("Da ist gerade etwas schiefgegangen"). Hier wird es
+     geflickt, bevor es rausgeht: fehlende Ergebnisse als "abgebrochen",
+     Dazwischengeratenes hinter die Ergebnisse, verwaiste Ergebnisse weg.
+     Gespeichert wird nichts davon; im Protokoll steht, dass es noetig war. */
+  verlaufReparieren(liste) {
+    const raus = [];
+    let geflickt = 0;
+    for (let i = 0; i < liste.length; i++) {
+      const n = liste[i];
+      if (n.role === "tool") { geflickt += 1; continue; }   // ohne Aufruf davor
+      raus.push(n);
+      if (n.role !== "assistant" || !n.tool_calls?.length) continue;
+      const offen = new Set(n.tool_calls.map((c) => c.id));
+      const dazwischen = [];
+      let j = i + 1;
+      while (j < liste.length && offen.size) {
+        const m = liste[j];
+        if (m.role === "tool" && offen.has(m.tool_call_id)) { raus.push(m); offen.delete(m.tool_call_id); }
+        else if (m.role === "tool") geflickt += 1;
+        else if (m.role === "assistant" && m.tool_calls?.length) break;
+        else dazwischen.push(m);
+        j += 1;
+      }
+      for (const id of offen) {
+        raus.push({ role: "tool", tool_call_id: id, content: JSON.stringify({ abgebrochen: true, hinweis: "Dieser Schritt wurde unterbrochen." }) });
+        geflickt += 1;
+      }
+      if (dazwischen.length) geflickt += dazwischen.length;
+      raus.push(...dazwischen);
+      i = j - 1;
+    }
+    if (geflickt) this.notieren("verlauf_geflickt", { stellen: geflickt });
+    return raus;
   },
 
   /* Ein Zug: Modell rufen, Werkzeuge ausfuehren, bis Text kommt. */
@@ -1160,7 +1213,14 @@ const Kern = {
         // Ueberblick, die erste Suche, die Suche nach der Beratung - je
         // einmal pro Zug, damit ein Fehlschlag keine Schleife wird.
         const letzte = this.lauf.gespraech[this.lauf.gespraech.length - 1];
+        if (this.istAngehalten()) break;   // angehalten: kein Modellaufruf mehr, der Kern meldet sich
         let pflicht = i === 0 && letzte?.role === "user" ? "stand_merken" : false;
+        if (i === 0 && this.lauf.fortsetzenMit) {
+          const w = this.lauf.fortsetzenMit;
+          this.lauf.fortsetzenMit = null;
+          const da = Werkzeugkasten.definitionen(this.freigabe()).some((d) => d.function?.name === w);
+          if (da) { pflicht = w; this.notieren("anhalt_fortgesetzt", { werkzeug: w }); }
+        }
         if (!pflicht) {
           /* Ein Werkzeug wird je Zug nur einmal erzwungen - sonst wird aus
              einem Fehlschlag eine Schleife. Manchmal aendert ein Schritt
@@ -2111,9 +2171,17 @@ const Kern = {
     if (this.lauf.abgeleitet?.length && !this.lauf.ausstehend) this.lauf.abgeleitet = [];
     this.sichern();
     setTimeout(() => { if (!this.laeuft) Zeiger.verbergen(); }, 900);
+    this.lauf.fortsetzenHinweis = null;
+    if (this.lauf.anhalt && !this.lauf.anhalt.gesagt && !this.lauf.ausstehend) this.anhaltMelden();
     // Nachricht, die waehrend der Arbeit kam
     const nachtrag = this.lauf.nachtrag || [];
-    if (nachtrag.length) {
+    if (nachtrag.length && this.lauf.anhalt?.gesagt) {
+      /* Nach dem Anhalten geht sie durch dieselbe Auswertung wie eine
+         neue Nachricht - sonst liefe "mach weiter" ins Leere. Angezeigt
+         ist sie schon. */
+      this.lauf.nachtrag = [];
+      setTimeout(() => nachtrag.forEach((t) => this.eingabe(t, { gezeigt: true })), 300);
+    } else if (nachtrag.length) {
       this.lauf.nachtrag = [];
       for (const t of nachtrag) this.gespraechPush({ role: "user", content: t });
       setTimeout(() => this.zug(), 300);
@@ -2180,7 +2248,7 @@ const Kern = {
         AgentPanel.status(zeile ? `${zeile.charAt(0).toLowerCase()}${zeile.slice(1)}…` : "arbeitet…");
       }
       let r;
-      if (Zeiger.abbruch) {
+      if (this.istAngehalten()) {
         r = { ergebnis: { abgebrochen: true, hinweis: "Die Person hat selbst uebernommen oder Stopp gesagt. Frag kurz, wie es weitergehen soll." } };
       } else {
         r = await Werkzeugkasten.ausfuehren(call.function.name, args, this, a.stufe);
@@ -2779,12 +2847,144 @@ const Kern = {
   },
 
   uebernahme() {
+    this.notieren("uebernahme", { seite: Werkzeuge.seite() });
+    this.anhalten("knopf");
+  },
+
+  /* ==================================================================
+     Angehalten - und dann?
+     ------------------------------------------------------------------
+     Gemeldet am 03.10.2026: Der Agent wurde waehrend der Suche
+     angehalten, danach kam kein Wort mehr, und "mach weiter" ergab
+     "Da ist gerade etwas schiefgegangen". Drei Ursachen:
+
+     1. Wer sich meldet, war dem Modell ueberlassen ("frag kurz, wie es
+        weitergehen soll" im Werkzeugergebnis). Dessen Text geht durch
+        den Vertrag fuer die Nachricht und fiel dort oft ganz weg.
+     2. Der Merker `Zeiger.abbruch` lebt nur bis zum naechsten Laden der
+        Seite. Lief die Werkzeugkette ueber einen Seitenwechsel, machte
+        sie danach einfach weiter.
+     3. Ein getipptes "Stopp" landete im Verlauf zwischen Werkzeugaufruf
+        und Ergebnis - ein Verlauf, den die Schnittstelle ablehnt.
+
+     Jetzt gilt: Angehalten heisst, das Modell wird in diesem Zug nicht
+     mehr gerufen. Der Kern sagt selbst, dass er angehalten hat, und
+     bietet drei Wege an: weitermachen (dasselbe Werkzeug noch einmal),
+     selbst weitersuchen, etwas aendern. Was die Person waehlt, steht im
+     Protokoll - fuer die Erhebung ist das eine Entscheidung ueber die
+     Kontrolle, genau wie die Uebernahme selbst.
+     ================================================================== */
+  istAngehalten() {
+    return Zeiger.abbruch || this.lauf.phase === "angehalten";
+  },
+
+  anhalten(quelle, text = null) {
     Zeiger.anhalten();
     this.sperreAus();
+    const a = this.lauf.ausstehend;
+    const werkzeug = a?.calls?.[a.i]?.function?.name || this.lauf.letztesWerkzeug || null;
+    if (!this.lauf.anhalt || this.lauf.anhalt.gesagt) {
+      // untaetig: "Stopp" kam, als gar nichts lief - dann gibt es keine
+      // Taetigkeit, die er nennen koennte
+      const untaetig = !this.laeuft && !this.lauf.ausstehend;
+      this.lauf.anhalt = { werkzeug: untaetig ? null : werkzeug, seite: Werkzeuge.seite(), quelle, text, untaetig, gesagt: false };
+    }
     this.lauf.phase = "angehalten";
-    this.notieren("uebernahme", { seite: Werkzeuge.seite() });
     AgentPanel.status("angehalten · du hast übernommen");
     this.sichern();
+    // Arbeitet gerade nichts (und wartet keine Kette auf das Laden der
+    // Seite), meldet sich der Kern sofort - sonst am Ende des Zuges.
+    if (!this.laeuft && !this.lauf.ausstehend) this.anhaltMelden();
+  },
+
+  ANHALT_TAETIGKEIT: {
+    suchen: "die Suche eingestellt habe",
+    regionen_zaehlen: "die Regionen durchgezählt habe",
+    regionen_vergleichen: "die Regionen verglichen habe",
+    monate_vergleichen: "die Monate verglichen habe",
+    stichprobe_nehmen: "mir Häuser von innen angesehen habe",
+    haeuser_ansehen: "die Häuser durchgegangen bin",
+    haus_details: "mir ein Haus genauer angesehen habe",
+    haus_oeffnen: "ein Haus geöffnet habe",
+    bewertungen_lesen: "die Bewertungen gelesen habe",
+    bewertungen_durchsuchen: "die Bewertungen durchsucht habe",
+    auswahl_vorlegen: "die Vorschläge zusammengestellt habe",
+    buchung_vorbereiten: "die Buchung vorbereitet habe",
+    formular_ausfuellen: "das Formular ausgefüllt habe",
+    faq_nachschlagen: "im FAQ nachgeschlagen habe",
+  },
+
+  anhaltMelden() {
+    const h = this.lauf.anhalt;
+    if (!h || h.gesagt) return;
+    h.gesagt = true;
+    if (h.text) this.gespraechPush({ role: "user", content: h.text });
+    const buchung = h.werkzeug === "buchung_abschliessen";
+    const taetigkeit = this.ANHALT_TAETIGKEIT[h.werkzeug] || "gearbeitet habe";
+    const satz = buchung
+      ? "Ich habe angehalten und nichts gebucht. Soll ich die Buchung doch abschließen?"
+      : h.untaetig
+        ? "Ich halte an und mache erst weiter, wenn du es sagst. Wie soll es weitergehen?"
+        : `Du hast mich angehalten, während ich ${taetigkeit}. Ich mache erst weiter, wenn du es sagst. Wie soll es weitergehen?`;
+    this.lauf.chips = buchung
+      ? ["Doch buchen", "Nicht buchen", "Ich möchte etwas ändern"]
+      : ["Weitermachen", "Ich suche selbst weiter", "Ich möchte etwas ändern"];
+    this.sagen(satz);
+    this.gespraechPush({ role: "assistant", content: satz });
+    AgentPanel.setSuggestions(this.lauf.chips);
+    this.notieren("anhalt_gemeldet", { werkzeug: h.werkzeug, seite: h.seite, quelle: h.quelle });
+    this.sichern();
+  },
+
+  /* Die Antwort auf "Wie soll es weitergehen?". Liefert true, wenn der
+     Kern sie selbst erledigt hat. Alles andere ist eine neue Nachricht
+     und geht den normalen Weg - die Person darf auch einfach etwas
+     Neues sagen. */
+  anhaltAntwort(t, opts = {}) {
+    const h = this.lauf.anhalt;
+    this.lauf.anhalt = null;
+    const satz = String(t).toLowerCase().replace(/[.!]+$/, "").trim();
+    const weiter = /^(ja[, ]*)?(bitte )?(weiter(machen)?|mach( doch| bitte)? weiter|weiter so|fortsetzen|such(e)? weiter|suche fortsetzen|doch buchen|leg los|los|mach)( bitte)?$/i.test(satz)
+      || /\b(mach|such|arbeite|geh)\w* (doch |bitte |einfach )?weiter\b/.test(satz)
+      || /\bfortsetzen\b/.test(satz);
+    const selbst = /\b(selbst|selber|allein|alleine)\b/.test(satz) && !/\bnicht (selbst|selber|allein)/.test(satz);
+    const aendern = /etwas (anderes|ändern|aendern)|was ändern|was aendern|^nicht buchen$/.test(satz);
+    const zeigen = () => { if (!opts.gezeigt) this.sagen(t, "user"); this.gespraechPush({ role: "user", content: t }); };
+
+    if (weiter && !selbst) {
+      this.notieren("anhalt_weiter", { werkzeug: h?.werkzeug || null });
+      this.lauf.fortsetzenMit = h?.werkzeug && h.werkzeug !== "stand_merken" ? h.werkzeug : null;
+      this.lauf.fortsetzenHinweis = this.ANHALT_TAETIGKEIT[h?.werkzeug] ? `zuletzt: ${h.werkzeug}` : "zuletzt: deine Arbeit auf der Seite";
+      return false;   // normaler Weg: Nachricht zeigen, Zug starten
+    }
+    if (selbst) {
+      zeigen();
+      const s = "Alles klar, die Seite gehört dir. Wenn du mich wieder brauchst, schreib einfach. Ich weiß noch, was wir besprochen haben.";
+      this.sagen(s);
+      this.gespraechPush({ role: "assistant", content: s });
+      this.lauf.chips = [];
+      AgentPanel.setSuggestions([]);
+      this.notieren("anhalt_selbst", { werkzeug: h?.werkzeug || null });
+      AgentPanel.platzMachen?.();
+      this.sichern();
+      return true;
+    }
+    if (aendern) {
+      zeigen();
+      const s = /nicht buchen/.test(satz)
+        ? "Alles klar, ich buche nicht. Sag mir einfach, was ich stattdessen tun soll."
+        : "Sag mir einfach, was ich anders machen soll, zum Beispiel ein anderes Budget, eine andere Region oder andere Wünsche.";
+      this.sagen(s);
+      this.gespraechPush({ role: "assistant", content: s });
+      this.lauf.chips = [];
+      AgentPanel.setSuggestions([]);
+      this.notieren("anhalt_aendern", { werkzeug: h?.werkzeug || null });
+      this.lauf.phase = "gespraech";
+      this.sichern();
+      return true;
+    }
+    this.notieren("anhalt_neue_nachricht", { werkzeug: h?.werkzeug || null });
+    return false;
   },
 };
 

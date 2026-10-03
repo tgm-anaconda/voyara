@@ -7,8 +7,11 @@
 
    `?frage=<id>` oeffnet die Seite direkt beim passenden Eintrag; das
    benutzt der Agent, und es funktioniert auch als Link im Chat. */
-const FAQ_ICONS = { buchung: "🧾", aendern: "↺", unterkunft: "🏨", flug: "✈",
-  reisende: "👪", preise: "€", seite: "💬", daten: "🔒" };
+/* Dieselben Linien-Icons wie in Kopfzeile und Karten. Vorher standen
+   hier Emojis, die je nach System bunt oder grau erschienen und neben
+   den Symbolen der Seite fremd wirkten. */
+const FAQ_ICONS = { buchung: ICONS.check, aendern: ICONS.clock, unterkunft: ICONS.bed,
+  flug: ICONS.plane, reisende: ICONS.users, preise: ICONS.tag, seite: ICONS.chat, daten: ICONS.shield };
 
 function faqEintrag(e, offen = false) {
   return `
