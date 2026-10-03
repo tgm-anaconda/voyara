@@ -268,11 +268,24 @@ const Werkzeugkasten = {
          - und was nicht darin steht, bleibt unbeantwortet. */
       f("faq_nachschlagen",
         "Schlaegt eine Frage zum Ablauf im FAQ der Seite nach: Buchung, Bezahlung, Stornierung, Check-in, "
-        + "Gepaeck, Kinder, Haustiere, Gebuehren, Merkzettel, Datenschutz und so weiter. "
+        + "Gepaeck, Kinder, Haustiere, Gebuehren, Merkzettel, Datenschutz, Flugklassen (was Premium Economy oder Business kostet), Verpflegung, Mietwagen und so weiter. "
         + "Nimm es fuer alles, was den SERVICE betrifft, nicht fuer Fragen zu Haeusern, Regionen oder Preisen "
         + "einer bestimmten Unterkunft - dafuer gibt es suchen, haus_oeffnen und bewertungen_lesen. "
         + "Steht nichts im FAQ, sag, dass du dazu nichts hast, und erfinde keine Auskunft.",
         { frage: text("Die Frage der Person, moeglichst in ihren Worten") }, ["frage"]),
+      /* Reisedaten aendern, auf jeder Seite (03.10.2026).
+         ----------------------------------------------------------------
+         Gemeldet: "Kann ich das Hotel auch im August buchen?" - und fuenf
+         Mal "Ich kann das nicht pruefen, ohne die Buchung zu verlassen".
+         Es fehlte das Werkzeug, also erfand das Modell eine Sperre. */
+      f("reisedaten_aendern",
+        "Aendert Monat, Anreisetag oder Zahl der Naechte - auf jeder Seite. Auf der Hausseite oder in der Kasse bleibt das Haus dasselbe: "
+        + "Die Seite wird mit den neuen Daten neu geladen, und du bekommst zurueck, ob das Haus dann frei ist und was es kostet. "
+        + "Mit nurPruefen=true wird nur nachgesehen (z.B. 'Ist das Hotel auch im August frei?'), ohne etwas umzustellen. "
+        + "Nimm das IMMER, wenn die Person andere Daten will - behaupte nie, dass das nicht geht.",
+        { monat: zahl("Neuer Reisemonat 1-12"), anreise: text("Neuer Anreisetag als YYYY-MM-DD, nur wenn die Person einen Tag nennt"),
+          naechte: zahl("Neue Zahl der Naechte"), id: text("Haus-id, wenn es um ein bestimmtes Haus geht (sonst das offene)"),
+          nurPruefen: { type: "boolean", description: "true = nur nachsehen, ob und zu welchem Preis das Haus mit diesen Daten buchbar ist" } }),
       f("zurueck_zur_liste",
         "Geht von einer Hausseite zurueck zur Trefferliste (Freigabe ab 'suchen').",
         {}),
@@ -320,7 +333,7 @@ const Werkzeugkasten = {
   BRAUCHT: {
     haus_oeffnen: "suchen", zurueck_zur_liste: "suchen", merken: "suchen",
     haeuser_ansehen: "suchen", stichprobe_nehmen: "suchen", monate_vergleichen: "suchen",
-    bewertungen_durchsuchen: "suchen",
+    bewertungen_durchsuchen: "suchen", reisedaten_aendern: "suchen",
     buchung_vorbereiten: "vorbereiten", buchung_abschliessen: "vorbereiten",
     formular_ausfuellen: "vorbereiten", kasse_aendern: "vorbereiten",
   },
@@ -370,6 +383,7 @@ const Werkzeugkasten = {
       case "buchung_vorbereiten": return `Bereite die Buchung für ${haus(a.id)} vor`;
       case "bewertungen_durchsuchen": return `Suche in den Bewertungen nach „${a?.begriff || "dem Stichwort"}“`;
       case "faq_nachschlagen": return "Schlage im FAQ nach";
+      case "reisedaten_aendern": return a?.nurPruefen ? "Prüfe die Reisedaten" : "Ändere die Reisedaten";
       case "formular_ausfuellen": return "Fülle das Buchungsformular aus";
       case "kasse_aendern": return a.nachsehen ? "Sehe in der Kasse nach" : "Ändere die Kasse";
       case "buchung_abschliessen": return "Schließe die Buchung ab";
@@ -1635,6 +1649,28 @@ const Werkzeugkasten = {
   PRO_PERSON_WORT: /pro person|pro kopf|je person|pro nase|f(ü|ue)r jede[nr]?\b|jeweils/i,
   FUER_ALLE_WORT: /f(ü|ue)r (uns )?alle|zusammen|f(ü|ue)r uns|gesamt pro nacht|insgesamt pro nacht|f(ü|ue)r die (ganze )?familie|f(ü|ue)r beide/i,
 
+  /* Flugpreise je Klasse fuer die Person: zum offenen Haus, sonst zum
+     genannten Ziel, sonst Spanne ueber alle Ziele ab ihrem Flughafen.
+     Pro Person, Hin- und Rueckflug - wie auf der Seite. */
+  flugKlassenPreise(p) {
+    if (typeof Flug === "undefined" || typeof FLIGHTS === "undefined") return null;
+    const urlId = typeof location !== "undefined" ? new URLSearchParams(location.search).get("id") : null;
+    const haus = urlId && typeof getItemById === "function" ? getItemById(urlId) : null;
+    const ziel = haus?.ziel || p.zielId || null;
+    const ab = p.flugAb || null;
+    const klassen = Object.entries(Flug.KLASSEN);
+    if (ziel) {
+      const f = Flug.optionen(ziel, ab)[0] || Flug.optionen(ziel, "")[0];
+      if (!f) return null;
+      return { ab: f.from, nach: f.to, proPersonHinUndZurueck: Object.fromEntries(klassen.map(([k, v]) => [v.label, Flug.preisProPerson(f, k)])) };
+    }
+    const liste = FLIGHTS.filter((f) => !ab || f.fromCode === Flug.code(ab) || f.from === ab);
+    if (!liste.length) return null;
+    const spanne = (k) => { const xs = liste.map((f) => Flug.preisProPerson(f, k)); return `${Math.min(...xs)} bis ${Math.max(...xs)} €`; };
+    return { ab: ab || "alle Flughaefen", proPersonHinUndZurueck: Object.fromEntries(klassen.map(([k, v]) => [v.label, spanne(k)])),
+      faktor: "Premium Economy 1,5-fach, Business 2,6-fach des Economy-Preises" };
+  },
+
   // Einen Betrag aus dem Satz lesen: "5000", "5.000 Euro", "5000€", "ca. 3500"
   betragAusText(text) {
     const t = String(text == null ? "" : text).toLowerCase();
@@ -1777,11 +1813,16 @@ const Werkzeugkasten = {
      Haeuser unterscheiden und dass es darauf ankommt, was ihr wichtig
      ist. */
   URTEIL: /\b(insgesamt|alles in allem|unterm strich|unter dem strich|im gesamtbild|zusammengefasst)\b[^.!?]{0,80}\b(besser|vorn|vorne|empfehlenswerter|die bessere wahl|ueberzeugender|überzeugender)\b|\bich (w(ü|ue)rde|empfehle|rate)\b[^.!?]{0,60}\b(nehmen|buchen|empfehlen|w(ä|ae)hlen|dir raten|zu)\b|\b(meine empfehlung|mein favorit|klarer favorit|die bessere wahl)\b/i,
+  ERFUNDENE_SPERRE: /\b(kann|k(ö|oe)nnen|geht)\b[^.!?]*\b(nicht|erst)\b[^.!?]*\b(ohne|wenn|bevor|nachdem)\b[^.!?]*\b(verlass\w*|beend\w*|abbrech\w*|zur(ü|ue)ck\w*)/i,
+
   urteilStreichen(text, profil = null) {
     const hat = new Set(profil?.ausstattung || []);
     const unbelegt = (s) => profil && Object.entries(this.AUSSTATTUNG_BEHAUPTUNG).some(([feld, re]) => re.test(s) && !hat.has(feld));
     const saetze = String(text || "").split(/(?<=[.!?])\s+/);
-    const bleiben = saetze.filter((s) => !this.URTEIL.test(s) && !unbelegt(s));
+    // Erfundene Sperren (03.10.2026): "Ich kann das hier nicht pruefen,
+    // ohne die Buchung zu verlassen" - kein Werkzeug hatte das gemeldet
+    const sperre = (s) => this.ERFUNDENE_SPERRE.test(s);
+    const bleiben = saetze.filter((s) => !this.URTEIL.test(s) && !unbelegt(s) && !sperre(s));
     return { text: bleiben.join(" ").trim(), gestrichen: saetze.length - bleiben.length };
   },
 
@@ -3898,9 +3939,14 @@ const Werkzeugkasten = {
         return { navigiert: true, stufe: 3 };
       }
 
+      /* Zur Flugklasse die echten Zahlen (03.10.2026). Gemeldet: "Premium
+         Economy kostet etwa 33 Euro pro Nacht und Zimmer mehr" - die
+         Klasse betrifft den Flug pro Person, nicht die Nacht. */
+      const flugpreise = treffer.some((t) => t.id === "f-klasse") ? Werkzeugkasten.flugKlassenPreise(kern.lauf.profil || {}) : null;
       return {
         ergebnis: {
           gefunden: treffer.length,
+          ...(flugpreise ? { flugpreise, flugHinweis: "Nenn die Preise pro Person fuer Hin- und Rueckflug aus flugpreise - nicht pro Nacht und nicht pro Zimmer." } : {}),
           antworten: treffer.map((t) => ({ frage: t.frage, antwort: t.antwort })),
           hinweis: "Antworte mit dem, was in antworten steht - in deinen Worten, aber ohne etwas "
             + "hinzuzufuegen, was dort nicht steht. Eine Antwort reicht meistens; nenn nur dann eine "
@@ -3908,6 +3954,89 @@ const Werkzeugkasten = {
         },
         log: `Im FAQ nachgesehen: ${treffer.map((t) => t.frage).slice(0, 2).join(" / ")}`,
       };
+    },
+
+    /* Reisedaten aendern - siehe die Definition oben. Zwei Stufen: erst
+       Stand aendern und (auf Haus- oder Kassenseite) die Hausseite mit
+       den neuen Daten laden, dann dort berichten. */
+    async reisedaten_aendern(a, kern, stufe) {
+      const p = kern.lauf.profil || (kern.lauf.profil = {});
+      const seite = Werkzeuge.seite();
+      const name = (m) => (typeof MONATSNAMEN !== "undefined" ? MONATSNAMEN[m - 1] : `Monat ${m}`);
+      const urlId = new URLSearchParams(location.search).get("id");
+      const id = a.id || ((seite === "stay" || seite === "checkout") ? urlId : null);
+      const item = id && typeof getItemById === "function" ? getItemById(id) : null;
+
+      if (stufe === 2) {
+        kern.sperreAus();
+        const r = kern.lauf.reisedatenNeu || {};
+        kern.lauf.reisedatenNeu = null;
+        const k = item ? aufenthaltKosten(item, p.monat, p, p.naechte || 7) : null;
+        const flug = item && p.flug && typeof Flug !== "undefined" ? Flug.paket(item, Math.max(1, (p.erwachsene || 0) + (p.kinder || 0)), p.flugKlasse || null) : null;
+        return { ergebnis: { ok: true, umgestellt: r, haus: item?.name || null,
+          ...(k ? { unterkunftGesamt: k.gesamt, ...(flug ? { mitFlug: k.gesamt + flug.gesamt } : {}) } : {}),
+          hinweis: "Die Hausseite steht jetzt auf den neuen Daten. Sag in einem Satz, was sich geaendert hat und was es jetzt kostet. Frag dann, ob es so bleiben soll." },
+          log: `Reisedaten umgestellt${item ? ` für ${item.name}` : ""}` };
+      }
+
+      const monat = Number.isInteger(a.monat) && a.monat >= 1 && a.monat <= 12 ? a.monat : null;
+      const naechte = Number.isInteger(a.naechte) && a.naechte > 0 && a.naechte < 60 ? a.naechte : null;
+      const anreise = /^\d{4}-\d{2}-\d{2}$/.test(String(a.anreise || "")) ? a.anreise : null;
+      const zielMonat = anreise ? new Date(anreise).getMonth() + 1 : (monat || p.monat || null);
+      if (!zielMonat && !naechte) return { ergebnis: { fehler: "Es fehlt, was geaendert werden soll (Monat, Anreisetag oder Naechte)." } };
+
+      // Ist das Haus in dem Monat frei, und was kostet es dann?
+      if (item && zielMonat && typeof freiImMonat === "function" && !freiImMonat(item, zielMonat)) {
+        kern.notieren("reisedaten_nicht_frei", { id: item.id, monat: zielMonat });
+        return { ergebnis: { frei: false, haus: item.name, monat: name(zielMonat),
+          hinweis: `${item.name} ist im ${name(zielMonat)} ausgebucht. Sag das offen und biete an, im ${name(zielMonat)} nach aehnlichen Haeusern zu suchen.` } };
+      }
+      const probe = { ...p, ...(zielMonat ? { monat: zielMonat } : {}), ...(naechte ? { naechte } : {}) };
+      if (a.nurPruefen) {
+        const k = item ? aufenthaltKosten(item, probe.monat, probe, probe.naechte || 7) : null;
+        const flug = item && p.flug && typeof Flug !== "undefined" ? Flug.paket(item, Math.max(1, (p.erwachsene || 0) + (p.kinder || 0)), p.flugKlasse || null) : null;
+        kern.notieren("reisedaten_geprueft", { id: item?.id || null, monat: zielMonat, naechte: probe.naechte || null });
+        return { ergebnis: { frei: true, haus: item?.name || null, monat: zielMonat ? name(zielMonat) : null, naechte: probe.naechte || null,
+          ...(k ? { unterkunftGesamt: k.gesamt, ...(flug ? { mitFlug: k.gesamt + flug.gesamt } : {}) } : {}),
+          hinweis: "Nur nachgesehen, nichts umgestellt. Sag das Ergebnis und frag, ob du die Daten so umstellen sollst - wenn ja, ruf reisedaten_aendern ohne nurPruefen." } };
+      }
+
+      // Den Stand aendern - das sagt die Person, also vonPerson
+      const vorher = { monat: p.monat || null, naechte: p.naechte || null };
+      if (zielMonat && zielMonat !== p.monat) { p.monat = zielMonat; delete p.von; delete p.bis; delete p.anreise; }
+      if (anreise) p.anreise = anreise;
+      if (naechte) p.naechte = naechte;
+      p.vonPerson ||= {};
+      if (zielMonat) p.vonPerson.monat = true;
+      if (naechte) p.vonPerson.naechte = true;
+      if (anreise) p.vonPerson.anreise = true;
+      kern.lauf.monatsvergleich = null;
+      kern.lauf.lageFuer = null;
+      kern.lauf.gesuchtMit = null;
+      kern.lauf.zuletztGemerkt = [...(kern.lauf.zuletztGemerkt || []), ...(zielMonat && zielMonat !== vorher.monat ? ["monat"] : []), ...(naechte ? ["naechte"] : [])];
+      kern.standAnzeigen();
+      kern.notieren("reisedaten_geaendert", { von: vorher, monat: p.monat || null, naechte: p.naechte || null, anreise: p.anreise || null, seite });
+      kern.lauf.reisedatenNeu = { monat: p.monat ? name(p.monat) : null, naechte: p.naechte || null, anreise: p.anreise || null };
+
+      // Auf Haus- oder Kassenseite: dieselbe Hausseite mit den neuen Daten
+      if (item && (seite === "stay" || seite === "checkout")) {
+        let href = kern.linkZu(item.id, item.name).href.replace(/&(from|to|flex|monat|nights)=[^&]*/g, "");
+        const f = Werkzeugkasten.flexWahl(p);
+        if (p.anreise && p.naechte) {
+          const bis = new Date(new Date(p.anreise).getTime() + p.naechte * 86400000).toISOString().slice(0, 10);
+          href += `&from=${p.anreise}&to=${bis}`;
+        } else if (f) href += `&flex=1&monat=${f.monat}&nights=${f.naechte}`;
+        if (typeof Flug !== "undefined") href = Flug.anLink(href);
+        if (typeof Reisedaten !== "undefined" && Reisedaten.leeren) { try { Reisedaten.leeren(); } catch { /* egal */ } }
+        kern.sperreAn();
+        kern.sichern();
+        await Zeiger.warte(300);
+        location.href = href;
+        return { navigiert: true, stufe: 2 };
+      }
+      kern.sichern();
+      return { ergebnis: { ok: true, umgestellt: kern.lauf.reisedatenNeu,
+        hinweis: seite === "results" ? "Der Stand ist umgestellt. Ruf jetzt suchen, damit die Liste die neuen Daten zeigt." : "Der Stand ist umgestellt." } };
     },
 
     /* Gezielt in den Bewertungen suchen.

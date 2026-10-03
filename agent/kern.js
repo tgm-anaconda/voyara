@@ -881,6 +881,18 @@ const Kern = {
     return { text, href };
   },
 
+  // Hat die Person gerade auf eine "Soll ich ...?"-Frage mit Ja geantwortet?
+  zustimmungZu() {
+    const verlauf = this.lauf.verlauf || [];
+    const letzteNutzer = [...verlauf].reverse().find((x) => x.rolle === "user")?.text || "";
+    if (!/^\s*(ja|jap|jo|jawohl|ok(ay)?|gern(e)?|bitte|mach (das|es|bitte)?|klar|genau|passt|einverstanden|ja,? bitte|ja,? mach)\b[\s.!]*$/i.test(letzteNutzer)) return null;
+    const i = verlauf.map((x) => x.rolle).lastIndexOf("user");
+    const davor = [...verlauf.slice(0, i)].reverse().find((x) => x.rolle === "bot")?.text || "";
+    const frage = (davor.match(/[^.!?]*\?/g) || []).pop();
+    if (!frage || !/\b(soll ich|möchtest du,? dass ich|moechtest du,? dass ich|darf ich|willst du,? dass ich)\b/i.test(frage)) return null;
+    return frage.trim();
+  },
+
   standAnzeigen() {
     if (typeof Politik !== "undefined") AgentPanel.eckdatenZeigen(Politik.eckdaten(this.lauf.profil || {}));
   },
@@ -944,6 +956,12 @@ const Kern = {
     if (grenzen) zeilen.push(grenzen);
     for (const block of this.regelnJetzt()) zeilen.push(block);
     zeilen.push("VERGLEICH: Vergleichst du Haeuser, nenn Unterschiede mit Zahlen - aber kuer keinen Sieger und sprich keine Empfehlung aus, auch nicht auf 'welches findest du besser?'. Sag dann, worin sie sich unterscheiden und dass es darauf ankommt, was der Person wichtiger ist.");
+    /* Keine erfundenen Sperren, und ein Ja wird ausgefuehrt (03.10.2026).
+       Gemeldet: fuenfmal "Ich kann das nicht, ohne die Buchung zu
+       verlassen. Soll ich?" - "ja" - und dieselbe Frage zurueck. */
+    zeilen.push("SPERREN: Sag nie, dass etwas nicht geht oder dass du dafuer erst etwas verlassen musst, wenn kein Werkzeug das gemeldet hat. Andere Daten (Monat, Anreisetag, Naechte) aendert reisedaten_aendern auf jeder Seite, auch in der Kasse.");
+    const zustimmung = this.zustimmungZu();
+    if (zustimmung) zeilen.push(`JA: Die Person hat gerade zugestimmt zu deiner Frage "${zustimmung}". Fuehr das JETZT mit dem passenden Werkzeug aus und frag nicht noch einmal.`);
     if (this.lauf.phase === "angehalten") zeilen.push("Die Person hat waehrend deiner Arbeit selbst geklickt; du hast angehalten.");
     if (this.lauf.fortsetzenHinweis) zeilen.push(`Die Person hatte dich angehalten und jetzt gesagt, dass du weitermachen sollst. Mach dort weiter, wo du warst (${this.lauf.fortsetzenHinweis}); sag nicht noch einmal, was du vorher schon gesagt hast.`);
     zeilen.push("Fuer deine naechste Antwort: hoechstens drei Saetze, genau eine Frage (nie zwei), und wenn du fragst, als letzte Zeile CHIPS: mit zwei bis vier Antworten.");
@@ -1045,6 +1063,15 @@ const Kern = {
     const fragen = String(letzte?.text || "").match(/[^.!?]*\?/g) || [];
     const frage = fragen.length ? fragen.at(-1).trim() : null;
     this.notieren("keine_antwort_aufgefangen", { text: String(text).slice(0, 40), frage: frage ? frage.slice(0, 80) : null });
+    /* Auf ein Ja oder Nein die Frage nicht wiederholen - das war im
+       Verlauf vom 03.10.2026 genau die Schleife. Dann lieber offen sagen,
+       dass er haengt, und nach einer Anweisung fragen. */
+    const kurzeAntwort = /^\s*(ja|nein|ne|jo|ok(ay)?|gern(e)?|bitte|klar|genau)\b[\s.!]*$/i.test(String(text));
+    if (kurzeAntwort && frage) {
+      this.notieren("schleife_aufgefangen", { text: String(text).slice(0, 20), frage: frage.slice(0, 80) });
+      this.sagenUndMerken("Entschuldige, da hänge ich gerade. Sag mir bitte in einem Satz, was ich tun soll, zum Beispiel „stell auf August um“ oder „zeig mir die Auswahl noch einmal“.");
+      return;
+    }
     const schonEntschuldigt = /^Entschuldige, das habe ich nicht ganz/.test(String(letzte?.text || ""));
     this.sagenUndMerken(schonEntschuldigt
       ? (frage ? `Noch einmal anders gefragt: ${frage}` : "Magst du es mir mit anderen Worten sagen?")

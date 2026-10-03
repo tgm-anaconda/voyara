@@ -1191,6 +1191,27 @@ const Kernpruefung = {
   },
 
   // Kommazahlen (03.10.2026): fragen statt "5 Naechte"
+  // Erfundene Sperren und Budget-Rueckfrage (03.10.2026)
+  sperreUndBudget() {
+    const fehler = [];
+    const SPERRE = [
+      ["Ich kann hier nicht direkt prüfen, ob Xenonas Anogia im August buchbar ist, ohne die aktuelle Buchung zu verlassen.", true],
+      ["Ich kann die Buchung erst vorbereiten, wenn ich die Suche verlassen habe.", true],
+      ["Wenn du zurück willst, kann ich die Liste öffnen.", false],
+      ["Ich kann dir die Häuser zeigen, wenn du magst.", false],
+    ];
+    for (const [satz, soll] of SPERRE) {
+      if (Werkzeugkasten.ERFUNDENE_SPERRE.test(satz) !== soll) fehler.push({ art: "sperre", thema: "vertrag", satz, text: `"${satz}" ${soll ? "nicht" : "faelschlich"} als erfundene Sperre erkannt` });
+    }
+    // Die guenstigste Reise muss ueber 50 € liegen, sonst greift die Rueckfrage nie
+    const min = Werkzeugkasten.reiseMinimum({ monat: 8, naechte: 4, erwachsene: 2, kinder: 2, kinderAlter: [3, 9], flug: true });
+    if (!(min > 50)) fehler.push({ art: "reise_minimum", thema: "preis", text: `Guenstigste Reise ${min} - unplausibel` });
+    // Jahreszeit mit Tippfehler
+    const jz = Werkzeugkasten.jahreszeitGenannt({ gespraech: [{ role: "user", content: "gerne im somme" }] });
+    if (jz?.name !== "sommer") fehler.push({ art: "jahreszeit", thema: "zeit", satz: "gerne im somme", text: `ergibt ${jz?.name || "nichts"}` });
+    return fehler;
+  },
+
   komma() {
     const fehler = [];
     if (typeof Kern === "undefined" || !Kern.kommaFrage) return fehler;
@@ -2329,6 +2350,7 @@ const Kernpruefung = {
     for (const f of this.deckeRaster()) alle.push(f);
     for (const f of this.reiz()) alle.push(f);
     for (const f of this.komma()) alle.push(f);
+    for (const f of this.sperreUndBudget()) alle.push(f);
     for (const f of this.budget()) alle.push(f);
     for (const f of this.vorschlagsset()) alle.push(f);
     for (const f of this.flughaefen()) alle.push(f);
