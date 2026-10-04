@@ -1027,17 +1027,38 @@ const Werkzeugkasten = {
       if (!nachOrt.has(f.fromCode)) nachOrt.set(f.fromCode, []);
       nachOrt.get(f.fromCode).push(f);
     }
+    let ortCode = liste[0]?.fromCode || null;
+    const alleOrte = [...nachOrt.keys()];
     if (nachOrt.size > 1) {
       let bester = null;
       for (const [code, l] of nachOrt) {
         const preis = Math.min(...l.map((f) => Flug.preisProPerson(f, p.flugKlasse || null)));
         if (!bester || preis < bester.preis) bester = { code, preis, liste: l };
       }
-      liste = bester ? bester.liste : liste;
+      // Auf Wunsch ein anderer der genannten Flughaefen (04.10.2026)
+      const wahl = p.flugAbWahl && nachOrt.has(p.flugAbWahl) ? { code: p.flugAbWahl, liste: nachOrt.get(p.flugAbWahl) } : bester;
+      liste = wahl ? wahl.liste : liste;
+      ortCode = wahl ? wahl.code : ortCode;
     }
+    const guenstigsterOrt = nachOrt.size > 1
+      ? alleOrte.map((c) => ({ c, pr: Math.min(...nachOrt.get(c).map((f) => Flug.preisProPerson(f, p.flugKlasse || null))) })).sort((a, b) => a.pr - b.pr)[0].c
+      : ortCode;
 
     const personen = Math.max(1, (p.erwachsene || 0) + (p.kinder || 0));
     const proPers = (f) => Flug.preisProPerson(f, p.flugKlasse || null);
+
+    /* Eine Tageszeit im Fenster (04.10.2026): die gewuenschte, sonst die
+       mit der guenstigsten Verbindung. Auf Wunsch zeigt der Agent danach
+       eine andere - nach demselben Schema. */
+    const zeiten = [...new Set(liste.map((f) => f.zeitfenster).filter(Boolean))];
+    let zeit = null;
+    if (zeiten.length > 1) {
+      const gewuenscht = p.flugZeit && zeiten.includes(p.flugZeit) ? p.flugZeit : null;
+      const billigste = liste.slice().sort((a, b) => proPers(a) - proPers(b))[0]?.zeitfenster;
+      zeit = gewuenscht || billigste;
+      liste = liste.filter((f) => f.zeitfenster === zeit);
+    }
+    const info = { ort: ortCode, guenstigsterOrt, andereOrte: alleOrte.filter((c) => c !== ortCode), zeit, andereZeiten: zeiten.filter((z) => z !== zeit) };
 
     /* Dieselbe Vergleichsregel wie bei den Haeusern.
        ----------------------------------------------------------------
@@ -1071,7 +1092,7 @@ const Werkzeugkasten = {
     fenster = fenster.slice().sort((a, b) => (a.stops || 0) - (b.stops || 0)
       || String(a.depart).localeCompare(String(b.depart)));
 
-    return fenster.map((f) => {
+    const raus = fenster.map((f) => {
       const proPerson = proPers(f);
       const gesamt = proPerson * personen;
       return {
@@ -1080,6 +1101,8 @@ const Werkzeugkasten = {
         personenText: `${personen} ${personen === 1 ? "Person" : "Personen"}, hin und zurück`,
       };
     });
+    raus.info = info;
+    return raus;
   },
 
   /* Die Rueckfrage: einmal je Haus, und nur wenn es etwas zu waehlen gibt. */
@@ -4935,7 +4958,31 @@ const Werkzeugkasten = {
           /* Der Satz kommt vom Kern, und der Zug endet hier. Vorher sollte
              das Modell "in einem Satz" sagen, dass gewaehlt werden kann -
              und nach der Wahl ging es nicht weiter (03.10.2026). */
-          kern.sagenUndMerken(`Ich habe dir die Flüge zu ${item.name} geöffnet. Wähl einfach einen aus, dann mache ich mit der Buchung weiter.`);
+          /* Offen sagen, was gezeigt wird, und anbieten, was es noch gibt
+             (04.10.2026, Wunsch des Nutzers): andere Tageszeit, und bei
+             mehreren genannten Flughaefen der andere. */
+          const info = fr.kandidaten.info || {};
+          const fl = fr.kandidaten.map((k) => k.flug);
+          const abName = fl[0]?.from || "";
+          const zeitenSort = fl.map((f) => f.depart).sort();
+          const direkt = fl.every((f) => !f.stops);
+          const ZEITNAME = { frueh: "morgens", mittag: "mittags", abend: "abends" };
+          const ORDNUNG = ["frueh", "mittag", "abend"];
+          const idx = ORDNUNG.indexOf(info.zeit);
+          const chips = ["Passt so"];
+          if (idx > 0 && (info.andereZeiten || []).includes(ORDNUNG[idx - 1])) chips.push("Früher am Tag");
+          if (idx >= 0 && idx < 2 && (info.andereZeiten || []).includes(ORDNUNG[idx + 1])) chips.push("Später am Tag");
+          const ortName = (c) => (typeof Flug !== "undefined" && Flug.flughaefen ? (Flug.flughaefen().find((h) => h.code === c)?.name || c) : c);
+          const anderer = (info.andereOrte || [])[0];
+          if (anderer) chips.push(`Ab ${ortName(anderer)} zeigen`);
+          const ortSatz = anderer && info.ort === info.guenstigsterOrt && !kern.lauf.flugOrtGesagt ? `Ab ${abName} ist es günstiger als ab ${ortName(anderer)}, deshalb habe ich dort gesucht. ` : "";
+          if (ortSatz) kern.lauf.flugOrtGesagt = true;
+          const zeitSatz = chips.length > 2 || (chips.length === 2 && !anderer)
+            ? "Passt dir die Uhrzeit, oder soll ich dir Verbindungen zu einer anderen Tageszeit zeigen?"
+            : (anderer ? `Passt das, oder soll ich dir auch Verbindungen ab ${ortName(anderer)} zeigen?` : "Wähl einfach eine aus, dann mache ich mit der Buchung weiter.");
+          kern.sagenUndMerken(`${ortSatz}Ich habe dir ${fl.length} Verbindungen ab ${abName} nach ${fl[0]?.to || item.name} herausgesucht, ${direkt ? "alle direkt" : "alle mit derselben Zahl an Stopps"}, Abflug ${ZEITNAME[info.zeit] || ""} zwischen ${zeitenSort[0]} und ${zeitenSort.at(-1)}. ${zeitSatz}`.replace(/\s+/g, " "));
+          if (chips.length > 1) { kern.lauf.chips = chips; AgentPanel.setSuggestions(chips); }
+          kern.notieren("flug_angesagt", { ort: info.ort, zeit: info.zeit, andereZeiten: info.andereZeiten || [], andereOrte: info.andereOrte || [] });
           kern.lauf.flugWartet = a.id;
           kern.lauf.kernWartet = true;
           return { ergebnis: { fehler: "Flug noch nicht gewaehlt",

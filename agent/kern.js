@@ -557,7 +557,12 @@ const Kern = {
     if (typeof Flug !== "undefined") {
       try {
         const f = Flug.lesen();
-        if (f.flugId && p.flugId !== f.flugId) {
+        /* Die Vorauswahl im Flugfenster ist keine Wahl (04.10.2026): Auf
+           "Spaeter am Tag" galt der vorausgewaehlte Partnerflug als
+           gewaehlt, und die Buchung lief damit weiter. Solange das Fenster
+           auf eine Wahl wartet, zaehlt nur ein Klick (Fluege.waehlen). */
+        const nurVorwahl = this.lauf.flugWartet && !p.flugId;
+        if (f.flugId && p.flugId !== f.flugId && !nurVorwahl) {
           p.flugId = f.flugId;
           this.lauf.flugGefragt = true;
           const v = typeof FLIGHTS !== "undefined" ? FLIGHTS.find((x) => x.id === f.flugId) : null;
@@ -1197,6 +1202,7 @@ const Kern = {
     if (this.welchesHaus(t, opts)) return;
     if (this.kommaPruefen(t, opts)) return;
     if (this.budgetPruefen(t, opts)) return;
+    if (this.flugWunsch(t, opts)) return;
     this.ankunftLesen(t);
     this.zimmerAntwort(t);
     this.abschlussAntwort(t);
@@ -3113,6 +3119,45 @@ const Kern = {
       this.lauf.fortsetzenMit = "buchung_abschliessen";
       this.notieren("abschluss_ja", {});
     }
+  },
+
+  /* Andere Tageszeit oder anderer Flughafen (04.10.2026). Antwort auf
+     die Frage beim Flugfenster; der Kern stellt um und laesst
+     buchung_vorbereiten das Fenster neu oeffnen. */
+  flugWunsch(t, opts = {}) {
+    if (!this.lauf.flugWartet || (this.lauf.profil || {}).flugId) return false;
+    const p = this.lauf.profil;
+    const satz = String(t).toLowerCase();
+    const ORDNUNG = ["frueh", "mittag", "abend"];
+    const auswahl = typeof Werkzeugkasten !== "undefined" ? Werkzeugkasten.flugAuswahl(getItemById(this.lauf.flugWartet), p) : [];
+    const info = auswahl.info || {};
+    let zeit = null, ort = null;
+    if (/fr(ü|ue)her|morgens|vormittag/.test(satz)) zeit = /morgens|vormittag/.test(satz) ? "frueh" : ORDNUNG[Math.max(0, ORDNUNG.indexOf(info.zeit) - 1)];
+    else if (/sp(ä|ae)ter|abends|nachmittag/.test(satz)) zeit = /abends/.test(satz) ? "abend" : ORDNUNG[Math.min(2, ORDNUNG.indexOf(info.zeit) + 1)];
+    else if (/mittags|mittag\b/.test(satz)) zeit = "mittag";
+    const orte = (info.andereOrte || []);
+    for (const c of orte) {
+      const name = (Flug.flughaefen?.().find((h) => h.code === c)?.name || c).toLowerCase();
+      if (satz.includes(name.toLowerCase()) || satz.includes(c.toLowerCase())) ort = c;
+    }
+    if (/^\s*passt( so)?\b/.test(satz)) {
+      if (!opts.gezeigt) this.sagen(t, "user");
+      this.gespraechPush({ role: "user", content: t });
+      this.sagenUndMerken("Dann wähl im Fenster einfach eine Verbindung aus.");
+      this.lauf.chips = []; AgentPanel.setSuggestions([]);
+      return true;
+    }
+    if (!zeit && !ort) return false;
+    if (zeit && zeit === info.zeit && !ort) return false;
+    if (zeit) p.flugZeit = zeit;
+    if (ort) { p.flugAbWahl = ort; delete p.flugZeit; }
+    this.lauf.flugGefragt = false;
+    // Die alte Vorauswahl gehoert zur alten Gruppe
+    try { Flug.set({ flugId: null }); } catch { /* ohne Flugmodul */ }
+    if (typeof Fluege !== "undefined") Fluege.schliessen?.(false, "andere");
+    this.notieren("flug_andere", { zeit: zeit || null, ort: ort || null });
+    this.lauf.fortsetzenMit = "buchung_vorbereiten";
+    return false;   // normaler Zug: buchung_vorbereiten oeffnet das Fenster neu
   },
 
   flugAntwort(t) {

@@ -2940,6 +2940,50 @@ FLIGHTS.push(
       f.price = Math.max(39, Math.round(preis * (faktor[i] ?? 1.03)));
     });
   }
+
+  /* Drei Tageszeiten je Flughafen und Ziel (04.10.2026).
+     ----------------------------------------------------------------
+     Wunsch des Nutzers: Der Agent zeigt drei Verbindungen und fragt, ob
+     die Uhrzeit passt oder ob er andere heraussuchen soll - "und dann
+     halt wieder nach dem gleichen Schema". Dafuer braucht es je Paar
+     mehr als eine Gruppe. Die vorhandene Gruppe bleibt, wo sie ist; zu
+     den beiden anderen Tageszeiten (frueh um 07:00, mittags um 12:30,
+     abends um 18:00) kommt je eine Gruppe nach demselben Bauplan dazu:
+     drei Verbindungen, 35 Minuten frueher bis 40 Minuten spaeter, gleiche
+     Dauer, Stopps und Gepaeck, die erste 2,5 Prozent guenstiger. Die
+     Gruppen untereinander liegen im Preis wenige Prozent auseinander. */
+  const ZEITEN = [{ id: "frueh", mitte: 7 * 60 }, { id: "mittag", mitte: 12 * 60 + 30 }, { id: "abend", mitte: 18 * 60 }];
+  const fenster = (min) => ZEITEN.reduce((a, b) => (Math.abs(b.mitte - min) < Math.abs(a.mitte - min) ? b : a)).id;
+  const neueGruppen = [];
+  let nrZeit = 900;
+  for (const liste of gruppen.values()) {
+    liste.sort((a, b) => alsMinuten(a.depart) - alsMinuten(b.depart));
+    const mitte = liste[Math.min(1, liste.length - 1)];
+    const eigenes = fenster(alsMinuten(mitte.depart));
+    for (const f of liste) f.zeitfenster = eigenes;
+    const dauer = minuten(mitte.duration);
+    const genutzt = new Set(liste.map((f) => f.airline));
+    const pool = AIRLINES.filter((x) => !genutzt.has(x.name));
+    ZEITEN.filter((z) => z.id !== eigenes).forEach((z, zi) => {
+      const zeitFaktor = z.id === "frueh" ? 0.97 : z.id === "abend" ? 0.99 : 1.0;
+      // Ein Versatz fuer die ganze Gruppe, nicht je Flug - sonst laeuft
+      // die Gruppe ueber die 80 Minuten hinaus, die die Pruefung erlaubt
+      const gruppenVersatz = ((nrZeit * 7) % 4) * 5;
+      [-35, 0, 40].forEach((v, i) => {
+        nrZeit += 1;
+        const a = pool[(zi * 3 + i) % (pool.length || 1)] || { name: mitte.airline };
+        const start = z.mitte + v + gruppenVersatz;
+        neueGruppen.push({
+          id: `f${nrZeit}`, type: "flight", airline: a.name,
+          from: mitte.from, fromCode: mitte.fromCode, to: mitte.to, toCode: mitte.toCode, ziel: mitte.ziel,
+          depart: uhrText(start), arrive: uhrText(start + dauer), duration: dauerText(dauer),
+          stops: mitte.stops || 0, price: Math.max(39, Math.round(mitte.price * zeitFaktor * [0.975, 1, 1.012][i])),
+          baggage: mitte.baggage, aircraft: mitte.aircraft, zeitfenster: z.id,
+        });
+      });
+    });
+  }
+  FLIGHTS.push(...neueGruppen);
 })();
 
 
