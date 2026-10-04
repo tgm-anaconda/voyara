@@ -534,6 +534,8 @@ const Kern = {
         if (m >= 1 && m <= 12) p.monat = m;
         p.flexibel = false;
         p.anreise = r.von;
+        // Auf der Seite eingestellt ist so fest wie gesagt (04.10.2026)
+        Object.assign((p.vonPerson ||= {}), { von: true, bis: true, anreise: true, monat: true, naechte: true });
         neu.push(`den ${new Date(r.von).getDate()}. als Anreisetag`);
       }
     }
@@ -767,6 +769,16 @@ const Kern = {
       this.notieren("nach_anhalt_verschluckt", { text: String(text).slice(0, 80) });
       return;
     }
+    /* Kein Platzhalter im Chat (04.10.2026: "undefined € insgesamt").
+       Letzte Sicherung fuer jeden Satz: Teilsaetze mit undefined, NaN
+       oder null fallen weg, und es wird notiert, damit die Quelle
+       gefunden wird. */
+    if (rolle === "bot" && /\b(undefined|NaN|null)\b/.test(String(text))) {
+      this.notieren("platzhalter_gestrichen", { text: String(text).slice(0, 120) });
+      text = String(text).split(/(?<=[.!?])\s+/).map((satz) => satz.split(/,\s+/).filter((teil) => !/\b(undefined|NaN|null)\b/.test(teil)).join(", "))
+        .filter((satz) => satz.trim()).join(" ").replace(/,\s*([.!?])/g, "$1").trim();
+      if (!text) return;
+    }
     /* Nichts zweimal hintereinander.
        ----------------------------------------------------------------
        Gemeldet am 02.10.2026, mit Bild: "Ich sehe mir die 4 Haeuser jetzt
@@ -959,6 +971,13 @@ const Kern = {
     /* Keine erfundenen Sperren, und ein Ja wird ausgefuehrt (03.10.2026).
        Gemeldet: fuenfmal "Ich kann das nicht, ohne die Buchung zu
        verlassen. Soll ich?" - "ja" - und dieselbe Frage zurueck. */
+    // Tag und Monat der Person widersprechen sich (04.10.2026): nachfragen
+    const zk = (this.lauf.profil || {}).zeitKonflikt;
+    if (zk) {
+      const tagText = typeof Flug !== "undefined" && Flug.datumText ? Flug.datumText(zk.tag) : zk.tag;
+      const monatText = typeof MONATSNAMEN !== "undefined" ? MONATSNAMEN[zk.monat - 1] : zk.monat;
+      zeilen.push(`KONFLIKT: Die Person hat ${tagText} als Anreise genannt und spaeter ${monatText} als Monat. Frag in einem Satz, was gilt. Gilt der Tag, ruf reisedaten_aendern mit anreise; gilt der Monat, ruf reisedaten_aendern mit monat. Loesch nichts von dir aus.`);
+    }
     zeilen.push("SPERREN: Sag nie, dass etwas nicht geht oder dass du dafuer erst etwas verlassen musst, wenn kein Werkzeug das gemeldet hat. Andere Daten (Monat, Anreisetag, Naechte) aendert reisedaten_aendern auf jeder Seite, auch in der Kasse.");
     const zustimmung = this.zustimmungZu();
     if (zustimmung) zeilen.push(`JA: Die Person hat gerade zugestimmt zu deiner Frage "${zustimmung}". Fuehr das JETZT mit dem passenden Werkzeug aus und frag nicht noch einmal.`);
@@ -1055,7 +1074,10 @@ const Kern = {
     const zaehle = () => (this.lauf.verlauf || []).filter((x) => x.rolle === "bot").length;
     const vorher = zaehle();
     const liefSchon = this.laeuft;
+    const fest = this.festeWerte();
+    this.lauf.festeWerteErlaubt = false;
     await this.eingabeInnen(text, opts);
+    this.festeWerteSichern(fest);
     if (!String(text || "").trim() || liefSchon) return;
     if (zaehle() > vorher) return;
     if (this.laeuft || this.lauf.ausstehend || this.istAngehalten() || this.lauf.stumm) return;
@@ -1078,6 +1100,47 @@ const Kern = {
       : frage
         ? `Entschuldige, das habe ich nicht ganz einordnen können. ${frage}`
         : "Entschuldige, das habe ich nicht ganz einordnen können. Sag es mir bitte noch einmal anders.");
+  },
+
+  /* Feste Werte (04.10.2026).
+     ------------------------------------------------------------------
+     Der Nutzer: "Ich brauche da halt ein sicheres Konstrukt, was halt
+     keine Fehler macht." Gemeldet war ein Anreisetag, der geklaert war
+     und verschwand. Was die Person selbst gesagt oder auf der Seite
+     eingestellt hat (vonPerson), darf ein Zug nicht einfach verlieren.
+     Vor jeder Nachricht merkt sich der Kern diese Werte; fehlt danach
+     einer, ohne dass die Person ihn geaendert hat, kommt er zurueck -
+     und es wird notiert, damit der Weg, der ihn geloescht hat, gefunden
+     wird. Aendern darf die Person alles; verloren geht nichts. */
+  FESTE_FELDER: ["monat", "anreise", "von", "bis", "naechte", "erwachsene", "kinder", "kinderAlter", "zimmer",
+    "maxPreis", "budgetGesamt", "zielId", "flug", "flugAb", "flugKlasse", "verpflegung", "typ"],
+
+  festeWerte() {
+    const p = this.lauf.profil || {};
+    const raus = {};
+    for (const f of this.FESTE_FELDER) {
+      if (p.vonPerson?.[f] && p[f] != null) raus[f] = JSON.parse(JSON.stringify(p[f]));
+    }
+    return raus;
+  },
+
+  festeWerteSichern(fest) {
+    const p = this.lauf.profil || {};
+    const zurueck = [];
+    for (const [f, wert] of Object.entries(fest || {})) {
+      if (p[f] != null) continue;                                   // da, vielleicht geaendert - erlaubt
+      if (this.lauf.festeWerteErlaubt && ["anreise", "von", "bis"].includes(f)) continue;   // reisedaten_aendern
+      if ((f === "maxPreis" || f === "budgetGesamt") && (p.preisEgal || p.maxPreis != null || p.budgetGesamt != null)) continue;
+      if (f === "kinderAlter" && !p.kinder) continue;
+      if ((f === "von" || f === "bis") && p.anreise) continue;
+      p[f] = wert;
+      zurueck.push(f);
+    }
+    if (zurueck.length) {
+      this.notieren("fester_wert_wiederhergestellt", { felder: zurueck });
+      this.standAnzeigen?.();
+      this.sichern();
+    }
   },
 
   async eingabeInnen(text, opts = {}) {
@@ -3342,6 +3405,8 @@ const Kern = {
     if (d.feld === "maxPreis") { p.maxPreis = d.wert; delete p.budgetGesamt; }
     else { p.budgetGesamt = d.wert; delete p.maxPreis; }
     if (d.proPerson) p.preisProPerson = d.proPerson; else delete p.preisProPerson;
+    // Umgerechnet ist umgerechnet - keine zweite Stelle rechnet noch einmal
+    this.lauf.preisProPersonGesagt = true;
     p.preisEgal = false;
     (p.vonPerson ||= {})[d.feld] = true;
     this.lauf.zuletztGemerkt = [...(this.lauf.zuletztGemerkt || []), d.feld];

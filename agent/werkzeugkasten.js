@@ -2760,12 +2760,18 @@ const Werkzeugkasten = {
          beiden Wege nicht ab - also steht die Frage dort, wo beide
          vorbeikommen. */
       const proPerson = gesagt(/pro person|je person|pro kopf|pro nase|\bp\.\s?p\.|pro erwachsene[mn]?\b/i, 1);
-      if (proPerson && (p.maxPreis || p.budgetGesamt)) {
+      /* Nur einmal umrechnen (04.10.2026). Gemeldet: "50 € pro Person pro
+         Nacht" wurde zu 800 € pro Nacht. budgetPruefen im Kern hatte schon
+         50 × 4 = 200 gerechnet, und diese Stelle rechnete noch einmal mal
+         vier. Hat der Kern umgerechnet (preisProPerson steht), bleibt es
+         dabei; diese Stelle faengt nur, was der Kern nicht gesehen hat. */
+      if (proPerson && (p.maxPreis || p.budgetGesamt) && !p.preisProPerson) {
         const koepfe = (p.erwachsene || 0) + (p.kinder || 0) || p.personen || 0;
         if (koepfe > 1 && !kern.lauf.preisProPersonGesagt) {
           kern.lauf.preisProPersonGesagt = true;
           const feld = p.maxPreis ? "maxPreis" : "budgetGesamt";
           const einzeln = p[feld];
+          if (feld === "maxPreis") p.preisProPerson = einzeln;
           p[feld] = einzeln * koepfe;
           geaendert.push(feld);
           Werkzeugkasten.ableiten(kern, feld,
@@ -4084,6 +4090,10 @@ const Werkzeugkasten = {
       kern.lauf.monatsvergleich = null;
       kern.lauf.lageFuer = null;
       kern.lauf.gesuchtMit = null;
+      delete p.zeitKonflikt;
+      // Die Person hat die Daten geaendert - der Waechter soll das nicht
+      // als Verlust werten und zuruecksetzen
+      kern.lauf.festeWerteErlaubt = true;
       kern.lauf.zuletztGemerkt = [...(kern.lauf.zuletztGemerkt || []), ...(zielMonat && zielMonat !== vorher.monat ? ["monat"] : []), ...(naechte ? ["naechte"] : [])];
       kern.standAnzeigen();
       kern.notieren("reisedaten_geaendert", { von: vorher, monat: p.monat || null, naechte: p.naechte || null, anreise: p.anreise || null, seite });
@@ -5301,8 +5311,11 @@ const Werkzeugkasten = {
       // Eine Antwort auf die gestellte Frage braucht keine Bestaetigung -
       // die steht in der Leiste, und "Oktober ist notiert" nervt
       if (e.thema && e.thema === gefragt) continue;
+      // Ein Feld ohne Wert wird nicht quittiert. Gemeldet am 04.10.2026:
+      // "hoechstens undefined € insgesamt merke ich mir"
+      if (p[f] == null && f !== "wuensche") continue;
       const wort = e.wort(p);
-      if (!wort) continue;
+      if (!wort || /undefined|NaN|null/.test(wort)) continue;
       // Das Modell hat es schon gesagt
       if (schonGesagt && new RegExp(wort.split(" ").filter((w) => w.length > 3)[0] || wort, "i").test(schonGesagt)) continue;
       teile.push(wort);
@@ -5667,19 +5680,28 @@ const Werkzeugkasten = {
     const raus = [];
     if (!p) return raus;
     const monatVon = (iso) => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? null : d.getMonth() + 1; };
-    if (p.monat && p.von) {
-      const m = monatVon(p.von);
-      if (m && m !== p.monat) {
-        raus.push({ art: "zeitraum_ausserhalb_monat", monat: p.monat, von: p.von, bis: p.bis || null });
-        if (reparieren) { delete p.von; delete p.bis; p.flexibel = true; }
-      }
-    }
-    if (p.monat && p.anreise) {
-      const m = monatVon(p.anreise);
-      if (m && m !== p.monat) {
-        raus.push({ art: "anreise_ausserhalb_monat", monat: p.monat, anreise: p.anreise });
-        if (reparieren) delete p.anreise;
-      }
+    /* Ein Tag der Person schlaegt den Monat (04.10.2026).
+       --------------------------------------------------------------
+       Gemeldet: Der Anreisetag war geklaert und verschwand - diese Stelle
+       loeschte still jeden Tag, der nicht im gemerkten Monat lag. Jetzt:
+       - Hat die Person den Tag genannt, nicht aber den Monat, zieht der
+         Monat dem Tag nach.
+       - Hat sie beides genannt, bleibt beides stehen, und der Kern fragt
+         nach (zeitKonflikt) - geloescht wird nichts, was sie gesagt hat.
+       - Nur ein Tag, der NICHT von ihr kommt, faellt weg. */
+    if (reparieren) delete p.zeitKonflikt;
+    const tagVonPerson = (feld) => !!(p.vonPerson && (p.vonPerson[feld] || (feld === "von" && p.vonPerson.anreise)));
+    const monatVonPerson = !!p.vonPerson?.monat;
+    for (const feld of ["von", "anreise"]) {
+      if (!p.monat || !p[feld]) continue;
+      const m = monatVon(p[feld]);
+      if (!m || m === p.monat) continue;
+      raus.push({ art: feld === "von" ? "zeitraum_ausserhalb_monat" : "anreise_ausserhalb_monat", monat: p.monat, [feld]: p[feld] });
+      if (!reparieren) continue;
+      if (tagVonPerson(feld) && !monatVonPerson) { p.monat = m; }
+      else if (tagVonPerson(feld) && monatVonPerson) { p.zeitKonflikt = { tag: p[feld], monat: p.monat }; }
+      else if (feld === "von") { delete p.von; delete p.bis; p.flexibel = true; }
+      else delete p.anreise;
     }
     if (p.von && p.bis) {
       const n = Math.round((new Date(p.bis) - new Date(p.von)) / 86400000);
