@@ -1459,9 +1459,18 @@ function bewertungsbild(item, { stichprobe = 200, wunschIds = [] } = {}) {
       const n = roh.filter((r) => h.muster.test(r.text)).length;
       return { id: h.id, art: h.art, text: h.text, anteil: n / roh.length, erwaehnungen: Math.round(n * faktor) };
     })
-    // Einmal unter zweihundert ist Zufall, kein Hinweis
-    .filter((h) => h.anteil >= 0.02)
+    .filter((h) => h.anteil > 0)
     .sort((a, b) => b.anteil - a.anteil);
+  /* Gleich viele Hinweise fuer jedes Haus (04.10.2026, Entscheidung des
+     Nutzers): drei Lob, zwei Kritik. Zuerst die, die oft genug vorkommen
+     (zwei Prozent - einmal unter zweihundert ist Zufall); reicht das
+     nicht, ruecken seltenere nach, die trotzdem wirklich in den Texten
+     stehen. Leer aufgefuellt wird nichts. */
+  const nehmen = (art, n) => {
+    const oft = hinweise.filter((h) => h.art === art && h.anteil >= 0.02);
+    const selten = hinweise.filter((h) => h.art === art && h.anteil < 0.02);
+    return [...oft, ...selten].slice(0, n);
+  };
 
   /* Immer beides: Lob und Kritik.
      ----------------------------------------------------------------
@@ -1470,10 +1479,7 @@ function bewertungsbild(item, { stichprobe = 200, wunschIds = [] } = {}) {
      ueberlagern, um die es in der Erhebung geht. Also drei plus, zwei
      minus - und wenn eine Seite nichts hergibt, faellt sie eben kuerzer
      aus, statt aufgefuellt zu werden. */
-  const gemischt = [
-    ...hinweise.filter((h) => h.art === "plus").slice(0, 3),
-    ...hinweise.filter((h) => h.art === "minus").slice(0, 2),
-  ];
+  const gemischt = [...nehmen("plus", 3), ...nehmen("minus", 2)];
 
   const kurz = aspektKurzfassung(item);
   const bilanz = (kurz.bilanz || []).slice();

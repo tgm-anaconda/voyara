@@ -3843,6 +3843,25 @@ const Werkzeugkasten = {
       kern.lauf.gelesen = kern.lauf.gelesen || {};
       kern.lauf.gelesen[a.id] = "hausseite";
       kern.notieren("bewertungen_gelesen", { id: a.id, wo: "hausseite", aspekt: null, einzelne: d.sichtbarGelesen || 0 });
+      /* Haeuser der Auswahl: feste Antwort vom Kern (04.10.2026).
+         --------------------------------------------------------------
+         Gemeldet: Bei "Mehr erfahren" fiel die Antwort je Haus anders
+         aus, beim Partnerhaus sehr negativ - das Modell griff frei
+         heraus, was es wollte. Fuer die Haeuser der Vorlage schreibt
+         jetzt der Kern, nach demselben Schema fuer alle (hausSchema). */
+      const vorlage = kern.lauf.letzteVorlage || [];
+      if (vorlage.includes(item.id)) {
+        const satz = Werkzeugkasten.hausSchema(item, kern.lauf.profil || {}, vorlage.indexOf(item.id));
+        if (satz) {
+          kern.sagen(satz, "bot", null, { aktionen: [{ text: "Vormerken", merken: item.id }] });
+          kern.gespraechPush({ role: "assistant", content: satz });
+          kern.lauf.kernWartet = true;
+          kern.notieren("haus_schema", { id: item.id, partner: item.id === kern.lauf.partnerId });
+          return { ergebnis: { geoeffnet: item.name, id: item.id, gesagt: true,
+            hinweis: "Die Zusammenfassung zu diesem Haus steht schon im Chat, nach demselben Schema wie bei den anderen. Schreib nichts dazu." },
+            log: `${item.name} geöffnet, Zusammenfassung nach Schema` };
+        }
+      }
       return {
         ergebnis: { geoeffnet: item.name, id: item.id, bewertungenAusgewertet: d.anzahl ?? item.reviewCount,
           gelobt: d.gelobt || [], kritisiert: d.kritisiert || [],
@@ -5394,6 +5413,63 @@ const Werkzeugkasten = {
     }
     kern.standAnzeigen?.();
     return true;
+  },
+
+  /* Eine Zusammenfassung je Haus, fuer alle Haeuser der Auswahl gleich
+     gebaut: Gesamtnote, zwei Staerken und eine Schwaeche aus den
+     (angeglichenen) Teilnoten der Kernthemen, die Wuensche der Person,
+     eine lobende und eine kritische Stimme. Damit es nicht dreimal
+     gleich klingt, wechselt die Satzform mit dem Platz in der Auswahl -
+     Inhalt und Reihenfolge bleiben. */
+  KERNTHEMEN: ["lage", "sauberkeit", "service", "essen", "ausstattung", "preis", "ruhe"],
+
+  hausSchema(item, p, platz = 0) {
+    if (!item || typeof aspektbilanz !== "function" || typeof Politik === "undefined") return null;
+    const bilanz = aspektbilanz(item) || [];
+    /* Dieselben Themen fuer alle Haeuser der Auswahl: Die Reihenfolge
+       kommt aus dem Schnitt des Sets (data/teilnoten.js), nicht aus dem
+       einzelnen Haus - sonst nennt das eine Lage, das andere Service,
+       nur weil eine Teilnote ein Zehntel hoeher liegt. */
+    const set = typeof Teilnoten !== "undefined" ? Teilnoten.laden?.() : null;
+    const imSet = set?.ziel && set.ziel[item.id] ? set : null;
+    const rang = (id) => {
+      if (!imSet) return null;
+      const werte = Object.values(imSet.ziel).map((z) => z[id]).filter((x) => x != null);
+      return werte.length ? werte.reduce((a, b) => a + b, 0) / werte.length : null;
+    };
+    const kern = bilanz.filter((b) => this.KERNTHEMEN.includes(b.id))
+      .sort((a, b) => ((rang(b.id) ?? b.anteilPositiv * 10) - (rang(a.id) ?? a.anteilPositiv * 10)) || a.id.localeCompare(b.id));
+    if (kern.length < 3) return null;
+    const t = (b) => `${b.label} (${Politik.teilnoteText(b.anteilPositiv)})`;
+    const [s1, s2] = kern;
+    const schwach = kern[kern.length - 1];
+    const note = `${String(item.rating.toFixed(1)).replace(".", ",")} von 5 bei ${(item.reviewCount || 0).toLocaleString("de-DE")} Bewertungen`;
+    const wunschIds = (p.kriterien || []).map((k) => Politik.kriterium(k.id)?.aspekt).filter(Boolean);
+    const wunsch = bilanz.filter((b) => wunschIds.includes(b.id) && ![s1.id, s2.id, schwach.id].includes(b.id)).slice(0, 2);
+    // Ein Satz je Stimme: der lobende Satz aus einer Lob-, der kritische
+    // aus einer Kritik-Bewertung (sonst stand "Wir waren mit zwei Kindern
+    // da" als Kritik da)
+    const NEG = /\b(nicht|leider|kein|keine|zu klein|zu wenig|laut|warten|teuer|fehlt|kaum|schwach|hellh(ö|oe)rig|extra|eng|kalt|schmutzig)\b/i;
+    const satzAus = (r, negativ) => {
+      const saetze = String(r?.text || "").split(/(?<=[.!?])\s+/).filter((x) => x.length > 25);
+      const e = negativ ? saetze.find((x) => NEG.test(x)) : saetze.find((x) => !NEG.test(x));
+      if (!e) return null;
+      return e.length > 110 ? `${e.slice(0, 107).trim()}…` : e;
+    };
+    const roh = typeof bewertungenFuer === "function" ? bewertungenFuer(item, 0, Math.min(item.reviewCount || 0, 120)) : [];
+    const lobSatz = roh.filter((r) => r.rating >= 5).map((r) => satzAus(r, false)).find(Boolean);
+    const kritikSatz = roh.filter((r) => r.rating <= 3).map((r) => satzAus(r, true)).find(Boolean);
+    const FORMEN = [
+      () => `${item.name} hat ${note}. Gäste loben vor allem ${t(s1)} und ${t(s2)}, weniger gut kommt ${t(schwach)} weg.`,
+      () => `Zu ${item.name}: ${note}. Am besten bewertet sind ${t(s1)} und ${t(s2)}, am schwächsten ${t(schwach)}.`,
+      () => `${item.name} liegt bei ${note}. Stark sind ${t(s1)} und ${t(s2)}, Abstriche gibt es bei ${t(schwach)}.`,
+    ];
+    const teile = [FORMEN[platz % FORMEN.length]()];
+    if (wunsch.length) teile.push(`Zu deinen Wünschen: ${wunsch.map(t).join(", ")}.`);
+    // Beide oder keine - eine Seite allein wuerde das Bild kippen
+    if (lobSatz && kritikSatz) teile.push(`Ein Gast schreibt: „${lobSatz}“ Kritisch: „${kritikSatz}“`);
+    teile.push("Soll ich es vormerken, oder möchtest du ein anderes ansehen?");
+    return teile.join(" ");
   },
 
   getraenkeHinweis(kern, p) {

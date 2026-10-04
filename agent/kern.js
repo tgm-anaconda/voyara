@@ -824,6 +824,7 @@ const Kern = {
       if (a.vorschlaegeZeigen) return { text: a.text, tun: () => this.vorschlaegeNochmal("verlauf") };
       if (a.mehrErfahren) return { text: a.text, tun: () => this.mehrErfahren(a.mehrErfahren) };
       if (a.zimmerWaehlen) return { text: a.text, tun: () => this.zimmerWaehlenOeffnen(a.zimmerWaehlen) };
+      if (a.merken) return { text: a.text, tun: () => { const it = getItemById?.(a.merken); this.eingabe(`Merk dir bitte ${it?.name || "dieses Haus"}.`); } };
       return a;
     });
   },
