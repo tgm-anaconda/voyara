@@ -297,6 +297,14 @@ const Werkzeugkasten = {
         + "Nur, wenn die Person einen Mietwagen will oder auf dein einmaliges Angebot ja sagt. Der Wagen wird getrennt von der Unterkunft gebucht.",
         { klasse: { type: "string", enum: ["Kleinwagen", "Kompaktklasse", "SUV", "Van (7 Sitze)"], description: "Nur, wenn die Person eine Klasse nennt; sonst waehlt der Kern nach der Zahl der Reisenden" },
           ziel: text("Region-id, wenn noch kein Ziel feststeht und die Person eins nennt") }),
+      /* Ein bestimmtes Haus gezielt suchen (04.10.2026). Gemeldet: "Was
+         wuerde das Hotel im August kosten?" - der Agent konnte nicht zur
+         Liste zurueck und nur nach diesem Haus suchen. */
+      f("haus_suchen",
+        "Sucht ein bestimmtes Haus sichtbar in der Liste - auch mit anderem Monat oder anderer Dauer: geht zur Liste, nimmt die Filter heraus, tippt den Namen in die Suche und zeigt die Karte. "
+        + "Nimm das fuer 'Was kostet das Hotel im August?', 'Gibt es das Haus auch fuer 10 Naechte?', 'Such mir nochmal das Hotel X'. Aendert nichts am Stand - danach fragt der Kern, ob umgestellt werden soll.",
+        { id: text("Haus-id, wenn bekannt"), name: text("Name des Hauses, wenn keine id bekannt ist"),
+          monat: zahl("Monat 1-12, fuer den gesucht werden soll (sonst der gemerkte)"), naechte: zahl("Naechte, wenn anders als gemerkt") }),
       f("zurueck_zur_liste",
         "Geht von einer Hausseite zurueck zur Trefferliste (Freigabe ab 'suchen').",
         {}),
@@ -344,7 +352,7 @@ const Werkzeugkasten = {
   BRAUCHT: {
     haus_oeffnen: "suchen", zurueck_zur_liste: "suchen", merken: "suchen",
     haeuser_ansehen: "suchen", stichprobe_nehmen: "suchen", monate_vergleichen: "suchen",
-    bewertungen_durchsuchen: "suchen", reisedaten_aendern: "suchen", mietwagen_suchen: "suchen",
+    bewertungen_durchsuchen: "suchen", reisedaten_aendern: "suchen", mietwagen_suchen: "suchen", haus_suchen: "suchen",
     buchung_vorbereiten: "vorbereiten", buchung_abschliessen: "vorbereiten",
     formular_ausfuellen: "vorbereiten", kasse_aendern: "vorbereiten",
   },
@@ -395,6 +403,7 @@ const Werkzeugkasten = {
       case "bewertungen_durchsuchen": return `Suche in den Bewertungen nach „${a?.begriff || "dem Stichwort"}“`;
       case "faq_nachschlagen": return "Schlage im FAQ nach";
       case "mietwagen_suchen": return "Suche einen Mietwagen";
+      case "haus_suchen": return "Suche das Haus gezielt in der Liste";
       case "reisedaten_aendern": return a?.nurPruefen ? "Prüfe die Reisedaten" : "Ändere die Reisedaten";
       case "formular_ausfuellen": return "Fülle das Buchungsformular aus";
       case "kasse_aendern": return a.nachsehen ? "Sehe in der Kasse nach" : "Ändere die Kasse";
@@ -4020,6 +4029,75 @@ const Werkzeugkasten = {
         },
         log: `Im FAQ nachgesehen: ${treffer.map((t) => t.frage).slice(0, 2).join(" / ")}`,
       };
+    },
+
+    async haus_suchen(a, kern, stufe) {
+      const p = kern.lauf.profil || {};
+      const alle = [...(typeof HOTELS !== "undefined" ? HOTELS : []), ...(typeof APARTMENTS !== "undefined" ? APARTMENTS : [])];
+      const urlId = new URLSearchParams(location.search).get("id");
+      let item = a.id ? getItemById(a.id) : null;
+      if (!item && a.name) {
+        const n = String(a.name).toLowerCase();
+        item = alle.find((h) => h.name.toLowerCase() === n) || alle.find((h) => h.name.toLowerCase().includes(n) || n.includes(h.name.toLowerCase()));
+      }
+      if (!item && urlId) item = getItemById(urlId);
+      if (!item && kern.lauf.gewaehlt) item = getItemById(kern.lauf.gewaehlt);
+      if (!item) return { ergebnis: { fehler: "Welches Haus? Ich finde keins mit diesem Namen." } };
+      const monat = Number.isInteger(a.monat) && a.monat >= 1 && a.monat <= 12 ? a.monat : (p.monat || null);
+      const naechte = Number.isInteger(a.naechte) && a.naechte > 0 ? a.naechte : (p.naechte || 7);
+      const probe = { ...p, monat, naechte };
+      const name = (m) => (typeof MONATSNAMEN !== "undefined" ? MONATSNAMEN[m - 1] : `Monat ${m}`);
+
+      if (stufe === 1 && Werkzeuge.seite() !== "results") {
+        kern.notieren("haus_suchen", { id: item.id, monat, naechte });
+        kern.sperreAn();
+        kern.sichern();
+        await Zeiger.warte(300);
+        let href = `results.html?type=${item.type === "apartment" ? "apartment" : "hotel"}`;
+        if (typeof Belegung !== "undefined") href = Belegung.anLink(href);
+        location.href = href;
+        return { navigiert: true, stufe: 2 };
+      }
+      // Auf der Liste: Filter heraus, Name und Monat in die Suche
+      kern.sperreAn();
+      try { await Werkzeuge.filterSetzen(Werkzeugkasten.filterWerte({})); } catch { /* Seite ohne Filter */ }
+      const fw = monat ? Werkzeugkasten.flexWahl({ monat, naechte }) : null;
+      await Werkzeuge.suchen({ ziel: item.name, ...(fw ? { flex: { monat: fw.monat, naechte } } : {}) });
+      await Zeiger.warte(500);
+      const karte = [...document.querySelectorAll("a.hotel-name")].find((x) => {
+        try { return new URL(x.getAttribute("href"), location.href).searchParams.get("id") === item.id; } catch { return false; }
+      });
+      if (karte) { await Zeiger.insBlickfeld(karte.closest(".result-card") || karte); await Zeiger.warte(700); }
+      kern.sperreAus();
+      kern.lauf.gewaehlt = item.id;
+      const frei = !monat || typeof freiImMonat !== "function" || freiImMonat(item, monat);
+      if (!frei) {
+        kern.sagen(`${item.name} ist im ${name(monat)} leider ausgebucht. Soll ich dir im ${name(monat)} ähnliche Häuser suchen?`);
+        kern.lauf.kernWartet = true;
+        return { ergebnis: { frei: false, haus: item.name, hinweis: "Steht schon im Chat. Schreib nichts dazu." } };
+      }
+      const k = aufenthaltKosten(item, monat, probe, naechte);
+      const personen = Math.max(1, (p.erwachsene || 0) + (p.kinder || 0));
+      const flug = p.flug && item.type !== "apartment" && typeof Flug !== "undefined" ? Flug.paket(item, personen, p.flugKlasse || null) : null;
+      const gesamt = k.gesamt + (flug ? flug.gesamt : 0);
+      const vorher = p.monat && p.monat !== monat ? aufenthaltKosten(item, p.monat, p, p.naechte || 7).gesamt + (flug ? flug.gesamt : 0) : null;
+      const euro = (n) => `${Math.round(n).toLocaleString("de-DE")} €`;
+      const satz = [
+        `${item.name}${monat ? ` im ${name(monat)}` : ""}: ${euro(k.proNacht)} pro Nacht für euch, für ${naechte} Nächte ${euro(gesamt)}${flug ? " mit Flug" : ""}.`,
+        vorher != null ? `Im ${name(p.monat)} wären es ${euro(vorher)}.` : null,
+        monat && p.monat && monat !== p.monat ? `Soll ich auf ${name(monat)} umstellen oder beim ${name(p.monat)} bleiben?` : "Soll ich es so für dich vormerken?",
+      ].filter(Boolean).join(" ");
+      kern.sagen(satz);
+      kern.gespraechPush({ role: "assistant", content: satz });
+      if (monat && p.monat && monat !== p.monat) {
+        kern.lauf.chips = [`Auf ${name(monat)} umstellen`, `Beim ${name(p.monat)} bleiben`];
+        AgentPanel.setSuggestions(kern.lauf.chips);
+      }
+      kern.lauf.kernWartet = true;
+      kern.notieren("haus_gesucht", { id: item.id, monat, naechte, gesamt, gefunden: !!karte });
+      kern.sichern();
+      return { ergebnis: { haus: item.name, monat: monat ? name(monat) : null, gesamt, hinweis: "Preis und Frage stehen schon im Chat. Will die Person umstellen, ruf reisedaten_aendern mit dem Monat." },
+        log: `${item.name} gezielt gesucht${monat ? ` (${name(monat)})` : ""}` };
     },
 
     /* Mietwagen suchen - siehe die Definition oben. Stufe 1 oeffnet den
@@ -7651,7 +7729,7 @@ const Werkzeugkasten = {
   FAEHIGKEITEN: "DAS KANNST DU (sag es so, wenn danach gefragt wird, und tu es mit dem Werkzeug in Klammern): "
     + "Unterkuenfte suchen und filtern (suchen); Regionen und Monate vergleichen (regionen_vergleichen, monate_vergleichen); "
     + "Haeuser oeffnen und der Reihe nach ansehen (haus_oeffnen, haeuser_ansehen); Bewertungen lesen und nach Stichworten durchsuchen, z.B. Hund, WLAN, Rutschen, Alkohol (bewertungen_lesen, bewertungen_durchsuchen); "
-    + "Monat, Anreisetag oder Naechte aendern, auch auf der Hausseite und in der Kasse (reisedaten_aendern); Fragen zu Ablauf, Zahlung, Storno, Flugklassen, Gepaeck nachschlagen (faq_nachschlagen); "
+    + "Monat, Anreisetag oder Naechte aendern, auch auf der Hausseite und in der Kasse (reisedaten_aendern); ein bestimmtes Haus gezielt suchen, auch mit anderem Monat oder anderer Dauer (haus_suchen); Fragen zu Ablauf, Zahlung, Storno, Flugklassen, Gepaeck nachschlagen (faq_nachschlagen); "
     + "Flug zum Hotel dazurechnen (alle Flughaefen, alle Ziele, taeglich); auf Wunsch einen Mietwagen suchen (mietwagen_suchen); "
     + "merken (merken); Zimmer, Verpflegung und Flug fuer die Buchung waehlen und die Buchung vorbereiten oder abschliessen, je nach Freigabe (buchung_vorbereiten, kasse_aendern, buchung_abschliessen).",
 
