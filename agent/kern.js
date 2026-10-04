@@ -2344,6 +2344,12 @@ const Kern = {
           // Moegliche Anreisetage (Flugtage) als Chips - konkreter als jede Umschreibung
           if (this.lauf.anreiseChips?.length) { antwort.chips = this.lauf.anreiseChips; this.lauf.anreiseChips = null; }
           this.lauf.chips = (antwort.chips || []).length ? antwort.chips : this.ersatzChips(fp);
+          /* Knoepfe nur zur gestellten Frage (04.10.2026). Gemeldet: "Wer
+             reist denn alles mit?" - darunter Juni, Juli, August. Die
+             Knoepfe gehoerten zum offenen Thema des Fahrplans, nicht zur
+             Frage, die wirklich dastand. */
+          const themaRe = fp.naechstes ? Werkzeugkasten.THEMA_WOERTER?.[fp.naechstes] : null;
+          if (themaRe && !themaRe.test(text) && !(antwort.chips || []).length) this.lauf.chips = [];
           AgentPanel.setSuggestions(this.lauf.chips);
           break;
         }

@@ -1209,7 +1209,7 @@ const Kernpruefung = {
     // Leser des Kerns aus dem Verlauf vom 03.10.2026
     const L = Werkzeugkasten.SELBST_LESEN;
     const lesen = [["anzahl", "vier", { anzahlVorschlaege: 4 }], ["anzahl", "gerne 5", { anzahlVorschlaege: 5 }], ["anzahl", "4 nächte", { anzahlVorschlaege: 4 }],
-      ["zeit", "im januar", { monat: 1 }], ["zeit", "nicht im januar", null], ["zeit", "januar oder februar", null]];
+      ["zeit", "im januar", { monat: 1 }], ["zeit", "nicht im januar", null], ["zeit", "januar oder februar", { monate: [1, 2] }], ["zeit", "juli bis august", { monate: [7, 8] }]];
     for (const [thema, satz, soll] of lesen) {
       let ist = null;
       try { ist = L[thema](satz, {}, Werkzeugkasten); } catch { ist = "fehler"; }

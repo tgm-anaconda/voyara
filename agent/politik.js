@@ -1529,7 +1529,15 @@ const Politik = {
     else if (profil.artEgal) raus.push({ feld: "Art", wert: "Hotels und Ferienwohnungen" });
     // Dieselbe Falle wie anderswo: "Mai" hat drei Buchstaben und fiel
     // durch die Laengenpruefung, die Kurzformen aussortieren sollte
-    if (profil.monat && typeof MONATSNAMEN !== "undefined") {
+    /* Mehrere Monate stehen als Spanne da (04.10.2026, Wunsch des
+       Nutzers: "dass da steht Juli - August"), nach dem Vergleich der
+       gewaehlte mit den verglichenen. */
+    if (profil.monate?.length >= 2 && typeof MONATSNAMEN !== "undefined") {
+      const namen = profil.monate.map((m) => MONATSNAMEN[m - 1]);
+      raus.push({ feld: "Zeit", wert: profil.monatAusVergleich && profil.monat
+        ? `${MONATSNAMEN[profil.monat - 1]} (verglichen: ${namen.join(", ")})`
+        : namen.join(" – ") });
+    } else if (profil.monat && typeof MONATSNAMEN !== "undefined") {
       raus.push({ feld: "Zeit", wert: MONATSNAMEN[profil.monat - 1] });
     }
     const personen = [];

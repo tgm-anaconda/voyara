@@ -97,6 +97,10 @@ const Werkzeugkasten = {
             description: "Was die letzte Nachricht der Person war. antwort = sie beantwortet die gestellte Frage (auch teilweise oder mit Zusatz). anweisung = sie sagt dir, was du tun sollst ('nimm das erste', 'buch das', 'zeig mir die Auswahl nochmal'). frage = sie will etwas von dir wissen. einwand = sie widerspricht, korrigiert oder lehnt etwas ab. unklar = sie versteht die Frage nicht oder fragt zurueck, was gemeint ist. sonstiges = passt in keines der Felder. Immer angeben." },
           ziel: text("Region aus dem Katalog, als id: mallorca, kreta, algarve, sardinien, teneriffa, barcelona, wien, lissabon, tirol, suedtirol, lappland, ostsee, marrakesch, kapstadt, krabi, island, newyork, kyoto. NUR, wenn die Person die Region selbst genannt hat - sonst leer lassen. Eine Region, die du fuer passend haeltst, gehoert nicht hierher: Dafuer gibt es regionen_vergleichen, und die Person entscheidet."),
           monat: zahl("Reisemonat 1-12. Ein Monat allein heisst: flexibel im Monat, ohne festes Datum."),
+          /* Mehrere Monate (04.10.2026): "Juli oder August" passte in kein
+             Feld - es wurde nichts gespeichert, und die Zeitfrage galt
+             trotzdem als beantwortet. */
+          monate: { type: "array", items: { type: "integer" }, description: "Wenn die Person mehrere Monate nennt ('Juli oder August', 'Juli bis August', 'Juni, Juli'), alle hier (1-12) und monat leer lassen. Der Kern vergleicht sie dann." },
           /* Die Person gibt die Wahl ab - in beliebigen Worten.
              ----------------------------------------------------------
              Am 27.09.2026 sagte jemand "gerne in dem Monat, wo ich die
@@ -1449,6 +1453,7 @@ const Werkzeugkasten = {
       const namen = Object.keys(wk.MONATSWORT).filter((w) => w.length >= 4 || w === "mai");
       const gefunden = [...new Set(namen.filter((w) => new RegExp(`(^|[^a-zäöüß])${w}([^a-zäöüß]|$)`).test(t)).map((w) => wk.MONATSWORT[w]))];
       if (gefunden.length === 1) return { monat: gefunden[0] };
+      if (gefunden.length >= 2 && gefunden.length <= 4) return { monate: gefunden.sort((a, b) => a - b) };
       if (!gefunden.length) {
         const jz = wk.jahreszeitGenannt({ gespraech: [{ role: "user", content: t }] });
         if (jz && !p.jahreszeit) return { jahreszeit: jz.name };
@@ -1960,6 +1965,8 @@ const Werkzeugkasten = {
     if (!gesetzt.length) return null;
     p.vonPerson = p.vonPerson || {};
     for (const f of gesetzt) p.vonPerson[f] = true;
+    // Mehrere Monate: derselbe Weg wie beim Modell
+    if (Array.isArray(werte.monate) && werte.monate.length >= 2) this.monateAnsetzen(kern, p, werte.monate, "kern");
     /* Quittiert wird das wie jede andere Aufnahme, vom Kern: `aufnahmeSatz`
        liest `zuletztGemerkt`. Ohne diesen Eintrag stünde der Wert still
        im Stand, und die Person wüsste nicht, ob er angekommen ist. */
@@ -2408,6 +2415,14 @@ const Werkzeugkasten = {
         a.monat = relativ;
         kern.lauf.monatRelativ = true;
         kern.notieren("monat_relativ", { monat: relativ });
+      }
+      const mehrere = Array.isArray(a.monate) ? [...new Set(a.monate.map(Number).filter((m) => Number.isInteger(m) && m >= 1 && m <= 12))] : [];
+      if (mehrere.length >= 2) {
+        delete a.monat;
+        Werkzeugkasten.monateAnsetzen(kern, p, mehrere, "modell");
+      } else if (a.monat && monatGenanntJetzt) {
+        // Ein einzelner Monat ersetzt eine fruehere Auswahl mehrerer
+        delete p.monate; delete p.monatAusVergleich;
       }
       setze("monat", a.monat);
       if (a.jahreszeit && Werkzeugkasten.JAHRESZEITEN[a.jahreszeit]) setze("jahreszeit", a.jahreszeit);
@@ -4284,6 +4299,7 @@ const Werkzeugkasten = {
 
       if (selbstEntscheiden && w) {
         p.monat = w.monat;
+        if (p.monate?.length) p.monatAusVergleich = true;
         kern.standAnzeigen();
         Werkzeugkasten.ableiten(kern, "monat", w.satz);
         kern.notieren("monat_abgeleitet", { monat: w.monat, haeuser: w.anzahl, schnitt: w.schnitt, sichtbar: true });
@@ -5353,6 +5369,33 @@ const Werkzeugkasten = {
   /* Getraenke gewuenscht, aber keine All Inclusive (03.10.2026).
      Gemeldet: "Alkohol und Entspannung ist wichtig" bei Halbpension -
      kein Wort dazu, dass Getraenke nur bei All Inclusive dabei sind. */
+  /* Mehrere Monate merken und den Vergleich ansetzen - eine Stelle fuer
+     Modell und Kern-Leser. Der Vergleich ist danach Sache des Kerns: Er
+     stellt die Liste auf jeden Monat, sagt an, was er tut, und setzt den
+     Monat mit Grund. Ein Anreisetag der Person legt den Monat fest -
+     dann wird nicht verglichen. */
+  monateAnsetzen(kern, p, monate, quelle = "kern") {
+    const liste = [...new Set(monate)].sort((a, b) => a - b).slice(0, 4);
+    if (liste.length < 2) return false;
+    if (p.vonPerson?.anreise && p.anreise) return false;
+    p.monate = liste;
+    delete p.monatAusVergleich;
+    (p.vonPerson ||= {}).monate = true;
+    if (p.vonPerson) delete p.vonPerson.monat;
+    if (!p.monat || !liste.includes(p.monat)) p.monat = liste[0];
+    (kern.lauf.besprochen ||= {}).zeit = true;
+    kern.lauf.monatsvergleich = { monate: liste, entscheiden: true };
+    kern.notieren("monate_genannt", { monate: liste, quelle });
+    // Gesagt wird es vom Kern, damit es immer dasteht und stimmt
+    if (typeof MONATSNAMEN !== "undefined") {
+      const namen = liste.map((m) => MONATSNAMEN[m - 1]);
+      const text = namen.length > 1 ? `${namen.slice(0, -1).join(", ")} und ${namen.at(-1)}` : namen[0];
+      this.ableiten(kern, "monat", `${text} merke ich mir. Ich vergleiche die Monate, sobald ich suche, und nehme den, in dem mehr für euch passt.`);
+    }
+    kern.standAnzeigen?.();
+    return true;
+  },
+
   getraenkeHinweis(kern, p) {
     if (kern.lauf.getraenkeHinweis) return;
     const will = (p.kriterien || []).some((k) => k.id === "getraenke");
