@@ -3626,6 +3626,36 @@ const Kern = {
     sperre.appendChild(leiste);
     document.body.appendChild(sperre);
     this.sperreAusrichten();
+    this.scrollSperre(true);
+  },
+
+  /* Auch Scrollen sperren (04.10.2026).
+     ------------------------------------------------------------------
+     Die Sperre fing nur Klicks ab; Mausrad, Wischen und Pfeiltasten
+     bewegten die Seite weiter. Gemeldet: nicht stoerend, aber die Seite
+     soll unberuehrt bleiben, solange der Agent arbeitet. Abgefangen wird,
+     was die Person tut - der Chat und offene Fenster bleiben scrollbar,
+     und der Agent selbst scrollt weiter (scrollIntoView, scrollBy). */
+  scrollSperre(an) {
+    const frei = (e) => !!(e.target && e.target.closest && e.target.closest(".agent-rail-inner, .agent-rail, #agentMessages, .vorschlag-fenster, input, textarea"));
+    if (an) {
+      if (this._scrollStopp) return;
+      const stopp = (e) => { if (!frei(e)) e.preventDefault(); };
+      const tasten = (e) => {
+        if (frei(e)) return;
+        if (["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End", " "].includes(e.key)) e.preventDefault();
+      };
+      this._scrollStopp = { stopp, tasten };
+      window.addEventListener("wheel", stopp, { passive: false, capture: true });
+      window.addEventListener("touchmove", stopp, { passive: false, capture: true });
+      window.addEventListener("keydown", tasten, { capture: true });
+    } else if (this._scrollStopp) {
+      const { stopp, tasten } = this._scrollStopp;
+      window.removeEventListener("wheel", stopp, { capture: true });
+      window.removeEventListener("touchmove", stopp, { capture: true });
+      window.removeEventListener("keydown", tasten, { capture: true });
+      this._scrollStopp = null;
+    }
   },
 
   /* Wo der Chat aufhoert, faengt die Sperre an.
@@ -3643,6 +3673,7 @@ const Kern = {
 
   sperreAus() {
     document.getElementById("agentSperre")?.remove();
+    this.scrollSperre(false);
   },
 
   uebernahme() {
