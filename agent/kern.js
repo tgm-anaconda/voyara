@@ -171,6 +171,7 @@ const STELLSCHRAUBEN = {
   // um, wenn ihm die Wahl ueberlassen wird? false = er rechnet still im
   // Katalog und nennt nur das Ergebnis mit Begruendung.
   monatsvergleich: true,         // true | false
+  mietwagenFrage: true,          // einmal vor der Kasse fragen (04.10.2026)
   log: true,
   // Schrittmeldungen ("Filter gesetzt, noch 9 Treffer") im Chat oder nur
   // im Log. Mit Log: nur im Log. Der Chat sagt beim Start einmal, wo man
@@ -1147,6 +1148,11 @@ const Kern = {
   async eingabeInnen(text, opts = {}) {
     const t = String(text || "").trim();
     if (!t) return;
+    /* Eine neue Nachricht beginnt einen neuen Zug: Ein "Kern wartet" aus
+       dem letzten darf ihn nicht sofort beenden (04.10.2026 - nach einer
+       Antwort im Mietwagen-Fenster blieb der Agent stumm, weil das Zeichen
+       aus dem Werkzeug davor noch stand). */
+    if (!this.laeuft) this.lauf.kernWartet = false;
     // Was die Person seit dem Laden auf der Seite gewaehlt hat (Zimmer,
     // Flug, Daten) - nicht erst beim naechsten Seitenaufbau
     /* Ein Uebernahmesatz gilt fuer die naechste Antwort, nicht laenger.

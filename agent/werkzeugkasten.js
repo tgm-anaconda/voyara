@@ -4684,6 +4684,21 @@ const Werkzeugkasten = {
           hinweis: "Frag in einem Satz, welches Haus es sein soll - aber nur, wenn die Person nicht "
             + "gerade auf einer Hausseite oder im Buchungsformular steht. Dort gilt das Haus der Seite." } };
       }
+      /* Einmal vor der Kasse: Mietwagen? (04.10.2026, Wunsch des Nutzers,
+         als kleines Fenster). Die Antwort fuehrt zurueck in diesen Schritt. */
+      if (stufe === 1 && item.type === "hotel" && !kern.lauf.mietwagenGefragt && !kern.lauf.mietwagen
+        && typeof Mietwagen !== "undefined" && kern.darf("suchen") && STELLSCHRAUBEN.mietwagenFrage !== false) {
+        kern.lauf.mietwagenGefragt = true;
+        const zName = (typeof ZIEL_NACH_ID !== "undefined" && ZIEL_NACH_ID[item.ziel]?.name) || "";
+        kern.lauf.gewaehlt = a.id;
+        kern.sagen(`Bevor ich buche: Braucht ihr vor Ort einen Mietwagen?`);
+        kern.sichern();
+        Mietwagen.frage(kern, { ziel: zName,
+          onJa: () => { kern.lauf.mietwagenVorBuchung = true; kern.lauf.fortsetzenMit = "mietwagen_suchen"; kern.eingabe("Ja, zeig mir Mietwagen."); },
+          onNein: () => { kern.lauf.fortsetzenMit = "buchung_vorbereiten"; kern.eingabe("Nein, kein Mietwagen."); } });
+        kern.lauf.kernWartet = true;
+        return { ergebnis: { wartet: true, hinweis: "Die Frage nach dem Mietwagen steht im Fenster und im Chat. Schreib nichts dazu." } };
+      }
       const seite = Werkzeuge.seite();
       const idHier = new URLSearchParams(location.search).get("id");
       kern.lauf.gewaehlt = a.id;
@@ -4754,7 +4769,12 @@ const Werkzeugkasten = {
            kommt damit weiterhin nicht durch. */
         const nutzer = kern.lauf.gespraech.filter((n) => n.role === "user");
         const tagZahl = parseInt(String(kern.lauf.profil.anreise || "").slice(-2), 10);
-        const tagGenannt = nutzer.slice(-4).some((n) => Werkzeugkasten.TAG.test(String(n.content)))
+        /* Auch ein Tag, den die Person auf der Seite eingestellt oder per
+           reisedaten_aendern geaendert hat, ist ihrer (04.10.2026: "den
+           Anreisetag vergessen, obwohl er geklaert war" - er stand nur
+           auf der Seite, nicht im Chat, und wurde hier geloescht). */
+        const tagGenannt = !!kern.lauf.profil.vonPerson?.anreise
+          || nutzer.slice(-4).some((n) => Werkzeugkasten.TAG.test(String(n.content)))
           || (!!tagZahl && nutzer.some((n) => new RegExp(`(^|[^\\d])0?${tagZahl}\\s*\\.`).test(String(n.content))));
         if (!kern.lauf.profil.anreise || !tagGenannt) {
           kern.lauf.profil.anreise = null;
@@ -5046,6 +5066,13 @@ const Werkzeugkasten = {
       const e = await Werkzeuge.buchungAbschliessen();
       kern.sperreAus();
       if (e.daten?.gebucht) kern.notieren("gebucht", { id: kern.lauf.gewaehlt, autonom });
+      // Der gemerkte Mietwagen: jetzt mit einem Knopf zu seiner Kasse
+      if (e.daten?.gebucht && kern.lauf.mietwagen?.id && !kern.lauf.mietwagenAngeboten) {
+        kern.lauf.mietwagenAngeboten = true;
+        const w = getItemById(kern.lauf.mietwagen.id);
+        let href = `checkout.html?id=${encodeURIComponent(kern.lauf.mietwagen.id)}&nights=${kern.lauf.profil?.naechte || 7}`;
+        kern.sagen(`Jetzt fehlt noch der Mietwagen: ${w?.model || "dein Wagen"} von ${w?.supplier || "dem Vermieter"}.`, "bot", [{ text: "Mietwagen buchen", href }]);
+      }
       if (e.daten?.wartetAufDaten) return { ergebnis: { fehler: e.text } };
       return { ergebnis: { gebucht: !!e.daten?.gebucht, text: e.text, hinweis: "Sag in einem Satz, dass es erledigt ist - ohne die Buchung noch einmal aufzuzaehlen. Es wurde nichts wirklich gebucht (Prototyp) - das steht auf der Seite, du musst es nicht betonen." }, log: e.text };
     },

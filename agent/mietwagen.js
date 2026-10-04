@@ -134,6 +134,17 @@ const Mietwagen = {
       try { Studie.notieren("mietwagen_gewaehlt", { id, partner: !!gewaehlt?.partner, wo: "fenster" }); } catch { /* ohne Studie */ }
     }
     this.schliessen(true);
+    /* Kam die Suche aus der Buchung (Frage vor der Kasse), geht es dort
+       weiter: Der Wagen wird gemerkt und nach der Unterkunft gebucht. */
+    if (k && k.lauf.mietwagenVorBuchung) {
+      k.lauf.mietwagen = { id, partner: !!gewaehlt?.partner };
+      k.lauf.mietwagenVorBuchung = false;
+      k.sagen(`${gewaehlt?.wagen?.model || "Den Wagen"} von ${gewaehlt?.wagen?.supplier || "dem Vermieter"} merke ich mir. Den buchen wir nach der Unterkunft, ich gehe jetzt weiter zur Buchung.`);
+      k.lauf.fortsetzenMit = "buchung_vorbereiten";
+      k.sichern();
+      k.eingabe("Weiter mit der Buchung der Unterkunft.");
+      return;
+    }
     if (k) {
       k.lauf.mietwagen = { id, partner: !!gewaehlt?.partner };
       k.sagen(`${gewaehlt?.wagen?.model || "Der Wagen"} von ${gewaehlt?.wagen?.supplier || "dem Vermieter"} liegt jetzt in der Kasse. Den Mietwagen buchst du getrennt von der Unterkunft.`);
@@ -143,6 +154,43 @@ const Mietwagen = {
     if (typeof Reisedaten !== "undefined") href = Reisedaten.anLink(href);
     if (d.tage && !/[?&](nights|from)=/.test(href)) href += `&nights=${d.tage}`;
     setTimeout(() => { location.href = href; }, 400);
+  },
+
+  /* Die Frage vor der Kasse (04.10.2026): einmal, als kleines Fenster,
+     weil sie im Chat kurz vor der Buchung leicht untergeht. */
+  frage(kern, { ziel = "", onJa, onNein } = {}) {
+    document.getElementById("mietwagenFrage")?.remove();
+    const el = document.createElement("div");
+    el.className = "vorschlag-schirm";
+    el.id = "mietwagenFrage";
+    el.innerHTML = `
+      <div class="vorschlag-fenster flug-fenster" role="dialog" aria-label="Mietwagen" style="max-width:460px">
+        <div class="vorschlag-kopf">
+          <div>
+            <p class="vorschlag-marke">Reise-Assistent</p>
+            <h2 class="vorschlag-titel">Braucht ihr vor Ort einen Mietwagen?</h2>
+            <p class="vorschlag-kontext">Ich kann dir drei passende Wagen${ziel ? ` in ${ziel}` : ""} heraussuchen. Gebucht wird er getrennt von der Unterkunft.</p>
+          </div>
+        </div>
+        <div class="vorschlag-fuss" style="display:flex;gap:10px;justify-content:flex-end">
+          <button type="button" class="btn btn-ghost" data-antwort="nein">Nein, danke</button>
+          <button type="button" class="btn btn-primary" data-antwort="ja">Ja, zeig mir welche</button>
+        </div>
+      </div>`;
+    document.body.appendChild(el);
+    document.body.classList.add("vorschlag-offen");
+    void el.offsetHeight;
+    el.classList.add("da");
+    const t0 = Date.now();
+    kern?.notieren("mietwagen_frage_gezeigt", {});
+    el.querySelectorAll("[data-antwort]").forEach((b) => b.addEventListener("click", () => {
+      const ja = b.dataset.antwort === "ja";
+      kern?.notieren("mietwagen_frage_antwort", { ja, sekunden: Math.round((Date.now() - t0) / 1000) });
+      if (typeof Studie !== "undefined" && Studie.notieren) { try { Studie.notieren("mietwagen_frage", { ja }); } catch { /* ohne Studie */ } }
+      el.remove();
+      document.body.classList.remove("vorschlag-offen");
+      (ja ? onJa : onNein)?.();
+    }));
   },
 
   schliessen(gewaehlt = false, wie = "knopf") {
