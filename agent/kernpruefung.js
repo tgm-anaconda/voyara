@@ -1630,6 +1630,162 @@ const Kernpruefung = {
     return fehler;
   },
 
+  /* Der eigene Chip muss wirken.
+     ------------------------------------------------------------------
+     Gemeldet am 06.10.2026: Der Kern fragte "Soll ich auf Hotels
+     eingrenzen, oder lieber ohne Flug bei beidem bleiben?", die Person
+     klickte seinen eigenen Chip "Nur Hotels, mit Flug" - und bekam
+     dieselbe Frage noch einmal, anders formuliert.
+
+     Drei Dinge hatten gefehlt, und diese Pruefung haelt alle drei fest:
+     die Frage war nicht als gestellt gefuehrt, die Antwort landete
+     deshalb als beilaeufige Erwaehnung im Stand, und der zweite Chip
+     ("Ohne Flug, dafuer beides") konnte den Flug gar nicht mehr
+     umstellen.
+
+     Geprueft wird am Ergebnis: Nach dem Klick auf einen eigenen Chip
+     muss das Thema erledigt sein und die Frage darf nicht wiederkommen.
+
+     Gegenprobe gegen den Stand davor: 8 Befunde. */
+  /* Jede Frage sagt, wohin die Antwort gehoert.
+     ------------------------------------------------------------------
+     Wunsch des Nutzers am 06.10.2026. Das Modell deutet weiter frei; es
+     erfaehrt nur, in welches Feld das Gedeutete gehoert. Genau diese
+     Zuordnung fehlte, und bei der Art (zwei Felder, `typ` und `artEgal`)
+     ging die Antwort deshalb verloren.
+
+     Was diese Pruefung leisten kann und was nicht, offen gesagt: Sie
+     prueft, dass jede gestellte Frage eine Zuordnung hat, dass jedes
+     genannte Feld im Werkzeugschema wirklich existiert, und dass die
+     Ansage im Auftrag an das Modell auch ankommt. Ob das Modell danach
+     besser trifft, kann sie nicht wissen - das zeigen erst die Laeufe
+     (`nachricht_vom_modell`, `antwort_selbst_gelesen`, `thema_beantwortet`).
+
+     Gegenprobe gegen den Stand davor: 15 Befunde. */
+  antwortErwartungen() {
+    const fehler = [];
+    const melde = (art, text, satz = "") => fehler.push({ art, thema: "fahrplan", text, satz });
+    if (typeof Werkzeugkasten === "undefined") return fehler;
+    let eigenschaften = {};
+    try {
+      const def = Werkzeugkasten.alleDefinitionen().find((d) => d.function?.name === "stand_merken");
+      eigenschaften = def?.function?.parameters?.properties || {};
+    } catch { eigenschaften = {}; }
+    if (!Object.keys(eigenschaften).length) {
+      melde("schema_fehlt", "Das Schema von stand_merken ist nicht lesbar - die Zuordnung ist nicht pruefbar");
+      return fehler;
+    }
+    const ohne = Werkzeugkasten.THEMA_OHNE_FELD || [];
+    for (const thema of Object.keys(Werkzeugkasten.THEMEN || {})) {
+      const felder = (Werkzeugkasten.THEMA_FELDER || {})[thema];
+      if (ohne.includes(thema)) {
+        if (felder?.length) melde("thema_doppelt_gefuehrt", `${thema}: steht als "nimmt nichts auf" UND hat Felder`);
+        continue;
+      }
+      if (!felder?.length) {
+        melde("thema_ohne_feld", `${thema}: die Frage sagt nicht, wohin die Antwort gehoert`);
+        continue;
+      }
+      for (const f of felder) {
+        if (!eigenschaften[f]) {
+          melde("feld_gibt_es_nicht", `${thema}: nennt das Feld "${f}", das Werkzeug stand_merken kennt es nicht`);
+        }
+      }
+      const satz = Werkzeugkasten.antwortErwartung(thema);
+      if (!satz) { melde("erwartung_leer", `${thema}: es kommt kein Ansagesatz heraus`); continue; }
+      if (!/stand_merken/.test(satz)) melde("erwartung_ohne_werkzeug", `${thema}: der Satz nennt das Werkzeug nicht`, satz);
+      // Die Person darf immer etwas anderes sagen - das muss dabeistehen,
+      // sonst wird aus der Zuordnung eine Scheuklappe
+      if (!/etwas anderes/.test(satz)) {
+        melde("erwartung_ohne_ausweg", `${thema}: der Satz laesst nicht offen, dass die Person etwas anderes sagt`, satz);
+      }
+    }
+    /* Und die Ansage muss im Auftrag an das Modell wirklich ankommen -
+       eine Tabelle, die niemand liest, ist keine Ansage. */
+    if (typeof Kern !== "undefined" && typeof Kern.fahrplanText === "function") {
+      const stand = { monat: 7, erwachsene: 2, kinder: 0, zielOffen: true, typ: "hotel", artGenannt: true };
+      const stub = { lauf: { profil: stand, gespraech: [], abgeleitet: [] },
+        standKurz: () => "", darf: () => true, freigabe: () => "suchen", notieren() {} };
+      let text = "";
+      try { text = String(Kern.fahrplanText.call(stub) || ""); } catch (e) { text = `Absturz: ${e && e.message}`; }
+      const fp = Werkzeugkasten.fahrplan(stand, stub.lauf);
+      const erwartet = Werkzeugkasten.antwortErwartung(fp.naechstes || fp.fragtThema);
+      if (erwartet && !text.includes("gehoert in stand_merken")) {
+        melde("ansage_kommt_nicht_an", `Thema ${fp.naechstes}: die Zuordnung steht nicht im Auftrag an das Modell`, text.slice(0, 160));
+      }
+    }
+    return fehler;
+  },
+
+  chipWirkungen() {
+    const fehler = [];
+    const melde = (art, text, satz = "") => fehler.push({ art, thema: "art", text, satz });
+    if (typeof Werkzeugkasten === "undefined") return fehler;
+    const faelle = [
+      { name: "Flug, gemeinsamer Reiter", p: { flug: true, artEgal: true } },
+      { name: "Flug, Ferienwohnung gewaehlt", p: { flug: true, typ: "apartment", artGenannt: true } },
+      { name: "All Inclusive ohne Art", p: { artEgal: true, verpflegung: "ai" } },
+      { name: "Sterne ohne Art", p: { artEgal: true, mindestSterne: 4 } },
+    ];
+    for (const f of faelle) {
+      const r = Werkzeugkasten.artRueckfrage(JSON.parse(JSON.stringify(f.p)), {});
+      if (!r) { melde("rueckfrage_fehlt", `${f.name}: der Kern stellt die Rueckfrage nicht mehr`); continue; }
+      if (!r.wirkung) { melde("chip_ohne_wirkung", `${f.name}: die Chips haben keine angemeldete Wirkung`, r.satz); continue; }
+      for (const c of r.chips || []) {
+        if (!Object.keys(r.wirkung).some((k) => k.trim().toLowerCase() === c.trim().toLowerCase())) {
+          melde("chip_ohne_wirkung", `${f.name}: Chip "${c}" hat keine angemeldete Wirkung`, r.satz);
+          continue;
+        }
+        /* Der ganze Zug, so wie er wirklich laeuft: Der Kern liest seinen
+           Chip, danach laeuft stand_merken wie nach jeder Nachricht - und
+           zwar ohne dass das Modell etwas setzt. Genau so stand es im
+           Protokoll: Das Modell hatte nur `flug` gesetzt, die Art nicht. */
+        const p = JSON.parse(JSON.stringify(f.p));
+        const kern = {
+          lauf: { profil: p, gefragt: "art", zuletztGefragt: "art", chipWirkung: r.wirkung, chipThema: "art",
+            letzteNachricht: c, gespraech: [{ role: "user", content: c }], chips: r.chips },
+          notieren() {}, standAnzeigen() {}, sichern() {}, sagen() {}, logZeile() {},
+          standKurz: () => "", eingabe() {}, darf: () => true, freigabe: () => "suchen",
+        };
+        Werkzeugkasten.chipAntwortLesen(kern, c);
+        try { Werkzeugkasten.werkzeuge.stand_merken({}, kern); } catch { /* der Rest wird trotzdem geprueft */ }
+
+        /* Geprueft wird gegen den WORTLAUT des Chips, nicht gegen die
+           Tabelle dahinter - sonst pruefte die Pruefung nur, ob die
+           Tabelle sich selbst gleicht. */
+        const t = c.toLowerCase();
+        const seite = Werkzeugkasten.seitenTyp(p);
+        if (/ohne flug|kein flug/.test(t) && p.flug !== false) {
+          melde("chip_ohne_wirkung", `${f.name}: "${c}" gesagt, im Stand steht flug=${p.flug}`, c);
+        }
+        if (/\bmit flug\b|hotels mit flug/.test(t) && p.flug !== true) {
+          melde("chip_ohne_wirkung", `${f.name}: "${c}" gesagt, im Stand steht flug=${p.flug}`, c);
+        }
+        if (/^nur hotels|dann hotels/.test(t) && seite !== "hotel") {
+          melde("chip_ohne_wirkung", `${f.name}: "${c}" gesagt, die Suche steht aber auf ${seite}`, c);
+        }
+        if (/ferienwohnung ohne flug|^nur ferienwohnungen/.test(t) && seite !== "apartment") {
+          melde("chip_ohne_wirkung", `${f.name}: "${c}" gesagt, die Suche steht aber auf ${seite}`, c);
+        }
+        if (/beides|beide offen/.test(t) && seite !== "unterkunft") {
+          melde("chip_ohne_wirkung", `${f.name}: "${c}" gesagt, die Suche steht aber auf ${seite}`, c);
+        }
+        // Die Antwort darf nicht als beilaeufige Erwaehnung abgelegt werden -
+        // daraus baute der Fahrplan die zweite, anders formulierte Frage
+        if (p.artErwaehnt) {
+          melde("antwort_als_erwaehnung", `${f.name}: "${c}" wurde als beilaeufige Erwaehnung abgelegt (artErwaehnt=${p.artErwaehnt})`, c);
+        }
+        if (!p.artGenannt && !p.artEgal) {
+          melde("art_bleibt_offen", `${f.name}: nach "${c}" gilt die Art immer noch als unentschieden`, c);
+        }
+        if (Werkzeugkasten.artRueckfrage(p, { artGefragt: { [r.grund]: true } })) {
+          melde("rueckfrage_kommt_wieder", `${f.name}: nach "${c}" steht dieselbe Rueckfrage wieder an`, c);
+        }
+      }
+    }
+    return fehler;
+  },
+
   korrektur() {
     const fehler = [];
     const melde = (art, text, satz = "") => fehler.push({ art, thema: "ziel", text, satz });
@@ -2451,6 +2607,8 @@ const Kernpruefung = {
     for (const f of this.namen()) alle.push(f);
     for (const f of this.korrektur()) alle.push(f);
     for (const f of this.regionenNennung()) alle.push(f);
+    for (const f of this.chipWirkungen()) alle.push(f);
+    for (const f of this.antwortErwartungen()) alle.push(f);
     for (const f of this.riegel()) alle.push(f);
     for (const f of this.zimmer()) alle.push(f);
     for (const f of this.alleThemen()) alle.push(f);

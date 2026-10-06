@@ -1053,11 +1053,20 @@ const Kern = {
     const fp = Werkzeugkasten.fahrplan(p, this.lauf);
     const bekannt = this.standKurz();
     const chipsHinweis = fp.naechstes ? (fp.chips ? ` Chips etwa: ${fp.chips}.` : " Keine CHIPS-Zeile - die Frage ist offen.") : "";
-    if (fp.phase === "eckdaten") return `FAHRPLAN: Eckdaten. Naechstes Thema, genau eines: ${fp.naechstes}. ${fp.frage}${chipsHinweis} Nicht mehr fragen, was im Stand steht (${bekannt}). Geht die Person auf etwas anderes ein oder fragt sie etwas, antworte darauf zuerst - und stell dann diese Frage. Du darfst jederzeit suchen, wenn du fuer eine Antwort Zahlen brauchst.`;
+    /* Wohin die Antwort gehoert (06.10.2026).
+       ----------------------------------------------------------------
+       Bis hierher bekam das Modell den Themennamen, einen Hinweis zur
+       Formulierung und die Chips - aber nie die Zuordnung zum Feld. Bei
+       der Art sind es sogar zwei Felder, die zusammengehoeren, und genau
+       dort ging die Antwort verloren. Das Deuten bleibt beim Modell, die
+       Zuordnung kommt vom Kern. */
+    const erwartung = Werkzeugkasten.antwortErwartung(fp.naechstes || fp.fragtThema);
+    const wohin = erwartung ? ` ${erwartung}` : "";
+    if (fp.phase === "eckdaten") return `FAHRPLAN: Eckdaten. Naechstes Thema, genau eines: ${fp.naechstes}. ${fp.frage}${chipsHinweis}${wohin} Nicht mehr fragen, was im Stand steht (${bekannt}). Geht die Person auf etwas anderes ein oder fragt sie etwas, antworte darauf zuerst - und stell dann diese Frage. Du darfst jederzeit suchen, wenn du fuer eine Antwort Zahlen brauchst.`;
     if (fp.phase === "suche") return fp.empfehlungBereit
       ? `FAHRPLAN: Die Eckdaten haben sich geaendert. Ruf suchen - es legt die passenden Haeuser neu vor.`
       : `FAHRPLAN: Alle Eckdaten sind da. Ruf suchen - die Lage (Zahlen) sagt danach die Seite selbst; du ergaenzt hoechstens einen Satz aus deinem Wissen und fragst das naechste Thema.`;
-    if (fp.phase === "beratung") return `FAHRPLAN: Beratung, die Lage ist bekannt. Naechstes Thema, genau eines: ${fp.naechstes}. ${fp.frage}${chipsHinweis}`;
+    if (fp.phase === "beratung") return `FAHRPLAN: Beratung, die Lage ist bekannt. Naechstes Thema, genau eines: ${fp.naechstes}. ${fp.frage}${chipsHinweis}${wohin}`;
     if (fp.phase === "selbst") return `FAHRPLAN: Die Person schaut selbst durch die Liste. ${this.lauf.vorgehenFuer ? "Antworte nur, wenn sie etwas fragt oder will; keine Vorschlaege von dir, keine Frage hinterher." : "Ruf suchen (stellt die Filter) und sag ihr, dass die Liste steht."}`;
     // vorschlaege
     if (!this.lauf.letzteVorlage?.length) return `FAHRPLAN: Beratung abgeschlossen. Ruf suchen - es legt die drei passendsten Haeuser gleich im Chat vor. Danach ein Satz: welches sie sich ansehen will oder ob etwas fehlt.`;
@@ -1358,8 +1367,16 @@ const Kern = {
          ist die Voraussetzung dafuer, eine nackte Zahl so zu lesen.
          Gelesen wird vor dem Modell, damit der Fahrplan im Auftrag schon
          den neuen Stand zeigt und das Thema nicht mehr als offen fuehrt. */
+      /* Zuerst der eigene Chip, dann der freie Text. Ein Chip ist der
+         Wortlaut des Kerns selbst - ihn wiederzuerkennen ist Buchfuehrung,
+         kein Deuten. Alles andere bleibt beim Modell. */
+      Werkzeugkasten.chipAntwortLesen(this, t);
       Werkzeugkasten.antwortSelbstLesen(this, this.lauf.gefragt, t);
       this.lauf.gefragt = null;
+      // Die Wirkung gilt genau fuer den Zug nach der Frage. Steht die Frage
+      // danach noch offen, meldet sie ihre Chips ohnehin neu an.
+      this.lauf.chipWirkung = null;
+      this.lauf.chipThema = null;
     }
     /* Ein Tag in einem anderen Monat: nicht raten, fragen.
        ------------------------------------------------------------------
@@ -1937,7 +1954,18 @@ const Kern = {
             if (this.lauf.artGefragt === true) this.lauf.artGefragt = { verpflegung: true, sterne: true };
             (this.lauf.artGefragt ||= {})[artFrage.grund] = true;
             this.notieren("art_rueckfrage", { grund: artFrage.grund, offen: fpJetzt.naechstes });
-            fpJetzt = { ...fpJetzt, satz: artFrage.satz, chips: artFrage.chips.join(" | "), naechstes: null, nurKern: true };
+            /* `fragtThema` fehlte hier, und das war der ganze Fehler
+               (gemeldet 06.10.2026). Ohne diesen Eintrag fuehrt der Kern
+               seine eigene Rueckfrage nicht als gestellt - die Antwort
+               darauf ("Nur Hotels, mit Flug", ein Chip von ihm selbst)
+               galt im naechsten Zug als beilaeufige Erwaehnung, landete
+               in `artErwaehnt`, und daraus baute der Fahrplan die Frage
+               "Du hattest vorhin Hotel geschrieben - soll ich nur danach
+               suchen?". Dieselbe Luecke wie beim Datum am 02.10.2026,
+               nur an einer anderen Frage. */
+            this.lauf.chipWirkung = artFrage.wirkung || null;
+            this.lauf.chipThema = "art";
+            fpJetzt = { ...fpJetzt, satz: artFrage.satz, chips: artFrage.chips.join(" | "), naechstes: null, nurKern: true, fragtThema: "art" };
           }
           /* Die Namen gehen nicht auf: fragen, bevor etwas eingetragen wird. */
           if (!freierZug && !tippGestellt && !artFrage && fpJetzt.satz !== null) {

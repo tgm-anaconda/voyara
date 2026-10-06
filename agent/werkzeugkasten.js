@@ -1241,6 +1241,16 @@ const Werkzeugkasten = {
         chips: wohnung
           ? ["Dann Hotels mit Flug", "Ferienwohnung ohne Flug"]
           : ["Nur Hotels, mit Flug", "Ohne Flug, dafür beides"],
+        /* Was der eigene Chip bedeutet - angemeldet an der Frage, die ihn
+           anbietet. Ohne das blieb "Ohne Flug, dafür beides" ohne Wirkung:
+           Der Kern liest einen Flugwunsch aus freiem Text nur, solange im
+           Stand noch nichts steht, und hier stand schon `flug: true`. Die
+           Person konnte ihren eigenen Chip also nicht durchsetzen. */
+        wirkung: wohnung
+          ? { "Dann Hotels mit Flug": { typ: "hotel", artGenannt: true, artEgal: false, flug: true },
+            "Ferienwohnung ohne Flug": { typ: "apartment", artGenannt: true, artEgal: false, flug: false } }
+          : { "Nur Hotels, mit Flug": { typ: "hotel", artGenannt: true, artEgal: false, flug: true },
+            "Ohne Flug, dafür beides": { typ: null, artEgal: true, artGenannt: true, flug: false } },
       };
     }
     if (!p.artEgal || p.artGenannt) return null;
@@ -1256,6 +1266,10 @@ const Werkzeugkasten = {
       satz: `Eine Sache dazu: Gerade suche ich Hotels und Ferienwohnungen zusammen, und ${wunsch} `
         + `gibt es nur bei Hotels. Soll ich auf Hotels eingrenzen, oder beides offen lassen?`,
       chips: ["Nur Hotels", "Beides offen lassen"],
+      wirkung: {
+        "Nur Hotels": { typ: "hotel", artGenannt: true, artEgal: false },
+        "Beides offen lassen": { typ: null, artEgal: true, artGenannt: true },
+      },
     };
   },
 
@@ -2023,17 +2037,41 @@ const Werkzeugkasten = {
     let werte = null;
     try { werte = leser(t, sicht, this); } catch { werte = null; }
     if (!werte) return null;
+    return this.werteUebernehmen(kern, thema, werte, t, "antwort_selbst_gelesen");
+  },
+
+  /* Die Buchfuehrung einer eigenen Lesung - an einer Stelle.
+     ------------------------------------------------------------------
+     Zwei Leser schreiben in den Stand: der Leser fuer die Antwort auf die
+     gestellte Frage (`antwortSelbstLesen`) und der fuer den eigenen Chip
+     (`chipAntwortLesen`). Beide muessen danach dasselbe tun - Herkunft
+     vermerken, gegen das Modell sperren, quittieren lassen, Annahme und
+     Nichtverstehen aufloesen. Stuende das zweimal da, liefe es
+     auseinander; das ist in diesem Projekt schon oft genug passiert. */
+  werteUebernehmen(kern, thema, werte, text = "", grund = "antwort_selbst_gelesen") {
+    const p = kern.lauf.profil || (kern.lauf.profil = {});
     const gesetzt = [];
-    for (const f of Object.keys(werte)) {
+    for (const f of Object.keys(werte || {})) {
       const w = werte[f];
-      if (w === undefined || w === null || w === "") continue;
+      /* `null` heisst hier ausdruecklich "dieses Feld raeumen" - gebraucht
+         vom Chip "beides", der `typ` loeschen muss, damit `seitenTyp` nicht
+         weiter das alte Hotel zeigt. Die Leser in SELBST_LESEN geben nie
+         null zurueck (ein null dort heisst "nichts gelesen" und wird eine
+         Ebene hoeher abgefangen), ihr Verhalten aendert sich also nicht. */
+      if (w === null) {
+        if (p[f] === undefined) continue;
+        delete p[f];
+        gesetzt.push(f);
+        continue;
+      }
+      if (w === undefined || w === "") continue;
       if (JSON.stringify(p[f] == null ? null : p[f]) === JSON.stringify(w)) continue;
       p[f] = w;
       gesetzt.push(f);
     }
     if (!gesetzt.length) return null;
     p.vonPerson = p.vonPerson || {};
-    for (const f of gesetzt) p.vonPerson[f] = true;
+    for (const f of gesetzt) { if (p[f] !== undefined) p.vonPerson[f] = true; else delete p.vonPerson[f]; }
     // Mehrere Monate: derselbe Weg wie beim Modell
     if (Array.isArray(werte.monate) && werte.monate.length >= 2) this.monateAnsetzen(kern, p, werte.monate, "kern");
     /* Quittiert wird das wie jede andere Aufnahme, vom Kern: `aufnahmeSatz`
@@ -2043,12 +2081,39 @@ const Werkzeugkasten = {
     kern.lauf.selbstGelesen = dazu(kern.lauf.selbstGelesen);
     kern.lauf.zuletztGemerkt = dazu(kern.lauf.zuletztGemerkt);
     // Eine Annahme und ein Nichtverstehen zu diesem Thema sind hinfällig
-    if (kern.lauf.uebersprungen) delete kern.lauf.uebersprungen[thema];
-    if (kern.lauf.nichtVerstanden) delete kern.lauf.nichtVerstanden[thema];
-    kern.notieren?.("antwort_selbst_gelesen", { thema, felder: gesetzt, text: t.slice(0, 60) });
+    if (thema && kern.lauf.uebersprungen) delete kern.lauf.uebersprungen[thema];
+    if (thema && kern.lauf.nichtVerstanden) delete kern.lauf.nichtVerstanden[thema];
+    kern.notieren?.(grund, { thema, felder: gesetzt, text: String(text).slice(0, 60) });
     kern.standAnzeigen?.();
     kern.sichern?.();
     return { thema, felder: gesetzt };
+  },
+
+  /* Der eigene Chip.
+     ------------------------------------------------------------------
+     Wunsch des Nutzers am 06.10.2026: Das Verstehen soll beim Modell
+     bleiben, der Kern soll nur dafuer sorgen, dass Beantwortetes
+     beantwortet bleibt. Bei einem Chip ist beides kein Widerspruch - der
+     Text stammt vom Kern selbst. Er muss ihn nicht deuten, nur
+     wiedererkennen.
+
+     Deshalb vergleicht diese Funktion auf Gleichheit, nicht auf Muster.
+     Schreibt jemand frei "nur Hotels bitte", greift sie nicht; dafuer ist
+     weiter das Modell da. Gelesen wird nur, was die Frage selbst als
+     Wirkung ihres Chips angemeldet hat (`wirkung`).
+
+     Der Anlass: Auf "Ohne Flug, dafür beides" blieb `flug` auf true, weil
+     der Kern den Flug nur aus freiem Text liest, wenn im Stand noch
+     nichts steht - und hier stand schon etwas. Die Person konnte ihren
+     eigenen Chip also nicht durchsetzen. */
+  chipAntwortLesen(kern, text) {
+    const wirkung = kern?.lauf?.chipWirkung;
+    if (!wirkung) return null;
+    const t = String(text == null ? "" : text).trim().toLowerCase();
+    if (!t) return null;
+    const treffer = Object.keys(wirkung).find((c) => c.trim().toLowerCase() === t);
+    if (!treffer) return null;
+    return this.werteUebernehmen(kern, kern.lauf.chipThema || null, wirkung[treffer], t, "chip_gelesen");
   },
 
   /* Eine Quittung des Modells - an einer Stelle, damit die Pruefung
@@ -3110,7 +3175,14 @@ const Werkzeugkasten = {
             if (antwortAufArt) { p.artEgal = true; p.artGenannt = true; delete p.typ; delete p.artErwaehnt; }
             else p.artErwaehnt = nennt;
           } else if (nennt) {
-            if (antwortAufArt) { a.typ = nennt; p.artGenannt = true; delete p.artErwaehnt; }
+            /* Direkt in den Stand, nicht ueber `a`.
+               ------------------------------------------------------------
+               `a.typ` wird weiter oben gelesen ("if (a.typ)"), eine
+               Zuweisung hier kommt zu spaet und verpufft. Nachgemessen am
+               06.10.2026: Auf "Nur Hotels, mit Flug" blieb artEgal stehen
+               und typ leer - der Stand sagte "beides", obwohl die Person
+               sich gerade entschieden hatte. */
+            if (antwortAufArt) { setze("typ", nennt); p.artGenannt = true; p.artEgal = false; delete p.artErwaehnt; }
             else p.artErwaehnt = nennt;
           } else if (antwortAufArt && beides) {
             // "Beides" allein, ohne das Wort - auch das ist eine Antwort
@@ -5289,6 +5361,81 @@ const Werkzeugkasten = {
      frage    bleibt als Anweisung fuer das Modell, wenn es doch einmal
               selbst formulieren muss (Sonderfaelle, Rueckfragen).
      chips    Antwortvorschlaege. */
+  /* Wohin die Antwort auf eine Frage gehoert.
+     ------------------------------------------------------------------
+     Wunsch des Nutzers am 06.10.2026: "Es ist einfach essentiell, dass
+     das Modell ueberhaupt weiss, was es fuer Antworten erwartet. Das
+     Modell ist ja in der Lage, alle moeglichen Antworten zu deuten, das
+     ist ja gerade der Vorteil, warum wir das Modell nutzen."
+
+     Er hat recht, und es fehlte wirklich. Das Modell bekam pro Frage den
+     Themennamen, einen Hinweis zur Formulierung und die Chips - aber nie
+     die Zuordnung "die Antwort darauf gehoert in dieses Feld". Der
+     Speicher hat ueber neunzig Felder, und fuer die Art sind es sogar
+     zwei, die zusammen gesetzt werden muessen (`typ` und `artEgal`).
+     Dass das Modell dabei danebengreift, ist kein Verstaendnisfehler,
+     sondern eine fehlende Ansage.
+
+     Die moeglichen Werte stehen absichtlich NICHT hier, sondern werden
+     aus dem Werkzeugschema gelesen (`antwortErwartung`). Zwei Listen
+     derselben Sache laufen auseinander, das ist in diesem Projekt die
+     wiederkehrende Fehlerquelle.
+
+     Nicht aufgefuehrt sind Themen, die keine Angabe der Person
+     aufnehmen (`weiter`, `beratung`) - sie sind unten ausdruecklich
+     ausgenommen, damit die Pruefung eine Luecke von einer Absicht
+     unterscheiden kann. */
+  THEMA_FELDER: {
+    zeit: ["monat", "monate", "jahreszeit", "monatUeberlassen", "von", "bis"],
+    reisende: ["personenGesamt", "erwachsene", "kinder"],
+    kinderAlter: ["kinderAlter"],
+    ziel: ["richtung", "ziel", "zielOffen", "mindestGrad"],
+    art: ["typ", "artEgal"],
+    dauer: ["naechte"],
+    flug: ["flug"],
+    flugAb: ["flugAb", "flugAbEgal", "flugAbAuswahl"],
+    flugKlasse: ["flugKlasse"],
+    anreise: ["anreise", "von", "bis", "anreiseAb", "anreiseBis"],
+    vorgehen: ["vorgehen"],
+    anzahl: ["anzahlVorschlaege"],
+    preis: ["maxPreis", "budgetGesamt", "preisEgal"],
+    verpflegung: ["verpflegung", "verpflegungEgal"],
+    wuensche: ["wuensche", "ausstattung", "ausstattungEgal"],
+  },
+
+  // Themen, die nichts aufnehmen - sie werden gar nicht mehr gefragt
+  THEMA_OHNE_FELD: ["weiter", "beratung"],
+
+  /* Der Satz fuer das Modell: wohin die Antwort gehoert, welche Werte es
+     dort gibt, und dass alles andere trotzdem erlaubt ist.
+     ------------------------------------------------------------------
+     Die Werte kommen aus dem Schema von `stand_merken`, nicht aus einer
+     zweiten Liste. Wer dort einen Wert ergaenzt, ergaenzt ihn damit auch
+     hier. */
+  antwortErwartung(thema) {
+    const felder = this.THEMA_FELDER[thema];
+    if (!felder?.length) return null;
+    let eigenschaften = {};
+    try {
+      const def = this.alleDefinitionen().find((d) => d.function?.name === "stand_merken");
+      eigenschaften = def?.function?.parameters?.properties || {};
+    } catch { eigenschaften = {}; }
+    const teile = felder.filter((f) => eigenschaften[f]).map((f) => {
+      const e = eigenschaften[f];
+      if (Array.isArray(e.enum) && e.enum.length) return `${f} (${e.enum.join(" | ")})`;
+      if (e.type === "boolean") return `${f} (true/false)`;
+      if (e.type === "array") return `${f} (Liste)`;
+      return f;
+    });
+    if (!teile.length) return null;
+    /* Kurz gehalten: Dass die Person auch etwas anderes sagen darf, steht
+       im Auftrag ohnehin schon - hier nur der Hinweis, dass dann nichts
+       gesetzt wird. Zweimal derselbe Satz im Auftrag kostet nur Platz. */
+    return `Die Antwort auf diese Frage gehoert in stand_merken: ${teile.join(", ")}. `
+      + "Setz davon, was die Person wirklich gesagt hat, in welchen Worten auch immer - das Deuten ist deine Aufgabe. "
+      + "Sagt sie etwas anderes, lass die Felder leer.";
+  },
+
   THEMEN: {
     zeit: {
 
