@@ -1564,6 +1564,72 @@ const Kernpruefung = {
      derselbe Satz noch einmal von vorn, als waere nie etwas anderes
      dagewesen. Beim zweiten Mal muss der Unterschied dastehen - was
      dazukommt, was wegfaellt, wie viele es jetzt sind. */
+  /* Gesagt wird nur, was es gibt.
+     ------------------------------------------------------------------
+     Gemeldet am 06.10.2026: "Im August sind das Island, Lappland,
+     Kapstadt und die Ostsee." In Lappland und Kapstadt ist im August
+     nichts buchbar - zwei der vier genannten Moeglichkeiten existieren
+     nicht, und wer eine davon waehlt, landet in einer Sackgasse.
+
+     Geprueft wird am fertigen Satz, nicht an der Funktion dahinter, und
+     "buchbar" ist hier eigens gerechnet (Katalog des Monats plus
+     Saison). Eine Pruefung, die dieselbe Funktion ruft wie der Code,
+     prueft nur, ob sie sich selbst gleicht.
+
+     Gegenprobe gegen das alte Verhalten: 56 Befunde. */
+  regionenNennung() {
+    const fehler = [];
+    const melde = (art, text, satz = "") => fehler.push({ art, thema: "ziel", text, satz });
+    if (typeof Werkzeugkasten === "undefined" || typeof ZIELE === "undefined"
+      || typeof Politik === "undefined" || typeof ZIEL_NACH_ID === "undefined") return fehler;
+
+    const buchbar = (id, p) => {
+      const z = ZIEL_NACH_ID[id];
+      if (z && typeof saisonPassung === "function" && p.monat && saisonPassung(z, p.monat) < 0.5) return false;
+      return Werkzeugkasten.katalog(p).some((h) => h.ziel === id);
+    };
+    // "Tirol" steckt nicht in "Suedtirol" (kleines t), aber sicher ist sicher
+    const genannt = (satz, name) => new RegExp(`(^|[^A-Za-zÄÖÜäöüß])${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}([^A-Za-zÄÖÜäöüß]|$)`).test(satz);
+
+    for (let monat = 1; monat <= 12; monat++) {
+      for (const richtung of ["warm", "kalt"]) {
+        const th = (Politik.THEMEN || []).find((t) => t.id === richtung);
+        if (!th) continue;
+        for (const mindestGrad of [null, 18, 21, 25]) {
+          const p = { monat, richtung, typ: "hotel", erwachsene: 2, kinder: 0, zimmer: 1,
+            ...(mindestGrad != null ? { mindestGrad } : {}) };
+          p.zieleErlaubt = Werkzeugkasten.regionenFuerRichtung(th, p);
+          if (!p.zieleErlaubt?.length) continue;
+          const wieViele = p.zieleErlaubt.filter((id) => buchbar(id, p)).length;
+          const wo = `${richtung}, Monat ${monat}, Grenze ${mindestGrad ?? "offen"}`;
+
+          const satz = Werkzeugkasten.richtungSatz(p);
+          if (satz) {
+            for (const z of ZIELE) {
+              if (genannt(satz, z.name) && !buchbar(z.id, p)) {
+                melde("region_ohne_haeuser", `${wo}: ${z.name} wird genannt, dort ist aber nichts buchbar`, satz);
+              }
+            }
+            const m = satz.match(/sind das (\d+) Regionen/);
+            if (m && Number(m[1]) !== wieViele) {
+              melde("regionenzahl_falsch", `${wo}: der Satz sagt ${m[1]} Regionen, buchbar sind ${wieViele}`, satz);
+            }
+          }
+
+          const sp = Werkzeugkasten.spanneRueckfrage(p, {});
+          if (sp?.satz) {
+            for (const z of ZIELE) {
+              if (genannt(sp.satz, z.name) && !buchbar(z.id, p)) {
+                melde("region_ohne_haeuser", `${wo} (Spannenfrage): ${z.name} wird genannt, dort ist aber nichts buchbar`, sp.satz);
+              }
+            }
+          }
+        }
+      }
+    }
+    return fehler;
+  },
+
   korrektur() {
     const fehler = [];
     const melde = (art, text, satz = "") => fehler.push({ art, thema: "ziel", text, satz });
@@ -1582,14 +1648,24 @@ const Kernpruefung = {
       p.mindestGrad = f.grad;
       p.zieleErlaubt = Werkzeugkasten.regionenFuerRichtung(th, p);
       const k = Werkzeugkasten.richtungKorrektur(p, vorher);
-      const aendert = JSON.stringify(vorher) !== JSON.stringify(p.zieleErlaubt);
+      /* Gemessen wird an dem, was die Person buchen kann, nicht an der
+         Temperaturspanne (06.10.2026). Faellt eine Region nur deshalb
+         weg, weil dort ohnehin nichts frei war, hat sich fuer sie nichts
+         geaendert - und ein Satz darueber waere eine Meldung ohne
+         Inhalt. */
+      const vorherMit = Werkzeugkasten.regionenMitHaeusern(p, vorher);
+      const jetztMit = Werkzeugkasten.regionenMitHaeusern(p);
+      const aendert = JSON.stringify(vorherMit) !== JSON.stringify(jetztMit);
       if (aendert !== f.aendert) continue;   // Katalog hat sich geaendert, kein Befund
       if (aendert && !k) { melde("korrektur_fehlt", `${f.name}: die Auswahl aendert sich, aber es wird nichts dazu gesagt`); continue; }
       if (!aendert && k) { melde("korrektur_ohne_grund", `${f.name}: nichts aendert sich, trotzdem ein Korrektursatz`, k); continue; }
       if (!k) continue;
-      // Die neue Zahl und die alte muessen im Satz stehen - sonst ist es keine Korrektur
-      if (!k.includes(String(p.zieleErlaubt.length)) || !k.includes(String(vorher.length))) {
-        melde("korrektur_ohne_zahlen", `${f.name}: alte oder neue Zahl fehlt`, k);
+      // Die neue Zahl und die alte muessen im Satz stehen - sonst ist es
+      // keine Korrektur. Und zwar die buchbaren, nicht die gezaehlten:
+      // Eine Zahl, die Regionen ohne freie Haeuser mitzaehlt, ist ein
+      // Versprechen, das die Seite nicht haelt.
+      if (!k.includes(String(jetztMit.length)) || !k.includes(String(vorherMit.length))) {
+        melde("korrektur_ohne_zahlen", `${f.name}: alte oder neue Zahl fehlt (buchbar: ${vorherMit.length} -> ${jetztMit.length})`, k);
       }
       if (/\d+ weitere weg|\d+ weitere dazu/.test(k) && !/und \d+ weitere|und eine weitere/.test(k)) {
         melde("korrektur_satzbau", `${f.name}: Aufzaehlung ohne "und"`, k);
@@ -2374,6 +2450,7 @@ const Kernpruefung = {
     for (const f of this.kennungen()) alle.push(f);
     for (const f of this.namen()) alle.push(f);
     for (const f of this.korrektur()) alle.push(f);
+    for (const f of this.regionenNennung()) alle.push(f);
     for (const f of this.riegel()) alle.push(f);
     for (const f of this.zimmer()) alle.push(f);
     for (const f of this.alleThemen()) alle.push(f);

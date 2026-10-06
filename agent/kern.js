@@ -921,7 +921,15 @@ const Kern = {
     const p = this.lauf.profil || {};
     const teile = [];
     if (p.zielId && typeof ZIEL_NACH_ID !== "undefined") teile.push(`Ziel ${ZIEL_NACH_ID[p.zielId]?.name}`);
-    else if (p.richtung && typeof Politik !== "undefined") teile.push(`Ziel offen, Richtung ${(Politik.THEMEN || []).find((x) => x.id === p.richtung)?.label || p.richtung} (${(p.zieleErlaubt || []).map((id) => ZIEL_NACH_ID?.[id]?.name || id).join(", ")})`);
+    else if (p.richtung && typeof Politik !== "undefined") {
+      /* Genannt werden nur Regionen, in denen im gemerkten Monat etwas
+         buchbar ist (06.10.2026). Stand hier die ganze Temperaturspanne,
+         zaehlte das Modell Regionen auf, in denen kein Haus frei ist -
+         genau das war der Fall "Island, Lappland, Kapstadt und die
+         Ostsee" im August. */
+      const nennbar = Werkzeugkasten.regionenMitHaeusern(p);
+      teile.push(`Ziel offen, Richtung ${(Politik.THEMEN || []).find((x) => x.id === p.richtung)?.label || p.richtung} (${nennbar.map((id) => ZIEL_NACH_ID?.[id]?.name || id).join(", ")})`);
+    }
     else if (p.zielOffen) teile.push("Ziel offen (alle Regionen)");
     if (p.monat && typeof Politik !== "undefined") {
       const name = Object.keys(Politik.MONATE).find((m) => Politik.MONATE[m] === p.monat && m.length > 3);
@@ -1027,7 +1035,7 @@ const Kern = {
     if (this.lauf.letzteVorlage?.length || fp.phase === "vorschlaege" || this.lauf.gewaehlt || seite === "stay") {
       const gelesen = Object.keys(this.lauf.gelesen || {})
         .map((id) => (typeof getItemById === "function" ? getItemById(id)?.name : null) || id);
-      bloecke.push(`BEWERTUNGEN: Was Gaeste loben oder kritisieren, Teilnoten und einzelne Aspekte (Essen, Lage, Sauberkeit, Service, Ruhe) sagst du erst, nachdem du bewertungen_lesen fuer genau dieses Haus gerufen hast - auch wenn du die Zahlen aus einem frueheren Ergebnis zu kennen glaubst. Das Lesen ist auf der Seite sichtbar und dauert einen Moment; kuendige es in einem halben Satz an ("ich schau mir die Bewertungen an"). Teilnoten immer als "x von 10", nie als Prozent. ${gelesen.length ? `Gelesen hast du bisher: ${gelesen.join(", ")}.` : "Gelesen hast du bisher noch keines."}`);
+      bloecke.push(`BEWERTUNGEN: Was Gaeste loben oder kritisieren, Teilnoten und einzelne Aspekte (Essen, Lage, Sauberkeit, Service, Ruhe) sagst du erst, nachdem du bewertungen_lesen fuer genau dieses Haus gerufen hast - auch wenn du die Zahlen aus einem frueheren Ergebnis zu kennen glaubst. Das Lesen ist auf der Seite sichtbar und dauert einen Moment; kuendige es in einem halben Satz an ("ich schau mir die Bewertungen an"). Alle Noten dieser Seite gehen von 1 bis 5, die Gesamtnote genauso wie die Teilnoten. Nenn sie als "x von 5", nie als Prozent und nie auf einer Zehnerskala. ${gelesen.length ? `Gelesen hast du bisher: ${gelesen.join(", ")}.` : "Gelesen hast du bisher noch keines."}`);
     }
     // Buchung: sobald die Freigabe es hergibt
     if (this.darf("vorbereiten")) {

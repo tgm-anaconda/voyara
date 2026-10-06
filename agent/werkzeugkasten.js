@@ -652,6 +652,38 @@ const Werkzeugkasten = {
     return fallback;
   },
 
+  /* Nur Regionen, in denen es im gemerkten Monat auch etwas zu buchen gibt.
+     ------------------------------------------------------------------
+     Gemeldet am 06.10.2026: "Im August sind das Island, Lappland,
+     Kapstadt und die Ostsee." In Lappland und Kapstadt ist im August kein
+     einziges Haus buchbar, beide haben dort keine Saison. Der Agent nennt
+     also vier Moeglichkeiten, von denen zwei nicht existieren, und wer
+     eine davon waehlt, laeuft in eine Sackgasse.
+
+     Die Ursache ist dieselbe wie bei den Filtern und beim Datum: Zwei
+     Stellen beantworten dieselbe Frage. `regionenFuerRichtung` kennt nur
+     die Temperatur, die Suche kennt zusaetzlich die Saison.
+
+     Der Stand (`zieleErlaubt`) bleibt bewusst, wie er ist - er ist die
+     Temperaturspanne, und die Suche filtert die Saison ohnehin selbst.
+     Geaendert wird nur, was GESAGT wird: Gesprochen wird allein ueber
+     Regionen, in denen etwas frei ist. Damit aendert sich kein einziges
+     Suchergebnis (nachgemessen ueber 288 Faelle: 198 Listen werden
+     kuerzer, kein Treffer bewegt sich). */
+  regionenMitHaeusern(p, ids = null) {
+    const liste = ids || p?.zieleErlaubt || [];
+    if (!p?.monat || typeof ZIEL_NACH_ID === "undefined") return [...liste];
+    const katalog = this.katalog(p);
+    const inSaison = (id) => typeof saisonPassung !== "function" || !ZIEL_NACH_ID[id]
+      || saisonPassung(ZIEL_NACH_ID[id], p.monat) >= 0.5;
+    const mit = liste.filter((id) => inSaison(id) && katalog.some((h) => h.ziel === id));
+    /* Bliebe nichts uebrig, ist die ungefilterte Liste die ehrlichere
+       Auskunft - lieber eine Region nennen, in der gerade nichts frei
+       ist, als gar keine. Eingetreten ist der Fall in keinem der 288
+       gemessenen Staende. */
+    return mit.length ? mit : [...liste];
+  },
+
   /* Der Satz dazu: welche Regionen es sind und wie warm es dort wird.
      Ohne ihn waere "eher warm" eine Auswahl, die niemand nachpruefen
      kann - und die Person koennte die Grenze nicht verschieben, weil sie
@@ -659,7 +691,7 @@ const Werkzeugkasten = {
   richtungSatz(p, ohneSchluss = false) {
     if (!p?.richtung || !p.monat || !p.zieleErlaubt?.length || typeof grad !== "function") return null;
     if (typeof MONATSNAMEN === "undefined" || typeof ZIEL_NACH_ID === "undefined") return null;
-    const mit = p.zieleErlaubt.map((id) => ZIEL_NACH_ID[id]).filter((z) => z && grad(z, p.monat) != null);
+    const mit = this.regionenMitHaeusern(p).map((id) => ZIEL_NACH_ID[id]).filter((z) => z && grad(z, p.monat) != null);
     if (mit.length < 2) return null;
     const warm = p.richtung === "warm";
     const werte = mit.map((z) => grad(z, p.monat));
@@ -808,7 +840,8 @@ const Werkzeugkasten = {
        03.10.2026: "Warm heisst fuer mich ab 21 Grad" und direkt danach
        "Bei 22 Grad bleiben?" - reichten bei 22 Grad zu wenige Regionen,
        war die Grenze schon gesunken, die Frage wusste davon nichts. */
-    const tempsJetzt = p.zieleErlaubt.map((id) => ZIEL_NACH_ID[id]).filter(Boolean).map((z) => grad(z, p.monat)).filter((g) => g != null);
+    const jetztIds = this.regionenMitHaeusern(p);
+    const tempsJetzt = jetztIds.map((id) => ZIEL_NACH_ID[id]).filter(Boolean).map((z) => grad(z, p.monat)).filter((g) => g != null);
     const basisGrenze = warm ? 22 : 12;
     const grenze = tempsJetzt.length ? (warm ? Math.min(basisGrenze, ...tempsJetzt) : Math.max(basisGrenze, ...tempsJetzt)) : basisGrenze;
     /* Was eine andere Grenze braechte - sonst ist die Frage so abstrakt
@@ -816,13 +849,14 @@ const Werkzeugkasten = {
     const alle = (typeof ZIELE !== "undefined" ? ZIELE : [])
       .filter((z) => grad(z, p.monat) != null && (typeof saisonPassung !== "function" || saisonPassung(z, p.monat) >= 0.5));
     const weiter = warm ? grenze - 4 : grenze + 4;
-    const jetzt = p.zieleErlaubt.length;
+    const jetzt = jetztIds.length;
     /* Dieselbe Zaehlung wie nach der Antwort: regionenFuerRichtung mit der
        neuen Grenze. Vorher zaehlte die Frage nur Regionen in Saison ("wären
        es 13"), die Auswahl danach alle ("jetzt 15 statt 12"). */
     const thema = typeof Politik !== "undefined" ? (Politik.THEMEN || []).find((t) => t.id === p.richtung) : null;
-    const dannIds = thema ? this.regionenFuerRichtung(thema, { ...p, mindestGrad: weiter }) : [];
-    const dazu = dannIds.filter((id) => !p.zieleErlaubt.includes(id)).map((id) => ZIEL_NACH_ID[id]?.name).filter(Boolean);
+    const dannRoh = thema ? this.regionenFuerRichtung(thema, { ...p, mindestGrad: weiter }) : [];
+    const dannIds = this.regionenMitHaeusern(p, dannRoh);
+    const dazu = dannIds.filter((id) => !jetztIds.includes(id)).map((id) => ZIEL_NACH_ID[id]?.name).filter(Boolean);
     const dann = dannIds.length;
     if (dann <= jetzt || !dazu.length) return null;  // nichts zu gewinnen, nicht fragen
     void alle;
@@ -837,9 +871,12 @@ const Werkzeugkasten = {
   richtungKorrektur(p, vorher) {
     if (!Array.isArray(vorher) || !vorher.length || !p?.zieleErlaubt?.length) return null;
     if (typeof ZIEL_NACH_ID === "undefined") return null;
-    const jetzt = p.zieleErlaubt;
-    const dazu = jetzt.filter((id) => !vorher.includes(id)).map((id) => ZIEL_NACH_ID[id]?.name).filter(Boolean);
-    const weg = vorher.filter((id) => !jetzt.includes(id)).map((id) => ZIEL_NACH_ID[id]?.name).filter(Boolean);
+    /* Beide Seiten durch denselben Filter, sonst zaehlt der Satz einen
+       Zugewinn, den es nicht gibt ("kommt Lappland dazu"). */
+    const jetzt = this.regionenMitHaeusern(p);
+    const vorherMit = this.regionenMitHaeusern(p, vorher);
+    const dazu = jetzt.filter((id) => !vorherMit.includes(id)).map((id) => ZIEL_NACH_ID[id]?.name).filter(Boolean);
+    const weg = vorherMit.filter((id) => !jetzt.includes(id)).map((id) => ZIEL_NACH_ID[id]?.name).filter(Boolean);
     if (!dazu.length && !weg.length) return null;
     const aufzaehlen = (liste) => {
       if (liste.length <= 3) {
@@ -854,7 +891,7 @@ const Werkzeugkasten = {
     const was = [];
     if (dazu.length) was.push(`${dazu.length === 1 ? "kommt" : "kommen"} ${aufzaehlen(dazu)} dazu`);
     if (weg.length) was.push(`${weg.length === 1 ? "fällt" : "fallen"} ${aufzaehlen(weg)} weg`);
-    return `${kopf} Damit ${was.join(" und ")} - jetzt ${jetzt.length} Regionen statt ${vorher.length}.`;
+    return `${kopf} Damit ${was.join(" und ")} - jetzt ${jetzt.length} Regionen statt ${vorherMit.length}.`;
   },
 
   richtungAnsagen(kern, p) {
