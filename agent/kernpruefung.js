@@ -1717,6 +1717,78 @@ const Kernpruefung = {
     return fehler;
   },
 
+  /* Woran es liegt, muss stimmen.
+     ------------------------------------------------------------------
+     Der Satz bei wenigen Treffern ("Am meisten nimmt dein Budget weg:
+     ohne diese Vorgabe waeren es 10 statt 1") nennt eine Zahl und eine
+     Ursache. Beides wird hier unabhaengig nachgerechnet - die Pruefung
+     ruft `engstelle` nicht noch einmal, sondern zaehlt selbst durch alle
+     Bedingungen und vergleicht.
+
+     Gegenprobe: Mit abgeschaltetem Satz 40 Befunde (jeder duenne Stand
+     ohne Erklaerung). */
+  engstellen() {
+    const fehler = [];
+    const melde = (art, text, satz = "") => fehler.push({ art, thema: "lage", text, satz });
+    if (typeof Werkzeugkasten === "undefined" || typeof Auswahl === "undefined" || typeof ZIELE === "undefined") return fehler;
+    const warm = (m, g) => ZIELE.filter((z) => (z.temp || [])[m - 1] >= g).map((z) => z.id);
+    const kalt = (m, g) => ZIELE.filter((z) => (z.temp || [])[m - 1] <= g).map((z) => z.id);
+    const staende = [];
+    for (const m of [1, 4, 8, 12]) {
+      for (const [e, k] of [[2, 0], [2, 3]]) {
+        for (const budget of [null, 2000, 5000]) {
+          for (const richtung of ["warm", "kalt"]) {
+            staende.push({ monat: m, naechte: 9, erwachsene: e, kinder: k, kinderAlter: Array.from({ length: k }, () => 8),
+              zimmer: 1, typ: "hotel", artGenannt: true, richtung,
+              zieleErlaubt: richtung === "warm" ? warm(m, 22) : kalt(m, 21),
+              ...(budget ? { budgetGesamt: budget } : {}), verpflegung: "ai" });
+          }
+        }
+      }
+    }
+    let gesehen = 0;
+    for (const p of staende) {
+      let liste = [];
+      try { liste = Werkzeugkasten.katalogTreffer(p, Werkzeugkasten.filterAusStand(p)); } catch { continue; }
+      const eng = Werkzeugkasten.engstelle(liste, p);
+      if (liste.length >= Werkzeugkasten.ENGSTELLE_GRENZE) {
+        if (eng) melde("engstelle_ohne_not", `${liste.length} Treffer, trotzdem ein Erklaersatz`, eng.satz);
+        continue;
+      }
+      gesehen++;
+      // Unabhaengig nachrechnen: welche einzelne Bedingung braechte am meisten?
+      const vg = Werkzeugkasten.vorgaben(p, Werkzeugkasten.filterAusStand(p));
+      const katalog = Werkzeugkasten.katalog(p);
+      let best = null;
+      for (const feld of Object.keys(Werkzeugkasten.ENGSTELLE)) {
+        let n = 0;
+        try { n = Auswahl.treffer(katalog, vg, feld).length; } catch { continue; }
+        if (n - liste.length < Werkzeugkasten.ENGSTELLE_MINDESTGEWINN) continue;
+        if (!best || n > best.n) best = { feld, n };
+      }
+      const wo = `Monat ${p.monat}, ${p.erwachsene}+${p.kinder}, ${p.richtung}, Budget ${p.budgetGesamt || "offen"}: ${liste.length} Treffer`;
+      if (best && !eng) { melde("engstelle_verschwiegen", `${wo} - ohne ${best.feld} waeren es ${best.n}, gesagt wird nichts`); continue; }
+      if (!best) continue;
+      if (eng.ohne !== best.n) {
+        melde("engstelle_falsche_zahl", `${wo} - der Satz sagt ${eng.ohne}, nachgerechnet sind es ${best.n}`, eng.satz);
+      }
+      if (eng.jetzt !== liste.length) {
+        melde("engstelle_falsche_zahl", `${wo} - der Satz sagt ${eng.jetzt} statt ${liste.length} Treffer`, eng.satz);
+      }
+      if (/null|undefined|NaN/.test(eng.satz)) {
+        melde("engstelle_satzbau", `${wo} - im Satz steht ein leerer Wert`, eng.satz);
+      }
+      // Einmal je Stand: Lage und Rundgang duerfen ihn nicht beide sagen
+      const lauf = {};
+      Werkzeugkasten.engstelle(liste, p, lauf);
+      if (Werkzeugkasten.engstelle(liste, p, lauf)) {
+        melde("engstelle_doppelt", `${wo} - derselbe Satz kommt ein zweites Mal`, eng.satz);
+      }
+    }
+    if (!gesehen) melde("engstelle_nie_geprueft", "Kein duenner Stand im Raster - die Pruefung laeuft ins Leere");
+    return fehler;
+  },
+
   chipWirkungen() {
     const fehler = [];
     const melde = (art, text, satz = "") => fehler.push({ art, thema: "art", text, satz });
@@ -2609,6 +2681,7 @@ const Kernpruefung = {
     for (const f of this.regionenNennung()) alle.push(f);
     for (const f of this.chipWirkungen()) alle.push(f);
     for (const f of this.antwortErwartungen()) alle.push(f);
+    for (const f of this.engstellen()) alle.push(f);
     for (const f of this.riegel()) alle.push(f);
     for (const f of this.zimmer()) alle.push(f);
     for (const f of this.alleThemen()) alle.push(f);

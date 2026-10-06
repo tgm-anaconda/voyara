@@ -3475,7 +3475,7 @@ const Werkzeugkasten = {
             kern.lauf.lageFuer = fp.schluessel;
             const fertigJetzt = fp.fertig || {};
             await kern.denkpause(600, "fasst zusammen…");
-            const lage = Werkzeugkasten.lageSatz(liste, p, umfang, gesamt ?? null);
+            const lage = Werkzeugkasten.lageSatz(liste, p, umfang, gesamt ?? null, kern.lauf);
             /* Die Zahl ist vorlaeufig, und das steht dabei.
                ----------------------------------------------------------
                Wunsch des Nutzers vom 28.09.2026: Der Agent sucht frueh,
@@ -4725,8 +4725,20 @@ const Werkzeugkasten = {
         // "die 1 Häuser" stand so im Chat, als nur ein Haus uebrigblieb
         // Weniger als gewuenscht wird gesagt, nicht verschwiegen (03.10.2026)
         const gewuenscht = p.anzahlVorschlaege || 3;
+        /* Und woran es liegt - an der Stelle, an der die Person die
+           kleine Zahl zum ersten Mal sieht. Gemeldet am 06.10.2026: "Du
+           wolltest 4 Haeuser, mit deinen Vorgaben passen aber nur 1" war
+           richtig, nannte aber nicht den Grund (es war das Budget). */
+        let engSatz = "";
+        if (r.ids.length < gewuenscht) {
+          try {
+            const pool = Werkzeugkasten.katalogTreffer(p, Werkzeugkasten.filterAusStand(p));
+            const e = Werkzeugkasten.engstelle(pool, p, kern.lauf);
+            if (e) engSatz = `${e.satz} `;
+          } catch { engSatz = ""; }
+        }
         const weniger = r.ids.length < gewuenscht
-          ? `Du wolltest ${gewuenscht} Häuser, mit deinen Vorgaben passen aber nur ${r.ids.length}. `
+          ? `Du wolltest ${gewuenscht} Häuser, mit deinen Vorgaben passen aber nur ${r.ids.length}. ${engSatz}`
           : "";
         kern.sagen(weniger + (r.ids.length === 1
           ? `Ich sehe mir das Haus jetzt genauer an.`
@@ -7252,7 +7264,75 @@ const Werkzeugkasten = {
     return { warm: w, kalt: k, grenze };
   },
 
-  lageSatz(liste, p, umfang, aufDerSeite = null) {
+  /* Woran es liegt, wenn wenig uebrig ist.
+     ------------------------------------------------------------------
+     Gemeldet am 06.10.2026: Am Ende blieb ein einziges Haus, und der
+     Agent sagte nur "mit deinen Vorgaben passen aber nur 1". Richtig,
+     aber nicht das Entscheidende. Nachgerechnet waren es zehn passende
+     Haeuser, und weggenommen hat sie allein das Budget: Business-Class
+     nach Island kostet fuer vier Personen 4.824 Euro, das Budget lag bei
+     5.000. Der Agent wusste das und sagte es nicht.
+
+     Gerechnet wird mit `Auswahl.treffer(..., ausser)` - dieselbe
+     Mechanik, die auch die Zahlen neben den Filtern in der Spalte
+     liefert, und dieselbe, mit der die Flugtag-Zeile schon rechnet. Kein
+     neues Verfahren, nur eine Frage mehr an dasselbe.
+
+     Bewusst klein gehalten (Wunsch des Nutzers: "recht simpel aufbauen,
+     damit da nicht wieder zu viel Komplexitaet dazukommt"): EIN Satz,
+     EINE Vorgabe, und der Agent lockert von sich aus nichts.
+
+     Nicht genannt werden Bedingungen, die keine Entscheidung der Person
+     sind (die Monatsbelegung, die Saison) und der Anreisetag, fuer den
+     es schon eine eigene Zeile gibt. */
+  ENGSTELLE_GRENZE: 15,
+  ENGSTELLE_MINDESTGEWINN: 3,
+  ENGSTELLE: {
+    gesamt: (p) => `dein Budget von ${Math.round(p.budgetGesamt).toLocaleString("de-DE")} € für die ganze Reise`,
+    preis: (p) => `die Grenze von ${Math.round(p.maxPreis).toLocaleString("de-DE")} € pro Nacht`,
+    ziel: (p) => (p.zielId ? "die Festlegung auf diese Region"
+      : p.richtung === "warm" ? "die Beschränkung auf warme Regionen"
+        : p.richtung === "kalt" ? "die Beschränkung auf kalte Regionen" : "die Auswahl der Regionen"),
+    verpflegung: (p) => `die Vorgabe ${(typeof BOARD_LABELS !== "undefined" && BOARD_LABELS[p.verpflegung]) || p.verpflegung}`,
+    gruppe: (p) => `die Gruppengröße von ${(p.erwachsene || 0) + (p.kinder || 0)} Personen`,
+    strand: (p) => (p.maxStrand < 1 ? `die ${Math.round(p.maxStrand * 1000)} m zum Strand` : `die ${p.maxStrand} km zum Strand`),
+    bewertung: (p) => `die Mindestbewertung von ${String(p.mindestbewertung).replace(".", ",")}`,
+    sterne: (p) => `die Vorgabe von mindestens ${p.mindestSterne} Sternen`,
+    ausstattung: () => "die gewünschte Ausstattung",
+    angebote: () => "die Vorgabe, dass es reduziert sein soll",
+    wlan: () => "die Vorgabe, dass WLAN ohne Aufpreis dabei ist",
+    art: (p) => (this.seitenTyp(p) === "apartment" ? "die Beschränkung auf Ferienwohnungen" : "die Beschränkung auf Hotels"),
+  },
+
+  engstelle(liste, p, lauf = null) {
+    if (!liste || liste.length >= this.ENGSTELLE_GRENZE) return null;
+    if (typeof Auswahl === "undefined") return null;
+    const vg = this.vorgaben(p, this.filterAusStand(p));
+    const katalog = this.katalog(p);
+    let beste = null;
+    for (const feld of Object.keys(this.ENGSTELLE)) {
+      let n = 0;
+      try { n = Auswahl.treffer(katalog, vg, feld).length; } catch { continue; }
+      if (n - liste.length < this.ENGSTELLE_MINDESTGEWINN) continue;
+      if (!beste || n > beste.n) beste = { feld, n };
+    }
+    if (!beste) return null;
+    let was = null;
+    try { was = this.ENGSTELLE[beste.feld].call(this, p); } catch { was = null; }
+    if (!was) return null;
+    const satz = `Am meisten nimmt ${was} weg: ohne diese Vorgabe wären es ${beste.n} statt ${liste.length}.`;
+    /* Einmal je Stand. Die Lage sagt den Satz nach der Suche, der Rundgang
+       noch einmal, wenn weniger Haeuser vorliegen als gewuenscht - dann
+       stuende er zweimal im selben Gespraech, ohne dass sich etwas
+       geaendert haette. */
+    if (lauf) {
+      if (lauf.engstelleGesagt === satz) return null;
+      lauf.engstelleGesagt = satz;
+    }
+    return { feld: beste.feld, ohne: beste.n, jetzt: liste.length, satz };
+  },
+
+  lageSatz(liste, p, umfang, aufDerSeite = null, lauf = null) {
     /* Der Monatsname kam aus einer Rueckwaertssuche in Politik.MONATE,
        die Kurzformen ueber die Laenge aussortierte ("okt" gegen
        "oktober"). Bei Mai griff das gegen den Monat selbst: drei
@@ -7412,6 +7492,9 @@ const Werkzeugkasten = {
         teile.push(`${weg} weitere gäbe es, wenn der Anreisetag flexibel wäre - dorthin fliegt am ${Flug.datumText(p.von)} nichts.`);
       }
     }
+    /* Und bei wenigen Treffern: woran es liegt. Siehe `engstelle`. */
+    const eng = this.engstelle(liste, p, lauf);
+    if (eng) teile.push(eng.satz);
     if (umfang.preisProNacht) {
       const { von, bis } = umfang.preisProNacht;
       const rest = p.naechte ? "" : ", gerechnet mit einer Woche";
