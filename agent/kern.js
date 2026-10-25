@@ -296,8 +296,14 @@ const STELLSCHRAUBEN = {
       document.body.classList.add("agent-schublade");
       document.body.classList.toggle("agent-fenster", fenster);
       let offen = null;
-      try { offen = sessionStorage.getItem("voyara_chat_offen"); } catch { /* egal */ }
-      if (offen !== "0") document.body.classList.add("agent-open");
+      let eingezogen = null;
+      try {
+        offen = sessionStorage.getItem("voyara_chat_offen");
+        eingezogen = sessionStorage.getItem("voyara_chat_eingezogen");
+      } catch { /* egal */ }
+      /* Beim allerersten Mal bleibt der Chat zu und faehrt gleich sichtbar
+         ein (Kern.chatEinziehen). Danach steht er offen da wie bisher. */
+      if (offen !== "0" && eingezogen === "1") document.body.classList.add("agent-open");
     } else {
       document.body.classList.remove("agent-schublade");
       document.body.classList.remove("agent-fenster");
@@ -897,6 +903,10 @@ const Kern = {
     if (erstoeffnung && !this.lauf.freigabeGewaehlt && typeof Zugang !== "undefined" && Zugang.istOffen()) {
       this.freigabeFragen();
     }
+
+    // Einmal am Anfang faehrt der Chat sichtbar ein - erst wenn kein
+    // Studienblatt mehr darueberliegt (siehe chatEinziehen)
+    this.chatEinziehen();
 
     this.kandidatenAuffrischen();
     this.standAnzeigen();
@@ -4075,6 +4085,75 @@ const Kern = {
     // Die Meldung kommt sofort - nicht erst, wenn der angehaltene Zug zu
     // Ende ist. Bis zur Antwort der Person ist der Agent danach stumm.
     this.anhaltMelden();
+  },
+
+  /* Einmal am Anfang faehrt der Chat sichtbar ein (25.10.2026)
+     ------------------------------------------------------------------
+     Wunsch des Nutzers, und er trifft ein Messproblem: Wer nicht weiss,
+     dass hinter dem Chat eine Seite liegt, fuer den ist "den Chat
+     schliessen und nachsehen" keine Entscheidung. Arm B maesse dann nicht
+     fehlendes Pruefinteresse, sondern fehlende Kenntnis - und genau daran
+     haengt die Auswertung.
+
+     Deshalb steht nach dem Aufgabenblatt zuerst Voyara da, und nach zwei
+     Sekunden waechst der Assistent von links darueber. Die Bewegung sagt
+     mehr als ein Satz: Hier ist eine Reiseseite, und darauf sitzt ein
+     Assistent. Die Mechanik dafuer gab es schon - die Schublade liegt auf
+     translateX(-104%) mit einer Ueberblendung; bisher wurde `agent-open`
+     nur gesetzt, bevor das erste Bild gezeichnet war.
+
+     Drei Festlegungen:
+
+     EINMAL je Sitzung, nicht bei jedem Seitenaufruf. Der Agent wechselt
+     staendig die Seite; liefe die Bewegung jedes Mal, saehe man in Arm B
+     bei jeder Navigation kurz die Seite, und die Manipulation loeste sich
+     Stueck fuer Stueck auf.
+
+     FESTE Pause, nicht verhaltensabhaengig. Ein Einfahren beim ersten
+     Scrollen waere je Person ein anderer Moment, und wer nichts tut, saesse
+     ewig davor.
+
+     NICHT ueber umschalten(). Sonst stuende in chat_umgeschaltet eine
+     Oeffnung, die niemand gemacht hat, und chatZuSelbst waere verfaelscht.
+     Das Einfahren bekommt sein eigenes Ereignis.
+
+     In beiden Armen dieselbe Auslosung und dieselbe Dauer. Nur die Breite
+     unterscheidet sich, und die ist der Eingriff. */
+  CHAT_EINZUG_MS: 2000,
+
+  chatEinziehen() {
+    if (typeof document === "undefined" || !document.body) return;
+    if (!document.body.classList.contains("agent-schublade")) return;
+    if (document.body.classList.contains("agent-open")) return;
+    if (this._einzugGeplant) return;
+    // Nicht, solange ein Studienblatt darueberliegt - dort saehe es niemand,
+    // und der Moment waere verbraucht
+    if (document.body.classList.contains("startschirm-offen")) return;
+    let schon = null;
+    let gewollt = null;
+    try {
+      schon = sessionStorage.getItem("voyara_chat_eingezogen");
+      gewollt = sessionStorage.getItem("voyara_chat_offen");
+    } catch { /* egal */ }
+    if (schon === "1") return;
+    if (gewollt === "0") return;        // selbst geschlossen, bleibt zu
+    this._einzugGeplant = true;
+    setTimeout(() => {
+      this._einzugGeplant = false;
+      if (document.body.classList.contains("agent-open")) return;
+      if (document.body.classList.contains("startschirm-offen")) return;
+      document.body.classList.add("agent-open");
+      try {
+        sessionStorage.setItem("voyara_chat_offen", "1");
+        sessionStorage.setItem("voyara_chat_eingezogen", "1");
+      } catch { /* egal */ }
+      AgentPanel.ansEnde?.();
+      this.notieren("chat_eingezogen", {
+        zugang: STELLSCHRAUBEN.zugang, verzoegerungMs: this.CHAT_EINZUG_MS });
+      // notieren() schreibt nur in den Lauf im Speicher - ohne sichern()
+      // waere der Eintrag beim naechsten Seitenwechsel weg
+      this.sichern();
+    }, this.CHAT_EINZUG_MS);
   },
 
   ANHALT_TAETIGKEIT: {

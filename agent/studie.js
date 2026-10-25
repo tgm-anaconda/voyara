@@ -614,6 +614,9 @@ const Studie = {
       el.remove();
       document.body.classList.remove("startschirm-offen");
       this.start(this.kern);
+      // Ohne Seitenwechsel laeuft Kern.start nicht noch einmal - das
+      // Einfahren des Chats muss hier angestossen werden
+      this.kern?.chatEinziehen?.();
       // Ohne Seitenwechsel muss die Uhr fuer die Einladung hier gestellt
       // werden - beim Laden der Seite lief noch keine Aufgabe.
       if (typeof Zugang !== "undefined" && Zugang.stand) Zugang.einladungPruefen();
@@ -1336,6 +1339,14 @@ const Studie = {
         [p + "chatZuWaehrendArbeit"]: zu.filter((e) => e.arbeitet === 1).length,
         [p + "chatZuVorBuchung"]: buchungT ? zu.filter((e) => e.t < buchungT).length : zu.length,
         [p + "chatZuletztZu"]: schalter.length ? (schalter[schalter.length - 1].offen === 0 ? 1 : 0) : "",
+        /* Hat der Chat einmal sichtbar eingefahren? (25.10.2026)
+           --------------------------------------------------------------
+           Eine Kontrollgroesse, keine Messgroesse: Wer das Einfahren nicht
+           gesehen hat, weiss unter Umstaenden gar nicht, dass hinter dem
+           Chat eine Seite liegt - und fuer den ist "schliessen und
+           nachsehen" keine Entscheidung. Steht hier 0, sind die Spalten
+           chatZu* dieser Person mit Vorsicht zu lesen. */
+        [p + "chatEingezogen"]: zaehle(protokoll, "chat_eingezogen") ? 1 : 0,
         [p + "detailsBeiZuemChat"]: details.filter((e) => inZu(e.t)).length,
       });
 
