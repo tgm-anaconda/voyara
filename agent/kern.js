@@ -4147,6 +4147,33 @@ const Kern = {
         sessionStorage.setItem("voyara_chat_offen", "1");
         sessionStorage.setItem("voyara_chat_eingezogen", "1");
       } catch { /* egal */ }
+      /* Das Einfahren IST das erste Oeffnen (25.10.2026).
+         --------------------------------------------------------------
+         Gemeldet direkt nach dem Einbau: "Wenn das Panel sich automatisch
+         oeffnet, kann man nichts anklicken und es ist einfach eine leere
+         Seite."
+
+         Richtig, und der Zustand sagte warum:
+
+           body: agent-schublade agent-fenster agent-ohne-freigabe agent-open
+           Nachrichten im Kasten: 0
+
+         Kern.start fragt die Freigabe nur, wenn der Chat beim Laden schon
+         offen war (Zugang.istOffen) - und seit dem Einfahren ist er das beim
+         ersten Mal eben nicht. Also kam weder die Freigabefrage noch die
+         Begruessung, und `agent-ohne-freigabe` blendete Eingabe, Chips und
+         Eckdaten aus. Zwei Sekunden spaeter fuhr ein leeres Panel ein.
+
+         Nachgeholt wird hier, was ein erstes Oeffnen sonst ausloest - aber
+         NICHT ueber Zugang.nachOeffnen: Das wuerde ein agent_geoeffnet
+         protokollieren, das niemand gemacht hat. */
+      document.getElementById("agentReiter")?.classList.remove("hat-neues");
+      AgentPanel.ungelesenLeeren?.();
+      if (!this.lauf.freigabeGewaehlt && STELLSCHRAUBEN.freigabeFrage === "erstoeffnung") {
+        this.freigabeFragen();
+      } else if (!this.lauf.verlauf.length) {
+        this.begruessen();
+      }
       AgentPanel.ansEnde?.();
       this.notieren("chat_eingezogen", {
         zugang: STELLSCHRAUBEN.zugang, verzoegerungMs: this.CHAT_EINZUG_MS });
