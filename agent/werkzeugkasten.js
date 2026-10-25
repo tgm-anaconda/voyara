@@ -879,6 +879,47 @@ const Werkzeugkasten = {
      Also einmal fragen, mit den Zahlen, die zur Wahl stehen, und dann nie
      wieder. Genauso wie bei der Datumsfrage: Das Thema des Fahrplans
      bleibt stehen und kommt danach von selbst wieder. */
+  /* Regionen im Satz: Artikel und Verbform (25.10.2026)
+     ------------------------------------------------------------------
+     Gemeldet: "Ab 18 Grad kämen Ostsee dazu." Zwei Fehler in einem Satz -
+     "die Ostsee" braucht ihren Artikel, und bei EINER Region heisst es
+     "käme", nicht "kämen".
+
+     Der Satz kommt aus dem Kern und nicht vom Modell, und das bleibt so:
+     In ihm stehen Zahlen aus dem Katalog (welche Regionen bei welcher
+     Grenze dazukaemen), und genau die hat das Modell frueher erfunden.
+     Richtig ist also nicht, den Satz abzugeben, sondern ihn richtig zu
+     bauen.
+
+     Von den achtzehn Regionen des Katalogs brauchen zwei einen Artikel.
+     Die Liste haengt an der id, nicht am Namen: Eine Umbenennung soll
+     auffallen und nicht still die Grammatik kaputtmachen. */
+  ARTIKEL: { algarve: "die Algarve", ostsee: "die Ostsee" },
+
+  regionMitArtikel(id) {
+    const name = typeof ZIEL_NACH_ID !== "undefined" ? ZIEL_NACH_ID[id]?.name : null;
+    if (!name) return null;
+    return this.ARTIKEL[id] || name;
+  },
+
+  /* Eine Aufzaehlung von Regionen plus die passende Verbform.
+     `rest` haengt "und N weitere" an, wenn die Liste zu lang wird. */
+  regionenListe(ids, { hoechstens = 3 } = {}) {
+    const teile = (ids || []).map((id) => this.regionMitArtikel(id)).filter(Boolean);
+    if (!teile.length) return null;
+    const mehrzahl = teile.length > 1;
+    let text;
+    if (teile.length > hoechstens) {
+      const rest = teile.length - hoechstens;
+      text = `${teile.slice(0, hoechstens).join(", ")} und ${rest} weitere`;
+    } else if (teile.length > 1) {
+      text = `${teile.slice(0, -1).join(", ")} und ${teile.at(-1)}`;
+    } else {
+      text = teile[0];
+    }
+    return { text, mehrzahl, anzahl: teile.length };
+  },
+
   spanneRueckfrage(p, lauf) {
     if (!p?.richtung || !p.monat || !p.zieleErlaubt?.length) return null;
     if (lauf?.spanneFrage) return null;              // hoechstens einmal
@@ -906,13 +947,14 @@ const Werkzeugkasten = {
     const thema = typeof Politik !== "undefined" ? (Politik.THEMEN || []).find((t) => t.id === p.richtung) : null;
     const dannRoh = thema ? this.regionenFuerRichtung(thema, { ...p, mindestGrad: weiter }) : [];
     const dannIds = this.regionenMitHaeusern(p, dannRoh);
-    const dazu = dannIds.filter((id) => !jetztIds.includes(id)).map((id) => ZIEL_NACH_ID[id]?.name).filter(Boolean);
+    const dazuIds = dannIds.filter((id) => !jetztIds.includes(id) && ZIEL_NACH_ID[id]?.name);
     const dann = dannIds.length;
-    if (dann <= jetzt || !dazu.length) return null;  // nichts zu gewinnen, nicht fragen
+    if (dann <= jetzt || !dazuIds.length) return null;  // nichts zu gewinnen, nicht fragen
     void alle;
-    const liste = dazu.length > 3 ? `${dazu.slice(0, 3).join(", ")} und ${dazu.length - 3} weitere` : (dazu.length > 1 ? `${dazu.slice(0, -1).join(", ")} und ${dazu.at(-1)}` : dazu[0]);
+    const auf = this.regionenListe(dazuIds);
+    if (!auf) return null;
     return {
-      satz: `${warm ? "Ab" : "Bis"} ${weiter} Grad kämen ${liste} dazu. Bei ${grenze} Grad bleiben oder auf ${weiter} gehen?`,
+      satz: `${warm ? "Ab" : "Bis"} ${weiter} Grad ${auf.mehrzahl ? "kämen" : "käme"} ${auf.text} dazu. Bei ${grenze} Grad bleiben oder auf ${weiter} gehen?`,
       chips: [`Bei ${grenze} Grad bleiben`, `${warm ? "Ab" : "Bis"} ${weiter} Grad`],
       grenze, weiter, jetzt, dann,
     };

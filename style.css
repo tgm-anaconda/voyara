@@ -2183,6 +2183,14 @@ body.agent-schublade .agent-zu-text { display: inline; font-size: .76rem; font-w
    Assistent arbeitet gerade" steht dabei sichtbar im Bild. */
 body.agent-fenster.agent-gesperrt #agentCollapse { visibility: hidden; }
 
+/* Kein Rollbalken, solange der Vollbild-Chat offen ist.
+   Die Seite bleibt scrollbar - der Agent muss sie scrollen koennen -,
+   nur ist der Balken unsichtbar. Sobald der Chat zu ist, ist er wieder da,
+   denn dann soll die Seite ja bedient werden. */
+html.arm-fenster-offen { scrollbar-width: none; }
+html.arm-fenster-offen::-webkit-scrollbar { width: 0; height: 0; }
+html.arm-fenster-offen body::-webkit-scrollbar { width: 0; height: 0; }
+
 /* Die Sperre deckt in Arm B das ganze Bild - also auch den Chat.
    Durchklickbar gemacht, damit im Chat weiter geschrieben werden kann,
    genau wie in Arm A, wo die Sperre erst rechts der Spalte beginnt.

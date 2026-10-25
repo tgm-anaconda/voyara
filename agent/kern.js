@@ -345,6 +345,20 @@ const STELLSCHRAUBEN = {
           main.removeAttribute("inert");
           main.removeAttribute("aria-hidden");
         }
+        /* Der Rollbalken der Seite dahinter (25.10.2026).
+           --------------------------------------------------------------
+           Gemeldet: "Rechts ist immer so ein Cursor, der quasi die Seite,
+           die im Hintergrund vom Agenten durchgescrollt wird, darstellt."
+           Richtig gesehen - das Overlay deckt 100vw, der Rollbalken des
+           Dokuments sitzt daneben und wandert mit, sobald der Agent
+           scrollt. Damit verraet er genau das, was in Arm B nicht zu sehen
+           sein soll.
+
+           Die Klasse haengt am html-Element, weil nur dort der Balken des
+           Wurzelscrollers zu erreichen ist. Versteckt, nicht abgeschaltet:
+           Mit overflow: hidden koennte der Agent die Seite nicht mehr
+           scrollen, und er muss es koennen. */
+        document.documentElement.classList.toggle("arm-fenster-offen", chatOffen);
       };
       abschirmen();
       try {
@@ -744,18 +758,26 @@ const Kern = {
       dauerMs: this.lauf.zugSeit ? Date.now() - this.lauf.zugSeit : null,
       schritte: frisch.map((z) => ({ t: z.t, text: z.text })),
     };
-    /* Vor die Antwort dieses Zuges, nicht dahinter: Im Kasten stand an
-       dieser Stelle gerade noch der Ring, und die Antwort kam danach. Im
-       Verlauf liegt sie schon, also wird der Block vor die letzte
-       Botnachricht eingefuegt. */
+    /* Wohin im Verlauf?
+       ----------------------------------------------------------------
+       Normalerweise vor die Antwort dieses Zuges: Im Kasten stand an
+       dieser Stelle gerade noch der Ring, und die Antwort kam danach.
+
+       Beim Anhalten ist es anders. Dann gibt es noch keine Antwort dieses
+       Zuges - die letzte Botnachricht stammt aus dem Zug davor, und ein
+       Block davor stuende an der falschen Stelle. Entschieden wird das
+       nicht ueber eine Fahne, sondern ueber die Zeit: Gehoert die letzte
+       Botnachricht zu diesem Zug, kommt der Block davor, sonst ans Ende. */
     const letzteBot = this.lauf.verlauf.map((n) => n.rolle).lastIndexOf("bot");
-    if (letzteBot >= 0) this.lauf.verlauf.splice(letzteBot, 0, eintrag);
+    const ausDiesemZug = letzteBot >= 0 && this.lauf.zugSeit
+      && (this.lauf.verlauf[letzteBot].zeit || 0) >= this.lauf.zugSeit;
+    if (ausDiesemZug) this.lauf.verlauf.splice(letzteBot, 0, eintrag);
     else this.lauf.verlauf.push(eintrag);
     this.sichern();
     const kasten = document.getElementById("agentMessages");
     const el = AgentPanel.schritteZeigen(eintrag, { still: false });
     const ring = document.getElementById("agentArbeit");
-    if (el && kasten && ring) kasten.insertBefore(el, ring);
+    if (el && kasten && ring && ausDiesemZug && ring.parentNode === kasten) kasten.insertBefore(el, ring);
     this.notieren("schritte_abgelegt", { zeilen: eintrag.schritte.length, dauerMs: eintrag.dauerMs });
   },
 
@@ -4012,6 +4034,41 @@ const Kern = {
       this.lauf.anhalt = { werkzeug: untaetig ? null : werkzeug, seite: Werkzeuge.seite(), quelle, text, untaetig, gesagt: false };
     }
     this.lauf.phase = "angehalten";
+    /* Der Zug ist vorbei (25.10.2026).
+       ----------------------------------------------------------------
+       Gemeldet: Agent waehrend der Arbeit angehalten, dann
+       "Weitermachen" geschrieben - und nichts geschah. Nachgestellt im
+       Pruefstand, der Grund stand in zwei Zeilen Zustand:
+
+         laeuft: true, ausstehend: true
+
+       `anhalten` nahm die Sperre weg, hielt den Zeiger an und meldete -
+       beendete den Zug aber nicht. Jede weitere Nachricht lief damit in
+
+         if (this.laeuft) { ...; this.lauf.nachtrag.push(t); return; }
+
+       und wartete auf ein zugBeenden, das nie kam: Der Zug hing an einem
+       Werkzeugaufruf, dessen Seitenwechsel nie stattfand, weil die Person
+       ihn gestoppt hatte. Sackgasse, ohne jede Rueckmeldung.
+
+       Wer anhaelt, beendet den Zug. Die ausstehenden Aufrufe sind genau
+       die Arbeit, die gestoppt wurde - sie verfallen. Dass dadurch ein
+       Werkzeugaufruf ohne Ergebnis im Gespraech stehen bleibt, faengt
+       verlaufReparieren vor dem naechsten Modellaufruf ab. */
+    this.laeuft = false;
+    if (this.lauf.ausstehend) {
+      this.notieren("anhalt_ausstehend_verworfen", {
+        werkzeug, offen: (this.lauf.ausstehend.calls || []).length - (this.lauf.ausstehend.i || 0) });
+      this.lauf.ausstehend = null;
+    }
+    /* Auch ein abgebrochener Zug hat gearbeitet (25.10.2026).
+       ----------------------------------------------------------------
+       Gemeldet: "Ich konnte nicht aufklappen, wie er gearbeitet hat." Der
+       Block entstand bisher nur in zugBeenden - und das lief nach einem
+       Stopp nie. Ausgerechnet der Zug, bei dem jemand dazwischengeht, war
+       damit der einzige ohne Nachweis. Dabei will man gerade dann wissen,
+       was bis dahin passiert ist. */
+    this.schritteAblegen();
     AgentPanel.arbeitAus?.();
     AgentPanel.status("angehalten · du hast übernommen");
     this.sichern();

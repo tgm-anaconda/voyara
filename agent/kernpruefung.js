@@ -2898,6 +2898,64 @@ const Kernpruefung = {
     return fehler;
   },
 
+  /* Nach dem Anhalten muss es weitergehen koennen (25.10.2026)
+     ------------------------------------------------------------------
+     Gemeldet: Agent waehrend der Arbeit angehalten, dann "Weitermachen"
+     geschrieben - und nichts geschah, ohne jede Rueckmeldung. Der Grund
+     stand in zwei Zeilen Zustand: `laeuft` blieb true und `ausstehend`
+     blieb gesetzt. Jede weitere Nachricht lief damit in
+
+       if (this.laeuft) { ...; this.lauf.nachtrag.push(t); return; }
+
+     und wartete auf ein zugBeenden, das nie kam, weil der Zug an einem
+     Werkzeugaufruf hing, dessen Seitenwechsel die Person gerade gestoppt
+     hatte.
+
+     Diese Pruefung haelt den Zustand nach dem Anhalten fest. Sie ruft den
+     echten Kern und setzt seinen Lauf danach zurueck.
+
+     Gegenprobe am 25.10.2026: die beiden Zeilen aus anhalten() entfernt -
+     zwei Befunde, mit ihnen 0. */
+  anhaltBeendetZug() {
+    const fehler = [];
+    if (typeof Kern === "undefined" || !Kern.anhalten || !Kern.leererLauf) return fehler;
+    const melde = (art, text) => fehler.push({ art, text, thema: null, satz: "" });
+
+    const sicherungLauf = Kern.lauf;
+    const sicherungLaeuft = Kern.laeuft;
+    try {
+      Kern.lauf = Kern.leererLauf();
+      Kern.lauf.phase = "arbeitet";
+      Kern.lauf.freigabe = "suchen";
+      Kern.lauf.freigabeGewaehlt = true;
+      Kern.laeuft = true;
+      Kern.lauf.ausstehend = { calls: [{ id: "c1", function: { name: "suchen", arguments: "{}" } }], i: 0, stufe: 1 };
+
+      Kern.anhalten("knopf");
+
+      if (Kern.laeuft) {
+        melde("anhalt_zug_laeuft_weiter",
+          "Nach anhalten() steht laeuft noch auf true - jede weitere Nachricht landet in lauf.nachtrag und wartet auf ein zugBeenden, das nicht mehr kommt");
+      }
+      if (Kern.lauf.ausstehend) {
+        melde("anhalt_ausstehend_bleibt",
+          "Nach anhalten() steht noch ein Werkzeugaufruf aus - er wird nie ausgefuehrt und blockiert die Sicherung in eingabe()");
+      }
+      if (Kern.lauf.phase !== "angehalten") {
+        melde("anhalt_phase_falsch", `Nach anhalten() ist die Phase "${Kern.lauf.phase}" statt "angehalten"`);
+      }
+      if (!Kern.lauf.anhalt?.gesagt) {
+        melde("anhalt_nicht_gemeldet", "Nach anhalten() ist die Meldung an die Person nicht vermerkt (anhalt.gesagt)");
+      }
+    } catch (e) {
+      melde("anhalt_absturz", `anhalten() ist gestolpert: ${e && e.message}`);
+    } finally {
+      Kern.lauf = sicherungLauf;
+      Kern.laeuft = sicherungLaeuft;
+    }
+    return fehler;
+  },
+
   lauf({ still = false } = {}) {
     const alle = [];
     const staende = this.staende();
@@ -2961,6 +3019,7 @@ const Kernpruefung = {
     for (const f of this.phasenNeutral()) alle.push(f);
     for (const f of this.schritteOhneHinweis()) alle.push(f);
     for (const f of this.satztrennung()) alle.push(f);
+    for (const f of this.anhaltBeendetZug()) alle.push(f);
     const ab = this.ablaeufe();
     for (const f of ab.fehler) alle.push(f);
     this.letzteAblaeufe = ab.berichte;
