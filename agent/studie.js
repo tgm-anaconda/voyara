@@ -1339,6 +1339,31 @@ const Studie = {
         [p + "detailsBeiZuemChat"]: details.filter((e) => inZu(e.t)).length,
       });
 
+      /* Der Schritte-Block, nur in Arm B (25.10.2026)
+         --------------------------------------------------------------
+         In Arm B ist das Aufklappen die einzige Moeglichkeit, die Arbeit
+         des Agenten nachzuvollziehen - und damit das Gegenstueck zum
+         Zusehen in Arm A. Die Spalten sind in Arm A leer, das ist richtig
+         so und keine fehlende Messung: Dort gibt es den Block nicht.
+
+         Achtung bei der Auswertung: "hat nachgeprueft" ist zwischen den
+         Armen NICHT vergleichbar. In Arm B laesst es sich zaehlen, in
+         Arm A nicht - wer dort hinsieht, hinterlaesst keinen Klick.
+         Vergleichbar bleibt das primaere Mass, Partnerhaus gebucht. */
+      const bloecke = protokoll.filter((e) => e.ereignis === "schritte_abgelegt");
+      const auf = ereignisse.filter((e) => e.ereignis === "schritte_geoeffnet");
+      const zuSchritte = ereignisse.filter((e) => e.ereignis === "schritte_geschlossen");
+      Object.assign(spalten, {
+        [p + "schritteBloecke"]: bloecke.length,
+        [p + "schritteZeilen"]: bloecke.reduce((n, e) => n + (e.zeilen || 0), 0),
+        [p + "schritteGeoeffnet"]: auf.length,
+        [p + "schritteJeGeoeffnet"]: bloecke.length ? (auf.length ? 1 : 0) : "",
+        [p + "schritteGeoeffnetVorBuchung"]: buchungT ? auf.filter((e) => e.t < buchungT).length : auf.length,
+        [p + "schritteDauerMs"]: zuSchritte.reduce((n, e) => n + (e.dauerMs || 0), 0),
+        [p + "schritteBisErstemAufS"]: auf.length && bloecke.length
+          ? Math.round((auf[0].t - bloecke[0].t) / 1000) : "",
+      });
+
       /* Partnerhaus und Vorlage: wurde es vorgelegt, wurde es gebucht,
          und wie "ueberzeugt" war die Person - schnell, ohne
          Nachpruefung, mit Rueckfragen? */

@@ -1037,6 +1037,93 @@ const AgentPanel = {
     document.getElementById("agentArbeit")?.remove();
   },
 
+  /* Die Schritte, aufklappbar in der Nachricht - nur in Arm B (25.10.2026)
+     ------------------------------------------------------------------
+     Entscheidung des Nutzers: Jeder Arm bekommt EINEN Kanal. Arm A
+     zusehen, Arm B nachlesen. Damit ist Arm B nicht mehr die aermere
+     Teilmenge von Arm A, sondern die andere Form derselben Sache - und
+     die Fragestellung lautet nicht mehr "macht Beobachtbarkeit einen
+     Unterschied", sondern "macht die Form einen Unterschied: live
+     zusehen gegen hinterher nachlesen".
+
+     Der Block steht an der Stelle, an der waehrend der Arbeit der Ring
+     stand, also direkt vor der Antwort dieses Zuges. Zugeklappt ist er
+     eine Zeile.
+
+     NUR Zeilen der Art "schritt".
+     ------------------------------------------------------------------
+     Das ist keine Geschmacksfrage. Im Log stehen auch Zeilen der Art
+     "hinweis", darunter "<Haus>: Partnerhaus von Voyara, bevorzugt
+     gelistet (Provision)" - die stille Offenlegung der Bedingung
+     offenlegung: "log". Zeigte der Block sie, bekaeme ausgerechnet nur
+     Arm B die Provision im Klartext zu lesen, und zwar direkt auf dem
+     primaeren Mass "Partnerhaus gebucht". Dann waere nicht mehr zu
+     trennen, was von der Darstellungsform kommt und was von der
+     Offenlegung. Die Kernpruefung `schritteOhneHinweis` wacht darueber. */
+  ARM_B() { return document.body.classList.contains("agent-fenster"); },
+
+  schritteZeigen(eintrag, { still = false } = {}) {
+    if (!this.ARM_B()) return null;
+    const box = document.getElementById("agentMessages");
+    const zeilen = (eintrag?.schritte || []).filter((z) => z && z.text);
+    if (!box || !zeilen.length) return null;
+
+    const el = document.createElement("div");
+    el.className = `msg schritte${still ? "" : " neu"}`;
+
+    const kopf = document.createElement("button");
+    kopf.type = "button";
+    kopf.className = "schritte-kopf";
+    kopf.setAttribute("aria-expanded", "false");
+    const dauer = eintrag.dauerMs ? Math.round(eintrag.dauerMs / 1000) : 0;
+    const dauerText = !dauer ? ""
+      : dauer < 60 ? `${dauer} Sekunden`
+        : `${Math.floor(dauer / 60)}:${String(dauer % 60).padStart(2, "0")} Minuten`;
+    kopf.innerHTML = `<span class="schritte-haken" aria-hidden="true">${typeof ICONS !== "undefined" && ICONS.check ? ICONS.check : "✓"}</span>`
+      + `<span class="schritte-titel">${zeilen.length} ${zeilen.length === 1 ? "Schritt" : "Schritte"} gearbeitet</span>`
+      + (dauerText ? `<span class="schritte-dauer">${dauerText}</span>` : "")
+      + `<span class="schritte-pfeil" aria-hidden="true">▾</span>`;
+
+    const liste = document.createElement("ol");
+    liste.className = "schritte-liste";
+    liste.hidden = true;
+    for (const z of zeilen) {
+      const li = document.createElement("li");
+      const uhr = document.createElement("span");
+      uhr.className = "schritte-uhr";
+      uhr.textContent = z.t
+        ? new Date(z.t).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })
+        : "";
+      const text = document.createElement("span");
+      text.textContent = z.text;
+      li.append(uhr, text);
+      liste.appendChild(li);
+    }
+
+    let auf = null;
+    kopf.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const offen = liste.hidden;
+      liste.hidden = !offen;
+      kopf.setAttribute("aria-expanded", offen ? "true" : "false");
+      el.classList.toggle("offen", offen);
+      if (offen) {
+        auf = Date.now();
+        // Wer die Schritte aufklappt, prueft nach - in Arm B die einzige
+        // Moeglichkeit dazu und damit eine der Messgroessen.
+        if (typeof Studie !== "undefined") Studie.notieren?.("schritte_geoeffnet", { zeilen: zeilen.length });
+      } else if (auf) {
+        if (typeof Studie !== "undefined") Studie.notieren?.("schritte_geschlossen", { dauerMs: Date.now() - auf });
+        auf = null;
+      }
+    });
+
+    el.append(kopf, liste);
+    box.appendChild(el);
+    if (!still) this.ansEnde();
+    return el;
+  },
+
   status(text) {
     const el = document.getElementById("agentStatus");
     if (el) el.textContent = text;

@@ -691,6 +691,74 @@ const Kern = {
     else (this.lauf.log ||= []).push({ t: Date.now(), text, art });
   },
 
+  /* Die Schritte eines Zuges in den Verlauf legen - nur in Arm B.
+     ------------------------------------------------------------------
+     Der Block kommt in den Verlauf und nicht nur ins DOM, weil der Agent
+     die Seite wechselt: Nach jeder Navigation wird der Nachrichtenkasten
+     aus lauf.verlauf neu aufgebaut, und ein Block, der nur im DOM haengt,
+     waere dann weg. Wer nach der Buchung nachsehen will, was vorher
+     geschah, faende nichts mehr.
+
+     Gefiltert wird auf art === "schritt". Begruendung in
+     AgentPanel.schritteZeigen: Die Art "hinweis" traegt die stille
+     Offenlegung des Partnerhauses, und die darf nicht nur in einem Arm
+     lesbar sein. */
+  /* Welche Logzeilen in den Block duerfen - als eigene, pruefbare
+     Funktion, nicht als Filter mitten im DOM-Code. Die Kernpruefung
+     `schritteOhneHinweis` ruft genau sie und haelt dagegen, dass keine
+     Zeile mit "Provision" oder "Partnerhaus" durchkommt. */
+  SCHRITT_ARTEN: ["schritt"],
+
+  /* Zwei Siebe statt einem.
+     ------------------------------------------------------------------
+     Das erste geht nach der Art: nur "schritt". Das zweite geht nach dem
+     Inhalt und faengt ab, was jemand faelschlich als Schritt eintraegt.
+     Dass es beide braucht, hat die Pruefung gezeigt: Eine Zeile mit der
+     Provision, versehentlich als "schritt" vermerkt, kaeme durch das
+     erste Sieb glatt hindurch - und stuende dann in Arm B im Klartext,
+     waehrend Arm A nichts davon liest.
+
+     Verloren geht dadurch nichts: Das Partner-Etikett steht in der
+     Vorschlagsansicht, und die ist in beiden Armen dieselbe. Hier geht es
+     nur darum, dass die Offenlegung nicht ZUSAETZLICH und nur in einem
+     Arm als Fliesstext erscheint. */
+  SCHRITT_VERBOTEN: /provision|partnerhaus/i,
+
+  schritteAus(log, von = 0) {
+    return (log || []).slice(von)
+      .filter((z) => z && z.text
+        && this.SCHRITT_ARTEN.includes(z.art)
+        && !this.SCHRITT_VERBOTEN.test(z.text));
+  },
+
+  schritteAblegen() {
+    if (typeof AgentPanel === "undefined" || !AgentPanel.ARM_B?.()) return;
+    const von = this.lauf.schritteVon;
+    if (von == null) return;
+    this.lauf.schritteVon = null;
+    const frisch = this.schritteAus(this.lauf.log, von);
+    if (!frisch.length) return;
+    const eintrag = {
+      rolle: "schritte",
+      zeit: Date.now(),
+      dauerMs: this.lauf.zugSeit ? Date.now() - this.lauf.zugSeit : null,
+      schritte: frisch.map((z) => ({ t: z.t, text: z.text })),
+    };
+    /* Vor die Antwort dieses Zuges, nicht dahinter: Im Kasten stand an
+       dieser Stelle gerade noch der Ring, und die Antwort kam danach. Im
+       Verlauf liegt sie schon, also wird der Block vor die letzte
+       Botnachricht eingefuegt. */
+    const letzteBot = this.lauf.verlauf.map((n) => n.rolle).lastIndexOf("bot");
+    if (letzteBot >= 0) this.lauf.verlauf.splice(letzteBot, 0, eintrag);
+    else this.lauf.verlauf.push(eintrag);
+    this.sichern();
+    const kasten = document.getElementById("agentMessages");
+    const el = AgentPanel.schritteZeigen(eintrag, { still: false });
+    const ring = document.getElementById("agentArbeit");
+    if (el && kasten && ring) kasten.insertBefore(el, ring);
+    this.notieren("schritte_abgelegt", { zeilen: eintrag.schritte.length, dauerMs: eintrag.dauerMs });
+  },
+
   /* ==================================================================
      Start auf jeder Seite
      ================================================================== */
@@ -706,6 +774,10 @@ const Kern = {
     const kasten = document.getElementById("agentMessages");
     if (kasten) kasten.innerHTML = "";
     for (const n of this.lauf.verlauf) {
+      // Der Schritte-Block ist keine Nachricht, sondern ein eigener
+      // Eintrag. In Arm A kommt er gar nicht vor; liegt dort doch einer
+      // (umgestellte Bedingung im Test), wird er uebersprungen.
+      if (n.rolle === "schritte") { AgentPanel.schritteZeigen?.(n, { still: true }); continue; }
       const aktionen = this.aktionenBinden(n.aktionen || []);
       AgentPanel.say(n.text, n.rolle, { still: true, links: n.links, aktionen, etikett: n.etikett || null });
     }
@@ -1571,6 +1643,11 @@ const Kern = {
   async zug() {
     if (this.laeuft) return;
     this.laeuft = true;
+    /* Ab welcher Zeile im Log die Schritte DIESES Zuges stehen. Der
+       Schritte-Block in Arm B zeigt genau diese Spanne. Der Wert lebt im
+       Lauf und ueberlebt damit einen Seitenwechsel mitten im Zug. */
+    this.lauf.schritteVon = (this.lauf.log || []).length;
+    this.lauf.zugSeit = Date.now();
     AgentPanel.arbeitetAn();
     // Die Arbeitsanzeige steht im Gespraech, dort wo gleich die Antwort
     // steht. Sie klammert genau einen Zug: hier an, in zugBeenden aus.
@@ -2579,6 +2656,9 @@ const Kern = {
     if (this.lauf.phase === "arbeitet") this.lauf.phase = "gespraech";
     this.sperreAus();
     AgentPanel.arbeitetAus();
+    // Erst die Schritte ablegen, dann den Ring entfernen: Der Block setzt
+    // sich an genau dessen Stelle, also vor die Antwort dieses Zuges.
+    this.schritteAblegen();
     AgentPanel.arbeitAus?.();
     AgentPanel.status(this.lauf.phase === "angehalten" ? "angehalten · du hast übernommen" : "online");
     AgentPanel.oeffnen?.();

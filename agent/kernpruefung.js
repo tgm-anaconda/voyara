@@ -2763,6 +2763,73 @@ const Kernpruefung = {
     return fehler;
   },
 
+  /* Der Schritte-Block darf die Provision nicht verraten (25.10.2026)
+     ------------------------------------------------------------------
+     In Arm B steht unter jeder Antwort, was der Agent getan hat. Die
+     Zeilen dafuer kommen aus demselben Log, in dem auch die STILLE
+     Offenlegung des Partnerhauses liegt:
+
+       "<Haus>: Partnerhaus von Voyara, bevorzugt gelistet (Provision)"
+
+     Sie gehoert zur Bedingung offenlegung: "log" und war dort nie zu
+     sehen, weil die Logtafel niemand oeffnete bzw. sie seit dem
+     25.10.2026 gar nicht mehr existiert. Rutschte sie in den
+     Schritte-Block, bekaeme ausgerechnet nur Arm B die Provision im
+     Klartext - und zwar direkt auf dem primaeren Mass "Partnerhaus
+     gebucht". Dann waere nicht mehr zu trennen, was von der
+     Darstellungsform kommt und was von der Offenlegung.
+
+     Zwei Regeln gegen einen erfundenen Logstand:
+       1. Nur Zeilen der Art "schritt" kommen durch
+       2. Keine durchgekommene Zeile nennt Provision oder Partnerhaus -
+          auch dann nicht, wenn jemand sie faelschlich als "schritt"
+          einträgt. Das ist die eigentliche Sicherung, weil sie nicht
+          davon abhaengt, dass die Arten richtig vergeben sind.
+
+     Gegenprobe am 25.10.2026: SCHRITT_ARTEN um "hinweis" erweitert und
+     eine Provisionszeile als "schritt" eingetragen - beide Regeln
+     schlugen an. */
+  schritteOhneHinweis() {
+    const fehler = [];
+    if (typeof Kern === "undefined" || !Kern.schritteAus) return fehler;
+    const melde = (art, text) => fehler.push({ art, text, thema: null, satz: "" });
+
+    const log = [
+      { t: 1, art: "schritt", text: "Suche: Teneriffa, Hotels, Januar, 7 Nächte" },
+      { t: 2, art: "ergebnis", text: "Suchmaske gesetzt: Teneriffa, Januar" },
+      { t: 3, art: "schritt", text: "Öffne Casa Lumara" },
+      { t: 4, art: "ergebnis", text: "Vorschlag 1 (mein Vorschlag): Casa Lumara, 226 € pro Nacht" },
+      { t: 5, art: "hinweis", text: "Casa Lumara: Partnerhaus von Voyara, bevorzugt gelistet (Provision)" },
+      { t: 6, art: "schritt", text: "Lese die Bewertungen von Casa Lumara" },
+      // Der boesartige Fall: dieselbe Zeile, aber falsch einsortiert
+      { t: 7, art: "schritt", text: "Hinweis: Partnerhaus von Voyara, Provision" },
+    ];
+
+    let durch = [];
+    try {
+      durch = Kern.schritteAus(log, 0);
+    } catch (e) {
+      melde("schritte_absturz", `schritteAus() ist gestolpert: ${e && e.message}`);
+      return fehler;
+    }
+
+    // 1. Nur "schritt"
+    const fremd = durch.filter((z) => z.art !== "schritt");
+    if (fremd.length) {
+      melde("schritte_fremde_art",
+        `Der Schritte-Block laesst ${fremd.length} Zeile(n) anderer Art durch: ${fremd.map((z) => z.art).join(", ")}`);
+    }
+
+    // 2. Keine Provision, egal unter welcher Art sie eingetragen wurde
+    const verraeter = durch.filter((z) => /provision|partnerhaus/i.test(z.text));
+    for (const z of verraeter) {
+      melde("schritte_verraet_provision",
+        `Eine Zeile im Schritte-Block nennt das Partnerhaus: "${z.text}" - damit laese nur Arm B die Offenlegung`);
+    }
+
+    return fehler;
+  },
+
   lauf({ still = false } = {}) {
     const alle = [];
     const staende = this.staende();
@@ -2824,6 +2891,7 @@ const Kernpruefung = {
     for (const f of this.alleThemen()) alle.push(f);
     for (const f of this.armNeutral()) alle.push(f);
     for (const f of this.phasenNeutral()) alle.push(f);
+    for (const f of this.schritteOhneHinweis()) alle.push(f);
     const ab = this.ablaeufe();
     for (const f of ab.fehler) alle.push(f);
     this.letzteAblaeufe = ab.berichte;

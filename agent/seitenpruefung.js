@@ -640,10 +640,38 @@ const Seitenpruefung = {
       } else this.bestanden();
     }
 
+    // 6b. Der Schritte-Block gehoert in Arm B und nur dorthin
+    const bloecke = [...document.querySelectorAll(".msg.schritte")];
+    for (const b of bloecke) {
+      const kopf = b.querySelector(".schritte-kopf");
+      if (!kopf || kopf.getAttribute("aria-expanded") == null) {
+        this.befund("Arm B", "Ein Schritte-Block hat keinen bedienbaren Kopf mit aria-expanded");
+      } else this.bestanden();
+      const verraeter = [...b.querySelectorAll("li")]
+        .filter((li) => /provision|partnerhaus/i.test(li.textContent || ""));
+      if (verraeter.length) {
+        this.befund("Arm B", `Ein Schritte-Block nennt das Partnerhaus (${verraeter.length} Zeile(n)) - das laese nur Arm B die Offenlegung`,
+          { erste: verraeter[0].textContent.slice(0, 80) });
+      } else this.bestanden();
+    }
+
     // 7. Keine waagerechte Verschiebung der Seite hinter dem Chat
     const links = parseFloat(window.getComputedStyle(main || document.body).marginLeft) || 0;
     if (links > 1) {
       this.befund("Arm B", "Die Seite hinter dem Chat ist nach rechts geschoben (Rand aus Arm A) - das zieht einen Scrollbalken auf", { marginLeft: links });
+    } else this.bestanden();
+  },
+
+  /* Arm A darf den Schritte-Block nicht haben (25.10.2026).
+     Das Gegenstueck zu armB(): Dort wird geprueft, dass der Block richtig
+     gebaut ist, hier, dass er in Arm A gar nicht erst auftaucht. Beides
+     zusammen sichert die Festlegung "jeder Arm einen Kanal". */
+  armA() {
+    if (document.body.classList.contains("agent-fenster")) return;
+    if (!document.body.classList.contains("agent-schublade")) return;
+    const bloecke = document.querySelectorAll(".msg.schritte");
+    if (bloecke.length) {
+      this.befund("Arm A", `In Arm A stehen ${bloecke.length} Schritte-Block/Bloecke - dort soll es sie nicht geben, sonst hat Arm A beide Kanaele`);
     } else this.bestanden();
   },
 
@@ -658,6 +686,7 @@ const Seitenpruefung = {
       if (seite === "checkout") { await this.kasse(); }
       this.fragebogen();
       this.armB();
+      this.armA();
     } catch (e) {
       this.befund("Ablauf", `Die Pruefung ist gestolpert: ${e.message}`, { stack: String(e.stack).slice(0, 200) });
     }

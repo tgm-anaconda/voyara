@@ -296,6 +296,41 @@ img, svg { max-width: 100%; }
   .arbeit-ring { border-top-color: var(--brand-400, #5fc3a4); }
 }
 
+/* Der Schritte-Block, nur in Arm B (25.10.2026).
+   Zugeklappt eine Zeile, aufgeklappt die Liste mit Uhrzeit und Handlung.
+   Gestaltung wie die uebrigen Elemente des Chats, damit sich die Arme nur
+   im Aufbau unterscheiden und nicht in den Mitteln. */
+.agent-messages .msg.schritte {
+  align-self: stretch; max-width: 100%; padding: 0;
+  border: 1px solid rgba(255,255,255,.1); border-radius: 14px;
+  background: rgba(255,255,255,.025); overflow: hidden;
+}
+.schritte-kopf {
+  width: 100%; display: flex; align-items: center; gap: 10px;
+  background: none; border: none; padding: 12px 16px;
+  color: rgba(255,255,255,.62); font: inherit; font-size: .85rem;
+  cursor: pointer; text-align: left;
+}
+.schritte-kopf:hover { color: rgba(255,255,255,.85); background: rgba(255,255,255,.03); }
+.schritte-kopf:focus-visible { outline: 2px solid var(--brand-500); outline-offset: -2px; }
+.schritte-haken { display: grid; place-items: center; color: var(--brand-400, #5fc3a4); flex-shrink: 0; }
+.schritte-haken svg { width: 14px; height: 14px; }
+.schritte-dauer { color: rgba(255,255,255,.34); font-variant-numeric: tabular-nums; }
+.schritte-pfeil { margin-left: auto; font-size: .7rem; color: rgba(255,255,255,.4); }
+.msg.schritte.offen .schritte-pfeil { transform: rotate(180deg); }
+.schritte-liste[hidden] { display: none !important; }
+.schritte-liste {
+  margin: 0; padding: 13px 16px 14px; list-style: none;
+  display: flex; flex-direction: column; gap: 9px;
+  border-top: 1px solid rgba(255,255,255,.07);
+}
+.schritte-liste li { display: flex; gap: 12px; font-size: .81rem; line-height: 1.5; }
+.schritte-uhr {
+  color: rgba(255,255,255,.32); font-variant-numeric: tabular-nums;
+  flex-shrink: 0; min-width: 38px;
+}
+.schritte-liste li span:last-child { color: rgba(255,255,255,.68); }
+
 /* Schaltflaeche unter einer Nachricht, die eine Nachfrage ausloest */
 .msg-aktion {
   background: rgba(255,255,255,.10); border: 1px solid rgba(255,255,255,.20);
