@@ -163,11 +163,39 @@ img, svg { max-width: 100%; }
 .agent-head .icon-btn { margin-left: auto; color: var(--chat-muted); }
 .agent-head .icon-btn:hover { color: #fff; background: rgba(255,255,255,.1); }
 
-.agent-messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 9px; min-height: 0; }
-.agent-messages .msg { max-width: 92%; padding: 10px 12px; border-radius: var(--r-md); font-size: .87rem; line-height: 1.45; }
-.agent-messages .msg.bot { align-self: flex-start; background: rgba(255,255,255,.085); border-bottom-left-radius: 4px; }
-/* Die eine Stelle, an der die Marke im Chat durchkommt */
-.agent-messages .msg.user { align-self: flex-end; background: var(--brand-500); color: #fff; border-bottom-right-radius: 4px; }
+/* Nachrichten, neu gefasst am 25.10.2026.
+   ------------------------------------------------------------------
+   Der Nutzer ueber den Vollbild-Chat: "Sieht meiner Meinung nach
+   ueberhaupt nicht aus wie eine Chatbot-Ansicht." Der groesste Grund
+   dafuer waren Rahmen um Sprechblasen - kein heutiges KI-Produkt macht
+   das, dort steht die Antwort als Fliesstext.
+
+   Geaendert wird hier fuer BEIDE Arme. Die Arme duerfen sich im Aufbau
+   unterscheiden (Spalte gegen Vollbild, das ist der Eingriff), aber
+   nicht in den Gestaltungselementen: gleiche Farben, gleiche
+   Schriftgroessen, gleiche Abstaende, gleicher Wortlaut.
+   Festlegung des Nutzers: "Die Gestaltungselemente sollen gleich sein,
+   die Buttonfarben, die Texte. Optisch muss das nicht ansatzweise gleich
+   aussehen." */
+.agent-messages { flex: 1; overflow-y: auto; padding: 18px 16px; display: flex; flex-direction: column; gap: 20px; min-height: 0; }
+.agent-messages .msg { max-width: 92%; font-size: .93rem; line-height: 1.62; }
+/* Die Antwort steht als Text, nicht in einem Kasten.
+   `border: none` muss ausdruecklich dastehen: Die allgemeine Regel
+   `.msg.bot` weiter unten (fuer den hellen Chat auf der Seite) bringt
+   einen Rahmen mit, und der blieb sonst als Umriss um jede Antwort
+   stehen - genau der Eindruck von Formular statt Gespraech. */
+.agent-messages .msg.bot {
+  align-self: stretch; max-width: 100%;
+  background: none; border: none; padding: 0; border-radius: 0;
+}
+/* Die eigene Nachricht bleibt eine Kapsel, aber neutral statt in der
+   Markenfarbe: Gruen auf Dunkel zieht den Blick staerker auf das, was man
+   selbst gesagt hat, als auf die Antwort. */
+.agent-messages .msg.user {
+  align-self: flex-end; max-width: 82%;
+  background: rgba(255,255,255,.085); color: rgba(255,255,255,.93);
+  border-radius: 18px; padding: 10px 15px;
+}
 
 /* Verweise unter einer Chatnachricht.
    Der Chat soll nicht alles allein machen: Wer lieber selbst schaut, klickt
@@ -244,6 +272,30 @@ img, svg { max-width: 100%; }
 .eckdaten-chip i { font-style: normal; color: rgba(255,255,255,.45); font-size: .68rem; }
 .eckdaten-chip b { font-weight: 600; color: rgba(255,255,255,.9); }
 
+/* Arbeitsanzeige im Gespraech (25.10.2026), Stufe 2 der Prozessanzeige.
+   Ring, eine Zeile, verstrichene Zeit. Sie sagt, DASS er arbeitet und
+   woran grob - nicht, was er anklickt. In beiden Armen identisch. */
+.msg-arbeit {
+  align-self: flex-start; display: flex; align-items: center; gap: 11px;
+  font-size: .93rem; color: rgba(255,255,255,.72);
+}
+.arbeit-ring {
+  width: 16px; height: 16px; flex-shrink: 0; border-radius: 50%;
+  border: 2px solid rgba(255,255,255,.16); border-top-color: var(--brand-400, #5fc3a4);
+  animation: arbeitDreht 1.1s linear infinite;
+}
+@keyframes arbeitDreht { to { transform: rotate(360deg); } }
+.arbeit-text { animation: arbeitAtmet 1.9s ease-in-out infinite; }
+@keyframes arbeitAtmet { 0%, 100% { opacity: .62 } 50% { opacity: 1 } }
+.arbeit-uhr {
+  font-size: .8rem; color: rgba(255,255,255,.34);
+  font-variant-numeric: tabular-nums; min-width: 28px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .arbeit-ring, .arbeit-text { animation: none; }
+  .arbeit-ring { border-top-color: var(--brand-400, #5fc3a4); }
+}
+
 /* Schaltflaeche unter einer Nachricht, die eine Nachfrage ausloest */
 .msg-aktion {
   background: rgba(255,255,255,.10); border: 1px solid rgba(255,255,255,.20);
@@ -276,14 +328,21 @@ img, svg { max-width: 100%; }
 .msg-link:hover { background: rgba(255,255,255,.19); border-color: rgba(255,255,255,.34); }
 .msg-link:focus-visible { outline: 2px solid var(--brand-500); outline-offset: 2px; }
 
-.agent-suggestions { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 16px 10px; }
+.agent-suggestions { display: flex; flex-wrap: wrap; gap: 8px; padding: 2px 16px 0; }
 .chip {
   background: rgba(255,255,255,.09); border: 1px solid rgba(255,255,255,.18); color: rgba(255,255,255,.88);
   border-radius: 999px; padding: 6px 11px; font-size: .78rem; cursor: pointer; font-family: var(--font-body);
 }
 .chip:hover { background: rgba(255,255,255,.16); }
 
-.agent-input { display: flex; gap: 7px; padding: 12px 16px 8px; border-top: 1px solid var(--chat-line); background: var(--chat-head); align-items: flex-end; }
+/* Eingabe als Kapsel statt als Rechteck mit drei Knoepfen daneben.
+   Gilt fuer beide Arme; in der Schublade ist sie nur schmaler. */
+.agent-input {
+  display: flex; gap: 6px; align-items: flex-end;
+  margin: 10px 16px 0; padding: 6px 6px 6px 16px;
+  background: rgba(255,255,255,.055); border: 1px solid rgba(255,255,255,.13);
+  border-radius: 24px; border-top: 1px solid rgba(255,255,255,.13);
+}
 /* Das Eingabefeld ist ein Textfeld, kein einzeiliges Feld: Es waechst
    nach unten mit, statt waagerecht wegzuscrollen. Die Hoehe setzt
    components.js bei jeder Eingabe; hier stehen nur die Grenzen. */
@@ -291,10 +350,20 @@ img, svg { max-width: 100%; }
   resize: none; overflow-y: hidden; min-height: 42px; max-height: 160px;
   line-height: 1.45; font-family: inherit;
 }
-.agent-input .input { background: rgba(255,255,255,.10); border-color: rgba(255,255,255,.2); color: #fff; }
-.agent-input .input::placeholder { color: rgba(255,255,255,.45); }
-.agent-input .input:focus { background: rgba(255,255,255,.16); border-color: var(--brand-500); box-shadow: none; }
-.agent-input .btn { padding: 10px 13px; }
+.agent-input .input { background: none; border: none; color: #fff; padding: 9px 0; }
+.agent-input .input::placeholder { color: rgba(255,255,255,.42); }
+.agent-input .input:focus { background: none; border: none; box-shadow: none; outline: none; }
+/* Runde Knoepfe innerhalb der Kapsel */
+.agent-input .btn {
+  width: 36px; height: 36px; padding: 0; border-radius: 50%;
+  display: grid; place-items: center; flex-shrink: 0;
+}
+.agent-input .agent-mikro {
+  width: 36px; height: 36px; padding: 0; border-radius: 50%;
+  display: grid; place-items: center; flex-shrink: 0;
+  background: none; border: none; color: rgba(255,255,255,.5);
+}
+.agent-input .agent-mikro:hover { background: rgba(255,255,255,.1); color: #fff; }
 /* Sprechen statt tippen. Der Knopf ist nur da, wo der Browser die
    Spracherkennung kann; waehrend der Aufnahme pulsiert er rot. */
 .agent-mikro {
@@ -306,7 +375,7 @@ img, svg { max-width: 100%; }
 .agent-mikro.hoert { background: #c0392b; border-color: #c0392b; animation: mikro-puls 1.3s ease-in-out infinite; }
 @keyframes mikro-puls { 0%, 100% { box-shadow: 0 0 0 0 rgba(192,57,43,.55); } 50% { box-shadow: 0 0 0 7px rgba(192,57,43,0); } }
 @media (prefers-reduced-motion: reduce) { .agent-mikro.hoert { animation: none; } }
-.agent-foot { font-size: .7rem; color: rgba(255,255,255,.42); padding: 0 16px 13px; margin: 0; background: var(--chat-head); }
+.agent-foot { font-size: .72rem; color: rgba(255,255,255,.44); padding: 9px 16px 13px; margin: 0; background: none; }
 
 /* Eingeklappter Zustand */
 body.agent-collapsed .app-shell { grid-template-columns: 52px minmax(0, 1fr); }
@@ -1979,30 +2048,77 @@ body.agent-fenster .agent-rail {
 @media (min-width: 900px) {
   body.agent-fenster.agent-open .app-main { margin-left: 0; }
 }
-/* Die innere Spalte: mittig, begrenzt */
-body.agent-fenster .agent-messages {
-  padding-left: max(16px, calc((100vw - 760px) / 2));
-  padding-right: max(16px, calc((100vw - 760px) / 2));
-  padding-top: 22px;
+/* Das Kontextband gibt es in BEIDEN Armen, mit demselben Grund und
+   derselben Trennlinie - nur die Breite ist verschieden. Vorher ging
+   Freigabe und Eckdaten uebergangslos in die Nachrichten ueber, und die
+   oberste Nachricht sah aus, als waere sie abgeschnitten. */
+body.agent-schublade .agent-freigabe,
+body.agent-schublade .agent-eckdaten {
+  background: rgba(255,255,255,.045);
 }
-body.agent-fenster .agent-messages .msg { max-width: min(92%, 640px); }
-body.agent-fenster .agent-freigabe,
-body.agent-fenster .agent-eckdaten,
+body.agent-schublade .agent-eckdaten { border-bottom: 1px solid rgba(255,255,255,.09); padding-bottom: 11px; }
+body.agent-schublade .agent-freigabe:not(:has(+ .agent-eckdaten:not([hidden]))) {
+  border-bottom: 1px solid rgba(255,255,255,.09); padding-bottom: 10px;
+}
+
+/* Die Lesespalte: 780 Pixel, mittig - so breit wie bei den Produkten,
+   die Teilnehmende kennen. Vorher 760 mit Blasen auf 640, was zusammen
+   wie eine breit gezogene Seitenleiste wirkte. */
+body.agent-fenster .agent-messages {
+  padding-left: max(24px, calc((100vw - 780px) / 2));
+  padding-right: max(24px, calc((100vw - 780px) / 2));
+  padding-top: 30px;
+  gap: 26px;
+}
 body.agent-fenster .agent-suggestions,
 body.agent-fenster .agent-input,
 body.agent-fenster .agent-foot {
-  width: 100%; max-width: 760px; margin-left: auto; margin-right: auto;
+  width: 100%; max-width: 780px; margin-left: auto; margin-right: auto;
+  box-sizing: border-box;
 }
-/* Eingabe und Fusszeile sitzen auf einer Flaeche, die ueber die ganze
-   Breite geht - sonst stuende die Leiste als Insel in der Mitte. */
-body.agent-fenster .agent-input { border-top: none; background: transparent; }
-body.agent-fenster .agent-foot { background: transparent; }
-body.agent-fenster .agent-rail-inner > form.agent-input { position: relative; }
-body.agent-fenster .agent-rail-inner::after { content: none; }
-/* Der Kopf bleibt eine Leiste ueber die ganze Breite */
-body.agent-fenster .agent-head { padding: 14px 22px 12px; }
-/* Platz fuer die Log-Blase oben rechts, damit sie nichts verdeckt -
-   dasselbe Prinzip wie body.mit-log .header-main */
+body.agent-fenster .agent-input { margin-top: 10px; }
+body.agent-fenster .agent-foot { text-align: center; }
+
+/* Das Kontextband: Freigabe und Eckdaten.
+   -----------------------------------------------------------------
+   Vorher lagen beide im Nachrichtenstrom und schnitten die Nachricht
+   darueber ab - das sah aus wie ein Fehler, war aber nur eine fehlende
+   Trennung. Der Nutzer: "Die muss noch ein bisschen visueller
+   herausstechender sein... und es ist ja auch aktuell nicht mittig."
+
+   Jetzt spannt sich das BAND ueber die volle Breite und traegt einen
+   eigenen Grund, aber sein INHALT richtet sich an derselben 780er Spalte
+   aus wie das Gespraech. Damit hat die breite Flaeche oben einen
+   waagerechten Anker, und Freigabe, Eckdaten und Nachrichten stehen in
+   einer Flucht. */
+body.agent-fenster .agent-freigabe,
+body.agent-fenster .agent-eckdaten {
+  width: 100%; max-width: none; box-sizing: border-box;
+  background: rgba(255,255,255,.045);
+  padding-left: max(24px, calc((100vw - 780px) / 2));
+  padding-right: max(24px, calc((100vw - 780px) / 2));
+  border-bottom: 1px solid rgba(255,255,255,.09);
+}
+body.agent-fenster .agent-freigabe { padding-top: 13px; padding-bottom: 11px; }
+body.agent-fenster .agent-eckdaten { padding-top: 11px; padding-bottom: 12px; }
+/* Stehen beide, ist es ein Band mit einer Trennlinie am Fuss */
+body.agent-fenster .agent-freigabe:has(+ .agent-eckdaten:not([hidden])) {
+  border-bottom: none; padding-bottom: 4px;
+}
+/* Die Freigabe ist eine Messgroesse und soll als Bedienelement erkennbar
+   sein, nicht als dritte graue Pille. */
+body.agent-fenster .freigabe-zeile { max-width: 420px; }
+body.agent-fenster .freigabe-knopf { font-size: .86rem; padding: 9px 14px; }
+body.agent-fenster .eckdaten-titel { font-size: .72rem; }
+body.agent-fenster .eckdaten-chip { font-size: .79rem; padding: 4px 11px; }
+
+/* Kopfleiste: Name und Zustand in einer Zeile, nichts Leeres darunter */
+body.agent-fenster .agent-head { padding: 13px 24px 12px; background: none; border-bottom: 1px solid rgba(255,255,255,.08); }
+body.agent-fenster .agent-head .agent-avatar { width: 26px; height: 26px; border-radius: 8px; }
+body.agent-fenster .agent-kopftext { display: flex; align-items: baseline; gap: 9px; }
+body.agent-fenster .agent-name { font-size: .88rem; }
+body.agent-fenster .agent-status { font-size: .78rem; }
+/* Platz fuer die Log-Blase, falls sie je wieder eingeschaltet wird */
 body.agent-fenster.mit-log .agent-head { padding-right: 188px; }
 
 /* Der beschriftete Ausgang.
@@ -2065,19 +2181,19 @@ body.agent-fenster.agent-open .vorschlag-schirm { left: 0; }
 body.agent-fenster .log-bubble { z-index: 712; }
 body.agent-fenster .log-panel { z-index: 714; }
 
-/* Geschlossener Zustand: ein beschriftetes Feld unten links statt des
-   Griffs am Rand. So sieht es aus, wie man es von Chatprodukten kennt,
-   und sagt zugleich, dass dort etwas wartet. */
-body.agent-fenster .agent-reiter {
-  top: auto; bottom: 20px; left: 20px;
-  flex-direction: row; gap: 8px;
-  padding: 11px 16px; border: 1px solid var(--line-strong);
-  border-radius: 999px; box-shadow: 0 8px 24px rgba(16,33,30,.2);
-  font-size: .82rem; letter-spacing: 0;
-}
-body.agent-fenster .agent-reiter:hover { padding-left: 16px; }
-body.agent-fenster .agent-reiter-text { writing-mode: horizontal-tb; }
-body.agent-fenster .agent-reiter-pfeil { transform: rotate(0deg); }
+/* Der Weg zum Agenten ist in beiden Armen derselbe (Entscheidung des
+   Nutzers vom 25.10.2026).
+   -----------------------------------------------------------------
+   Hier stand kurz ein rundes Feld unten links, wie man es von
+   Chatprodukten kennt. Der Nutzer dazu: "Da moechte ich bitte bei beiden
+   quasi die Oeffnungsmethode wie in Variante A haben, weil ich sehe
+   wirklich null Sinn darin, das zu variieren."
+
+   Er hat recht. Ein Unterschied im Weg hinein ist ein zweiter Eingriff
+   neben der Beobachtbarkeit, und er traefe genau die Messgroesse, an der
+   am meisten haengt: wie oft jemand den Chat verlaesst und zurueckkommt.
+   Also derselbe Reiter am linken Rand, in beiden Armen, ohne eigene
+   Regel - `.agent-reiter` gilt unveraendert fuer `agent-fenster`. */
 
 /* Reiter am linken Rand: schmal, dezent, mit Pfeil nach rechts */
 .agent-reiter {

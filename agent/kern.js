@@ -185,7 +185,26 @@ const STELLSCHRAUBEN = {
   // Katalog und nennt nur das Ergebnis mit Begruendung.
   monatsvergleich: true,         // true | false
   mietwagenFrage: true,          // einmal vor der Kasse fragen (04.10.2026)
-  log: true,
+  /* Das Agenten-Log, aus am 25.10.2026.
+     ------------------------------------------------------------------
+     Es stammt aus dem Aufbau, in dem Nachvollziehbarkeit selbst die
+     Fragestellung war und das Oeffnen des Logs eine Messgroesse. In der
+     Beobachtbarkeits-Erhebung richtet es Schaden an: Es listet in Arm B
+     jeden Schritt mit Uhrzeit, und wer es aufklappt, liest genau das
+     nach, was er auf der Seite nicht sehen konnte. Der Unterschied
+     zwischen den Armen schrumpft damit auf einen Klick.
+
+     Der Nutzer dazu: "Ich muss ehrlicherweise sagen, dass ich mit dem
+     Agentenlog noch nicht so uebereinstimme, denn er war eine
+     urspruengliche Idee, die wir hatten, doch bei einer anderen Art der
+     Untersuchung."
+
+     Die Zeilen werden WEITER aufgezeichnet (Log.zeile schreibt in
+     lauf.log, unabhaengig von dieser Stellschraube). Nur die Tafel in der
+     Ecke ist weg. Damit bleibt der Weg offen, die Schritte spaeter als
+     aufklappbaren Block in der Nachricht zu zeigen, falls die
+     Fragestellung auf "zusehen gegen nachlesen" umgestellt wird. */
+  log: false,
   // Schrittmeldungen ("Filter gesetzt, noch 9 Treffer") im Chat oder nur
   // im Log. Mit Log: nur im Log. Der Chat sagt beim Start einmal, wo man
   // nachsehen kann - ob jemand das tut, ist eine der Messungen.
@@ -793,6 +812,9 @@ const Kern = {
     // Ein Werkzeug hatte die Seite gewechselt: dort weitermachen
     if (this.lauf.ausstehend) {
       AgentPanel.arbeitetAn();
+      // Nach einem Seitenwechsel mitten im Zug: Die Anzeige ist mit dem
+      // alten Kasten verschwunden und wird hier neu aufgebaut.
+      AgentPanel.arbeitAn?.("Macht weiter");
       AgentPanel.status("macht weiter…");
       setTimeout(() => this.fortsetzenNachLaden(), 600);
     } else if (this.lauf.phase === "gespraech" && this.lauf.verlauf.length) {
@@ -1550,6 +1572,9 @@ const Kern = {
     if (this.laeuft) return;
     this.laeuft = true;
     AgentPanel.arbeitetAn();
+    // Die Arbeitsanzeige steht im Gespraech, dort wo gleich die Antwort
+    // steht. Sie klammert genau einen Zug: hier an, in zugBeenden aus.
+    AgentPanel.arbeitAn?.("Denkt nach");
     AgentPanel.status("denkt nach…");
     try {
       const erzwungen = new Set();
@@ -2554,6 +2579,7 @@ const Kern = {
     if (this.lauf.phase === "arbeitet") this.lauf.phase = "gespraech";
     this.sperreAus();
     AgentPanel.arbeitetAus();
+    AgentPanel.arbeitAus?.();
     AgentPanel.status(this.lauf.phase === "angehalten" ? "angehalten · du hast übernommen" : "online");
     AgentPanel.oeffnen?.();
     // Wer selbst durch die Liste gehen will, soll sie auch sehen
@@ -2653,9 +2679,14 @@ const Kern = {
       let args = {};
       args = this.argumenteLesen(call.function.arguments, call.function.name);
       if (a.stufe === 1) {
+        /* Der Schritt wird weiter aufgezeichnet (lauf.log), aber er steht
+           nicht mehr im Bild: Angezeigt wird die Phase. Siehe
+           Werkzeugkasten.PHASEN - Stufe 2 der Prozessanzeige, Entscheidung
+           des Nutzers vom 25.10.2026. */
         const zeile = Werkzeugkasten.logText(call.function.name, args, this.lauf.profil || {});
         if (zeile) this.logZeile(zeile, "schritt");
-        AgentPanel.status(zeile ? `${zeile.charAt(0).toLowerCase()}${zeile.slice(1)}…` : "arbeitet…");
+        const phase = Werkzeugkasten.phaseText(call.function.name);
+        if (phase) AgentPanel.status(phase);
       }
       let r;
       if (this.istAngehalten()) {
@@ -3885,6 +3916,7 @@ const Kern = {
       this.lauf.anhalt = { werkzeug: untaetig ? null : werkzeug, seite: Werkzeuge.seite(), quelle, text, untaetig, gesagt: false };
     }
     this.lauf.phase = "angehalten";
+    AgentPanel.arbeitAus?.();
     AgentPanel.status("angehalten · du hast übernommen");
     this.sichern();
     // Die Meldung kommt sofort - nicht erst, wenn der angehaltene Zug zu

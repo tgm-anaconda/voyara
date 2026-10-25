@@ -2691,6 +2691,78 @@ const Kernpruefung = {
     return fehler;
   },
 
+  /* Die Prozessanzeige bleibt eine Phase (25.10.2026)
+     ------------------------------------------------------------------
+     Stufe 2 der Prozessanzeige steht und faellt an einer Grenze: Die
+     Anzeige sagt, DASS der Agent arbeitet und woran grob, nicht WAS er
+     anklickt. Rutscht dort je wieder Schritt-Genauigkeit hinein - eine
+     Trefferzahl, ein Hausname, ein Filtername -, dann liest man in Arm B
+     nach, was man auf der Seite nicht sehen konnte, und der Unterschied
+     zwischen den Armen schrumpft auf eine Zeile. Genau daran ist das
+     Agenten-Log gescheitert.
+
+     Vier Regeln, gegen alle Werkzeuge der echten Definitionsliste:
+       1. Jedes Werkzeug ist bewusst eingeordnet (Eintrag in PHASEN)
+       2. Keine Ziffer im Phasentext - Zahlen sind Schritt, nicht Phase
+       3. Der Phasentext ist nicht einfach der Logtext
+       4. Der Phasentext haengt nicht vom Arm ab
+
+     Gegenprobe am 25.10.2026 mit einem Eintrag
+       suchen: "Filter gesetzt, noch 9 Treffer"
+     und einer armabhaengigen Zeile: beide Regeln schlugen an. */
+  phasenNeutral() {
+    const fehler = [];
+    if (typeof Werkzeugkasten === "undefined" || !Werkzeugkasten.alleDefinitionen) return fehler;
+    const melde = (art, text) => fehler.push({ art, text, thema: null, satz: "" });
+
+    let namen = [];
+    try {
+      namen = Werkzeugkasten.alleDefinitionen().map((d) => d.function?.name).filter(Boolean);
+    } catch (e) {
+      melde("phasen_absturz", `alleDefinitionen() ist gestolpert: ${e && e.message}`);
+      return fehler;
+    }
+
+    const vorher = typeof STELLSCHRAUBEN !== "undefined" ? STELLSCHRAUBEN.zugang : null;
+    try {
+      for (const name of namen) {
+        // 1. Bewusst eingeordnet
+        if (!Object.prototype.hasOwnProperty.call(Werkzeugkasten.PHASEN, name)) {
+          melde("phase_fehlt", `Das Werkzeug "${name}" steht in keiner Phase - es faellt still auf "Arbeitet" zurueck, statt eingeordnet zu sein`);
+          continue;
+        }
+        const phase = Werkzeugkasten.phaseText(name);
+        if (phase == null) continue;      // absichtlich ohne Anzeige
+
+        // 2. Keine Ziffer
+        if (/\d/.test(phase)) {
+          melde("phase_zu_genau", `Die Phase zu "${name}" nennt eine Zahl: "${phase}" - das ist Schritt, nicht Phase`);
+        }
+
+        // 3. Nicht der Logtext
+        let log = null;
+        try { log = Werkzeugkasten.logText(name, {}, {}); } catch { log = null; }
+        if (log && String(log).trim() === String(phase).trim()) {
+          melde("phase_ist_schritt", `Die Phase zu "${name}" ist woertlich der Logtext: "${phase}"`);
+        }
+
+        // 4. Nicht vom Arm abhaengig
+        if (typeof STELLSCHRAUBEN !== "undefined") {
+          STELLSCHRAUBEN.zugang = "schublade";
+          const a = Werkzeugkasten.phaseText(name);
+          STELLSCHRAUBEN.zugang = "fenster";
+          const b = Werkzeugkasten.phaseText(name);
+          if (a !== b) {
+            melde("phase_nach_arm", `Die Phase zu "${name}" lautet je nach Arm anders: A "${a}" gegen B "${b}"`);
+          }
+        }
+      }
+    } finally {
+      if (typeof STELLSCHRAUBEN !== "undefined" && vorher !== null) STELLSCHRAUBEN.zugang = vorher;
+    }
+    return fehler;
+  },
+
   lauf({ still = false } = {}) {
     const alle = [];
     const staende = this.staende();
@@ -2751,6 +2823,7 @@ const Kernpruefung = {
     for (const f of this.zimmer()) alle.push(f);
     for (const f of this.alleThemen()) alle.push(f);
     for (const f of this.armNeutral()) alle.push(f);
+    for (const f of this.phasenNeutral()) alle.push(f);
     const ab = this.ablaeufe();
     for (const f of ab.fehler) alle.push(f);
     this.letzteAblaeufe = ab.berichte;

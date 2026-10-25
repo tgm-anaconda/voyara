@@ -985,9 +985,67 @@ const AgentPanel = {
     const el = document.getElementById("agentVorschau");
     if (el) el.textContent = text;
   },
+  /* Die Arbeitsanzeige im Gespraech (25.10.2026)
+     ------------------------------------------------------------------
+     Spinner, eine Zeile und die verstrichene Zeit, an der Stelle, an der
+     gleich die Antwort steht - so wie man es von Chatprodukten kennt.
+     Sie ersetzt das Agenten-Log: Statt einer Tafel in der Ecke, die jeden
+     Schritt mit Uhrzeit auflistet, sagt sie nur die Phase.
+
+     Sie haengt nicht im Verlauf (lauf.verlauf), sondern ist ein fluechtiges
+     Element am Ende des Kastens. Ein Seitenwechsel mitten im Zug baut sie
+     beim Fortsetzen neu auf.
+
+     In beiden Armen gleich: dieselbe Stelle, derselbe Wortlaut, dieselbe
+     Gestaltung. Nur die Breite der Spalte ist verschieden, und die ist
+     der Eingriff. */
+  arbeitAn(text) {
+    const box = document.getElementById("agentMessages");
+    if (!box) return;
+    let el = document.getElementById("agentArbeit");
+    if (!el) {
+      el = document.createElement("div");
+      el.id = "agentArbeit";
+      el.className = "msg-arbeit";
+      // polite statt assertive: Es soll vorgelesen werden, aber nicht
+      // mitten in einen Satz hineinfahren.
+      el.setAttribute("aria-live", "polite");
+      el.innerHTML = '<span class="arbeit-ring" aria-hidden="true"></span>'
+        + '<span class="arbeit-text"></span>'
+        + '<span class="arbeit-uhr" aria-hidden="true"></span>';
+      this._arbeitSeit = Date.now();
+      const uhr = () => {
+        const feld = el.querySelector(".arbeit-uhr");
+        if (!feld) return;
+        const s = Math.floor((Date.now() - this._arbeitSeit) / 1000);
+        // Erst ab fuenf Sekunden: darunter ist der Zaehler Unruhe, nicht
+        // Auskunft.
+        feld.textContent = s >= 5 ? `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}` : "";
+      };
+      uhr();
+      this._arbeitUhr = setInterval(uhr, 1000);
+    }
+    const t = String(text || "Arbeitet").replace(/[….]+$/, "");
+    el.querySelector(".arbeit-text").textContent = t.charAt(0).toUpperCase() + t.slice(1);
+    // Immer ans Ende: Zwischendurch kommen Nachrichten dazu
+    box.appendChild(el);
+    this.ansEnde();
+  },
+
+  arbeitAus() {
+    if (this._arbeitUhr) { clearInterval(this._arbeitUhr); this._arbeitUhr = null; }
+    document.getElementById("agentArbeit")?.remove();
+  },
+
   status(text) {
     const el = document.getElementById("agentStatus");
     if (el) el.textContent = text;
+    // Solange die Arbeitsanzeige steht, traegt sie denselben Text. So
+    // reichen die vorhandenen status()-Aufrufe, ohne dass jeder einzeln
+    // die Anzeige bedienen muss.
+    if (document.getElementById("agentArbeit") && text && !/^(online|angehalten)/.test(text)) {
+      this.arbeitAn(text);
+    }
     // Im Arbeitszustand traegt die Kopfzeile den laufenden Schritt, nicht
     // die letzte Antwort - sonst stuende dort etwas Veraltetes, waehrend
     // sich die Seite sichtbar bewegt.

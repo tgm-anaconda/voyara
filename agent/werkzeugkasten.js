@@ -368,6 +368,56 @@ const Werkzeugkasten = {
      nicht, nach denen gesucht wurde. Ein Log, in dem viermal dasselbe
      steht, laesst sich nicht lesen - und es ist eine der Stellen, an
      denen sich zeigen soll, dass der Agent arbeitet. */
+  /* Die Phase, nicht der Schritt (25.10.2026)
+     ------------------------------------------------------------------
+     Bis hierher stand in der Statuszeile der kleingeschriebene Logtext:
+     "suche: teneriffa, hotels, januar, 7 naechte…", "lese die bewertungen
+     von casa lumara…". Das ist Schritt-Genauigkeit, und sie gehoert in
+     Arm B nicht ins Bild: Wer sie liest, weiss, was der Agent tut, ohne
+     die Seite gesehen zu haben - der Unterschied zwischen den Armen
+     schrumpft auf eine Zeile.
+
+     Diese Abbildung fasst die Werkzeuge zu wenigen Phasen zusammen. Man
+     sieht, DASS er arbeitet und woran grob, nicht WAS er anklickt.
+
+     Die Texte sind in BEIDEN Armen dieselben. Kaeme hier je Arm etwas
+     anderes heraus, waere die Anzeige selbst ein zweiter Eingriff neben
+     der Beobachtbarkeit; die Kernpruefung `phasenNeutral` wacht darueber.
+
+     null heisst: Phase beibehalten. stand_merken und freigabe_aendern
+     sind Buchhaltung, keine Arbeit, und sollen die Anzeige nicht
+     flackern lassen. */
+  PHASEN: {
+    regionen_zaehlen: "Vergleicht Regionen und Zeiträume",
+    regionen_vergleichen: "Vergleicht Regionen und Zeiträume",
+    monate_vergleichen: "Vergleicht Regionen und Zeiträume",
+    suchen: "Sucht passende Unterkünfte",
+    haus_suchen: "Sucht passende Unterkünfte",
+    stichprobe_nehmen: "Sieht sich einzelne Häuser an",
+    haus_details: "Sieht sich einzelne Häuser an",
+    haus_oeffnen: "Sieht sich einzelne Häuser an",
+    haeuser_ansehen: "Sieht sich einzelne Häuser an",
+    bewertungen_lesen: "Liest Bewertungen",
+    bewertungen_durchsuchen: "Liest Bewertungen",
+    zurueck_zur_liste: "Sieht sich einzelne Häuser an",
+    auswahl_vorlegen: "Stellt die Vorschläge zusammen",
+    merken: "Merkt vor",
+    mietwagen_suchen: "Sucht einen Mietwagen",
+    faq_nachschlagen: "Schlägt etwas nach",
+    reisedaten_aendern: "Bereitet die Buchung vor",
+    buchung_vorbereiten: "Bereitet die Buchung vor",
+    formular_ausfuellen: "Bereitet die Buchung vor",
+    kasse_aendern: "Bereitet die Buchung vor",
+    buchung_abschliessen: "Schließt die Buchung ab",
+    stand_merken: null,
+    freigabe_aendern: null,
+  },
+
+  phaseText(name) {
+    const t = this.PHASEN[name];
+    return t === undefined ? "Arbeitet" : t;
+  },
+
   logText(name, a = {}, p = null) {
     const haus = (id) => (typeof getItemById === "function" ? getItemById(id)?.name : null) || id;
     switch (name) {
