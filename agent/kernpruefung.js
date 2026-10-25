@@ -2626,6 +2626,71 @@ const Kernpruefung = {
     }
     return fehler;
   },
+  /* Der Auftrag an das Modell darf den Arm nicht kennen (25.10.2026).
+     ------------------------------------------------------------------
+     Der ganze Aufbau der Beobachtbarkeits-Erhebung steht auf einem Satz:
+     Beide Arme laufen ueber dieselbe Implementierung, der Agent tut
+     dasselbe, nur die Sicht darauf ist verschieden. Haengt irgendwo im
+     Fahrplan eine Zeile, die den Arm abfragt - und sei es gut gemeint,
+     etwa "sag ihr, sie kann ja selbst schauen" nur in Arm A -, dann
+     unterscheiden sich die Arme nicht mehr bloss optisch, sondern im
+     Wortlaut. Ein Effekt waere dann nicht mehr der Beobachtbarkeit
+     zuzuschreiben, und in den Daten waere das nicht zu sehen.
+
+     Die Pruefung baut jeden Fahrplan zweimal, einmal mit
+     zugang: "schublade", einmal mit "fenster", und vergleicht das
+     Ergebnis Zeichen fuer Zeichen. Sie laeuft ueber eine Stichprobe der
+     Staende (jeden fuenfzigsten), weil der Fahrplan hier zweimal gebaut
+     wird und das Ergebnis ohnehin entweder ueberall gleich ist oder
+     nirgends.
+
+     Gegenprobe (29.10.2026 wiederholbar): Baut man testweise in
+     werkzeugkasten.js eine armabhaengige Zeile ein, etwa
+       if (STELLSCHRAUBEN.zugang === "fenster") hinweis += " Sag ihr X.";
+     muss diese Pruefung anschlagen. Tut sie es nicht, ist sie wertlos.
+     Geprueft wurde das am 25.10.2026 mit genau diesem Eingriff: 36
+     Befunde. Ohne den Eingriff: 0. */
+  armNeutral() {
+    const fehler = [];
+    if (typeof STELLSCHRAUBEN === "undefined") return fehler;
+    const vorher = STELLSCHRAUBEN.zugang;
+    const staende = this.staende().filter((_, i) => i % 50 === 0);
+    const bauen = (arm, p, l, wie) => {
+      STELLSCHRAUBEN.zugang = arm;
+      const probe = JSON.parse(JSON.stringify(p));
+      try {
+        const fp = Werkzeugkasten.fahrplan(probe, {
+          gespraech: l.gespraech, gesuchtMit: l.gesuchtMit || null, gefragtWie: wie });
+        return JSON.stringify(fp);
+      } catch (e) {
+        return "ABSTURZ: " + String(e && e.message);
+      }
+    };
+    try {
+      for (const p of staende) {
+        for (const l of this.LAEUFE) {
+          const a = bauen("schublade", p, l, {});
+          const b = bauen("fenster", p, l, {});
+          if (a !== b) {
+            // Die erste abweichende Stelle zeigen, sonst steht hier der
+            // ganze Fahrplan und man sucht sich den Unterschied selbst
+            let i = 0;
+            while (i < a.length && i < b.length && a[i] === b[i]) i += 1;
+            fehler.push({
+              art: "arm_im_auftrag",
+              text: `Der Fahrplan unterscheidet sich nach Arm (Lauf "${l.name}"): `
+                + `A "...${a.slice(Math.max(0, i - 40), i + 60)}" gegen B "...${b.slice(Math.max(0, i - 40), i + 60)}"`,
+              thema: null, satz: "", stand: p,
+            });
+          }
+        }
+      }
+    } finally {
+      STELLSCHRAUBEN.zugang = vorher;
+    }
+    return fehler;
+  },
+
   lauf({ still = false } = {}) {
     const alle = [];
     const staende = this.staende();
@@ -2685,6 +2750,7 @@ const Kernpruefung = {
     for (const f of this.riegel()) alle.push(f);
     for (const f of this.zimmer()) alle.push(f);
     for (const f of this.alleThemen()) alle.push(f);
+    for (const f of this.armNeutral()) alle.push(f);
     const ab = this.ablaeufe();
     for (const f of ab.fehler) alle.push(f);
     this.letzteAblaeufe = ab.berichte;

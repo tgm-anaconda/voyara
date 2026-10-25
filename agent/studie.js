@@ -94,6 +94,7 @@ const Studie = {
       einstieg: {},               // hinweisSekunden, Freigabemessung
       fragebogen: null,
       eckpunkte: null,            // die drei Angaben der Person (freie Aufgabe)
+      umgebung: null,             // Fenster, Geraet, Arm (umgebungNotieren)
       ereignisse: [],             // Messpunkte ausserhalb des Kerns
       gesendet: {},               // welche Sicherungspunkte beim Server angekommen sind
     };
@@ -431,7 +432,6 @@ const Studie = {
           <ul>
             <li>Wohin, wann, wie lange und mit wem entscheidest du</li>
             <li>Nimm etwas, das du zu Hause auch buchen würdest</li>
-            <li>Den Assistenten am rechten Rand kannst du nutzen - musst du aber nicht</li>
           </ul>
         </div>`;
     }
@@ -592,11 +592,19 @@ const Studie = {
       this.phaseSetzen("arbeitet");
       this.sichern();
 
-      // Jede Aufgabe beginnt mit geschlossener Schublade, wie ein neuer
-      // Besuch der Seite. Ob jemand den Assistenten in Aufgabe 2 wieder
-      // aufzieht, ist die Wiederverwendung - und die braucht einen Klick.
-      try { sessionStorage.setItem("voyara_chat_offen", "0"); } catch { /* egal */ }
-      document.body.classList.remove("agent-open");
+      /* Bis zum 25.10.2026 begann jede Aufgabe mit geschlossener
+         Schublade - damals war die Frage, OB jemand den Assistenten
+         ueberhaupt aufzieht, selbst eine Messgroesse.
+
+         Die Frage ist beantwortet und wurde fallen gelassen: Wer den
+         Agenten nie oeffnet, liefert zur Kennzeichnung des Partnerhauses
+         keinen einzigen Messwert. In der Beobachtbarkeits-Erhebung waere
+         sie sogar schaedlich, weil ein zugeklappter Reiter Selbstauswahl
+         erzeugt - und zwar in beiden Armen verschieden stark, weil ein
+         Vollbild-Chat etwas anderes verspricht als eine schmale Spalte.
+
+         Also beginnen beide Arme geoeffnet. Was danach passiert, steht in
+         chat_umgeschaltet: Wer selbst zumacht, macht selbst zu. */
 
       // Jede Aufgabe beginnt auf der Startseite. Nach der ersten Buchung
       // stuende man sonst noch auf der Bestaetigungsseite der letzten -
@@ -877,6 +885,14 @@ const Studie = {
     if (this.angebunden) return;
     this.angebunden = true;
 
+    // Fenster und Geraet: einmal sofort, danach bei jeder Groessenaenderung
+    this.umgebungNotieren();
+    let umgebungTimer = null;
+    window.addEventListener("resize", () => {
+      clearTimeout(umgebungTimer);
+      umgebungTimer = setTimeout(() => this.umgebungNotieren(), 400);
+    }, { passive: true });
+
     // Einfuegen im Chat: Wer die Aufgabe eins zu eins hineinkopiert, hat
     // nicht delegiert, sondern diktiert. Gemessen wird die Laenge und
     // wie viel davon aus dem Aufgabentext stammt.
@@ -914,6 +930,69 @@ const Studie = {
         ueberChat: !!e.target.closest?.("#agentRail, .msg-link"),
       });
     }, true);
+  },
+
+  /* Fenster und Geraet, einmal je Sitzung (25.10.2026)
+     ------------------------------------------------------------------
+     Der zweite Studienarm legt den Chat ueber die ganze Seite. Wie viel
+     Seite daneben ueberhaupt Platz haette, haengt damit am Fenster - und
+     unter 1040 Pixeln verhaelt sich auch Arm A schon wie eine Schublade.
+     Ohne diese Spalten laesst sich hinterher nicht sagen, ob jemand den
+     Unterschied zwischen den Armen ueberhaupt sehen konnte.
+
+     Festgehalten wird der groesste je gemessene Wert, nicht der erste:
+     Wer das Fenster zwischendurch vergroessert, hat die breite Ansicht
+     gesehen. `geaendert` haelt fest, dass sich die Breite ueberhaupt
+     bewegt hat - eine Sitzung mit wechselnder Breite ist keine saubere
+     Beobachtung. */
+  umgebungNotieren() {
+    if (!this.daten) return;
+    const breite = window.innerWidth || 0;
+    const hoehe = window.innerHeight || 0;
+    const u = this.daten.umgebung || null;
+    const neu = {
+      breite, hoehe,
+      breiteMax: u ? Math.max(u.breiteMax || 0, breite) : breite,
+      breiteMin: u ? Math.min(u.breiteMin || breite, breite) : breite,
+      geaendert: u ? (u.geaendert || (u.breite !== breite || u.hoehe !== hoehe)) : false,
+      dpr: Math.round((window.devicePixelRatio || 1) * 100) / 100,
+      // Der Schwellwert, an dem die Seitenleiste in die Schublade kippt
+      schmal: window.matchMedia("(max-width: 1040px)").matches,
+      // Zeigegeraet statt Bildschirmbreite: ein Tablet ist breit und hat
+      // trotzdem keinen Mauszeiger
+      grob: window.matchMedia("(pointer: coarse)").matches,
+      touch: (navigator.maxTouchPoints || 0) > 0,
+      zugang: typeof STELLSCHRAUBEN !== "undefined" ? (STELLSCHRAUBEN.zugang || "") : "",
+      sprache: navigator.language || "",
+    };
+    const ersteMessung = !u;
+    this.daten.umgebung = neu;
+    this.sichern();
+    if (ersteMessung) this.notieren("umgebung", neu);
+  },
+
+  /* Chat auf und zu (25.10.2026)
+     ------------------------------------------------------------------
+     Bis hierher lief das Umschalten durch components.js, ohne einen
+     Eintrag. Fuer die Beobachtbarkeits-Erhebung ist es die zentrale
+     Kontrollgroesse: Wer den Chat schliesst, sieht die Seite - in Arm B
+     ist das der einzige Weg dorthin. Gezaehlt wird jeder Wechsel mit
+     Zeitpunkt, Seite und Anlass, damit sich hinterher ausrechnen laesst,
+     wie lange die Seite sichtbar war und wer von sich aus hingesehen hat.
+
+     `quelle` trennt die eigene Entscheidung ("kopf", "griff", "symbol")
+     von der des Agenten ("platz", wenn die Person "ich schaue selbst"
+     gewaehlt hat) - sonst zaehlte ein vom Agenten freigegebener Blick wie
+     eine eigene Nachpruefung. */
+  chatUmgeschaltet(offen, quelle = "kopf") {
+    if (!this.daten) return;
+    this.notieren("chat_umgeschaltet", {
+      offen: offen ? 1 : 0,
+      quelle,
+      seite: typeof Werkzeuge !== "undefined" && Werkzeuge.seite ? Werkzeuge.seite() : "",
+      zugang: typeof STELLSCHRAUBEN !== "undefined" ? (STELLSCHRAUBEN.zugang || "") : "",
+      arbeitet: this.kern?.laeuft ? 1 : 0,
+    });
   },
 
   // Von stay.js beim Verlassen der Detailseite aufgerufen
@@ -1013,6 +1092,23 @@ const Studie = {
       eckMonat: z(d.eckpunkte?.monat),
       eckBudget: z(d.eckpunkte?.budget),
       eckSekunden: z(d.eckpunkte?.sekunden),
+      /* Fenster, Geraet und Arm (25.10.2026)
+         --------------------------------------------------------------
+         `armZugang` ist die Bedingung der Beobachtbarkeits-Erhebung:
+         schublade = der Agent arbeitet sichtbar auf der Seite neben dem
+         Chat, fenster = der Chat liegt ueber der ganzen Seite und die
+         Arbeit ist nicht zu sehen. Die Fensterspalten sagen, ob die
+         Person den Unterschied ueberhaupt sehen konnte. */
+      armZugang: z(d.umgebung?.zugang),
+      geraetBreite: z(d.umgebung?.breite),
+      geraetHoehe: z(d.umgebung?.hoehe),
+      geraetBreiteMax: z(d.umgebung?.breiteMax),
+      geraetBreiteMin: z(d.umgebung?.breiteMin),
+      geraetBreiteGeaendert: d.umgebung ? (d.umgebung.geaendert ? 1 : 0) : "",
+      geraetSchmal: d.umgebung ? (d.umgebung.schmal ? 1 : 0) : "",
+      geraetGrob: d.umgebung ? (d.umgebung.grob ? 1 : 0) : "",
+      geraetTouch: d.umgebung ? (d.umgebung.touch ? 1 : 0) : "",
+      geraetDpr: z(d.umgebung?.dpr),
     };
 
     d.durchlaeufe.forEach((r, i) => {
@@ -1205,6 +1301,42 @@ const Studie = {
         [p + "logScrollMax"]: logZu.length ? Math.max(...logZu.map((e) => e.scrollMax || 0)) : "",
         [p + "logEndeErreicht"]: logZu.length ? (logZu.some((e) => e.endeErreicht) ? 1 : 0) : "",
         [p + "logScrollNoetig"]: logAuf.length ? (logAuf.some((e) => e.scrollNoetig) ? 1 : 0) : "",
+      });
+
+      /* Chat auf und zu: wie lange die Seite sichtbar war (25.10.2026)
+         --------------------------------------------------------------
+         In Arm B ist das Schliessen des Chats der einzige Weg zur Seite,
+         in Arm A nur einer von mehreren. Deshalb stehen hier beide Seiten
+         der Rechnung: wie oft geschlossen wurde, wie viel davon die
+         Person selbst entschieden hat (quelle != "platz"), und wie viele
+         Sekunden der Chat insgesamt zu war.
+
+         Die Dauer wird aus Paaren gebildet: jedes Schliessen zaehlt bis
+         zum naechsten Oeffnen, ein offenes Ende bis zum Ende der Aufgabe.
+         Ein zweites Schliessen ohne Oeffnen dazwischen verlaengert das
+         laufende Fenster, es beginnt kein neues. */
+      const schalter = ereignisse.filter((e) => e.ereignis === "chat_umgeschaltet");
+      const zu = schalter.filter((e) => e.offen === 0);
+      const ende = r.beendet || Date.now();
+      let zuMs = 0;
+      let zuSeit = null;
+      for (const e of schalter) {
+        if (e.offen === 0 && zuSeit === null) zuSeit = e.t;
+        else if (e.offen === 1 && zuSeit !== null) { zuMs += e.t - zuSeit; zuSeit = null; }
+      }
+      if (zuSeit !== null) zuMs += Math.max(0, ende - zuSeit);
+      // Was die Person waehrend des geschlossenen Chats getan hat: Haeuser
+      // geoeffnet, die nicht aus dem Chat kamen
+      const inZu = (t) => schalter.filter((e) => e.t <= t).slice(-1)[0]?.offen === 0;
+      Object.assign(spalten, {
+        [p + "chatZu"]: zu.length,
+        [p + "chatZuSelbst"]: zu.filter((e) => e.quelle !== "platz").length,
+        [p + "chatJeZu"]: zu.length ? 1 : 0,
+        [p + "chatZuSekunden"]: Math.round(zuMs / 1000),
+        [p + "chatZuWaehrendArbeit"]: zu.filter((e) => e.arbeitet === 1).length,
+        [p + "chatZuVorBuchung"]: buchungT ? zu.filter((e) => e.t < buchungT).length : zu.length,
+        [p + "chatZuletztZu"]: schalter.length ? (schalter[schalter.length - 1].offen === 0 ? 1 : 0) : "",
+        [p + "detailsBeiZuemChat"]: details.filter((e) => inZu(e.t)).length,
       });
 
       /* Partnerhaus und Vorlage: wurde es vorgelegt, wurde es gebucht,

@@ -538,6 +538,115 @@ const Seitenpruefung = {
      Ablauf und Tafel
      ================================================================== */
 
+  /* ==================================================================
+     Arm B: deckt der Chat wirklich alles zu? (25.10.2026)
+     ==================================================================
+     Die Kernpruefung sieht den Fahrplan, nicht das Bild. Dieser Arm der
+     Beobachtbarkeits-Erhebung steht aber genau auf dem Bild: Wenn irgendwo
+     ein Streifen der Seite durchscheint, ein Zeiger sichtbar bleibt oder
+     eine Umrandung auf einer Karte aufleuchtet, ist Arm B kein Arm B mehr,
+     und zwar ohne dass es in den Daten zu sehen waere.
+
+     Geprueft wird nur, wenn die Seite wirklich in Arm B laeuft
+     (?zugang=fenster). In Arm A und in der alten Seitenleiste wird die
+     Pruefung uebersprungen - dort soll die Seite ja zu sehen sein.
+
+     Was geprueft wird:
+       1. Der Chat deckt das Fenster vollstaendig (Rechteck gemessen)
+       2. Die Seite dahinter ist stillgelegt (inert), nicht nur verdeckt
+       3. Der Zeiger ist unsichtbar, der Klickring ebenso
+       4. Keine Arbeitsumrandung (.agent-hover, .agent-liest) ist zu sehen
+       5. Der Weg nach draussen ist beschriftet, nicht nur ein Kreuz
+       6. Das Log ist erreichbar, also ueber dem Chat (Festlegung: in
+          beiden Armen gleich)
+       7. Die Seite steht nicht waagerecht verschoben hinter dem Chat
+     ================================================================== */
+  armB() {
+    if (!document.body.classList.contains("agent-fenster")) {
+      console.info("Seitenpruefung: nicht in Arm B, Vollbild-Pruefung uebersprungen");
+      return;
+    }
+    const rail = document.getElementById("agentRail");
+    const offen = document.body.classList.contains("agent-open");
+    if (!rail) { this.befund("Arm B", "Kein #agentRail auf der Seite"); return; }
+    if (!offen) {
+      // Geschlossener Zustand: dann MUSS der Weg zurueck sichtbar sein
+      const reiter = document.getElementById("agentReiter");
+      if (!reiter) this.befund("Arm B", "Chat ist zu und es gibt keinen Weg zurueck (#agentReiter fehlt)");
+      else this.bestanden();
+      return;
+    }
+
+    // 1. Deckt das ganze Fenster
+    const k = rail.getBoundingClientRect();
+    const deckt = k.left <= 1 && k.top <= 1
+      && k.right >= window.innerWidth - 1 && k.bottom >= window.innerHeight - 1;
+    if (!deckt) {
+      this.befund("Arm B", "Der Chat deckt das Fenster nicht vollstaendig - die Seite scheint durch", {
+        chat: { l: Math.round(k.left), t: Math.round(k.top), r: Math.round(k.right), b: Math.round(k.bottom) },
+        fenster: { w: window.innerWidth, h: window.innerHeight },
+      });
+    } else this.bestanden();
+
+    // 2. Seite stillgelegt
+    const main = document.querySelector(".app-main");
+    if (!main) this.befund("Arm B", "Kein .app-main gefunden - die Abschirmung kann nicht greifen");
+    else if (!main.hasAttribute("inert")) {
+      this.befund("Arm B", "Die Seite hinter dem Chat ist nur verdeckt, nicht stillgelegt (kein inert) - sie nimmt weiter Tastaturfokus");
+    } else this.bestanden();
+
+    // 3. Zeiger und Klickring unsichtbar
+    const zeiger = document.getElementById("agentZeiger");
+    if (zeiger && zeiger.classList.contains("sichtbar")) {
+      this.befund("Arm B", "Der Zeiger des Agenten ist sichtbar (z-index 9000 liegt ueber dem Chat)");
+    } else this.bestanden();
+    const ring = document.getElementById("agentKlickring");
+    if (ring && ring.classList.contains("puls")) {
+      this.befund("Arm B", "Der Klickring laeuft sichtbar ueber dem Chat");
+    } else this.bestanden();
+
+    // 4. Keine Arbeitsumrandung sichtbar
+    const umrandet = [...document.querySelectorAll(".agent-hover, .agent-liest")]
+      .filter((e) => {
+        const st = window.getComputedStyle(e);
+        return st.outlineStyle && st.outlineStyle !== "none";
+      });
+    if (umrandet.length) {
+      this.befund("Arm B", `${umrandet.length} Element(e) tragen noch eine sichtbare Arbeitsumrandung`, {
+        erstes: umrandet[0].className });
+    } else this.bestanden();
+
+    // 5. Beschrifteter Ausgang
+    const zu = document.getElementById("agentCollapse");
+    const text = zu?.querySelector(".agent-zu-text");
+    const sichtbar = text && window.getComputedStyle(text).display !== "none";
+    const gesperrt = document.body.classList.contains("agent-gesperrt");
+    // Unter 1040 Pixeln bleibt es absichtlich beim Kreuz: Dort bricht der
+    // Name des Assistenten um und der Knopf laege auf ihm. Gilt in beiden
+    // Armen gleich; die Erhebung laeuft am Rechner.
+    const schmal = window.matchMedia("(max-width: 1040px)").matches;
+    if (!zu) this.befund("Arm B", "Kein Schliessknopf (#agentCollapse) im Chatkopf");
+    else if (gesperrt || schmal) this.bestanden();   // waehrend der Arbeit und auf schmalen Fenstern absichtlich ohne Wort
+    else if (!sichtbar) this.befund("Arm B", "Der Ausgang ist nur ein Kreuz - die Beschriftung fehlt");
+    else this.bestanden();
+
+    // 6. Log ueber dem Chat
+    const bubble = document.querySelector(".log-bubble");
+    if (bubble) {
+      const zChat = parseInt(window.getComputedStyle(rail).zIndex, 10) || 0;
+      const zLog = parseInt(window.getComputedStyle(bubble).zIndex, 10) || 0;
+      if (zLog <= zChat) {
+        this.befund("Arm B", "Das Log liegt unter dem Chat und ist in Arm B nicht erreichbar", { zChat, zLog });
+      } else this.bestanden();
+    }
+
+    // 7. Keine waagerechte Verschiebung der Seite hinter dem Chat
+    const links = parseFloat(window.getComputedStyle(main || document.body).marginLeft) || 0;
+    if (links > 1) {
+      this.befund("Arm B", "Die Seite hinter dem Chat ist nach rechts geschoben (Rand aus Arm A) - das zieht einen Scrollbalken auf", { marginLeft: links });
+    } else this.bestanden();
+  },
+
   async laufen() {
     this.befunde = [];
     this.geprueft = 0;
@@ -548,6 +657,7 @@ const Seitenpruefung = {
       if (seite === "stay") { await this.hausseite(); }
       if (seite === "checkout") { await this.kasse(); }
       this.fragebogen();
+      this.armB();
     } catch (e) {
       this.befund("Ablauf", `Die Pruefung ist gestolpert: ${e.message}`, { stack: String(e.stack).slice(0, 200) });
     }

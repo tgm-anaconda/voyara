@@ -84,9 +84,19 @@ const STELLSCHRAUBEN = {
 
   /* Aufbau der Erhebung (Stand 18.09.2026), siehe AGENT-KONZEPT Abschnitt 25.
      ------------------------------------------------------------------
-     zugang       schublade = der Agent ist zu Beginn unsichtbar und nur
-                  ueber einen schmalen Reiter am rechten Rand erreichbar;
-                  seitenleiste = die alte, dauerhaft offene Spalte links.
+     zugang       Der Faktor der Beobachtbarkeits-Erhebung (25.10.2026),
+                  zwischen Personen:
+                  schublade = Arm A. Der Chat liegt als 380 Pixel breite
+                  Spalte links, die Seite daneben. Wer zusieht, sieht den
+                  Agenten tippen, filtern und klicken.
+                  fenster = Arm B. Derselbe Chat, derselbe Agent, dieselbe
+                  Arbeit auf derselben Seite - nur deckt der Chat das Bild
+                  vollstaendig, und der Zeiger ist unsichtbar. Man sieht,
+                  DASS er arbeitet, nicht WAS er tut. Der Weg zur Seite
+                  bleibt offen: Chat schliessen, und sie liegt da.
+                  seitenleiste = die alte, dauerhaft offene Rasterspalte.
+                  Bleibt im Code, kommt in der Erhebung nicht vor, weil
+                  beide Arme gleich oeffnen und schliessen muessen.
      einladung    Ort des Angebots "Moechtest du den Assistenten nutzen?",
                   das nach dem Ausloeser erscheint, falls der Reiter bis
                   dahin nicht benutzt wurde. keine = kein Angebot.
@@ -124,7 +134,10 @@ const STELLSCHRAUBEN = {
      Algarve). Beides bleibt erhalten, umschaltbar auch ueber die
      Adresse: ?aufgabe=fest. */
   aufgabe: "frei",               // frei | fest
-  zugang: "seitenleiste",        // schublade | seitenleiste
+  /* Vorgabe bleibt die alte Spalte, damit ein Blick auf den Prototyp
+     ohne Studienlink aussieht wie bisher. Die Erhebung setzt den Arm
+     ueber die Adresse: ?zugang=schublade (A) oder ?zugang=fenster (B). */
+  zugang: "seitenleiste",        // schublade | fenster | seitenleiste
   einladung: "keine",            // unten-rechts | cursor | mitte | liste | keine
   einladungAusloeser: "detail",  // detail | zeit
   einladungSekunden: 60,
@@ -199,7 +212,7 @@ const STELLSCHRAUBEN = {
     fehler: ["keine", "filter", "kriterium", "behauptung"],
     begruendung: ["knapp", "ausfuehrlich"],
     initiative: ["abwartend", "vorschlagend"],
-    zugang: ["schublade", "seitenleiste"],
+    zugang: ["schublade", "fenster", "seitenleiste"],
     einladung: ["unten-rechts", "unten-links", "cursor", "mitte", "liste", "keine"],
     einladungAusloeser: ["detail", "zeit"],
     freigabeFrage: ["erstoeffnung", "start"],
@@ -244,13 +257,31 @@ const STELLSCHRAUBEN = {
   // Seitenleiste nicht erst aufblitzt. Ob die Schublade offen war, weiss
   // der sessionStorage (siehe AgentPanel.umschalten).
   if (typeof document !== "undefined") {
-    if (STELLSCHRAUBEN.zugang === "schublade") {
+    /* Beide Arme laufen ueber die Schubladenmechanik (25.10.2026).
+       ----------------------------------------------------------------
+       `agent-schublade` bringt alles mit, was beide brauchen: fixes
+       Overlay, Ein- und Ausfahren, Reiter im geschlossenen Zustand,
+       gemerkter Zustand ueber Seitenwechsel. `agent-fenster` kommt in
+       Arm B dazu und aendert nur die Breite und die innere Aufteilung.
+       Zwei Klassen statt einer, damit Arm B alles Erprobte erbt und sich
+       die Arme nicht in der Mechanik unterscheiden, sondern nur darin,
+       wie viel vom Bild der Chat einnimmt.
+
+       Beide starten geoeffnet. Entscheidung des Nutzers: Wer den Agenten
+       nie oeffnet, liefert keinen einzigen Messwert, und ein Reiter, den
+       man erst finden muss, erzeugt Selbstauswahl - die waere schlimmer
+       als ungleiches Wissen. Nur wer selbst geschlossen hat, findet ihn
+       geschlossen wieder. */
+    const fenster = STELLSCHRAUBEN.zugang === "fenster";
+    if (fenster || STELLSCHRAUBEN.zugang === "schublade") {
       document.body.classList.add("agent-schublade");
+      document.body.classList.toggle("agent-fenster", fenster);
       let offen = null;
       try { offen = sessionStorage.getItem("voyara_chat_offen"); } catch { /* egal */ }
-      if (offen === "1") document.body.classList.add("agent-open");
+      if (offen !== "0") document.body.classList.add("agent-open");
     } else {
       document.body.classList.remove("agent-schublade");
+      document.body.classList.remove("agent-fenster");
     }
     /* Seit dem 27.09.2026 ist die offene Spalte der Normalfall, und die
        Seiten tragen die Schubladen-Klasse nicht mehr im HTML - sie kommt
@@ -264,6 +295,44 @@ const STELLSCHRAUBEN = {
     const wieder = () => document.body.classList.remove("agent-lautlos");
     requestAnimationFrame(() => requestAnimationFrame(wieder));
     setTimeout(wieder, 400);
+
+    /* Arm B: die Seite dahinter wird stillgelegt, nicht nur verdeckt.
+       ----------------------------------------------------------------
+       Verdecken allein reicht nicht. Eine Seite, die nur unter einem
+       Overlay liegt, nimmt weiter Tastaturfokus: Wer in Arm B zweimal
+       Tab druecke, saesse in einem Formular, das er nicht sieht, und
+       der Browser scrollte die unsichtbare Seite dorthin. `inert` nimmt
+       dem ganzen Teilbaum Fokus, Klicks und Vorlesbarkeit auf einmal -
+       die Seite bleibt die Maschine, auf der der Agent arbeitet, kann
+       aber nicht mehr dazwischenfunken.
+
+       Beobachter statt Aufrufliste: `agent-open` wird an fuenf Stellen
+       umgeschaltet (umschalten, oeffnen, platzMachen, arbeitetAn,
+       Zugang.oeffnen). Jede davon einzeln zu bedienen heisst, dass die
+       sechste es irgendwann vergisst. Der Beobachter sieht jede.
+
+       Nur `.app-main` wird stillgelegt. Alles, was zur Erhebung gehoert -
+       Vorschlagsansicht, Studienblaetter, Log, Aufgabenreiter, Sperre -
+       haengt direkt am Body und bleibt bedienbar. */
+    if (fenster) {
+      const abschirmen = () => {
+        const main = document.querySelector(".app-main");
+        if (!main) return;
+        const chatOffen = document.body.classList.contains("agent-open");
+        if (chatOffen) {
+          main.setAttribute("inert", "");
+          main.setAttribute("aria-hidden", "true");
+        } else {
+          main.removeAttribute("inert");
+          main.removeAttribute("aria-hidden");
+        }
+      };
+      abschirmen();
+      try {
+        new MutationObserver(abschirmen)
+          .observe(document.body, { attributes: true, attributeFilter: ["class"] });
+      } catch { /* ohne Beobachter bleibt es beim Startzustand */ }
+    }
   }
 })();
 
@@ -3712,6 +3781,14 @@ const Kern = {
     leiste.append(hinweis, knopf);
     sperre.appendChild(leiste);
     document.body.appendChild(sperre);
+    /* Die Sperre auch als Klasse am Body (25.10.2026).
+       ----------------------------------------------------------------
+       In Arm B haengt daran, dass sich der Chat nicht ausgerechnet
+       waehrend der Arbeit schliessen laesst - sonst laege die Seite
+       mitten im Zug offen da und der Arm waere fuer diesen Moment kein
+       Arm B mehr. Eine Klasse statt einer Abfrage auf das Element, damit
+       es das Stylesheet ohne :has() entscheiden kann. */
+    document.body.classList.add("agent-gesperrt");
     this.sperreAusrichten();
     this.scrollSperre(true);
   },
@@ -3760,6 +3837,7 @@ const Kern = {
 
   sperreAus() {
     document.getElementById("agentSperre")?.remove();
+    document.body.classList.remove("agent-gesperrt");
     this.scrollSperre(false);
   },
 

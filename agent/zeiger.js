@@ -81,7 +81,19 @@ const Zeiger = {
     if (this.ring) this.ring.style.transform = `translate3d(${x}px, ${y}px, 0)`;
   },
 
-  zeigen() { this.el?.classList.add("sichtbar"); },
+  /* In Arm B bleibt der Zeiger unsichtbar (25.10.2026).
+     ------------------------------------------------------------------
+     Er fahrt weiter, haelt weiter an und braucht weiter dieselbe Zeit -
+     die Choreografie ist identisch, nur sieht man sie nicht. Das ist der
+     Kern des Aufbaus: Was der Agent tut, bleibt gleich, nur die Sicht
+     darauf wird genommen. Die Sperre sitzt hier an EINER Stelle, in
+     zeigen(), und nicht an den vier Aufrufern - sonst waere ein
+     fuenfter Aufruf irgendwann ein unbemerktes Leck. */
+  armB() {
+    return typeof document !== "undefined" && document.body
+      && document.body.classList.contains("agent-fenster");
+  },
+  zeigen() { if (this.armB()) return; this.el?.classList.add("sichtbar"); },
   verbergen() { this.el?.classList.remove("sichtbar"); },
 
   /* ==================================================================
@@ -327,6 +339,9 @@ const Zeiger = {
   },
 
   klickringZeigen() {
+    // Der Ring liegt auf z-index 8999, also ueber dem Vollbild-Chat - er
+    // waere in Arm B das sichtbarste Leck von allen.
+    if (this.armB()) return;
     if (!this.ring) return;
     this.ring.classList.remove("puls");
     void this.ring.offsetWidth;        // Neustart der Animation erzwingen

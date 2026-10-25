@@ -686,7 +686,14 @@ function renderAgentRail() {
       <div class="agent-vorschau" id="agentVorschau">Tippen zum Öffnen</div>
     </div>
     <span class="agent-ungelesen" id="agentUngelesen">1</span>
-    <button type="button" class="icon-btn" id="agentCollapse" title="Chat auf- oder zuklappen">${ICONS.close}</button>
+    <!-- Beschrifteter Ausgang (25.10.2026).
+         Ein blosses Kreuz sagt nicht, dass dahinter eine Seite liegt, auf der
+         man selbst suchen kann. In Arm B ist das die einzige Tuer nach
+         draussen, deshalb steht das Wort daneben - und zwar in beiden Armen
+         gleich, damit sich daran kein Unterschied aufbaut. -->
+    <button type="button" class="icon-btn agent-zu" id="agentCollapse" title="Chat schließen und selbst weitersuchen">
+      <span class="agent-zu-text">Schließen</span>${ICONS.close}
+    </button>
   </div>
 
   <!-- Freigabe: wie viel der Chat tun darf. Von der Person gewaehlt,
@@ -822,6 +829,10 @@ const AgentPanel = {
       // will ihn nicht auf jeder Seite wieder aufgeklappt vorfinden.
       try { sessionStorage.setItem("voyara_chat_offen", offen ? "1" : "0"); } catch { /* egal */ }
       if (schublade() && typeof Zugang !== "undefined") Zugang.zustandGemeldet(offen);
+      // Seit dem 25.10.2026 die zentrale Kontrollgroesse der
+      // Beobachtbarkeits-Erhebung: In Arm B ist der geschlossene Chat der
+      // einzige Weg zur Seite. Vorher lief das Umschalten ohne Eintrag.
+      if (typeof Studie !== "undefined") Studie.chatUmgeschaltet?.(offen, "kopf");
     };
     this.umschalten = umschalten;
 
@@ -1118,6 +1129,21 @@ const AgentPanel = {
   oeffnen() {
     const schublade = document.body.classList.contains("agent-schublade");
     if (!window.matchMedia("(max-width: 1040px)").matches && !schublade) return;
+    /* Wer selbst zugemacht hat, bleibt zu (25.10.2026).
+       ----------------------------------------------------------------
+       Vorher sprang der Chat am Ende jedes Zuges wieder auf. In Arm B
+       heisst das: Die Person schliesst ihn, um die Seite anzusehen, der
+       Agent wird fertig, und der Chat legt sich wieder ueber alles. Damit
+       waere genau die Messgroesse abgeschnitten, um die es geht - wie
+       lange jemand selbst nachsieht -, und zwar nur in dem Arm, in dem
+       der Chat die ganze Seite deckt.
+
+       Also: Das Zu bleibt stehen, und dass es etwas Neues gibt, sagt der
+       Punkt am Reiter (Zugang.neueNachricht). Gleiche Regel in beiden
+       Armen, damit sich daran kein Unterschied aufbaut. */
+    let gewollt = null;
+    try { gewollt = sessionStorage.getItem("voyara_chat_offen"); } catch { /* egal */ }
+    if (gewollt === "0") { if (typeof Zugang !== "undefined") Zugang.neueNachricht?.(); return; }
     // In der Schublade oeffnet der Agent sich nur von selbst, wenn die
     // Person ihn schon einmal benutzt hat. Vorher waere das ein
     // ungefragtes Aufspringen - und genau das soll die Einladung sein,
@@ -1130,6 +1156,7 @@ const AgentPanel = {
     this.ungelesenLeeren();
     this.ansEnde();
     if (warZu && schublade && typeof Zugang !== "undefined") Zugang.zustandGemeldet(true);
+    if (warZu && typeof Studie !== "undefined") Studie.chatUmgeschaltet?.(true, "agent");
   },
 
   /* Beim Aufklappen ans Ende des Gespraechs springen.
@@ -1184,6 +1211,10 @@ const AgentPanel = {
       document.body.classList.remove("agent-open");
       try { sessionStorage.setItem("voyara_chat_offen", "0"); } catch { /* egal */ }
       if (schublade && typeof Zugang !== "undefined") Zugang.zustandGemeldet(false);
+      // Eigene Quelle: Hier hat die Person "ich schaue selbst" gewaehlt und
+      // der Agent macht Platz - das ist keine eigene Nachpruefung mitten im
+      // Lauf und darf in der Auswertung nicht wie eine zaehlen.
+      if (typeof Studie !== "undefined") Studie.chatUmgeschaltet?.(false, "platz");
     }, 2600);
     return true;
   },
@@ -1494,7 +1525,11 @@ function mountChrome(activeNav) {
       openModal(
         "Hilfe & Kontakt",
         `<p>Voyara ist ein Prototyp für eine wissenschaftliche Studie. Es sind keine echten Buchungen möglich.</p>
-         <p><strong>Fragen zur Bedienung?</strong> Der Reise-Assistent am rechten Rand hilft dir bei der Suche.</p>
+         <!-- Ortsangabe und Empfehlung entfernt (25.10.2026): Der Satz nannte den
+              Assistenten "am rechten Rand" - er steht links, und in Arm B ueber der
+              ganzen Seite. Dazu war er eine Empfehlung, ihn zu benutzen. Beides ist
+              in einer Erhebung, die genau das messen will, eine Beeinflussung. -->
+         <p><strong>Fragen zur Bedienung?</strong> Du kannst selbst suchen und filtern oder den Reise-Assistenten fragen.</p>
          <p><strong>Fragen zur Reise?</strong> Gepäck, Stornierung, Anzahlung, Haustiere: das steht in den <a href="faq.html">häufigen Fragen</a>.</p>
          <p><strong>Fragen zur Studie?</strong> Schreib an <a href="mailto:studie@voyara.example">studie@voyara.example</a>.</p>`,
         /* Hier stand der Verweis auf info.html?p=faq - das sind die Fragen
