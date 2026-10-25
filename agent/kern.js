@@ -944,7 +944,7 @@ const Kern = {
        gefunden wird. */
     if (rolle === "bot" && /\b(undefined|NaN|null)\b/.test(String(text))) {
       this.notieren("platzhalter_gestrichen", { text: String(text).slice(0, 120) });
-      text = String(text).split(/(?<=[.!?])\s+/).map((satz) => satz.split(/,\s+/).filter((teil) => !/\b(undefined|NaN|null)\b/.test(teil)).join(", "))
+      text = Werkzeugkasten.saetze(String(text)).map((satz) => satz.split(/,\s+/).filter((teil) => !/\b(undefined|NaN|null)\b/.test(teil)).join(", "))
         .filter((satz) => satz.trim()).join(" ").replace(/,\s*([.!?])/g, "$1").trim();
       if (!text) return;
     }
@@ -1717,7 +1717,7 @@ const Kern = {
           const n = this.lauf.letzteVorlage?.length || 0;
           if (n && text) {
             const WZ = { ein: 1, eine: 1, zwei: 2, drei: 3, vier: 4, "fünf": 5, fuenf: 5, sechs: 6 };
-            const saetze = text.split(/(?<=[.!?])\s+/);
+            const saetze = Werkzeugkasten.saetze(text);
             const bleiben = saetze.filter((x) => {
               const m = x.match(/\b(\d|zwei|drei|vier|f(ü|ue)nf|sechs)\s+(passende[nr]?\s+|schöne[nr]?\s+)?(hotels|häuser|haeuser|unterkünfte|unterkuenfte|vorschläge|vorschlaege|optionen)\b/i);
               if (!m) return true;
@@ -1761,7 +1761,7 @@ const Kern = {
         // alt sind sie?" durch. Hier wird nicht neu gefragt, sondern die
         // zweite Frage faellt weg; sie ist ohnehin als naechstes Thema dran.
         if (text && nachricht.tool_calls && this.fragenZaehlen(text) > 1) {
-          const saetze = text.split(/(?<=[.!?])\s+/);
+          const saetze = Werkzeugkasten.saetze(text);
           const bis = saetze.findIndex((x) => /\?\s*$/.test(x) && this.FRAGEWORT.test(x));
           if (bis >= 0) {
             text = saetze.slice(0, bis + 1).join(" ").trim();
@@ -1781,7 +1781,7 @@ const Kern = {
         // Saetze mit denselben Zahlen fallen weg, die Frage bleibt
         if (text && this.lauf.lageImZug) {
           const zahlen = new Set((this.lauf.lageImZug.match(/\d+/g) || []).filter((z) => +z >= 5));
-          const saetze = text.split(/(?<=[.!?])\s+/);
+          const saetze = Werkzeugkasten.saetze(text);
           /* Wie viel es gibt, sagt der Kern - und nur er.
              ------------------------------------------------------------
              Bis hierher fielen nur Saetze weg, die dieselben Zahlen
@@ -1818,7 +1818,7 @@ const Kern = {
           const alle = [...(typeof HOTELS !== "undefined" ? HOTELS : []), ...(typeof APARTMENTS !== "undefined" ? APARTMENTS : [])];
           const fremde = alle.map((h) => h.name).filter((n) => !eigene.includes(n) && text.includes(n));
           if (fremde.length) {
-            const saetze = text.split(/(?<=[.!?])\s+/).filter((x) => !fremde.some((n) => x.includes(n)));
+            const saetze = Werkzeugkasten.saetze(text).filter((x) => !fremde.some((n) => x.includes(n)));
             text = saetze.join(" ").trim() || "Welches möchtest du dir genauer ansehen, oder fehlt dir noch etwas?";
             nachricht.content = text;
             this.notieren("fremdes_haus", { namen: fremde.slice(0, 3) });
@@ -1840,7 +1840,7 @@ const Kern = {
            und Charakter der Ziele ist nicht betroffen - das ist kein Wissen
            ueber diese Seite. */
         if (text && !this.lauf.gesuchtMit) {
-          const saetze = text.split(/(?<=[.!?])\s+/);
+          const saetze = Werkzeugkasten.saetze(text);
           const rest = saetze.filter((x) => /\?\s*$/.test(x) || !Kern.UEBER_DIE_SEITE.test(x));
           if (rest.length !== saetze.length) {
             const weg = saetze.filter((x) => !rest.includes(x));
@@ -1864,7 +1864,7 @@ const Kern = {
             .filter(Boolean).map((id) => ({ id, name: getItemById?.(id)?.name })).filter((x) => x.name);
           const ungelesen = bekannt.filter((x) => !gelesen[x.id] && text.includes(x.name));
           if (ungelesen.length) {
-            const saetze = text.split(/(?<=[.!?])\s+/);
+            const saetze = Werkzeugkasten.saetze(text);
             const rest = saetze.filter((x) => /\?\s*$/.test(x)
               || !ungelesen.some((u) => x.includes(u.name)) || !Kern.URTEIL.test(x));
             if (rest.length !== saetze.length) {
@@ -1900,7 +1900,7 @@ const Kern = {
             offen.push(re);
           }
           if (offen.length) {
-            const saetze = text.split(/(?<=[.!?])\s+/);
+            const saetze = Werkzeugkasten.saetze(text);
             const rest = saetze.filter((x) => /\?\s*$/.test(x) || !offen.some((re) => re.test(x)));
             if (rest.length && rest.length !== saetze.length) {
               text = rest.join(" ");
@@ -1914,21 +1914,37 @@ const Kern = {
         if (text && this.lauf.vorlageImZug && this.lauf.letzteVorlage?.length) {
           const namen = this.lauf.letzteVorlage.map((id) => getItemById?.(id)?.name).filter(Boolean);
           if (namen.filter((n) => text.includes(n)).length >= 2) {
-            const saetze = text.split(/(?<=[.!?])\s+/);
+            const saetze = Werkzeugkasten.saetze(text);
             const frage = saetze.filter((x) => /\?\s*$/.test(x) && !namen.some((n) => x.includes(n)));
             text = frage.length ? frage[frage.length - 1] : "Welches möchtest du dir genauer ansehen, oder fehlt dir noch etwas?";
             nachricht.content = text;
             this.notieren("vorlage_wiederholt");
           }
         }
-        // "Oktober ist notiert." - das Modell bestaetigt gern, was die Person
-        // ohnehin in der Leiste sieht. Der Bestaetigungssatz faellt weg,
-        // wenn danach noch etwas kommt.
+        /* "Oktober ist notiert." - das Modell bestaetigt gern, was die
+           Person ohnehin in der Leiste sieht. Der Bestaetigungssatz faellt
+           weg, wenn danach noch etwas kommt.
+
+           Nur: Das Wort allein reicht nicht als Grund. Am 25.10.2026
+           verschwand so der halbe Satz "Verstanden, dass ihr am 8. August
+           anreisen wollt" - er enthielt "Verstanden" und war damit fuer
+           diese Regel eine blosse Quittung, obwohl in ihm die ganze
+           Auskunft stand.
+
+           Deshalb zaehlt jetzt auch die Laenge: Eine Quittung ist kurz.
+           "Oktober ist notiert." sind drei Woerter, "Alles klar, August
+           ist gemerkt." fuenf. Wer mehr schreibt, sagt etwas. Sechs
+           Woerter ist die Grenze. */
         if (text) {
-          const saetze = text.split(/(?<=[.!?])\s+/);
-          if (saetze.length > 1 && /(notiert|gemerkt|vermerkt|verstanden|^danke|^super|^alles klar|^prima|^perfekt)/i.test(saetze[0]) && !/\?/.test(saetze[0])) {
+          const saetze = Werkzeugkasten.saetze(text);
+          const erster = saetze[0] || "";
+          const woerter = erster.split(/\s+/).filter(Boolean).length;
+          if (saetze.length > 1 && woerter <= 6
+            && /(notiert|gemerkt|vermerkt|verstanden|^danke|^super|^alles klar|^prima|^perfekt)/i.test(erster)
+            && !/\?/.test(erster)) {
             text = saetze.slice(1).join(" ");
             nachricht.content = text;
+            this.notieren("quittung_gestrichen", { satz: erster.slice(0, 60) });
           }
         }
         /* Das Netz unter allen Sackgassen.
@@ -2423,7 +2439,7 @@ const Kern = {
               return !this.lauf.gegruesst && !gruessteJetzt && t2.length <= 40
                 && /^(hallo|hi|hey|moin|servus|guten (tag|morgen|abend)|grüß|gruess|schön, dass)\b/i.test(t2);
             };
-            let vorspann = fpJetzt.nurKern ? "" : String(text || "").split(/(?<=[.!?])\s+/)
+            let vorspann = fpJetzt.nurKern ? "" : Werkzeugkasten.saetze(String(text || ""))
               .filter((x) => x.trim() && !/\?/.test(x))
               .filter((x) => { if (istGruss(x)) { gruessteJetzt = true; return true; } const n = norm(x); return n.length > 8 && !frageNorm.includes(n); })
               .filter((x) => !sagtDasselbe(x))
@@ -2461,7 +2477,7 @@ const Kern = {
                Agent hat der Person etwas zugesagt, was nicht passiert ist. */
             // Die Liste steht bei Werkzeugkasten.QUITTUNG - eine Regel, eine Stelle
             const quittung = Werkzeugkasten.QUITTUNG;
-            const stuecke = vorspann.split(/(?<=[.!?])\s+/);
+            const stuecke = Werkzeugkasten.saetze(vorspann);
             const behauptet = stuecke.filter((x) => quittung.test(x));
             if (behauptet.length) vorspann = stuecke.filter((x) => !quittung.test(x)).join(" ").trim();
             /* Erst streichen, dann den eigenen Satz bauen - in dieser

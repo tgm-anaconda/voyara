@@ -397,7 +397,7 @@ const Pruefstand = {
       if (/!/.test(t)) rest.push({ art: "ausrufezeichen", text: t.slice(0, 160) });
       const verboten = t.match(this.VERBOTEN);
       if (verboten) rest.push({ art: "verbotenes_wort", wort: verboten[0], text: t.slice(0, 160) });
-      const saetze = t.split(/(?<=[.!?])\s+/).filter(Boolean);
+      const saetze = Werkzeugkasten.saetze(t).filter(Boolean);
       /* Die Laengenregel ist am 25.09.2026 gefallen. Der Nutzer: "So
          wichtig ist es nicht, dass die Chatnachrichten nicht zu lang
          werden." Sie kostete an anderer Stelle Qualitaet, weil das Modell

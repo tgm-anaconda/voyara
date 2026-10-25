@@ -2158,7 +2158,7 @@ const Kernpruefung = {
       const kern = { lauf, notieren() {}, standAnzeigen() {}, sichern() {} };
       Werkzeugkasten.antwortSelbstLesen(kern, "dauer", "9 Nächte");
       const modell = "Ich merke mir 9 Nächte.";
-      const uebrig = modell.split(/(?<=[.!?])\s+/).filter((x) => !Werkzeugkasten.QUITTUNG.test(x)).join(" ").trim();
+      const uebrig = Werkzeugkasten.saetze(modell).filter((x) => !Werkzeugkasten.QUITTUNG.test(x)).join(" ").trim();
       const satz = Werkzeugkasten.aufnahmeSatz(kern, uebrig);
       if (!satz || !/9/.test(satz)) {
         melde("aufnahme_ohne_satz", `Nach "9 Nächte" quittiert niemand: Kern sagt ${satz ? `"${satz}"` : "nichts"}`, "dauer");
@@ -2830,6 +2830,74 @@ const Kernpruefung = {
     return fehler;
   },
 
+  /* Kein Satz darf mitten im Wort anfangen (25.10.2026)
+     ------------------------------------------------------------------
+     Gemeldet an diesem Tag: Im Chat stand "August anreisen wollt. Wie
+     lange soll die Reise werden?" Geschrieben hatte das Modell
+     "Verstanden, dass ihr am 8. August anreisen wollt. Wie lange soll die
+     Reise werden?" Zwei Fehler hatten ineinandergegriffen: Der
+     Satztrenner zerbrach das Datum "8. August", und die Regel, die einen
+     reinen Bestaetigungssatz streicht, nahm daraufhin "Verstanden, dass
+     ihr am 8." fuer eine Quittung und warf sie weg.
+
+     Diese Pruefung haelt beide Haelften fest:
+       1. saetze() trennt Ordnungszahlen, Abkuerzungen und Initialen nicht
+       2. Die Quittungsregel laesst einen Satz mit Inhalt stehen, auch
+          wenn ein Quittungswort darin vorkommt
+
+     Teil 2 prueft die Bedingung nach, statt den Kern zu rufen: Die Regel
+     sitzt mitten in der Modellantwort und waere von hier aus nicht
+     erreichbar, ohne ein ganzes Gespraech nachzubauen. Die Bedingung ist
+     dieselbe - Woerter im ersten Satz, Quittungswort, kein Fragezeichen.
+
+     Gegenprobe am 25.10.2026 mit dem alten Satztrenner und ohne die
+     Laengengrenze: beide Teile schlugen an. */
+  QUITTUNG_WORT: /(notiert|gemerkt|vermerkt|verstanden|^danke|^super|^alles klar|^prima|^perfekt)/i,
+
+  SATZ_FAELLE: [
+    { text: "Verstanden, dass ihr am 8. August anreisen wollt. Wie lange soll die Reise werden?", saetze: 2, erster: "Verstanden, dass ihr am 8. August anreisen wollt.", streichen: false },
+    { text: "Am 1. Juli geht es los. Passt das?", saetze: 2, erster: "Am 1. Juli geht es los.", streichen: false },
+    { text: "Der 24. Dezember ist frei. Willst du den nehmen?", saetze: 2, erster: "Der 24. Dezember ist frei.", streichen: false },
+    { text: "Oktober ist notiert. Wie lange soll es werden?", saetze: 2, erster: "Oktober ist notiert.", streichen: true },
+    { text: "Alles klar, August ist gemerkt. Wohin soll es gehen?", saetze: 2, erster: "Alles klar, August ist gemerkt.", streichen: true },
+    { text: "Ich schaue bei z. B. Teneriffa nach. Einen Moment.", saetze: 2, erster: "Ich schaue bei z. B. Teneriffa nach.", streichen: false },
+    { text: "Danke. Wie viele Naechte sollen es sein?", saetze: 2, erster: "Danke.", streichen: true },
+    { text: "Ein Satz ohne alles", saetze: 1, erster: "Ein Satz ohne alles", streichen: false },
+  ],
+
+  satztrennung() {
+    const fehler = [];
+    if (typeof Werkzeugkasten === "undefined" || !Werkzeugkasten.saetze) return fehler;
+    const melde = (art, text) => fehler.push({ art, text, thema: null, satz: "" });
+
+    for (const f of this.SATZ_FAELLE) {
+      const teile = Werkzeugkasten.saetze(f.text);
+
+      // 1. Richtig getrennt?
+      if (teile.length !== f.saetze) {
+        melde("satz_falsch_getrennt",
+          `"${f.text}" wird in ${teile.length} statt ${f.saetze} Saetze zerlegt: ${JSON.stringify(teile)}`);
+      }
+      if (teile[0] !== f.erster) {
+        melde("satz_falscher_anfang",
+          `Der erste Satz von "${f.text}" lautet "${teile[0]}" statt "${f.erster}"`);
+      }
+
+      // 2. Wuerde die Quittungsregel ihn streichen?
+      const erster = teile[0] || "";
+      const woerter = erster.split(/\s+/).filter(Boolean).length;
+      const wuerde = teile.length > 1 && woerter <= 6
+        && this.QUITTUNG_WORT.test(erster) && !/\?/.test(erster);
+      if (wuerde !== f.streichen) {
+        melde("quittung_falsch_gestrichen",
+          wuerde
+            ? `"${erster}" wuerde gestrichen, obwohl darin Auskunft steht (${woerter} Woerter)`
+            : `"${erster}" wuerde stehen bleiben, obwohl es eine blosse Quittung ist`);
+      }
+    }
+    return fehler;
+  },
+
   lauf({ still = false } = {}) {
     const alle = [];
     const staende = this.staende();
@@ -2892,6 +2960,7 @@ const Kernpruefung = {
     for (const f of this.armNeutral()) alle.push(f);
     for (const f of this.phasenNeutral()) alle.push(f);
     for (const f of this.schritteOhneHinweis()) alle.push(f);
+    for (const f of this.satztrennung()) alle.push(f);
     const ab = this.ablaeufe();
     for (const f of ab.fehler) alle.push(f);
     this.letzteAblaeufe = ab.berichte;

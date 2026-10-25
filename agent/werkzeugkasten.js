@@ -1880,7 +1880,7 @@ const Werkzeugkasten = {
   FRAGEWORT: /\b(wie|was|wo|wer|wen|wem|worauf|wofür|wofuer|womit|wohin|woran|wobei|wann|welche[rsnm]?|warum|wieso|ob|soll|sollen|möchte|moechte|möchtest|moechtest|möchtet|moechtet|willst|wollt|hast|habt|haben|ist|sind|seid|bist|gibt|kann|kannst|könnt|koennt|darf|brauchst|braucht|passt|interessiert)\b/i,
 
   fragenZaehlen(text) {
-    const saetze = String(text).split(/(?<=[.!?])\s+/)
+    const saetze = Werkzeugkasten.saetze(String(text))
       .filter((s) => /\?\s*$/.test(s))
       .filter((s) => !/^(oder|bzw\.?|beziehungsweise|also|und wenn|zum beispiel|etwa|z\. ?b\.?)\b/i.test(s.trim()))
       .filter((s) => this.FRAGEWORT.test(s));
@@ -1979,7 +1979,7 @@ const Werkzeugkasten = {
   urteilStreichen(text, profil = null) {
     const hat = new Set(profil?.ausstattung || []);
     const unbelegt = (s) => profil && Object.entries(this.AUSSTATTUNG_BEHAUPTUNG).some(([feld, re]) => re.test(s) && !hat.has(feld));
-    const saetze = String(text || "").split(/(?<=[.!?])\s+/);
+    const saetze = Werkzeugkasten.saetze(String(text || ""));
     // Erfundene Sperren (03.10.2026): "Ich kann das hier nicht pruefen,
     // ohne die Buchung zu verlassen" - kein Werkzeug hatte das gemeldet
     const sperre = (s) => this.ERFUNDENE_SPERRE.test(s);
@@ -2001,7 +2001,7 @@ const Werkzeugkasten = {
     for (const wort of plan.quittungWorte || []) {
       if (!this.wortErkannt(wort, t)) return { ok: false, grund: `nicht_quittiert:${wort}` };
     }
-    const saetze = t.split(/(?<=[.!?])\s+/);
+    const saetze = Werkzeugkasten.saetze(t);
     if (!plan.etwasGemerkt && saetze.some((x) => this.QUITTUNG.test(x))) {
       return { ok: false, grund: "quittung_ohne_stand" };
     }
@@ -2174,6 +2174,54 @@ const Werkzeugkasten = {
      kannte er "merke ich mir" und nicht "ich merke mir" - dieselbe
      Zusage in der anderen Wortstellung. Deshalb jetzt beide Richtungen
      und die üblichen Verwandten dazu. */
+  /* Saetze trennen, ohne an Ordnungszahlen zu zerbrechen (25.10.2026)
+     ------------------------------------------------------------------
+     Gemeldet an diesem Tag, in Arm B: Im Chat stand
+
+       "August anreisen wollt. Wie lange soll die Reise werden?"
+
+     Der Anfang fehlte. Das Modell hatte geschrieben "Verstanden, dass ihr
+     am 8. August anreisen wollt. Wie lange soll die Reise werden?" - und
+     `Werkzeugkasten.saetze(text)` trennt nach JEDEM Punkt mit Leerzeichen
+     dahinter, also mitten im Datum: "Verstanden, dass ihr am 8." und
+     "August anreisen wollt." Die Regel, die einen reinen
+     Bestaetigungssatz entfernt, strich daraufhin den ersten Teil - und
+     damit den halben Satz.
+
+     Seit der Agent nach dem genauen Anreisetag fragt (01.10.2026), stehen
+     Ordnungszahlen staendig in seinen Saetzen. Der Fehler war also kein
+     Einzelfall, sondern wartete an achtzehn Stellen im Code, die alle
+     denselben Ausdruck benutzten.
+
+     Deshalb EINE Funktion fuer alle. Sie trennt wie vorher und klebt
+     danach wieder zusammen, was kein Satzende war: ein Teil, der auf eine
+     ein- oder zweistellige Zahl mit Punkt endet, und die gebraeuchlichen
+     Abkuerzungen.
+
+     Bewusst in Kauf genommen: Ein Satz, der wirklich auf einer blanken
+     Zahl endet ("Es bleiben 9."), wird mit dem naechsten verschmolzen.
+     Das ist die harmlosere Richtung - ein zu langer erster Satz fuehrt
+     dazu, dass eine Streichregel NICHT greift, ein zu kurzer dazu, dass
+     sie zu viel greift. Preise schreibt der Agent ohnehin mit Einheit. */
+  ABKUERZUNG: /(?:^|\s)(?:z|ca|bzw|bspw|evtl|inkl|exkl|ggf|Nr|Abs|Mio|Mrd|Std|usw|etc)\.$/i,
+
+  saetze(text) {
+    const roh = String(text == null ? "" : text).split(/(?<=[.!?])\s+/);
+    const raus = [];
+    for (const teil of roh) {
+      const vorher = raus.length ? raus[raus.length - 1] : null;
+      const weiter = vorher !== null
+        && (/\b\d{1,2}\.$/.test(vorher)
+          || this.ABKUERZUNG.test(vorher)
+          // Ein einzelner Grossbuchstabe mit Punkt ist nie ein Satzende -
+          // er ist die zweite Haelfte von "z. B." oder eine Initiale.
+          || /(?:^|\s)[A-ZÄÖÜ]\.$/.test(vorher));
+      if (weiter) raus[raus.length - 1] = `${vorher} ${teil}`;
+      else raus.push(teil);
+    }
+    return raus;
+  },
+
   QUITTUNG: /\b(?:merke?|merk) ich mir\b|\bich (?:merke?|merk) (?:mir|es|das)\b|\bnotiere ich\b|\bich notiere\b|\bhabe ich (?:mir )?(?:gemerkt|notiert)\b|\bnehme ich (?:so )?auf\b|\b(?:ist|sind|hab ich|habe ich) (?:schon )?(?:notiert|gemerkt|vermerkt|aufgenommen)\b|\bhalte ich fest\b|\bich halte\b[^.!?]*\bfest\b|\bspeichere ich\b|\bich speichere\b|\btrage ich\b[^.!?]*\bein\b|\bich trage\b[^.!?]*\bein\b|\bvermerke ich\b|\bich vermerke\b/i,
 
   /* Hat das Modell selbst gesagt, worum es geht?
@@ -5849,7 +5897,7 @@ const Werkzeugkasten = {
     // da" als Kritik da)
     const NEG = /\b(nicht|leider|kein|keine|zu klein|zu wenig|laut|warten|teuer|fehlt|kaum|schwach|hellh(ö|oe)rig|extra|eng|kalt|schmutzig)\b/i;
     const satzAus = (r, negativ) => {
-      const saetze = String(r?.text || "").split(/(?<=[.!?])\s+/).filter((x) => x.length > 25);
+      const saetze = Werkzeugkasten.saetze(String(r?.text || "")).filter((x) => x.length > 25);
       const e = negativ ? saetze.find((x) => NEG.test(x)) : saetze.find((x) => !NEG.test(x));
       if (!e) return null;
       return e.length > 110 ? `${e.slice(0, 107).trim()}…` : e;
