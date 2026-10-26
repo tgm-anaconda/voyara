@@ -2298,19 +2298,80 @@ body.agent-ohne-freigabe #agentFreigabe,
 body.agent-ohne-freigabe #agentForm,
 body.agent-ohne-freigabe #agentSuggestions,
 body.agent-ohne-freigabe #agentEckdaten { display: none !important; }
-.freigabe-karte { max-width: 100%; }
+/* Der Begruessungsschirm (26.10.2026)
+   ------------------------------------------------------------------
+   Entscheidung des Nutzers nach den Entwuerfen: der Schirm in beiden
+   Armen, in Arm A aber oben statt mittig.
+
+   Er fuellt die Nachrichtenflaeche, solange die Freigabe fehlt - das ist
+   genau der Zustand, den `agent-ohne-freigabe` ohnehin markiert, also
+   braucht es dafuer keine neue Klasse. Kein Blatt davor, nichts
+   wegzuklicken: Der Schirm IST der Chat, bis die Freigabe steht. */
+body.agent-ohne-freigabe .agent-messages {
+  justify-content: center;
+  align-items: center;
+}
+/* Arm A: oben ansetzen. In 380 Pixeln Breite steht der Schirm sonst zu
+   tief, weil er fast die ganze Hoehe braucht. */
+body.agent-ohne-freigabe.agent-schublade:not(.agent-fenster) .agent-messages {
+  justify-content: flex-start;
+  padding-top: 14px;
+}
+
+.freigabe-karte { max-width: 100%; width: 100%; }
+body.agent-ohne-freigabe .freigabe-karte { max-width: 560px; }
 .freigabe-karte p { margin: 0 0 10px; }
-.freigabe-karte-optionen { display: grid; gap: 7px; }
+
+.begruessung-kopf {
+  display: flex; flex-direction: column; align-items: center;
+  text-align: center; gap: 9px; margin-bottom: 20px;
+}
+.begruessung-symbol {
+  width: 62px; height: 62px; border-radius: 20px;
+  background: rgba(47,158,127,.16); color: var(--brand-400, #6fc8aa);
+  display: grid; place-items: center; margin-bottom: 3px;
+}
+.begruessung-symbol svg { width: 30px; height: 30px; }
+.begruessung-kopf h2 {
+  margin: 0; font-size: 1.3rem; font-weight: 700; letter-spacing: -.02em;
+  line-height: 1.25; color: #fff;
+}
+.begruessung-kopf p {
+  margin: 0; font-size: .88rem; line-height: 1.58;
+  color: rgba(255,255,255,.64); max-width: 44ch;
+}
+
+.begruessung-kann {
+  margin: 0 0 20px; padding: 0; list-style: none;
+  display: grid; gap: 7px; width: 100%;
+}
+.begruessung-kann li {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 15px; border-radius: 12px;
+  background: rgba(255,255,255,.045); font-size: .88rem;
+}
+.begruessung-kann li span { display: grid; place-items: center; flex-shrink: 0; color: var(--brand-400, #6fc8aa); }
+.begruessung-kann li svg { width: 18px; height: 18px; }
+
+.begruessung-frage { margin: 0 0 11px !important; font-size: .93rem; font-weight: 600; color: #fff; }
+.begruessung-fuss { margin: 10px 0 0 !important; font-size: .78rem; color: rgba(255,255,255,.44); }
+
+/* Die Freigabeknoepfe tragen die Farben des Chats, nicht die der Seite.
+   Vorher waren es weisse Karten auf dunklem Grund - im Schirm wirkte das
+   wie ein Fremdkoerper. Geaendert fuer BEIDE Arme. */
+.freigabe-karte-optionen { display: grid; gap: 8px; }
 .freigabe-karte-optionen button {
   display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
-  width: 100%; padding: 9px 12px; border-radius: 10px; text-align: left;
-  border: 1px solid var(--brand-100); background: #fff; color: var(--ink-900);
-  font: inherit; font-size: .85rem; cursor: pointer;
+  width: 100%; padding: 12px 15px; border-radius: 12px; text-align: left;
+  border: 1px solid rgba(255,255,255,.16); background: rgba(255,255,255,.05);
+  color: rgba(255,255,255,.93);
+  font: inherit; font-size: .88rem; cursor: pointer;
   transition: border-color .12s ease, background .12s ease;
 }
-.freigabe-karte-optionen button b { font-weight: 700; }
-.freigabe-karte-optionen button span { font-size: .76rem; color: var(--ink-500); }
-.freigabe-karte-optionen button:hover { border-color: var(--brand-500); background: var(--brand-50); }
+.freigabe-karte-optionen button b { font-weight: 600; }
+.freigabe-karte-optionen button span { font-size: .79rem; color: rgba(255,255,255,.52); }
+.freigabe-karte-optionen button:hover { border-color: rgba(47,158,127,.55); background: rgba(47,158,127,.1); }
+.freigabe-karte-optionen button:focus-visible { outline: 2px solid var(--brand-500); outline-offset: 2px; }
 
 /* Etikett an einer Nachricht ("Partner") */
 .msg.hat-etikett { padding-top: 8px; }

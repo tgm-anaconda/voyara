@@ -491,8 +491,50 @@ const Kern = {
     const el = document.createElement("div");
     el.className = "msg bot freigabe-karte neu";
     el.id = "freigabeKarte";
+
+    /* Der Begruessungsschirm (26.10.2026)
+       ----------------------------------------------------------------
+       Gemeldet nach dem Einfahren des Chats: "Man ist tatsaechlich ein
+       bisschen verwirrt bei diesem Fenster, was sich so reinschiebt."
+       Zu Recht - bis hierher stand dort ein einzelner Satz und drei
+       Knoepfe, ohne dass jemand gesagt haette, was dieses Ding ist.
+
+       Jetzt erklaert es sich selbst: Symbol, Name, was er kann, und dass
+       man ihn wieder loswird. Die Freigabefrage bleibt darunter, wo sie
+       war, und ist weiter die erste Entscheidung.
+
+       Bewusst KEIN Blatt davor und nichts zum Wegklicken. Ein Tor vor dem
+       Chat waere ein Entscheidungspunkt, und der erzeugt Selbstauswahl -
+       dieselbe Falle wie beim Reiter und beim grossen Knopf. Hier liegt
+       nichts davor: Der Schirm IST der Chat, bis die Freigabe steht.
+
+       Wortgleich in beiden Armen. Verschieden ist nur, dass er in Arm B
+       in der Mitte der Flaeche steht und in Arm A oben - eine
+       Hoehenfrage, keine Aussage. */
+    const kopf = document.createElement("div");
+    kopf.className = "begruessung-kopf";
+    kopf.innerHTML = `<span class="begruessung-symbol" aria-hidden="true">${ICONS.chat}</span>`
+      + `<h2>Der Reise-Assistent von Voyara</h2>`
+      + `<p>Du behältst die Entscheidung. Den Chat kannst du oben schließen und wie auf jeder anderen Seite weitersuchen.</p>`;
+    el.appendChild(kopf);
+
+    const kann = document.createElement("ul");
+    kann.className = "begruessung-kann";
+    for (const [symbol, text] of [
+      [ICONS.search, "Sucht und filtert Unterkünfte für dich"],
+      [ICONS.list, "Vergleicht Preise, Lage und Bewertungen"],
+      [ICONS.luggage, "Bereitet die Buchung vor, wenn du willst"],
+    ]) {
+      const li = document.createElement("li");
+      li.innerHTML = `<span aria-hidden="true">${symbol}</span>`;
+      li.appendChild(document.createTextNode(text));
+      kann.appendChild(li);
+    }
+    el.appendChild(kann);
+
     const frage = document.createElement("p");
-    frage.innerHTML = "Hallo! Bevor ich loslege: <strong>Wie weit darf ich für dich gehen?</strong> Du kannst das jederzeit ändern.";
+    frage.className = "begruessung-frage";
+    frage.textContent = "Wie weit darf ich für dich gehen?";
     el.appendChild(frage);
     const liste = document.createElement("div");
     liste.className = "freigabe-karte-optionen";
@@ -516,6 +558,10 @@ const Kern = {
       liste.appendChild(b);
     }
     el.appendChild(liste);
+    const fuss = document.createElement("p");
+    fuss.className = "begruessung-fuss";
+    fuss.textContent = "Du kannst das jederzeit ändern.";
+    el.appendChild(fuss);
     box.appendChild(el);
     box.scrollTop = box.scrollHeight;
     document.body.classList.add("agent-ohne-freigabe");
