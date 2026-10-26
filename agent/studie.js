@@ -959,8 +959,12 @@ const Studie = {
       breiteMin: u ? Math.min(u.breiteMin || breite, breite) : breite,
       geaendert: u ? (u.geaendert || (u.breite !== breite || u.hoehe !== hoehe)) : false,
       dpr: Math.round((window.devicePixelRatio || 1) * 100) / 100,
-      // Der Schwellwert, an dem die Seitenleiste in die Schublade kippt
+      /* Zwei Schwellwerte, weil es zwei gibt (26.10.2026).
+         Bei 1040 kippt das Layout auf die Mobilregel, bei 899 aendern
+         sich Reiter und Aufgabenreiter. Bisher stand nur 1040 in den
+         Daten, und "schmal" hiess damit etwas anderes als im Layout. */
       schmal: window.matchMedia("(max-width: 1040px)").matches,
+      schmal899: window.matchMedia("(max-width: 899px)").matches,
       // Zeigegeraet statt Bildschirmbreite: ein Tablet ist breit und hat
       // trotzdem keinen Mauszeiger
       grob: window.matchMedia("(pointer: coarse)").matches,
@@ -1109,6 +1113,7 @@ const Studie = {
       geraetBreiteMin: z(d.umgebung?.breiteMin),
       geraetBreiteGeaendert: d.umgebung ? (d.umgebung.geaendert ? 1 : 0) : "",
       geraetSchmal: d.umgebung ? (d.umgebung.schmal ? 1 : 0) : "",
+      geraetSchmal899: d.umgebung ? (d.umgebung.schmal899 ? 1 : 0) : "",
       geraetGrob: d.umgebung ? (d.umgebung.grob ? 1 : 0) : "",
       geraetTouch: d.umgebung ? (d.umgebung.touch ? 1 : 0) : "",
       geraetDpr: z(d.umgebung?.dpr),

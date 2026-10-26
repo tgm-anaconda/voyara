@@ -675,6 +675,69 @@ const Seitenpruefung = {
     } else this.bestanden();
   },
 
+  /* Unterscheiden sich die Arme auch auf dem Telefon? (26.10.2026)
+     ------------------------------------------------------------------
+     Gemessen am 26.10. bei 375 x 812: Beide Arme lieferten ein Chatfeld
+     von 375 x 812 - pixelgleich. Wer am Handy teilnahm, war unabhaengig
+     vom Link in Arm B. Das war der Wegfall des Eingriffs, nicht nur
+     fehlende Politur, und es stand in keiner Pruefung.
+
+     Diese hier haelt drei Dinge fest, und nur unter 1040 Pixeln:
+       1. Arm A deckt NICHT die ganze Hoehe (Kopfblatt, nicht Vollbild)
+       2. Arm A zieht sich waehrend der Arbeit zurueck
+       3. Arm B tut das nicht
+
+     Sie schaltet dafuer kurz die Klassen um und setzt sie danach zurueck -
+     anders ist beides in einem Durchgang nicht zu messen.
+
+     Gegenprobe: Nimmt man die Mobilregel fuer Arm A heraus, schlaegt sie
+     an (dann ist Arm A wieder 100dvh hoch und faehrt nicht zurueck). */
+  armeAufDemTelefon() {
+    if (!window.matchMedia("(max-width: 1040px)").matches) {
+      console.info("Seitenpruefung: kein schmales Fenster, Telefonpruefung uebersprungen");
+      return;
+    }
+    const rail = document.getElementById("agentRail");
+    if (!rail || !document.body.classList.contains("agent-schublade")) return;
+
+    const warFenster = document.body.classList.contains("agent-fenster");
+    const warGesperrt = document.body.classList.contains("agent-gesperrt");
+    const warOffen = document.body.classList.contains("agent-open");
+    const hoehe = () => Math.round(rail.getBoundingClientRect().height);
+    try {
+      document.body.classList.add("agent-open");
+      document.body.classList.remove("agent-fenster", "agent-gesperrt");
+      const aRuhe = hoehe();
+      document.body.classList.add("agent-gesperrt");
+      const aArbeit = hoehe();
+      document.body.classList.remove("agent-gesperrt");
+      document.body.classList.add("agent-fenster");
+      const bRuhe = hoehe();
+      document.body.classList.add("agent-gesperrt");
+      const bArbeit = hoehe();
+
+      if (aRuhe >= window.innerHeight - 2) {
+        this.befund("Telefon", `Arm A deckt die ganze Hoehe (${aRuhe} von ${window.innerHeight}) - dann ist er von Arm B nicht zu unterscheiden`);
+      } else this.bestanden();
+
+      if (aRuhe === bRuhe) {
+        this.befund("Telefon", `Beide Arme sind gleich hoch (${aRuhe}) - der Eingriff faellt auf dem Telefon weg`);
+      } else this.bestanden();
+
+      if (aArbeit >= aRuhe) {
+        this.befund("Telefon", `Arm A zieht sich waehrend der Arbeit nicht zurueck (${aArbeit} statt weniger als ${aRuhe}) - man sieht die Seite nicht, auf der er arbeitet`);
+      } else this.bestanden();
+
+      if (bArbeit !== bRuhe) {
+        this.befund("Telefon", `Arm B weicht waehrend der Arbeit (${bArbeit} statt ${bRuhe}) - dort soll er gerade stehen bleiben`);
+      } else this.bestanden();
+    } finally {
+      document.body.classList.toggle("agent-fenster", warFenster);
+      document.body.classList.toggle("agent-gesperrt", warGesperrt);
+      document.body.classList.toggle("agent-open", warOffen);
+    }
+  },
+
   async laufen() {
     this.befunde = [];
     this.geprueft = 0;
@@ -687,6 +750,7 @@ const Seitenpruefung = {
       this.fragebogen();
       this.armB();
       this.armA();
+      this.armeAufDemTelefon();
     } catch (e) {
       this.befund("Ablauf", `Die Pruefung ist gestolpert: ${e.message}`, { stack: String(e.stack).slice(0, 200) });
     }

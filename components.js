@@ -807,6 +807,7 @@ const AgentPanel = {
     });
 
     this.spracheAnbinden();
+    this.tastaturAnbinden();
 
     // Am Rechner klappt der Knopf die Spalte schmal, auf dem Handy oeffnet
     // und schliesst er das Panel. Zwei Gesten, ein Knopf - deshalb hier die
@@ -985,6 +986,37 @@ const AgentPanel = {
     const el = document.getElementById("agentVorschau");
     if (el) el.textContent = text;
   },
+  /* Die Tastatur auf dem Telefon (26.10.2026)
+     ------------------------------------------------------------------
+     `visualViewport` kam im Projekt bisher keinmal vor, und das faellt
+     genau auf einem Geraet auf: Auf iOS verschiebt die Tastatur nur das
+     VISUELLE Viewport, nicht das Layout-Viewport. Ein Chatfenster mit
+     `height: 100dvh` bleibt deshalb so hoch wie vorher, und die
+     Eingabezeile an seinem unteren Rand rutscht unter die Tastatur - man
+     tippt blind. Android verkleinert das Layout-Viewport und hat das
+     Problem nicht, aber dieselbe Rechnung schadet dort auch nicht.
+
+     Die Hoehe wandert als `--vvh` an das Wurzelelement; das Stylesheet
+     rechnet in der Mobilregel damit. Ohne die Schnittstelle bleibt es bei
+     100dvh - dann ist es wie vorher und nicht schlechter. */
+  tastaturAnbinden() {
+    const vv = window.visualViewport;
+    if (!vv || this._tastaturAn) return;
+    this._tastaturAn = true;
+    const setzen = () => {
+      // Nur auf schmalen Geraeten: am Rechner hat die Spalte volle Hoehe
+      if (!window.matchMedia("(max-width: 1040px)").matches) {
+        document.documentElement.style.removeProperty("--vvh");
+        return;
+      }
+      document.documentElement.style.setProperty("--vvh", `${Math.round(vv.height)}px`);
+    };
+    setzen();
+    vv.addEventListener("resize", setzen);
+    vv.addEventListener("scroll", setzen);
+    window.addEventListener("orientationchange", () => setTimeout(setzen, 250));
+  },
+
   /* Die Arbeitsanzeige im Gespraech (25.10.2026)
      ------------------------------------------------------------------
      Spinner, eine Zeile und die verstrichene Zeit, an der Stelle, an der
@@ -1328,8 +1360,17 @@ const AgentPanel = {
      Ruhezustand auf einen Blick sichtbar ist. */
   arbeitetAn() {
     if (!window.matchMedia("(max-width: 1040px)").matches) return;
+    /* Bis zum 26.10.2026 stand hier auch
+         document.body.classList.remove("agent-open");
+       also: Der Chat ging waehrend der Arbeit ZU. Das war richtig gedacht
+       (man soll die Seite sehen), aber als Mittel falsch - ein
+       geschlossener Chat ist in Arm B dasselbe wie in Arm A, und der
+       Unterschied zwischen den Armen verschwand.
+
+       Jetzt faehrt das Kopfblatt in Arm A nur auf einen Streifen zusammen
+       (CSS, `agent-gesperrt`), und in Arm B bleibt es stehen. Der Chat
+       bleibt in beiden Faellen offen; was sich aendert, ist seine Hoehe. */
     document.body.classList.add("agent-arbeitet");
-    document.body.classList.remove("agent-open");
   },
 
   arbeitetAus() {

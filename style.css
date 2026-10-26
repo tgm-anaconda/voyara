@@ -428,8 +428,19 @@ body.agent-collapsed .agent-head .icon-btn { margin-left: 0; transform: rotate(4
 }
 .icon-btn:hover { background: var(--canvas); color: var(--ink-900); }
 
+/* Dialoge und Hinweise liegen UEBER dem Chat (26.10.2026).
+   ------------------------------------------------------------------
+   Gemessen am 26.10.: Der Chat liegt auf 660, der Dialogschirm lag auf
+   200 und der Hinweis auf 300. Hilfe, Konto und "Zum Merkzettel
+   hinzugefuegt" oeffneten sich damit HINTER dem Chat - auf dem Telefon
+   unsichtbar, am Rechner halb von der Spalte verdeckt.
+
+   720 und 730: ueber Chat (660), Reiter (700) und Einladung (680), aber
+   unter Vorschlagsansicht (900), Studienblaettern (950) und Sperre
+   (8500). Hoeher muessen sie nicht, denn solange eines davon steht,
+   laesst sich kein Dialog oeffnen. */
 .modal-backdrop {
-  position: fixed; inset: 0; z-index: 200; background: rgba(9,20,17,.45);
+  position: fixed; inset: 0; z-index: 720; background: rgba(9,20,17,.45);
   display: grid; place-items: center; padding: 22px; animation: fade .15s ease;
 }
 @keyframes fade { from { opacity: 0 } to { opacity: 1 } }
@@ -451,7 +462,7 @@ body.agent-collapsed .agent-head .icon-btn { margin-left: 0; transform: rotate(4
   position: fixed; left: 50%; bottom: 26px; transform: translate(-50%, 14px);
   background: var(--brand-900); color: #fff; padding: 11px 18px; border-radius: 999px;
   display: flex; align-items: center; gap: 9px; font-size: .88rem; box-shadow: var(--sh-lg);
-  opacity: 0; transition: opacity .22s, transform .22s; z-index: 300; pointer-events: none;
+  opacity: 0; transition: opacity .22s, transform .22s; z-index: 730; pointer-events: none;
 }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
 .toast svg { color: #6fe0b4; }
@@ -2054,6 +2065,123 @@ body.agent-schublade .agent-foot { display: block; }
 body.agent-schublade .agent-input { padding-bottom: 12px; }
 
 /* =================================================================
+   26a. Auf dem Telefon (26.10.2026)
+   -----------------------------------------------------------------
+   Gemessen am 26.10. bei 375 x 812: Beide Arme lieferten ein Chatfeld
+   von 375 x 812 - pixelgleich. Wer am Handy teilnahm, war unabhaengig
+   vom Link in Arm B. Der Eingriff fiel weg, nicht nur die Politur.
+
+   Grund: `body.agent-schublade .agent-rail { width: min(380px,100vw);
+   height: 100dvh }` in der Schubladenregel. Eine 380 Pixel breite Spalte
+   NEBEN der Seite gibt es auf 375 Pixern nicht.
+
+   Das Projekt hatte die richtige Mobil-Idee schon: In der alten
+   Mobilregel schrumpfte der Chat waehrend der Arbeit auf 62 Pixel, damit
+   man die Seite sieht, auf der er klickt. Genau Arm A. Nur stand sie VOR
+   der Schubladenregel und war damit seit deren Einfuehrung wirkungslos
+   (gemessen: `rueckzugWirkt: false`).
+
+   Hier steht sie neu, NACH der Schubladenregel, und getrennt nach Arm:
+
+     Arm A  Kopfblatt oben, 62 Prozent der Hoehe, Eingabe am unteren Rand
+            des Blattes. Waehrend der Agent arbeitet, faehrt es auf einen
+            Streifen zusammen - die Seite bekommt das ganze Bild. Danach
+            wieder auf.
+     Arm B  Vollbild, das nicht weicht.
+
+   Dieselbe Aussage wie am Rechner, nur senkrecht statt waagerecht.
+   ================================================================= */
+@media (max-width: 1040px) {
+
+  /* --- Gemeinsames ------------------------------------------------ */
+
+  /* Die Eckdaten brachen bei 375 Pixeln auf drei Zeilen um; Kopf und
+     Baender frassen 243 der 812 Pixel. Jetzt eine Zeile, waagerecht
+     scrollbar. */
+  body.agent-schublade .agent-eckdaten {
+    flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden;
+    scrollbar-width: none; padding-top: 8px; padding-bottom: 8px;
+  }
+  body.agent-schublade .agent-eckdaten::-webkit-scrollbar { height: 0; }
+  body.agent-schublade .eckdaten-titel { display: none; }
+  body.agent-schublade .eckdaten-chip { flex-shrink: 0; }
+
+  /* Beruehrungsziele: gemessen waren Schliessen 30x30, Fragezeichen
+     30x31, Mikrofon und Senden 36x36. Unter 44 trifft man auf einem
+     Telefon daneben - und Schliessen ist der einzige Ausgang. */
+  body.agent-schublade .agent-head .icon-btn,
+  body.agent-schublade #agentCollapse.agent-zu { min-width: 44px; min-height: 44px; }
+  body.agent-schublade .freigabe-info { min-width: 44px; min-height: 44px; }
+  body.agent-schublade .agent-input .btn,
+  body.agent-schublade .agent-input .agent-mikro { width: 44px; height: 44px; }
+
+  /* Der Home-Balken des iPhones. safe-area kam im Stylesheet bisher
+     keinmal vor; Eingabe und Fusszeile stiessen daran. */
+  body.agent-schublade .agent-foot { padding-bottom: max(13px, env(safe-area-inset-bottom)); }
+
+  /* --- Arm A: das Kopfblatt --------------------------------------- */
+
+  body.agent-schublade:not(.agent-fenster) .agent-rail {
+    top: 0; bottom: auto; left: 0; right: 0;
+    width: 100%; max-width: 100%;
+    height: min(62dvh, var(--vvh, 62dvh));
+    border-right: none; border-bottom: 1px solid rgba(0,0,0,.3);
+    border-radius: 0 0 20px 20px;
+    box-shadow: 0 6px 22px rgba(16,33,30,.26);
+    transform: translateY(-104%);
+  }
+  body.agent-schublade:not(.agent-fenster).agent-open .agent-rail { transform: none; }
+
+  /* Die Seite beginnt unter dem Streifen und laeuft beim Aufklappen
+     hinter dem Blatt weiter - das kennt man von Blaettern ueber Inhalt. */
+  body.agent-schublade:not(.agent-fenster) .app-main { padding-top: 64px !important; }
+  body.agent-schublade:not(.agent-fenster) #siteHeader { top: 64px !important; }
+  body.agent-schublade:not(.agent-fenster).agent-open .app-main { margin-left: 0; }
+
+  /* Der Rueckzug: waehrend der Agent arbeitet, bleibt nur der Streifen.
+     `agent-gesperrt` steht genau so lange, wie er arbeitet (Kern.sperreAn) -
+     verlaesslicher als `agent-arbeitet`, das an der Fensterbreite haengt. */
+  body.agent-schublade:not(.agent-fenster).agent-gesperrt .agent-rail {
+    height: 64px; border-radius: 0 0 14px 14px;
+  }
+  body.agent-schublade:not(.agent-fenster).agent-gesperrt .agent-freigabe,
+  body.agent-schublade:not(.agent-fenster).agent-gesperrt .agent-eckdaten,
+  body.agent-schublade:not(.agent-fenster).agent-gesperrt .agent-suggestions,
+  body.agent-schublade:not(.agent-fenster).agent-gesperrt .agent-input,
+  body.agent-schublade:not(.agent-fenster).agent-gesperrt .agent-foot { display: none; }
+  /* Im Streifen steht die Arbeitsanzeige, sonst nichts */
+  body.agent-schublade:not(.agent-fenster).agent-gesperrt .agent-messages {
+    padding: 0 16px; justify-content: center;
+  }
+  body.agent-schublade:not(.agent-fenster).agent-gesperrt .agent-messages > *:not(#agentArbeit) { display: none; }
+  body.agent-schublade:not(.agent-fenster).agent-gesperrt .agent-head { padding-top: 10px; padding-bottom: 8px; }
+  /* Die Sperrleiste braucht es im Streifen nicht mehr - er IST die Meldung */
+  body.agent-schublade:not(.agent-fenster).agent-gesperrt .sperre-leiste { bottom: 18px; top: auto; }
+
+  /* --- Arm B: Vollbild, das nicht weicht --------------------------- */
+
+  body.agent-fenster .agent-rail {
+    top: 0; left: 0; right: 0; bottom: 0;
+    width: 100vw; max-width: 100vw;
+    height: var(--vvh, 100dvh);
+    border-radius: 0; border-right: none;
+  }
+  body.agent-fenster .agent-messages {
+    padding-left: 16px; padding-right: 16px; padding-top: 18px; gap: 20px;
+  }
+  body.agent-fenster .agent-freigabe,
+  body.agent-fenster .agent-eckdaten {
+    padding-left: 16px; padding-right: 16px;
+  }
+  body.agent-fenster .agent-head { padding-left: 16px; padding-right: 16px; }
+  body.agent-fenster .agent-input { margin-left: 16px; margin-right: 16px; }
+  body.agent-fenster .agent-foot { padding-left: 16px; padding-right: 16px; }
+  /* Der Begruessungsschirm steht auch hier oben, nicht mittig - auf 812
+     Pixeln Hoehe braucht er fast alles davon. */
+  body.agent-ohne-freigabe.agent-fenster .agent-messages { justify-content: flex-start; }
+}
+
+/* =================================================================
    26b. Arm B der Beobachtbarkeits-Erhebung: der Chat als Vollbild
         (25.10.2026)
    -----------------------------------------------------------------
@@ -2259,7 +2387,39 @@ body.agent-fenster .log-panel { z-index: 714; }
 body.agent-open .agent-reiter, body.startschirm-offen .agent-reiter { display: none; }
 /* Der Aufgaben-Reiter bleibt rechts und weicht der Log-Bubble nach unten aus */
 body.agent-schublade .aufgabe-reiter { top: 42%; }
-@media (max-width: 899px) { body.agent-schublade.agent-open .aufgabe-reiter { display: none; } }
+/* Der Aufgabenreiter wandert auf dem Telefon in die Kopfleiste
+   (26.10.2026).
+   ------------------------------------------------------------------
+   Hier stand `display: none` unter 899 Pixeln bei offenem Chat. In Arm B
+   ist der Chat IMMER offen - die Aufgabe war auf dem Telefon damit nie
+   nachzulesen.
+
+   Nur ihn wieder einzublenden reichte nicht: Gemessen ragte er als 36 x
+   379 Pixel grosser Streifen am rechten Rand in den Begruessungsschirm
+   und schnitt dessen dritte Zeile ab. Auf 375 Pixeln gibt es keinen
+   freien Rand.
+
+   Also sitzt er dort, wo auf einem Telefon Bedienelemente hingehoeren:
+   als Pille in der Kopfleiste, links neben "Schliessen". Kein Overlap,
+   immer erreichbar, 44 Pixel hoch. Bei geschlossenem Chat steht sie an
+   derselben Stelle ueber der Seite. */
+@media (max-width: 899px) {
+  /* `body.agent-schublade .aufgabe-reiter { top: 42% }` steht weiter oben
+     und ist spezifischer - eine Medienabfrage hebt die Spezifitaet nicht.
+     Deshalb hier derselbe Selektor, sonst bleibt der Reiter auf halber
+     Hoehe stehen (gemessen: y 341 statt 9). */
+  body.agent-schublade .aufgabe-reiter,
+  .aufgabe-reiter {
+    /* 72 statt 64: Gemessen ragte die Pille sonst vier Pixel unter den
+       Schliessknopf (Pille bis 311, Knopf ab 307). */
+    top: 9px; bottom: auto; right: 72px;
+    writing-mode: horizontal-tb; transform: none;
+    border-radius: 999px; padding: 0 15px;
+    min-height: 44px; display: inline-flex; align-items: center;
+    font-size: .76rem; letter-spacing: .01em;
+    box-shadow: 0 4px 14px rgba(16,33,30,.3);
+  }
+}
 
 /* Log-Bubble rechts oben, gegenueber dem Agenten */
 .log-bubble {
