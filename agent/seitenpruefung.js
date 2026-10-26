@@ -703,8 +703,22 @@ const Seitenpruefung = {
     const warFenster = document.body.classList.contains("agent-fenster");
     const warGesperrt = document.body.classList.contains("agent-gesperrt");
     const warOffen = document.body.classList.contains("agent-open");
-    const hoehe = () => Math.round(rail.getBoundingClientRect().height);
+    /* Gemessen wird die SICHTBARE Flaeche, nicht die Hoehe: Seit dem
+       26.10.2026 faehrt das Kopfblatt waehrend der Arbeit mit
+       `translateY(-104%)` aus dem Bild, und daran aendert sich seine
+       Hoehe nicht. Wer hier `height` misst, prueft nichts. */
+    const hoehe = () => {
+      const k = rail.getBoundingClientRect();
+      return Math.round(Math.max(0, Math.min(k.bottom, window.innerHeight) - Math.max(k.top, 0)));
+    };
+    const warLautlos = document.body.classList.contains("agent-lautlos");
     try {
+      /* Ohne das misst die Pruefung den Anfang der Ueberblendung statt das
+         Ergebnis: `transform` ist mit .28s uebergeblendet, und
+         getBoundingClientRect liefert waehrenddessen den alten Platz.
+         `agent-lautlos` schaltet die Uebergaenge ab - dieselbe Klasse, die
+         beim Laden das Aufblitzen verhindert. */
+      document.body.classList.add("agent-lautlos");
       document.body.classList.add("agent-open");
       document.body.classList.remove("agent-fenster", "agent-gesperrt");
       const aRuhe = hoehe();
@@ -725,8 +739,19 @@ const Seitenpruefung = {
       } else this.bestanden();
 
       if (aArbeit >= aRuhe) {
-        this.befund("Telefon", `Arm A zieht sich waehrend der Arbeit nicht zurueck (${aArbeit} statt weniger als ${aRuhe}) - man sieht die Seite nicht, auf der er arbeitet`);
+        this.befund("Telefon", `Arm A zieht sich waehrend der Arbeit nicht zurueck (${aArbeit} von ${aRuhe} Pixeln bleiben sichtbar) - man sieht die Seite nicht, auf der er arbeitet`);
       } else this.bestanden();
+      /* Seit dem 26.10. soll er ganz verschwinden, nicht nur schrumpfen -
+         die Arbeitsanzeige steht dann in der Sperrleiste. */
+      if (aArbeit > 2) {
+        this.befund("Telefon", `Arm A verdeckt waehrend der Arbeit noch ${aArbeit} Pixel - er soll ganz aus dem Bild fahren`);
+      } else this.bestanden();
+      /* Und die Leiste muss die Phase tragen, sonst steht waehrend der
+         Arbeit nirgends, was er gerade tut. */
+      const leiste = document.querySelector(".sperre-leiste");
+      if (leiste && !leiste.querySelector(".sperre-ring")) {
+        this.befund("Telefon", "Die Sperrleiste hat keinen Ring - dann fehlt in Arm A waehrend der Arbeit jede Anzeige");
+      } else if (leiste) this.bestanden();
 
       if (bArbeit !== bRuhe) {
         this.befund("Telefon", `Arm B weicht waehrend der Arbeit (${bArbeit} statt ${bRuhe}) - dort soll er gerade stehen bleiben`);
@@ -735,6 +760,7 @@ const Seitenpruefung = {
       document.body.classList.toggle("agent-fenster", warFenster);
       document.body.classList.toggle("agent-gesperrt", warGesperrt);
       document.body.classList.toggle("agent-open", warOffen);
+      document.body.classList.toggle("agent-lautlos", warLautlos);
     }
   },
 

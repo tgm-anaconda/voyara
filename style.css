@@ -1574,6 +1574,19 @@ body.agent-collapsed .agent-head .icon-btn { margin-left: 0; transform: rotate(4
   position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 8500;
   background: transparent; cursor: default;
 }
+/* Ring und Uhr in der Sperrleiste (26.10.2026): Auf dem Telefon ist sie
+   in Arm A die einzige Arbeitsanzeige, weil der Chat dort waehrend der
+   Arbeit ganz verschwindet. Ueberall sonst steht sie zusaetzlich dort. */
+.sperre-ring {
+  width: 14px; height: 14px; flex-shrink: 0;
+  border: 2px solid rgba(255,255,255,.22); border-top-color: var(--brand-400, #5fc3a4);
+}
+.sperre-uhr {
+  font-size: .74rem; color: rgba(255,255,255,.5);
+  font-variant-numeric: tabular-nums; min-width: 26px;
+}
+.sperre-uhr:empty { display: none; }
+
 .sperre-leiste {
   position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%);
   display: flex; align-items: center; gap: 10px;
@@ -2138,25 +2151,37 @@ body.agent-schublade .agent-input { padding-bottom: 12px; }
   body.agent-schublade:not(.agent-fenster) #siteHeader { top: 64px !important; }
   body.agent-schublade:not(.agent-fenster).agent-open .app-main { margin-left: 0; }
 
-  /* Der Rueckzug: waehrend der Agent arbeitet, bleibt nur der Streifen.
+  /* Der Rueckzug: waehrend der Agent arbeitet, faehrt das Kopfblatt ganz
+     aus dem Bild.
+     -----------------------------------------------------------------
+     Erst war es ein 64 Pixel hoher Streifen. Entscheidung des Nutzers vom
+     26.10.2026: ganz weg, die Seite bekommt das volle Bild, und die
+     Arbeitsanzeige steht in der Sperrleiste unten. Dort war ohnehin schon
+     der Anhalten-Knopf - jetzt tragen Ring, Phase und Uhr dieselbe Leiste.
+
+     Dieselbe Bewegung wie beim Schliessen, nur ohne Zutun: Das Blatt
+     faehrt nach oben weg und kommt danach an genau dieselbe Stelle
+     zurueck, weil `agent-open` unberuehrt bleibt. Wer den Chat vorher
+     geschlossen hatte, findet ihn danach geschlossen.
+
      `agent-gesperrt` steht genau so lange, wie er arbeitet (Kern.sperreAn) -
      verlaesslicher als `agent-arbeitet`, das an der Fensterbreite haengt. */
   body.agent-schublade:not(.agent-fenster).agent-gesperrt .agent-rail {
-    height: 64px; border-radius: 0 0 14px 14px;
+    transform: translateY(-104%);
   }
-  body.agent-schublade:not(.agent-fenster).agent-gesperrt .agent-freigabe,
-  body.agent-schublade:not(.agent-fenster).agent-gesperrt .agent-eckdaten,
-  body.agent-schublade:not(.agent-fenster).agent-gesperrt .agent-suggestions,
-  body.agent-schublade:not(.agent-fenster).agent-gesperrt .agent-input,
-  body.agent-schublade:not(.agent-fenster).agent-gesperrt .agent-foot { display: none; }
-  /* Im Streifen steht die Arbeitsanzeige, sonst nichts */
-  body.agent-schublade:not(.agent-fenster).agent-gesperrt .agent-messages {
-    padding: 0 16px; justify-content: center;
+  /* Die Aufgaben-Pille sitzt in der Kopfleiste und faehrt damit nicht mit
+     weg - sie liegt waehrend der Arbeit ohnehin unter der Sperre und
+     waere nicht anklickbar. */
+  body.agent-schublade.agent-gesperrt .aufgabe-reiter { display: none; }
+  /* Die Leiste ist jetzt die einzige Anzeige: etwas hoeher ueber dem
+     Home-Balken und breiter, weil die Phase darin steht. */
+  body.agent-schublade:not(.agent-fenster).agent-gesperrt .sperre-leiste {
+    bottom: max(20px, env(safe-area-inset-bottom));
+    max-width: calc(100vw - 24px);
   }
-  body.agent-schublade:not(.agent-fenster).agent-gesperrt .agent-messages > *:not(#agentArbeit) { display: none; }
-  body.agent-schublade:not(.agent-fenster).agent-gesperrt .agent-head { padding-top: 10px; padding-bottom: 8px; }
-  /* Die Sperrleiste braucht es im Streifen nicht mehr - er IST die Meldung */
-  body.agent-schublade:not(.agent-fenster).agent-gesperrt .sperre-leiste { bottom: 18px; top: auto; }
+  body.agent-schublade:not(.agent-fenster).agent-gesperrt .sperre-hinweis {
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
 
   /* --- Arm B: Vollbild, das nicht weicht --------------------------- */
 

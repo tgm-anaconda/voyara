@@ -3977,13 +3977,33 @@ const Kern = {
     knopf.textContent = "Agent anhalten";
     knopf.addEventListener("click", (e) => { e.stopPropagation(); this.uebernahme(); });
 
+    /* Die Sperrleiste traegt die Arbeitsanzeige (26.10.2026)
+       ----------------------------------------------------------------
+       Wunsch des Nutzers: Auf dem Telefon soll der Chat waehrend der
+       Arbeit ganz verschwinden und die Seite das volle Bild bekommen -
+       die Phase steht dann hier.
+
+       Ring, Phase und Uhr gibt es deshalb UEBERALL in der Leiste, nicht
+       nur auf dem Telefon und nicht nur in einem Arm. Eine Regel statt
+       vier Sonderfaellen, und die Anzeige bleibt damit zwangslaeufig in
+       beiden Armen dieselbe. Gefuellt wird sie von AgentPanel.arbeitAn,
+       derselben Stelle wie die Anzeige im Gespraech - damit es nur eine
+       Quelle fuer den Text gibt. */
+    const ring = document.createElement("span");
+    ring.className = "arbeit-ring sperre-ring";
+    ring.setAttribute("aria-hidden", "true");
+
     const hinweis = document.createElement("span");
     hinweis.className = "sperre-hinweis";
     hinweis.textContent = "Der Assistent arbeitet gerade";
 
+    const uhr = document.createElement("span");
+    uhr.className = "sperre-uhr";
+    uhr.setAttribute("aria-hidden", "true");
+
     const leiste = document.createElement("div");
     leiste.className = "sperre-leiste";
-    leiste.append(hinweis, knopf);
+    leiste.append(ring, hinweis, uhr, knopf);
     sperre.appendChild(leiste);
     document.body.appendChild(sperre);
     /* Die Sperre auch als Klasse am Body (25.10.2026).

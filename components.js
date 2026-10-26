@@ -1052,13 +1052,23 @@ const AgentPanel = {
         const s = Math.floor((Date.now() - this._arbeitSeit) / 1000);
         // Erst ab fuenf Sekunden: darunter ist der Zaehler Unruhe, nicht
         // Auskunft.
-        feld.textContent = s >= 5 ? `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}` : "";
+        const stand = s >= 5 ? `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}` : "";
+        feld.textContent = stand;
+        const leisteUhr = document.querySelector(".sperre-uhr");
+        if (leisteUhr) leisteUhr.textContent = stand;
       };
       uhr();
       this._arbeitUhr = setInterval(uhr, 1000);
     }
     const t = String(text || "Arbeitet").replace(/[….]+$/, "");
-    el.querySelector(".arbeit-text").textContent = t.charAt(0).toUpperCase() + t.slice(1);
+    const satz = t.charAt(0).toUpperCase() + t.slice(1);
+    el.querySelector(".arbeit-text").textContent = satz;
+    /* Dieselbe Phase auch in der Sperrleiste (26.10.2026).
+       Auf dem Telefon ist sie in Arm A die einzige Anzeige, weil der Chat
+       waehrend der Arbeit ganz verschwindet. Ueberall sonst steht sie
+       zusaetzlich dort - eine Quelle fuer den Text, keine Sonderfaelle. */
+    const leisteText = document.querySelector(".sperre-hinweis");
+    if (leisteText) leisteText.textContent = satz;
     // Immer ans Ende: Zwischendurch kommen Nachrichten dazu
     box.appendChild(el);
     this.ansEnde();
