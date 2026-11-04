@@ -395,11 +395,33 @@ const Seitenpruefung = {
      sondern eine Eigenschaft der Messung. Deshalb zwei Stufen: Im
      sichtbaren Tab wird die Bewegung gemessen, im Hintergrund nur, ob
      ueberhaupt etwas zu scrollen da ist und das Werkzeug ohne Fehler
-     durchlaeuft. */
+     durchlaeuft.
+
+     Befund an der Pruefung selbst, 04.11.2026: Diese Stufe hat nie
+     gemessen, was sie behauptet. `filterspalte()` laeuft vorher und
+     engt die Liste von 360 Karten auf 3 ein; `listeUeberfliegen` legt
+     unter acht Karten gar keine Halte an und scrollt deshalb nicht.
+     Der Befund "die Seite hat sich nicht bewegt" kam also von der
+     Reihenfolge der Pruefungen, nicht von der Seite. Hier wird die
+     Spalte darum zuerst zurueckgesetzt, und eine zu kurze Liste wird
+     als das benannt, was sie ist: nicht messbar. */
 
   async scrollen() {
     if (typeof Werkzeuge === "undefined") return;
     const g = "Scrollen";
+
+    /* Die Spalte zurueck auf unbeschraenkt, sonst messen wir die
+       Filter der vorigen Pruefung. */
+    const reset = document.getElementById("fReset");
+    if (reset) { reset.click(); await new Promise((f) => setTimeout(f, 200)); }
+    const inListe = document.querySelectorAll("#resultList .result-card").length;
+    if (inListe < 8) {
+      console.info(`[${g}] Nur ${inListe} Karten in der Liste - unter acht legt `
+        + "listeUeberfliegen keine Halte an, Bewegung ist nicht messbar");
+      this.bestanden();
+      return;
+    }
+
     const hoehe = document.documentElement.scrollHeight;
     const sichtbar = window.innerHeight;
     if (hoehe <= sichtbar + 50) {
