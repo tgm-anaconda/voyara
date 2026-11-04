@@ -1,0 +1,224 @@
+{
+ "hotels": [
+  {
+   "id": "h370",
+   "ziel": "kapstadt",
+   "name": "Camps Bay Cliffside",
+   "ort": "Kapstadt",
+   "region": "Camps Bay",
+   "kategorie": "luxus",
+   "sterne": 5,
+   "preis": 426,
+   "rating": 4.8,
+   "bewertungen": 548,
+   "strand": 0.2,
+   "zentrum": 7.8,
+   "flughafen": 28,
+   "extras": [
+    "pool",
+    "spa",
+    "seaView",
+    "terrace"
+   ],
+   "kurz": "Über dem Strand von Camps Bay, Zwölf Apostel im Rücken, Pool auf der Klippe.",
+   "lang": "Camps Bay liegt an der Atlantikseite unter den Twelve Apostles, der Felskette hinter dem Tafelberg, und hat einen weißen Strand mit Palmen davor. Das Haus steht am Hang, vierundzwanzig Zimmer und Suiten, Glas, Beton, Holz, alle mit Blick nach Westen, was abends den Sonnenuntergang ins Zimmer holt. Ein Becken liegt auf der Klippenkante, dazu ein Spa mit zwei Behandlungsräumen und Dampfbad. Zum Strand sind es zweihundert Meter und eine Treppe, das Wasser kommt aus dem Benguelastrom und hat vierzehn Grad, was die meisten einmal probieren. Die Seilbahn zum Tafelberg liegt acht Kilometer entfernt, der Chapman's Peak Drive beginnt südlich.",
+   "highlights": [
+    "Becken auf der Klippenkante",
+    "Zweihundert Meter zum Strand",
+    "Alle Zimmer nach Westen",
+    "Acht Kilometer zur Tafelberg-Seilbahn"
+   ]
+  },
+  {
+   "id": "h371",
+   "ziel": "kapstadt",
+   "name": "Bo-Kaap Colour House",
+   "ort": "Kapstadt",
+   "region": "Bo-Kaap",
+   "kategorie": "boutique",
+   "sterne": 4,
+   "preis": 198,
+   "rating": 4.6,
+   "bewertungen": 486,
+   "strand": 2.4,
+   "zentrum": 0.8,
+   "flughafen": 21,
+   "extras": [
+    "terrace"
+   ],
+   "kurz": "Im Viertel der bunten Häuser, Signal Hill über dem Dach, Zentrum zu Fuß.",
+   "lang": "Das Bo-Kaap liegt am Hang des Signal Hill und ist das Viertel der Cape Malay, der Nachkommen von Menschen, die ab dem siebzehnten Jahrhundert aus Südostasien verschleppt wurden. Die Häuser sind in starken Farben gestrichen, was eine Tradition aus der Zeit nach der Abschaffung der Sklaverei ist. Das Haus ist eines davon, vierzehn Zimmer, Holzböden, hohe Decken, auf dem Dach eine Terrasse mit Blick auf Tafelberg und Hafen. Zur Long Street sind es acht Gehminuten, zum Company's Garden zehn, zum Bo-Kaap-Museum drei. Die Küche kocht Cape Malay, Bobotie und Curry, abends vier Gerichte. Nach Sonnenuntergang sollte man Taxi nehmen, das sagt das Haus auch selbst.",
+   "highlights": [
+    "Buntes Haus am Signal Hill",
+    "Dachterrasse mit Blick auf den Tafelberg",
+    "Cape-Malay-Küche am Abend",
+    "Acht Minuten zur Long Street"
+   ]
+  },
+  {
+   "id": "h372",
+   "ziel": "kapstadt",
+   "name": "Waterfront Harbour Suites",
+   "ort": "Kapstadt",
+   "region": "V&A Waterfront",
+   "kategorie": "stadt",
+   "sterne": 4,
+   "preis": 268,
+   "rating": 4.5,
+   "bewertungen": 894,
+   "strand": 1.2,
+   "zentrum": 1.8,
+   "flughafen": 22,
+   "extras": [
+    "pool",
+    "gym",
+    "seaView",
+    "terrace"
+   ],
+   "kurz": "An der V&A Waterfront, Robben-Island-Fähre und Zeitz-Museum am Haus.",
+   "lang": "Die Victoria & Alfred Waterfront ist ein funktionierender Hafen, in dem Schlepper arbeiten, während daneben Läden und Restaurants stehen, und sie ist der Teil Kapstadts, in dem man abends ohne Sorge zu Fuß geht. Das Haus liegt am Becken, zweiundachtzig Zimmer, zwei Drittel mit Blick auf Hafen und Tafelberg, der von hier aus am vollständigsten zu sehen ist. Die Fähre nach Robben Island fährt dreihundert Meter entfernt, das Zeitz-Museum für zeitgenössische afrikanische Kunst liegt in einem umgebauten Getreidesilo zweihundert Meter weiter. Dachbecken, Fitnessraum, Frühstück ab halb sieben. Zum Flughafen sind es zweiundzwanzig Kilometer, bei Verkehr fünfzig Minuten.",
+   "highlights": [
+    "Am Hafenbecken der Waterfront",
+    "Dreihundert Meter zur Robben-Island-Fähre",
+    "Zeitz-Museum im alten Getreidesilo",
+    "Dachbecken mit Tafelberg-Blick"
+   ]
+  },
+  {
+   "id": "h373",
+   "ziel": "kapstadt",
+   "name": "Constantia Weingut",
+   "ort": "Kapstadt",
+   "region": "Constantia",
+   "kategorie": "finca",
+   "sterne": 4,
+   "preis": 286,
+   "rating": 4.7,
+   "bewertungen": 424,
+   "strand": 9.4,
+   "zentrum": 14.0,
+   "flughafen": 26,
+   "extras": [
+    "pool",
+    "spa",
+    "terrace",
+    "bikeRental"
+   ],
+   "kurz": "Weingut im ältesten Anbaugebiet der südlichen Hemisphäre, Verkostung im Haus.",
+   "lang": "Constantia liegt auf der Ostseite des Tafelbergmassivs und ist das älteste Weinanbaugebiet außerhalb Europas, 1685 angelegt, bekannt für Sauvignon Blanc und einen Süßwein, den Napoleon auf St. Helena bestellte. Das Haus gehört zu einem arbeitenden Gut, zwanzig Zimmer in kapholländischen Gebäuden mit den geschwungenen Giebeln, Reben bis an die Mauer, Eichen über dem Hof. Verkostung findet täglich statt, Kellertour auf Anmeldung. Ein Becken liegt im Garten, dazu ein Spa mit zwei Räumen. Zum Kirstenbosch, dem botanischen Garten am Berghang, sind es sechs Kilometer, nach Muizenberg an den Indischen Ozean zehn. Räder stehen bereit, die Weinroute ist flach.",
+   "highlights": [
+    "Arbeitendes Weingut von 1685",
+    "Kapholländische Gebäude",
+    "Verkostung täglich im Haus",
+    "Sechs Kilometer nach Kirstenbosch"
+   ]
+  },
+  {
+   "id": "h374",
+   "ziel": "kapstadt",
+   "name": "Muizenberg Surf House",
+   "ort": "Kapstadt",
+   "region": "Muizenberg",
+   "kategorie": "budget",
+   "sterne": 2,
+   "preis": 98,
+   "rating": 4.2,
+   "bewertungen": 568,
+   "strand": 0.2,
+   "zentrum": 24.0,
+   "flughafen": 26,
+   "kurz": "Am Indischen Ozean, warmes Wasser, bunte Umkleidehäuschen am Strand.",
+   "lang": "Muizenberg liegt an der False Bay auf der anderen Seite der Halbinsel, und dort kommt das Wasser aus dem Indischen Ozean statt aus dem Atlantik, also zwanzig Grad statt vierzehn. Das macht den Strand zum Ort, an dem in Kapstadt Surfen gelernt wird, und die bunten Umkleidehäuschen davor sind das zweitbekannteste Motiv der Stadt. Das Haus liegt zweihundert Meter vom Sand, zwanzig Zimmer, einfach, mit Dusche, Trockenraum für Neoprenanzüge, Küche zur Mitbenutzung. Zur Surfschule sind es hundert Meter, Boards werden verliehen. Der Zug nach Kapstadt fährt in vierzig Minuten entlang der Küste, zu den Pinguinen von Boulders Beach sind es fünfzehn Kilometer.",
+   "highlights": [
+    "Zweihundert Meter zum warmen Indischen Ozean",
+    "Surfschule und Verleih in Gehweite",
+    "Küche zur Mitbenutzung",
+    "Pinguine in fünfzehn Kilometern"
+   ]
+  },
+  {
+   "id": "h375",
+   "ziel": "kapstadt",
+   "name": "Hout Bay Fisherman",
+   "ort": "Kapstadt",
+   "region": "Hout Bay",
+   "kategorie": "familie",
+   "sterne": 3,
+   "preis": 168,
+   "rating": 4.4,
+   "bewertungen": 486,
+   "strand": 0.4,
+   "zentrum": 18.0,
+   "flughafen": 34,
+   "extras": [
+    "pool",
+    "kidsClub"
+   ],
+   "kurz": "Am Hafen von Hout Bay, Robbenbootsfahrten, Chapman's Peak vor der Tür.",
+   "lang": "Hout Bay liegt in einer Bucht zwischen Bergen und hat einen Hafen, in dem noch gefischt wird, dazu einen Strand von einem Kilometer und das Duiker Island davor, auf dem fünftausend Seebären leben. Boote fahren vom Kai in zwanzig Minuten hin. Das Haus liegt vierhundert Meter vom Sand, zweiunddreißig Zimmer, die Hälfte Familienzimmer, dazu ein Becken mit Kinderbereich und Spielplatz im Garten. Der Chapman's Peak Drive, eine der eindrucksvollsten Küstenstraßen der Welt, beginnt am Ortsausgang. Zur Seilbahn am Tafelberg sind es siebzehn Kilometer, nach Kapstadt achtzehn. Halbpension auf Wunsch, Fisch vom Hafenmarkt.",
+   "highlights": [
+    "Vierhundert Meter zum Strand",
+    "Robbenbootsfahrten zum Duiker Island",
+    "Chapman's Peak Drive ab Ortsausgang",
+    "Becken mit Kinderbereich"
+   ]
+  },
+  {
+   "id": "h376",
+   "ziel": "kapstadt",
+   "name": "Sea Point Promenade",
+   "ort": "Kapstadt",
+   "region": "Sea Point",
+   "kategorie": "stadt",
+   "sterne": 4,
+   "preis": 212,
+   "rating": 4.5,
+   "bewertungen": 724,
+   "strand": 0.3,
+   "zentrum": 4.2,
+   "flughafen": 25,
+   "extras": [
+    "pool",
+    "gym",
+    "seaView",
+    "terrace"
+   ],
+   "kurz": "An der Promenade, Meerwasserbecken nebenan, vier Kilometer ins Zentrum.",
+   "lang": "Die Promenade von Sea Point zieht sich vier Kilometer am Atlantik entlang, mit Rasen, Spielplätzen und Leuten, die dort morgens und abends laufen, und sie ist der am besten genutzte öffentliche Raum der Stadt. Das Haus liegt direkt daran, achtundfünfzig Zimmer, zwei Drittel mit Blick auf das Wasser, alle mit Balkon. Das Meerwasserbecken Sea Point Pavilion, ein Freibad von 1951 mit fünfzig Metern und Blick auf die Brandung, liegt fünfhundert Meter entfernt. Zum Zentrum sind es vier Kilometer, zum Lion's Head Aufstieg drei. Auf dem Dach ein Becken, im Keller ein Fitnessraum. Von Juni bis Oktober ziehen Südliche Glattwale vorbei, oft von der Promenade aus zu sehen.",
+   "highlights": [
+    "Direkt an der Promenade",
+    "Fünfhundert Meter zum Meerwasserbecken",
+    "Dachbecken und Fitnessraum",
+    "Wale von Juni bis Oktober"
+   ]
+  },
+  {
+   "id": "h377",
+   "ziel": "kapstadt",
+   "name": "Simon's Town Naval House",
+   "ort": "Simon's Town",
+   "region": "False Bay",
+   "kategorie": "boutique",
+   "sterne": 4,
+   "preis": 224,
+   "rating": 4.7,
+   "bewertungen": 386,
+   "strand": 0.5,
+   "zentrum": 38.0,
+   "flughafen": 44,
+   "extras": [
+    "pool",
+    "terrace",
+    "seaView"
+   ],
+   "kurz": "Im Marinehafen an der False Bay, Pinguine von Boulders Beach zu Fuß.",
+   "lang": "Simon's Town ist seit 1814 Marinestützpunkt, hat eine Hauptstraße mit viktorianischen Fassaden und zwei Kilometer weiter Boulders Beach, an dem seit 1982 eine Kolonie von Brillenpinguinen lebt, inzwischen rund zweitausend Tiere, zwischen Granitblöcken und auf Holzstegen zu beobachten. Das Haus ist ein Offiziershaus von 1890, sechzehn Zimmer, Holzveranden, Kaminzimmer, Becken im Garten hinter einer Mauer. Zum Strand sind es fünfhundert Meter, zu den Pinguinen zwanzig Gehminuten am Wasser entlang. Das Kap der Guten Hoffnung liegt sechzehn Kilometer südlich. Der Zug nach Kapstadt fährt an der Küste, eine Stunde. Abends vier Gänge mit Fisch aus der Bucht.",
+   "highlights": [
+    "Offiziershaus von 1890",
+    "Zwanzig Minuten zu den Pinguinen",
+    "Becken im Garten",
+    "Kap der Guten Hoffnung in 16 Kilometern"
+   ]
+  }
+ ]
+}

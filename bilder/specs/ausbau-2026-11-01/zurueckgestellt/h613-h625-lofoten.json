@@ -1,0 +1,342 @@
+{
+ "hotels": [
+  {
+   "id": "h613",
+   "ziel": "lofoten",
+   "name": "Rorbuer Hamnoy",
+   "ort": "Hamnøy",
+   "region": "Moskenesøy",
+   "kategorie": "strand",
+   "sterne": 3,
+   "preis": 186,
+   "rating": 4.7,
+   "bewertungen": 624,
+   "strand": 0.2,
+   "zentrum": 0.4,
+   "flughafen": 192,
+   "extras": [
+    "seaView",
+    "terrace"
+   ],
+   "kurz": "Rote Fischerhütten auf Pfählen über dem Wasser, Felswand im Rücken.",
+   "lang": "Die Hütten standen hier, als in Hamnøy noch Stockfisch getrocknet wurde, und sie stehen immer noch auf denselben Pfählen im Fjord. Elf Einheiten, Holz innen wie außen, Ofen, Küchenzeile, ein Fenster, hinter dem das Wasser steht. Die Felswand des Festvågtind ragt zweihundert Meter hinter dem Haus auf, im Winter liegt sie im Schatten und im Juni geht die Sonne dort nicht unter. Vom Steg aus kann man angeln, Gerät hängt im Schuppen. Nach Reine sind es drei Kilometer, zum Strand bei Sakrisøy zweihundert Meter, und der ist meistens leer.",
+   "highlights": [
+    "Hütten auf Pfählen im Fjord",
+    "Angelsteg mit Gerät vor der Tür",
+    "Zweihundert Meter zum Strand",
+    "Mitternachtssonne im Juni"
+   ]
+  },
+  {
+   "id": "h614",
+   "ziel": "lofoten",
+   "name": "Nordlys Henningsvaer",
+   "ort": "Henningsvær",
+   "region": "Austvågøy",
+   "kategorie": "boutique",
+   "sterne": 4,
+   "preis": 248,
+   "rating": 4.8,
+   "bewertungen": 486,
+   "strand": 0.8,
+   "zentrum": 0.2,
+   "flughafen": 104,
+   "extras": [
+    "terrace",
+    "spa"
+   ],
+   "kurz": "Umgebaute Fischfabrik im Inselort, Sauna am Kai, Nordlicht ab September.",
+   "lang": "Henningsvær liegt auf mehreren Inselchen, die mit Brücken verbunden sind, und wirkt deshalb kleiner als es ist. Das Haus war eine Fischfabrik, heute sind es achtzehn Zimmer mit sichtbaren Trägern, Betonboden und Fenstern, die bis zum Boden gehen. Die Sauna steht am Kai und hat eine Leiter ins Wasser, was im Oktober eine Entscheidung ist. Nordlichter stehen hier von Ende September bis März, bei klarem Himmel sieht man sie vom Steg aus, ohne wegzufahren. Im Ort gibt es drei Restaurants, eine Kletterhalle und eine Galerie, mehr braucht es nicht.",
+   "highlights": [
+    "Umgebaute Fischfabrik am Hafen",
+    "Sauna am Kai mit Leiter ins Wasser",
+    "Nordlichter vom Steg aus",
+    "Kletterhalle und Galerie im Ort"
+   ]
+  },
+  {
+   "id": "h615",
+   "ziel": "lofoten",
+   "name": "Haukland Beach Lodge",
+   "ort": "Vestvågøy",
+   "region": "Vestvågøy",
+   "kategorie": "strand",
+   "sterne": 4,
+   "preis": 224,
+   "rating": 4.6,
+   "bewertungen": 392,
+   "strand": 0.1,
+   "zentrum": 6.2,
+   "flughafen": 138,
+   "extras": [
+    "seaView",
+    "terrace"
+   ],
+   "kurz": "Hundert Meter über dem Haukland-Strand, weißer Sand und türkises Wasser bei acht Grad.",
+   "lang": "Der Strand von Haukland ist der Grund, warum Lofoten-Fotos nicht geglaubt werden: weißer Sand, türkises Wasser, dahinter Felswände mit Schnee. Die Temperatur im Wasser liegt bei acht bis zwölf Grad, das erklärt, warum er auch im Juli leer ist. Die Lodge liegt hundert Meter oberhalb, sechzehn Zimmer in zwei Holzbauten, alle zur Bucht. Über den Pass nach Uttakleiv sind es zwanzig Minuten zu Fuß, der Weg ist ausgebaut und lohnt sich morgens. Abends gibt es eine Karte mit drei Gerichten, Fisch, Lamm und etwas Vegetarisches, mehr liefert die Umgebung nicht.",
+   "highlights": [
+    "Hundert Meter über dem Haukland-Strand",
+    "Alle Zimmer zur Bucht",
+    "Zwanzig Minuten über den Pass nach Uttakleiv",
+    "Drei Gerichte am Abend"
+   ]
+  },
+  {
+   "id": "h616",
+   "ziel": "lofoten",
+   "name": "Unstad Surf Camp",
+   "ort": "Unstad",
+   "region": "Vestvågøy",
+   "kategorie": "budget",
+   "sterne": 2,
+   "preis": 112,
+   "rating": 4.4,
+   "bewertungen": 548,
+   "strand": 0.2,
+   "zentrum": 11.0,
+   "flughafen": 152,
+   "kurz": "Nördlichster Surfspot Europas, Mehrbettzimmer und Trockenraum für Neoprenanzüge.",
+   "lang": "Unstad ist eine Bucht mit einer Handvoll Häusern und einer Welle, die von September bis April läuft und dann am besten ist, wenn es am kältesten ist. Das Camp hat Doppel- und Mehrbettzimmer, einen Trockenraum, in dem dreißig Neoprenanzüge hängen können, und eine Sauna direkt am Strand. Kurse laufen täglich, Ausrüstung wird verliehen, Siebenmillimeter sind im Preis. Wer nicht surft, nutzt den Ort als Ausgangspunkt für die Wanderung nach Eggum, drei Stunden an der Küste entlang. Essen gibt es im Café an der Straße, einfach und reichlich, und Abends wird das Licht knapp.",
+   "highlights": [
+    "Surfen von September bis April",
+    "Sauna direkt am Strand",
+    "Trockenraum für dreißig Anzüge",
+    "Küstenwanderung nach Eggum"
+   ]
+  },
+  {
+   "id": "h617",
+   "ziel": "lofoten",
+   "name": "Reine Fjordhus",
+   "ort": "Reine",
+   "region": "Moskenesøy",
+   "kategorie": "familie",
+   "sterne": 3,
+   "preis": 168,
+   "rating": 4.5,
+   "bewertungen": 438,
+   "strand": 0.6,
+   "zentrum": 0.3,
+   "flughafen": 196,
+   "extras": [
+    "kidsClub"
+   ],
+   "kurz": "Familienhütten am Reinefjord, Boote mieten, Wanderung zum Reinebringen vor der Tür.",
+   "lang": "Reine liegt am Ende einer Kette von Inselchen und gilt als der am häufigsten fotografierte Ort Norwegens, was an der Treppe zum Reinebringen liegt: eintausendfünfhundert Stufen, oben der Blick, für den man kommt. Die Hütten liegen am Wasser, vierzehn Einheiten mit zwei Schlafzimmern, Küche und Ofen, geeignet für vier bis sechs Personen. Boote mit Außenborder kann man stundenweise mieten, Rettungswesten in Kindergrößen hängen im Bootshaus. Für Kinder ist der Fjord das Beste am Ort, weil man überall an Wasser kommt, ohne dass Wellen stören. Im Dorf gibt es einen Laden, eine Bäckerei und das Fischrestaurant am Kai.",
+   "highlights": [
+    "Treppe zum Reinebringen im Ort",
+    "Boote stundenweise mit Kinderwesten",
+    "Hütten mit zwei Schlafzimmern und Ofen",
+    "Geschützter Fjord ohne Wellen"
+   ]
+  },
+  {
+   "id": "h618",
+   "ziel": "lofoten",
+   "name": "Nusfjord Arctic Resort",
+   "ort": "Nusfjord",
+   "region": "Flakstadøy",
+   "kategorie": "luxus",
+   "sterne": 4,
+   "preis": 312,
+   "rating": 4.7,
+   "bewertungen": 356,
+   "strand": 1.4,
+   "zentrum": 0.1,
+   "flughafen": 164,
+   "extras": [
+    "spa",
+    "seaView",
+    "terrace"
+   ],
+   "kurz": "Denkmalgeschütztes Fischerdorf, komplett als Hotel, mit Sauna über dem Hafenbecken.",
+   "lang": "Nusfjord ist kein Ort mit einem Hotel, sondern ein Ort, der eines ist: das Dorf steht unter Denkmalschutz, die Hütten aus dem neunzehnten Jahrhundert sind restauriert und werden vermietet, der Kramladen von 1907 verkauft noch. Dreißig Einheiten, von der Zweipersonenhütte bis zum Haus für sechs, innen Eiche und Messing, draußen unverändertes Rot. Die Sauna hängt über dem Hafenbecken und hat eine Luke nach unten. Gekocht wird im alten Tranhaus, fünf Gänge mit allem, was im Fjord oder auf der Insel wächst. Autos bleiben am Ortseingang stehen, das ist Teil der Auflage und merkbar angenehm.",
+   "highlights": [
+    "Denkmalgeschütztes Fischerdorf als Hotel",
+    "Sauna über dem Hafenbecken",
+    "Fünf Gänge im alten Tranhaus",
+    "Autofreier Ortskern"
+   ]
+  },
+  {
+   "id": "h619",
+   "ziel": "lofoten",
+   "name": "Svolvaer Havn",
+   "ort": "Svolvær",
+   "region": "Austvågøy",
+   "kategorie": "stadt",
+   "sterne": 4,
+   "preis": 196,
+   "rating": 4.3,
+   "bewertungen": 812,
+   "strand": 1.8,
+   "zentrum": 0.1,
+   "flughafen": 86,
+   "extras": [
+    "terrace"
+   ],
+   "kurz": "Am Hafen der Inselhauptstadt, Hurtigruten-Anleger und Busbahnhof fußläufig.",
+   "lang": "Svolvær ist mit viertausend Einwohnern die größte Stadt der Lofoten und der Ort, an dem man ankommt, bevor man weiterfährt. Das Haus liegt am Hafenbecken, zweiundsechzig Zimmer, nüchtern und gut geheizt, die oberen mit Blick auf die Svolværgeita, den Felszahn über der Stadt. Der Hurtigruten-Anleger liegt zweihundert Meter entfernt, der Busbahnhof dreihundert, Mietwagenstationen im Haus. Zum Trollfjord fahren Boote vom Kai, zweieinhalb Stunden, im Winter mit Seeadlern. Restaurant und Bar sind das ganze Jahr offen, was auf den Inseln nicht selbstverständlich ist.",
+   "highlights": [
+    "Zweihundert Meter zum Hurtigruten-Anleger",
+    "Blick auf die Svolværgeita",
+    "Bootstouren zum Trollfjord ab Kai",
+    "Ganzjährig geöffnet"
+   ]
+  },
+  {
+   "id": "h620",
+   "ziel": "lofoten",
+   "name": "Eggum Seahouse",
+   "ort": "Eggum",
+   "region": "Vestvågøy",
+   "kategorie": "boutique",
+   "sterne": 3,
+   "preis": 178,
+   "rating": 4.6,
+   "bewertungen": 268,
+   "strand": 0.3,
+   "zentrum": 9.4,
+   "flughafen": 144,
+   "extras": [
+    "terrace"
+   ],
+   "kurz": "Ehemaliges Seehaus an der Nordküste, Blick auf die offene See, keine Nachbarn.",
+   "lang": "Eggum liegt an der Nordseite der Insel, dort, wo nichts mehr zwischen Küste und offenem Nordatlantik steht. Das Seehaus diente früher zum Einsalzen, heute sind es acht Zimmer mit dicken Wänden und kleinen Fenstern, aus denen man das Wetter kommen sieht. Die Mitternachtssonne ist hier besonders gut zu sehen, weil der Horizont nach Norden frei liegt. Vor dem Haus beginnt der Küstenweg nach Unstad, drei Stunden über Geröll und Grasmatten, mit einer Ruine einer alten Radarstation auf der Hälfte. Verpflegung bringt man selbst mit oder nimmt das Frühstück dazu, der nächste Laden ist in Bøstad.",
+   "highlights": [
+    "Ehemaliges Seehaus direkt an der Nordküste",
+    "Freier Blick nach Norden",
+    "Küstenweg nach Unstad ab Haus",
+    "Acht Zimmer, keine Nachbarschaft"
+   ]
+  },
+  {
+   "id": "h621",
+   "ziel": "lofoten",
+   "name": "Ballstad Brygge",
+   "ort": "Ballstad",
+   "region": "Vestvågøy",
+   "kategorie": "strand",
+   "sterne": 3,
+   "preis": 158,
+   "rating": 4.4,
+   "bewertungen": 346,
+   "strand": 0.5,
+   "zentrum": 0.3,
+   "flughafen": 148,
+   "extras": [
+    "seaView"
+   ],
+   "kurz": "Hütten am Arbeitshafen, Kutter legen morgens an, Fisch direkt vom Kai.",
+   "lang": "Ballstad ist einer der letzten Orte auf den Lofoten, in dem Fischerei mehr Umsatz macht als Tourismus, und das prägt den Tagesablauf: um fünf fahren die Boote raus, nachmittags wird am Kai sortiert. Die Hütten stehen mitten darin, zwölf Einheiten, Holz, Ofen, Küche, einfache Bäder. Fisch kauft man unten am Kai, zum halben Ladenpreis und ohne Verpackung. Der Strand bei Skottnes liegt fünf Minuten entfernt und ist bei Westwind der Ort, an dem man das Wetter spürt. Im Winter arbeiten die Trockengestelle, zwischen Februar und Mai hängt hier überall Stockfisch, und das riecht man.",
+   "highlights": [
+    "Mitten im Arbeitshafen",
+    "Fisch direkt vom Kai",
+    "Fünf Minuten zum Strand bei Skottnes",
+    "Stockfischgestelle von Februar bis Mai"
+   ]
+  },
+  {
+   "id": "h622",
+   "ziel": "lofoten",
+   "name": "Kabelvag Gjestehus",
+   "ort": "Kabelvåg",
+   "region": "Austvågøy",
+   "kategorie": "budget",
+   "sterne": 2,
+   "preis": 104,
+   "rating": 4.2,
+   "bewertungen": 412,
+   "strand": 0.7,
+   "zentrum": 0.2,
+   "flughafen": 92,
+   "kurz": "Günstiges Gästehaus im ältesten Ort der Lofoten, Küche zur Mitbenutzung.",
+   "lang": "Kabelvåg ist älter als Svolvær und war einmal das Zentrum der Inseln, was man an der hölzernen Kirche sieht, die mit zwölfhundert Plätzen für einen Ort mit zweitausend Einwohnern eindeutig zu groß ist. Das Gästehaus hat sechzehn Zimmer, teils mit eigenem Bad, teils mit geteiltem, und eine Küche, in der jeder kochen kann. Das ist hier Geld wert, weil die Restaurantpreise auf den Lofoten in keinem Verhältnis zum Rest stehen. Zum Kiesstrand hinter dem Ort sind es sieben Minuten, zum Aquarium zehn. Nach Svolvær fährt der Bus alle halbe Stunde, Fahrzeit sieben Minuten.",
+   "highlights": [
+    "Küche zur Mitbenutzung",
+    "Ältester Ort der Lofoten",
+    "Bus nach Svolvær alle halbe Stunde",
+    "Günstigstes Haus auf den Inseln"
+   ]
+  },
+  {
+   "id": "h623",
+   "ziel": "lofoten",
+   "name": "Gimsoy Vinterlodge",
+   "ort": "Gimsøy",
+   "region": "Gimsøya",
+   "kategorie": "berg",
+   "sterne": 4,
+   "preis": 268,
+   "rating": 4.7,
+   "bewertungen": 294,
+   "strand": 0.9,
+   "zentrum": 7.8,
+   "flughafen": 118,
+   "extras": [
+    "spa"
+   ],
+   "kurz": "Auf der flachen Insel zwischen Bergen, gebaut für Nordlichtbeobachtung im Winter.",
+   "lang": "Gimsøya liegt flach zwischen zwei Gebirgsinseln, und genau das ist der Grund für das Haus: der Himmel ist hier von Horizont zu Horizont offen, es gibt kaum Streulicht, und die Nordlichter stehen von Ende August bis April fast jede klare Nacht irgendwo. Zwanzig Zimmer, alle mit großem Nordfenster und Verdunklung, dazu ein unbeheiztes Beobachtungsdeck mit Liegen und Decken. Geweckt wird auf Wunsch, wenn die Aktivität anzieht. Die Sauna ist nach Norden verglast, was dieselbe Logik verfolgt. Tagsüber geht es zum Pferdehof nebenan, zum Golfplatz am Meer oder an den Strand von Hov, der neun Kilometer entfernt liegt.",
+   "highlights": [
+    "Freier Nordhimmel ohne Streulicht",
+    "Weckdienst bei Nordlichtaktivität",
+    "Nach Norden verglaste Sauna",
+    "Beobachtungsdeck mit Decken"
+   ]
+  },
+  {
+   "id": "h624",
+   "ziel": "lofoten",
+   "name": "Stamsund Rorbu",
+   "ort": "Stamsund",
+   "region": "Vestvågøy",
+   "kategorie": "finca",
+   "sterne": 3,
+   "preis": 142,
+   "rating": 4.3,
+   "bewertungen": 322,
+   "strand": 1.1,
+   "zentrum": 0.4,
+   "flughafen": 132,
+   "extras": [
+    "bikeRental"
+   ],
+   "kurz": "Einfache Rorbuer am Hurtigruten-Hafen, Räder und Angelboot gehören dazu.",
+   "lang": "Stamsund ist Hurtigruten-Halt und ansonsten unauffällig, was den Ort angenehm macht: hier wohnen Leute, die arbeiten, nicht Leute, die fotografieren. Die Rorbuer stehen am Wasser, zehn Einheiten, zwei bis sechs Betten, Ofen, Küche, Trockenraum. Räder stehen bereit, dazu ein kleines Boot, das man mit Einweisung nehmen darf. Zum Strand bei Steine sind es gut einen Kilometer, zur Bergtour auf den Steinetinden zwei. Abends kommt die Hurtigruten ein, zweiundzwanzig Uhr nordwärts, und der halbe Ort steht am Kai.",
+   "highlights": [
+    "Rorbuer direkt am Hafen",
+    "Räder und Angelboot inklusive",
+    "Kilometer zum Strand bei Steine",
+    "Hurtigruten legt abends an"
+   ]
+  },
+  {
+   "id": "h625",
+   "ziel": "lofoten",
+   "name": "Ramberg Strandhotell",
+   "ort": "Ramberg",
+   "region": "Flakstadøy",
+   "kategorie": "strand",
+   "sterne": 4,
+   "preis": 206,
+   "rating": 4.5,
+   "bewertungen": 468,
+   "strand": 0.1,
+   "zentrum": 0.5,
+   "flughafen": 158,
+   "extras": [
+    "seaView",
+    "spa"
+   ],
+   "kurz": "Am langen Sandstrand von Ramberg, Zimmer mit Blick auf die offene See.",
+   "lang": "Der Strand von Ramberg ist über einen Kilometer lang, nach Nordwesten offen, und bei Sturm schlagen die Wellen über die Straße, die daran vorbeiführt. Das Hotel liegt am Südende, vierundvierzig Zimmer, zwei Drittel mit Blick auf den Sand. Die Sauna im Erdgeschoss hat eine Glasfront zum Strand, man geht in Badeschuhen zwanzig Meter ins Wasser und wieder zurück. Im Winter ist der Ort Ausgangspunkt für Nordlichtfahrten, im Sommer für die Wanderung zum Kvalvika-Strand, zu dem keine Straße führt. Das Restaurant kocht norwegisch und ohne Umstände, abends vier Gerichte.",
+   "highlights": [
+    "Direkt am Kilometerstrand von Ramberg",
+    "Sauna mit Glasfront zum Strand",
+    "Zwei Drittel der Zimmer mit Seeblick",
+    "Ausgangspunkt für Kvalvika"
+   ]
+  }
+ ]
+}

@@ -123,7 +123,8 @@ function teilnoten(o) {
 
 // --- Zusammenbauen -------------------------------------------------------
 // Ziele, an denen weder Aussenpool noch Klimaanlage glaubwuerdig sind
-const KALTE_ZIELE = new Set(["lappland", "island", "tirol", "suedtirol", "ostsee"]);
+const KALTE_ZIELE = new Set(["lappland", "island", "tirol", "suedtirol", "ostsee",
+  "nordsee", "lofoten", "cornwall", "bretagne"]);
 
 function hotel(o) {
   const s = o.sterne;
@@ -134,7 +135,8 @@ function hotel(o) {
 
   // Ein Aussenpool gehoert nicht an jedes Ziel: in Lappland oder an der Ostsee
   // waere er unglaubwuerdig. Wer trotzdem einen hat, traegt ihn in `extras` ein.
-  const OHNE_POOL = new Set(["lappland", "island", "wien", "ostsee", "newyork", "kyoto"]);
+  const OHNE_POOL = new Set(["lappland", "island", "wien", "ostsee", "newyork", "kyoto",
+    "lofoten", "nordsee", "bretagne", "cornwall"]);
   // Klimaanlage ebenso: an kalten Zielen hat sie kein Haus.
   const kalt = KALTE_ZIELE.has(o.ziel);
   const vorgabe = (AUSSTATTUNG[o.kategorie] || [])

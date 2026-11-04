@@ -1,0 +1,224 @@
+{
+ "hotels": [
+  {
+   "id": "h378",
+   "ziel": "krabi",
+   "name": "Railay Beach Resort",
+   "ort": "Railay",
+   "region": "Railay",
+   "kategorie": "strand",
+   "sterne": 4,
+   "preis": 246,
+   "rating": 4.7,
+   "bewertungen": 624,
+   "strand": 0.1,
+   "zentrum": 1.2,
+   "flughafen": 34,
+   "extras": [
+    "pool",
+    "seaView",
+    "terrace"
+   ],
+   "kurz": "Nur per Boot erreichbar, Kalksteinwände im Rücken, Kletterfelsen am Strand.",
+   "lang": "Railay ist eine Halbinsel, die man nur mit dem Longtailboot erreicht, weil Kalksteinwände den Landweg versperren, und genau das hält die Tagesgäste in Grenzen. Das Haus liegt am West Railay Beach, achtundvierzig Bungalows und Zimmer, Holz und Rattan, zwei Drittel mit Blick auf Wasser und Felsen. Zum Sand sind es achtzig Meter, zum Pool zwanzig. Die Felsen hier sind eines der bekanntesten Klettergebiete Asiens, mit über siebenhundert Routen, Schulen liegen am Strand. Zur Phra Nang Cave Beach führt ein Weg in zehn Minuten, eine Bucht mit Höhle und einem Boot, das Nudelsuppe verkauft. Der Transfer vom Flughafen dauert eine Stunde, davon fünfzehn Minuten Boot.",
+   "highlights": [
+    "Nur per Boot erreichbar",
+    "Achtzig Meter zum West Railay Beach",
+    "Siebenhundert Kletterrouten in Gehweite",
+    "Zehn Minuten zur Phra Nang Cave Beach"
+   ]
+  },
+  {
+   "id": "h379",
+   "ziel": "krabi",
+   "name": "Klong Muang Bay",
+   "ort": "Klong Muang",
+   "region": "Klong Muang",
+   "kategorie": "luxus",
+   "sterne": 5,
+   "preis": 386,
+   "rating": 4.7,
+   "bewertungen": 548,
+   "strand": 0.1,
+   "zentrum": 12.0,
+   "flughafen": 32,
+   "extras": [
+    "pool",
+    "spa",
+    "seaView",
+    "terrace"
+   ],
+   "kurz": "Am ruhigen Nordstrand, drei Becken, Inseln im Blick, Spa am Wasser.",
+   "lang": "Klong Muang liegt zwölf Kilometer nördlich von Ao Nang und ist der Strandabschnitt, an dem die Bars fehlen: ein Kilometer Sand, Kasuarinen, dahinter Hügel, und vorgelagert die Inseln, die bei Sonnenuntergang schwarz werden. Das Haus hat vierundsechzig Zimmer und Villen, Teak, Stein, hohe Dächer, zwei Drittel mit Blick aufs Wasser, einige mit eigenem Becken. Drei Becken für alle, eines mit Salzwasser. Das Spa liegt in Pavillons am Strand, acht Behandlungsräume, thailändische Massage als Grundprogramm. Zum Nationalpark Hat Noppharat Thara sind es acht Kilometer, Boote zu den Hong-Inseln fahren vom Strand. Zwei Restaurants, eines thailändisch, eines mit Fisch vom Grill.",
+   "highlights": [
+    "Ruhiger Strandabschnitt ohne Bars",
+    "Drei Becken, eines mit Salzwasser",
+    "Spa in Pavillons am Strand",
+    "Boote zu den Hong-Inseln ab Strand"
+   ]
+  },
+  {
+   "id": "h380",
+   "ziel": "krabi",
+   "name": "Ao Nang Hillside",
+   "ort": "Ao Nang",
+   "region": "Ao Nang",
+   "kategorie": "familie",
+   "sterne": 4,
+   "preis": 186,
+   "rating": 4.4,
+   "bewertungen": 948,
+   "strand": 0.6,
+   "zentrum": 0.4,
+   "flughafen": 26,
+   "extras": [
+    "pool",
+    "kidsClub",
+    "seaView"
+   ],
+   "kurz": "Über Ao Nang, zwei Becken mit Rutschen, Boote zu den Inseln am Strand.",
+   "lang": "Ao Nang ist der Hauptort der Region und hat alles, was Familien brauchen: Apotheken, Supermärkte, Kinderärzte, eine Promenade ohne Verkehr und einen Pier, von dem Longtailboote zu den Inseln fahren. Das Haus liegt am Hang oberhalb, zweiundsiebzig Zimmer, zwei Drittel Familienzimmer, viele mit Blick über die Bucht. Zwei Becken, eines mit zwei Rutschen und flachem Bereich. Betreuung läuft von zehn bis sechzehn Uhr ganzjährig. Zum Strand sind es sechshundert Meter abwärts, der Shuttle fährt alle zwanzig Minuten. Zur Four Islands Tour geht es vom Pier, fünf Stunden mit Schnorcheln, für Kinder ab sechs geeignet. Halbpension oder All Inclusive, Kinderbuffet ab achtzehn Uhr.",
+   "highlights": [
+    "Zwei Becken, eines mit Rutschen",
+    "Shuttle zum Strand alle zwanzig Minuten",
+    "Betreuung ganzjährig",
+    "Four Islands Tour ab Pier"
+   ]
+  },
+  {
+   "id": "h381",
+   "ziel": "krabi",
+   "name": "Koh Lanta Longbeach",
+   "ort": "Koh Lanta",
+   "region": "Koh Lanta",
+   "kategorie": "strand",
+   "sterne": 4,
+   "preis": 198,
+   "rating": 4.6,
+   "bewertungen": 586,
+   "strand": 0.0,
+   "zentrum": 2.8,
+   "flughafen": 88,
+   "extras": [
+    "pool",
+    "seaView",
+    "terrace"
+   ],
+   "kurz": "Direkt am Phra Ae Beach, vier Kilometer Sand, Sonnenuntergang im Westen.",
+   "lang": "Koh Lanta liegt achtzig Kilometer südlich und wird mit Fähre und Brücke erreicht, was eineinhalb Stunden Transfer bedeutet und dafür eine Insel, die deutlich ruhiger ist als das Festland. Der Phra Ae Beach, auch Long Beach, zieht sich vier Kilometer nach Westen, flach, breit und mit Sonnenuntergang jeden Abend. Das Haus steht direkt im Sand, vierzig Bungalows, Holz und Rattan, alle mit Veranda, die vorderen mit Blick aufs Wasser. Ein Becken zwischen Palmen. Im Süden liegt der Nationalpark Mu Ko Lanta mit Leuchtturm und Affen, dreißig Kilometer über eine Straße mit Schlaglöchern. Die Altstadt Lanta Old Town mit den Stelzenhäusern liegt zwölf Kilometer östlich.",
+   "highlights": [
+    "Bungalows direkt im Sand",
+    "Vier Kilometer Strand nach Westen",
+    "Becken zwischen Palmen",
+    "Nationalpark Mu Ko Lanta im Süden"
+   ]
+  },
+  {
+   "id": "h382",
+   "ziel": "krabi",
+   "name": "Tubkaek Mountain Lodge",
+   "ort": "Tubkaek",
+   "region": "Tubkaek",
+   "kategorie": "boutique",
+   "sterne": 4,
+   "preis": 224,
+   "rating": 4.7,
+   "bewertungen": 412,
+   "strand": 0.2,
+   "zentrum": 16.0,
+   "flughafen": 36,
+   "extras": [
+    "pool",
+    "spa",
+    "seaView",
+    "terrace"
+   ],
+   "kurz": "Am Fuß des Khao Ngon Nak, stiller Strand, Aussichtspunkt in zwei Stunden.",
+   "lang": "Tubkaek liegt am nördlichen Ende der Küste, wo die Straße endet, und hat deshalb einen Strand, auf dem man im Januar allein sein kann. Dahinter steigt der Khao Ngon Nak auf, und der Weg hinauf, Dragon Crest genannt, führt in knapp zwei Stunden auf einen Felsvorsprung mit Blick über die ganze Bucht und die Inseln, der jedes Foto der Region schlägt. Das Haus hat achtundzwanzig Zimmer in flachen Holzbauten, Teak, Leinen, Veranden mit Hängematte. Becken zwischen den Gebäuden, Spa mit vier Räumen. Zum Strand sind es zweihundert Meter, Boote nach Hong Island fahren vom Pier zwei Kilometer weiter. Abends eine kurze Karte mit Fisch vom Grill.",
+   "highlights": [
+    "Stiller Strand am Ende der Straße",
+    "Dragon Crest in zwei Stunden",
+    "Veranden mit Hängematte",
+    "Boote nach Hong Island vom Pier"
+   ]
+  },
+  {
+   "id": "h383",
+   "ziel": "krabi",
+   "name": "Krabi Town Riverside",
+   "ort": "Krabi Town",
+   "region": "Krabi Town",
+   "kategorie": "stadt",
+   "sterne": 3,
+   "preis": 124,
+   "rating": 4.3,
+   "bewertungen": 524,
+   "strand": 14.0,
+   "zentrum": 0.2,
+   "flughafen": 12,
+   "extras": [
+    "pool",
+    "terrace"
+   ],
+   "kurz": "Am Fluss in der Stadt, Nachtmarkt und Pier zu Fuß, zwölf Kilometer zum Flughafen.",
+   "lang": "Krabi Town ist Verwaltungssitz und Hafen und wird von den meisten durchfahren, obwohl der Nachtmarkt am Fluss das besser Essen bietet als die Strandorte und zu einem Drittel des Preises. Das Haus liegt an der Uferstraße, zweiunddreißig Zimmer, einfach und gepflegt, die oberen mit Blick auf Fluss und Mangroven. Ein Becken auf dem Dach. Zum Nachtmarkt sind es dreihundert Meter, zum Pier, von dem Boote nach Railay und Koh Phi Phi fahren, vierhundert. Der Flughafen ist zwölf Kilometer entfernt, fünfzehn Minuten. Zum Wat Tham Sua, dem Tigerhöhlentempel mit zwölfhundert Stufen, sind es neun Kilometer. Für Anreise- und Abreisenächte das praktischste Haus der Region.",
+   "highlights": [
+    "Dreihundert Meter zum Nachtmarkt",
+    "Zwölf Kilometer zum Flughafen",
+    "Dachbecken über dem Fluss",
+    "Pier nach Railay und Koh Phi Phi"
+   ]
+  },
+  {
+   "id": "h384",
+   "ziel": "krabi",
+   "name": "Ao Thalane Kajaklodge",
+   "ort": "Ao Thalane",
+   "region": "Ao Thalane",
+   "kategorie": "finca",
+   "sterne": 3,
+   "preis": 152,
+   "rating": 4.6,
+   "bewertungen": 324,
+   "strand": 1.4,
+   "zentrum": 18.0,
+   "flughafen": 30,
+   "extras": [
+    "pool",
+    "terrace",
+    "bikeRental"
+   ],
+   "kurz": "In den Mangroven von Ao Thalane, Kajaks am Steg, Felsen im Wasser.",
+   "lang": "Ao Thalane ist eine Bucht voller Mangroven, aus denen Kalksteinfelsen senkrecht aufsteigen, und sie wird mit dem Kajak erschlossen, nicht mit dem Boot: die Kanäle zwischen den Wurzeln sind zu flach und zu eng. Die Lodge liegt am Ufer, vierzehn Bungalows auf Stelzen, Holz, Moskitonetze, Veranden über dem Wasser. Kajaks liegen am Steg und gehören dazu, die beste Zeit ist eine Stunde vor Hochwasser. Ein Becken im Garten. Zum nächsten Sandstrand sind es anderthalb Kilometer, nach Ao Nang achtzehn. Räder stehen bereit, die Straße durch die Gummibaumplantagen ist flach. Abends wird thailändisch gekocht, vier Gerichte, mittags Nudelsuppe.",
+   "highlights": [
+    "Kajaks am Steg inklusive",
+    "Bungalows auf Stelzen über dem Wasser",
+    "Mangrovenkanäle zwischen Kalksteinfelsen",
+    "Becken im Garten"
+   ]
+  },
+  {
+   "id": "h385",
+   "ziel": "krabi",
+   "name": "Nopparat Thara Budget",
+   "ort": "Hat Noppharat Thara",
+   "region": "Ao Nang",
+   "kategorie": "budget",
+   "sterne": 2,
+   "preis": 86,
+   "rating": 4.2,
+   "bewertungen": 486,
+   "strand": 0.3,
+   "zentrum": 2.4,
+   "flughafen": 24,
+   "kurz": "Günstige Bungalows am Nationalparkstrand, Sandbank bei Ebbe.",
+   "lang": "Hat Noppharat Thara ist Nationalparkstrand und schließt nördlich an Ao Nang an, zwei Kilometer Sand mit Kasuarinen dahinter und einer Sandbank, die bei Ebbe zur Insel Koh Khao Pak Khlong hinausführt, sodass man zu Fuß hinübergeht. Das Haus hat achtzehn Bungalows, einfach, Ventilator oder Klimaanlage gegen Zuschlag, Dusche, Veranda. Für unter neunzig Euro am Strand ist das in Krabi die Ausnahme. Zum Sand sind es dreihundert Meter, zum Pier nach Phi Phi vierhundert, nach Ao Nang zweieinhalb Kilometer mit dem Songthaew. Im Haus gibt es Frühstück, abends essen die meisten an den Garküchen an der Straße, wo ein Gericht zwei Euro kostet.",
+   "highlights": [
+    "Dreihundert Meter zum Nationalparkstrand",
+    "Sandbank zur Insel bei Ebbe",
+    "Unter neunzig Euro am Strand",
+    "Pier nach Koh Phi Phi in Gehweite"
+   ]
+  }
+ ]
+}

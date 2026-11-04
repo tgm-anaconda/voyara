@@ -1,0 +1,36 @@
+{ "haeuser": [
+  { "id": "h512", "ziel": "barcelona", "name": "Hotel Somorrostro", "ort": "Barcelona", "region": "Barceloneta",
+    "kategorie": "strand", "sterne": 3, "preis": 158, "rating": 4.4, "bewertungen": 1286,
+    "strand": 0.15, "zentrum": 1.6,
+    "kurz": "Kleines Haus hundertfünfzig Meter vom Strand der Barceloneta, Dachterrasse mit Blick aufs Wasser.",
+    "lang": "Das Haus steht in einer Seitengasse der Barceloneta, benannt nach dem Barackenviertel, das hier bis 1966 am Strand stand. Vierundzwanzig Zimmer auf fünf Etagen, schlicht eingerichtet, mit Schallschutzfenstern, die in diesem Viertel nötig sind. Auf dem Dach eine Terrasse mit Liegen und Blick über die Dächer aufs Mittelmeer. Zum Strand sind es hundertfünfzig Meter, zur Markthalle der Barceloneta vier Gehminuten, zur Metro Barceloneta sechs. Frühstück gibt es im Erdgeschoss, es ist ordentlich und nicht mehr. Wer abends Ruhe braucht, sollte ein Zimmer zum Innenhof nehmen.",
+    "highlights": ["Hundertfünfzig Meter zum Strand", "Dachterrasse mit Meerblick", "Vier Minuten zur Markthalle", "Schallschutzfenster"] },
+
+  { "id": "h513", "ziel": "barcelona", "name": "Nova Icària Beachhotel", "ort": "Barcelona", "region": "Vila Olímpica",
+    "kategorie": "strand", "sterne": 4, "preis": 196, "rating": 4.5, "bewertungen": 1842,
+    "strand": 0.2, "zentrum": 2.2,
+    "kurz": "Vierhundert Zimmer am Strand Nova Icària, Pool auf dem Dach, Hafen nebenan.",
+    "lang": "Das Haus wurde für die Spiele von 1992 gebaut und gehört zu den Hotels, die seitdem die Strandfront der Vila Olímpica prägen. Zweihundertvierzig Zimmer, die meisten mit Balkon, auf dem Dach ein Pool mit Blick über den Port Olímpic. Zum Strand Nova Icària sind es zweihundert Meter, zur Metro Ciutadella fünf Minuten, in die Altstadt zwanzig. Der Strandabschnitt hier ist breiter und ruhiger als die Barceloneta. Frühstücksbuffet, Fitnessraum, ein Restaurant mit katalanischer Karte. Das Viertel ist abends still, die Lokale liegen am Hafen zweihundert Meter weiter.",
+    "highlights": ["Zweihundert Meter zum Strand Nova Icària", "Dachpool über dem Port Olímpic", "Ruhiger als die Barceloneta", "Fünf Minuten zur Metro"] },
+
+  { "id": "h514", "ziel": "barcelona", "name": "Pension Mar i Cel", "ort": "Barcelona", "region": "Barceloneta",
+    "kategorie": "budget", "sterne": 2, "preis": 96, "rating": 4.1, "bewertungen": 864,
+    "strand": 0.25, "zentrum": 1.8,
+    "kurz": "Günstige Pension in der Barceloneta, zweihundertfünfzig Meter zum Sand.",
+    "lang": "Achtzehn Zimmer über zwei Etagen in einem Haus von 1890, schmal geschnitten wie alles in diesem Viertel. Die Zimmer sind klein, sauber und einfach, einige mit Gemeinschaftsbad auf dem Gang, was den Preis erklärt. Kein Aufzug. Zum Strand sind es zweihundertfünfzig Meter, zur Metro Barceloneta fünf Gehminuten, zum Hafen drei. Frühstück gibt es nicht, dafür eine Küche zur Mitbenutzung und einen Aufenthaltsraum. Die Familie, der das Haus gehört, wohnt im Erdgeschoss und ist seit drei Generationen da. Für den Preis die beste Lage am Strand.",
+    "highlights": ["Zweihundertfünfzig Meter zum Strand", "Günstigstes Strandhaus der Stadt", "Küche zur Mitbenutzung", "Familienbetrieb seit drei Generationen"] },
+
+  { "id": "h515", "ziel": "barcelona", "name": "Bogatell Design Rooms", "ort": "Barcelona", "region": "Poblenou",
+    "kategorie": "boutique", "sterne": 4, "preis": 172, "rating": 4.6, "bewertungen": 1124,
+    "strand": 0.3, "zentrum": 3.2,
+    "kurz": "Boutiquehaus in Poblenou, dreihundert Meter zum Strand Bogatell.",
+    "lang": "Eine ehemalige Druckerei, die zu einem Haus mit zweiunddreißig Zimmern umgebaut wurde; die Stahlträger stehen noch, die Böden sind aus gegossenem Beton, und in der Lobby hängen Arbeiten von Künstlern aus dem Viertel. Zum Strand Bogatell sind es dreihundert Meter, zur Rambla del Poblenou fünf Gehminuten, zur Metro Llacuna vier. Der Bogatell ist der Strand, an dem die Barceloner selbst liegen. Frühstück à la carte, Bar auf der Dachterrasse, ein kleiner Wellnessbereich mit Sauna im Untergeschoss. Fahrräder kann man im Haus leihen.",
+    "highlights": ["Dreihundert Meter zum Strand Bogatell", "Umgebaute Druckerei mit Stahlträgern", "Wellnessbereich mit Sauna", "Fahrräder im Haus"] },
+
+  { "id": "h516", "ziel": "barcelona", "name": "Hotel Platja Llevant", "ort": "Barcelona", "region": "Diagonal Mar",
+    "kategorie": "familie", "sterne": 4, "preis": 142, "rating": 4.3, "bewertungen": 1468,
+    "strand": 0.35, "zentrum": 4.2,
+    "kurz": "Familienhotel am ruhigsten Stadtstrand, Pool und Kinderbecken.",
+    "lang": "Das Haus liegt am östlichen Ende der Strandfront, wo der Llevant-Strand beginnt, der ruhigste der Stadt. Hundertachtzig Zimmer, davon vierzig Familienzimmer für vier Personen, auf der Gartenebene ein Pool mit separatem Kinderbecken. Zum Strand sind es dreihundertfünfzig Meter, zur Metro El Maresme fünf Gehminuten, in die Altstadt fünfundzwanzig. Das Einkaufszentrum Diagonal Mar liegt nebenan, was mit Kindern bei Regen praktisch ist. Halbpension möglich, das Buffet ist auf Familien ausgelegt. Der Strandabschnitt hat einen bewachten Bereich und flaches Wasser.",
+    "highlights": ["Pool mit separatem Kinderbecken", "Vierzig Familienzimmer für vier", "Ruhigster Stadtstrand mit flachem Wasser", "Fünf Minuten zur Metro"] }
+] }

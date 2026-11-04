@@ -140,11 +140,24 @@ const Studie = {
      zusaetzlich im Chat genannt - dann waere in der Stufe "etikett" die
      Erklaerung doch angekommen, und der Klick haette nichts mehr
      gemessen. */
+  /* Welche Stufen der Kennzeichnung ausgelost werden (02.11.2026).
+     ------------------------------------------------------------------
+     Zwei, nicht drei. Der Faktor Zugang hat zwei Stufen; mit drei
+     Kennzeichnungsstufen waere die Matrix 2x3 = sechs Zellen, und bei
+     rund 130 Personen blieben gut 20 je Zelle. Ein Interaktionstest
+     braucht etwa das Vierfache der Fallzahl eines Haupteffekts - sechs
+     Zellen waeren also nicht auswertbar.
+
+     "text" bleibt als feste Stufe im Code einstellbar, kommt in der
+     Auslosung aber nicht vor. */
+  KENNZEICHNUNG_STUFEN: ["ohne", "etikett"],
+
   auslosen(reihenfolge) {
     const s = typeof STELLSCHRAUBEN !== "undefined" ? STELLSCHRAUBEN : {};
-    const stufen = ["ohne", "etikett", "text"];
-    const kennzeichnung = stufen.includes(s.kennzeichnung)
-      ? s.kennzeichnung : stufen[Math.floor(Math.random() * stufen.length)];
+    const alleStufen = ["ohne", "etikett", "text"];
+    const zuLosen = this.KENNZEICHNUNG_STUFEN;
+    const kennzeichnung = alleStufen.includes(s.kennzeichnung)
+      ? s.kennzeichnung : zuLosen[Math.floor(Math.random() * zuLosen.length)];
     // Nur noch fuer Tests und alte Links; im Normalfall "log" (still)
     const ALT = ["chip", "log", "agent", "etikett", "offen", "keine"];
     const offenlegung = ALT.includes(s.offenlegung) ? s.offenlegung : "log";
@@ -1083,6 +1096,21 @@ const Studie = {
       reihenfolge: d.reihenfolge.join("-"),
       hinweisSekunden: z(d.einstieg.hinweisSekunden),
       gruppeOffenlegung: z(d.gruppe?.offenlegung),
+      /* Die beiden Faktoren der 2x2 und ihre Zelle (02.11.2026).
+         --------------------------------------------------------------
+         `gruppeKennzeichnung` fehlte: Die Stufe wurde ausgelost, aber nie
+         exportiert - in den Daten haette der zweite Faktor also gar nicht
+         existiert. `armZugang` steht weiter unten und traegt den ersten.
+
+         `zelle` fasst beides zusammen, damit die Zellenbesetzung ohne
+         Nachrechnen ablesbar ist und auffaellt, wenn eine Zelle leer
+         bleibt. */
+      gruppeKennzeichnung: z(d.gruppe?.kennzeichnung),
+      zelle: (() => {
+        const arm = d.umgebung?.zugang || "";
+        const k = d.gruppe?.kennzeichnung || "";
+        return arm && k ? `${arm}|${k}` : "";
+      })(),
       gruppePartnerBesteIn: z(d.gruppe?.partnerBesteIn),
       gruppeEinladung: z(d.gruppe?.einladung),
       freigabeStart: z(d.einstieg.freigabe?.stufe),
@@ -1135,6 +1163,41 @@ const Studie = {
         [p + "freigabeEnde"]: z(r.freigabeEnde),
         [p + "freigabeAenderungen"]: zaehle(protokoll, "freigabe"),
         [p + "nachrichten"]: (r.verlauf || []).filter((n) => n.rolle === "user").length,
+        /* Womit gesucht wurde und wie eng es dabei wurde (01.11.2026).
+           --------------------------------------------------------------
+           Wunsch des Nutzers: "dass wir quasi bei jeder Person, die wir
+           tracken, auch die Kombination tracken, die sie ausgewaehlt
+           haben, damit man dann am Ende auch weiss, ob es vielleicht bei
+           manchen Personen Kombinationen gab, bei denen es zu sehr, sehr
+           wenig Haeusern gefuehrt hat".
+
+           Das ist keine Bequemlichkeit, sondern eine Bedingung fuer die
+           Auswertung: Wer am Ende aus drei Haeusern waehlt, deren Preise
+           weit auseinanderliegen, entscheidet moeglicherweise nach Preis
+           und nicht nach dem Partnerlabel. Ohne diese Spalten liesse sich
+           das hinterher nicht mehr nachsehen - der Stand ist dann weg.
+
+           Gelesen wird, was ohnehin protokolliert wird: die
+           `suche`-Eintraege tragen Filtertext und Trefferzahl. */
+        ...(() => {
+          const suchen = protokoll.filter((e) => e.ereignis === "suche");
+          const letzte = suchen[suchen.length - 1] || null;
+          const zahlen = suchen.map((e) => e.treffer).filter((n) => typeof n === "number");
+          const hinweise = protokoll.filter((e) => e.ereignis === "engstelle_hinweis");
+          return {
+            [p + "filterKombination"]: z(letzte?.filter),
+            [p + "suchlaeufe"]: suchen.length,
+            [p + "trefferZuletzt"]: letzte && typeof letzte.treffer === "number" ? letzte.treffer : "",
+            [p + "trefferMinimum"]: zahlen.length ? Math.min(...zahlen) : "",
+            [p + "engstelleHinweise"]: hinweise.length,
+            [p + "engstelleEngsteZahl"]: hinweise.length ? Math.min(...hinweise.map((e) => e.treffer)) : "",
+            [p + "engstelleFelder"]: [...new Set(hinweise.map((e) => e.feld))].join(","),
+            [p + "engstelleFragen"]: zaehle(protokoll, "engstelle_rueckfrage"),
+            [p + "widerspruchFragen"]: zaehle(protokoll, "widerspruch_rueckfrage"),
+            [p + "regionVorgemerkt"]: [...new Set(protokoll.filter((e) => e.ereignis === "ziel_vorgemerkt")
+              .flatMap((e) => e.ziele || [e.ziel]).filter(Boolean))].join(","),
+          };
+        })(),
         [p + "uebergebenAnteil"]: z(r.uebergeben?.anteil),
         [p + "gebucht"]: z(r.buchung?.id),
         [p + "gebuchtGesamt"]: z(r.buchung?.gesamt),

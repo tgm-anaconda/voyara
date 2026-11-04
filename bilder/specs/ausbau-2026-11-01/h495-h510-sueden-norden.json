@@ -1,0 +1,435 @@
+{
+ "hotels": [
+  {
+   "id": "h495",
+   "ziel": "marrakesch",
+   "name": "Riad Zitoun",
+   "ort": "Marrakesch",
+   "region": "Medina",
+   "kategorie": "boutique",
+   "sterne": 4,
+   "preis": 168,
+   "rating": 4.6,
+   "bewertungen": 486,
+   "strand": null,
+   "zentrum": 0.5,
+   "flughafen": 7,
+   "extras": [
+    "pool",
+    "terrace"
+   ],
+   "kurz": "Riad an der Rue Riad Zitoun, Hof mit Brunnen, Jemaa el-Fna in acht Minuten.",
+   "lang": "Die Rue Riad Zitoun führt vom Jemaa el-Fna zum Bahia-Palast und ist eine der wenigen Gassen der Medina, in der man nicht alle zwanzig Meter angesprochen wird. Das Riad liegt in einer Abzweigung, sechzehn Zimmer auf zwei Etagen um einen Hof mit Brunnen und Bananenstauden, Tadelakt, Zellige, Zedernholz, im Hof ein Becken von fünf Metern. Auf dem Dach eine Terrasse mit Liegen. Zum Jemaa el-Fna sind es acht Gehminuten, zum Bahia-Palast vier, zum Museum für Fotografie sechs. Abendessen auf Anmeldung, drei Gänge, im Hof serviert.",
+   "highlights": [
+    "Becken im Innenhof",
+    "Acht Minuten zum Jemaa el-Fna",
+    "Vier Minuten zum Bahia-Palast",
+    "Dachterrasse mit Liegen"
+   ]
+  },
+  {
+   "id": "h496",
+   "ziel": "marrakesch",
+   "name": "Amelkis Golfresort",
+   "ort": "Marrakesch",
+   "region": "Süden",
+   "kategorie": "luxus",
+   "sterne": 5,
+   "preis": 348,
+   "rating": 4.6,
+   "bewertungen": 424,
+   "strand": null,
+   "zentrum": 8.4,
+   "flughafen": 9,
+   "extras": [
+    "spa",
+    "pool",
+    "gym",
+    "terrace"
+   ],
+   "kurz": "Am Golfplatz südlich der Stadt, Atlasblick, Hammam und drei Becken.",
+   "lang": "Südlich von Marrakesch liegen auf der Route de Ouarzazate mehrere Golfanlagen, und von dort aus steht der Hohe Atlas als Kulisse am Horizont, von November bis April mit Schnee. Das Haus hat vierundvierzig Zimmer und Suiten in flachen Lehmbauten, alle mit Terrasse, viele mit Blick auf die Fairways und die Berge. Drei Becken, eines beheizt, dazu ein Hammam mit Gommage und acht Anwendungsräumen. Zur Medina sind es acht Kilometer, der Shuttle fährt stündlich, zum Flughafen neun. Zwei Restaurants, eines marokkanisch mit sechs Gängen, eines mediterran am Becken.",
+   "highlights": [
+    "Drei Becken, eines beheizt",
+    "Hammam mit acht Anwendungsräumen",
+    "Atlasblick mit Schnee von November bis April",
+    "Stündlicher Shuttle in die Medina"
+   ]
+  },
+  {
+   "id": "h497",
+   "ziel": "marrakesch",
+   "name": "Dar Essaouira Road",
+   "ort": "Marrakesch",
+   "region": "Gueliz",
+   "kategorie": "familie",
+   "sterne": 4,
+   "preis": 186,
+   "rating": 4.3,
+   "bewertungen": 624,
+   "strand": null,
+   "zentrum": 3.2,
+   "flughafen": 8,
+   "extras": [
+    "kidsClub",
+    "pool"
+   ],
+   "kurz": "Familienhaus am Stadtrand, zwei Becken mit Rutschen, Shuttle in die Medina.",
+   "lang": "Für Familien ist die Medina anstrengend: enge Gassen, Mopeds, keine Kinderwagenwege. Dieses Haus liegt am westlichen Stadtrand an der Straße nach Essaouira, achtundfünfzig Zimmer, zwei Drittel Familienzimmer mit vier Betten, zwei Becken, eines mit zwei Rutschen und flachem Bereich. Betreuung läuft ganzjährig vormittags und nachmittags. Der Shuttle in die Medina fährt stündlich und kostet nichts, zum Flughafen sind es acht Kilometer. Im Juli und August über vierzig Grad, dann sind November bis März die besseren Monate. Halbpension oder All Inclusive, Kinderbuffet ab achtzehn Uhr.",
+   "highlights": [
+    "Zwei Becken, eines mit Rutschen",
+    "Ganzjährige Betreuung",
+    "Stündlicher Shuttle in die Medina",
+    "Acht Kilometer zum Flughafen"
+   ]
+  },
+  {
+   "id": "h498",
+   "ziel": "marrakesch",
+   "name": "Asni Atlashaus",
+   "ort": "Asni",
+   "region": "Hoher Atlas",
+   "kategorie": "finca",
+   "sterne": 3,
+   "preis": 148,
+   "rating": 4.6,
+   "bewertungen": 286,
+   "strand": null,
+   "zentrum": 46.0,
+   "flughafen": 48,
+   "extras": [
+    "pool",
+    "terrace",
+    "bikeRental"
+   ],
+   "kurz": "Lehmhaus unter dem Toubkal, Berberdörfer am Hang, kühl im Sommer.",
+   "lang": "Asni liegt auf eintausendeinhundert Metern am Fuß des Toubkal, mit viertausendeinhundertsiebenundsechzig Metern der höchste Berg Nordafrikas. Von hier starten die Touren nach Imlil und weiter zum Gipfel, zwei Tage mit Hütte. Das Haus ist aus Lehm gebaut, vierzehn Zimmer, Terrassen zum Tal, ein Becken im Garten unter Walnussbäumen. Im Juli ist es hier zehn Grad kühler als in Marrakesch. Der Markt in Asni ist dienstags und einer der größten der Region. Räder stehen bereit, bergab bis Marrakesch sind es sechsundvierzig Kilometer. Abends Tajine aus dem Lehmofen.",
+   "highlights": [
+    "Lehmhaus unter dem Toubkal",
+    "Becken unter Walnussbäumen",
+    "Zehn Grad kühler als Marrakesch",
+    "Dienstagsmarkt in Asni"
+   ]
+  },
+  {
+   "id": "h499",
+   "ziel": "kapstadt",
+   "name": "Blouberg Family Beach",
+   "ort": "Bloubergstrand",
+   "region": "West Coast",
+   "kategorie": "familie",
+   "sterne": 4,
+   "preis": 162,
+   "rating": 4.4,
+   "bewertungen": 586,
+   "strand": 0.2,
+   "zentrum": 18.0,
+   "flughafen": 24,
+   "extras": [
+    "kidsClub",
+    "pool",
+    "seaView"
+   ],
+   "kurz": "Am Bloubergstrand mit dem Postkartenblick auf den Tafelberg.",
+   "lang": "Von Bloubergstrand aus sieht man über die Table Bay hinweg den Tafelberg in voller Breite, und das ist das Bild, das auf jeder Postkarte Kapstadts steht. Der Strand ist breit, der Wind beständig, weshalb hier die Kitesurfer stehen. Das Haus liegt zweihundert Meter vom Sand, achtundvierzig Zimmer, zwei Drittel Familienzimmer mit vier Betten, ein Becken mit Kinderbereich und Spielplatz im Garten. Betreuung läuft in den Ferien ganztägig. Zum Zentrum sind es achtzehn Kilometer, zum Flughafen vierundzwanzig. Das Wasser hat vierzehn Grad, zum Baden eignet sich eher das Becken. Halbpension mit Buffet.",
+   "highlights": [
+    "Postkartenblick auf den Tafelberg",
+    "Zweihundert Meter zum Strand",
+    "Becken mit Kinderbereich",
+    "Betreuung in den Ferien ganztägig"
+   ]
+  },
+  {
+   "id": "h500",
+   "ziel": "kapstadt",
+   "name": "Franschhoek Spa Estate",
+   "ort": "Franschhoek",
+   "region": "Winelands",
+   "kategorie": "luxus",
+   "sterne": 5,
+   "preis": 298,
+   "rating": 4.8,
+   "bewertungen": 412,
+   "strand": 48.0,
+   "zentrum": 72.0,
+   "flughafen": 62,
+   "extras": [
+    "spa",
+    "pool",
+    "terrace",
+    "bikeRental"
+   ],
+   "kurz": "Weingut im Tal der Hugenotten, Spa im Kelterhaus, Bergkessel ringsum.",
+   "lang": "Franschhoek wurde 1688 von Hugenotten gegründet, die den Weinbau mitbrachten, und das Tal ist von drei Seiten von Bergen umschlossen, was ihm ein eigenes Klima gibt. Das Gut hat sechsundzwanzig Zimmer und Suiten in kapholländischen Gebäuden, Reben bis an die Mauer, Eichen über dem Hof. Der Spa liegt im alten Kelterhaus, zwei Becken, drei Saunen, acht Anwendungsräume, dazu ein Außenbecken mit Blick auf die Wände. Verkostungen im eigenen Keller, dazu die Wine Tram, die zwischen den Gütern des Tals pendelt. Nach Kapstadt sind es zweiundsiebzig Kilometer, zum Flughafen zweiundsechzig. Küche mit sieben Gängen.",
+   "highlights": [
+    "Spa im alten Kelterhaus",
+    "Außenbecken mit Blick auf die Wände",
+    "Verkostungen im eigenen Keller",
+    "Wine Tram zwischen den Gütern"
+   ]
+  },
+  {
+   "id": "h501",
+   "ziel": "kapstadt",
+   "name": "Woodstock Werkstatthotel",
+   "ort": "Kapstadt",
+   "region": "Woodstock",
+   "kategorie": "boutique",
+   "sterne": 3,
+   "preis": 164,
+   "rating": 4.4,
+   "bewertungen": 486,
+   "strand": 3.2,
+   "zentrum": 2.6,
+   "flughafen": 16,
+   "extras": [
+    "terrace"
+   ],
+   "kurz": "Umgebaute Werkstatt im Künstlerviertel, Old Biscuit Mill am Samstag.",
+   "lang": "Woodstock liegt zwischen Zentrum und Hafen am Hang des Devil's Peak und war Industrieviertel, bevor Galerien, Werkstätten und Designbüros in die Hallen zogen. Samstags ist Markt in der Old Biscuit Mill, einer alten Keksfabrik. Das Haus liegt in einer früheren Autowerkstatt, achtzehn Zimmer, Sichtziegel, Stahlfenster, auf dem Dach eine Terrasse mit Blick auf den Tafelberg. Zum Zentrum sind es zweieinhalb Kilometer, zum Flughafen sechzehn. Die Wandbilder im Viertel lohnen einen Rundgang, nach Einbruch der Dunkelheit nimmt man allerdings ein Taxi, das sagt das Haus auch selbst.",
+   "highlights": [
+    "Umgebaute Autowerkstatt",
+    "Old Biscuit Mill am Samstag",
+    "Dachterrasse mit Tafelbergblick",
+    "Sechzehn Kilometer zum Flughafen"
+   ]
+  },
+  {
+   "id": "h502",
+   "ziel": "kapstadt",
+   "name": "Kalk Bay Fisherman",
+   "ort": "Kalk Bay",
+   "region": "False Bay",
+   "kategorie": "budget",
+   "sterne": 2,
+   "preis": 102,
+   "rating": 4.3,
+   "bewertungen": 412,
+   "strand": 0.6,
+   "zentrum": 26.0,
+   "flughafen": 28,
+   "kurz": "Günstig im Fischerort an der False Bay, Zug entlang der Küste.",
+   "lang": "Kalk Bay ist ein Fischerort an der False Bay, in dem morgens die Boote anlanden und auf dem Kai verkauft wird, während nebenan Antiquariate und Cafés aufmachen. Der Ort besteht aus einer Straße zwischen Berg und Meer. Das Haus hat vierzehn Zimmer über einem Café, einfach, mit Dusche, sechs mit Blick auf den Hafen. Der Zug nach Kapstadt fährt direkt am Wasser entlang, fünfundvierzig Minuten, und ist für sich genommen schon die Fahrt wert. Zum Tidal Pool bei Dalebrook sind es sechshundert Meter, zu den Pinguinen von Boulders Beach zwölf Kilometer.",
+   "highlights": [
+    "Zimmer über einem Café am Hafen",
+    "Zug am Wasser entlang nach Kapstadt",
+    "Sechshundert Meter zum Tidal Pool",
+    "Zwölf Kilometer zu den Pinguinen"
+   ]
+  },
+  {
+   "id": "h503",
+   "ziel": "krabi",
+   "name": "Ao Nam Mao Bungalows",
+   "ort": "Ao Nam Mao",
+   "region": "Ao Nang",
+   "kategorie": "budget",
+   "sterne": 2,
+   "preis": 70,
+   "rating": 4.2,
+   "bewertungen": 386,
+   "strand": 0.3,
+   "zentrum": 5.6,
+   "flughafen": 28,
+   "kurz": "Einfache Bungalows an der stillen Bucht, Pier nach Railay nebenan.",
+   "lang": "Ao Nam Mao liegt zwischen Ao Nang und dem Pier nach Railay, hat einen flachen Strand mit Mangroven am Rand und kaum Betrieb, weil die meisten direkt weiterfahren. Das Haus hat sechzehn Bungalows, einfach, Ventilator oder Klimaanlage gegen Zuschlag, Dusche, Veranda. Für unter achtzig Euro am Wasser ist das in Krabi die Ausnahme. Zum Sand sind es dreihundert Meter, zum Pier nach Railay siebenhundert, nach Ao Nang fünf Kilometer mit dem Songthaew. Im Haus gibt es Frühstück, abends essen die meisten an den Garküchen an der Straße, wo ein Gericht zwei Euro kostet.",
+   "highlights": [
+    "Dreihundert Meter zur stillen Bucht",
+    "Pier nach Railay in siebenhundert Metern",
+    "Unter achtzig Euro am Wasser",
+    "Garküchen an der Straße"
+   ]
+  },
+  {
+   "id": "h504",
+   "ziel": "krabi",
+   "name": "Koh Jum Beach Huts",
+   "ort": "Koh Jum",
+   "region": "Koh Jum",
+   "kategorie": "strand",
+   "sterne": 3,
+   "preis": 168,
+   "rating": 4.7,
+   "bewertungen": 286,
+   "strand": 0.0,
+   "zentrum": 4.2,
+   "flughafen": 64,
+   "extras": [
+    "seaView",
+    "terrace"
+   ],
+   "kurz": "Insel ohne Straßenlaternen, Hütten im Sand, Strom bis Mitternacht.",
+   "lang": "Koh Jum liegt zwischen Krabi und Koh Lanta, hat dreitausend Einwohner, keine Straßenlaternen und einen einzigen Ort. Strom gibt es auf Teilen der Insel nur bis Mitternacht, danach wird es dunkel und sehr still. Die Hütten stehen direkt im Sand am Golden Pearl Beach, vierzehn Einheiten aus Holz und Bambus, Veranda mit Hängematte, Moskitonetze, einfache Bäder. Die Fähre von Krabi braucht eineinhalb Stunden, im Monsun von Mai bis Oktober fährt sie seltener. Der Berg Pu im Norden lässt sich in zwei Stunden besteigen. Küche am Strand, Fisch vom Boot, vier Gerichte.",
+   "highlights": [
+    "Hütten direkt im Sand",
+    "Keine Straßenlaternen, Strom bis Mitternacht",
+    "Veranda mit Hängematte",
+    "Berg Pu in zwei Stunden"
+   ]
+  },
+  {
+   "id": "h505",
+   "ziel": "krabi",
+   "name": "Phi Phi Laem Tong",
+   "ort": "Koh Phi Phi",
+   "region": "Koh Phi Phi",
+   "kategorie": "luxus",
+   "sterne": 4,
+   "preis": 298,
+   "rating": 4.6,
+   "bewertungen": 524,
+   "strand": 0.1,
+   "zentrum": 6.8,
+   "flughafen": 72,
+   "extras": [
+    "spa",
+    "pool",
+    "seaView",
+    "terrace"
+   ],
+   "kurz": "Am Nordstrand von Phi Phi Don, abseits des Orts, Longtail als Zubringer.",
+   "lang": "Laem Tong liegt an der Nordspitze von Phi Phi Don und ist vom Hauptort Tonsai nur per Boot erreichbar, was den Unterschied ausmacht: Dort ist es nachts laut, hier hört man das Wasser. Das Haus hat vierzig Zimmer und Villen in flachen Bauten am Strand, Teak, hohe Dächer, zwei Drittel mit Blick aufs Wasser. Ein Becken zwischen Palmen, ein Spa mit vier Pavillons am Sand. Zum Schnorcheln reicht ein Steg, die Riffe beginnen zwanzig Meter vor dem Strand. Maya Bay ist in vierzig Minuten mit dem Longtail erreichbar, die Transfers organisiert das Haus. Abends vier Gänge, Fisch vom Grill.",
+   "highlights": [
+    "Nur per Boot erreichbar",
+    "Riffe zwanzig Meter vor dem Strand",
+    "Spa in vier Pavillons am Sand",
+    "Maya Bay in vierzig Minuten"
+   ]
+  },
+  {
+   "id": "h506",
+   "ziel": "krabi",
+   "name": "Khao Thong Mangrovenhof",
+   "ort": "Khao Thong",
+   "region": "Ao Thalane",
+   "kategorie": "finca",
+   "sterne": 3,
+   "preis": 146,
+   "rating": 4.6,
+   "bewertungen": 268,
+   "strand": 2.2,
+   "zentrum": 16.0,
+   "flughafen": 26,
+   "extras": [
+    "pool",
+    "terrace",
+    "bikeRental"
+   ],
+   "kurz": "Zwischen Kalkfelsen und Mangroven, Kajak und Kletterfelsen vor der Tür.",
+   "lang": "Khao Thong liegt an der Bucht von Ao Thalane, wo Kalksteinfelsen aus Mangrovenwäldern aufsteigen und ein Felsmassiv direkt über dem Dorf steht, an dem geklettert wird. Der Hof hat zwölf Bungalows zwischen Gummibäumen, Holz, Moskitonetze, ein Becken im Garten. Kajaks liegen am Steg und gehören dazu, die Kanäle zwischen den Wurzeln sind nur damit zu befahren, am besten eine Stunde vor Hochwasser. Zur Kletterwand sind es vierhundert Meter, die Routen reichen von leicht bis sehr schwer. Nach Ao Nang sind es sechzehn Kilometer, zum Flughafen sechsundzwanzig. Abends thailändisch, vier Gerichte.",
+   "highlights": [
+    "Kajaks am Steg inklusive",
+    "Kletterwand in vierhundert Metern",
+    "Becken zwischen Gummibäumen",
+    "Mangrovenkanäle vor der Tür"
+   ]
+  },
+  {
+   "id": "h507",
+   "ziel": "island",
+   "name": "Thingvellir Seehaus",
+   "ort": "Þingvellir",
+   "region": "Südwestisland",
+   "kategorie": "boutique",
+   "sterne": 4,
+   "preis": 268,
+   "rating": 4.7,
+   "bewertungen": 324,
+   "strand": null,
+   "zentrum": 48.0,
+   "flughafen": 72,
+   "extras": [
+    "spa",
+    "terrace"
+   ],
+   "kurz": "Am Thingvallavatn, Kontinentalspalte nebenan, Golden Circle vor der Tür.",
+   "lang": "In Þingvellir trafen sich ab dem Jahr 930 die Isländer zum Althing, dem ältesten Parlament Europas, und genau dort läuft die Grenze zwischen der nordamerikanischen und der eurasischen Platte durch die Landschaft, sichtbar als Spalte im Fels. Das Haus liegt am Ufer des Thingvallavatn, des größten Sees des Landes, sechzehn Zimmer, Holz und Beton, Fenster bis zum Boden aufs Wasser. Zwei Hot Pots am Ufer. Die Spalte Silfra, in der man zwischen den Platten taucht, liegt vier Kilometer entfernt. Geysir und Gullfoss sind in einer halben Stunde erreichbar.",
+   "highlights": [
+    "Am größten See Islands",
+    "Kontinentalspalte in Gehweite",
+    "Zwei Hot Pots am Ufer",
+    "Silfra zum Tauchen in vier Kilometern"
+   ]
+  },
+  {
+   "id": "h508",
+   "ziel": "island",
+   "name": "Vestmannaeyjar Inselhaus",
+   "ort": "Heimaey",
+   "region": "Vestmannaeyjar",
+   "kategorie": "boutique",
+   "sterne": 3,
+   "preis": 212,
+   "rating": 4.6,
+   "bewertungen": 286,
+   "strand": 1.2,
+   "zentrum": 0.3,
+   "flughafen": 142,
+   "extras": [
+    "terrace",
+    "seaView"
+   ],
+   "kurz": "Auf den Westmännerinseln, Vulkan von 1973 im Ort, größte Papageitaucherkolonie.",
+   "lang": "1973 brach auf Heimaey ein Vulkan aus und begrub ein Drittel des Ortes unter Asche; die Bewohner wurden in einer Nacht mit der Fischereiflotte evakuiert. Ein Haus ist heute als Museum ausgegraben, der Krater Eldfell lässt sich in einer halben Stunde besteigen. Auf den Klippen der Insel brütet die größte Papageitaucherkolonie der Welt, von Mai bis August. Das Haus hat vierzehn Zimmer, einfach und warm, acht mit Blick auf den Hafen. Die Fähre von Landeyjahöfn braucht fünfunddreißig Minuten. Im August findet das Þjóðhátíð statt, ein Festival, zu dem halb Island kommt.",
+   "highlights": [
+    "Vulkan von 1973 im Ort",
+    "Größte Papageitaucherkolonie der Welt",
+    "Fähre in 35 Minuten",
+    "Krater Eldfell in einer halben Stunde"
+   ]
+  },
+  {
+   "id": "h509",
+   "ziel": "island",
+   "name": "Laugarvatn Fontana",
+   "ort": "Laugarvatn",
+   "region": "Südisland",
+   "kategorie": "berg",
+   "sterne": 4,
+   "preis": 232,
+   "rating": 4.6,
+   "bewertungen": 386,
+   "strand": 0.4,
+   "zentrum": 0.6,
+   "flughafen": 96,
+   "extras": [
+    "spa"
+   ],
+   "kurz": "Am Geothermalsee, Dampfbäder über den Quellen, Roggenbrot aus dem Sand.",
+   "lang": "In Laugarvatn kommt heißes Wasser direkt am Seeufer aus dem Boden, und die Dampfbäder dort sind über die natürlichen Quellen gebaut, man sitzt also unmittelbar über dem Dampf. Im schwarzen Sand daneben wird seit Generationen Roggenbrot vergraben und nach vierundzwanzig Stunden ausgegraben, täglich um halb drei, Zusehen erlaubt. Das Haus hat vierundzwanzig Zimmer, Holz und Wolle, Blick auf den See, dazu ein eigener Hot Pot. Zum Geysir sind es zwanzig Kilometer, nach Þingvellir dreißig, nach Reykjavík achtzig. Küche mit Forelle aus dem See und Lamm aus dem Tal.",
+   "highlights": [
+    "Dampfbäder über natürlichen Quellen",
+    "Roggenbrot aus dem schwarzen Sand",
+    "Eigener Hot Pot am See",
+    "Zwanzig Kilometer zum Geysir"
+   ]
+  },
+  {
+   "id": "h510",
+   "ziel": "island",
+   "name": "Skagafjördur Pferdehof",
+   "ort": "Varmahlíð",
+   "region": "Nordisland",
+   "kategorie": "finca",
+   "sterne": 3,
+   "preis": 186,
+   "rating": 4.6,
+   "bewertungen": 268,
+   "strand": 14.0,
+   "zentrum": 1.2,
+   "flughafen": 342,
+   "extras": [
+    "terrace",
+    "bikeRental"
+   ],
+   "kurz": "Pferdehof im Skagafjörður, Islandpferde aus eigener Zucht, Torfkirche nebenan.",
+   "lang": "Der Skagafjörður gilt als das Pferdetal Islands, hier stehen mehr Pferde als Menschen, und die Zucht geht auf dieselben Linien zurück, die seit der Landnahme unvermischt geblieben sind. Der Hof hält achtzig Tiere, zwölf Zimmer in umgebauten Wirtschaftsgebäuden, Holz, Wolle, Blick über die Weiden. Ausritte gehen vom Hof, für Anfänger eine Stunde, für Geübte mehrtägig mit Herde. Die Torfkirche von Víðimýri aus dem Jahr 1834 steht drei Kilometer entfernt und ist eine der letzten erhaltenen. Zum Wildwasserfahren auf der Austari-Jökulsá sind es zwanzig Kilometer. Abends Lamm vom Hof.",
+   "highlights": [
+    "Achtzig Islandpferde aus eigener Zucht",
+    "Ausritte für Anfänger und Geübte",
+    "Torfkirche von 1834 in drei Kilometern",
+    "Wildwasser auf der Austari-Jökulsá"
+   ]
+  }
+ ]
+}

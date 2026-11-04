@@ -1,0 +1,344 @@
+{
+ "hotels": [
+  {
+   "id": "h600",
+   "ziel": "nordsee",
+   "name": "Haus Kliffende",
+   "ort": "Kampen",
+   "region": "Sylt",
+   "kategorie": "boutique",
+   "sterne": 4,
+   "preis": 268,
+   "rating": 4.7,
+   "bewertungen": 412,
+   "strand": 0.3,
+   "zentrum": 0.9,
+   "flughafen": 11,
+   "extras": [
+    "terrace",
+    "spa"
+   ],
+   "kurz": "Reetgedecktes Haus hinter der Dünenkante, vierzehn Zimmer, keine Durchgangsstraße.",
+   "lang": "Das Haus steht in der zweiten Reihe hinter dem Roten Kliff, was im Winter der entscheidende Vorteil ist: der Wind kommt oben an, nicht an den Fenstern. Vierzehn Zimmer auf zwei Geschosse verteilt, Dielenboden, weiß gekalkte Wände, in jedem Zimmer ein Sessel am Fenster. Zum Strandübergang sind es vier Minuten über einen Bohlenweg, zum Ortskern von Kampen zehn. Die Sauna im Souterrain ist klein und wird nachmittags angeheizt, danach gibt es Tee im Kaminzimmer. Gekocht wird nur abends, vier Gänge, Fisch von der Auktion in List.",
+   "highlights": [
+    "Vier Minuten über den Bohlenweg zum Strand",
+    "Vierzehn Zimmer, keine Hotelkette",
+    "Sauna und Kaminzimmer",
+    "Vier Gänge mit Fisch aus List"
+   ]
+  },
+  {
+   "id": "h601",
+   "ziel": "nordsee",
+   "name": "Reethof Keitum",
+   "ort": "Keitum",
+   "region": "Sylt",
+   "kategorie": "finca",
+   "sterne": 4,
+   "preis": 212,
+   "rating": 4.6,
+   "bewertungen": 538,
+   "strand": 2.4,
+   "zentrum": 0.4,
+   "flughafen": 7,
+   "extras": [
+    "bikeRental",
+    "terrace"
+   ],
+   "kurz": "Alter Kapitänshof am Wattenmeer, mit Obstgarten und Leihrädern im Preis.",
+   "lang": "Keitum liegt auf der Wattseite der Insel, wo es grün ist und windstiller als im Westen. Der Hof gehörte einem Walfangkapitän, die Jahreszahl über der Tür nennt 1736, und an der Grundform hat sich seitdem wenig geändert. Zwölf Zimmer gehen in den Obstgarten hinaus, hinter dem Garten beginnt der Deich und dahinter das Watt, das zweimal am Tag verschwindet. Räder stehen im Schuppen und kosten nichts extra, nach Westerland sind es zwanzig Minuten auf dem Radweg. Abends wird im Gewölbe serviert, mittags gibt es nur Brot, Käse und Suppe.",
+   "highlights": [
+    "Kapitänshof von 1736",
+    "Direkt am Deich zum Wattenmeer",
+    "Leihräder ohne Zuschlag",
+    "Zwanzig Radminuten nach Westerland"
+   ]
+  },
+  {
+   "id": "h602",
+   "ziel": "nordsee",
+   "name": "Strandhotel Wenningstedt",
+   "ort": "Wenningstedt",
+   "region": "Sylt",
+   "kategorie": "strand",
+   "sterne": 4,
+   "preis": 236,
+   "rating": 4.5,
+   "bewertungen": 874,
+   "strand": 0.1,
+   "zentrum": 0.3,
+   "flughafen": 9,
+   "extras": [
+    "spa",
+    "seaView"
+   ],
+   "kurz": "Direkt an der Promenade, Hallenbad mit Blick auf die Brandung.",
+   "lang": "Vom Hotel bis zum Sand sind es achtzig Meter und eine Treppe, mehr trennt nicht. Sechsundneunzig Zimmer, die zur Westseite mit Balkon und dem Geräusch, für das man herkommt. Das Hallenbad liegt hinter einer Glasfront zum Meer, im November ist das der meistgenutzte Raum im Haus. Der Strandkorbverleih gehört dazu, im Winter stehen stattdessen Decken bereit. Wenningstedt ist der ruhigere Nachbar von Westerland, der Ortskern besteht aus drei Straßen und reicht für Brot, Fisch und ein Abendessen.",
+   "highlights": [
+    "Achtzig Meter bis zum Sand",
+    "Hallenbad mit Blick auf die Brandung",
+    "Westzimmer mit Balkon zum Meer",
+    "Strandkorb im Preis"
+   ]
+  },
+  {
+   "id": "h603",
+   "ziel": "nordsee",
+   "name": "Pension Dünenweg",
+   "ort": "Hörnum",
+   "region": "Sylt",
+   "kategorie": "budget",
+   "sterne": 2,
+   "preis": 98,
+   "rating": 4.2,
+   "bewertungen": 316,
+   "strand": 0.4,
+   "zentrum": 0.6,
+   "flughafen": 18,
+   "kurz": "Einfache Pension am Südende der Insel, Frühstück inklusive, kein Schnickschnack.",
+   "lang": "Hörnum liegt ganz im Süden, wo die Insel schmal wird und man an einer Stelle beide Küsten gleichzeitig sieht. Die Pension hat elf Zimmer, Linoleum im Flur und Betten, die hart genug sind. Geheizt wird gut, das ist hier wichtiger als Design. Zum Strand am Leuchtturm sind es fünf Minuten, zum Hafen zehn, von dort fahren Boote nach Amrum und zu den Seehundbänken. Frühstück gibt es von acht bis zehn, abends muss man in den Ort, das sind zwei Gasthäuser und eine Fischbude.",
+   "highlights": [
+    "Fünf Minuten zum Strand am Leuchtturm",
+    "Boote nach Amrum ab Hafen",
+    "Frühstück inklusive",
+    "Günstigstes Haus auf Sylt"
+   ]
+  },
+  {
+   "id": "h604",
+   "ziel": "nordsee",
+   "name": "Seezeichen Amrum",
+   "ort": "Norddorf",
+   "region": "Amrum",
+   "kategorie": "boutique",
+   "sterne": 3,
+   "preis": 158,
+   "rating": 4.6,
+   "bewertungen": 284,
+   "strand": 0.6,
+   "zentrum": 0.5,
+   "flughafen": 52,
+   "extras": [
+    "terrace"
+   ],
+   "kurz": "Neun Zimmer am Rand der Dünen, Amrums Kniepsand beginnt hinter dem Haus.",
+   "lang": "Der Kniepsand vor Amrum ist an manchen Stellen über einen Kilometer breit, eine Sandfläche, auf der man im Oktober eine Stunde läuft, ohne jemandem zu begegnen. Das Haus liegt am Dünenrand von Norddorf, neun Zimmer, alle mit Blick ins Gras. Die Betreiber haben das frühere Lotsenhaus übernommen und wenig verändert außer der Heizung und den Bädern. Auf die Insel kommt man nur mit der Fähre von Dagebüll, Autos braucht man drüben nicht. Abendessen auf Anmeldung, es gibt ein Gericht, meist Fisch.",
+   "highlights": [
+    "Kniepsand hinter dem Haus",
+    "Neun Zimmer im alten Lotsenhaus",
+    "Insel ohne Autoverkehr",
+    "Ein Abendgericht auf Anmeldung"
+   ]
+  },
+  {
+   "id": "h605",
+   "ziel": "nordsee",
+   "name": "Kurhaus Wyk",
+   "ort": "Wyk auf Föhr",
+   "region": "Föhr",
+   "kategorie": "luxus",
+   "sterne": 5,
+   "preis": 324,
+   "rating": 4.7,
+   "bewertungen": 462,
+   "strand": 0.2,
+   "zentrum": 0.3,
+   "flughafen": 46,
+   "extras": [
+    "spa",
+    "seaView",
+    "terrace"
+   ],
+   "kurz": "Bäderarchitektur an der Südstrandpromenade, Thalasso über zwei Etagen.",
+   "lang": "Das Haus stammt aus der Zeit, als Föhr ein königliches Seebad war, und die weiße Fassade mit den Balkonreihen ist seit 1890 im Kern dieselbe. Innen ist alles neu, einundsiebzig Zimmer, hohe Decken, Parkett, zur Promenade hin französische Fenster. Der Thalassobereich zieht sich über zwei Etagen, mit Meerwasserbecken, sechs Anwendungsräumen und einer Dachsauna mit Blick auf die Reede. Föhr liegt im Windschatten von Amrum und Sylt, deshalb ist es hier spürbar milder, der Südstrand liegt nach Süden und ist flach. Das Restaurant hat eine kurze Karte und einen langen Weinkeller.",
+   "highlights": [
+    "Seebadhaus von 1890 an der Promenade",
+    "Thalasso über zwei Etagen",
+    "Dachsauna mit Blick auf die Reede",
+    "Milderes Klima im Windschatten"
+   ]
+  },
+  {
+   "id": "h606",
+   "ziel": "nordsee",
+   "name": "Familienhotel Watteninsel",
+   "ort": "Utersum",
+   "region": "Föhr",
+   "kategorie": "familie",
+   "sterne": 4,
+   "preis": 186,
+   "rating": 4.4,
+   "bewertungen": 652,
+   "strand": 0.3,
+   "zentrum": 1.4,
+   "flughafen": 54,
+   "extras": [
+    "kidsClub"
+   ],
+   "kurz": "Flacher Weststrand, Wattführungen für Kinder, Spielscheune bei Regen.",
+   "lang": "Utersum liegt an der Westseite von Föhr, wo das Wasser weit zurückgeht und Kinder stundenlang in den Prielen stehen können, ohne tiefer als bis zum Knie zu kommen. Das Haus ist einstöckig und lang gebaut, achtundfünfzig Zimmer, viele mit Verbindungstür. In der ehemaligen Scheune steht alles, was Regentage brauchen: Kletterwand, Tischtennis, Bällebad und eine Werkstatt, in der gesägt werden darf. Zweimal in der Woche führt ein Nationalparkranger ins Watt, das ist im Preis enthalten und auch für Erwachsene interessant. Abends Halbpension, mit einem früheren Kindertisch um halb sechs.",
+   "highlights": [
+    "Flaches Wasser und Priele am Weststrand",
+    "Wattführung mit Ranger inklusive",
+    "Spielscheune für Regentage",
+    "Früher Kindertisch um halb sechs"
+   ]
+  },
+  {
+   "id": "h607",
+   "ziel": "nordsee",
+   "name": "Pfahlbau St. Peter",
+   "ort": "St. Peter-Ording",
+   "region": "Eiderstedt",
+   "kategorie": "strand",
+   "sterne": 4,
+   "preis": 198,
+   "rating": 4.5,
+   "bewertungen": 1142,
+   "strand": 0.0,
+   "zentrum": 1.8,
+   "flughafen": 112,
+   "extras": [
+    "seaView",
+    "terrace"
+   ],
+   "kurz": "Auf Stelzen im Sand, zwölf Kilometer Strand vor der Tür, Wind inklusive.",
+   "lang": "St. Peter-Ording hat den breitesten Strand der deutschen Nordseeküste, zwölf Kilometer lang und an manchen Stellen über einen Kilometer tief, und das Haus steht mitten darin auf Pfählen. Vierundzwanzig Zimmer, alle nach Westen, alle mit Terrasse auf Stelzenhöhe. Bei Flut steht das Wasser bis unter den Steg, bei Ebbe läuft man zwanzig Minuten bis zur Kante. Das ist hier der Normalfall und kein Ereignis. Für Strandsegler und Kitesurfer ist der Ort die erste Adresse an der Küste, die Schulen liegen beide fußläufig. Küche von zwölf bis einundzwanzig Uhr durchgehend, weil die Leute kommen, wenn der Wind nachlässt.",
+   "highlights": [
+    "Pfahlbau direkt im Sand",
+    "Alle Zimmer nach Westen mit Terrasse",
+    "Kite- und Strandseglerschulen fußläufig",
+    "Küche durchgehend offen"
+   ]
+  },
+  {
+   "id": "h608",
+   "ziel": "nordsee",
+   "name": "Thalasso Nordstrand",
+   "ort": "St. Peter-Ording",
+   "region": "Eiderstedt",
+   "kategorie": "luxus",
+   "sterne": 4,
+   "preis": 248,
+   "rating": 4.6,
+   "bewertungen": 738,
+   "strand": 0.5,
+   "zentrum": 1.1,
+   "flughafen": 110,
+   "extras": [
+    "spa",
+    "terrace"
+   ],
+   "kurz": "Schwefelquelle und Meerwasser, drei Saunen, Behandlungen auch ohne Übernachtung.",
+   "lang": "Der Ort ist offiziell Nordseeheilbad und Schwefelbad gleichzeitig, eine Kombination, die es in Deutschland sonst nicht gibt, und dieses Haus arbeitet damit. Im Keller liegen zwei Becken, eines mit Meerwasser, eines mit Sole, dazu drei Saunen und acht Anwendungsräume. Zweiundachtzig Zimmer, nüchtern eingerichtet, Eiche und Leinen, alle mit Loggia. Die Behandlungspläne gehen von drei Tagen bis zu zwei Wochen, man kann aber auch einfach nur schlafen und baden. Zum Strandaufgang Bad sind es sieben Minuten durch den Kiefernwald, der hier bis an die Dünen reicht.",
+   "highlights": [
+    "Meerwasser- und Solebecken",
+    "Drei Saunen, acht Anwendungsräume",
+    "Sieben Minuten durch den Kiefernwald zum Strand",
+    "Kurpläne von drei Tagen bis zwei Wochen"
+   ]
+  },
+  {
+   "id": "h609",
+   "ziel": "nordsee",
+   "name": "Gasthof Büsumer Deich",
+   "ort": "Büsum",
+   "region": "Dithmarschen",
+   "kategorie": "budget",
+   "sterne": 2,
+   "preis": 86,
+   "rating": 4.1,
+   "bewertungen": 428,
+   "strand": 0.9,
+   "zentrum": 0.4,
+   "flughafen": 138,
+   "kurz": "Einfaches Haus hinter dem Deich, Krabbenbrötchen im Hafen um die Ecke.",
+   "lang": "Büsum ist ein Arbeitshafen, in dem Urlaub gemacht wird, und das merkt man dem Ort an, im guten Sinn. Der Gasthof hat vierzehn Zimmer über der Gaststube, einfach möbliert, sauber, mit Fenstern zum Deich. Die Wände sind nicht die dicksten, dafür kostet eine Nacht weniger als die Hälfte von Sylt. Im Hafen landen die Kutter nachmittags an, die Krabbenbrötchen dort sind der eigentliche Grund für den Ort. Zum Grünstrand und zum Familienlagune sind es gut zehn Minuten zu Fuß, Deichschafe inbegriffen.",
+   "highlights": [
+    "Zehn Minuten zum Grünstrand",
+    "Kutterhafen mit Krabbenbrötchen",
+    "Vierzehn Zimmer über der Gaststube",
+    "Günstigste Nacht an der Küste"
+   ]
+  },
+  {
+   "id": "h610",
+   "ziel": "nordsee",
+   "name": "Krabbenkutter Norddeich",
+   "ort": "Norden-Norddeich",
+   "region": "Ostfriesland",
+   "kategorie": "familie",
+   "sterne": 3,
+   "preis": 142,
+   "rating": 4.3,
+   "bewertungen": 516,
+   "strand": 0.6,
+   "zentrum": 0.8,
+   "flughafen": 196,
+   "extras": [
+    "kidsClub"
+   ],
+   "kurz": "Hinter dem Deich in Norddeich, Fähren nach Juist und Norderney vor der Tür.",
+   "lang": "Norddeich ist vor allem Umsteigepunkt, der Fähranleger nach Juist und Norderney liegt zehn Gehminuten entfernt, und genau das macht das Haus für Familien praktisch: man kann jeden Tag auf eine andere Insel und abends zurück. Zweiundvierzig Zimmer, drei Viertel davon Familienzimmer mit vier Betten. Hinter dem Deich liegt die Badebucht mit flachem Wasser und Spielplatz, das Meerwasser-Wellenbad ist bei Regen die Alternative. Die Betreuung läuft vormittags und am frühen Abend, in den Ferien täglich. Halbpension mit Buffet, der Fisch kommt aus Greetsiel.",
+   "highlights": [
+    "Zehn Minuten zum Fähranleger",
+    "Flache Badebucht hinter dem Deich",
+    "Drei Viertel Familienzimmer",
+    "Tagesausflüge nach Juist und Norderney"
+   ]
+  },
+  {
+   "id": "h611",
+   "ziel": "nordsee",
+   "name": "Inselhof Langeoog",
+   "ort": "Langeoog",
+   "region": "Ostfriesische Inseln",
+   "kategorie": "finca",
+   "sterne": 4,
+   "preis": 192,
+   "rating": 4.6,
+   "bewertungen": 374,
+   "strand": 1.2,
+   "zentrum": 0.6,
+   "flughafen": 208,
+   "extras": [
+    "bikeRental",
+    "terrace"
+   ],
+   "kurz": "Umgebauter Inselhof zwischen Dorf und Dünen, autofrei, Räder gehören dazu.",
+   "lang": "Auf Langeoog gibt es keine Autos, nur Fahrräder, Pferdefuhrwerke und eine Inselbahn vom Hafen ins Dorf. Der Hof liegt am östlichen Dorfrand, sechzehn Zimmer in zwei Flügeln um einen gepflasterten Hof, dazwischen Rosenstöcke, die den Wind gewöhnt sind. Räder stehen bereit, anders kommt man hier nicht voran. Zum Hauptstrand sind es ein Kilometer und zweihundert Meter, zur Ostspitze mit den Seehundbänken acht Kilometer, flach und gut zu fahren. Gekocht wird mit dem, was die Fähre bringt, die Karte wechselt deshalb täglich.",
+   "highlights": [
+    "Autofreie Insel, Räder inklusive",
+    "Sechzehn Zimmer um einen Innenhof",
+    "Acht Kilometer zur Ostspitze",
+    "Tageskarte je nach Fährlieferung"
+   ]
+  },
+  {
+   "id": "h612",
+   "ziel": "nordsee",
+   "name": "Deichgraf Husum",
+   "ort": "Husum",
+   "region": "Nordfriesland",
+   "kategorie": "stadt",
+   "sterne": 3,
+   "preis": 124,
+   "rating": 4.2,
+   "bewertungen": 348,
+   "strand": 4.8,
+   "zentrum": 0.2,
+   "flughafen": 88,
+   "extras": [
+    "terrace"
+   ],
+   "kurz": "Am Binnenhafen in Husum, guter Ausgangspunkt für Inseln und Halligen.",
+   "lang": "Husum nennt sich die graue Stadt am Meer, was von Storm stammt und bei Sonne nicht stimmt. Das Haus steht am Binnenhafen, wo die Kutter bis in die Stadt hineinfahren und abends die Giebelhäuser sich im Wasser spiegeln. Achtundzwanzig Zimmer, die hofseitigen sind ruhiger, die zum Hafen haben den Blick. Zum Strand muss man hinaus nach Dockkoog, das sind fünf Kilometer mit dem Rad am Deich entlang. Wer die Halligen sehen will, fährt von Schlüttsiel, und dafür ist die Stadt der naheliegende Standort. Frühstück ab sieben, weil die Fähren früh gehen.",
+   "highlights": [
+    "Direkt am Binnenhafen",
+    "Zimmer mit Blick auf die Giebelhäuser",
+    "Ausgangspunkt für Halligfahrten",
+    "Frühstück ab sieben Uhr"
+   ]
+  }
+ ]
+}

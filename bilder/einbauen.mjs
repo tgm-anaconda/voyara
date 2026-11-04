@@ -16,7 +16,22 @@ const dir = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(dir, "..");
 const QUELLE = path.join(dir, "generiert");
 const ZIEL = path.join(root, "img");
-const MAX_BREITE = 1600;
+/* 1200 statt 1600 (02.11.2026).
+   ------------------------------------------------------------------
+   Der Wert stand auf 1600, die 378 Objekte der frueheren Runden liegen
+   aber alle in 1200 - sie wurden konvertiert, als hier noch 1200 stand,
+   und `wandeln` ueberspringt, was schon da ist. Beim Winterausbau fiel
+   das auf: dieselben Motive wogen auf einmal 476 statt 288 KB.
+
+   1200 ist auch der dokumentierte Bedarf (siehe README: das groesste
+   Bild auf der Seite ist rund 600 x 300, auf feinen Displays 1200 x 600).
+
+   Der eigentliche Grund ist aber methodisch: Haetten die neuen Haeuser
+   schaerfere Bilder als die alten, korrelierte Bildqualitaet mit "neu" -
+   und neu sind ueberproportional die guenstigen und die Familienhaeuser,
+   also genau die, die fuer die Vergleichbarkeit eingefuegt wurden. Alle
+   Haeuser muessen gleich gut aussehen. */
+const MAX_BREITE = 1200;
 const QUALITAET = 82;
 
 // Objektordner direkt aus generiert/ lesen statt aus ordner.json.
@@ -87,13 +102,23 @@ for (const quelle of bilder) {
 // haben keine Aussenansicht und behalten ihre Reihenfolge.
 // Sechs Haeuser aus der ersten Runde haben auf Position 2 kein Gebaeude,
 // sondern Pool, Zimmer oder Strand. Bei ihnen bleibt Position 1 vorn.
-// Die Haeuser vom 02.10.2026 (h185 bis h218) haben keine KI-Aussenansicht,
-// sondern fuenf Stockbilder. Bei ihnen bleibt der Ort das Titelbild.
-const OHNE_AUSSENANSICHT = Array.from({ length: 34 }, (_, i) => `h${185 + i}`);
-const TITEL_BLEIBT_EINS = new Set(["h02", "h03", "h07", "h08", "h10", "h12", ...OHNE_AUSSENANSICHT]);
+// Nur h01 bis h184 haben eine KI-Aussenansicht. Alles darueber - die Haeuser
+// vom 02.10.2026, der Winterausbau vom 01.11.2026 und jedes spaeter gebaute -
+// hat fuenf Stockbilder, und dort bleibt der Ort das Titelbild.
+//
+// Stand 04.11.2026 als Grenze statt als Liste geschrieben: Vorher stand hier
+// eine aufgezaehlte Liste bis h511, und die neuen Haeuser h512 bis h534 fielen
+// durch - bei ihnen rutschte das Wohnzimmer ins Titelbild. Eine Liste, die bei
+// jedem Ausbau nachgezogen werden muss, geht genau so wieder schief.
+const LETZTE_AUSSENANSICHT = 184;
+const TITEL_BLEIBT_EINS = new Set(["h02", "h03", "h07", "h08", "h10", "h12"]);
+const hatAussenansicht = (id) => {
+  const n = /^h(\d+)$/.exec(id);
+  return !!n && Number(n[1]) <= LETZTE_AUSSENANSICHT && !TITEL_BLEIBT_EINS.has(id);
+};
 
 function galerieOrdnung(bereich, id, dateien) {
-  if (bereich !== "hotels" || TITEL_BLEIBT_EINS.has(id)) return dateien;
+  if (bereich !== "hotels" || !hatAussenansicht(id)) return dateien;
   const aussen = dateien.find((f) => f.startsWith("2."));
   return aussen ? [aussen, ...dateien.filter((f) => f !== aussen)] : dateien;
 }

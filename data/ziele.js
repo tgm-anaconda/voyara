@@ -96,8 +96,18 @@ const ZIELE = [
     id: "ostsee", name: "Ostsee", land: "Deutschland", typ: "strand",
     flughafen: "RLG", flughafenName: "Rostock-Laage",
     monate: [5, 6, 7, 8, 9, 10],
+    /* Winter an der Ostsee ist Nebensaison, keine Hauptsaison: Wellness,
+       Sturmspaziergaenge, leere Strandpromenaden. November war ueber die
+       Randzeit ohnehin schon offen, der Rest des Winters kommt dazu -
+       damit "eher kalt plus Strandnaehe" nicht mehr in einer Sackgasse
+       endet (03.11.2026). Der ganze Winter und nicht nur Dezember und
+       Januar: Sonst stuenden Februar und Maerz als Loecher zwischen zwei
+       offenen Monaten, und das waere willkuerlich. So ist die Ostsee
+       ganzjaehrig buchbar - Hauptsaison im Sommer, Nebensaison sonst,
+       genau wie die echten Ostseebaeder arbeiten. */
+    nebensaison: [11, 12, 1, 2, 3],
     temp: [3, 3, 6, 11, 16, 19, 21, 21, 17, 12, 7, 4],
-    kurz: "Steilküste, Bäderarchitektur und Strandkörbe — auch im Herbst schön.",
+    kurz: "Steilküste, Bäderarchitektur und Strandkörbe — im Winter still und wellnesstauglich.",
   },
   {
     id: "marrakesch", name: "Marrakesch", land: "Marokko", typ: "stadt",
@@ -160,11 +170,33 @@ const TYP_LABELS = {
    Saison
    ================================================================== */
 
-// Wie gut passt ein Ziel zum gewaehlten Reisemonat? 1 = Hauptsaison,
-// 0.5 = Randzeit (Monat direkt daneben), 0.15 = klar ausserhalb.
+/* Wie gut passt ein Ziel zum gewaehlten Reisemonat? 1 = Hauptsaison,
+   0.5 = Nebensaison (Randzeit oder ausdruecklich genannt), 0.15 = klar
+   ausserhalb.
+
+   `nebensaison` kam am 03.11.2026 dazu.
+   ------------------------------------------------------------------
+   Gemessen: "Eher kalt" plus "in Strandnaehe" ergab im Dezember ZWEI
+   Haeuser, im Januar EINES, und mit 200 m zum Strand keines. Beides sind
+   Vorgaben, die eine Person nennen kann, ohne etwas Ausgefallenes zu
+   wollen - und wer in Arm B dort landet, sieht die Sackgasse hinter einem
+   Vollbild-Chat.
+
+   Die Ostsee ist genau das fehlende Stueck: 4 Grad im Dezember, also kalt
+   nach derselben Regel, die der Agent benutzt, und 21 Haeuser hoechstens
+   500 m vom Strand. Sie fiel nur durch die Saisonpruefung.
+
+   Warum nicht einfach November und Dezember in `monate`? Weil das Modell
+   daraus "Hauptsaison" macht, samt vollem Preisfaktor. Die Ostsee im
+   Dezember ist Nebensaison, nicht Hauptsaison - und ein falsches Etikett
+   auf der Hausseite waere ein Glaubwuerdigkeitsleck in einer Studie, in
+   der die Leute genau hinsehen sollen. Deshalb die zweite Liste: Sie
+   sagt, was eine Nebensaison IST, statt sie aus der Nachbarschaft zu
+   erraten. */
 function saisonPassung(ziel, monat) {
   if (!ziel || !monat) return 1;
   if (ziel.monate.includes(monat)) return 1;
+  if ((ziel.nebensaison || []).includes(monat)) return 0.5;
   const davor = monat === 1 ? 12 : monat - 1;
   const danach = monat === 12 ? 1 : monat + 1;
   if (ziel.monate.includes(davor) || ziel.monate.includes(danach)) return 0.5;
@@ -334,9 +366,27 @@ function freiImMonat(item, monat) {
   if (!item || !monat) return true;
   const ziel = typeof ZIEL_NACH_ID !== "undefined" ? ZIEL_NACH_ID[item.ziel] : null;
   const passung = ziel ? saisonPassung(ziel, monat) : 1;
-  // Anteil der ausgebuchten Haeuser: Hauptsaison knapp ein Drittel,
-  // Randzeit ein Sechstel, ausserhalb der Saison kaum etwas.
-  const belegt = passung === 1 ? 320 : passung === 0.5 ? 160 : 60;
+  /* Anteil der ausgebuchten Haeuser: Hauptsaison ein Sechstel,
+     Randzeit ein Zwoelftel, ausserhalb der Saison kaum etwas.
+
+     Halbiert am 03.11.2026 (vorher 320/160/60, also knapp ein Drittel in
+     der Hauptsaison).
+     ----------------------------------------------------------------
+     Der Massstab des Nutzers: Egal welche Kombination jemand waehlt, es
+     sollen mindestens acht Objekte uebrigbleiben, und unter zehn fragt
+     der Agent, ob er die Suche ausweiten soll. Gemessen ueber 92
+     Kombinationen aus Region und Filter lagen mit einem Drittel Belegung
+     acht darunter, mit einem Sechstel nur noch eine.
+
+     Ein Drittel war die realistischere Zahl, aber sie kostet hier zu
+     viel: Jede ausgebuchte Unterkunft faellt aus einer Menge heraus, die
+     ohnehin schon durch Region und Filter klein ist, und am Ende
+     entscheidet dann der Filter statt des Partnerlabels. Ganz abschalten
+     waere der einfachste Weg gewesen - dann gaebe es aber auch das
+     "Das Haus ist im Mai leider ausgebucht, soll ich dir aehnliche
+     suchen?" nicht mehr, und das ist sichtbare Agentenarbeit, auf die es
+     in dieser Studie ankommt. Halbieren behaelt beides. */
+  const belegt = passung === 1 ? 160 : passung === 0.5 ? 80 : 30;
   return belegungsZahl(`${item.id}|${monat}`) >= belegt;
 }
 

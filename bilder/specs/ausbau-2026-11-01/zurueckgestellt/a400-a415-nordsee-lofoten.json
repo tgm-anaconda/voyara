@@ -1,0 +1,471 @@
+{
+ "wohnungen": [
+  {
+   "id": "a400",
+   "ziel": "nordsee",
+   "name": "Reetkate Munkmarsch",
+   "ort": "Munkmarsch",
+   "region": "Sylt",
+   "preis": 184,
+   "rating": 4.7,
+   "bewertungen": 142,
+   "schlafzimmer": 2,
+   "baeder": 1,
+   "groesse": 78,
+   "gaeste": 4,
+   "strand": 1.6,
+   "zentrum": 0.6,
+   "reinigung": 95,
+   "extras": [
+    "terrace",
+    "parking"
+   ],
+   "kurz": "Hälfte einer Reetkate am Wattenmeer, Kamin im Wohnraum, Garten zum Deich.",
+   "lang": "Munkmarsch liegt auf der Wattseite von Sylt und besteht aus zwanzig Häusern, einem Hafen für Segler und einer Bushaltestelle. Die Kate ist von 1907, geteilt in zwei Wohnungen, diese hat zwei Schlafzimmer, eine Wohnküche mit Kamin und einen Garten, der am Deich endet. Gegen Abend steht die Sonne über dem Watt, das zweimal am Tag trockenfällt. Zum Sandstrand an der Westseite sind es anderthalb Kilometer mit dem Rad, nach Keitum zwei, nach Westerland sechs. Bettwäsche und Handtücher liegen bereit, Hund auf Anfrage.",
+   "highlights": [
+    "Reetkate von 1907 am Wattenmeer",
+    "Kamin in der Wohnküche",
+    "Garten direkt am Deich",
+    "Zwei Kilometer nach Keitum"
+   ]
+  },
+  {
+   "id": "a401",
+   "ziel": "nordsee",
+   "name": "Strandwohnung Wenningstedt",
+   "ort": "Wenningstedt",
+   "region": "Sylt",
+   "preis": 206,
+   "rating": 4.6,
+   "bewertungen": 168,
+   "schlafzimmer": 2,
+   "baeder": 2,
+   "groesse": 86,
+   "gaeste": 5,
+   "strand": 0.2,
+   "zentrum": 0.3,
+   "reinigung": 110,
+   "extras": [
+    "balcony",
+    "parking",
+    "seaView"
+   ],
+   "kurz": "Zweite Reihe hinter der Düne, Balkon nach Westen, zwei Bäder.",
+   "lang": "Die Wohnung liegt im ersten Stock eines Hauses von 1978, das außen unspektakulär und innen vollständig erneuert ist. Zwei Schlafzimmer, zwei Bäder, eine Wohnküche nach Westen und ein Balkon, von dem aus man über die Dünenkante das Wasser sieht. Zum Strandübergang sind es zweihundert Meter. Mit fünf Betten und zwei Bädern ist sie für zwei Familien oder drei Generationen gedacht, und das funktioniert, weil die Schlafzimmer an gegenüberliegenden Enden liegen. Waschmaschine und Trockner im Haus, Stellplatz vor der Tür, Strandkörbe über die Verwaltung.",
+   "highlights": [
+    "Zweihundert Meter zum Strandübergang",
+    "Balkon nach Westen über die Düne",
+    "Zwei Bäder an getrennten Enden",
+    "Waschmaschine und Trockner"
+   ]
+  },
+  {
+   "id": "a402",
+   "ziel": "nordsee",
+   "name": "Kapitänshaus Amrum",
+   "ort": "Nebel",
+   "region": "Amrum",
+   "preis": 158,
+   "rating": 4.7,
+   "bewertungen": 124,
+   "schlafzimmer": 2,
+   "baeder": 1,
+   "groesse": 72,
+   "gaeste": 4,
+   "strand": 1.2,
+   "zentrum": 0.3,
+   "reinigung": 85,
+   "extras": [
+    "terrace",
+    "parking"
+   ],
+   "kurz": "Erdgeschoss eines Kapitänshauses, Friesenstube mit Wandfliesen, Insel ohne Autos.",
+   "lang": "Nebel liegt in der Mitte von Amrum, und die alten Kapitänshäuser dort haben noch die blauweißen Wandfliesen, mit denen Seefahrer im achtzehnten Jahrhundert ihre Stuben auskleideten. In diesem ist das Erdgeschoss Ferienwohnung, zwei Schlafzimmer, eine Stube mit Fliesenwand und eine Küche zum Garten. Zum Kniepsand sind es zwölf Gehminuten über den Dünenweg, dort ist der Strand über einen Kilometer breit. Auf die Insel kommt man mit der Fähre von Dagebüll, ein Auto braucht man drüben nicht, Räder stehen im Schuppen. Bäckerei und Kaufmann liegen in derselben Straße.",
+   "highlights": [
+    "Friesenstube mit originalen Wandfliesen",
+    "Zwölf Minuten zum Kniepsand",
+    "Räder im Schuppen",
+    "Bäckerei in derselben Straße"
+   ]
+  },
+  {
+   "id": "a403",
+   "ziel": "nordsee",
+   "name": "Pfahlhaus St. Peter",
+   "ort": "St. Peter-Ording",
+   "region": "Eiderstedt",
+   "preis": 192,
+   "rating": 4.6,
+   "bewertungen": 214,
+   "schlafzimmer": 2,
+   "baeder": 1,
+   "groesse": 74,
+   "gaeste": 4,
+   "strand": 0.6,
+   "zentrum": 1.4,
+   "reinigung": 95,
+   "extras": [
+    "terrace",
+    "parking",
+    "seaView"
+   ],
+   "kurz": "Holzhaus am Dünenrand, Terrasse nach Westen, zwölf Kilometer Strand.",
+   "lang": "St. Peter-Ording hat den breitesten Strand der deutschen Nordseeküste, und das Haus steht am Rand des Dünengürtels im Ortsteil Bad. Zwei Schlafzimmer, Wohnküche mit Holzofen, eine Terrasse nach Westen, auf der man abends sitzt, wenn der Wind nachlässt, und bei Sturm nicht. Zum Strandaufgang sind es sechshundert Meter durch den Kiefernwald, der hier bis an die Dünen reicht. Die Wohnung ist auf Wind und Sand ausgelegt: Fliesen im Eingang, Dusche draußen, Trockenraum für Neoprenanzüge, denn der Ort ist eine Kiteadresse. Stellplatz, Waschmaschine, Hund erlaubt.",
+   "highlights": [
+    "Sechshundert Meter durch den Kiefernwald zum Strand",
+    "Holzofen in der Wohnküche",
+    "Außendusche und Trockenraum",
+    "Hund erlaubt"
+   ]
+  },
+  {
+   "id": "a404",
+   "ziel": "nordsee",
+   "name": "Deichkate Büsum",
+   "ort": "Büsum",
+   "region": "Dithmarschen",
+   "preis": 124,
+   "rating": 4.4,
+   "bewertungen": 186,
+   "schlafzimmer": 2,
+   "baeder": 1,
+   "groesse": 64,
+   "gaeste": 4,
+   "strand": 0.8,
+   "zentrum": 0.5,
+   "reinigung": 70,
+   "extras": [
+    "terrace",
+    "parking"
+   ],
+   "kurz": "Einfache Wohnung hinter dem Deich, günstig, Kutterhafen in Gehweite.",
+   "lang": "Büsum ist ein Arbeitshafen, in dem Urlaub gemacht wird, und die Preise liegen entsprechend unter denen der Inseln. Die Wohnung liegt im Erdgeschoss eines Backsteinhauses hinter dem Deich, zwei Schlafzimmer, Wohnküche, kleine Terrasse zum Hof. Eingerichtet ist einfach und ohne Anspruch, dafür vollständig: Geschirr für sechs, Waschmaschine, Kinderbett auf Anfrage. Zum Grünstrand und zur Familienlagune sind es gut zehn Gehminuten über den Deich, Deichschafe inbegriffen. Im Hafen landen die Kutter nachmittags an, die Krabbenbrötchen dort sind der eigentliche Grund für den Ort.",
+   "highlights": [
+    "Zehn Minuten über den Deich zum Grünstrand",
+    "Kutterhafen in Gehweite",
+    "Kinderbett auf Anfrage",
+    "Günstigste Wohnung an der Küste"
+   ]
+  },
+  {
+   "id": "a405",
+   "ziel": "nordsee",
+   "name": "Inselwohnung Langeoog",
+   "ort": "Langeoog",
+   "region": "Ostfriesische Inseln",
+   "preis": 168,
+   "rating": 4.6,
+   "bewertungen": 142,
+   "schlafzimmer": 2,
+   "baeder": 1,
+   "groesse": 68,
+   "gaeste": 4,
+   "strand": 1.0,
+   "zentrum": 0.4,
+   "reinigung": 85,
+   "extras": [
+    "balcony"
+   ],
+   "kurz": "Im autofreien Dorf, Räder gehören dazu, Inselbahn vom Hafen.",
+   "lang": "Auf Langeoog gibt es keine Autos, nur Räder, Pferdefuhrwerke und eine Inselbahn vom Hafen ins Dorf, mit der auch das Gepäck kommt. Die Wohnung liegt im ersten Stock eines Hauses am östlichen Dorfrand, zwei Schlafzimmer, Wohnküche, Balkon nach Süden. Zwei Räder gehören dazu, anders kommt man hier nicht voran. Zum Hauptstrand ist es ein Kilometer, zur Ostspitze mit den Seehundbänken acht, flach und gut zu fahren. Im Dorf gibt es Supermarkt, Bäckerei und das Meerwasser-Erlebnisbad für Regentage. Bettwäsche inklusive, Endreinigung getrennt.",
+   "highlights": [
+    "Autofreie Insel, zwei Räder inklusive",
+    "Kilometer zum Hauptstrand",
+    "Acht Kilometer zur Ostspitze",
+    "Meerwasserbad für Regentage"
+   ]
+  },
+  {
+   "id": "a406",
+   "ziel": "nordsee",
+   "name": "Hallighaus Nordstrand",
+   "ort": "Nordstrand",
+   "region": "Nordfriesland",
+   "preis": 146,
+   "rating": 4.7,
+   "bewertungen": 98,
+   "schlafzimmer": 3,
+   "baeder": 1,
+   "groesse": 96,
+   "gaeste": 6,
+   "strand": 0.9,
+   "zentrum": 4.2,
+   "reinigung": 90,
+   "extras": [
+    "terrace",
+    "parking"
+   ],
+   "kurz": "Ganzes Haus auf der Halbinsel, drei Schlafzimmer, Blick auf das Watt.",
+   "lang": "Nordstrand ist über einen Damm mit dem Festland verbunden und wirkt trotzdem wie eine Insel: Marschland, Deiche, Höfe und kaum Verkehr. Das Haus steht allein am Binnendeich, drei Schlafzimmer, zwei Wohnräume, große Küche, Platz für sechs. Vom Esstisch sieht man über die Weiden auf den Deich, dahinter liegt das Watt. Zum Badestrand bei Holmer Siel sind es neunhundert Meter, zum Fähranleger nach Pellworm vier Kilometer, von dort fahren auch die Boote zu den Halligen. Mit sechs Betten und einem Garten ohne Nachbarn ist das Haus für Familien oder zwei Paare gedacht, Hunde sind erlaubt.",
+   "highlights": [
+    "Ganzes Haus für sechs Personen",
+    "Blick über die Weiden auf den Deich",
+    "Neunhundert Meter zum Badestrand",
+    "Fähre nach Pellworm und zu den Halligen"
+   ]
+  },
+  {
+   "id": "a407",
+   "ziel": "nordsee",
+   "name": "Fischerhaus Föhr",
+   "ort": "Utersum",
+   "region": "Föhr",
+   "preis": 172,
+   "rating": 4.6,
+   "bewertungen": 156,
+   "schlafzimmer": 2,
+   "baeder": 1,
+   "groesse": 70,
+   "gaeste": 4,
+   "strand": 0.4,
+   "zentrum": 1.2,
+   "reinigung": 85,
+   "extras": [
+    "terrace",
+    "parking"
+   ],
+   "kurz": "Am flachen Weststrand von Föhr, Priele für Kinder, Garten mit Hecke.",
+   "lang": "An der Westseite von Föhr geht das Wasser weit zurück, und Kinder können in den Prielen stundenlang stehen, ohne tiefer als bis zum Knie zu kommen. Das Haus liegt vierhundert Meter davon, ein weiß gekalkter Fischerbau mit zwei Schlafzimmern, Wohnküche und einem Garten, den eine Hecke vom Wind abschirmt. Föhr liegt im Schutz von Amrum und Sylt, deshalb ist es hier merklich milder, und der Südstrand ist flach. Zum Wattenmeer-Besucherzentrum sind es sechs Kilometer, nach Wyk mit dem Rad zehn. Kinderbett, Hochstuhl und Bollerwagen gehören zur Wohnung.",
+   "highlights": [
+    "Vierhundert Meter zum flachen Weststrand",
+    "Priele zum Spielen für Kinder",
+    "Garten mit Windschutzhecke",
+    "Kinderbett und Bollerwagen inklusive"
+   ]
+  },
+  {
+   "id": "a408",
+   "ziel": "lofoten",
+   "name": "Rorbu Sakrisøy",
+   "ort": "Sakrisøy",
+   "region": "Moskenesøy",
+   "preis": 196,
+   "rating": 4.8,
+   "bewertungen": 124,
+   "schlafzimmer": 2,
+   "baeder": 1,
+   "groesse": 62,
+   "gaeste": 4,
+   "strand": 0.3,
+   "zentrum": 1.8,
+   "reinigung": 90,
+   "extras": [
+    "terrace",
+    "seaView",
+    "parking"
+   ],
+   "kurz": "Gelbe Fischerhütte auf Pfählen, Fjord unter dem Fenster, Angelgerät im Schuppen.",
+   "lang": "Die Hütten von Sakrisøy sind nicht rot, sondern ockergelb, was früher bedeutete, dass der Besitzer sich teurere Farbe leisten konnte. Diese steht auf Pfählen im Fjord, zwei Schlafzimmer, ein Wohnraum mit Ofen und offener Küche, Fenster, hinter denen das Wasser steht. Angelgerät hängt im Schuppen, vom Steg aus fängt man Köhler und Dorsch, und die Küche hat eine Pfanne dafür. Zum Strand bei Sakrisøy sind es dreihundert Meter, nach Reine drei Kilometer, zum Aufstieg auf den Reinebringen vier. Holz liegt bereit, Bettwäsche inklusive. Im Winter heizt der Ofen schneller als die Elektroheizung.",
+   "highlights": [
+    "Hütte auf Pfählen im Fjord",
+    "Angelgerät und Steg inklusive",
+    "Dreihundert Meter zum Strand",
+    "Ofen und Holz im Haus"
+   ]
+  },
+  {
+   "id": "a409",
+   "ziel": "lofoten",
+   "name": "Haukland Hytte",
+   "ort": "Vestvågøy",
+   "region": "Vestvågøy",
+   "preis": 212,
+   "rating": 4.7,
+   "bewertungen": 108,
+   "schlafzimmer": 2,
+   "baeder": 1,
+   "groesse": 74,
+   "gaeste": 5,
+   "strand": 0.2,
+   "zentrum": 6.4,
+   "reinigung": 100,
+   "extras": [
+    "terrace",
+    "seaView",
+    "parking"
+   ],
+   "kurz": "Hütte über dem Haukland-Strand, weißer Sand, Pass nach Uttakleiv zu Fuß.",
+   "lang": "Der Strand von Haukland sieht aus wie eine Karibikaufnahme, bis man das Thermometer im Wasser sieht: acht bis zwölf Grad. Die Hütte steht zweihundert Meter darüber am Hang, zwei Schlafzimmer, Wohnraum mit Panoramafenster zur Bucht, Küche mit allem, was man für eine Woche braucht. Über den Pass nach Uttakleiv sind es zwanzig Minuten zu Fuß, der Weg ist ausgebaut und morgens am besten. Im Sommer geht die Sonne hier sechs Wochen nicht unter, dafür hat jedes Schlafzimmer Verdunklung. Im Winter stehen die Nordlichter über der Bucht, und vom Wohnzimmer aus sieht man sie, ohne hinauszugehen.",
+   "highlights": [
+    "Zweihundert Meter über dem Haukland-Strand",
+    "Panoramafenster zur Bucht",
+    "Zwanzig Minuten über den Pass nach Uttakleiv",
+    "Verdunklung für die hellen Nächte"
+   ]
+  },
+  {
+   "id": "a410",
+   "ziel": "lofoten",
+   "name": "Henningsvær Loft",
+   "ort": "Henningsvær",
+   "region": "Austvågøy",
+   "preis": 184,
+   "rating": 4.7,
+   "bewertungen": 132,
+   "schlafzimmer": 1,
+   "baeder": 1,
+   "groesse": 52,
+   "gaeste": 3,
+   "strand": 0.9,
+   "zentrum": 0.1,
+   "reinigung": 85,
+   "extras": [
+    "seaView"
+   ],
+   "kurz": "Dachwohnung über dem Hafen, Mitten im Inselort, Lokale vor der Tür.",
+   "lang": "Henningsvær liegt auf mehreren Inselchen, die mit Brücken verbunden sind, und hat auf engem Raum drei Restaurants, eine Kletterhalle, eine Galerie und einen Fußballplatz zwischen Felsen, der auf jedem zweiten Lofoten-Foto zu sehen ist. Die Wohnung liegt unter dem Dach eines Lagerhauses am Kai, ein Schlafzimmer, Wohnküche, Dachschrägen und zwei Fenster auf das Hafenbecken. Für zwei Personen mit Platz oder drei ohne. Nichts im Ort ist weiter als vier Gehminuten entfernt, was im Januar bei Wind der entscheidende Vorteil ist. Parken am Ortseingang, Bettwäsche inklusive.",
+   "highlights": [
+    "Dachwohnung über dem Hafenbecken",
+    "Alles im Ort unter vier Gehminuten",
+    "Drei Restaurants und Kletterhalle",
+    "Mitten in Henningsvær"
+   ]
+  },
+  {
+   "id": "a411",
+   "ziel": "lofoten",
+   "name": "Reine Fjordhytte",
+   "ort": "Reine",
+   "region": "Moskenesøy",
+   "preis": 204,
+   "rating": 4.7,
+   "bewertungen": 146,
+   "schlafzimmer": 3,
+   "baeder": 1,
+   "groesse": 92,
+   "gaeste": 6,
+   "strand": 0.7,
+   "zentrum": 0.4,
+   "reinigung": 110,
+   "extras": [
+    "terrace",
+    "seaView",
+    "parking"
+   ],
+   "kurz": "Ganze Hütte am Reinefjord für sechs, Boot am Steg, Reinebringen im Ort.",
+   "lang": "Reine liegt am Ende einer Kette von Inselchen, und die Treppe zum Reinebringen, eintausendfünfhundert Stufen, beginnt zwei Kilometer entfernt. Die Hütte steht am Wasser, drei Schlafzimmer, großer Wohnraum mit Ofen, Küche mit Esstisch für sechs, Terrasse über dem Fjord. Ein Boot mit Außenborder liegt am Steg und darf nach Einweisung genutzt werden, Rettungswesten in Kindergrößen hängen im Bootshaus. Der Fjord ist geschützt, es gibt keine Wellen, und Kinder kommen überall ans Wasser. Im Dorf ein Laden, eine Bäckerei und das Fischrestaurant am Kai. Holz, Bettwäsche und Hochstuhl gehören dazu.",
+   "highlights": [
+    "Ganze Hütte für sechs Personen",
+    "Boot mit Kinderwesten am Steg",
+    "Geschützter Fjord ohne Wellen",
+    "Treppe zum Reinebringen im Ort"
+   ]
+  },
+  {
+   "id": "a412",
+   "ziel": "lofoten",
+   "name": "Unstad Surfhytte",
+   "ort": "Unstad",
+   "region": "Vestvågøy",
+   "preis": 158,
+   "rating": 4.5,
+   "bewertungen": 164,
+   "schlafzimmer": 1,
+   "baeder": 1,
+   "groesse": 48,
+   "gaeste": 3,
+   "strand": 0.2,
+   "zentrum": 11.0,
+   "reinigung": 75,
+   "extras": [
+    "terrace",
+    "parking"
+   ],
+   "kurz": "Kleine Hütte an der Surfbucht, Trockenraum, Welle von September bis April.",
+   "lang": "Unstad ist eine Bucht mit einer Handvoll Häusern und einer Welle, die läuft, wenn es am kältesten ist. Die Hütte steht zweihundert Meter vom Wasser, ein Schlafzimmer, Wohnküche mit Ofen, ein Trockenraum, in dem zwei Siebenmillimeter-Anzüge über Nacht trocknen. Ausrüstung leiht man im Camp am Strand, Kurse laufen täglich. Wer nicht surft, nimmt den Ort als Ausgangspunkt für die Küstenwanderung nach Eggum, drei Stunden über Geröll und Grasmatten. Essen gibt es im Café an der Straße oder aus der eigenen Küche, der nächste Supermarkt ist in Leknes, dreißig Kilometer.",
+   "highlights": [
+    "Zweihundert Meter zur Surfbucht",
+    "Trockenraum für Neoprenanzüge",
+    "Küstenwanderung nach Eggum",
+    "Ofen in der Wohnküche"
+   ]
+  },
+  {
+   "id": "a413",
+   "ziel": "lofoten",
+   "name": "Ballstad Sjøhus",
+   "ort": "Ballstad",
+   "region": "Vestvågøy",
+   "preis": 176,
+   "rating": 4.6,
+   "bewertungen": 118,
+   "schlafzimmer": 2,
+   "baeder": 1,
+   "groesse": 66,
+   "gaeste": 4,
+   "strand": 0.6,
+   "zentrum": 0.3,
+   "reinigung": 85,
+   "extras": [
+    "seaView",
+    "parking"
+   ],
+   "kurz": "Seehaus im Arbeitshafen, Fisch vom Kai, Stockfischgestelle im Frühjahr.",
+   "lang": "Ballstad ist einer der letzten Orte der Lofoten, in dem Fischerei mehr Umsatz macht als Tourismus. Um fünf fahren die Boote raus, nachmittags wird am Kai sortiert, und wer unten fragt, kauft Dorsch zum halben Ladenpreis. Das Seehaus steht mitten darin, zwei Schlafzimmer, Wohnküche mit großem Fenster auf den Hafen, Ofen. Zwischen Februar und Mai hängt überall Stockfisch in den Gestellen, und das riecht man, was zum Ort gehört und vorher gesagt sein soll. Zum Strand bei Skottnes sind es sechshundert Meter, nach Leknes zehn Kilometer. Bettwäsche inklusive, Hund erlaubt.",
+   "highlights": [
+    "Seehaus im Arbeitshafen",
+    "Fisch direkt vom Kai",
+    "Sechshundert Meter zum Strand",
+    "Stockfischgestelle von Februar bis Mai"
+   ]
+  },
+  {
+   "id": "a414",
+   "ziel": "lofoten",
+   "name": "Gimsøy Nordlyshus",
+   "ort": "Gimsøy",
+   "region": "Gimsøya",
+   "preis": 218,
+   "rating": 4.8,
+   "bewertungen": 96,
+   "schlafzimmer": 2,
+   "baeder": 1,
+   "groesse": 72,
+   "gaeste": 4,
+   "strand": 0.8,
+   "zentrum": 7.8,
+   "reinigung": 95,
+   "extras": [
+    "terrace",
+    "parking"
+   ],
+   "kurz": "Haus auf der flachen Insel, freier Nordhimmel, Sauna im Anbau.",
+   "lang": "Gimsøya liegt flach zwischen zwei Gebirgsinseln, und deshalb ist der Himmel hier von Horizont zu Horizont offen, ohne Streulicht und ohne Berge im Weg. Von Ende August bis April stehen die Nordlichter an fast jeder klaren Nacht irgendwo darin. Das Haus hat zwei Schlafzimmer mit großen Nordfenstern und Verdunklung, eine Wohnküche und eine Sauna im Anbau, von der aus man durch ein Fenster nach Norden sieht. Draußen Liegen und Decken. Tagsüber gibt es den Pferdehof nebenan, den Golfplatz am Meer und den Strand von Hov, neun Kilometer entfernt. Der nächste Laden ist in Vågan, sechs Kilometer.",
+   "highlights": [
+    "Freier Nordhimmel ohne Streulicht",
+    "Sauna mit Fenster nach Norden",
+    "Nordfenster mit Verdunklung",
+    "Pferdehof und Golfplatz nebenan"
+   ]
+  },
+  {
+   "id": "a415",
+   "ziel": "lofoten",
+   "name": "Kabelvåg Hus",
+   "ort": "Kabelvåg",
+   "region": "Austvågøy",
+   "preis": 148,
+   "rating": 4.5,
+   "bewertungen": 138,
+   "schlafzimmer": 2,
+   "baeder": 1,
+   "groesse": 70,
+   "gaeste": 4,
+   "strand": 0.7,
+   "zentrum": 0.3,
+   "reinigung": 80,
+   "extras": [
+    "terrace",
+    "parking"
+   ],
+   "kurz": "Günstiges Haus im ältesten Ort, Bus nach Svolvær alle halbe Stunde.",
+   "lang": "Kabelvåg ist älter als Svolvær und war einmal das Zentrum der Inseln, was man an der hölzernen Kirche sieht, die mit zwölfhundert Plätzen für zweitausend Einwohner eindeutig zu groß ist. Das Haus liegt in einer Seitenstraße, zwei Schlafzimmer, Wohnküche, kleine Terrasse. Es ist das günstigste unter den Wohnungen der Inseln, und weil die Restaurantpreise auf den Lofoten in keinem Verhältnis zum Rest stehen, spart die eigene Küche hier mehr als anderswo. Zum Kiesstrand hinter dem Ort sind es sieben Gehminuten, zum Aquarium zehn. Der Bus nach Svolvær fährt alle halbe Stunde, Fahrzeit sieben Minuten.",
+   "highlights": [
+    "Günstigste Wohnung auf den Lofoten",
+    "Bus nach Svolvær alle halbe Stunde",
+    "Sieben Minuten zum Kiesstrand",
+    "Ältester Ort der Inseln"
+   ]
+  }
+ ]
+}

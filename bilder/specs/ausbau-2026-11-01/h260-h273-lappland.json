@@ -1,0 +1,360 @@
+{
+ "hotels": [
+  {
+   "id": "h260",
+   "ziel": "lappland",
+   "name": "Levi Tunturihotelli",
+   "ort": "Levi",
+   "region": "Kittilä",
+   "kategorie": "berg",
+   "sterne": 4,
+   "preis": 246,
+   "rating": 4.5,
+   "bewertungen": 684,
+   "strand": null,
+   "zentrum": 0.2,
+   "flughafen": 18,
+   "extras": [
+    "spa"
+   ],
+   "kurz": "Am Fuß des Levi-Fells, größtes Skigebiet Finnlands, Flughafen in zwanzig Minuten.",
+   "lang": "Levi ist das größte Skigebiet Finnlands, dreiundvierzig Pisten an einem einzelnen Fjell, und weil die Hänge baumfrei sind, sieht man von oben über die gesamte Tundra. Das Haus liegt an der Talstation, achtundfünfzig Zimmer, Kiefernholz, Fenster mit dreifacher Scheibe und Verdunklung für die hellen Nächte im Mai. Im Keller liegen zwei Saunen und ein Becken, davor ein Eisloch im Hof für alle, die das wollen. Der Flughafen Kittilä ist zwanzig Minuten entfernt, mit Direktflügen im Winter. Von Ende November bis Mitte Januar geht die Sonne kaum über den Horizont, das Licht ist dann blau und hält den ganzen Tag.",
+   "highlights": [
+    "An der Talstation des Levi-Fells",
+    "Zwei Saunen und Eisloch im Hof",
+    "Zwanzig Minuten zum Flughafen Kittilä",
+    "Dreiundvierzig Pisten über der Tundra"
+   ]
+  },
+  {
+   "id": "h261",
+   "ziel": "lappland",
+   "name": "Glasiglu Inari",
+   "ort": "Inari",
+   "region": "Inari",
+   "kategorie": "luxus",
+   "sterne": 5,
+   "preis": 486,
+   "rating": 4.8,
+   "bewertungen": 412,
+   "strand": null,
+   "zentrum": 2.1,
+   "flughafen": 42,
+   "extras": [
+    "spa"
+   ],
+   "kurz": "Glasdachsuiten am Inarisee, Nordlicht vom Bett aus, Rauchsauna am Ufer.",
+   "lang": "Der Inarisee ist der dritte große See Finnlands und hat über dreitausend Inseln, von denen eine, Ukonsaari, den Samen als Opferstätte diente. Das Haus steht am Westufer, vierundzwanzig Suiten mit Glasdach über dem Bett, Verdunklung per Schalter, Fußbodenheizung bis zur Fensterkante. Wer um zwei Uhr aufwacht und Grün sieht, muss nicht aufstehen. Die Rauchsauna am Ufer wird über vier Stunden angeheizt und zweimal täglich freigegeben. Touren fahren mit Schneemobil, Husky oder Rentier, das Samenmuseum Siida liegt zwei Kilometer entfernt und ist das beste des Landes. Die Küche arbeitet mit Rentier, Felchen und Moosbeeren.",
+   "highlights": [
+    "Glasdach über dem Bett mit Verdunklung",
+    "Rauchsauna am Inarisee",
+    "Samenmuseum Siida in zwei Kilometern",
+    "Küche mit Rentier und Felchen"
+   ]
+  },
+  {
+   "id": "h262",
+   "ziel": "lappland",
+   "name": "Pyhä Tunturi Lodge",
+   "ort": "Pyhätunturi",
+   "region": "Pelkosenniemi",
+   "kategorie": "berg",
+   "sterne": 4,
+   "preis": 224,
+   "rating": 4.6,
+   "bewertungen": 386,
+   "strand": null,
+   "zentrum": 0.4,
+   "flughafen": 58,
+   "extras": [
+    "spa"
+   ],
+   "kurz": "Am Rand des Nationalparks, steilste Pisten Lapplands, Schlucht am Wanderweg.",
+   "lang": "Pyhä liegt am Pyhä-Luosto-Nationalpark, einem der ältesten Finnlands, und hat mit zweihundertachtzig Metern den größten Höhenunterschied in Lappland, was hier als steil gilt. Das Haus hat zweiunddreißig Zimmer in zwei Holzriegeln, breite Fenster, Ofen in den größeren Einheiten. Der Isokuru, die tiefste Schlucht Finnlands, beginnt zwei Kilometer entfernt und ist im Winter mit Schneeschuhen zu gehen. Sauna, Dampfbad und ein Außenbecken, das bei minus zwanzig Grad besonders überzeugt. Nordlichter stehen von September bis April, der Weckdienst läuft auf Wunsch. Halbpension mit vier Gängen, Fisch und Rentier im Wechsel.",
+   "highlights": [
+    "Größter Höhenunterschied Lapplands",
+    "Isokuru-Schlucht in zwei Kilometern",
+    "Außenbecken im Freien",
+    "Weckdienst bei Nordlichtaktivität"
+   ]
+  },
+  {
+   "id": "h263",
+   "ziel": "lappland",
+   "name": "Rovaniemi Arctic House",
+   "ort": "Rovaniemi",
+   "region": "Rovaniemi",
+   "kategorie": "stadt",
+   "sterne": 4,
+   "preis": 192,
+   "rating": 4.3,
+   "bewertungen": 824,
+   "strand": null,
+   "zentrum": 0.2,
+   "flughafen": 9,
+   "extras": [
+    "spa"
+   ],
+   "kurz": "In der Stadt am Polarkreis, Flughafen neun Kilometer, Arktikum zu Fuß.",
+   "lang": "Rovaniemi liegt genau am Polarkreis, ist mit dreiundsechzigtausend Einwohnern die größte Stadt Lapplands und wurde nach 1944 vollständig neu gebaut, nach einem Plan von Alvar Aalto in Form eines Rentiergeweihs. Das Haus steht im Zentrum, sechsundsiebzig Zimmer, nüchtern, warm, gut schallgedämmt. Das Arktikum, ein Museum über die Arktis mit einem Glastunnel in den Fluss hinein, liegt zehn Gehminuten entfernt. Der Flughafen ist neun Kilometer weg, mit Direktflügen aus mehreren europäischen Städten im Winter. Vom Haus starten Touren zu Huskys, Rentieren und Schneemobilen, und das Weihnachtsmanndorf liegt acht Kilometer nördlich, für Kinder unverzichtbar und für Erwachsene eine Zumutung.",
+   "highlights": [
+    "Mitten in Rovaniemi am Polarkreis",
+    "Neun Kilometer zum Flughafen",
+    "Arktikum in zehn Gehminuten",
+    "Touren starten am Haus"
+   ]
+  },
+  {
+   "id": "h264",
+   "ziel": "lappland",
+   "name": "Yllästunturi Hütten",
+   "ort": "Äkäslompolo",
+   "region": "Kolari",
+   "kategorie": "finca",
+   "sterne": 3,
+   "preis": 168,
+   "rating": 4.5,
+   "bewertungen": 342,
+   "strand": null,
+   "zentrum": 1.4,
+   "flughafen": 52,
+   "extras": [
+    "bikeRental"
+   ],
+   "kurz": "Blockhütten am See, Ofen und Sauna in jeder Einheit, Loipen vor der Tür.",
+   "lang": "Ylläs hat das größte Loipennetz Finnlands, dreihundertdreißig Kilometer, von denen ein Teil beleuchtet ist, weil im Dezember sonst niemand etwas sieht. Die Hütten stehen am Ufer des Äkäslompolo-Sees, zehn Einheiten für zwei bis sechs Personen, jede mit Holzofen, Küche und eigener Sauna, was in Finnland weniger Luxus als Selbstverständlichkeit ist. Zur Loipe sind es fünfzig Meter, zur Gondel drei Kilometer mit dem Skibus. Im Sommer gehören Räder und ein Ruderboot dazu, der See ist flach und im Juli brauchbar warm. Einkaufen im Ort, gekocht wird selbst, das halbiert die Kosten gegenüber den Hotels am Fjell.",
+   "highlights": [
+    "Eigene Sauna in jeder Hütte",
+    "Fünfzig Meter zur Loipe",
+    "330 Kilometer Loipennetz, teils beleuchtet",
+    "Räder und Ruderboot im Sommer"
+   ]
+  },
+  {
+   "id": "h265",
+   "ziel": "lappland",
+   "name": "Kakslauttanen Waldsuiten",
+   "ort": "Saariselkä",
+   "region": "Inari",
+   "kategorie": "luxus",
+   "sterne": 4,
+   "preis": 398,
+   "rating": 4.6,
+   "bewertungen": 568,
+   "strand": null,
+   "zentrum": 8.2,
+   "flughafen": 34,
+   "extras": [
+    "spa"
+   ],
+   "kurz": "Einzelne Suiten im Kiefernwald, Glaskuppel und Kamin, kein Nachbar in Sicht.",
+   "lang": "Das Grundstück liegt im Kiefernwald zwischen Saariselkä und Ivalo, und die achtzehn Einheiten stehen so weit auseinander, dass man von keiner die nächste sieht. Jede hat einen Kamin, eine Glaskuppel über dem Schlafbereich und eine eigene kleine Sauna. Holz wird täglich vor die Tür gelegt. Nordlichter sind hier von Ende August bis April zu sehen, die Lichtverschmutzung liegt bei null. Das Hauptgebäude hat Restaurant und Bar, der Weg dorthin ist beleuchtet und zweihundert Meter lang. Touren starten am Haus, Huskys, Rentiere, Schneeschuhe. Von Dezember bis Januar wird es nicht hell, was den Aufenthalt prägt und nicht jedem liegt.",
+   "highlights": [
+    "Einzelsuiten ohne Sichtkontakt",
+    "Glaskuppel über dem Bett",
+    "Eigene Sauna und Kamin je Einheit",
+    "Keine Lichtverschmutzung"
+   ]
+  },
+  {
+   "id": "h266",
+   "ziel": "lappland",
+   "name": "Pallas Tunturihovi",
+   "ort": "Pallastunturi",
+   "region": "Muonio",
+   "kategorie": "berg",
+   "sterne": 3,
+   "preis": 176,
+   "rating": 4.5,
+   "bewertungen": 288,
+   "strand": null,
+   "zentrum": 12.0,
+   "flughafen": 68,
+   "kurz": "Mitten im Pallas-Yllästunturi-Nationalpark, Wanderweg Hetta-Pallas ab Haus.",
+   "lang": "Das Haus steht im Pallas-Yllästunturi-Nationalpark, dem größten Finnlands, und hat damit eine Lage, die heute nicht mehr genehmigt würde: der nächste Ort ist zwölf Kilometer entfernt, drumherum ist Schutzgebiet. Vierundzwanzig Zimmer, einfach, Holz, dreifache Fenster, keine Fernseher. Der Fernwanderweg Hetta-Pallas, der älteste des Landes, beginnt an der Tür und braucht vier Tage über fünfundfünfzig Kilometer Fjellrücken. Im Winter laufen Loipen durch den Park, Motorschlitten sind hier verboten, weshalb es völlig still ist. Sauna im Haus, zweimal täglich geheizt. Vollpension, weil es nichts anderes gibt, drei Mahlzeiten mit Lunchpaket auf Wunsch.",
+   "highlights": [
+    "Mitten im größten Nationalpark Finnlands",
+    "Fernwanderweg Hetta-Pallas ab Tür",
+    "Keine Motorschlitten, völlige Stille",
+    "Vollpension mit Lunchpaket"
+   ]
+  },
+  {
+   "id": "h267",
+   "ziel": "lappland",
+   "name": "Kemi Eisbrecher Lodge",
+   "ort": "Kemi",
+   "region": "Meri-Lappi",
+   "kategorie": "boutique",
+   "sterne": 4,
+   "preis": 232,
+   "rating": 4.4,
+   "bewertungen": 396,
+   "strand": null,
+   "zentrum": 0.6,
+   "flughafen": 8,
+   "extras": [
+    "spa"
+   ],
+   "kurz": "Am zugefrorenen Bottnischen Meerbusen, Eisbrecherfahrten und Schneeburg im Ort.",
+   "lang": "Kemi liegt am Nordende der Ostsee, die hier von Januar bis April zufriert, so weit, dass man zu Fuß oder mit dem Motorschlitten hinausfährt. Der Eisbrecher Sampo, früher im Dienst, nimmt heute Gäste mit und lässt sie im Trockenanzug im Eiswasser treiben, vier Stunden, und das ist in Lappland das außergewöhnlichste Erlebnis, das man kaufen kann. Das Haus liegt sechshundert Meter vom Hafen, zweiundzwanzig Zimmer, Beton und Holz, Fenster zum Wasser. Die Schneeburg, jedes Jahr neu gebaut, steht von Januar bis April am Ufer. Sauna mit Meerblick, Flughafen Kemi-Tornio acht Kilometer. Küche mit Fisch aus dem Meerbusen.",
+   "highlights": [
+    "Eisbrecherfahrten ab Hafen",
+    "Schneeburg von Januar bis April",
+    "Sauna mit Blick aufs Eis",
+    "Acht Kilometer zum Flughafen"
+   ]
+  },
+  {
+   "id": "h268",
+   "ziel": "lappland",
+   "name": "Hetta Fjellstation",
+   "ort": "Enontekiö",
+   "region": "Enontekiö",
+   "kategorie": "budget",
+   "sterne": 2,
+   "preis": 98,
+   "rating": 4.2,
+   "bewertungen": 246,
+   "strand": null,
+   "zentrum": 0.8,
+   "flughafen": 12,
+   "kurz": "Einfache Station am Ounasjärvi, Nordende des Hetta-Pallas-Wegs.",
+   "lang": "Hetta ist der Hauptort von Enontekiö, der nordwestlichsten Gemeinde Finnlands, und hat achthundert Einwohner auf einer Fläche größer als Zypern. Die Station liegt am Ufer des Ounasjärvi, achtzehn Zimmer, einfach, mit Dusche im Zimmer, dazu Mehrbettzimmer für Wanderer. Hier endet oder beginnt der Hetta-Pallas-Weg, weshalb im Frühjahr und Herbst viele mit Rucksack ankommen. Trockenraum und Sauna gehören dazu, Karten gibt es an der Rezeption. Gegenüber dem See stehen die Ounastunturi-Fjelle, und weil es im Norden nichts gibt, das Licht macht, sind die Nordlichter hier besonders deutlich. Küche mittags und abends, einfach, finnisch, reichlich.",
+   "highlights": [
+    "Am Ufer des Ounasjärvi",
+    "Endpunkt des Hetta-Pallas-Wegs",
+    "Trockenraum und Sauna für Wanderer",
+    "Zwölf Kilometer zum Flughafen Enontekiö"
+   ]
+  },
+  {
+   "id": "h269",
+   "ziel": "lappland",
+   "name": "Ruka Pohjola",
+   "ort": "Ruka",
+   "region": "Kuusamo",
+   "kategorie": "familie",
+   "sterne": 4,
+   "preis": 206,
+   "rating": 4.4,
+   "bewertungen": 712,
+   "strand": null,
+   "zentrum": 0.3,
+   "flughafen": 28,
+   "extras": [
+    "kidsClub",
+    "spa"
+   ],
+   "kurz": "An der Rukatunturi-Talstation, Kinderland am Hang, Hallenbad und Betreuung.",
+   "lang": "Ruka liegt knapp südlich des Polarkreises in Kuusamo und hat eine Skisaison von Oktober bis Mai, die längste in Finnland, weil der Fjell früh und lange Schnee hält. Das Haus steht an der Talstation, achtundsechzig Zimmer, zwei Drittel Familienzimmer, viele mit Verbindungstür. Das Kinderland liegt am Hang unten mit eigenem Lift und Zauberteppich, die Skischule holt am Haus ab. Im Haus Hallenbad, zwei Saunen, Spielzimmer, Betreuung in den finnischen und deutschen Ferien ganztägig. Zum Nationalpark Oulanka sind es fünfzig Kilometer, der Karhunkierros-Weg dort ist der bekannteste Wanderweg des Landes. Halbpension mit Buffet.",
+   "highlights": [
+    "Skisaison von Oktober bis Mai",
+    "Kinderland mit eigenem Lift",
+    "Hallenbad und zwei Saunen",
+    "Nationalpark Oulanka in fünfzig Kilometern"
+   ]
+  },
+  {
+   "id": "h270",
+   "ziel": "lappland",
+   "name": "Sodankylä Flusshaus",
+   "ort": "Sodankylä",
+   "region": "Sodankylä",
+   "kategorie": "budget",
+   "sterne": 2,
+   "preis": 88,
+   "rating": 4.1,
+   "bewertungen": 218,
+   "strand": null,
+   "zentrum": 0.4,
+   "flughafen": 92,
+   "kurz": "Günstiges Haus am Kitinen, Holzkirche von 1689 im Ort.",
+   "lang": "Sodankylä liegt auf halbem Weg zwischen Rovaniemi und Ivalo an der Straße nach Norden und ist für die meisten ein Zwischenstopp. Dafür ist das Haus gebaut: vierzehn Zimmer, einfach, mit Dusche, gut geheizt, Parkplatz mit Motorvorwärmer, was im Januar kein Zubehör ist. Die alte Holzkirche von 1689 steht am Fluss und ist eine der ältesten Finnlands, erhalten, weil sie 1944 übersehen wurde. Im Juni findet hier das Festival der Mitternachtssonne statt, ein Filmfestival, zu dem Regisseure aus der ganzen Welt in ein Dorf mit achttausend Einwohnern kommen. Nordlichter sieht man vom Parkplatz, dazu muss man nirgends hinfahren.",
+   "highlights": [
+    "Holzkirche von 1689 am Fluss",
+    "Parkplatz mit Motorvorwärmer",
+    "Nordlichter vom Parkplatz aus",
+    "Günstigstes Haus in Lappland"
+   ]
+  },
+  {
+   "id": "h271",
+   "ziel": "lappland",
+   "name": "Saariselkä Aurora Chalets",
+   "ort": "Saariselkä",
+   "region": "Inari",
+   "kategorie": "finca",
+   "sterne": 4,
+   "preis": 258,
+   "rating": 4.6,
+   "bewertungen": 432,
+   "strand": null,
+   "zentrum": 0.9,
+   "flughafen": 28,
+   "extras": [
+    "bikeRental"
+   ],
+   "kurz": "Chalets am Rand des Urho-Kekkonen-Nationalparks, Loipen und Ofen in jeder Einheit.",
+   "lang": "Saariselkä liegt am Rand des Urho-Kekkonen-Nationalparks, der so groß ist wie Zypern und bis zur russischen Grenze reicht. Die Chalets stehen in einer Reihe am Waldrand, vierzehn Einheiten mit Holzofen, eigener Sauna und einem Fenster, das nach Norden zeigt. Zur Loipe sind es dreißig Meter, zum Skigebiet Kaunispää ein Kilometer. Im Park gibt es offene Hütten, in denen jeder übernachten darf, das ist finnisches Recht und eine Erfahrung für sich. Im Sommer gehören Räder dazu, die Mückensaison dauert allerdings von Mitte Juni bis Ende Juli und wird regelmäßig unterschätzt. Frühstück im Hauptgebäude, abends auf Anmeldung.",
+   "highlights": [
+    "Am Urho-Kekkonen-Nationalpark",
+    "Holzofen und Sauna je Chalet",
+    "Dreißig Meter zur Loipe",
+    "Offene Hütten im Park"
+   ]
+  },
+  {
+   "id": "h272",
+   "ziel": "lappland",
+   "name": "Torassieppi Rentierhof",
+   "ort": "Muonio",
+   "region": "Muonio",
+   "kategorie": "familie",
+   "sterne": 3,
+   "preis": 182,
+   "rating": 4.6,
+   "bewertungen": 364,
+   "strand": null,
+   "zentrum": 6.4,
+   "flughafen": 74,
+   "extras": [
+    "kidsClub"
+   ],
+   "kurz": "Arbeitender Rentierhof am See, Fütterung zum Mitmachen, Schlittenfahrten ab Hof.",
+   "lang": "Der Hof hält seit vier Generationen Rentiere, derzeit rund zweihundert, und der Betrieb läuft weiter, auch mit Gästen im Haus. Gefüttert wird morgens und nachmittags, Mithelfen ist ausdrücklich erwünscht und für Kinder der Kern des Aufenthalts. Zwanzig Zimmer in zwei Holzgebäuden am Ufer des Torassieppi-Sees, einfach, warm, mit Blick übers Eis. Schlittenfahrten starten am Hof, von zwanzig Minuten bis zu einer Tagestour mit Lagerfeuer. Dazu gibt es eine Rauchsauna am See und ein Eisloch. Im Sommer schwimmt man im See und fährt mit dem Boot zur Insel. Vollpension, Rentier steht auf der Karte, was manche irritiert und sachlich zum Betrieb gehört.",
+   "highlights": [
+    "Arbeitender Rentierhof mit 200 Tieren",
+    "Fütterung zum Mitmachen",
+    "Schlittenfahrten ab Hof",
+    "Rauchsauna mit Eisloch am See"
+   ]
+  },
+  {
+   "id": "h273",
+   "ziel": "lappland",
+   "name": "Olos Fjellhotel",
+   "ort": "Olos",
+   "region": "Muonio",
+   "kategorie": "berg",
+   "sterne": 4,
+   "preis": 214,
+   "rating": 4.5,
+   "bewertungen": 408,
+   "strand": null,
+   "zentrum": 5.2,
+   "flughafen": 66,
+   "extras": [
+    "spa"
+   ],
+   "kurz": "Auf dem Olostunturi, Loipe und Piste am Haus, freier Blick nach Norden.",
+   "lang": "Der Olostunturi ist ein einzelner Fjell über dem Muonio-Tal, und das Hotel steht auf halber Höhe, womit es über der Baumgrenze liegt und nach Norden freie Sicht hat. Sechsunddreißig Zimmer, Kiefer und Wolle, alle mit Nordfenster, zwei Drittel mit Balkon. Loipe und Piste beginnen am Haus, das Gebiet ist klein, dafür leer. Im Spa gibt es zwei Saunen, ein Dampfbad und ein Außenbecken, das bei dreißig Grad minus raucht. Der Weckdienst bei Nordlichtaktivität funktioniert seit Jahren und wird auch im März noch gebraucht. Halbpension mit vier Gängen, zusätzlich eine Hüttenjause an der Loipe, die zum Haus gehört.",
+   "highlights": [
+    "Über der Baumgrenze mit freier Nordsicht",
+    "Loipe und Piste am Haus",
+    "Außenbecken bei Minusgraden",
+    "Eigene Hüttenjause an der Loipe"
+   ]
+  }
+ ]
+}

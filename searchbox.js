@@ -1,4 +1,5 @@
-// Suchmaske mit vier Reitern: Hotels, Ferienwohnungen, Mietwagen, Flüge.
+// Suchmaske mit drei Reitern: Hotels, Ferienwohnungen, Flüge.
+// Der Mietwagen-Reiter ist am 02.11.2026 entfallen.
 // Jeder Reiter zeigt eigene Felder. Bei Unterkünften lässt sich der Flug
 // optional dazubuchen. Der Zustand wandert als URL-Parameter weiter.
 
@@ -153,7 +154,14 @@ const SearchBox = (() => {
       { key: "unterkunft", label: "Unterkünfte" },
       { key: "hotel", label: "Hotels" },
       { key: "apartment", label: "Ferienwohnungen" },
-      { key: "car", label: "Mietwagen" },
+      /* Kein Mietwagen-Reiter mehr (02.11.2026).
+         ----------------------------------------------------------------
+         Vorgabe aus der Besprechung mit Kai: Der Mietwagen faellt aus der
+         Erhebung. Die Frage des Agenten davor ist abgeschaltet
+         (STELLSCHRAUBEN.mietwagenFrage), und ohne diesen Reiter gibt es
+         auch keinen zweiten Weg hinein. Der Bestand bleibt im Katalog
+         liegen, `results.html?type=car` funktioniert weiter - nur verlinkt
+         ihn nichts mehr. */
       /* Kein Flug-Reiter.
          ----------------------------------------------------------------
          Der Nutzer am 02.10.2026: "Zusaetzlich koennen wir diesen

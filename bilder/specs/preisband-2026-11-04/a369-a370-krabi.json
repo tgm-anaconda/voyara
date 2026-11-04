@@ -1,0 +1,24 @@
+{
+  "stand": "2026-11-04",
+  "grund": "Krabi hatte zwoelf Wohnungen fuer vier Personen, im Februar waren davon nur sechs frei - die Belegungssimulation hatte die grossen getroffen. Zwei weitere schaffen die Luft, die der Massstab braucht.",
+  "wohnungen": [
+    { "id": "a369", "name": "Ao Nang Familienbungalow", "region": "Ao Nang", "pricePerNight": 94, "rating": 4.5, "reviewCount": 263,
+      "bedrooms": 2, "bathrooms": 2, "size": 78, "maxGuests": 5,
+      "shortDescription": "Bungalow in einer kleinen Anlage, zweihundert Meter zum Strand von Ao Nang, Pool im Garten.",
+      "description": "Die Anlage liegt eine Querstraße hinter der Strandpromenade von Ao Nang, acht Bungalows um einen Garten mit Pool, in dem abends kaum jemand ist, weil die meisten Gäste dann essen gehen. Der Bungalow hat zwei Schlafzimmer, zwei Bäder und eine offene Küche zur überdachten Terrasse hin; für eine Familie zu viert oder fünft reicht das gut. Zum Strand sind es zweihundert Meter, zu den Longtailbooten nach Railay und Poda dreihundert. Die Garküchen in der Soi 11 sind vier Gehminuten entfernt und deutlich günstiger als die Lokale an der Promenade. Nachts ist es ruhig, die Klimaanlage läuft in beiden Schlafzimmern.",
+      "highlights": ["Zweihundert Meter zum Strand", "Pool im Garten der Anlage", "Zwei Schlafzimmer mit Klimaanlage", "Vier Minuten zu den Garküchen"],
+      "amenities": ["wifi", "kitchen", "washer", "balcony", "pool", "aircon", "familyFriendly", "parking"],
+      "distanceToBeach": 0.2, "distanceToCenter": 0.4,
+      "minNights": 3, "cleaningFee": 45,
+      "ratingBreakdown": { "lage": 4.7, "sauberkeit": 4.4, "ausstattung": 4.5, "preis": 4.7, "kommunikation": 4.4, "checkin": 4.4 } },
+    { "id": "a370", "name": "Klong Muang Gartenhaus", "region": "Klong Muang", "pricePerNight": 118, "rating": 4.4, "reviewCount": 187,
+      "bedrooms": 3, "bathrooms": 2, "size": 96, "maxGuests": 6,
+      "shortDescription": "Drei Schlafzimmer am ruhigen Nordstrand, eigener Garten, Pool zur Mitbenutzung.",
+      "description": "Klong Muang liegt zwanzig Autominuten nördlich von Ao Nang und ist der ruhige Teil der Küste: ein langer Strand, ein paar Resorts, kein Nachtleben. Das Haus steht in zweiter Reihe in einem eingezäunten Garten mit Mangobaum, drei Schlafzimmer, zwei Bäder, eine Wohnküche mit Esstisch für sechs. Der Pool gehört zur Anlage und wird von vier Häusern geteilt. Zum Strand sind es vierhundert Meter über einen Pfad, zur Tup-Kaek-Bucht mit den Kalkfelsen fünf Autominuten. Einkaufen lässt sich im Ort nur klein; der größere Supermarkt liegt in Ao Nang. Ein Roller oder Auto ist hier sinnvoll.",
+      "highlights": ["Drei Schlafzimmer für sechs Personen", "Eigener Garten mit Mangobaum", "Vierhundert Meter zum ruhigen Nordstrand", "Pool für vier Häuser"],
+      "amenities": ["wifi", "kitchen", "washer", "balcony", "pool", "aircon", "familyFriendly", "parking", "petsAllowed"],
+      "distanceToBeach": 0.4, "distanceToCenter": 8,
+      "minNights": 4, "cleaningFee": 55,
+      "ratingBreakdown": { "lage": 4.3, "sauberkeit": 4.5, "ausstattung": 4.5, "preis": 4.5, "kommunikation": 4.5, "checkin": 4.3 } }
+  ]
+}

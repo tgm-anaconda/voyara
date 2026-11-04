@@ -1,0 +1,343 @@
+{
+ "wohnungen": [
+  {
+   "id": "a161",
+   "ziel": "barcelona",
+   "name": "Eixample Fliesenwohnung",
+   "ort": "Barcelona",
+   "region": "Eixample",
+   "preis": 168,
+   "rating": 4.6,
+   "bewertungen": 224,
+   "schlafzimmer": 2,
+   "baeder": 1,
+   "groesse": 86,
+   "gaeste": 4,
+   "strand": 2.2,
+   "zentrum": 1.1,
+   "reinigung": 85,
+   "extras": [
+    "balcony"
+   ],
+   "kurz": "Altbau mit Hydraulikfliesen, Balkon zum Blockinnenhof, Metro vor der Tür.",
+   "lang": "Die Wohnung liegt im dritten Stock eines Hauses von 1908, mit den gemusterten Hydraulikfliesen, die in Barcelona von Hand gegossen wurden und in jedem Raum ein anderes Muster haben. Zwei Schlafzimmer, Wohnküche, ein Balkon zum Innenhof des Blocks, wo es deutlich stiller ist als zur Straße. Aufzug vorhanden. Zur Casa Milà sind es acht Gehminuten, zur Sagrada Família zwanzig, zur Metro L5 zwei. Waschmaschine, Geschirr für sechs, kein Fernseher, dafür Bücher. In Barcelona ist Ferienvermietung lizenzpflichtig, die Nummer hängt im Flur.",
+   "highlights": [
+    "Altbau von 1908 mit Hydraulikfliesen",
+    "Balkon zum stillen Blockinnenhof",
+    "Acht Minuten zur Casa Milà",
+    "Zwei Minuten zur Metro"
+   ]
+  },
+  {
+   "id": "a162",
+   "ziel": "barcelona",
+   "name": "Barceloneta Strandapartment",
+   "ort": "Barcelona",
+   "region": "Barceloneta",
+   "preis": 186,
+   "rating": 4.4,
+   "bewertungen": 286,
+   "schlafzimmer": 2,
+   "baeder": 1,
+   "groesse": 62,
+   "gaeste": 4,
+   "strand": 0.1,
+   "zentrum": 1.8,
+   "reinigung": 80,
+   "extras": [
+    "balcony",
+    "seaView"
+   ],
+   "kurz": "Hundert Meter zum Strand, Balkon zur Gasse, Altstadt in zehn Minuten.",
+   "lang": "Barceloneta ist ein Viertel aus schmalen Gassen zwischen Hafen und Strand, 1750 für Fischer gebaut, und das einzige Stadtviertel Europas, in dem man vom Bett in zweihundert Schritten im Mittelmeer steht. Die Wohnung liegt im zweiten Stock, zwei Schlafzimmer, Wohnküche, Balkon zur Gasse, kein Aufzug. Zum Sand sind es hundert Meter, zur Markthalle vier Gehminuten, zur Altstadt zehn. Im Sommer ist der Strand voll und die Gassen nachts laut, im Oktober wird es beides nicht mehr. Die Fenster sind doppelt verglast, das hilft, aber nicht vollständig.",
+   "highlights": [
+    "Hundert Meter zum Strand",
+    "Vier Minuten zur Markthalle",
+    "Zehn Minuten in die Altstadt",
+    "Doppelt verglaste Fenster"
+   ]
+  },
+  {
+   "id": "a163",
+   "ziel": "barcelona",
+   "name": "Gràcia Terrassenwohnung",
+   "ort": "Barcelona",
+   "region": "Gràcia",
+   "preis": 176,
+   "rating": 4.7,
+   "bewertungen": 192,
+   "schlafzimmer": 2,
+   "baeder": 1,
+   "groesse": 78,
+   "gaeste": 4,
+   "strand": 3.4,
+   "zentrum": 2.4,
+   "reinigung": 85,
+   "extras": [
+    "terrace"
+   ],
+   "kurz": "Dachwohnung in Gràcia mit eigener Terrasse, Park Güell in zwanzig Minuten.",
+   "lang": "Gràcia war bis 1897 eine eigene Stadt und fühlt sich noch so an: kleine Plätze mit Bäumen, auf denen abends die Nachbarn sitzen, enge Straßen, in denen Autos nicht lohnen. Die Wohnung liegt unter dem Dach, zwei Schlafzimmer, Wohnküche und eine Terrasse von zwanzig Quadratmetern, auf der man von Mai bis Oktober isst. Vier Stockwerke ohne Aufzug. Zur Plaça de la Virreina sind es drei Gehminuten, zum Park Güell zwanzig bergauf, zur Metro L3 fünf. Im August findet die Festa Major statt, eine Woche, in der die Straßen geschmückt und bis vier Uhr nachts voll sind.",
+   "highlights": [
+    "Eigene Terrasse mit zwanzig Quadratmetern",
+    "Drei Minuten zur Plaça de la Virreina",
+    "Zwanzig Minuten zum Park Güell",
+    "Viertel ohne Durchgangsverkehr"
+   ]
+  },
+  {
+   "id": "a164",
+   "ziel": "barcelona",
+   "name": "Poblenou Fabrikloft",
+   "ort": "Barcelona",
+   "region": "Sant Martí",
+   "preis": 192,
+   "rating": 4.6,
+   "bewertungen": 168,
+   "schlafzimmer": 2,
+   "baeder": 2,
+   "groesse": 94,
+   "gaeste": 5,
+   "strand": 0.5,
+   "zentrum": 3.8,
+   "reinigung": 95,
+   "extras": [
+    "balcony",
+    "parking"
+   ],
+   "kurz": "Loft in einer alten Textilfabrik, Strand Bogatell in fünf Minuten.",
+   "lang": "Poblenou war das Manchester Kataloniens, ein Viertel aus Textilfabriken, und als die Industrie ging, blieben Hallen mit Sheddächern, die heute Büros, Ateliers und Wohnungen sind. Diese ist eine davon, zwei Schlafzimmer, zwei Bäder, offener Wohnraum mit Stahlträgern und Fenstern über drei Meter. Zum Strand Bogatell sind es fünfhundert Meter, ein Strand, an dem Barcelonesen und nicht Reisegruppen liegen. Die Rambla del Poblenou mit ihren Lokalen beginnt um die Ecke, die Metro L4 zwei Blocks entfernt, zur Altstadt zwölf Minuten mit der Bahn. Stellplatz in der Tiefgarage.",
+   "highlights": [
+    "Loft in alter Textilfabrik",
+    "Fünfhundert Meter zum Strand Bogatell",
+    "Zwei Bäder und fünf Betten",
+    "Stellplatz in der Tiefgarage"
+   ]
+  },
+  {
+   "id": "a165",
+   "ziel": "barcelona",
+   "name": "Sant Antoni Studio",
+   "ort": "Barcelona",
+   "region": "Eixample",
+   "preis": 132,
+   "rating": 4.4,
+   "bewertungen": 246,
+   "schlafzimmer": 1,
+   "baeder": 1,
+   "groesse": 46,
+   "gaeste": 2,
+   "strand": 2.6,
+   "zentrum": 1.4,
+   "reinigung": 60,
+   "extras": [
+    "balcony"
+   ],
+   "kurz": "Günstiges Studio am Mercat de Sant Antoni, Metro hundert Meter.",
+   "lang": "Sant Antoni ist der Teil des Eixample westlich der Rambla und das Viertel, in das Barcelonesen ziehen, wenn ihnen Gràcia zu teuer wird: Markthalle, Buchstände am Sonntag, Lokale, in denen man ohne Reservierung sitzt. Das Studio liegt im ersten Stock gegenüber der Halle, ein Schlafzimmer, Wohnküche, kleiner Balkon zur Straße. Für zwei Personen, nicht mehr. Zur Metro L2 sind es hundert Meter, zur Rambla acht Gehminuten, zum MACBA zehn. In der Markthalle gibt es ab sechs Uhr Frühstück für die Händler, und das ist das beste Frühstück des Viertels.",
+   "highlights": [
+    "Gegenüber dem Mercat de Sant Antoni",
+    "Hundert Meter zur Metro L2",
+    "Markthallenfrühstück ab sechs Uhr",
+    "Günstigste Wohnung in Barcelona"
+   ]
+  },
+  {
+   "id": "a166",
+   "ziel": "barcelona",
+   "name": "Sarrià Gartenwohnung",
+   "ort": "Barcelona",
+   "region": "Sarrià-Sant Gervasi",
+   "preis": 204,
+   "rating": 4.7,
+   "bewertungen": 142,
+   "schlafzimmer": 3,
+   "baeder": 2,
+   "groesse": 112,
+   "gaeste": 6,
+   "strand": 5.4,
+   "zentrum": 4.8,
+   "reinigung": 110,
+   "extras": [
+    "terrace",
+    "parking"
+   ],
+   "kurz": "Erdgeschoss einer Stadtvilla mit Garten, Oberstadtviertel, Bahn ins Zentrum.",
+   "lang": "Sarrià war bis 1921 ein Dorf und ist heute das stillste Viertel Barcelonas, oben am Hang, mit Villen, Platanen und einer Markthalle, in der niemand Englisch spricht. Die Wohnung nimmt das Erdgeschoss einer Villa von 1920 ein, drei Schlafzimmer, zwei Bäder, Wohnküche und ein eigener Garten mit Zypressen und Zitronenbaum. Mit sechs Betten und Garten ist sie für Familien gedacht, die in Barcelona nicht im Lärm wohnen wollen. Zur Bahn Ferrocarril sind es sechs Gehminuten, zum Passeig de Gràcia zwölf Minuten Fahrt. Zum Tibidabo mit dem Vergnügungspark von 1899 zwanzig Minuten.",
+   "highlights": [
+    "Eigener Garten mit Zitronenbaum",
+    "Drei Schlafzimmer für sechs Personen",
+    "Zwölf Minuten mit der Bahn ins Zentrum",
+    "Stillstes Viertel der Stadt"
+   ]
+  },
+  {
+   "id": "a167",
+   "ziel": "wien",
+   "name": "Altbau Josefstadt",
+   "ort": "Wien",
+   "region": "Josefstadt",
+   "preis": 164,
+   "rating": 4.7,
+   "bewertungen": 186,
+   "schlafzimmer": 2,
+   "baeder": 1,
+   "groesse": 92,
+   "gaeste": 4,
+   "strand": null,
+   "zentrum": 1.4,
+   "reinigung": 85,
+   "extras": [
+    "balcony"
+   ],
+   "kurz": "Biedermeieraltbau mit Stuckdecken, Hofbalkon, Theater um die Ecke.",
+   "lang": "Die Josefstadt ist der kleinste Bezirk Wiens und der mit den meisten Beisln pro Quadratmeter. Die Wohnung liegt im zweiten Stock eines Biedermeierhauses von 1832, zwei Schlafzimmer, Wohnküche, Stuckdecken, Parkett und ein Balkon zum Hof, in dem eine Kastanie steht. Dreieinhalb Meter Raumhöhe, Aufzug seit 2018. Zum Theater in der Josefstadt sind es vier Gehminuten, zum Volkstheater acht, zur Ringstraße zehn. Waschmaschine, Geschirr für sechs, Kinderbett auf Anfrage. Im Haus wohnen Wiener, keine Ferienvermietungen reihenweise, das merkt man im Treppenhaus.",
+   "highlights": [
+    "Biedermeierhaus von 1832 mit Stuckdecken",
+    "Balkon zum Hof mit Kastanie",
+    "Vier Minuten zum Theater in der Josefstadt",
+    "Dreieinhalb Meter Raumhöhe"
+   ]
+  },
+  {
+   "id": "a168",
+   "ziel": "wien",
+   "name": "Prater Familienwohnung",
+   "ort": "Wien",
+   "region": "Leopoldstadt",
+   "preis": 152,
+   "rating": 4.5,
+   "bewertungen": 242,
+   "schlafzimmer": 2,
+   "baeder": 1,
+   "groesse": 78,
+   "gaeste": 5,
+   "strand": null,
+   "zentrum": 2.4,
+   "reinigung": 80,
+   "extras": [
+    "balcony",
+    "parking"
+   ],
+   "kurz": "Am Grünen Prater, fünf Betten, sechzehn Minuten zum Flughafen.",
+   "lang": "Die Wohnung liegt an der Hauptallee am Rand des Grünen Praters, vier Kilometer gerader Weg unter Kastanien, auf dem morgens die halbe Stadt läuft. Zwei Schlafzimmer mit fünf Betten, Wohnküche, Balkon nach Süden. Zum Wurstelprater mit dem Riesenrad sind es zehn Gehminuten, zur U1 am Praterstern sieben, und von dort fährt die Schnellbahn in sechzehn Minuten zum Flughafen. Supermarkt im Haus. Für Familien ist das die praktischste Adresse der Stadt, weil der Park das Programm für die Zwischenzeiten liefert. Kinderbett, Hochstuhl und ein Stellplatz gehören dazu.",
+   "highlights": [
+    "An der Hauptallee im Grünen Prater",
+    "Fünf Betten und Stellplatz",
+    "Sechzehn Minuten zum Flughafen",
+    "Supermarkt im Haus"
+   ]
+  },
+  {
+   "id": "a169",
+   "ziel": "wien",
+   "name": "Dachwohnung Neubau",
+   "ort": "Wien",
+   "region": "Neubau",
+   "preis": 186,
+   "rating": 4.6,
+   "bewertungen": 164,
+   "schlafzimmer": 2,
+   "baeder": 1,
+   "groesse": 74,
+   "gaeste": 4,
+   "strand": null,
+   "zentrum": 1.6,
+   "reinigung": 85,
+   "extras": [
+    "terrace"
+   ],
+   "kurz": "Dachgeschoss im siebten Bezirk, Terrasse über den Dächern, Lokale rundherum.",
+   "lang": "Der siebte Bezirk ist das Viertel, in dem Wien am wenigsten nach Postkarte aussieht: kleine Läden, Zweitgeschäfte, Lokale, in denen Leute aus dem Viertel sitzen. Die Wohnung liegt im ausgebauten Dachgeschoss, zwei Schlafzimmer, offener Wohnraum mit Dachschrägen und eine Terrasse von fünfzehn Quadratmetern über den Dächern. Aufzug bis in den vierten, dann eine Treppe. Zum MuseumsQuartier sind es sechs Gehminuten, zur Mariahilfer Straße drei, zum Naschmarkt zwölf. Abends gibt es im Umkreis von dreihundert Metern mehr gute Lokale als in manchen Städten insgesamt.",
+   "highlights": [
+    "Terrasse mit fünfzehn Quadratmetern über den Dächern",
+    "Sechs Minuten zum MuseumsQuartier",
+    "Lokale im Umkreis von 300 Metern",
+    "Dachgeschoss mit Schrägen"
+   ]
+  },
+  {
+   "id": "a170",
+   "ziel": "wien",
+   "name": "Grinzing Winzerhaus",
+   "ort": "Wien",
+   "region": "Döbling",
+   "preis": 172,
+   "rating": 4.6,
+   "bewertungen": 128,
+   "schlafzimmer": 2,
+   "baeder": 1,
+   "groesse": 84,
+   "gaeste": 4,
+   "strand": null,
+   "zentrum": 8.2,
+   "reinigung": 90,
+   "extras": [
+    "terrace",
+    "parking"
+   ],
+   "kurz": "Wohnung in einem Winzerhaus, Weinberge hinter dem Garten, Linie 38 ins Zentrum.",
+   "lang": "Grinzing ist formal Wien und faktisch ein Dorf am Stadtrand mit Weinbergen, die bis an die Häuser reichen. Die Wohnung liegt im Erdgeschoss eines Winzerhauses von 1870, zwei Schlafzimmer, Wohnküche mit Gewölbe, Terrasse zum Garten, hinter dem die Rieden beginnen. Wenn beim Nachbarn ausgesteckt ist, sitzt man im Hof zwischen Wienern, die zum Essen und nicht zum Fotografieren kommen. Die Straßenbahnlinie 38 fährt sieben Gehminuten entfernt und braucht dreiundzwanzig Minuten zum Schottentor am Ring. Der Weg durch die Weinberge nach Nussdorf dauert eine halbe Stunde, Stellplatz gehört dazu.",
+   "highlights": [
+    "Winzerhaus von 1870 mit Gewölbe",
+    "Weinberge hinter dem Garten",
+    "Linie 38 in 23 Minuten zum Ring",
+    "Weg durch die Rieden nach Nussdorf"
+   ]
+  },
+  {
+   "id": "a171",
+   "ziel": "wien",
+   "name": "Studio Mariahilf",
+   "ort": "Wien",
+   "region": "Mariahilf",
+   "preis": 118,
+   "rating": 4.3,
+   "bewertungen": 268,
+   "schlafzimmer": 1,
+   "baeder": 1,
+   "groesse": 42,
+   "gaeste": 2,
+   "strand": null,
+   "zentrum": 2.2,
+   "reinigung": 55,
+   "extras": [],
+   "kurz": "Günstiges Studio an der Mariahilfer Straße, U3 vor der Tür.",
+   "lang": "Die Mariahilfer Straße ist die längste Einkaufsstraße Wiens und seit dem Umbau zur Begegnungszone leiser, als man denkt. Das Studio liegt im Hoftrakt eines Altbaus, also deutlich ruhiger als die Straßenseite, ein Schlafzimmer, Wohnküche, kein Balkon. Für zwei Personen, nicht mehr. Die U3 hält vor dem Haus, zum Stephansplatz sind es vier Stationen, zum Westbahnhof vier in die andere Richtung, zum MuseumsQuartier zehn Gehminuten. Waschmaschine in der Wohnung, Supermarkt im Haus. Für diesen Preis so zentral in Wien ist die Wohnung einer der verlässlicheren Einstiege, auch wenn sie keine Überraschung bietet.",
+   "highlights": [
+    "U3 direkt vor dem Haus",
+    "Hoftrakt, deutlich ruhiger",
+    "Vier Stationen zum Stephansplatz",
+    "Günstigste Wohnung in Wien"
+   ]
+  },
+  {
+   "id": "a172",
+   "ziel": "wien",
+   "name": "Innere Stadt Palaiswohnung",
+   "ort": "Wien",
+   "region": "Innere Stadt",
+   "preis": 246,
+   "rating": 4.7,
+   "bewertungen": 148,
+   "schlafzimmer": 3,
+   "baeder": 2,
+   "groesse": 128,
+   "gaeste": 6,
+   "strand": null,
+   "zentrum": 0.2,
+   "reinigung": 130,
+   "extras": [
+    "balcony"
+   ],
+   "kurz": "Große Wohnung im ersten Bezirk, drei Schlafzimmer, Oper in acht Minuten.",
+   "lang": "Die Wohnung liegt im zweiten Stock eines Palais von 1878 in einer Gasse zwischen Kärntner Straße und Stadtpark, drei Schlafzimmer, zwei Bäder, ein Salon mit Flügeltüren und eine Wohnküche, in der sechs Leute sitzen. Kassettenparkett, vier Meter Raumhöhe, Aufzug. Für den ersten Bezirk ist das viel Platz, und mit sechs Betten liegt sie pro Person unter zwei Hotelzimmern. Zur Oper sind es acht Gehminuten, zum Stephansdom fünf, zur Albertina sieben. Vor der Tür fährt keine Straßenbahn, es ist still. Waschmaschine, Geschirr für zehn, Kinderbett auf Anfrage.",
+   "highlights": [
+    "Palais von 1878 im ersten Bezirk",
+    "Drei Schlafzimmer und zwei Bäder",
+    "Acht Minuten zur Oper",
+    "Vier Meter Raumhöhe"
+   ]
+  }
+ ]
+}

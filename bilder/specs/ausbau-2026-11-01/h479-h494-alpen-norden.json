@@ -1,0 +1,412 @@
+{
+ "hotels": [
+  {
+   "id": "h479",
+   "ziel": "tirol",
+   "name": "Gasthof Nauders",
+   "ort": "Nauders",
+   "region": "Oberinntal",
+   "kategorie": "budget",
+   "sterne": 2,
+   "preis": 80,
+   "rating": 4.2,
+   "bewertungen": 312,
+   "strand": null,
+   "zentrum": 0.3,
+   "flughafen": 128,
+   "kurz": "Einfacher Gasthof am Reschenpass, Dreiländereck, Lift in Gehweite.",
+   "lang": "Nauders liegt auf eintausendvierhundert Metern direkt am Reschenpass, wo Österreich, Italien und die Schweiz aufeinandertreffen. Der Gasthof hat achtzehn Zimmer über der Stube, einfach möbliert, mit Dusche und WC, gut geheizt. Zur Bergkastelbahn sind es sechshundert Meter, das Gebiet hat siebzig Pistenkilometer und selten Wartezeiten, weil die meisten weiter nach Ischgl fahren. Der versunkene Kirchturm im Reschensee steht neun Kilometer südlich in Italien und ist im Winter über das Eis erreichbar. In der Stube wird mittags und abends gekocht, Tiroler Karte, Portionen für Skifahrer.",
+   "highlights": [
+    "Sechshundert Meter zur Bergkastelbahn",
+    "Siebzig Pistenkilometer ohne Wartezeiten",
+    "Dreiländereck am Reschenpass",
+    "Versunkener Kirchturm in neun Kilometern"
+   ]
+  },
+  {
+   "id": "h480",
+   "ziel": "tirol",
+   "name": "Kaunertaler Gletscherhof",
+   "ort": "Feichten",
+   "region": "Kaunertal",
+   "kategorie": "berg",
+   "sterne": 4,
+   "preis": 206,
+   "rating": 4.5,
+   "bewertungen": 386,
+   "strand": null,
+   "zentrum": 0.4,
+   "flughafen": 96,
+   "extras": [
+    "spa"
+   ],
+   "kurz": "Im Seitental unter dem Gletscher, Panoramastraße, Ski bis Juni.",
+   "lang": "Das Kaunertal endet an einem Gletscher, auf den eine Panoramastraße mit neunundzwanzig Kehren bis auf zweitausendsiebenhundertfünfzig Meter führt, und dort oben wird bis in den Juni gefahren. Das Haus liegt in Feichten, achtunddreißig Zimmer, Zirbenholz, Südbalkone, Skibus vor der Tür. Im Spa Sauna, Dampfbad und ein Außenbecken mit Blick auf die Wände. Das Tal ist eng, still und ohne Après-Ski, was man als Mangel oder als Grund lesen kann. Im Sommer beginnt am Gletscherparkplatz der Weg zur Gepatschhütte, und der Gepatsch-Stausee liegt auf halber Strecke.",
+   "highlights": [
+    "Gletscherskilauf bis in den Juni",
+    "Panoramastraße mit 29 Kehren",
+    "Außenbecken mit Blick auf die Wände",
+    "Tal ohne Après-Ski"
+   ]
+  },
+  {
+   "id": "h481",
+   "ziel": "tirol",
+   "name": "Lienzer Dolomitenhof",
+   "ort": "Lienz",
+   "region": "Osttirol",
+   "kategorie": "berg",
+   "sterne": 4,
+   "preis": 186,
+   "rating": 4.5,
+   "bewertungen": 468,
+   "strand": null,
+   "zentrum": 0.6,
+   "flughafen": 172,
+   "extras": [
+    "spa"
+   ],
+   "kurz": "In Osttirol unter den Lienzer Dolomiten, Loipen im Tal, Stadt mit Arkaden.",
+   "lang": "Lienz liegt in einem Talkessel, in dem sich Drau und Isel treffen, mit den Lienzer Dolomiten im Süden und der Schobergruppe im Norden. Die Stadt hat Arkaden, einen Hauptplatz und ein Schloss, was sie von den meisten Tiroler Skiorten unterscheidet. Das Haus steht am Stadtrand, zweiundvierzig Zimmer, Lärchenholz, Balkone nach Süden auf die Wände. Die Loipen beginnen vor der Tür, zweihundert Kilometer im Tal, und das Zettersfeld ist mit der Bahn in zehn Minuten erreicht. Im Spa Sauna, Dampfbad und ein Hallenbad. Osttirol ist vom restlichen Tirol durch Italien getrennt, weshalb es hier spürbar ruhiger ist.",
+   "highlights": [
+    "Loipen vor der Tür, 200 Kilometer im Tal",
+    "Balkone auf die Lienzer Dolomiten",
+    "Zehn Minuten mit der Bahn aufs Zettersfeld",
+    "Stadt mit Arkaden und Schloss"
+   ]
+  },
+  {
+   "id": "h482",
+   "ziel": "tirol",
+   "name": "Wildschönau Bauernhof",
+   "ort": "Niederau",
+   "region": "Wildschönau",
+   "kategorie": "finca",
+   "sterne": 3,
+   "preis": 158,
+   "rating": 4.6,
+   "bewertungen": 342,
+   "strand": null,
+   "zentrum": 1.4,
+   "flughafen": 72,
+   "extras": [
+    "terrace",
+    "bikeRental"
+   ],
+   "kurz": "Arbeitender Hof im Hochtal, Milch aus dem Stall, Skibus unten an der Straße.",
+   "lang": "Die Wildschönau ist ein Hochtal über dem Inntal, in das eine einzige Straße führt, und sie lebt von Milchwirtschaft, nicht von Hotellerie. Der Hof liegt am Hang über Niederau, zehn Zimmer im umgebauten Wirtschaftsteil, Altholz, Lehmputz, Blick über das Tal. Im Stall stehen zweiundzwanzig Kühe, gemolken wird morgens und abends, zusehen ist erlaubt. Milch, Butter und Käse kommen aus der eigenen Kammer, das Frühstück entsprechend. Zum Skigebiet Ski Juwel fährt der Bus unten an der Straße, im Sommer gehören Räder dazu. Die Schaukäserei und die Krummen Steige liegen in Gehweite.",
+   "highlights": [
+    "Arbeitender Hof mit 22 Kühen",
+    "Milch und Käse aus eigener Kammer",
+    "Skibus unten an der Straße",
+    "Räder im Sommer inklusive"
+   ]
+  },
+  {
+   "id": "h483",
+   "ziel": "suedtirol",
+   "name": "Gasthof Ahrntal",
+   "ort": "Luttach",
+   "region": "Ahrntal",
+   "kategorie": "budget",
+   "sterne": 2,
+   "preis": 82,
+   "rating": 4.3,
+   "bewertungen": 286,
+   "strand": null,
+   "zentrum": 0.2,
+   "flughafen": 272,
+   "kurz": "Einfacher Gasthof im hintersten Tal, Klausberg-Bahn in Gehweite.",
+   "lang": "Das Ahrntal ist das nördlichste Tal Italiens und endet an der Grenze zu Österreich unter Dreitausendern. Der Gasthof liegt in Luttach, sechzehn Zimmer über der Stube, einfach, mit Dusche und WC, Holzvertäfelung aus den siebziger Jahren, die niemand ersetzt hat und die gut aussieht. Zur Klausberg-Bahn sind es siebenhundert Meter, das Gebiet Skiworld Ahrntal hat achtzig Pistenkilometer. In der Stube gibt es Südtiroler Küche zu Preisen, die in Gröden eine Vorspeise kosten. Im Sommer beginnt im Tal der Weg zum Schwarzensteinhaus, und die Krimmler Wasserfälle liegen über den Pass.",
+   "highlights": [
+    "Siebenhundert Meter zur Klausberg-Bahn",
+    "Achtzig Pistenkilometer",
+    "Südtiroler Küche zu Talpreisen",
+    "Nördlichstes Tal Italiens"
+   ]
+  },
+  {
+   "id": "h484",
+   "ziel": "suedtirol",
+   "name": "Pension Ultental",
+   "ort": "St. Walburg",
+   "region": "Ultental",
+   "kategorie": "budget",
+   "sterne": 2,
+   "preis": 86,
+   "rating": 4.3,
+   "bewertungen": 248,
+   "strand": null,
+   "zentrum": 0.3,
+   "flughafen": 212,
+   "kurz": "Günstige Pension im stillsten Tal, Urlärchen und drei Seen.",
+   "lang": "Das Ultental zweigt bei Lana vom Etschtal ab und ist eines der wenigen Südtiroler Täler ohne Skizirkus und ohne Durchgangsverkehr, weil es oben endet. Dort stehen die Urlärchen, von denen die älteste auf achthundert Jahre geschätzt wird. Die Pension hat vierzehn Zimmer, einfach, mit Dusche, acht mit Balkon zum Tal. Für unter neunzig Euro ist das in Südtirol selten. Die drei Weißbrunner Seen liegen am Talende, der Weg um den obersten dauert anderthalb Stunden. Nach Meran sind es achtundzwanzig Kilometer, zum Skigebiet Schwemmalm acht, das klein ist und fast leer.",
+   "highlights": [
+    "Tal ohne Durchgangsverkehr",
+    "Urlärchen am Talende",
+    "Acht Zimmer mit Balkon",
+    "Unter neunzig Euro"
+   ]
+  },
+  {
+   "id": "h485",
+   "ziel": "suedtirol",
+   "name": "Schnalstaler Gletscherhof",
+   "ort": "Kurzras",
+   "region": "Schnalstal",
+   "kategorie": "berg",
+   "sterne": 4,
+   "preis": 224,
+   "rating": 4.5,
+   "bewertungen": 386,
+   "strand": null,
+   "zentrum": 0.2,
+   "flughafen": 232,
+   "extras": [
+    "spa"
+   ],
+   "kurz": "Am Gletscher auf 2000 Metern, Lift vor dem Haus, Ötzi-Fundstelle im Tal.",
+   "lang": "Kurzras liegt am Ende des Schnalstals auf zweitausendundelf Metern, und darüber beginnt das Gletscherskigebiet, das von September bis Mai geöffnet ist. Dreihundert Meter höher im Tisental wurde 1991 Ötzi gefunden, die Fundstelle ist im Sommer in vier Stunden erreichbar. Das Haus hat sechsunddreißig Zimmer, Fichtenholz, Südbalkone, die Gletscherbahn beginnt achtzig Meter vor dem Eingang. Im Spa zwei Saunen, Dampfbad und ein Hallenbad mit Blick auf die Wände. Das Tal ist eng und im Winter oft im Schatten, dafür ist Schnee hier nie eine Frage.",
+   "highlights": [
+    "Achtzig Meter zur Gletscherbahn",
+    "Skifahren von September bis Mai",
+    "Ötzi-Fundstelle im Tal",
+    "Hallenbad mit Blick auf die Wände"
+   ]
+  },
+  {
+   "id": "h486",
+   "ziel": "suedtirol",
+   "name": "Gsieser Talhof",
+   "ort": "St. Magdalena",
+   "region": "Gsieser Tal",
+   "kategorie": "finca",
+   "sterne": 4,
+   "preis": 178,
+   "rating": 4.7,
+   "bewertungen": 324,
+   "strand": null,
+   "zentrum": 1.1,
+   "flughafen": 262,
+   "extras": [
+    "terrace",
+    "bikeRental",
+    "spa"
+   ],
+   "kurz": "Hof im Loipental, Gsieser Tal Lauf im Februar, keine Lifte.",
+   "lang": "Das Gsieser Tal hat keine Skilifte und ist dafür eines der besten Langlaufreviere der Alpen: zweiundvierzig Loipenkilometer im Tal, und im Februar läuft hier der Gsieser Tal Lauf mit dreitausend Startern. Der Hof liegt am Talende, vierzehn Zimmer in alten Wirtschaftsgebäuden, Altholz, Kachelofen im Aufenthaltsraum, eine kleine Sauna im Nebengebäude. Die Loipe beginnt am Gartentor. Im Sommer führen Wege in den Naturpark Rieserferner-Ahrn, und die Räder stehen bereit. Gekocht wird mit dem, was Hof und Tal hergeben, abends vier Gänge, Speck und Käse aus eigener Herstellung.",
+   "highlights": [
+    "Loipe beginnt am Gartentor",
+    "42 Loipenkilometer, keine Lifte",
+    "Kachelofen und eigene Sauna",
+    "Speck und Käse aus eigener Herstellung"
+   ]
+  },
+  {
+   "id": "h487",
+   "ziel": "lappland",
+   "name": "Gästehaus Posio",
+   "ort": "Posio",
+   "region": "Posio",
+   "kategorie": "budget",
+   "sterne": 2,
+   "preis": 90,
+   "rating": 4.2,
+   "bewertungen": 224,
+   "strand": null,
+   "zentrum": 0.4,
+   "flughafen": 118,
+   "kurz": "Günstig am Rand des Riisitunturi, Hängeschnee im Februar.",
+   "lang": "Der Riisitunturi-Nationalpark ist der Ort, an dem die Fotos der buckligen Schneebäume entstehen: Bei bestimmten Wetterlagen lagert sich so viel Schnee auf den Fichten ab, dass sie unter der Last Formen annehmen, die nichts mehr mit Bäumen zu tun haben. Am besten im Februar. Das Gästehaus liegt in Posio, vierzehn Zimmer, einfach, mit Dusche, Küche zur Mitbenutzung und Trockenraum. Zum Parkeingang sind es fünfzehn Kilometer, der Aufstieg dauert eine Stunde. Posio ist auch für seine Keramik bekannt, die Manufaktur im Ort kann man besichtigen. Nordlichter sieht man vom Parkplatz.",
+   "highlights": [
+    "Fünfzehn Kilometer zum Riisitunturi",
+    "Hängeschnee im Februar",
+    "Küche und Trockenraum im Haus",
+    "Keramikmanufaktur im Ort"
+   ]
+  },
+  {
+   "id": "h488",
+   "ziel": "lappland",
+   "name": "Salla Grenzlodge",
+   "ort": "Salla",
+   "region": "Salla",
+   "kategorie": "berg",
+   "sterne": 3,
+   "preis": 182,
+   "rating": 4.5,
+   "bewertungen": 268,
+   "strand": null,
+   "zentrum": 0.8,
+   "flughafen": 152,
+   "extras": [
+    "spa"
+   ],
+   "kurz": "Im Osten an der russischen Grenze, Rentiere im Park, kaum Besucher.",
+   "lang": "Salla liegt im Osten Lapplands kurz vor der Grenze und wirbt selbst damit, mitten im Nirgendwo zu liegen. Das stimmt: Im Nationalpark östlich des Ortes trifft man an einem Wintertag eher Rentiere als Menschen. Die Lodge hat vierundzwanzig Zimmer in zwei Holzriegeln, Kiefer, dreifache Fenster, eine Sauna mit Eisloch im Hof. Das kleine Skigebiet hat fünfzehn Pisten und beginnt achthundert Meter entfernt, die Loipen laufen vom Haus weg. Im Rentierpark des Ortes kann man füttern und Schlitten fahren. Halbpension mit vier Gängen, Rentier und Fisch im Wechsel.",
+   "highlights": [
+    "Nationalpark mit mehr Rentieren als Menschen",
+    "Sauna mit Eisloch im Hof",
+    "Achthundert Meter zum Skigebiet",
+    "Loipen ab Haus"
+   ]
+  },
+  {
+   "id": "h489",
+   "ziel": "lappland",
+   "name": "Utsjoki Nordkap-Haus",
+   "ort": "Utsjoki",
+   "region": "Utsjoki",
+   "kategorie": "finca",
+   "sterne": 3,
+   "preis": 196,
+   "rating": 4.6,
+   "bewertungen": 186,
+   "strand": null,
+   "zentrum": 1.2,
+   "flughafen": 168,
+   "extras": [
+    "bikeRental"
+   ],
+   "kurz": "Nördlichste Gemeinde Finnlands, Lachsfischen am Teno, Polarnacht.",
+   "lang": "Utsjoki ist die nördlichste Gemeinde Finnlands, liegt an der norwegischen Grenze und hat als einzige eine samische Bevölkerungsmehrheit. Der Grenzfluss Teno ist einer der besten Lachsflüsse Europas, gefischt wird mit Erlaubnis und vom Boot. Das Haus hat zehn Zimmer in Holzbauten am Ufer, Ofen, Sauna am Wasser, einfache Bäder. Die Polarnacht dauert hier von Ende November bis Mitte Januar, und dafür geht im Sommer zwei Monate die Sonne nicht unter. Zum Nordkap sind es zweihundertvierzig Kilometer, zum Fjell Ailigas eine Stunde zu Fuß. Essen wird im Haus gekocht, Lachs und Rentier.",
+   "highlights": [
+    "Nördlichste Gemeinde Finnlands",
+    "Lachsfischen am Grenzfluss Teno",
+    "Sauna am Wasser",
+    "Polarnacht von Ende November bis Mitte Januar"
+   ]
+  },
+  {
+   "id": "h490",
+   "ziel": "lappland",
+   "name": "Oulanka Flusshütten",
+   "ort": "Kuusamo",
+   "region": "Kuusamo",
+   "kategorie": "finca",
+   "sterne": 4,
+   "preis": 212,
+   "rating": 4.6,
+   "bewertungen": 342,
+   "strand": null,
+   "zentrum": 38.0,
+   "flughafen": 58,
+   "extras": [
+    "bikeRental"
+   ],
+   "kurz": "Am Oulanka-Nationalpark, Karhunkierros ab Haus, Stromschnellen am Fluss.",
+   "lang": "Der Oulanka-Nationalpark liegt an der russischen Grenze und hat mit dem Karhunkierros, dem Bärenrundweg, den bekanntesten Wanderweg Finnlands: achtzig Kilometer über Hängebrücken, Stromschnellen und Sandbänke. Die Hütten stehen am Flussufer am Parkrand, zwölf Einheiten mit Holzofen, Küche und eigener Sauna. Der Weg beginnt dreihundert Meter entfernt. Im Winter laufen Loipen durch den Park, Motorschlitten sind verboten. Zum Skigebiet Ruka sind es zwanzig Kilometer, zum Flughafen Kuusamo achtundfünfzig. Räder gehören dazu, die Mückensaison im Juli wird regelmäßig unterschätzt.",
+   "highlights": [
+    "Karhunkierros beginnt 300 Meter entfernt",
+    "Eigene Sauna in jeder Hütte",
+    "Loipen durch den Park, keine Motorschlitten",
+    "Zwanzig Kilometer nach Ruka"
+   ]
+  },
+  {
+   "id": "h491",
+   "ziel": "ostsee",
+   "name": "Fehmarn Südstrand Spa",
+   "ort": "Burg auf Fehmarn",
+   "region": "Fehmarn",
+   "kategorie": "luxus",
+   "sterne": 4,
+   "preis": 182,
+   "rating": 4.6,
+   "bewertungen": 548,
+   "strand": 0.2,
+   "zentrum": 1.8,
+   "flughafen": 148,
+   "extras": [
+    "spa",
+    "seaView",
+    "terrace"
+   ],
+   "kurz": "Am Südstrand von Fehmarn, Meerwasserbecken, sonnenreichste Insel Deutschlands.",
+   "lang": "Fehmarn hat statistisch die meisten Sonnenstunden Deutschlands, und der Südstrand bei Burgtiefe ist drei Kilometer lang, flach und nach Süden offen. Das Haus liegt zweihundert Meter davon, sechsundfünfzig Zimmer, hell und ruhig eingerichtet, zwei Drittel mit Blick auf das Wasser. Der Spa hat ein Meerwasserbecken, drei Saunen und acht Anwendungsräume und ist von Oktober bis März der Hauptgrund für die Buchungen. Fehmarn ist über die Sundbrücke erreichbar, zum Wasservogelreservat Wallnau sind es zwanzig Kilometer, zur Fähre nach Dänemark zehn. Küche mit fünf Gängen, Dorsch aus der Ostsee.",
+   "highlights": [
+    "Meerwasserbecken und drei Saunen",
+    "Zweihundert Meter zum Südstrand",
+    "Sonnenreichste Insel Deutschlands",
+    "Fähre nach Dänemark in zehn Kilometern"
+   ]
+  },
+  {
+   "id": "h492",
+   "ziel": "ostsee",
+   "name": "Pension Koserow",
+   "ort": "Koserow",
+   "region": "Usedom",
+   "kategorie": "budget",
+   "sterne": 2,
+   "preis": 76,
+   "rating": 4.2,
+   "bewertungen": 386,
+   "strand": 0.4,
+   "zentrum": 0.3,
+   "flughafen": 188,
+   "kurz": "Günstige Pension an der schmalsten Stelle Usedoms, Seebrücke und Steilufer.",
+   "lang": "Koserow liegt dort, wo Usedom nur noch zweihundert Meter breit ist, zwischen Ostsee und Achterwasser, und hat mit dem Streckelsberg ein Steilufer von achtundfünfzig Metern, das höchste der Insel. Die Pension hat sechzehn Zimmer, einfach, mit Dusche und WC, sechs mit Balkon. Zum Strandaufgang sind es vierhundert Meter, zur Seebrücke sechshundert. Für unter achtzig Euro ist das auf Usedom im Sommer eine Ausnahme. Die Salzhütten am Strand, in denen früher der Fang gepökelt wurde, stehen noch und beherbergen heute ein kleines Museum. Der Radweg führt ohne Steigung nach Zinnowitz und nach Ückeritz.",
+   "highlights": [
+    "Vierhundert Meter zum Strand",
+    "Steilufer Streckelsberg mit 58 Metern",
+    "Salzhütten am Strand",
+    "Unter achtzig Euro auf Usedom"
+   ]
+  },
+  {
+   "id": "h493",
+   "ziel": "ostsee",
+   "name": "Travemünde Lotsenhaus",
+   "ort": "Travemünde",
+   "region": "Lübecker Bucht",
+   "kategorie": "boutique",
+   "sterne": 4,
+   "preis": 206,
+   "rating": 4.6,
+   "bewertungen": 486,
+   "strand": 0.2,
+   "zentrum": 0.4,
+   "flughafen": 176,
+   "extras": [
+    "terrace",
+    "seaView"
+   ],
+   "kurz": "An der Trave-Mündung, Viermaster vor dem Fenster, Lübeck in zwanzig Minuten.",
+   "lang": "In Travemünde mündet die Trave in die Ostsee, und am Priwall gegenüber liegt die Passat, ein Viermaster von 1911, der als Museumsschiff vor Anker liegt. Das Haus ist ein Lotsenhaus von 1878 an der Vorderreihe, achtzehn Zimmer, Dielen, hohe Fenster, zwölf mit Blick auf die Mündung, in der die Fähren nach Schweden und Finnland ein- und auslaufen. Zum Strand sind es zweihundert Meter, zur Seebrücke vierhundert. Nach Lübeck mit seinen sieben Türmen fährt die Bahn in zwanzig Minuten. Frühstück bis halb zwölf, abends eine kurze Karte mit Fisch.",
+   "highlights": [
+    "Lotsenhaus von 1878 an der Vorderreihe",
+    "Blick auf die Trave-Mündung",
+    "Zweihundert Meter zum Strand",
+    "Zwanzig Minuten nach Lübeck"
+   ]
+  },
+  {
+   "id": "h494",
+   "ziel": "ostsee",
+   "name": "Lohme Steilküste",
+   "ort": "Lohme",
+   "region": "Rügen",
+   "kategorie": "boutique",
+   "sterne": 3,
+   "preis": 168,
+   "rating": 4.6,
+   "bewertungen": 324,
+   "strand": 0.9,
+   "zentrum": 0.4,
+   "flughafen": 148,
+   "extras": [
+    "terrace",
+    "seaView"
+   ],
+   "kurz": "Auf der Steilküste über dem Königsstuhl, Sonnenuntergang über dem Wasser.",
+   "lang": "Lohme liegt im Nordosten Rügens auf der Steilküste, und weil die Küste hier nach Nordwesten zeigt, ist es der einzige Ort an der Kreideküste, an dem die Sonne über dem Wasser untergeht. Das Haus steht am Hangrand, vierzehn Zimmer, einfach und hell, zehn mit Blick über die Ostsee. Zum Königsstuhl im Nationalpark Jasmund sind es vier Kilometer über den Hochuferweg, zur Kreidefelsenbucht unter dem Ort führt eine Treppe mit zweihundertzehn Stufen. Der Buchenwald von Jasmund gehört zum Weltnaturerbe. Abends drei Gerichte, Fisch aus Sassnitz.",
+   "highlights": [
+    "Steilküste mit Sonnenuntergang über dem Wasser",
+    "Vier Kilometer zum Königsstuhl",
+    "Treppe zur Kreidefelsenbucht",
+    "Weltnaturerbe Buchenwald Jasmund"
+   ]
+  }
+ ]
+}

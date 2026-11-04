@@ -3,6 +3,8 @@ bilder/.env
 bilder/generiert/
 bilder/eingang/
 bilder/pruefung.html
+bilder/zuordnung-pruefung.html
+bilder/vorrat-pruefung.html
 node_modules/
 _backup/
 

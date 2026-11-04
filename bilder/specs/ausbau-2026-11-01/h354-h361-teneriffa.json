@@ -1,0 +1,223 @@
+{
+ "hotels": [
+  {
+   "id": "h354",
+   "ziel": "teneriffa",
+   "name": "El Medano Windhaus",
+   "ort": "El Médano",
+   "region": "Süden",
+   "kategorie": "strand",
+   "sterne": 3,
+   "preis": 148,
+   "rating": 4.4,
+   "bewertungen": 486,
+   "strand": 0.1,
+   "zentrum": 0.3,
+   "flughafen": 8,
+   "extras": [
+    "seaView",
+    "terrace"
+   ],
+   "kurz": "Am Windsurfstrand im Süden, acht Kilometer zum Flughafen, Passat das ganze Jahr.",
+   "lang": "El Médano hat den beständigsten Wind der Kanaren, weshalb hier die Weltmeisterschaften im Windsurfen stattfinden und der Strand ganzjährig voll Segel ist. Das Haus liegt an der Promenade, vierundzwanzig Zimmer, einfach und hell, zwei Drittel mit Blick auf Montaña Roja und Wasser. Zum Sand sind es achtzig Meter, zur Schule zweihundert, Material wird dort verliehen. Der Ort ist kein Resort, sondern ein Dorf mit Fischrestaurants und einem Platz, auf dem abends Kinder spielen. Zum Flughafen Teneriffa Süd sind es acht Kilometer, zehn Minuten, was für einen Anreisetag mit Kindern den Unterschied macht.",
+   "highlights": [
+    "Achtzig Meter zum Windsurfstrand",
+    "Acht Kilometer zum Flughafen",
+    "Blick auf Montaña Roja",
+    "Dorf statt Resort"
+   ]
+  },
+  {
+   "id": "h355",
+   "ziel": "teneriffa",
+   "name": "Los Gigantes Klippenhotel",
+   "ort": "Los Gigantes",
+   "region": "Westen",
+   "kategorie": "luxus",
+   "sterne": 4,
+   "preis": 268,
+   "rating": 4.6,
+   "bewertungen": 586,
+   "strand": 0.4,
+   "zentrum": 0.5,
+   "flughafen": 42,
+   "extras": [
+    "pool",
+    "spa",
+    "seaView",
+    "terrace"
+   ],
+   "kurz": "Über den Klippen von Los Gigantes, sechshundert Meter Wand, Wale vor der Küste.",
+   "lang": "Die Klippen von Los Gigantes fallen sechshundert Meter senkrecht ins Meer, und davor leben Grindwale und Große Tümmler ganzjährig, eine der verlässlichsten Walbeobachtungsstellen Europas. Das Haus liegt oberhalb des Hafens, zweiundfünfzig Zimmer, alle mit Balkon nach Norden auf die Wand oder nach Westen auf das Wasser. Zwei Becken auf Terrassen, dazu ein Spa mit Meerwasserbecken, zwei Saunen und sechs Anwendungsräumen. Zum schwarzen Strand sind es vierhundert Meter, zum Hafen mit den Booten dreihundert. Nachmittags fällt die Wand in Schatten, dann kühlt es schnell ab, was im Juli angenehm und im Januar spürbar ist.",
+   "highlights": [
+    "Über den sechshundert Meter hohen Klippen",
+    "Wale ganzjährig vor der Küste",
+    "Zwei Becken auf Terrassen",
+    "Spa mit Meerwasserbecken"
+   ]
+  },
+  {
+   "id": "h356",
+   "ziel": "teneriffa",
+   "name": "Puerto Jardín Botánico",
+   "ort": "Puerto de la Cruz",
+   "region": "Norden",
+   "kategorie": "boutique",
+   "sterne": 4,
+   "preis": 186,
+   "rating": 4.6,
+   "bewertungen": 524,
+   "strand": 0.6,
+   "zentrum": 0.8,
+   "flughafen": 78,
+   "extras": [
+    "pool",
+    "terrace"
+   ],
+   "kurz": "Am Botanischen Garten im Norden, Teide-Blick, Lago Martiánez in Gehweite.",
+   "lang": "Der Norden Teneriffas ist grün, weil der Passat dort die Wolken stapelt, und Puerto de la Cruz ist der älteste Urlaubsort der Insel, seit britische Reisende im neunzehnten Jahrhundert wegen des Klimas kamen. Das Haus liegt am Botanischen Garten von 1788, in dem Bäume stehen, die älter sind als die Hotels drumherum. Zweiundzwanzig Zimmer, Holzbalkone im kanarischen Stil, Innenhof mit Becken. Zum Lago Martiánez, den Meerwasserbecken von César Manrique, sind es sechshundert Meter, zum schwarzen Strand Playa Jardín achthundert. Der Teide ist von der Dachterrasse zu sehen, zur Auffahrt sind es fünfzig Kilometer. Frühstück im Hof.",
+   "highlights": [
+    "Am Botanischen Garten von 1788",
+    "Innenhof mit Becken",
+    "Sechshundert Meter zum Lago Martiánez",
+    "Teide von der Dachterrasse"
+   ]
+  },
+  {
+   "id": "h357",
+   "ziel": "teneriffa",
+   "name": "Garachico Lavabecken",
+   "ort": "Garachico",
+   "region": "Norden",
+   "kategorie": "boutique",
+   "sterne": 3,
+   "preis": 164,
+   "rating": 4.6,
+   "bewertungen": 342,
+   "strand": 0.2,
+   "zentrum": 0.2,
+   "flughafen": 88,
+   "extras": [
+    "terrace",
+    "seaView"
+   ],
+   "kurz": "Im Lavaort am Meer, Naturbecken El Caletón vor dem Haus.",
+   "lang": "Garachico war bis 1706 der wichtigste Hafen Teneriffas, dann lief ein Lavastrom hindurch und füllte das Hafenbecken auf. Was blieb, ist ein Ort aus dem sechzehnten Jahrhundert und davor Lavafelsen, in denen Becken liegen, El Caletón, in denen man bei ruhiger See badet. Das Haus ist ein Herrenhaus von 1690, vierzehn Zimmer, Holzgalerie um den Innenhof, Steinböden, Fenster auf die Becken. Zum Wasser sind es hundertfünfzig Meter. Im Ort gibt es die Burg San Miguel, drei Plätze mit Lorbeerbäumen und sechs Restaurants, mehr nicht. Nach Masca sind es fünfundzwanzig Kilometer über eine Straße mit Serpentinen, die ihren Ruf verdient.",
+   "highlights": [
+    "Herrenhaus von 1690 mit Holzgalerie",
+    "Naturbecken El Caletón vor dem Haus",
+    "Lavastrom von 1706 im Ortsbild",
+    "Fünfundzwanzig Kilometer nach Masca"
+   ]
+  },
+  {
+   "id": "h358",
+   "ziel": "teneriffa",
+   "name": "La Laguna Casa Colonial",
+   "ort": "San Cristóbal de La Laguna",
+   "region": "Norden",
+   "kategorie": "stadt",
+   "sterne": 3,
+   "preis": 142,
+   "rating": 4.5,
+   "bewertungen": 412,
+   "strand": 8.4,
+   "zentrum": 0.1,
+   "flughafen": 72,
+   "extras": [
+    "terrace"
+   ],
+   "kurz": "Im Weltkulturerbe-Zentrum, Universitätsstadt, Anaga-Gebirge in Reichweite.",
+   "lang": "La Laguna war die erste Hauptstadt Teneriffas und ist die einzige unbefestigte Kolonialstadt mit erhaltenem Grundriss, weshalb sie Weltkulturerbe ist. Sie liegt auf sechshundert Metern, also kühler und oft im Nebel, und hat durch die Universität zwanzigtausend Studenten. Das Haus ist ein Stadthaus des siebzehnten Jahrhunderts, achtzehn Zimmer um einen Innenhof mit Holzgalerien und Drachenbaum. Zur Kathedrale sind es vier Gehminuten, zur Calle San Agustín mit den Patrizierhäusern zwei. Ins Anaga-Gebirge mit dem Lorbeerwald sind es zwanzig Kilometer, zum Strand von Las Teresitas neun. Die Straßenbahn nach Santa Cruz fährt in dreißig Minuten.",
+   "highlights": [
+    "Stadthaus aus dem 17. Jahrhundert",
+    "Innenhof mit Holzgalerien",
+    "Weltkulturerbe-Zentrum",
+    "Straßenbahn nach Santa Cruz"
+   ]
+  },
+  {
+   "id": "h359",
+   "ziel": "teneriffa",
+   "name": "Playa Paraíso Familienclub",
+   "ort": "Playa Paraíso",
+   "region": "Süden",
+   "kategorie": "familie",
+   "sterne": 4,
+   "preis": 192,
+   "rating": 4.3,
+   "bewertungen": 948,
+   "strand": 0.3,
+   "zentrum": 1.6,
+   "flughafen": 24,
+   "extras": [
+    "kidsClub",
+    "pool",
+    "seaView"
+   ],
+   "kurz": "Dreihundert Meter zur Bucht, drei Becken, Betreuung ganzjährig.",
+   "lang": "Playa Paraíso liegt an der Westküste des Südens, wo die Hänge steil zum Wasser abfallen und die Buchten klein sind. Das Haus hat hundertsechsundzwanzig Zimmer, zwei Drittel Familienzimmer, dazu drei Becken, eines mit Rutschen, eines beheizt, eines für Erwachsene. Betreuung läuft ganzjährig von zehn bis siebzehn Uhr und abends von neunzehn bis einundzwanzig. Zur Bucht sind es dreihundert Meter und eine Treppe, Sand und Kies gemischt, Aufsicht im Sommer. Der Siam Park, der größte Wasserpark Europas, liegt zwölf Kilometer entfernt. All Inclusive buchbar, Kinderbuffet ab halb sechs, Erwachsene ab neunzehn Uhr.",
+   "highlights": [
+    "Drei Becken, eines mit Rutschen",
+    "Betreuung ganzjährig, auch abends",
+    "Dreihundert Meter zur Bucht",
+    "Siam Park in zwölf Kilometern"
+   ]
+  },
+  {
+   "id": "h360",
+   "ziel": "teneriffa",
+   "name": "Finca Teno Alto",
+   "ort": "Buenavista del Norte",
+   "region": "Teno",
+   "kategorie": "finca",
+   "sterne": 4,
+   "preis": 178,
+   "rating": 4.7,
+   "bewertungen": 286,
+   "strand": 4.2,
+   "zentrum": 6.8,
+   "flughafen": 92,
+   "extras": [
+    "pool",
+    "terrace",
+    "bikeRental"
+   ],
+   "kurz": "Finca im Teno-Massiv, Ziegenkäse aus eigener Herstellung, Wanderwege ab Hof.",
+   "lang": "Teno Alto ist ein Hochplateau im Nordwesten über sechshundert Metern, auf dem ein Dutzend Höfe Ziegen halten und Käse machen, und das vom restlichen Teneriffa durch eine einzige Straße verbunden ist. Die Finca gehört dazu, zwölf Zimmer in alten Wirtschaftsgebäuden, Natursteinwände, Holzbalken, Becken im Garten unter Feigenbäumen. Käse, Brot und Marmelade zum Frühstück kommen vom Hof. Wanderwege beginnen an der Tür, nach Masca über den Grat sind es vier Stunden, zum Leuchtturm Punta de Teno acht Kilometer hinunter. Räder stehen bereit, bergab lohnt sich das mehr als bergauf. Abends auf Anmeldung drei Gänge, Ziege und Gemüse aus dem Garten.",
+   "highlights": [
+    "Arbeitende Ziegenfinca auf 600 Metern",
+    "Käse aus eigener Herstellung",
+    "Wanderwege ab Hof",
+    "Becken unter Feigenbäumen"
+   ]
+  },
+  {
+   "id": "h361",
+   "ziel": "teneriffa",
+   "name": "Santa Cruz Auditorio",
+   "ort": "Santa Cruz de Tenerife",
+   "region": "Osten",
+   "kategorie": "stadt",
+   "sterne": 4,
+   "preis": 168,
+   "rating": 4.4,
+   "bewertungen": 624,
+   "strand": 7.2,
+   "zentrum": 0.4,
+   "flughafen": 62,
+   "extras": [
+    "pool",
+    "terrace"
+   ],
+   "kurz": "An der Hafenpromenade, Calatrava-Auditorium nebenan, Las Teresitas mit dem Bus.",
+   "lang": "Santa Cruz ist Hauptstadt und Hafenstadt und wird von Urlaubern meist umfahren, was ein Fehler ist: der Markt Nuestra Señora de África, das Kunstmuseum TEA, die Fußgängerzone und das Auditorium von Santiago Calatrava liegen auf zwei Kilometern beisammen. Das Haus steht an der Promenade, achtundsechzig Zimmer, sachlich, die oberen mit Blick auf Hafen und Anaga-Berge. Auf dem Dach ein Becken. Zum Auditorium sind es vierhundert Meter, zum Markt sechshundert. Der Strand Las Teresitas mit Sahara-Sand liegt sieben Kilometer entfernt, der Bus fährt alle fünfzehn Minuten. Im Februar ist Karneval, der zweitgrößte der Welt, dann ist die Stadt vier Nächte durchgehend wach.",
+   "highlights": [
+    "An der Hafenpromenade",
+    "Vierhundert Meter zum Calatrava-Auditorium",
+    "Dachbecken mit Blick auf Anaga",
+    "Las Teresitas mit dem Bus"
+   ]
+  }
+ ]
+}

@@ -319,10 +319,16 @@ const Kernpruefung = {
       const melde = (art, text) => fehler.push({ art, thema: name, satz: schritte.join(" → "), text });
 
       if (!fertig) melde("kein_ende", "Der Ablauf kommt nicht zur Vorlage");
-      // Kein Thema zweimal - die erfundene Person antwortet ja immer
+      /* Kein Thema zweimal - die erfundene Person antwortet ja immer.
+         Ausnahme seit dem 03.11.2026: Bei den Wuenschen wird absichtlich
+         nachgehakt ("Faellt dir neben dem Essen noch etwas ein?"), bis zu
+         dreimal. Ein viertes Mal ist weiter ein Befund, und fuer jedes
+         andere Thema bleibt es bei einmal - sonst waere aus einer
+         gewollten Ausnahme eine gelockerte Regel geworden. */
       const themen = schritte.filter((x) => !["suche", "vorschlaege", "selbst"].includes(x));
-      const doppelt = themen.filter((t, i) => themen.indexOf(t) !== i);
-      if (doppelt.length) melde("thema_doppelt", `${[...new Set(doppelt)].join(", ")} wird zweimal gefragt`);
+      const erlaubt = { wuensche: 3 };
+      const zuOft = [...new Set(themen)].filter((t) => themen.filter((x) => x === t).length > (erlaubt[t] || 1));
+      if (zuOft.length) melde("thema_doppelt", `${zuOft.map((t) => `${t} wird ${themen.filter((x) => x === t).length}× gefragt`).join(", ")}`);
       // Die Vorgehensfrage setzt eine Suche voraus
       const iV = schritte.indexOf("vorgehen");
       const iS = schritte.indexOf("suche");

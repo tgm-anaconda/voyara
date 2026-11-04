@@ -1,0 +1,376 @@
+{
+ "hotels": [
+  {
+   "id": "h302",
+   "ziel": "newyork",
+   "name": "The Highline Rooms",
+   "ort": "New York",
+   "region": "Chelsea",
+   "kategorie": "boutique",
+   "sterne": 4,
+   "preis": 298,
+   "rating": 4.5,
+   "bewertungen": 864,
+   "strand": null,
+   "zentrum": 2.4,
+   "flughafen": 25,
+   "extras": [
+    "terrace",
+    "gym"
+   ],
+   "kurz": "An der High Line, Whitney Museum und Chelsea Market in Gehweite.",
+   "lang": "Die High Line ist eine stillgelegte Hochbahn, die über zweieinhalb Kilometer als Park durch Chelsea führt, und das Haus liegt direkt darunter. Achtundvierzig Zimmer in einem Backsteinbau von 1912, Gusseisensäulen in der Lobby, oben Eichenböden und Fenster, die sich öffnen lassen, was in New York selten ist. Zum Whitney Museum sind es fünf Gehminuten, zum Chelsea Market sieben, zu den Galerien im Westen von Chelsea drei. Auf dem Dach eine Terrasse mit Blick über den Hudson nach New Jersey. Die Linien A, C und E halten vier Blocks entfernt, zum Flughafen JFK sind es fünfzig Minuten mit Bahn und AirTrain.",
+   "highlights": [
+    "Direkt unter der High Line",
+    "Backsteinbau von 1912",
+    "Dachterrasse mit Blick über den Hudson",
+    "Fünf Minuten zum Whitney Museum"
+   ]
+  },
+  {
+   "id": "h303",
+   "ziel": "newyork",
+   "name": "SoHo Cast Iron",
+   "ort": "New York",
+   "region": "SoHo",
+   "kategorie": "luxus",
+   "sterne": 5,
+   "preis": 486,
+   "rating": 4.7,
+   "bewertungen": 624,
+   "strand": null,
+   "zentrum": 3.2,
+   "flughafen": 22,
+   "extras": [
+    "spa",
+    "gym",
+    "terrace"
+   ],
+   "kurz": "Gusseisengebäude in SoHo, Loft-Suiten mit sechs Metern Deckenhöhe.",
+   "lang": "SoHo hat die größte Ansammlung von Gusseisenarchitektur der Welt, Fabrikbauten aus den 1870ern, die später Künstlerlofts und dann Geschäfte wurden. Das Haus ist einer dieser Bauten, zweiunddreißig Suiten, Deckenhöhen bis sechs Meter, Säulen im Raum, Fenster über zwei Etagen. Die Einrichtung hält sich zurück, Eiche, Leinen, Stahl, keine Kunst, die nicht hingehört. Der Spa liegt im Erdgeschoss hinter dem Hof, zwei Behandlungsräume, Dampfbad, kein Becken. Zum Washington Square sind es zwölf Gehminuten, zu Little Italy sechs, zur Linie 6 am Spring Street drei. Restaurant mit offener Küche, abends voll und mit Reservierung auch für Hausgäste.",
+   "highlights": [
+    "Gusseisenbau aus den 1870ern",
+    "Deckenhöhen bis sechs Meter",
+    "Spa hinter dem Innenhof",
+    "Zwölf Minuten zum Washington Square"
+   ]
+  },
+  {
+   "id": "h304",
+   "ziel": "newyork",
+   "name": "Williamsburg Loft",
+   "ort": "New York",
+   "region": "Brooklyn",
+   "kategorie": "boutique",
+   "sterne": 4,
+   "preis": 242,
+   "rating": 4.5,
+   "bewertungen": 748,
+   "strand": null,
+   "zentrum": 5.8,
+   "flughafen": 20,
+   "extras": [
+    "terrace",
+    "gym"
+   ],
+   "kurz": "In Williamsburg am East River, Skyline von Manhattan vom Dach.",
+   "lang": "Williamsburg liegt in Brooklyn gegenüber von Midtown, und die Aussicht von hier auf Manhattan ist die, die man eigentlich sucht, wenn man in Manhattan wohnt. Das Haus war eine Seilerei, vierundfünfzig Zimmer, Sichtziegel, Stahlträger, Betonböden, Bäder mit Zement-Fliesen. Auf dem Dach eine Bar mit der Skyline als Hintergrund, abends voll, Hausgäste haben Vorrang. Die Linie L fährt in neun Minuten zur 14th Street in Manhattan, die Fähre vom Pier zwei Blocks weiter nach Midtown in zwanzig. Im Viertel liegen Smorgasburg am Wochenende, die Brauerei Brooklyn Brewery und die Domino Park Promenade am Fluss.",
+   "highlights": [
+    "Umgebaute Seilerei am East River",
+    "Dachbar mit Blick auf die Skyline",
+    "Linie L in neun Minuten nach Manhattan",
+    "Fähre nach Midtown vom Pier"
+   ]
+  },
+  {
+   "id": "h305",
+   "ziel": "newyork",
+   "name": "Upper West Side Brownstone",
+   "ort": "New York",
+   "region": "Upper West Side",
+   "kategorie": "boutique",
+   "sterne": 3,
+   "preis": 216,
+   "rating": 4.6,
+   "bewertungen": 486,
+   "strand": null,
+   "zentrum": 4.2,
+   "flughafen": 30,
+   "extras": [
+    "terrace"
+   ],
+   "kurz": "Brownstone an der 83. Straße, Central Park und Naturkundemuseum um die Ecke.",
+   "lang": "Die Upper West Side ist der Teil Manhattans, in dem Familien wohnen und nicht nur arbeiten, mit Brownstones, Buchhandlungen und Zebra Diners, die seit vierzig Jahren dasselbe machen. Das Haus ist eines dieser Reihenhäuser von 1898, sechzehn Zimmer auf fünf Etagen, Treppe mit Holzgeländer, Aufzug seit 2019. Zimmer mit Stuckdecken und Erkerfenstern, die hinteren mit Blick in die Gärten der Blockmitte. Zum Central Park sind es zwei Blocks, zum Naturkundemuseum vier, zum Lincoln Center zwanzig Gehminuten. Die Linien 1, B und C halten jeweils in Gehweite. Frühstück im Souterrain, von sieben bis zehn, mit Bagels von Absolute Bagels drei Häuser weiter.",
+   "highlights": [
+    "Brownstone von 1898",
+    "Zwei Blocks zum Central Park",
+    "Vier Blocks zum Naturkundemuseum",
+    "Bagels von Absolute Bagels zum Frühstück"
+   ]
+  },
+  {
+   "id": "h306",
+   "ziel": "newyork",
+   "name": "Lower East Side Tenement",
+   "ort": "New York",
+   "region": "Lower East Side",
+   "kategorie": "budget",
+   "sterne": 2,
+   "preis": 138,
+   "rating": 4.1,
+   "bewertungen": 692,
+   "strand": null,
+   "zentrum": 3.4,
+   "flughafen": 20,
+   "kurz": "Einfache Zimmer in einem Mietshaus von 1904, Bars und Delis rundherum.",
+   "lang": "Die Lower East Side war über hundert Jahre das Einwanderungsviertel New Yorks, und die schmalen Mietshäuser mit den Feuertreppen an der Fassade stehen noch alle. Das Haus ist eines davon, zweiundzwanzig Zimmer, klein, einfach, mit Bad im Zimmer, Wände dünn und Betten gut. Für Manhattan unter hundertfünfzig Dollar ist das Haus einer der wenigen Orte, der nicht Hostel heißt. Katz's Delicatessen liegt zwei Blocks entfernt, das Tenement Museum vier, die Williamsburg Bridge sechs. Die Linie F hält an der Delancey Street in Gehweite. Nachts ist das Viertel laut, die hofseitigen Zimmer sind spürbar ruhiger und kosten dasselbe.",
+   "highlights": [
+    "Mietshaus von 1904 mit Feuertreppe",
+    "Unter hundertfünfzig Dollar in Manhattan",
+    "Zwei Blocks zu Katz's Delicatessen",
+    "Hofzimmer deutlich ruhiger"
+   ]
+  },
+  {
+   "id": "h307",
+   "ziel": "newyork",
+   "name": "Tribeca Warehouse",
+   "ort": "New York",
+   "region": "Tribeca",
+   "kategorie": "luxus",
+   "sterne": 5,
+   "preis": 524,
+   "rating": 4.8,
+   "bewertungen": 438,
+   "strand": null,
+   "zentrum": 3.8,
+   "flughafen": 22,
+   "extras": [
+    "spa",
+    "gym",
+    "pool"
+   ],
+   "kurz": "Lagerhaus in Tribeca, Pool im Keller, One World Trade in zehn Minuten.",
+   "lang": "Tribeca ist das Viertel südlich von Canal Street, in dem die Lagerhäuser am größten und die Straßen am breitesten sind, was es für New York ungewöhnlich still macht. Das Haus war ein Textillager von 1889, sechsunddreißig Zimmer und Suiten, Gewölbe im Erdgeschoss, oben Eiche, Messing und Fenster mit Stahlrahmen. Im Keller liegt ein Pool von zwanzig Metern, dazu zwei Saunen und vier Behandlungsräume, was in Manhattan selten ist und den Preis mit erklärt. Zum One World Trade Center sind es zehn Gehminuten, zur Brooklyn Bridge fünfzehn, zum Battery Park zwanzig. Restaurant mit Degustationsmenü, dazu eine Bar im Gewölbe.",
+   "highlights": [
+    "Textillager von 1889",
+    "Zwanzig-Meter-Pool im Keller",
+    "Zehn Minuten zum One World Trade Center",
+    "Bar im Gewölbe"
+   ]
+  },
+  {
+   "id": "h308",
+   "ziel": "newyork",
+   "name": "Midtown Grand Central",
+   "ort": "New York",
+   "region": "Midtown",
+   "kategorie": "stadt",
+   "sterne": 4,
+   "preis": 268,
+   "rating": 4.3,
+   "bewertungen": 1248,
+   "strand": null,
+   "zentrum": 0.8,
+   "flughafen": 27,
+   "extras": [
+    "gym",
+    "terrace"
+   ],
+   "kurz": "Zwei Blocks von Grand Central, Flughafenbahn und alle Linien im Umkreis.",
+   "lang": "Grand Central ist nicht nur Bahnhof, sondern der Punkt, von dem aus New York am einfachsten zu erschließen ist: sieben U-Bahnlinien, die Metro-North nach Norden, Busse zu beiden Flughäfen. Das Haus liegt zwei Blocks nördlich, hundertzweiundachtzig Zimmer, sachlich, grau und beige, mit Doppelverglasung, die funktioniert. Zum Chrysler Building sind es drei Minuten, zum Empire State zwölf, zum Times Square fünfzehn, zum MoMA achtzehn. Auf dem Dach eine Terrasse, im Keller ein Fitnessraum rund um die Uhr. Frühstücksbuffet ab halb sechs, weil hier viele weiterfliegen. Für die Lage ist der Preis unter dem Mittel des Viertels.",
+   "highlights": [
+    "Zwei Blocks von Grand Central",
+    "Sieben U-Bahnlinien in Gehweite",
+    "Drei Minuten zum Chrysler Building",
+    "Frühstück ab halb sechs"
+   ]
+  },
+  {
+   "id": "h309",
+   "ziel": "newyork",
+   "name": "Harlem Jazz House",
+   "ort": "New York",
+   "region": "Harlem",
+   "kategorie": "boutique",
+   "sterne": 3,
+   "preis": 182,
+   "rating": 4.5,
+   "bewertungen": 412,
+   "strand": null,
+   "zentrum": 7.4,
+   "flughafen": 34,
+   "extras": [
+    "terrace"
+   ],
+   "kurz": "Brownstone an der 125. Straße, Apollo Theater und Jazzclubs zu Fuß.",
+   "lang": "Harlem ist seit hundert Jahren das Zentrum schwarzer Kultur in den USA, und was davon lebendig geblieben ist, findet man an einem Abend: das Apollo Theater mit der Amateur Night am Mittwoch, die Jazzclubs an der Lenox Avenue, die Gospelmessen am Sonntagmorgen. Das Haus ist ein Brownstone von 1905, vierzehn Zimmer, Parkett, Erkerfenster, auf dem Dach eine Terrasse über die Blockmitte. Zum Apollo sind es sechs Gehminuten, zum Studio Museum vier, zum nördlichen Central Park zehn. Die Linien A, B, C und D halten an der 125. Straße, zur Midtown sind es zwölf Minuten mit dem Express. Frühstück mit Buttermilchbiscuits, die hier gebacken werden.",
+   "highlights": [
+    "Brownstone von 1905",
+    "Sechs Minuten zum Apollo Theater",
+    "Jazzclubs an der Lenox Avenue",
+    "Zwölf Minuten mit dem Express nach Midtown"
+   ]
+  },
+  {
+   "id": "h310",
+   "ziel": "newyork",
+   "name": "DUMBO Bridge View",
+   "ort": "New York",
+   "region": "Brooklyn",
+   "kategorie": "luxus",
+   "sterne": 4,
+   "preis": 398,
+   "rating": 4.7,
+   "bewertungen": 524,
+   "strand": null,
+   "zentrum": 4.6,
+   "flughafen": 19,
+   "extras": [
+    "spa",
+    "gym",
+    "terrace"
+   ],
+   "kurz": "Unter der Manhattan Bridge, Zimmer mit Blick auf beide Brücken.",
+   "lang": "DUMBO steht für Down Under the Manhattan Bridge Overpass, und der Name ist wörtlich zu nehmen: die Brücke läuft über das Viertel hinweg, und aus der Washington Street sieht man zwischen zwei Lagerhäusern das Empire State Building unter dem Brückenbogen, das bekannteste Motiv der Stadt. Das Haus war eine Kartonfabrik, vierundvierzig Zimmer, Beton, Stahl, Fenster über die ganze Wand, zwei Drittel mit Blick auf Brooklyn Bridge und Manhattan Bridge. Der Brooklyn Bridge Park liegt vor der Tür, mit Karussell, Sportplätzen und einer Promenade über einen Kilometer. Die Fähre nach Wall Street fährt vom Pier, sieben Minuten. Spa mit zwei Behandlungsräumen und Dampfbad.",
+   "highlights": [
+    "Umgebaute Kartonfabrik unter der Brücke",
+    "Blick auf beide Brücken",
+    "Brooklyn Bridge Park vor der Tür",
+    "Fähre nach Wall Street in sieben Minuten"
+   ]
+  },
+  {
+   "id": "h311",
+   "ziel": "newyork",
+   "name": "Hell's Kitchen Theater Rooms",
+   "ort": "New York",
+   "region": "Hell's Kitchen",
+   "kategorie": "stadt",
+   "sterne": 3,
+   "preis": 198,
+   "rating": 4.2,
+   "bewertungen": 894,
+   "strand": null,
+   "zentrum": 1.4,
+   "flughafen": 28,
+   "kurz": "Zwischen Times Square und Hudson, Broadway-Theater um die Ecke.",
+   "lang": "Hell's Kitchen liegt westlich des Theaterviertels und war lange der Bezirk, in den man nicht ging, inzwischen ist es die Gegend mit der höchsten Restaurantdichte Manhattans, vor allem entlang der Ninth Avenue. Das Haus liegt in einer Querstraße, siebzig Zimmer, klein, nüchtern, mit Doppelfenstern. Zu den Broadway-Theatern sind es fünf bis zehn Gehminuten, zum Times Square acht, zum Hudson Yards zwölf, zur High Line fünfzehn. Die Linien A, C und E halten zwei Blocks entfernt, der Port Authority Busbahnhof ebenfalls. Kein Restaurant im Haus, dafür zweihundert in Gehweite, und das ist die bessere Lösung.",
+   "highlights": [
+    "Fünf bis zehn Minuten zu den Theatern",
+    "Restaurantdichte der Ninth Avenue",
+    "Zwei Blocks zur Linie A, C und E",
+    "Acht Minuten zum Times Square"
+   ]
+  },
+  {
+   "id": "h312",
+   "ziel": "newyork",
+   "name": "Long Island City Skyline",
+   "ort": "New York",
+   "region": "Queens",
+   "kategorie": "stadt",
+   "sterne": 4,
+   "preis": 206,
+   "rating": 4.4,
+   "bewertungen": 688,
+   "strand": null,
+   "zentrum": 5.2,
+   "flughafen": 18,
+   "extras": [
+    "gym",
+    "terrace"
+   ],
+   "kurz": "In Queens am East River, eine Station nach Midtown, achtzehn Kilometer zum Flughafen.",
+   "lang": "Long Island City liegt in Queens direkt gegenüber von Midtown, und mit der Linie 7 ist man in einer Station an der Grand Central Station. Das macht das Viertel zu der Adresse, an der man für Manhattan-Nähe nicht Manhattan-Preise zahlt. Das Haus ist ein Neubau, hundertvier Zimmer, hell, sachlich, zwei Drittel mit Blick über den Fluss auf die Skyline, was von hier aus vollständig ist. Der Gantry Plaza State Park liegt vor der Tür, mit den alten Verladekränen und der Pepsi-Leuchtreklame. Das MoMA PS1 ist zehn Gehminuten entfernt. Zum Flughafen JFK sind es achtzehn Kilometer, zu LaGuardia neun. Dachterrasse im Sommer, Fitnessraum ganztägig.",
+   "highlights": [
+    "Eine Station nach Grand Central",
+    "Zwei Drittel Zimmer mit Blick auf die Skyline",
+    "Neun Kilometer nach LaGuardia",
+    "Gantry Plaza State Park vor der Tür"
+   ]
+  },
+  {
+   "id": "h313",
+   "ziel": "newyork",
+   "name": "Greenwich Village Townhouse",
+   "ort": "New York",
+   "region": "Greenwich Village",
+   "kategorie": "boutique",
+   "sterne": 4,
+   "preis": 312,
+   "rating": 4.7,
+   "bewertungen": 486,
+   "strand": null,
+   "zentrum": 3.0,
+   "flughafen": 23,
+   "extras": [
+    "terrace"
+   ],
+   "kurz": "Stadthaus an einer Baumstraße, Washington Square und Jazzclubs zu Fuß.",
+   "lang": "Greenwich Village hat als einziges Viertel Manhattans kein Raster, die Straßen laufen schief und tragen Namen statt Nummern, was auf Karten unpraktisch und im Gehen angenehm ist. Das Haus steht an der Bank Street unter Platanen, achtzehn Zimmer in einem Stadthaus von 1848, Kamine in vier Zimmern, hinten ein Garten mit Mauer. Zum Washington Square sind es acht Gehminuten, zum Village Vanguard vier, zum Blue Note sechs, und beide spielen jeden Abend. Zur High Line sind es zwölf Minuten westwärts. Frühstück im Garten, wenn es geht, sonst im Salon. Abends wird nicht gekocht, das Viertel erledigt das.",
+   "highlights": [
+    "Stadthaus von 1848 an der Bank Street",
+    "Vier Zimmer mit Kamin",
+    "Vier Minuten zum Village Vanguard",
+    "Garten mit Mauer"
+   ]
+  },
+  {
+   "id": "h314",
+   "ziel": "newyork",
+   "name": "Financial District Tower",
+   "ort": "New York",
+   "region": "Financial District",
+   "kategorie": "stadt",
+   "sterne": 4,
+   "preis": 228,
+   "rating": 4.3,
+   "bewertungen": 1024,
+   "strand": null,
+   "zentrum": 4.0,
+   "flughafen": 21,
+   "extras": [
+    "gym",
+    "terrace",
+    "spa"
+   ],
+   "kurz": "Hochhaus an der Wall Street, am Wochenende still, Fähren und Bahn am Haus.",
+   "lang": "Das Financial District ist unter der Woche die dichteste Gegend New Yorks und am Wochenende fast leer, was für Übernachtungen genau umgekehrt nützlich ist als man denkt: freitagabends wird es ruhig und die Preise fallen. Das Haus liegt zwei Blocks von der Wall Street, hundertsechsundfünfzig Zimmer in einem Bürohochhaus von 1931, ab dem zwanzigsten Stock mit Blick auf Hafen und Freiheitsstatue. Die Staten Island Ferry fährt kostenlos vom Terminal in Gehweite, der Battery Park liegt fünf Minuten entfernt. Zwölf U-Bahnlinien halten im Umkreis von fünfhundert Metern, zum Flughafen JFK sind es einundzwanzig Kilometer. Spa und Fitnessraum im dritten Stock.",
+   "highlights": [
+    "Bürohochhaus von 1931 an der Wall Street",
+    "Blick auf Hafen und Freiheitsstatue",
+    "Kostenlose Staten Island Ferry in Gehweite",
+    "Zwölf U-Bahnlinien im Umkreis"
+   ]
+  },
+  {
+   "id": "h315",
+   "ziel": "newyork",
+   "name": "Upper East Side Museum Mile",
+   "ort": "New York",
+   "region": "Upper East Side",
+   "kategorie": "luxus",
+   "sterne": 5,
+   "preis": 462,
+   "rating": 4.7,
+   "bewertungen": 548,
+   "strand": null,
+   "zentrum": 5.0,
+   "flughafen": 28,
+   "extras": [
+    "spa",
+    "gym",
+    "terrace"
+   ],
+   "kurz": "An der Museum Mile, Met und Guggenheim in Gehweite, Park gegenüber.",
+   "lang": "Die Fifth Avenue zwischen 82. und 105. Straße heißt Museum Mile, weil dort neun Museen in Folge stehen, darunter das Metropolitan, das Guggenheim und die Neue Galerie. Das Haus liegt an der 86. Straße, zweiundvierzig Zimmer und Suiten in einem Wohnhaus von 1926, Kassettendecken, Parkett, Bäder in Marmor, die vorderen mit Blick in den Central Park. Zum Metropolitan sind es sechs Gehminuten, zum Guggenheim vier, zum Reservoir im Park drei. Der Spa liegt im Souterrain mit Dampfbad, Sauna und vier Behandlungsräumen. Die Linie 4, 5, 6 und die neue Q halten in Gehweite. Restaurant mit kurzer Karte, Frühstück bis elf, nachmittags Tee.",
+   "highlights": [
+    "Wohnhaus von 1926 an der Museum Mile",
+    "Sechs Minuten zum Metropolitan",
+    "Vorderzimmer mit Blick in den Central Park",
+    "Spa mit vier Behandlungsräumen"
+   ]
+  }
+ ]
+}

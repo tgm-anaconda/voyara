@@ -1,0 +1,245 @@
+{
+ "hotels": [
+  {
+   "id": "h470",
+   "ziel": "sardinien",
+   "name": "Santa Margherita Familienbucht",
+   "ort": "Pula",
+   "region": "Südküste",
+   "kategorie": "familie",
+   "sterne": 4,
+   "preis": 178,
+   "rating": 4.4,
+   "bewertungen": 684,
+   "strand": 0.2,
+   "zentrum": 3.4,
+   "flughafen": 42,
+   "extras": [
+    "kidsClub",
+    "pool",
+    "seaView"
+   ],
+   "kurz": "Im Pinienwald an der Südküste, flaches Wasser, Betreuung in der Saison.",
+   "lang": "Santa Margherita di Pula ist ein acht Kilometer langer Streifen aus Schirmpinien zwischen Straße und Meer, und darin liegen die Häuser so weit auseinander, dass man vom einen das andere nicht sieht. Der Strand ist flach und feinsandig, was ihn für kleine Kinder brauchbar macht. Das Haus hat achtundsechzig Zimmer in flachen Riegeln, zwei Drittel Familienzimmer, zwei Becken, eines mit Rutsche. Betreuung läuft in der Saison von zehn bis sechzehn Uhr. Zu den Ruinen von Nora, einer phönizischen Stadt am Meer, sind es sechs Kilometer, nach Cagliari dreißig.",
+   "highlights": [
+    "Zweihundert Meter zum flachen Sandstrand",
+    "Pinienwald zwischen Straße und Meer",
+    "Zwei Becken, eines mit Rutsche",
+    "Sechs Kilometer zu den Ruinen von Nora"
+   ]
+  },
+  {
+   "id": "h471",
+   "ziel": "sardinien",
+   "name": "Badesi Dünenresort",
+   "ort": "Badesi",
+   "region": "Nordküste",
+   "kategorie": "familie",
+   "sterne": 4,
+   "preis": 172,
+   "rating": 4.3,
+   "bewertungen": 548,
+   "strand": 0.3,
+   "zentrum": 2.8,
+   "flughafen": 48,
+   "extras": [
+    "kidsClub",
+    "pool"
+   ],
+   "kurz": "Hinter dem Dünengürtel der Nordküste, acht Kilometer Sand, Kinderclub.",
+   "lang": "Die Küste zwischen Badesi und Valledoria ist ein ununterbrochener Sandstrand von acht Kilometern mit einem Dünengürtel davor, und weil die Straße weiter landeinwärts verläuft, ist es dort still. Das Haus liegt hinter den Dünen, zweiundsechzig Zimmer, die Hälfte Familienzimmer mit vier Betten, dazu zwei Becken und ein Spielbereich. Betreuung in der Saison vormittags und am frühen Abend. Zum Strandaufgang sind es dreihundert Meter über einen Bohlenweg. Die Mündung des Coghinas eignet sich zum Kitesurfen, Castelsardo mit seiner Burg liegt zwanzig Kilometer östlich.",
+   "highlights": [
+    "Dreihundert Meter über den Bohlenweg zum Strand",
+    "Acht Kilometer Sand ohne Straße davor",
+    "Zwei Becken und Spielbereich",
+    "Kitesurfen an der Coghinas-Mündung"
+   ]
+  },
+  {
+   "id": "h472",
+   "ziel": "sardinien",
+   "name": "Porto Cervo Spa Residenz",
+   "ort": "Arzachena",
+   "region": "Costa Smeralda",
+   "kategorie": "luxus",
+   "sterne": 5,
+   "preis": 358,
+   "rating": 4.7,
+   "bewertungen": 424,
+   "strand": 0.4,
+   "zentrum": 3.2,
+   "flughafen": 32,
+   "extras": [
+    "spa",
+    "pool",
+    "seaView",
+    "terrace"
+   ],
+   "kurz": "Über einer Bucht der Costa Smeralda, Spa mit Meerwasser, Granit und Macchia.",
+   "lang": "Die Costa Smeralda wurde ab 1962 nach strengen Bauregeln angelegt: keine Hochhäuser, keine geraden Linien, alles aus Granit und mit Macchia bewachsen. Das Haus hält sich daran, achtundzwanzig Zimmer und Suiten, die sich in den Hang ducken, alle mit Terrasse zur Bucht. Der Spa arbeitet mit Meerwasser, zwei Becken, drei Saunen, acht Anwendungsräume, dazu ein Außenbecken zwischen Granitblöcken. Zum eigenen Strand sind es vierhundert Meter über einen Pfad. Nach Porto Cervo sind es sechs Kilometer, zum Archipel La Maddalena fahren Boote ab Palau. Küche mit sechs Gängen.",
+   "highlights": [
+    "Spa mit Meerwasser und drei Saunen",
+    "Außenbecken zwischen Granitblöcken",
+    "Vierhundert Meter zum eigenen Strand",
+    "Boote zum Archipel La Maddalena"
+   ]
+  },
+  {
+   "id": "h473",
+   "ziel": "sardinien",
+   "name": "Alghero Bastioni",
+   "ort": "Alghero",
+   "region": "Nordwesten",
+   "kategorie": "boutique",
+   "sterne": 4,
+   "preis": 192,
+   "rating": 4.6,
+   "bewertungen": 586,
+   "strand": 1.2,
+   "zentrum": 0.1,
+   "flughafen": 12,
+   "extras": [
+    "terrace",
+    "seaView"
+   ],
+   "kurz": "Auf der Stadtmauer von Alghero, katalanische Altstadt, Flughafen in zwölf Kilometern.",
+   "lang": "Alghero wurde im vierzehnten Jahrhundert katalanisch besiedelt, und die Sprache hat sich gehalten: Die Straßenschilder stehen zweisprachig, und die Altstadt heißt Barceloneta. Das Haus liegt auf den Bastioni, der Stadtmauer über dem Meer, zwanzig Zimmer, Tonnengewölbe, Kalksteinwände, auf dem Dach eine Terrasse, von der man den Sonnenuntergang über dem Capo Caccia sieht. Zum Hafen sind es vier Gehminuten, zum Sandstrand Lido anderthalb Kilometer. Zur Grotte von Neptun fahren Boote vom Hafen, oder man nimmt die sechshundertvierundfünfzig Stufen der Escala del Cabirol. Zum Flughafen sind es zwölf Kilometer.",
+   "highlights": [
+    "Zimmer auf der Stadtmauer",
+    "Dachterrasse mit Blick zum Capo Caccia",
+    "Katalanisch zweisprachige Altstadt",
+    "Zwölf Kilometer zum Flughafen"
+   ]
+  },
+  {
+   "id": "h474",
+   "ziel": "sardinien",
+   "name": "Oliena Supramonte Hof",
+   "ort": "Oliena",
+   "region": "Barbagia",
+   "kategorie": "finca",
+   "sterne": 3,
+   "preis": 144,
+   "rating": 4.7,
+   "bewertungen": 268,
+   "strand": 32.0,
+   "zentrum": 2.4,
+   "flughafen": 88,
+   "extras": [
+    "pool",
+    "terrace",
+    "bikeRental"
+   ],
+   "kurz": "Hof am Fuß des Supramonte, eigener Cannonau, Quelle Su Gologone nah.",
+   "lang": "Oliena liegt unter der Kalkwand des Monte Corrasi, und der Cannonau von hier gilt als der kräftigste Sardiniens. Der Hof hat zwölf Zimmer in Natursteingebäuden, ein Becken auf der Terrasse, Blick auf die Wand, die abends rot wird. Der Wein kommt aus dem eigenen Keller, das Abendessen ist sardisch und reichlich, mit Pane carasau, Ferkel und Pecorino. Zur Karstquelle Su Gologone, aus der täglich dreihundert Liter je Sekunde kommen, sind es sieben Kilometer. Räder stehen bereit, die Straßen sind leer und steil. Zur Küste bei Cala Gonone sind es zweiunddreißig Kilometer über den Pass.",
+   "highlights": [
+    "Hof unter der Wand des Monte Corrasi",
+    "Eigener Cannonau aus dem Keller",
+    "Sieben Kilometer zur Quelle Su Gologone",
+    "Becken mit Blick auf die Kalkwand"
+   ]
+  },
+  {
+   "id": "h475",
+   "ziel": "sardinien",
+   "name": "Villasimius Capo Carbonara",
+   "ort": "Villasimius",
+   "region": "Südosten",
+   "kategorie": "strand",
+   "sterne": 4,
+   "preis": 196,
+   "rating": 4.5,
+   "bewertungen": 624,
+   "strand": 0.1,
+   "zentrum": 3.8,
+   "flughafen": 58,
+   "extras": [
+    "pool",
+    "seaView",
+    "terrace"
+   ],
+   "kurz": "Am Meeresschutzgebiet Capo Carbonara, weißer Sand, Granit im Wasser.",
+   "lang": "Das Capo Carbonara an der Südostspitze ist seit 1998 Meeresschutzgebiet, und die Buchten davor haben weißen Sand, Granitblöcke im Wasser und Seegraswiesen, in denen man ohne Boot schnorcheln kann. Das Haus steht direkt an der Spiaggia del Riso, vierunddreißig Zimmer, Stein und Leinen, zwei Drittel mit Blick auf das Wasser, ein Becken im Garten unter Pinien. Zum Sand sind es achtzig Meter. Tauchbasen und Bootsverleih liegen am Hafen, zwei Kilometer entfernt. Nach Cagliari sind es siebenundfünfzig Kilometer über die Küstenstraße, die selbst der Grund für die Fahrt ist.",
+   "highlights": [
+    "Achtzig Meter zur Spiaggia del Riso",
+    "Meeresschutzgebiet Capo Carbonara",
+    "Becken unter Pinien",
+    "Schnorcheln ohne Boot"
+   ]
+  },
+  {
+   "id": "h476",
+   "ziel": "sardinien",
+   "name": "Pensione Carloforte",
+   "ort": "Carloforte",
+   "region": "San Pietro",
+   "kategorie": "budget",
+   "sterne": 2,
+   "preis": 92,
+   "rating": 4.3,
+   "bewertungen": 286,
+   "strand": 1.8,
+   "zentrum": 0.2,
+   "flughafen": 86,
+   "kurz": "Auf der Insel San Pietro, ligurische Fischer, Fähre ab Portovesme.",
+   "lang": "Carloforte ist der einzige Ort auf der Insel San Pietro und wurde 1738 von ligurischen Korallenfischern gegründet, die zuvor zwei Jahrhunderte auf einer tunesischen Insel gelebt hatten. Gesprochen wird dort bis heute ein genuesischer Dialekt, und gegessen wird Couscous neben Pesto. Die Pension hat sechzehn Zimmer über einer Bar am Hafen, einfach, mit Dusche. Die Fähre von Portovesme braucht vierzig Minuten. Zu den Buchten im Westen, La Caletta und Cala Fico, sind es sechs Kilometer. Im Mai ist Thunfischfang mit der traditionellen Tonnara, was im Ort ein Fest und auf den Tellern ein Ereignis ist.",
+   "highlights": [
+    "Ligurischer Ort auf einer sardischen Insel",
+    "Zimmer über einer Hafenbar",
+    "Fähre ab Portovesme in vierzig Minuten",
+    "Thunfischfest im Mai"
+   ]
+  },
+  {
+   "id": "h477",
+   "ziel": "teneriffa",
+   "name": "Los Cristianos Wellnesshaus",
+   "ort": "Los Cristianos",
+   "region": "Süden",
+   "kategorie": "luxus",
+   "sterne": 4,
+   "preis": 144,
+   "rating": 4.5,
+   "bewertungen": 724,
+   "strand": 0.3,
+   "zentrum": 0.8,
+   "flughafen": 16,
+   "extras": [
+    "spa",
+    "pool",
+    "seaView"
+   ],
+   "kurz": "Über dem Hafen von Los Cristianos, Meerwasserbecken, Spa im Haus.",
+   "lang": "Los Cristianos war ein Fischerdorf und ist heute der Fährhafen nach La Gomera, El Hierro und La Palma, mit einer Bucht, die nach Süden geschützt liegt und deshalb ruhiges Wasser hat. Das Haus steht am Hang darüber, achtundfünfzig Zimmer, hell und schlicht, zwei Drittel mit Balkon zum Wasser. Der Spa hat ein Meerwasserbecken, zwei Saunen, Dampfbad und sechs Anwendungsräume, und weil die Preise hier unter denen von Costa Adeje liegen, bekommt man das zu einem Kurs, der nicht dazu passt. Zum Sandstrand sind es dreihundert Meter, zum Fährhafen sechshundert, zum Flughafen Süd sechzehn Kilometer.",
+   "highlights": [
+    "Meerwasserbecken und zwei Saunen",
+    "Dreihundert Meter zum Sandstrand",
+    "Fähren nach La Gomera ab Hafen",
+    "Sechzehn Kilometer zum Flughafen"
+   ]
+  },
+  {
+   "id": "h478",
+   "ziel": "teneriffa",
+   "name": "Pensión La Orotava",
+   "ort": "La Orotava",
+   "region": "Norden",
+   "kategorie": "budget",
+   "sterne": 2,
+   "preis": 64,
+   "rating": 4.2,
+   "bewertungen": 342,
+   "strand": 7.8,
+   "zentrum": 0.2,
+   "flughafen": 72,
+   "kurz": "Günstige Pension in der Kolonialstadt, Teide-Auffahrt vor der Tür.",
+   "lang": "La Orotava liegt über dem Tal, nach dem es heißt, auf dreihundert Metern, und die Altstadt mit ihren Holzbalkonen und Patios gehört zu den besten Kolonialensembles der Kanaren. Die Pension hat zwölf Zimmer um einen Patio mit Drachenbaum, einfach, mit Dusche, kalkgeweißt. Für unter siebzig Euro ist das auf Teneriffa bemerkenswert. Die Straße zum Teide beginnt im Ort und führt in einer Stunde auf zweitausend Meter in den Nationalpark, die Seilbahn setzt dort an. Nach Puerto de la Cruz sind es acht Kilometer hinunter, zum schwarzen Strand ebenso. Im Juni werden die Straßen mit Blumenteppichen ausgelegt.",
+   "highlights": [
+    "Patio mit Drachenbaum",
+    "Teide-Auffahrt beginnt im Ort",
+    "Acht Kilometer nach Puerto de la Cruz",
+    "Unter siebzig Euro"
+   ]
+  }
+ ]
+}

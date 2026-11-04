@@ -1,0 +1,299 @@
+{
+ "hotels": [
+  {
+   "id": "h405",
+   "ziel": "barcelona",
+   "name": "Castelldefels Platja",
+   "ort": "Castelldefels",
+   "region": "Baix Llobregat",
+   "kategorie": "familie",
+   "sterne": 4,
+   "preis": 188,
+   "rating": 4.4,
+   "bewertungen": 724,
+   "strand": 0.2,
+   "zentrum": 18.0,
+   "flughafen": 9,
+   "extras": [
+    "kidsClub",
+    "pool",
+    "seaView"
+   ],
+   "kurz": "Fünf Kilometer Sandstrand südlich der Stadt, flaches Wasser, Bahn ins Zentrum.",
+   "lang": "Castelldefels liegt zwanzig Minuten südlich von Barcelona und hat, was die Stadt nicht hat: fünf Kilometer breiten Sandstrand mit flachem Einstieg und ohne Gedränge. Das Haus steht zweihundert Meter davon, sechsundsechzig Zimmer, zwei Drittel Familienzimmer mit vier Betten, viele mit Verbindungstür. Zwei Becken, eines mit flachem Bereich, dazu Betreuung in den Ferien von zehn bis sechzehn Uhr. Die Bahn hält acht Gehminuten entfernt und braucht fünfundzwanzig Minuten bis zur Plaça Catalunya, der Flughafen liegt neun Kilometer weg. Halbpension mit Buffet, Kindertisch um halb sieben.",
+   "highlights": [
+    "Zweihundert Meter zum flachen Sandstrand",
+    "Zwei Becken, eines für Kinder",
+    "Fünfundzwanzig Minuten mit der Bahn ins Zentrum",
+    "Neun Kilometer zum Flughafen"
+   ]
+  },
+  {
+   "id": "h406",
+   "ziel": "barcelona",
+   "name": "Sitges Familiar",
+   "ort": "Sitges",
+   "region": "Garraf",
+   "kategorie": "familie",
+   "sterne": 4,
+   "preis": 196,
+   "rating": 4.5,
+   "bewertungen": 648,
+   "strand": 0.3,
+   "zentrum": 36.0,
+   "flughafen": 26,
+   "extras": [
+    "kidsClub",
+    "pool",
+    "seaView"
+   ],
+   "kurz": "In Sitges an der Strandpromenade, siebzehn Buchten, Betreuung ganzjährig.",
+   "lang": "Sitges hat siebzehn Strände auf vier Kilometern, eine Promenade ohne Verkehr und ein Klima, das durch das Garraf-Massiv im Rücken milder bleibt als in Barcelona. Das Haus liegt an der Promenade, achtundfünfzig Zimmer, mehr als die Hälfte Familienzimmer, die Vorderseite mit Balkon zum Wasser. Betreuung läuft ganzjährig vormittags und am frühen Abend, dazu ein Becken mit Kinderbereich und ein Spielzimmer. Zum Ortskern mit den Gassen und der Kirche auf dem Felsen sind es sechs Gehminuten. Die Bahn nach Barcelona fährt halbstündlich und braucht fünfunddreißig Minuten.",
+   "highlights": [
+    "Dreihundert Meter zum Strand",
+    "Betreuung ganzjährig",
+    "Promenade ohne Verkehr",
+    "Bahn nach Barcelona halbstündlich"
+   ]
+  },
+  {
+   "id": "h407",
+   "ziel": "barcelona",
+   "name": "Badalona Marina",
+   "ort": "Badalona",
+   "region": "Barcelonès",
+   "kategorie": "familie",
+   "sterne": 3,
+   "preis": 184,
+   "rating": 4.3,
+   "bewertungen": 486,
+   "strand": 0.2,
+   "zentrum": 9.4,
+   "flughafen": 24,
+   "extras": [
+    "kidsClub",
+    "pool"
+   ],
+   "kurz": "Nördlicher Nachbar der Stadt, breiter Strand, Metro L2 vor der Tür.",
+   "lang": "Badalona grenzt im Norden direkt an Barcelona, hat denselben Strand und deutlich weniger Betrieb darauf. Das Haus liegt zweihundert Meter vom Sand, zweiundfünfzig Zimmer, die Hälfte Familienzimmer mit vier Betten. Im Haus ein Becken mit Kinderbereich, ein Spielraum und Betreuung in den Ferien. Die Metro L2 hält vor der Tür, zum Sagrada Família sind es achtzehn Minuten, zur Plaça Catalunya vierundzwanzig. Wer mit Kindern in Barcelona ist und abends Ruhe will, wohnt hier richtig und zahlt weniger als in Barceloneta. Halbpension mit Buffet.",
+   "highlights": [
+    "Zweihundert Meter zum Strand",
+    "Metro L2 vor der Tür",
+    "Achtzehn Minuten zur Sagrada Família",
+    "Becken mit Kinderbereich"
+   ]
+  },
+  {
+   "id": "h408",
+   "ziel": "barcelona",
+   "name": "Diagonal Mar Beach",
+   "ort": "Barcelona",
+   "region": "Sant Martí",
+   "kategorie": "strand",
+   "sterne": 4,
+   "preis": 176,
+   "rating": 4.4,
+   "bewertungen": 812,
+   "strand": 0.3,
+   "zentrum": 5.2,
+   "flughafen": 20,
+   "extras": [
+    "pool",
+    "seaView",
+    "terrace"
+   ],
+   "kurz": "Am Strand von Mar Bella, Park nebenan, Metro L4 in fünf Minuten.",
+   "lang": "Die Strände nördlich des Olympiahafens heißen Nova Mar Bella und Llevant, sind breiter als die Barceloneta und werden überwiegend von Leuten aus der Stadt genutzt. Das Haus steht dreihundert Meter davon am Rand des Parc del Poblenou, achtundsechzig Zimmer, hell und sachlich, zwei Drittel mit Blick aufs Wasser. Auf dem Dach ein Becken. Zur Metro L4 sind es fünf Gehminuten, in die Altstadt zwölf Minuten mit der Bahn. Das Einkaufszentrum Diagonal Mar und der Konzertsaal liegen in Gehweite. Halbpension buchbar, Fisch aus der Markthalle Poblenou.",
+   "highlights": [
+    "Dreihundert Meter zum Strand Mar Bella",
+    "Dachbecken",
+    "Fünf Minuten zur Metro L4",
+    "Park Poblenou nebenan"
+   ]
+  },
+  {
+   "id": "h409",
+   "ziel": "barcelona",
+   "name": "Garraf Spa Retreat",
+   "ort": "Sitges",
+   "region": "Garraf",
+   "kategorie": "luxus",
+   "sterne": 5,
+   "preis": 324,
+   "rating": 4.7,
+   "bewertungen": 412,
+   "strand": 0.6,
+   "zentrum": 38.0,
+   "flughafen": 28,
+   "extras": [
+    "spa",
+    "pool",
+    "seaView",
+    "terrace"
+   ],
+   "kurz": "Über der Küste bei Sitges, Spa mit Meerwasser, Naturpark im Rücken.",
+   "lang": "Zwischen Sitges und dem Garraf-Massiv fällt die Küste steil ins Meer, und darüber liegt dieses Haus, zweiunddreißig Zimmer und Suiten, Kalkstein, Eiche, alle mit Terrasse nach Süden. Der Spa arbeitet mit Meerwasser, zwei Becken, drei Saunen, acht Anwendungsräume, dazu ein Außenbecken auf der Klippenterrasse. Zum Strand sind es sechshundert Meter über einen Pfad. Hinter dem Haus beginnt der Naturpark Garraf, karstig und im Frühjahr voller Rosmarin. Nach Sitges sind es zwei Kilometer, nach Barcelona achtunddreißig. Restaurant mit sechs Gängen und einer Karte katalanischer Lagen.",
+   "highlights": [
+    "Spa mit Meerwasser und drei Saunen",
+    "Außenbecken auf der Klippenterrasse",
+    "Sechshundert Meter zum Strand",
+    "Naturpark Garraf hinter dem Haus"
+   ]
+  },
+  {
+   "id": "h410",
+   "ziel": "barcelona",
+   "name": "Poble-sec Pension",
+   "ort": "Barcelona",
+   "region": "Sants-Montjuïc",
+   "kategorie": "budget",
+   "sterne": 2,
+   "preis": 78,
+   "rating": 4.2,
+   "bewertungen": 568,
+   "strand": 2.4,
+   "zentrum": 1.6,
+   "flughafen": 14,
+   "kurz": "Günstige Pension am Fuß des Montjuïc, Tapasgasse Blai um die Ecke.",
+   "lang": "Poble-sec liegt zwischen Paral·lel und Montjuïc und ist das Viertel, in dem Barcelona isst, ohne dafür zu zahlen: Die Carrer Blai ist eine Fußgängergasse voller Pinchos-Bars, in denen ein Spieß unter zwei Euro kostet. Die Pension hat achtzehn Zimmer im zweiten Stock eines Altbaus, einfach, mit Dusche und WC, hofseitig ruhig. Zur Metro L3 sind es vier Gehminuten, zur Rambla acht, zum Montjuïc mit der Standseilbahn sechs. Für unter achtzig Euro so zentral ist das in Barcelona selten. Frühstück gegen Zuschlag, Bäckerei im Haus.",
+   "highlights": [
+    "Carrer Blai mit den Pinchos-Bars um die Ecke",
+    "Vier Minuten zur Metro L3",
+    "Acht Minuten zur Rambla",
+    "Unter achtzig Euro im Zentrum"
+   ]
+  },
+  {
+   "id": "h411",
+   "ziel": "barcelona",
+   "name": "Sant Andreu Hostal",
+   "ort": "Barcelona",
+   "region": "Sant Andreu",
+   "kategorie": "budget",
+   "sterne": 2,
+   "preis": 74,
+   "rating": 4.1,
+   "bewertungen": 486,
+   "strand": 4.8,
+   "zentrum": 5.4,
+   "flughafen": 22,
+   "kurz": "Günstig im nördlichen Wohnviertel, Metro L1, Markthalle gegenüber.",
+   "lang": "Sant Andreu war bis 1897 ein eigenes Dorf und ist heute das Viertel, in dem Barcelona wohnt und nicht besichtigt wird: niedrige Häuser, eine Fußgängerzone, eine Markthalle und Bars, in denen niemand Englisch spricht. Das Haus liegt an der Hauptstraße, vierundzwanzig Zimmer, einfach möbliert, mit Dusche, Doppelfenster zur Straße. Die Metro L1 hält zwei Gehminuten entfernt, zur Plaça Catalunya sind es sechzehn Minuten. Gegenüber die Markthalle, in der man für einen Bruchteil der Innenstadtpreise frühstückt. Waschsalon im Haus.",
+   "highlights": [
+    "Zwei Minuten zur Metro L1",
+    "Markthalle gegenüber",
+    "Sechzehn Minuten zur Plaça Catalunya",
+    "Günstigstes Haus in Barcelona"
+   ]
+  },
+  {
+   "id": "h412",
+   "ziel": "barcelona",
+   "name": "Sant Gervasi Stadthaus",
+   "ort": "Barcelona",
+   "region": "Sarrià-Sant Gervasi",
+   "kategorie": "boutique",
+   "sterne": 4,
+   "preis": 214,
+   "rating": 4.6,
+   "bewertungen": 386,
+   "strand": 5.2,
+   "zentrum": 3.4,
+   "flughafen": 16,
+   "extras": [
+    "terrace",
+    "pool"
+   ],
+   "kurz": "Modernisme-Haus im Oberstadtviertel, Innenhof mit Becken, Bahn ins Zentrum.",
+   "lang": "Sant Gervasi liegt oberhalb der Diagonal, ruhig, grün und ohne Reisegruppen. Das Haus ist eine Villa von 1906 mit der geschwungenen Fassade des Modernisme, zwanzig Zimmer, Hydraulikfliesen, Stuckdecken, hinten ein Hof mit Becken und Zitrusbäumen. Zur Bahn Ferrocarril sind es fünf Gehminuten, zum Passeig de Gràcia zehn Minuten Fahrt. Die Casa Milà liegt zwei Stationen entfernt, der Park Güell drei Kilometer. Frühstück im Hof, abends wird nicht gekocht, im Viertel stehen zwölf Restaurants in Gehweite.",
+   "highlights": [
+    "Villa von 1906 im Modernisme",
+    "Innenhof mit Becken",
+    "Zehn Minuten mit der Bahn ins Zentrum",
+    "Ruhigstes Stadtviertel"
+   ]
+  },
+  {
+   "id": "h413",
+   "ziel": "barcelona",
+   "name": "Les Corts Camp Nou",
+   "ort": "Barcelona",
+   "region": "Les Corts",
+   "kategorie": "stadt",
+   "sterne": 4,
+   "preis": 168,
+   "rating": 4.3,
+   "bewertungen": 724,
+   "strand": 4.6,
+   "zentrum": 3.8,
+   "flughafen": 12,
+   "extras": [
+    "gym",
+    "terrace"
+   ],
+   "kurz": "Neben dem Camp Nou, Metro L3 und L5, zwölf Kilometer zum Flughafen.",
+   "lang": "Les Corts ist Bürobezirk und Stadion zugleich, und für Übernachtungen hat das den Vorteil, dass am Wochenende die Preise fallen. Das Haus liegt vierhundert Meter vom Camp Nou, sechsundachtzig Zimmer, nüchtern, grau und beige, mit guter Verdunklung. Die Metro L3 und L5 halten jeweils in Gehweite, zur Plaça Catalunya sind es vierzehn Minuten, zum Flughafen zwölf Kilometer. An Spieltagen ist die Gegend voll, der Spielplan hängt an der Rezeption aus. Dachterrasse, Fitnessraum rund um die Uhr, Frühstücksbuffet ab halb sieben.",
+   "highlights": [
+    "Vierhundert Meter zum Camp Nou",
+    "Zwei Metrolinien in Gehweite",
+    "Zwölf Kilometer zum Flughafen",
+    "Dachterrasse und Fitnessraum"
+   ]
+  },
+  {
+   "id": "h414",
+   "ziel": "barcelona",
+   "name": "Horta Masia",
+   "ort": "Barcelona",
+   "region": "Horta-Guinardó",
+   "kategorie": "finca",
+   "sterne": 3,
+   "preis": 152,
+   "rating": 4.6,
+   "bewertungen": 288,
+   "strand": 6.8,
+   "zentrum": 6.2,
+   "flughafen": 22,
+   "extras": [
+    "terrace",
+    "bikeRental",
+    "pool"
+   ],
+   "kurz": "Umgebautes Landhaus am Stadtrand, Labyrinthpark nebenan, Collserola im Rücken.",
+   "lang": "Horta war ein Dorf mit Landhäusern, bevor die Stadt es einholte, und einige dieser Masies stehen noch, mit dicken Mauern und Innenhöfen. Dieses ist eines davon, vierzehn Zimmer, Natursteinwände, Holzbalken, ein Garten mit Becken unter Feigen. Nebenan liegt der Parc del Laberint d'Horta von 1791, der älteste Garten der Stadt, mit einem Heckenlabyrinth, in dem man sich tatsächlich verläuft. Hinter dem Viertel beginnt der Naturpark Collserola mit Wegen bis zum Tibidabo. Räder stehen bereit, bergab in die Stadt sind es zwanzig Minuten, die Metro L3 fährt in achtzehn.",
+   "highlights": [
+    "Landhaus mit Becken unter Feigen",
+    "Labyrinthpark von 1791 nebenan",
+    "Naturpark Collserola im Rücken",
+    "Räder inklusive"
+   ]
+  },
+  {
+   "id": "h415",
+   "ziel": "barcelona",
+   "name": "El Clot Apartments",
+   "ort": "Barcelona",
+   "region": "Sant Martí",
+   "kategorie": "apart",
+   "sterne": 3,
+   "preis": 142,
+   "rating": 4.4,
+   "bewertungen": 486,
+   "strand": 2.8,
+   "zentrum": 3.2,
+   "flughafen": 18,
+   "extras": [
+    "terrace",
+    "pool"
+   ],
+   "kurz": "Apartments mit Küche im Clot, Bahnhof Sants und Flughafen gut erreichbar.",
+   "lang": "El Clot liegt östlich der Sagrada Família und ist ein gewachsenes Wohnviertel mit Markthalle, Plätzen und einem Park auf einem ehemaligen Bahngelände. Das Haus hat achtundzwanzig Apartments von vierzig bis fünfundsiebzig Quadratmetern, alle mit Küche, Waschmaschine und Balkon, auf dem Dach ein kleines Becken. Ab vier Nächten liegt der Preis deutlich unter einem Hotelzimmer, zumal die Markthalle zweihundert Meter entfernt ist. Zur Sagrada Família sind es zwölf Gehminuten, zur Metro L1 und L2 jeweils drei, zum Bahnhof Sants fünfzehn Minuten mit der Bahn.",
+   "highlights": [
+    "Apartments mit Küche und Waschmaschine",
+    "Zwölf Minuten zur Sagrada Família",
+    "Markthalle zweihundert Meter entfernt",
+    "Dachbecken"
+   ]
+  }
+ ]
+}

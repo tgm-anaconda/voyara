@@ -1,0 +1,469 @@
+{
+ "wohnungen": [
+  {
+   "id": "a416",
+   "ziel": "cornwall",
+   "name": "Cottage Porthgwarra",
+   "ort": "Porthgwarra",
+   "region": "Penwith",
+   "preis": 168,
+   "rating": 4.7,
+   "bewertungen": 112,
+   "schlafzimmer": 2,
+   "baeder": 1,
+   "groesse": 66,
+   "gaeste": 4,
+   "strand": 0.3,
+   "zentrum": 5.8,
+   "reinigung": 85,
+   "extras": [
+    "terrace",
+    "parking"
+   ],
+   "kurz": "Granitcottage über einer Fischerbucht, Coast Path vor der Tür, kein Durchgangsverkehr.",
+   "lang": "Porthgwarra ist eine Bucht mit sechs Häusern, einem Slipway und zwei in den Fels geschlagenen Tunneln, durch die früher Seetang und Boote bewegt wurden. Das Cottage ist aus Granit, zwei Schlafzimmer unter Dachschrägen, Wohnraum mit Kamin, Küche zum Hof. Zum Kieselstrand sind es dreihundert Meter abwärts. Der South West Coast Path führt in beide Richtungen vor der Tür vorbei, nach Land's End sind es fünf Kilometer über die Klippen. Im Mai und Juni stehen die Hänge voller Fingerhut und Meernelke. Holz liegt bereit, Hund erlaubt, Handyempfang ist dünn und das WLAN deshalb das einzige Verbindungsmittel.",
+   "highlights": [
+    "Granitcottage über der Bucht",
+    "Coast Path in beide Richtungen ab Tür",
+    "Dreihundert Meter zum Strand",
+    "Fünf Kilometer bis Land's End"
+   ]
+  },
+  {
+   "id": "a417",
+   "ziel": "cornwall",
+   "name": "St Ives Harbour Flat",
+   "ort": "St Ives",
+   "region": "West Cornwall",
+   "preis": 198,
+   "rating": 4.6,
+   "bewertungen": 186,
+   "schlafzimmer": 2,
+   "baeder": 1,
+   "groesse": 62,
+   "gaeste": 4,
+   "strand": 0.1,
+   "zentrum": 0.2,
+   "reinigung": 95,
+   "extras": [
+    "seaView"
+   ],
+   "kurz": "Wohnung über dem Hafen, Fenster auf die Boote, Tate und Strände zu Fuß.",
+   "lang": "St Ives hat vier Strände, ein Hafenbecken, das bei Ebbe trockenfällt, und seit 1993 eine Außenstelle der Tate am Porthmeor Beach. Die Wohnung liegt im zweiten Stock eines Hauses an der Hafenstraße, zwei Schlafzimmer, Wohnküche mit zwei Fenstern auf die Boote, schmale Treppe, keine Ausnahme. Zum Harbour Beach sind es fünfzig Meter, zum Porthmeor fünf Gehminuten, zur Tate sechs. Auto nach St Ives zu bringen lohnt nicht, die Gassen sind dafür nicht gebaut, und der Zug von St Erth fährt die schönste Küstenstrecke Englands in zehn Minuten. Möwen sind hier zudringlich, Essen bleibt drin.",
+   "highlights": [
+    "Fenster auf das Hafenbecken",
+    "Fünfzig Meter zum Harbour Beach",
+    "Sechs Minuten zur Tate",
+    "Zug von St Erth entlang der Küste"
+   ]
+  },
+  {
+   "id": "a418",
+   "ziel": "cornwall",
+   "name": "Padstow Quay Cottage",
+   "ort": "Padstow",
+   "region": "North Cornwall",
+   "preis": 212,
+   "rating": 4.7,
+   "bewertungen": 148,
+   "schlafzimmer": 3,
+   "baeder": 2,
+   "groesse": 98,
+   "gaeste": 6,
+   "strand": 0.8,
+   "zentrum": 0.2,
+   "reinigung": 120,
+   "extras": [
+    "terrace",
+    "parking"
+   ],
+   "kurz": "Ganzes Cottage am Hafen für sechs, Camel Trail ab Haus, Räder im Schuppen.",
+   "lang": "Padstow lebt vom Hafen und vom Essen, und beides liegt vor der Tür. Das Cottage ist von 1830, drei Schlafzimmer, zwei Bäder, Wohnraum mit Kamin, Küche mit Esstisch für sechs und ein Hof mit Mauer. Der Camel Trail, achtzehn Kilometer flacher Radweg auf einer stillgelegten Bahnlinie an der Mündung entlang bis Bodmin, beginnt zweihundert Meter entfernt, vier Räder stehen im Schuppen. Zum Sandstrand bei Harbour Cove sind es zehn Gehminuten über den Küstenweg, zum Fähranleger nach Rock drei. Parken ist in Padstow das Problem, ein Stellplatz gehört zum Haus, und das ist mehr wert als es klingt.",
+   "highlights": [
+    "Ganzes Cottage von 1830 für sechs",
+    "Camel Trail und vier Räder",
+    "Eigener Stellplatz in Padstow",
+    "Zehn Minuten zu Harbour Cove"
+   ]
+  },
+  {
+   "id": "a419",
+   "ziel": "cornwall",
+   "name": "Sennen Surf Flat",
+   "ort": "Sennen Cove",
+   "region": "Penwith",
+   "preis": 176,
+   "rating": 4.5,
+   "bewertungen": 164,
+   "schlafzimmer": 1,
+   "baeder": 1,
+   "groesse": 48,
+   "gaeste": 3,
+   "strand": 0.1,
+   "zentrum": 0.3,
+   "reinigung": 75,
+   "extras": [
+    "seaView",
+    "terrace"
+   ],
+   "kurz": "Kleine Wohnung über der Bucht, Trockenraum, Kilometer Sand vor dem Fenster.",
+   "lang": "Sennen Cove liegt zwei Kilometer vor Land's End und hat den letzten großen Sandstrand vor dem Atlantik, einen Kilometer hell und bei Westwind brauchbar zum Surfen. Die Wohnung liegt im Obergeschoss direkt an der Strandstraße, ein Schlafzimmer, Wohnküche mit Fenster über den Sand, Trockenraum im Erdgeschoss für Anzüge und Boards. Die Surfschule ist hundert Meter entfernt. Im Dorf stehen eine Rettungsstation, ein Pub und eine Strandbude, der Laden ist oben am Berg in Sennen. Bei Sturm kommt die Gischt bis an die Fenster, was im Winter der Grund ist, warum Leute hier buchen.",
+   "highlights": [
+    "Fenster über den Kilometerstrand",
+    "Trockenraum für Boards und Anzüge",
+    "Hundert Meter zur Surfschule",
+    "Zwei Kilometer bis Land's End"
+   ]
+  },
+  {
+   "id": "a420",
+   "ziel": "cornwall",
+   "name": "Fowey Riverside Flat",
+   "ort": "Fowey",
+   "region": "South Cornwall",
+   "preis": 194,
+   "rating": 4.7,
+   "bewertungen": 138,
+   "schlafzimmer": 2,
+   "baeder": 1,
+   "groesse": 70,
+   "gaeste": 4,
+   "strand": 1.2,
+   "zentrum": 0.3,
+   "reinigung": 95,
+   "extras": [
+    "terrace",
+    "seaView"
+   ],
+   "kurz": "Terrasse über dem Fowey-Fluss, Segler im Blick, Fähre nach Polruan.",
+   "lang": "Fowey hängt an einem Hang über einer Flussmündung, in der ständig gesegelt wird, und in der ganzen Stadt gibt es kaum eine Straße ohne Steigung. Die Wohnung liegt auf halber Höhe, zwei Schlafzimmer, Wohnküche mit Fenstern bis zum Boden und eine Terrasse, von der man flussabwärts bis zur offenen See sieht. Zur Readymoney Cove, einem Sandstrand zwischen Felsen, führt ein Pfad durch den Wald in zwölf Minuten. Die Fähre nach Polruan fährt alle zehn Minuten und kostet wenig, drüben beginnt der Hall Walk. Parken ist am Ortseingang, der Weg hinunter mit Gepäck ist steil und einmal am Tag genug.",
+   "highlights": [
+    "Terrasse mit Blick flussabwärts",
+    "Zwölf Minuten zur Readymoney Cove",
+    "Fähre nach Polruan alle zehn Minuten",
+    "Fenster bis zum Boden"
+   ]
+  },
+  {
+   "id": "a421",
+   "ziel": "cornwall",
+   "name": "Bude Cliff Apartment",
+   "ort": "Bude",
+   "region": "North Cornwall",
+   "preis": 162,
+   "rating": 4.4,
+   "bewertungen": 192,
+   "schlafzimmer": 2,
+   "baeder": 1,
+   "groesse": 72,
+   "gaeste": 5,
+   "strand": 0.4,
+   "zentrum": 0.6,
+   "reinigung": 85,
+   "extras": [
+    "balcony",
+    "parking",
+    "seaView"
+   ],
+   "kurz": "Über dem Summerleaze Beach, Meerwasserbecken am Strand, fünf Betten.",
+   "lang": "Bude hat zwei Strände nebeneinander und am Rand des einen ein Meerwasserbecken aus den zwanziger Jahren, das bei jeder Flut neu gefüllt wird und Kindern Wellen erspart. Die Wohnung liegt oben am Kliff, zwei Schlafzimmer mit fünf Betten, Wohnküche, Balkon zur Seeseite. Zum Strandaufgang sind es vierhundert Meter. Der Bude Canal führt mitten durch den Ort, mit Tretbooten und einem flachen Radweg daran entlang. Für Familien ist das die praktischste Adresse an dieser Küste, weil alles zu Fuß geht und nichts steil ist. Stellplatz, Waschmaschine, Kinderbett auf Anfrage.",
+   "highlights": [
+    "Vierhundert Meter zum Summerleaze Beach",
+    "Meerwasserbecken am Strand",
+    "Fünf Betten in zwei Schlafzimmern",
+    "Tretboote am Canal"
+   ]
+  },
+  {
+   "id": "a422",
+   "ziel": "cornwall",
+   "name": "Mousehole Granite Cottage",
+   "ort": "Mousehole",
+   "region": "Penwith",
+   "preis": 182,
+   "rating": 4.7,
+   "bewertungen": 124,
+   "schlafzimmer": 2,
+   "baeder": 1,
+   "groesse": 58,
+   "gaeste": 4,
+   "strand": 0.2,
+   "zentrum": 0.1,
+   "reinigung": 85,
+   "extras": [
+    "terrace"
+   ],
+   "kurz": "Cottage im Granitdorf, Gassen zu eng für Autos, Hafen vor dem Fenster.",
+   "lang": "Mousehole ist ein Dorf aus Granit um ein winziges Hafenbecken, mit Gassen, in denen zwei Menschen aneinander vorbeikommen und ein Auto nicht. Das Cottage steht in einer solchen Gasse, zwei Schlafzimmer unter Dachschrägen, Wohnraum mit Kamin, Küche mit Fenster auf den Hafen. Türen sind niedrig, Böden schief, das ist bei einem Haus von 1780 kein Mangel. Die Kiesbucht im Hafen fällt bei Ebbe trocken, zum Sandstrand nach Penzance sind es drei Kilometer am Wasser entlang. Geparkt wird am oberen Ortsrand. Im Dezember wird der Hafen beleuchtet, das ist in Cornwall eine Institution und der Ort dann voll.",
+   "highlights": [
+    "Cottage von 1780 im Granitdorf",
+    "Küchenfenster auf den Hafen",
+    "Kamin im Wohnraum",
+    "Hafenbeleuchtung im Dezember"
+   ]
+  },
+  {
+   "id": "a423",
+   "ziel": "cornwall",
+   "name": "Perranporth Dune House",
+   "ort": "Perranporth",
+   "region": "North Cornwall",
+   "preis": 186,
+   "rating": 4.5,
+   "bewertungen": 176,
+   "schlafzimmer": 3,
+   "baeder": 2,
+   "groesse": 94,
+   "gaeste": 6,
+   "strand": 0.2,
+   "zentrum": 0.5,
+   "reinigung": 110,
+   "extras": [
+    "terrace",
+    "parking",
+    "seaView"
+   ],
+   "kurz": "Ganzes Haus hinter den Dünen für sechs, drei Kilometer Sand, Flughafen in zwölf Kilometern.",
+   "lang": "Perranporth hat drei Kilometer Sand, der bei Ebbe so breit wird, dass man den Wasserrand kaum erkennt, und am Südende eine Bar, die direkt im Sand steht. Das Haus liegt hinter dem Dünengürtel, drei Schlafzimmer, zwei Bäder, großer Wohnraum mit Küche und eine Terrasse nach Westen. Zum Strandaufgang sind es zweihundert Meter durch das Gras. Die Wellen eignen sich für Anfänger, die Schule arbeitet am Nordende. Zum Flughafen Newquay sind es zwölf Kilometer, was ein verlängertes Wochenende realistisch macht, auch ohne Mietwagen. Zwei Stellplätze, Waschmaschine, Außendusche, Hund erlaubt.",
+   "highlights": [
+    "Ganzes Haus für sechs hinter den Dünen",
+    "Zweihundert Meter durch die Dünen zum Strand",
+    "Zwölf Kilometer zum Flughafen",
+    "Außendusche und zwei Stellplätze"
+   ]
+  },
+  {
+   "id": "a424",
+   "ziel": "bretagne",
+   "name": "Maison Saint-Malo",
+   "ort": "Saint-Malo",
+   "region": "Côte d'Émeraude",
+   "preis": 192,
+   "rating": 4.6,
+   "bewertungen": 168,
+   "schlafzimmer": 2,
+   "baeder": 1,
+   "groesse": 68,
+   "gaeste": 4,
+   "strand": 0.3,
+   "zentrum": 0.2,
+   "reinigung": 95,
+   "extras": [
+    "seaView"
+   ],
+   "kurz": "Wohnung innerhalb der Stadtmauer, Strand vor dem Tor, Gezeiten von zwölf Metern.",
+   "lang": "Saint-Malo liegt hinter einer Granitmauer, die man in vierzig Minuten umrunden kann, und davor laufen die größten Gezeiten Europas auf, bis zu zwölf Meter Unterschied. Die Wohnung liegt im dritten Stock eines Reederhauses innerhalb der Mauer, zwei Schlafzimmer, Wohnküche, zwei Fenster über die Dächer aufs Meer. Treppe ohne Aufzug, vierundfünfzig Stufen. Durch das Porte de Dinan sind es dreißig Meter zum Plage de Bon-Secours mit seinem gemauerten Meerwasserbecken, das bei Ebbe gefüllt bleibt. Bahnhof und Fähre nach Dinard jeweils zehn Gehminuten. Geparkt wird außerhalb der Mauer, der Platz ist zugewiesen.",
+   "highlights": [
+    "Innerhalb der Stadtmauer",
+    "Dreißig Meter zum Plage de Bon-Secours",
+    "Meerwasserbecken bleibt bei Ebbe gefüllt",
+    "Bahnhof in zehn Gehminuten"
+   ]
+  },
+  {
+   "id": "a425",
+   "ziel": "bretagne",
+   "name": "Longère Cancale",
+   "ort": "Cancale",
+   "region": "Côte d'Émeraude",
+   "preis": 174,
+   "rating": 4.7,
+   "bewertungen": 132,
+   "schlafzimmer": 3,
+   "baeder": 2,
+   "groesse": 102,
+   "gaeste": 6,
+   "strand": 0.9,
+   "zentrum": 1.2,
+   "reinigung": 115,
+   "extras": [
+    "terrace",
+    "parking"
+   ],
+   "kurz": "Langes Steinhaus über den Austernbänken, drei Schlafzimmer, Garten mit Feigenbaum.",
+   "lang": "Cancale verkauft Austern, seit es Cancale gibt, und bei Ebbe sieht man die Bänke in der Bucht liegen, Reihe neben Reihe bis zum Horizont. Die Longère ist ein langes niedriges Granithaus am Hang, drei Schlafzimmer, zwei Bäder, Wohnküche mit Kamin, Garten mit Feigenbaum und Blick auf das Wasser. Unten am Quai sitzen die Verkäuferinnen mit Tabletts, man kauft ein Dutzend, bekommt eine Zitrone dazu und isst auf der Mauer. Der Küstenweg zur Pointe du Grouin ist sieben Kilometer und einer der schönsten der Küste. Zum Sandstrand bei Port-Mer sind es neunhundert Meter, zum Mont-Saint-Michel fünfunddreißig.",
+   "highlights": [
+    "Granithaus mit Blick auf die Austernbänke",
+    "Drei Schlafzimmer und zwei Bäder",
+    "Küstenweg zur Pointe du Grouin",
+    "Mont-Saint-Michel in 35 Kilometern"
+   ]
+  },
+  {
+   "id": "a426",
+   "ziel": "bretagne",
+   "name": "Ploumanac'h Granitwohnung",
+   "ort": "Ploumanac'h",
+   "region": "Côte de Granit Rose",
+   "preis": 178,
+   "rating": 4.7,
+   "bewertungen": 124,
+   "schlafzimmer": 2,
+   "baeder": 1,
+   "groesse": 66,
+   "gaeste": 4,
+   "strand": 0.2,
+   "zentrum": 0.3,
+   "reinigung": 90,
+   "extras": [
+    "terrace",
+    "parking",
+    "seaView"
+   ],
+   "kurz": "Zwischen den rosa Felsblöcken, Strand und Zöllnerpfad vor der Tür.",
+   "lang": "Der Granit an diesem Küstenabschnitt ist tatsächlich rosa, und bei Abendlicht wird er rot. Die Wohnung liegt im Erdgeschoss eines Hauses über der Plage de Saint-Guirec, zwei Schlafzimmer, Wohnküche, Terrasse zwischen zwei Granitblöcken hindurch mit Blick aufs Wasser. Zum Sandstrand sind es zweihundert Meter, bei Ebbe wird er doppelt so breit. Der Sentier des Douaniers beginnt am Strandende und führt an den bekanntesten Felsformationen vorbei zum Leuchtturm Mean Ruz, eine Stunde, gut ausgebaut und mit Kinderwagen machbar. Nach Perros-Guirec sind es vier Kilometer, Stellplatz gehört dazu.",
+   "highlights": [
+    "Terrasse zwischen den Granitblöcken",
+    "Zweihundert Meter zur Plage de Saint-Guirec",
+    "Zöllnerpfad zum Leuchtturm Mean Ruz",
+    "Rosa Granit bei Abendlicht"
+   ]
+  },
+  {
+   "id": "a427",
+   "ziel": "bretagne",
+   "name": "Carnac Villa Dunes",
+   "ort": "Carnac",
+   "region": "Morbihan",
+   "preis": 206,
+   "rating": 4.6,
+   "bewertungen": 186,
+   "schlafzimmer": 3,
+   "baeder": 2,
+   "groesse": 96,
+   "gaeste": 6,
+   "strand": 0.4,
+   "zentrum": 1.4,
+   "reinigung": 115,
+   "extras": [
+    "terrace",
+    "parking"
+   ],
+   "kurz": "Haus zwischen Steinreihen und Strand, Südbucht mit achtzehn Grad im September.",
+   "lang": "Carnac hat dreitausend aufgerichtete Steine aus dem Neolithikum auf der Landseite und einen Sandstrand in einer nach Süden geschützten Bucht auf der anderen. Weil die Bucht von Quiberon gedeckt ist, bleibt das Wasser hier im September bei achtzehn Grad, deutlich wärmer als an der Nordküste. Das Haus liegt dazwischen, drei Schlafzimmer, zwei Bäder, Wohnküche und ein Garten mit Pinien. Zum Strand sind es vierhundert Meter, zu den Steinreihen zwei Kilometer über den Radweg, vier Räder stehen im Schuppen. Das Thalasso des Ortes ist eine der ältesten Anlagen Frankreichs und fußläufig. Kinderbett und Hochstuhl gehören dazu.",
+   "highlights": [
+    "Vierhundert Meter zum Strand der Südbucht",
+    "Achtzehn Grad Wasser im September",
+    "Vier Räder im Schuppen",
+    "Thalasso im Ort fußläufig"
+   ]
+  },
+  {
+   "id": "a428",
+   "ziel": "bretagne",
+   "name": "Belle-Île Kerhuel",
+   "ort": "Sauzon",
+   "region": "Belle-Île-en-Mer",
+   "preis": 196,
+   "rating": 4.7,
+   "bewertungen": 108,
+   "schlafzimmer": 2,
+   "baeder": 1,
+   "groesse": 74,
+   "gaeste": 4,
+   "strand": 1.1,
+   "zentrum": 0.8,
+   "reinigung": 100,
+   "extras": [
+    "terrace",
+    "parking"
+   ],
+   "kurz": "Steinhaus über dem Hafen von Sauzon, Insel nur per Fähre, Räder inklusive.",
+   "lang": "Belle-Île erreicht man nur mit der Fähre von Quiberon, und das filtert zuverlässig. Sauzon liegt im Norden an einer engen Hafenbucht, in der bei Ebbe die Boote im Schlick liegen und die Häuser in verschiedenen Farben gestrichen sind. Das Haus steht oberhalb, zwei Schlafzimmer, Wohnküche mit Kamin, Terrasse auf den Hafen. Zwei Räder gehören dazu, die Insel ist achtzehn Kilometer lang und gut zu fahren. Zur Plage des Grands Sables, dem größten Sandstrand, sind es elf Kilometer, zur Pointe des Poulains mit dem Leuchtturm vier. Autos auf die Insel zu bringen ist teuer und meistens unnötig.",
+   "highlights": [
+    "Terrasse über dem Hafen von Sauzon",
+    "Nur mit der Fähre erreichbar",
+    "Zwei Räder inklusive",
+    "Vier Kilometer zur Pointe des Poulains"
+   ]
+  },
+  {
+   "id": "a429",
+   "ziel": "bretagne",
+   "name": "Concarneau Pêcheur",
+   "ort": "Concarneau",
+   "region": "Finistère Sud",
+   "preis": 158,
+   "rating": 4.5,
+   "bewertungen": 146,
+   "schlafzimmer": 2,
+   "baeder": 1,
+   "groesse": 64,
+   "gaeste": 4,
+   "strand": 0.8,
+   "zentrum": 0.3,
+   "reinigung": 80,
+   "extras": [
+    "terrace",
+    "parking"
+   ],
+   "kurz": "Fischerhaus am Kai, Ville Close gegenüber, Sables Blancs in Gehweite.",
+   "lang": "Concarneau hat eine Altstadt auf einer Insel im Hafen, von einer Mauer umgeben und über eine Brücke erreichbar, und daneben einen der größten Fischereihäfen Frankreichs. Das Haus steht am Kai gegenüber der Ville Close, zwei Schlafzimmer, Wohnküche, kleiner Hof. Die Auktion beginnt um sechs, Besichtigung mit Anmeldung, und danach kauft man unten am Kai ein. Zum Sandstrand Plage des Sables Blancs sind es achthundert Meter nach Westen, flach und für Familien brauchbar. Im Ort reihen sich Crêperien, von denen die an der Rue Vauban die beste und die am Hafen die teuerste ist. Stellplatz gehört dazu.",
+   "highlights": [
+    "Gegenüber der befestigten Ville Close",
+    "Fischauktion um sechs Uhr",
+    "Achthundert Meter zur Plage des Sables Blancs",
+    "Crêperien in Gehweite"
+   ]
+  },
+  {
+   "id": "a430",
+   "ziel": "bretagne",
+   "name": "Crozon Maison de Pêcheur",
+   "ort": "Crozon",
+   "region": "Finistère",
+   "preis": 142,
+   "rating": 4.5,
+   "bewertungen": 138,
+   "schlafzimmer": 2,
+   "baeder": 1,
+   "groesse": 62,
+   "gaeste": 4,
+   "strand": 0.7,
+   "zentrum": 0.6,
+   "reinigung": 75,
+   "extras": [
+    "terrace",
+    "parking"
+   ],
+   "kurz": "Günstiges Haus auf der Halbinsel, Buchten und Klippen in jeder Richtung.",
+   "lang": "Die Halbinsel Crozon hat die Form eines Kreuzes und an jedem Arm eine andere Küste, von Sandbuchten im Süden bis zu hundert Meter hohen Klippen am Pointe de Pen-Hir. Das Haus liegt in Morgat, zwei Schlafzimmer, Wohnküche, Garten mit Mauer, einfach eingerichtet und das günstigste unter den Wohnungen hier. Zum Plage de Morgat sind es siebenhundert Meter, zu den Grotten dort fahren Boote vom Hafen. Der Küstenweg ist überall in Gehweite, markiert und nicht überlaufen. Zum Pointe de Pen-Hir sind es zwölf Kilometer, nach Brest fünfundfünfzig. Stellplatz, Waschmaschine, Hund erlaubt.",
+   "highlights": [
+    "Siebenhundert Meter zur Plage de Morgat",
+    "Bootstouren zu den Grotten",
+    "Küstenweg in Gehweite",
+    "Günstigste Wohnung in der Bretagne"
+   ]
+  },
+  {
+   "id": "a431",
+   "ziel": "bretagne",
+   "name": "Douarnenez Conserverie",
+   "ort": "Douarnenez",
+   "region": "Finistère",
+   "preis": 168,
+   "rating": 4.6,
+   "bewertungen": 114,
+   "schlafzimmer": 2,
+   "baeder": 1,
+   "groesse": 76,
+   "gaeste": 4,
+   "strand": 0.6,
+   "zentrum": 0.4,
+   "reinigung": 85,
+   "extras": [
+    "terrace",
+    "parking",
+    "seaView"
+   ],
+   "kurz": "Loft in einer alten Konservenfabrik, Masten im Blick, Kajakbucht in Gehweite.",
+   "lang": "Douarnenez war einmal der größte Sardinenhafen Europas, und was davon geblieben ist, liegt im Port-Rhu als schwimmendes Museum: Frachtsegler, Schlepper, Fischerboote, an denen gearbeitet wird. Die Wohnung liegt in einer früheren Konservenfabrik am Kai gegenüber, zwei Schlafzimmer, offener Wohnraum mit Backsteinwand und hohen Fenstern auf die Masten. Zum Plage des Dames im Stadtteil Tréboul sind es sechshundert Meter, ein geschützter Sandstrand mit Promenade. Die Bucht ist flach und einer der besten Orte der Küste zum Kajakfahren, Verleih am Strand. Stellplatz im Hof, Waschmaschine, Bettwäsche inklusive.",
+   "highlights": [
+    "Loft in alter Konservenfabrik",
+    "Fenster auf das schwimmende Hafenmuseum",
+    "Sechshundert Meter zur Plage des Dames",
+    "Kajakverleih in der flachen Bucht"
+   ]
+  }
+ ]
+}

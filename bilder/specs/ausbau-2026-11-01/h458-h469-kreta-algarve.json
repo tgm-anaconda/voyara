@@ -1,0 +1,325 @@
+{
+ "hotels": [
+  {
+   "id": "h458",
+   "ziel": "kreta",
+   "name": "Georgioupoli Familienbucht",
+   "ort": "Georgioupoli",
+   "region": "Nordwestküste",
+   "kategorie": "familie",
+   "sterne": 4,
+   "preis": 168,
+   "rating": 4.4,
+   "bewertungen": 724,
+   "strand": 0.2,
+   "zentrum": 0.6,
+   "flughafen": 38,
+   "extras": [
+    "kidsClub",
+    "pool",
+    "seaView"
+   ],
+   "kurz": "Am flachen Sandstrand bei Georgioupoli, Kinderclub, Eukalyptusallee ins Dorf.",
+   "lang": "Georgioupoli liegt an der Mündung des Almiros, und der Strand zieht sich von dort zehn Kilometer nach Osten, flach, breit und mit Sand statt Kies. Das Haus steht zweihundert Meter davon, zweiundsiebzig Zimmer, zwei Drittel Familienzimmer mit vier Betten. Zwei Becken, eines mit Rutsche und flachem Bereich, Betreuung von zehn bis sechzehn Uhr in der Saison. Ins Dorf führt eine Allee aus Eukalyptusbäumen, am Platz stehen Tavernen um eine Platane. Nach Chania sind es dreiunddreißig Kilometer, zum Flughafen achtunddreißig. Halbpension oder All Inclusive, Kinderbuffet ab halb sieben.",
+   "highlights": [
+    "Zweihundert Meter zum flachen Sandstrand",
+    "Zwei Becken, eines mit Rutsche",
+    "Betreuung in der Saison",
+    "Eukalyptusallee ins Dorf"
+   ]
+  },
+  {
+   "id": "h459",
+   "ziel": "kreta",
+   "name": "Pension Palaiochora",
+   "ort": "Palaiochora",
+   "region": "Südwestküste",
+   "kategorie": "budget",
+   "sterne": 2,
+   "preis": 54,
+   "rating": 4.2,
+   "bewertungen": 386,
+   "strand": 0.3,
+   "zentrum": 0.2,
+   "flughafen": 78,
+   "kurz": "Einfache Pension auf der Halbinsel, Sand im Westen, Kies im Osten.",
+   "lang": "Palaiochora liegt auf einer schmalen Halbinsel an der Südwestküste, mit einem Sandstrand auf der einen und einem Kiesstrand auf der anderen Seite, zwischen denen das ganze Dorf auf zwei Straßen passt. Die Pension hat vierzehn Zimmer, einfach, mit Dusche und Balkon, acht davon zum Wasser. Für diesen Preis am Meer ist das auf Kreta die Ausnahme. Von hier fahren Boote nach Sougia, Agia Roumeli und Elafonisi, die Küstenstraße endet im Ort und der E4 läuft weiter. Abends sitzt der halbe Ort an der Uferstraße, an der die Tavernen ihre Tische bis ans Wasser stellen.",
+   "highlights": [
+    "Sandstrand und Kiesstrand im selben Ort",
+    "Acht Zimmer mit Blick aufs Wasser",
+    "Boote nach Elafonisi und Agia Roumeli",
+    "Günstigstes Haus auf Kreta"
+   ]
+  },
+  {
+   "id": "h460",
+   "ziel": "kreta",
+   "name": "Chania Hafenhaus",
+   "ort": "Chania",
+   "region": "Nordwestküste",
+   "kategorie": "boutique",
+   "sterne": 4,
+   "preis": 198,
+   "rating": 4.7,
+   "bewertungen": 586,
+   "strand": 0.9,
+   "zentrum": 0.1,
+   "flughafen": 16,
+   "extras": [
+    "terrace"
+   ],
+   "kurz": "Am venezianischen Hafen, Leuchtturm im Blick, Markthalle in Gehweite.",
+   "lang": "Der venezianische Hafen von Chania ist ein Bogen aus Fassaden um ein Becken, an dessen Ende ein Leuchtturm aus dem sechzehnten Jahrhundert steht. Das Haus ist ein Reederhaus von 1595, achtzehn Zimmer, Bruchsteinwände, Holzdecken, einige mit Erker über das Wasser. Zur Markthalle von 1913, einem Kreuzbau aus Eisen und Glas, sind es sieben Gehminuten, zum Sandstrand Nea Chora neunhundert Meter. Die Altstadtgassen dahinter sind venezianisch, osmanisch und jüdisch zugleich. Frühstück auf der Dachterrasse mit Blick auf die Weißen Berge.",
+   "highlights": [
+    "Reederhaus von 1595 am Hafen",
+    "Erkerzimmer über dem Wasser",
+    "Sieben Minuten zur Markthalle",
+    "Dachterrasse mit Blick auf die Weißen Berge"
+   ]
+  },
+  {
+   "id": "h461",
+   "ziel": "kreta",
+   "name": "Agios Nikolaos Voulismeni",
+   "ort": "Agios Nikolaos",
+   "region": "Ostkreta",
+   "kategorie": "stadt",
+   "sterne": 4,
+   "preis": 176,
+   "rating": 4.4,
+   "bewertungen": 624,
+   "strand": 0.4,
+   "zentrum": 0.2,
+   "flughafen": 64,
+   "extras": [
+    "pool",
+    "terrace"
+   ],
+   "kurz": "Am Süßwassersee mitten in der Stadt, Spinalonga per Boot.",
+   "lang": "Agios Nikolaos ist um den Voulismeni gebaut, einen runden Süßwassersee von vierundsechzig Metern Tiefe, der über einen Kanal mit dem Meer verbunden ist und von Tavernen umstanden wird. Das Haus liegt am oberen Rand, vierundvierzig Zimmer, hell und ruhig, die oberen mit Blick über See und Bucht, auf dem Dach ein Becken. Zum Stadtstrand Kitroplatia sind es vierhundert Meter. Vom Hafen fahren Boote zur Festungsinsel Spinalonga, bis 1957 Leprakolonie, eine Dreiviertelstunde über den Golf von Mirabello.",
+   "highlights": [
+    "Am Voulismeni-See",
+    "Dachbecken mit Blick über die Bucht",
+    "Vierhundert Meter zum Stadtstrand",
+    "Boote nach Spinalonga"
+   ]
+  },
+  {
+   "id": "h462",
+   "ziel": "kreta",
+   "name": "Matala Höhlenbucht",
+   "ort": "Matala",
+   "region": "Südkreta",
+   "kategorie": "strand",
+   "sterne": 3,
+   "preis": 148,
+   "rating": 4.4,
+   "bewertungen": 486,
+   "strand": 0.1,
+   "zentrum": 0.2,
+   "flughafen": 72,
+   "extras": [
+    "seaView",
+    "terrace"
+   ],
+   "kurz": "An der Bucht mit den Felshöhlen, Sandstrand, Sonnenuntergang nach Westen.",
+   "lang": "Die Sandsteinwand über dem Strand von Matala ist von römischen Grabkammern durchlöchert, in denen in den sechziger Jahren Aussteiger wohnten, bis die Polizei sie räumte. Heute kann man sie tagsüber besichtigen. Das Haus liegt am Südende der Bucht, sechsundzwanzig Zimmer, einfach und hell, zwei Drittel mit Balkon zum Wasser. Zum Sand sind es hundert Meter. Die Bucht öffnet sich nach Westen, der Sonnenuntergang ist der Grund, warum abends alle an der Uferstraße sitzen. Nach Phaistos mit dem minoischen Palast sind es elf Kilometer, zur Bucht Red Beach eine halbe Stunde über den Felsweg.",
+   "highlights": [
+    "Hundert Meter zum Sandstrand",
+    "Römische Felshöhlen über der Bucht",
+    "Sonnenuntergang nach Westen",
+    "Elf Kilometer nach Phaistos"
+   ]
+  },
+  {
+   "id": "h463",
+   "ziel": "kreta",
+   "name": "Plakias Olivenhof",
+   "ort": "Plakias",
+   "region": "Südkreta",
+   "kategorie": "finca",
+   "sterne": 3,
+   "preis": 142,
+   "rating": 4.6,
+   "bewertungen": 324,
+   "strand": 1.4,
+   "zentrum": 1.8,
+   "flughafen": 86,
+   "extras": [
+    "pool",
+    "terrace",
+    "bikeRental"
+   ],
+   "kurz": "Olivenhof über der Bucht von Plakias, Kourtaliotiko-Schlucht nebenan.",
+   "lang": "Plakias liegt an der Südküste zwischen zwei Schluchten, und der Wind aus dem Libyschen Meer macht die Bucht im August erträglich, wenn der Norden der Insel steht. Der Hof liegt dreihundert Meter oberhalb am Hang, zwölf Zimmer in Natursteingebäuden, ein Becken zwischen Olivenbäumen, deren Öl beim Frühstück auf dem Tisch steht. Zum Sandstrand sind es anderthalb Kilometer bergab. Die Kourtaliotiko-Schlucht beginnt fünf Kilometer entfernt und führt in zwei Stunden zum Palmenstrand von Preveli. Räder stehen bereit, bergab lohnt sich das mehr als bergauf. Abends drei Gänge aus dem Garten.",
+   "highlights": [
+    "Olivenhof mit eigenem Öl",
+    "Becken zwischen Olivenbäumen",
+    "Kourtaliotiko-Schlucht in fünf Kilometern",
+    "Räder inklusive"
+   ]
+  },
+  {
+   "id": "h464",
+   "ziel": "algarve",
+   "name": "Vilalara Thalasso",
+   "ort": "Porches",
+   "region": "Westalgarve",
+   "kategorie": "luxus",
+   "sterne": 5,
+   "preis": 288,
+   "rating": 4.7,
+   "bewertungen": 468,
+   "strand": 0.3,
+   "zentrum": 2.8,
+   "flughafen": 52,
+   "extras": [
+    "spa",
+    "pool",
+    "seaView",
+    "terrace"
+   ],
+   "kurz": "Thalasso über der Steilküste, vier Meerwasserbecken, eigener Strandzugang.",
+   "lang": "Zwischen Armação de Pêra und Carvoeiro fällt die Küste in Sandsteinklippen ab, und in einer Lücke darin liegt dieses Haus in subtropischen Gärten. Zweiunddreißig Zimmer und Suiten, weiß gekalkt, alle mit Terrasse zum Meer. Der Thalassobereich arbeitet mit Meerwasser aus der Bucht, vier Becken unterschiedlicher Temperatur, zwei Saunen, Hamam und zehn Anwendungsräume, dazu Kurpläne von drei Tagen bis zu zwei Wochen. Zum eigenen Strandzugang führt ein Aufzug durch den Fels. Die Praia da Marinha liegt vier Kilometer östlich. Küche mit fünf Gängen, Fisch vom Markt in Portimão.",
+   "highlights": [
+    "Vier Meerwasserbecken im Thalasso",
+    "Aufzug durch den Fels zum Strand",
+    "Alle Zimmer mit Terrasse zum Meer",
+    "Vier Kilometer zur Praia da Marinha"
+   ]
+  },
+  {
+   "id": "h465",
+   "ziel": "algarve",
+   "name": "Pensão Olhão",
+   "ort": "Olhão",
+   "region": "Ostalgarve",
+   "kategorie": "budget",
+   "sterne": 2,
+   "preis": 62,
+   "rating": 4.2,
+   "bewertungen": 412,
+   "strand": 6.4,
+   "zentrum": 0.2,
+   "flughafen": 12,
+   "kurz": "Günstig im Fischerort, zwei Markthallen am Wasser, Inseln per Boot.",
+   "lang": "Olhão ist der größte Fischereihafen der Algarve und sieht mit seinen würfelförmigen Flachdachhäusern eher nordafrikanisch als portugiesisch aus. Am Wasser stehen zwei Backsteinmarkthallen von 1916, eine für Fisch, eine für alles andere, und samstags ist davor Markt. Die Pension hat sechzehn Zimmer, einfach, mit Dusche, hofseitig ruhig. Für unter siebzig Euro ist das an dieser Küste selten. Vom Anleger fahren Boote zu den Inseln Armona und Culatra, zwanzig Minuten, dort liegen Sandstrände ohne Straße und ohne Auto. Zum Flughafen Faro sind es zwölf Kilometer.",
+   "highlights": [
+    "Zwei Markthallen von 1916 am Wasser",
+    "Boote zu den Inseln Armona und Culatra",
+    "Zwölf Kilometer zum Flughafen",
+    "Unter siebzig Euro"
+   ]
+  },
+  {
+   "id": "h466",
+   "ziel": "algarve",
+   "name": "Lagos Ponta da Piedade",
+   "ort": "Lagos",
+   "region": "Westalgarve",
+   "kategorie": "boutique",
+   "sterne": 4,
+   "preis": 186,
+   "rating": 4.6,
+   "bewertungen": 568,
+   "strand": 0.5,
+   "zentrum": 1.4,
+   "flughafen": 78,
+   "extras": [
+    "pool",
+    "terrace",
+    "seaView"
+   ],
+   "kurz": "Über den Felsnadeln der Ponta da Piedade, Treppe zur Bucht.",
+   "lang": "Die Ponta da Piedade südlich von Lagos ist ein Feld aus goldenen Felsnadeln, Bögen und Grotten, durch die Boote fahren, wenn die See ruhig ist. Das Haus liegt oben auf dem Kliff, zweiundzwanzig Zimmer, weiß und schlicht, alle mit Terrasse nach Süden, dazu ein Becken an der Kante. Eine Treppe mit hundertachtzig Stufen führt zur Bucht hinunter. Die Praia Dona Ana liegt zehn Gehminuten entfernt, die Altstadt von Lagos mit der Stadtmauer und dem Sklavenmarktgebäude eineinhalb Kilometer. Abends vier Gänge, Muscheln und Seebrasse.",
+   "highlights": [
+    "Becken an der Klippenkante",
+    "Treppe zur eigenen Bucht",
+    "Zehn Minuten zur Praia Dona Ana",
+    "Bootstouren durch die Grotten"
+   ]
+  },
+  {
+   "id": "h467",
+   "ziel": "algarve",
+   "name": "Alte Serra Quinta",
+   "ort": "Alte",
+   "region": "Serra do Caldeirão",
+   "kategorie": "finca",
+   "sterne": 3,
+   "preis": 136,
+   "rating": 4.6,
+   "bewertungen": 286,
+   "strand": 28.0,
+   "zentrum": 1.2,
+   "flughafen": 42,
+   "extras": [
+    "pool",
+    "terrace",
+    "bikeRental"
+   ],
+   "kurz": "Quinta im Binnenland, Quellen im Dorf, kühler als die Küste.",
+   "lang": "Alte liegt dreißig Kilometer landeinwärts in der Serra do Caldeirão und gilt als das am besten erhaltene Dorf der Algarve: weiße Häuser, Schornsteine mit durchbrochenem Mauerwerk, eine Kirche mit Azulejos aus dem sechzehnten Jahrhundert und zwei Quellen, an denen das Wasser aus dem Fels kommt. Die Quinta liegt am Ortsrand, vierzehn Zimmer, Natursteinmauern, ein Becken unter Johannisbrotbäumen. Im Juli ist es hier drei bis vier Grad kühler als an der Küste. Räder stehen bereit, die Ecovia durch das Barrocal ist flach. Abends drei Gänge aus dem Garten, mittags Brot, Käse und Oliven.",
+   "highlights": [
+    "Bestes erhaltenes Dorf der Algarve",
+    "Becken unter Johannisbrotbäumen",
+    "Kühler als die Küste",
+    "Räder für die Ecovia"
+   ]
+  },
+  {
+   "id": "h468",
+   "ziel": "algarve",
+   "name": "Albufeira Familienclub",
+   "ort": "Albufeira",
+   "region": "Westalgarve",
+   "kategorie": "familie",
+   "sterne": 4,
+   "preis": 174,
+   "rating": 4.3,
+   "bewertungen": 948,
+   "strand": 0.4,
+   "zentrum": 1.6,
+   "flughafen": 38,
+   "extras": [
+    "kidsClub",
+    "pool",
+    "seaView"
+   ],
+   "kurz": "Über der Praia da Oura, drei Becken mit Rutschen, Betreuung ganzjährig.",
+   "lang": "Albufeira ist der betriebsamste Ort der Algarve, und wer mit Kindern kommt, nimmt den Abschnitt an der Praia da Oura, wo der Strand breit ist und die Treppe kurz. Das Haus liegt vierhundert Meter davon, sechsundachtzig Zimmer, zwei Drittel Familienzimmer, drei Becken, eines mit zwei Rutschen und flachem Bereich. Betreuung läuft ganzjährig von zehn bis siebzehn Uhr. Der Wasserpark Zoomarine liegt zwölf Kilometer entfernt, die Altstadt zwei. Zum Flughafen Faro sind es achtunddreißig Kilometer. All Inclusive buchbar, Kinderbuffet ab achtzehn Uhr.",
+   "highlights": [
+    "Vierhundert Meter zur Praia da Oura",
+    "Drei Becken, eines mit Rutschen",
+    "Betreuung ganzjährig",
+    "Zwölf Kilometer zum Zoomarine"
+   ]
+  },
+  {
+   "id": "h469",
+   "ziel": "algarve",
+   "name": "Sagres Fortaleza Rooms",
+   "ort": "Sagres",
+   "region": "Westalgarve",
+   "kategorie": "stadt",
+   "sterne": 3,
+   "preis": 128,
+   "rating": 4.3,
+   "bewertungen": 342,
+   "strand": 0.8,
+   "zentrum": 0.3,
+   "flughafen": 112,
+   "extras": [
+    "terrace"
+   ],
+   "kurz": "Am Ortsplatz von Sagres, Festung und Leuchtturm in Gehweite.",
+   "lang": "Sagres liegt an der Südwestecke Europas, und auf der Landzunge davor steht die Festung, in der Heinrich der Seefahrer im fünfzehnten Jahrhundert seine Navigationsschule unterhalten haben soll. Das Haus liegt am Ortsplatz, vierundzwanzig Zimmer, einfach und hell, einige mit Dachterrasse. Zur Festung sind es fünfzehn Gehminuten, zum Praia da Mareta achthundert Meter, zum Cabo de São Vicente sechs Kilometer. Der Wind hier ist beständig, was Surfer anzieht und abends die Terrasse frisch macht. Im Ort gibt es Fischrestaurants, zwei Surfschulen und sonst wenig, und genau deshalb kommen die Leute.",
+   "highlights": [
+    "Am Ortsplatz von Sagres",
+    "Fünfzehn Minuten zur Festung",
+    "Achthundert Meter zum Praia da Mareta",
+    "Sechs Kilometer zum Cabo de São Vicente"
+   ]
+  }
+ ]
+}

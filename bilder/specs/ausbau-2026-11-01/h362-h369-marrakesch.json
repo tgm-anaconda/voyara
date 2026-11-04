@@ -1,0 +1,222 @@
+{
+ "hotels": [
+  {
+   "id": "h362",
+   "ziel": "marrakesch",
+   "name": "Riad Dar Bellarj",
+   "ort": "Marrakesch",
+   "region": "Medina",
+   "kategorie": "boutique",
+   "sterne": 4,
+   "preis": 186,
+   "rating": 4.7,
+   "bewertungen": 524,
+   "strand": null,
+   "zentrum": 0.4,
+   "flughafen": 7,
+   "extras": [
+    "pool",
+    "terrace"
+   ],
+   "kurz": "Riad in der Medina, Innenhof mit Orangenbäumen, Dachterrasse über den Dächern.",
+   "lang": "Ein Riad ist ein Haus, das sich nach innen öffnet: von der Gasse führt eine schmale Tür in einen Hof mit Brunnen, Orangenbäumen und Zimmern auf zwei Etagen rundherum, und von der Gasse hört man nichts. Dieses hat zwölf Zimmer, Tadelakt an den Wänden, Zedernholzdecken, Zellige-Fliesen in den Bädern, im Hof ein Becken von vier Metern. Auf dem Dach eine Terrasse mit Blick über die Medina auf den Atlas, der von November bis April Schnee trägt. Zum Museum Dar Bellarj sind es zwei Gehminuten, zur Medersa Ben Youssef drei, zum Jemaa el-Fna zehn. Abendessen auf Anmeldung, Tajine und Salate, im Hof serviert.",
+   "highlights": [
+    "Riad mit Becken im Innenhof",
+    "Dachterrasse mit Atlas-Blick",
+    "Drei Minuten zur Medersa Ben Youssef",
+    "Tajine im Hof auf Anmeldung"
+   ]
+  },
+  {
+   "id": "h363",
+   "ziel": "marrakesch",
+   "name": "Palais Hivernage",
+   "ort": "Marrakesch",
+   "region": "Hivernage",
+   "kategorie": "luxus",
+   "sterne": 5,
+   "preis": 398,
+   "rating": 4.7,
+   "bewertungen": 586,
+   "strand": null,
+   "zentrum": 1.4,
+   "flughafen": 4,
+   "extras": [
+    "pool",
+    "spa",
+    "gym",
+    "terrace"
+   ],
+   "kurz": "Im Hivernage mit Garten, Hammam über zwei Etagen, vier Kilometer zum Flughafen.",
+   "lang": "Das Hivernage wurde in den dreißiger Jahren als Gartenviertel angelegt, mit breiten Straßen, Bougainvillea und Mauern, hinter denen man nichts sieht. Das Haus liegt in einem solchen Garten, zweiundfünfzig Zimmer und Suiten, Marmor, Tadelakt, Zedernholz, alle mit Terrasse zum Park. Zwei Becken, eines beheizt, dazu ein Hammam über zwei Etagen mit Dampfräumen, Gommage und acht Anwendungsräumen, was in Marrakesch das eigentliche Programm ist. Zur Medina sind es zwölf Gehminuten oder vier mit dem Taxi, zum Jardin Majorelle zwei Kilometer, zum Flughafen vier. Zwei Restaurants, eines marokkanisch mit sieben Gängen, eines französisch.",
+   "highlights": [
+    "Hammam über zwei Etagen",
+    "Zwei Becken, eines beheizt",
+    "Vier Kilometer zum Flughafen",
+    "Alle Zimmer mit Terrasse zum Park"
+   ]
+  },
+  {
+   "id": "h364",
+   "ziel": "marrakesch",
+   "name": "Palmeraie Oasis",
+   "ort": "Marrakesch",
+   "region": "Palmeraie",
+   "kategorie": "familie",
+   "sterne": 4,
+   "preis": 206,
+   "rating": 4.4,
+   "bewertungen": 824,
+   "strand": null,
+   "zentrum": 9.2,
+   "flughafen": 14,
+   "extras": [
+    "pool",
+    "kidsClub"
+   ],
+   "kurz": "In der Palmeraie, drei Becken, Betreuung und Kamelhof nebenan.",
+   "lang": "Die Palmeraie ist ein Palmenhain von hundertfünfzigtausend Bäumen nordöstlich der Stadt, seit dem elften Jahrhundert bewässert, und dort liegen die Häuser weit auseinander, mit Platz, der in der Medina nicht zu haben ist. Das Haus hat achtundachtzig Zimmer in flachen Riegeln, zwei Drittel Familienzimmer, dazu drei Becken, eines mit Rutschen und eines beheizt. Betreuung läuft ganzjährig vormittags und nachmittags, dazu ein Kamel- und Ponyhof auf dem Nachbargrundstück. Zum Jemaa el-Fna sind es neun Kilometer, der Shuttle fährt stündlich und kostet nichts. Im Juli und August steigt das Thermometer über vierzig Grad, dann ist das Haus für Kinder zu heiß und November bis März die bessere Zeit.",
+   "highlights": [
+    "Drei Becken, eines mit Rutschen",
+    "Kamel- und Ponyhof nebenan",
+    "Stündlicher Shuttle in die Medina",
+    "Ganzjährige Betreuung"
+   ]
+  },
+  {
+   "id": "h365",
+   "ziel": "marrakesch",
+   "name": "Dar Mellah",
+   "ort": "Marrakesch",
+   "region": "Mellah",
+   "kategorie": "budget",
+   "sterne": 2,
+   "preis": 74,
+   "rating": 4.2,
+   "bewertungen": 486,
+   "strand": null,
+   "zentrum": 0.8,
+   "flughafen": 6,
+   "extras": [
+    "terrace"
+   ],
+   "kurz": "Einfaches Haus im jüdischen Viertel, Gewürzmarkt und Bahia-Palast zu Fuß.",
+   "lang": "Das Mellah war ab 1558 das jüdische Viertel von Marrakesch und ist heute der Teil der Medina mit dem Gewürzmarkt, dem Platz der Apotheker und den wenigsten Souvenirläden. Das Haus hat zehn Zimmer um einen kleinen Hof, einfach, mit Dusche, kalkgeweißt, auf dem Dach eine Terrasse mit Matten und Blick auf die Koutoubia. Für unter achtzig Euro in der Medina ist das ein Preis, den sonst nur Hostels machen. Zum Bahia-Palast sind es vier Gehminuten, zu den Saadier-Gräbern sechs, zum Jemaa el-Fna zwölf. Frühstück auf dem Dach, Pfannkuchen und Minztee. Abends gibt es im Viertel vier Lokale, in denen Einheimische essen, und das Haus sagt, welche.",
+   "highlights": [
+    "Zimmer um einen Hof im Mellah",
+    "Dachterrasse mit Blick auf die Koutoubia",
+    "Vier Minuten zum Bahia-Palast",
+    "Unter achtzig Euro in der Medina"
+   ]
+  },
+  {
+   "id": "h366",
+   "ziel": "marrakesch",
+   "name": "Agafay Wüstencamp",
+   "ort": "Agafay",
+   "region": "Agafay",
+   "kategorie": "boutique",
+   "sterne": 4,
+   "preis": 248,
+   "rating": 4.7,
+   "bewertungen": 412,
+   "strand": null,
+   "zentrum": 32.0,
+   "flughafen": 36,
+   "extras": [
+    "pool",
+    "terrace"
+   ],
+   "kurz": "Zelte in der Steinwüste, Atlas am Horizont, Sternenhimmel ohne Streulicht.",
+   "lang": "Die Agafay ist keine Sanddüne, sondern eine Steinwüste dreißig Kilometer südlich der Stadt, mit Hügeln aus grauem Mergel und dem Hohen Atlas als Kulisse dahinter. Das Camp hat achtzehn Zelte mit festem Boden, Bad, Bett und Ofen für die Nächte, die zwischen November und Februar unter zehn Grad fallen. Ein Becken liegt zwischen den Zelten, abends brennt ein Feuer. Lichtverschmutzung gibt es nicht, der Sternenhimmel ist der Grund, warum die Leute hier übernachten statt einen Tagesausflug zu machen. Kamelritte und Quads werden vom Camp organisiert, der Transfer aus der Stadt dauert vierzig Minuten. Abends drei Gänge, marokkanisch, am Feuer serviert.",
+   "highlights": [
+    "Festzelte mit Bad und Ofen",
+    "Becken zwischen den Zelten",
+    "Sternenhimmel ohne Streulicht",
+    "Vierzig Minuten Transfer aus der Stadt"
+   ]
+  },
+  {
+   "id": "h367",
+   "ziel": "marrakesch",
+   "name": "Gueliz Modern Rooms",
+   "ort": "Marrakesch",
+   "region": "Gueliz",
+   "kategorie": "stadt",
+   "sterne": 4,
+   "preis": 152,
+   "rating": 4.4,
+   "bewertungen": 624,
+   "strand": null,
+   "zentrum": 2.2,
+   "flughafen": 5,
+   "extras": [
+    "pool",
+    "gym",
+    "terrace"
+   ],
+   "kurz": "In der Neustadt, Jardin Majorelle in Gehweite, fünf Kilometer zum Flughafen.",
+   "lang": "Gueliz wurde ab 1913 von den Franzosen als Neustadt neben die Medina gesetzt, mit Boulevards, Cafés und Läden, in denen Preise angeschrieben stehen. Wer nach drei Tagen Souk eine Pause braucht, wohnt hier richtig. Das Haus hat vierundsechzig Zimmer, sachlich eingerichtet, alle mit Klimaanlage und Balkon, auf dem Dach ein Becken mit Blick auf die Koutoubia. Zum Jardin Majorelle und dem Yves-Saint-Laurent-Museum sind es sechshundert Meter, zum Jemaa el-Fna zwei Kilometer oder zehn Minuten mit dem Taxi. Der Flughafen liegt fünf Kilometer entfernt. Frühstücksbuffet, abends ein Restaurant mit französischer und marokkanischer Karte.",
+   "highlights": [
+    "Dachbecken mit Blick auf die Koutoubia",
+    "Sechshundert Meter zum Jardin Majorelle",
+    "Fünf Kilometer zum Flughafen",
+    "Neustadt mit festen Preisen"
+   ]
+  },
+  {
+   "id": "h368",
+   "ziel": "marrakesch",
+   "name": "Kasbah Dar Lalla",
+   "ort": "Marrakesch",
+   "region": "Kasbah",
+   "kategorie": "boutique",
+   "sterne": 3,
+   "preis": 142,
+   "rating": 4.6,
+   "bewertungen": 386,
+   "strand": null,
+   "zentrum": 1.1,
+   "flughafen": 6,
+   "extras": [
+    "terrace"
+   ],
+   "kurz": "Riad im Kasbah-Viertel, Saadier-Gräber um die Ecke, vierzehn Zimmer.",
+   "lang": "Die Kasbah ist der südliche Teil der Medina, der im zwölften Jahrhundert als Herrschaftsviertel angelegt wurde, und sie ist deutlich ruhiger als die Souks im Norden. Das Riad hat vierzehn Zimmer auf zwei Etagen um einen Hof mit Zitronenbaum und Brunnen, Tadelakt, Zellige, Zedernholz, keine Klimaanlage in zwei Zimmern, dafür zwei Meter dicke Wände. Zu den Saadier-Gräbern sind es drei Gehminuten, zum Badi-Palast fünf, zum Jemaa el-Fna zwölf. Auf dem Dach eine Terrasse mit Liegen und Blick auf das Minarett der Kasbah-Moschee. Abendessen auf Anmeldung, vier Gänge, im Hof. Der Hausherr organisiert Hammam-Besuche im Viertelbad, nicht im Hotel.",
+   "highlights": [
+    "Riad mit Zitronenbaum im Hof",
+    "Drei Minuten zu den Saadier-Gräbern",
+    "Dachterrasse an der Kasbah-Moschee",
+    "Hammam im Viertelbad"
+   ]
+  },
+  {
+   "id": "h369",
+   "ziel": "marrakesch",
+   "name": "Ourika Flusslodge",
+   "ort": "Setti Fatma",
+   "region": "Ourika-Tal",
+   "kategorie": "finca",
+   "sterne": 3,
+   "preis": 158,
+   "rating": 4.6,
+   "bewertungen": 324,
+   "strand": null,
+   "zentrum": 42.0,
+   "flughafen": 44,
+   "extras": [
+    "pool",
+    "terrace",
+    "bikeRental"
+   ],
+   "kurz": "Im Ourika-Tal am Fluss, Wasserfälle und Berberdörfer, Atlas über dem Haus.",
+   "lang": "Das Ourika-Tal beginnt vierzig Kilometer südlich von Marrakesch und steigt in den Hohen Atlas, und schon auf tausendfünfhundert Metern ist es zehn Grad kühler als in der Stadt, was im Sommer den Unterschied macht. Die Lodge liegt am Fluss, sechzehn Zimmer in Lehmbauten, Terrassen über dem Wasser, ein Becken im Garten unter Walnussbäumen. Von Setti Fatma führen Pfade zu sieben Wasserfällen, der erste ist in vierzig Minuten erreicht, der siebte in drei Stunden mit Führer. Berberdörfer kleben an den Hängen gegenüber. Räder stehen bereit, bergab bis zur Hauptstraße. Abends Tajine am Fluss, Gemüse aus den Terrassengärten des Tals.",
+   "highlights": [
+    "Am Fluss im Ourika-Tal",
+    "Zehn Grad kühler als die Stadt",
+    "Becken unter Walnussbäumen",
+    "Sieben Wasserfälle ab Setti Fatma"
+   ]
+  }
+ ]
+}

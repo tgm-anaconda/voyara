@@ -89,11 +89,23 @@ const STELLSCHRAUBEN = {
                   schublade = Arm A. Der Chat liegt als 380 Pixel breite
                   Spalte links, die Seite daneben. Wer zusieht, sieht den
                   Agenten tippen, filtern und klicken.
-                  fenster = Arm B. Derselbe Chat, derselbe Agent, dieselbe
-                  Arbeit auf derselben Seite - nur deckt der Chat das Bild
-                  vollstaendig, und der Zeiger ist unsichtbar. Man sieht,
-                  DASS er arbeitet, nicht WAS er tut. Der Weg zur Seite
-                  bleibt offen: Chat schliessen, und sie liegt da.
+                  fenster = Arm B, Hybridfassung seit 01.11.2026.
+                  Derselbe Chat, derselbe Agent, dieselbe Arbeit auf
+                  derselben Seite. Im RUHEZUSTAND ist er von Arm A nicht
+                  zu unterscheiden - gleiche Spalte, gleiche Breite,
+                  gleiche Seite daneben. Erst WAEHREND der Agent arbeitet,
+                  klappt der Chat auf die volle Flaeche auf, der Zeiger
+                  wird unsichtbar und die Seite verschwindet dahinter:
+                  Man sieht, DASS er arbeitet, nicht WAS er tut. Danach
+                  faehrt alles zurueck. Damit unterscheiden sich die Arme
+                  nur noch in der Arbeitsphase und nicht mehr in Flaeche,
+                  Bedienung und Optik der ganzen Sitzung.
+                  Geschaltet wird das ueber die Klasse `agent-vollbild`,
+                  gesetzt in sperreAn() und entfernt in sperreAus().
+                  fensterDauer = die alte Fassung bis zum 01.11.2026, bei
+                  der das Vollbild dauerhaft galt. Bleibt als Rueckweg und
+                  als Vergleichsfall im Code, kommt in der Erhebung nicht
+                  vor.
                   seitenleiste = die alte, dauerhaft offene Rasterspalte.
                   Bleibt im Code, kommt in der Erhebung nicht vor, weil
                   beide Arme gleich oeffnen und schliessen muessen.
@@ -134,10 +146,14 @@ const STELLSCHRAUBEN = {
      Algarve). Beides bleibt erhalten, umschaltbar auch ueber die
      Adresse: ?aufgabe=fest. */
   aufgabe: "frei",               // frei | fest
-  /* Vorgabe bleibt die alte Spalte, damit ein Blick auf den Prototyp
-     ohne Studienlink aussieht wie bisher. Die Erhebung setzt den Arm
-     ueber die Adresse: ?zugang=schublade (A) oder ?zugang=fenster (B). */
-  zugang: "seitenleiste",        // schublade | fenster | seitenleiste
+  /* Der Arm wird ausgelost, sobald der Link keinen nennt (02.11.2026) -
+     siehe stellschraubenAusAdresse weiter unten. Dieser Wert hier greift
+     deshalb nur noch, wenn die Auslosung nicht laeuft (etwa in den
+     Selbstpruefungen, die ihn direkt setzen).
+
+     Zum Testen weiter ueber die Adresse: ?zugang=schublade (A),
+     ?zugang=fenster (B), ?zugang=seitenleiste (neutraler Blick). */
+  zugang: "seitenleiste",        // schublade | fenster | fensterDauer | seitenleiste
   einladung: "keine",            // unten-rechts | cursor | mitte | liste | keine
   einladungAusloeser: "detail",  // detail | zeit
   einladungSekunden: 60,
@@ -160,14 +176,22 @@ const STELLSCHRAUBEN = {
      etikett = nur das Wort "Partnerhaus", Erklaerung auf Klick
      text    = Etikett plus Erklaerungssatz, sofort sichtbar
      zufall  = je Person ausgelost (Normalfall der Erhebung) */
-  /* Bis auf Weiteres fest auf "etikett" (Entscheidung des Nutzers vom
-     03.10.2026): Jede Person sieht das Partner-Label an Haus und Flug.
-     Wer den Prototyp ansieht - etwa der Betreuer -, soll nicht zufaellig
-     in der Kontrollgruppe landen und gar kein Label sehen. Fuer die
-     Erhebung kommt die Auslosung zurueck: "zufall" (oder eine feste
-     Stufe) hier eintragen. Ueber die Adresse laesst sich das bewusst
-     nicht umstellen - nur im Code. */
-  kennzeichnung: "etikett",      // zufall | ohne | etikett | text
+  /* Seit dem 02.11.2026 ausgelost - der zweite Faktor der 2x2.
+     ------------------------------------------------------------------
+     Stand bis dahin fest auf "etikett", weil ein Blick auf den Prototyp
+     nicht zufaellig in der Kontrollgruppe landen sollte (Entscheidung vom
+     03.10.2026). Fuer die Erhebung gebraucht wird die Auslosung: Ohne sie
+     haette jede Person dieselbe Stufe, und die Matrix haette statt vier
+     Zellen nur zwei.
+
+     Gelost wird zwischen "ohne" und "etikett", nicht ueber alle drei
+     Stufen - siehe Studie.KENNZEICHNUNG_STUFEN. Mit "text" waeren es
+     2x3 = sechs Zellen; bei rund 130 Personen blieben gut 20 je Zelle,
+     und das traegt keinen Interaktionstest.
+
+     Wer den Prototyp ohne Auslosung ansehen will, traegt hier eine feste
+     Stufe ein. Ueber die Adresse geht das bewusst weiterhin nicht. */
+  kennzeichnung: "zufall",       // zufall | ohne | etikett | text
   // Sieht der Agent sich die engere Auswahl vorher sichtbar an (Haus
   // oeffnen, Bewertungen lesen, Zimmer und Verpflegung setzen)? Kostet
   // acht bis zehn Sekunden je Haus und ist der Kern der Fragestellung:
@@ -184,7 +208,12 @@ const STELLSCHRAUBEN = {
   // um, wenn ihm die Wahl ueberlassen wird? false = er rechnet still im
   // Katalog und nennt nur das Ergebnis mit Begruendung.
   monatsvergleich: true,         // true | false
-  mietwagenFrage: true,          // einmal vor der Kasse fragen (04.10.2026)
+  /* Aus am 02.11.2026, Vorgabe aus der Besprechung mit Kai: Der Mietwagen
+     faellt aus der Erhebung. Er kostete einen eigenen Zug vor der Kasse
+     und misst nichts, was die Fragestellung braucht. Der Reiter in der
+     Suchmaske ist zusaetzlich entfernt - sonst koennte jemand von sich
+     aus hineingehen, und das waere ein Ausreisser in den Daten. */
+  mietwagenFrage: false,         // einmal vor der Kasse fragen (04.10.2026)
   /* Das Agenten-Log, aus am 25.10.2026.
      ------------------------------------------------------------------
      Es stammt aus dem Aufbau, in dem Nachvollziehbarkeit selbst die
@@ -231,7 +260,7 @@ const STELLSCHRAUBEN = {
     fehler: ["keine", "filter", "kriterium", "behauptung"],
     begruendung: ["knapp", "ausfuehrlich"],
     initiative: ["abwartend", "vorschlagend"],
-    zugang: ["schublade", "fenster", "seitenleiste"],
+    zugang: ["schublade", "fenster", "fensterDauer", "seitenleiste"],
     einladung: ["unten-rechts", "unten-links", "cursor", "mitte", "liste", "keine"],
     einladungAusloeser: ["detail", "zeit"],
     freigabeFrage: ["erstoeffnung", "start"],
@@ -267,6 +296,31 @@ const STELLSCHRAUBEN = {
     if (v === "0" || v === "1") { gruppe[feld] = v === "1"; neu = true; }
   }
 
+  /* Den Arm auslosen, wenn der Link keinen nennt (02.11.2026).
+     ------------------------------------------------------------------
+     Bis hierher kam der Arm ausschliesslich ueber die Adresse. Wer den
+     normalen Link oeffnete, bekam `seitenleiste` - also weder A noch B.
+     Fuer die Erhebung haette das bedeutet: zwei getrennte Links verteilen
+     und darauf vertrauen, dass niemand den falschen erwischt.
+
+     Jetzt wird gelost, sobald nichts vorgegeben ist. Die Zuweisung geht
+     in denselben sessionStorage wie die Werte aus der Adresse und gilt
+     damit fuer die ganze Sitzung ueber alle Seiten.
+
+     Wichtig fuer das Testen: Ein Wert in der Adresse schlaegt die
+     Auslosung weiter, weil die Adresse vorher gelesen wird. `?zugang=
+     schublade`, `?zugang=fenster` und auch `?zugang=seitenleiste` fuer
+     den neutralen Blick auf den Prototyp funktionieren unveraendert.
+
+     Gelost wird nur zwischen den beiden Armen der Erhebung.
+     `fensterDauer` und `seitenleiste` sind Rueckwege und kommen in der
+     Auslosung bewusst nicht vor. */
+  const ARME = ["schublade", "fenster"];
+  if (!gruppe.zugang) {
+    gruppe.zugang = ARME[Math.floor(Math.random() * ARME.length)];
+    neu = true;
+  }
+
   if (neu) { try { sessionStorage.setItem(SCHLUESSEL, JSON.stringify(gruppe)); } catch { /* egal */ } }
   // Eine Kennzeichnung aus einem alten Link gilt nicht mehr - nur der Code
   delete gruppe.kennzeichnung;
@@ -291,10 +345,25 @@ const STELLSCHRAUBEN = {
        man erst finden muss, erzeugt Selbstauswahl - die waere schlimmer
        als ungleiches Wissen. Nur wer selbst geschlossen hat, findet ihn
        geschlossen wieder. */
-    const fenster = STELLSCHRAUBEN.zugang === "fenster";
+    /* Arm-Markierung und Sichtzustand sind seit dem 01.11.2026 zwei
+       verschiedene Dinge (Hybridfassung).
+       ----------------------------------------------------------------
+       `agent-fenster` sagt, in welchem ARM die Person ist. Daran haengen
+       die Dinge, die den ganzen Durchgang ueber gelten: der
+       Schritte-Block als Kanal von Arm B (AgentPanel.ARM_B), der
+       unsichtbare Zeiger (Zeiger.armB) und die Selbstpruefungen.
+
+       `agent-vollbild` sagt, ob der Chat GERADE das Bild deckt. Daran
+       haengt die gesamte Optik. Im Hybrid wird sie nur waehrend der
+       Arbeit gesetzt, in der alten Fassung (`fensterDauer`) dauerhaft.
+       Beide Arme sehen im Ruhezustand damit gleich aus, ohne dass an
+       Arm A eine einzige Zeile geaendert werden musste. */
+    const dauer = STELLSCHRAUBEN.zugang === "fensterDauer";
+    const fenster = STELLSCHRAUBEN.zugang === "fenster" || dauer;
     if (fenster || STELLSCHRAUBEN.zugang === "schublade") {
       document.body.classList.add("agent-schublade");
       document.body.classList.toggle("agent-fenster", fenster);
+      document.body.classList.toggle("agent-vollbild", dauer);
       let offen = null;
       let eingezogen = null;
       try {
@@ -307,6 +376,7 @@ const STELLSCHRAUBEN = {
     } else {
       document.body.classList.remove("agent-schublade");
       document.body.classList.remove("agent-fenster");
+      document.body.classList.remove("agent-vollbild");
     }
     /* Seit dem 27.09.2026 ist die offene Spalte der Normalfall, und die
        Seiten tragen die Schubladen-Klasse nicht mehr im HTML - sie kommt
@@ -343,7 +413,13 @@ const STELLSCHRAUBEN = {
       const abschirmen = () => {
         const main = document.querySelector(".app-main");
         if (!main) return;
-        const chatOffen = document.body.classList.contains("agent-open");
+        /* Seit dem 01.11.2026 entscheidet das Vollbild, nicht der offene
+           Chat: Im Ruhezustand ist Arm B dieselbe Spalte wie Arm A, und
+           dort SOLL die Seite bedienbar bleiben. Stillgelegt wird sie
+           nur, solange der Chat sie wirklich deckt. Der Beobachter unten
+           sieht die neue Klasse von selbst, sie haengt ebenfalls am
+           Body. */
+        const chatOffen = document.body.classList.contains("agent-vollbild");
         if (chatOffen) {
           main.setAttribute("inert", "");
           main.setAttribute("aria-hidden", "true");
@@ -964,12 +1040,67 @@ const Kern = {
       AgentPanel.arbeitetAn();
       // Nach einem Seitenwechsel mitten im Zug: Die Anzeige ist mit dem
       // alten Kasten verschwunden und wird hier neu aufgebaut.
-      AgentPanel.arbeitAn?.("Macht weiter");
-      AgentPanel.status("macht weiter…");
+      const weiter = this.weiterText();
+      AgentPanel.arbeitAn?.(weiter.gross);
+      AgentPanel.status(weiter.klein);
       setTimeout(() => this.fortsetzenNachLaden(), 600);
     } else if (this.lauf.phase === "gespraech" && this.lauf.verlauf.length) {
       AgentPanel.status("online");
     }
+  },
+
+  /* Was der Agent gerade tut, nach einem Seitenwechsel (03.11.2026).
+     ------------------------------------------------------------------
+     Gemeldet: "Die Information, die im Chat steht, was er gerade macht,
+     ist ein bisschen zu undetailliert. Nicht, dass da nur steht, macht
+     weiter, sondern dass da steht, sucht auf Detail-Hotel-Seite."
+
+     Wechselt ein Werkzeug die Seite, wird der Kasten drueben neu
+     aufgebaut - und bis zum 03.11.2026 stand dort "Macht weiter", egal
+     was anlag. Dabei weiss der Kern es genau: Der ausstehende Aufruf
+     nennt das Werkzeug, und bei den mehrstufigen Werkzeugen steht das
+     Haus im Rundgang oder in der Stichprobe.
+
+     Die Saetze stehen hier und nicht im Modell: Sie sollen genau das
+     sagen, was passiert, und in beiden Armen gleich lauten - die
+     Beobachtbarkeit ist der Faktor, nicht die Wortwahl. */
+  weiterText() {
+    const a = this.lauf.ausstehend;
+    const name = a?.calls?.[a.i]?.function?.name || this.lauf.letztesWerkzeug || null;
+    const hausName = (id) => (typeof getItemById === "function" ? getItemById(id)?.name : null) || null;
+    // Welches Haus gerade an der Reihe ist
+    const r = this.lauf.rundgang || this.lauf.stichprobe || null;
+    const dran = r && r.ids ? hausName(r.ids[r.i]) : null;
+    let roh = null;
+    if (name === "haeuser_ansehen") {
+      roh = Werkzeuge.seite() === "results"
+        ? (dran ? `Sucht ${dran} in der Trefferliste` : "Geht zurück zur Trefferliste")
+        : (dran ? `Sieht sich ${dran} auf der Hausseite an` : "Sieht sich die Hausseite an");
+    } else if (name === "stichprobe_nehmen") {
+      roh = dran ? `Schaut in ${dran} hinein` : "Schaut in ein Haus hinein";
+    } else if (name === "bewertungen_lesen" || name === "bewertungen_durchsuchen") {
+      const id = a?.calls?.[a.i]?.function?.arguments;
+      let wer = dran;
+      try { const j = JSON.parse(id || "{}"); wer = hausName(j.id) || wer; } catch { /* egal */ }
+      roh = wer ? `Liest die Bewertungen von ${wer}` : "Liest die Bewertungen";
+    } else if (name === "haus_oeffnen" || name === "haus_details") {
+      roh = dran ? `Öffnet die Seite von ${dran}` : "Öffnet die Hausseite";
+    } else if (name === "suchen" || name === "haus_suchen") {
+      roh = "Stellt die Filter in der Trefferliste";
+    } else if (name === "reisedaten_aendern") {
+      roh = "Ändert die Reisedaten in der Suche";
+    } else if (name === "monate_vergleichen") {
+      roh = "Vergleicht die Monate";
+    } else if (name === "zurueck_zur_liste") {
+      roh = "Geht zurück zur Trefferliste";
+    } else if (name === "buchung_vorbereiten" || name === "formular_ausfuellen") {
+      roh = "Füllt das Buchungsformular aus";
+    } else if (name === "faq_nachschlagen") {
+      roh = "Schlägt in den Hinweisen nach";
+    }
+    if (!roh) roh = "Macht weiter";
+    // Oben gross geschrieben, in der Statuszeile klein mit Auslassung
+    return { gross: roh, klein: `${roh.charAt(0).toLowerCase()}${roh.slice(1)}…` };
   },
 
   kandidatenAuffrischen() {
@@ -1157,11 +1288,15 @@ const Kern = {
     if (typeof Politik !== "undefined") AgentPanel.eckdatenZeigen(Politik.eckdaten(this.lauf.profil || {}));
   },
 
-  // Der Stand als Text fuer das Modell
+  /* Der Stand als Text fuer das Modell. Ein Ausschluss steht hier
+     zusaetzlich und nicht als Alternative: Er gilt neben einem festen
+     Ziel, neben einer Auswahl und neben einer Himmelsrichtung. */
   standKurz() {
     const p = this.lauf.profil || {};
     const teile = [];
+    const regionsname = (id) => (typeof ZIEL_NACH_ID !== "undefined" ? ZIEL_NACH_ID[id]?.name : null) || id;
     if (p.zielId && typeof ZIEL_NACH_ID !== "undefined") teile.push(`Ziel ${ZIEL_NACH_ID[p.zielId]?.name}`);
+    else if ((p.zieleAuswahl || []).length) teile.push(`Ziel nur ${p.zieleAuswahl.map(regionsname).join(", ")}`);
     else if (p.richtung && typeof Politik !== "undefined") {
       /* Genannt werden nur Regionen, in denen im gemerkten Monat etwas
          buchbar ist (06.10.2026). Stand hier die ganze Temperaturspanne,
@@ -1172,6 +1307,8 @@ const Kern = {
       teile.push(`Ziel offen, Richtung ${(Politik.THEMEN || []).find((x) => x.id === p.richtung)?.label || p.richtung} (${nennbar.map((id) => ZIEL_NACH_ID?.[id]?.name || id).join(", ")})`);
     }
     else if (p.zielOffen) teile.push("Ziel offen (alle Regionen)");
+    // Zusaetzlich, nicht alternativ: ein Ausschluss gilt neben allem anderen
+    if ((p.zieleAus || []).length) teile.push(`NICHT ${p.zieleAus.map(regionsname).join(", ")} (von der Person abgelehnt, nicht aufheben)`);
     if (p.monat && typeof Politik !== "undefined") {
       const name = Object.keys(Politik.MONATE).find((m) => Politik.MONATE[m] === p.monat && m.length > 3);
       if (name) teile.push(`Monat ${name}`);
@@ -1378,7 +1515,8 @@ const Kern = {
      und es wird notiert, damit der Weg, der ihn geloescht hat, gefunden
      wird. Aendern darf die Person alles; verloren geht nichts. */
   FESTE_FELDER: ["monat", "anreise", "von", "bis", "naechte", "erwachsene", "kinder", "kinderAlter", "zimmer",
-    "maxPreis", "budgetGesamt", "zielId", "flug", "flugAb", "flugKlasse", "verpflegung", "typ"],
+    "maxPreis", "budgetGesamt", "zielId", "zieleAuswahl", "zieleAus", "zielVorgemerkt", "zieleVorgemerkt",
+    "flug", "flugAb", "flugKlasse", "verpflegung", "typ"],
 
   festeWerte() {
     const p = this.lauf.profil || {};
@@ -1543,6 +1681,7 @@ const Kern = {
     this.haustierLesen(t);
     this.lauf.selbstGelesen = [];
     this.budgetUebernehmen();
+    this.regionenLesen(t);
     if (this.lauf.filterStandSchon) {
       this.lauf.filterStandSchon = false;
       this.notieren("filter_standen_schon", {});
@@ -1595,6 +1734,23 @@ const Kern = {
     if (this.lauf.gefragt) {
       (this.lauf.besprochen ||= {})[this.lauf.gefragt] = true;
       this.notieren("thema_beantwortet", { thema: this.lauf.gefragt });
+      /* Bei den Wuenschen wird nachgehakt (03.11.2026).
+         ----------------------------------------------------------------
+         Gemeldet: "Wenn man dann einmal Essen antwortet, fragt er sofort,
+         okay, soll ich jetzt fuer dich das raussuchen? ... Er soll immer
+         fragen, faellt dir noch irgendwas ein neben dem Essen? Also er
+         soll mindestens zweimal fragen."
+
+         Gezaehlt wird mit `lauf.gefragtWie.wuensche`, dem Zaehler, den
+         der Fahrplan ohnehin fuehrt - ein zweiter waere eine zweite
+         Wahrheit gewesen. `fertig.wuensche` gilt erst ab der dritten
+         Frage. Wer abwinkt ("nein", "das war's", "such los"), beendet das
+         Thema sofort - sonst waere aus dem Nachhaken eine Schleife
+         geworden. */
+      if (this.lauf.gefragt === "wuensche" && this.WUNSCH_GENUG.test(String(t))) {
+        this.lauf.wuenscheGenug = true;
+        this.notieren("wuensche_abgewunken", { satz: String(t).slice(0, 80) });
+      }
       // Fuer den Abgleich weiter unten: Worauf hat sie gerade geantwortet?
       // Kommt davon nichts im Stand an, hat der Agent sie nicht verstanden.
       this.lauf.zuletztGefragt = this.lauf.gefragt;
@@ -2212,7 +2368,39 @@ const Kern = {
               }
             }
           }
-          const artFrage = !freierZug && !tippGestellt && Werkzeugkasten.artRueckfrage(this.lauf.profil || {}, this.lauf);
+          /* Zwei Rueckfragen vor der Art-Frage (01.11.2026).
+             ------------------------------------------------------------
+             Beide folgen demselben Muster: ein Satz, zwei Chips, eine
+             Frage je Zug, `naechstes: null`, damit das offene Thema des
+             Fahrplans danach von selbst wiederkommt.
+
+             Reihenfolge: Der Widerspruch zuerst, weil dort eine Angabe
+             der Person noch gar nicht uebernommen wurde und bis zur
+             Antwort liegen bleibt. Die Engstelle danach - sie beschreibt
+             einen Zustand, der auch einen Zug spaeter noch gilt. */
+          let kernFrage = null;
+          if (!freierZug && !tippGestellt) {
+            const wf = Werkzeugkasten.widerspruchRueckfrage(this.lauf.profil || {}, this.lauf);
+            if (wf) {
+              (this.lauf.widerspruchGefragt ||= {})[wf.ziel] = true;
+              this.notieren("widerspruch_rueckfrage", { ziel: wf.ziel, richtung: this.lauf.profil?.richtung });
+              kernFrage = { ...wf, thema: "ziel" };
+            } else {
+              const ef = Werkzeugkasten.engstelleRueckfrage(this.lauf.profil || {}, this.lauf);
+              if (ef) {
+                (this.lauf.engstelleGefragt ||= {})[ef.grund] = true;
+                this.notieren("engstelle_rueckfrage", { feld: ef.grund, treffer: this.lauf.letzteEngstelle?.jetzt });
+                kernFrage = { ...ef, thema: null };
+              }
+            }
+          }
+          if (kernFrage) {
+            this.lauf.chipWirkung = kernFrage.wirkung || null;
+            this.lauf.chipThema = kernFrage.thema;
+            fpJetzt = { ...fpJetzt, satz: kernFrage.satz, chips: kernFrage.chips.join(" | "),
+              naechstes: null, nurKern: true };
+          }
+          const artFrage = !freierZug && !tippGestellt && !kernFrage && Werkzeugkasten.artRueckfrage(this.lauf.profil || {}, this.lauf);
           if (artFrage) {
             // Je Grund merken, nicht pauschal: Flug und Verpflegung sind
             // zwei verschiedene Abwaegungen fuer dieselbe Entscheidung.
@@ -2233,7 +2421,7 @@ const Kern = {
             fpJetzt = { ...fpJetzt, satz: artFrage.satz, chips: artFrage.chips.join(" | "), naechstes: null, nurKern: true, fragtThema: "art" };
           }
           /* Die Namen gehen nicht auf: fragen, bevor etwas eingetragen wird. */
-          if (!freierZug && !tippGestellt && !artFrage && fpJetzt.satz !== null) {
+          if (!freierZug && !tippGestellt && !artFrage && !kernFrage && fpJetzt.satz !== null) {
             const nf = Werkzeugkasten.namenRueckfrage(this.lauf.profil || {}, this.lauf);
             if (nf) {
               this.lauf.namenGefragt = true;
@@ -3764,6 +3952,73 @@ const Kern = {
     return false;
   },
 
+  /* Abgelehnte Regionen liest der Kern selbst (03.11.2026).
+     ------------------------------------------------------------------
+     Gemeldet: "ich moechte bitte nicht nach lissabon oder marrakesch die
+     bitte rausnehmen aus der suche" - der Agent bestaetigte es in Worten
+     ("Ich habe verstanden, dass du Lissabon und Marrakesch nicht in der
+     Suche haben moechtest"), aber im Stand stand nichts, in den
+     Eckdaten fehlte die Zeile "Nicht", und der naechste Suchlauf zeigte
+     beide Regionen weiter. Das Feld `zieleAus` gibt es, das Modell hatte
+     es nur nicht gefuellt - es hat geantwortet statt eingetragen.
+
+     Hier und nicht im Werkzeug: Derselbe Weg wie beim Budget und beim
+     Datum. Ein Ausschluss ist die eine Angabe, bei der ein Vergessen
+     nicht auffaellt - die Person sieht die Region einfach weiter und
+     entscheidet am Ende womoeglich nach Region statt nach dem, was
+     gemessen werden soll.
+
+     Gelesen wird nur, was die Person selbst gesagt hat, und nur mit
+     einem Verneinungswort davor. "Lieber", "sondern", "stattdessen" und
+     "aber" setzen den Satz zurueck: In "nicht Mallorca, lieber Kreta"
+     ist Kreta gewuenscht, nicht abgelehnt. */
+  AUSSCHLUSS_WORT: /\b(nicht|nichts|kein|keine|keinen|keinesfalls|ohne|au(ß|ss)er|ausser|ausschlie(ß|ss)en|rausnehmen|raus|rauslassen|weglassen|streich|vermeiden|bitte nicht|auf keinen fall|will ich nicht|moechte ich nicht|möchte ich nicht)\b/i,
+  AUSSCHLUSS_ENDE: /\b(lieber|sondern|stattdessen|statt ?dessen|aber|daf(ü|ue)r|am liebsten|gerne|gern)\b/i,
+
+  regionenLesen(t) {
+    const satzTeile = String(t).split(/[.!?;]+|\bund\b(?=[^,]*\bnicht\b)/i);
+    const p = this.lauf.profil || (this.lauf.profil = {});
+    const raus = [];
+    for (const teil of satzTeile) {
+      const m = teil.match(this.AUSSCHLUSS_WORT);
+      if (!m) continue;
+      /* Das Verneinungswort kann vor der Region stehen ("nicht nach
+         Lissabon") oder dahinter ("nimm Kreta bitte raus"). Gelesen wird
+         deshalb der ganze Teilsatz - abgeschnitten nur dort, wo ein Wort
+         ihn umdreht, und zwar nur, wenn dieses Wort NACH der Verneinung
+         kommt ("nicht Mallorca, lieber Kreta"). */
+      let feld = teil;
+      const nach = teil.slice(m.index + m[0].length);
+      const ende = nach.match(this.AUSSCHLUSS_ENDE);
+      if (ende) feld = teil.slice(0, m.index + m[0].length + ende.index);
+      for (const z of (typeof ZIELE !== "undefined" ? ZIELE : [])) {
+        const woerter = [z.name, z.id, z.region].filter(Boolean)
+          .map((x) => String(x).toLowerCase()).filter((x) => x.length >= 3);
+        const drin = woerter.some((w) => {
+          const sicher = w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+          return new RegExp(`(^|[^a-zäöüß])${sicher}([^a-zäöüß]|$)`, "i").test(feld);
+        });
+        if (drin && !raus.includes(z.id)) raus.push(z.id);
+      }
+    }
+    if (!raus.length) return;
+    const vorher = [...(p.zieleAus || [])];
+    const neu = raus.filter((id) => !vorher.includes(id));
+    if (!neu.length) return;
+    p.zieleAus = [...vorher, ...neu];
+    // Eine abgelehnte Region kann nicht gleichzeitig das Ziel sein
+    if (p.zielId && p.zieleAus.includes(p.zielId)) { p.zielId = null; p.zielOffen = true; }
+    if ((p.zieleAuswahl || []).length) {
+      p.zieleAuswahl = p.zieleAuswahl.filter((id) => !p.zieleAus.includes(id));
+    }
+    if (p.zielVorgemerkt && p.zieleAus.includes(p.zielVorgemerkt)) delete p.zielVorgemerkt;
+    (p.vonPerson ||= {}).zieleAus = true;
+    this.lauf.zuletztGemerkt = [...(this.lauf.zuletztGemerkt || []), "zieleAus"];
+    this.notieren("ziele_ausgeschlossen", { ziele: neu, wo: "kern", satz: String(t).slice(0, 120) });
+    this.standAnzeigen?.();
+    this.sichern();
+  },
+
   // Uebernimmt einen geklaerten Betrag - nach dem Zuruecksetzen der Quittungen
   budgetUebernehmen() {
     const d = this.lauf.preisDirekt;
@@ -4014,6 +4269,32 @@ const Kern = {
        Arm B mehr. Eine Klasse statt einer Abfrage auf das Element, damit
        es das Stylesheet ohne :has() entscheiden kann. */
     document.body.classList.add("agent-gesperrt");
+    /* Hier klappt Arm B auf (01.11.2026, Hybridfassung).
+       ------------------------------------------------------------------
+       Der Schaltpunkt liegt bewusst hier und nicht an `agent-arbeitet`:
+       Die Klasse wird auch beim blossen Nachdenken gesetzt (arbeitetAn in
+       components.js, aufgerufen ohne sperreAn), und der Chat wuerde bei
+       jeder Denkpause aufspringen und wieder zuklappen. sperreAn umrandet
+       dagegen genau die Phase, in der der Agent auf der SEITE arbeitet -
+       und nur die soll Arm B verdecken.
+
+       `fensterDauer` bleibt aussen vor: dort ist das Vollbild schon beim
+       Start gesetzt und darf am Ende der Arbeit nicht abgeraeumt werden. */
+    if (typeof STELLSCHRAUBEN !== "undefined" && STELLSCHRAUBEN.zugang === "fenster") {
+      document.body.classList.add("agent-vollbild");
+    }
+    /* Der Ladevorhang muss die Arbeitsphase kennen (01.11.2026).
+       ------------------------------------------------------------------
+       Beim Seitenwechsel liegt bis zum ersten Zeichnen ein Vorhang ueber
+       der Seite; in Arm B ist er dunkel, damit der Wechsel hinter dem
+       Vollbild nicht aufblitzt. Das stand bisher am Arm - mit dem Hybrid
+       waere Arm B dadurch bei JEDEM Seitenwechsel dunkel, auch im
+       Ruhezustand, und damit von Arm A zu unterscheiden.
+
+       Die Kopfzeile der Seiten liest deshalb diesen Schalter, und er
+       muss im sessionStorage stehen: vor dem ersten Zeichnen gibt es
+       noch kein Skript, das den Zustand kennt. */
+    try { sessionStorage.setItem("voyara_arbeitet", "1"); } catch { /* egal */ }
     this.sperreAusrichten();
     this.scrollSperre(true);
   },
@@ -4063,6 +4344,12 @@ const Kern = {
   sperreAus() {
     document.getElementById("agentSperre")?.remove();
     document.body.classList.remove("agent-gesperrt");
+    // Gegenstueck zu sperreAn: nur die Hybridfassung faehrt zurueck,
+    // `fensterDauer` behaelt sein Vollbild ueber die ganze Sitzung.
+    if (typeof STELLSCHRAUBEN !== "undefined" && STELLSCHRAUBEN.zugang === "fenster") {
+      document.body.classList.remove("agent-vollbild");
+    }
+    try { sessionStorage.setItem("voyara_arbeitet", "0"); } catch { /* egal */ }
     this.scrollSperre(false);
   },
 
@@ -4094,6 +4381,10 @@ const Kern = {
      Protokoll - fuer die Erhebung ist das eine Entscheidung ueber die
      Kontrolle, genau wie die Uebernahme selbst.
      ================================================================== */
+  /* Abwinken bei den Wuenschen: "nein", "das war's", "such los". Nur
+     hier gebraucht, deshalb steht es nicht bei den grossen Mustern. */
+  WUNSCH_GENUG: /\b(nein|nee|n(ö|oe)|nichts( mehr| weiter)?|das war'?s|das wars|mehr nicht|reicht( so)?|passt( so)?|keine? (weiteren?|mehr)|such(e)? (los|jetzt)|leg los|mach weiter|weiter|fertig|alles|soweit alles)\b/i,
+
   istAngehalten() {
     return Zeiger.abbruch || this.lauf.phase === "angehalten";
   },

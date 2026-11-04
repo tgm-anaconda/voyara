@@ -1,0 +1,325 @@
+{
+ "hotels": [
+  {
+   "id": "h638",
+   "ziel": "bretagne",
+   "name": "Les Remparts Saint-Malo",
+   "ort": "Saint-Malo",
+   "region": "Côte d'Émeraude",
+   "kategorie": "boutique",
+   "sterne": 4,
+   "preis": 224,
+   "rating": 4.6,
+   "bewertungen": 724,
+   "strand": 0.2,
+   "zentrum": 0.1,
+   "flughafen": 212,
+   "extras": [
+    "terrace",
+    "seaView"
+   ],
+   "kurz": "Innerhalb der Stadtmauer, Strand direkt vor dem Tor, Gezeiten von zwölf Metern.",
+   "lang": "Saint-Malo liegt hinter einer Granitmauer, die man in vierzig Minuten umrunden kann, und davor laufen die größten Gezeiten Europas auf, bis zu zwölf Meter Unterschied. Das Haus steht in einer Gasse innerhalb der Mauer, zwanzig Zimmer in einem Reederhaus des achtzehnten Jahrhunderts, Balken, Steinböden, in den oberen Etagen Blick über die Dächer aufs Meer. Durch das Porte de Dinan sind es dreißig Meter zum Plage de Bon-Secours mit seinem gemauerten Meerwasserbecken, das bei Ebbe gefüllt bleibt. Zur Fähre nach Dinard und zum Bahnhof gehen jeweils zehn Minuten. Frühstück im Gewölbe, Kouign-Amann und Salzbutterkaramell inklusive.",
+   "highlights": [
+    "Innerhalb der Stadtmauer",
+    "Dreißig Meter zum Plage de Bon-Secours",
+    "Meerwasserbecken bleibt bei Ebbe gefüllt",
+    "Reederhaus aus dem 18. Jahrhundert"
+   ]
+  },
+  {
+   "id": "h639",
+   "ziel": "bretagne",
+   "name": "Villa Dinard",
+   "ort": "Dinard",
+   "region": "Côte d'Émeraude",
+   "kategorie": "luxus",
+   "sterne": 5,
+   "preis": 338,
+   "rating": 4.7,
+   "bewertungen": 486,
+   "strand": 0.3,
+   "zentrum": 0.4,
+   "flughafen": 206,
+   "extras": [
+    "spa",
+    "seaView",
+    "terrace"
+   ],
+   "kurz": "Belle-Époque-Villa über der Plage de l'Écluse, Thalasso im Haus.",
+   "lang": "Dinard war um 1900 das Seebad der Engländer, und die Villen am Hang stehen noch alle, mit Türmchen, Veranden und Blick über die Mündung auf Saint-Malo. Dieses Haus hat vierundvierzig Zimmer, hohe Fenster, Stuck, die Seeseite mit Balkon. Das Thalasso im Souterrain arbeitet mit Meerwasser aus der Bucht, zwei Becken, vier Anwendungsräume, Hammam. Vom Haus führt der Promenade du Clair de Lune am Wasser entlang, abends beleuchtet, bis zur Pointe du Moulinet. Der Plage de l'Écluse liegt dreihundert Meter entfernt, mit gestreiften Umkleidezelten, die hier seit hundert Jahren dieselben Farben haben.",
+   "highlights": [
+    "Belle-Époque-Villa mit Blick auf Saint-Malo",
+    "Thalasso mit Meerwasser aus der Bucht",
+    "Promenade du Clair de Lune ab Haus",
+    "Dreihundert Meter zur Plage de l'Écluse"
+   ]
+  },
+  {
+   "id": "h640",
+   "ziel": "bretagne",
+   "name": "Maison Cancale",
+   "ort": "Cancale",
+   "region": "Côte d'Émeraude",
+   "kategorie": "finca",
+   "sterne": 3,
+   "preis": 168,
+   "rating": 4.5,
+   "bewertungen": 392,
+   "strand": 0.5,
+   "zentrum": 0.6,
+   "flughafen": 222,
+   "extras": [
+    "terrace",
+    "bikeRental"
+   ],
+   "kurz": "Steinhaus über den Austernbänken, Verkostung am Hafen fünf Minuten entfernt.",
+   "lang": "Cancale verkauft Austern, seit es Cancale gibt, und bei Ebbe sieht man die Bänke in der Bucht liegen, Reihe neben Reihe bis zum Horizont. Das Haus ist ein Granitbau am Hang über dem Hafen, zehn Zimmer, dicke Wände, Fenster mit Sprossen, hinten ein Garten mit Feigenbaum. Unten am Quai sitzen die Verkäuferinnen mit Tabletts, man kauft ein Dutzend, bekommt eine Zitrone dazu und isst auf der Mauer. Räder stehen bereit, der Küstenweg nach Pointe du Grouin ist sieben Kilometer und einer der schönsten der Küste. Zum Sandstrand bei Port-Mer sind es anderthalb Kilometer.",
+   "highlights": [
+    "Granitbau über dem Austernhafen",
+    "Austern am Quai in fünf Minuten",
+    "Küstenweg zur Pointe du Grouin",
+    "Räder inklusive"
+   ]
+  },
+  {
+   "id": "h641",
+   "ziel": "bretagne",
+   "name": "Ploumanac'h Granit Rose",
+   "ort": "Ploumanac'h",
+   "region": "Côte de Granit Rose",
+   "kategorie": "boutique",
+   "sterne": 4,
+   "preis": 212,
+   "rating": 4.7,
+   "bewertungen": 438,
+   "strand": 0.2,
+   "zentrum": 0.3,
+   "flughafen": 134,
+   "extras": [
+    "terrace",
+    "seaView"
+   ],
+   "kurz": "Zwischen den rosa Granitblöcken, Strand und Zöllnerpfad vor der Tür.",
+   "lang": "Der Granit an diesem Küstenabschnitt ist tatsächlich rosa, und bei Abendlicht wird er rot, was den Ruf des Ortes erklärt. Das Haus liegt in der zweiten Reihe über der Plage de Saint-Guirec, sechzehn Zimmer, Holz und Leinen, zur Seeseite mit kleinem Balkon zwischen die Blöcke hinein. Der Sentier des Douaniers beginnt am Strandende und führt an den bekanntesten Felsformationen vorbei zum Leuchtturm Mean Ruz, eine Stunde und gut ausgebaut. Zum Sandstrand sind es zweihundert Meter, bei Ebbe wird er doppelt so breit. Abendkarte mit vier Gängen, Fisch aus Perros-Guirec.",
+   "highlights": [
+    "Zweihundert Meter zur Plage de Saint-Guirec",
+    "Zöllnerpfad zum Leuchtturm Mean Ruz",
+    "Rosa Granit bei Abendlicht",
+    "Vier Gänge mit Fisch aus Perros-Guirec"
+   ]
+  },
+  {
+   "id": "h642",
+   "ziel": "bretagne",
+   "name": "Hotel Perros-Guirec",
+   "ort": "Perros-Guirec",
+   "region": "Côte de Granit Rose",
+   "kategorie": "familie",
+   "sterne": 3,
+   "preis": 158,
+   "rating": 4.3,
+   "bewertungen": 568,
+   "strand": 0.4,
+   "zentrum": 0.8,
+   "flughafen": 130,
+   "extras": [
+    "kidsClub"
+   ],
+   "kurz": "Über der Plage de Trestraou, flaches Wasser, Boote zu den Sept-Îles.",
+   "lang": "Die Plage de Trestraou ist ein weiter Sandbogen mit flachem Einstieg, an dem Kinder weit hinauslaufen können, bevor es tiefer wird. Das Hotel liegt oberhalb, zweiundfünfzig Zimmer, viele mit Verbindungstür, die Vorderseite mit Balkon zur Bucht. Vom Strand fahren Boote zum Vogelschutzgebiet Sept-Îles, wo Basstölpel und Papageitaucher brüten, eine Dreiviertelstunde hinaus. Betreuung läuft in den Schulferien vormittags, dazu Spielraum und Tischtennis im Haus. Halbpension mit Buffet, Crêpes gibt es jeden Abend, das war nicht zu verhandeln.",
+   "highlights": [
+    "Vierhundert Meter zur Plage de Trestraou",
+    "Flacher Einstieg für Kinder",
+    "Bootstouren zu den Sept-Îles",
+    "Crêpes jeden Abend"
+   ]
+  },
+  {
+   "id": "h643",
+   "ziel": "bretagne",
+   "name": "Carnac Les Alignements",
+   "ort": "Carnac",
+   "region": "Morbihan",
+   "kategorie": "strand",
+   "sterne": 4,
+   "preis": 196,
+   "rating": 4.4,
+   "bewertungen": 682,
+   "strand": 0.3,
+   "zentrum": 1.2,
+   "flughafen": 182,
+   "extras": [
+    "spa",
+    "seaView",
+    "terrace"
+   ],
+   "kurz": "Zwischen Steinreihen und Strand, geschützte Bucht, Thalasso im Ort.",
+   "lang": "Carnac hat zweierlei: dreitausend aufgerichtete Steine aus dem Neolithikum auf der Landseite und einen Sandstrand in einer nach Süden geschützten Bucht auf der anderen. Das Hotel liegt dazwischen, achtundfünfzig Zimmer, hell und ohne Zierrat, die Südseite mit Balkon Richtung Wasser. Weil die Bucht nach Süden offen und von Quiberon gedeckt ist, bleibt das Wasser hier im September bei achtzehn Grad, deutlich wärmer als an der Nordküste. Zum Strand sind es dreihundert Meter, zu den Steinreihen zwei Kilometer über den Radweg. Das Thalasso des Ortes ist eine der ältesten Anlagen Frankreichs und liegt fußläufig.",
+   "highlights": [
+    "Geschützte Südbucht, achtzehn Grad im September",
+    "Dreihundert Meter zum Sandstrand",
+    "Zwei Kilometer zu den Steinreihen",
+    "Thalasso im Ort fußläufig"
+   ]
+  },
+  {
+   "id": "h644",
+   "ziel": "bretagne",
+   "name": "Quiberon Presqu'ile",
+   "ort": "Quiberon",
+   "region": "Morbihan",
+   "kategorie": "luxus",
+   "sterne": 4,
+   "preis": 268,
+   "rating": 4.6,
+   "bewertungen": 524,
+   "strand": 0.2,
+   "zentrum": 0.9,
+   "flughafen": 202,
+   "extras": [
+    "spa",
+    "seaView",
+    "terrace"
+   ],
+   "kurz": "Auf der Halbinsel, Ruhe im Osten, wilde Küste im Westen, Thalasso im Haus.",
+   "lang": "Quiberon liegt auf einer Halbinsel, die so schmal ist, dass man an einer Stelle von der windgeschützten Ostseite zur Côte Sauvage im Westen in zehn Minuten hinüberläuft. Das Haus steht auf der Ostseite, achtundvierzig Zimmer, Parkett, Leinen, Seeblick aus zwei Dritteln. Das Thalasso im Haus hat ein Meerwasserbecken, Hammam und sechs Anwendungsräume und ist im Oktober der Hauptgrund für die Buchungen. Vom Hafen fahren Fähren nach Belle-Île, fünfundvierzig Minuten. Die Côte Sauvage ist zum Baden verboten und zum Anschauen eindrücklich, der Weg daran entlang zieht sich fünfzehn Kilometer.",
+   "highlights": [
+    "Zehn Minuten von der geschützten Bucht zur Côte Sauvage",
+    "Thalasso mit Meerwasserbecken im Haus",
+    "Fähre nach Belle-Île ab Hafen",
+    "Zwei Drittel der Zimmer mit Seeblick"
+   ]
+  },
+  {
+   "id": "h645",
+   "ziel": "bretagne",
+   "name": "Belle-Ile Port-Goulphar",
+   "ort": "Bangor",
+   "region": "Belle-Île-en-Mer",
+   "kategorie": "finca",
+   "sterne": 4,
+   "preis": 232,
+   "rating": 4.7,
+   "bewertungen": 348,
+   "strand": 1.6,
+   "zentrum": 4.2,
+   "flughafen": 218,
+   "extras": [
+    "terrace",
+    "seaView",
+    "bikeRental"
+   ],
+   "kurz": "Über der Schlucht von Port-Goulphar, Insel ohne Durchgangsverkehr.",
+   "lang": "Belle-Île erreicht man nur mit der Fähre von Quiberon, und das filtert zuverlässig. Das Haus liegt an der Südküste über der Schlucht von Port-Goulphar, zwanzig Zimmer in zwei flachen Steinbauten, alle mit Terrasse zur Klippe. Unten im Einschnitt liegt ein Bootsanleger, der Weg hinunter dauert zehn Minuten und hinauf fünfzehn. Räder stehen bereit, die Insel ist achtzehn Kilometer lang und mit dem Rad gut zu machen, Monets Aiguilles de Port-Coton sind zwei Kilometer entfernt. Der nächste Sandstrand ist die Plage de Donnant, anderthalb Kilometer, mit Brandung und ohne Aufsicht. Abends vier Gänge, Hummer auf Vorbestellung.",
+   "highlights": [
+    "Terrassen direkt über der Klippe",
+    "Nur mit der Fähre erreichbar",
+    "Monets Aiguilles in zwei Kilometern",
+    "Räder für die Inselrunde"
+   ]
+  },
+  {
+   "id": "h646",
+   "ziel": "bretagne",
+   "name": "Concarneau Ville Close",
+   "ort": "Concarneau",
+   "region": "Finistère Sud",
+   "kategorie": "stadt",
+   "sterne": 3,
+   "preis": 142,
+   "rating": 4.3,
+   "bewertungen": 496,
+   "strand": 0.8,
+   "zentrum": 0.2,
+   "flughafen": 96,
+   "extras": [
+    "terrace"
+   ],
+   "kurz": "Am Fuß der befestigten Altstadtinsel, Fischauktion im Hafen nebenan.",
+   "lang": "Concarneau hat eine Altstadt auf einer Insel im Hafen, von einer Mauer umgeben und über eine Brücke erreichbar, und daneben einen der größten Fischereihäfen Frankreichs. Das Haus steht am Kai gegenüber der Ville Close, dreißig Zimmer, die vorderen mit Blick auf Mauer und Boote. Die Auktion beginnt um sechs, Besichtigung mit Anmeldung, und danach gibt es Frühstück. Zum Sandstrand Plage des Sables Blancs sind es achthundert Meter nach Westen, flach und für Familien brauchbar. Im Ort reihen sich Crêperien, von denen die an der Rue Vauban die beste und die am Hafen die teuerste ist.",
+   "highlights": [
+    "Gegenüber der befestigten Ville Close",
+    "Fischauktion um sechs Uhr nebenan",
+    "Achthundert Meter zur Plage des Sables Blancs",
+    "Crêperien in Gehweite"
+   ]
+  },
+  {
+   "id": "h647",
+   "ziel": "bretagne",
+   "name": "Crozon Cap Sizun",
+   "ort": "Crozon",
+   "region": "Finistère",
+   "kategorie": "budget",
+   "sterne": 2,
+   "preis": 96,
+   "rating": 4.1,
+   "bewertungen": 372,
+   "strand": 0.7,
+   "zentrum": 0.5,
+   "flughafen": 62,
+   "kurz": "Einfaches Haus auf der Halbinsel Crozon, Strände und Klippen rundherum.",
+   "lang": "Die Halbinsel Crozon hat die Form eines Kreuzes und an jedem Arm eine andere Küste, von Sandbuchten im Süden bis zu hundert Meter hohen Klippen am Pointe de Pen-Hir. Das Haus ist nüchtern, achtzehn Zimmer, Linoleum, feste Betten, gut geheizt, und kostet unter hundert Euro, was in der Bretagne im Sommer selten ist. Zum Plage de Morgat sind es siebenhundert Meter, zu den Grotten dort fahren Boote vom Hafen. Der Küstenweg ist überall in Gehweite, markiert und nicht überlaufen. Frühstück gibt es, abends muss man in den Ort, das sind eine Crêperie, eine Pizzeria und eine Bar.",
+   "highlights": [
+    "Siebenhundert Meter zur Plage de Morgat",
+    "Bootstouren zu den Grotten ab Hafen",
+    "Küstenweg zum Pointe de Pen-Hir",
+    "Unter hundert Euro die Nacht"
+   ]
+  },
+  {
+   "id": "h648",
+   "ziel": "bretagne",
+   "name": "Douarnenez Port-Rhu",
+   "ort": "Douarnenez",
+   "region": "Finistère",
+   "kategorie": "boutique",
+   "sterne": 3,
+   "preis": 164,
+   "rating": 4.4,
+   "bewertungen": 326,
+   "strand": 0.6,
+   "zentrum": 0.3,
+   "flughafen": 68,
+   "extras": [
+    "terrace"
+   ],
+   "kurz": "Am Hafenmuseum im alten Fischerviertel, Segelboote vor den Fenstern.",
+   "lang": "Douarnenez war einmal der größte Sardinenhafen Europas, und was davon geblieben ist, steht im Port-Rhu als schwimmendes Museum: Frachtsegler, Schlepper, Fischerboote, an denen gearbeitet wird. Das Haus liegt am Kai gegenüber, zwölf Zimmer in einem Konservenfabrikgebäude, Backstein, hohe Fenster, Blick auf die Masten. Zum Plage des Dames im Stadtteil Tréboul sind es sechshundert Meter, ein geschützter Sandstrand mit Promenade. Die Bucht von Douarnenez ist flach und einer der besten Orte der Küste zum Kajakfahren, Verleih am Strand. Abends kocht die Küche Sardinen, Makrele und Kouign-Amann, und das in dieser Reihenfolge.",
+   "highlights": [
+    "Blick auf das schwimmende Hafenmuseum",
+    "Zimmer in alter Konservenfabrik",
+    "Sechshundert Meter zur Plage des Dames",
+    "Kajakverleih in der flachen Bucht"
+   ]
+  },
+  {
+   "id": "h649",
+   "ziel": "bretagne",
+   "name": "Audierne Pointe du Raz",
+   "ort": "Audierne",
+   "region": "Cap Sizun",
+   "kategorie": "strand",
+   "sterne": 3,
+   "preis": 152,
+   "rating": 4.4,
+   "bewertungen": 408,
+   "strand": 0.2,
+   "zentrum": 1.4,
+   "flughafen": 92,
+   "extras": [
+    "seaView",
+    "terrace"
+   ],
+   "kurz": "Am Sandstrand von Sainte-Évette, letzter Ort vor dem Pointe du Raz.",
+   "lang": "Audierne liegt an der Mündung des Goyen, und westlich davon wird es nur noch Fels: der Pointe du Raz ist fünfzehn Kilometer entfernt und der westlichste Punkt der Bretagne, mit Strömungen, die Seeleute seit Jahrhunderten respektieren. Das Hotel steht am Strand von Sainte-Évette, sechsundzwanzig Zimmer, einfach, die Hälfte mit Blick aufs Wasser. Die Bucht ist nach Süden geschützt, Sand, flacher Einstieg, Aufsicht im Juli und August. Vom Anleger nebenan fahren Boote zur Île de Sein, einer Insel ohne Autos und mit einem Meter Höhe über dem Meer. Fischrestaurant im Haus, Karte nach Tagesfang.",
+   "highlights": [
+    "Direkt am Strand von Sainte-Évette",
+    "Boote zur Île de Sein ab Anleger",
+    "Fünfzehn Kilometer zum Pointe du Raz",
+    "Karte nach Tagesfang"
+   ]
+  }
+ ]
+}

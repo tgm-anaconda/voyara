@@ -66,7 +66,8 @@ const NAV_ITEMS = [
   { key: "unterkunft", label: "Unterkünfte", icon: ICONS.bed, href: "results.html?type=unterkunft" },
   { key: "hotel", label: "Hotels", icon: ICONS.bed, href: "results.html?type=hotel" },
   { key: "apartment", label: "Ferienwohnungen", icon: ICONS.home, href: "results.html?type=apartment" },
-  { key: "car", label: "Mietwagen", icon: ICONS.car, href: "results.html?type=car" },
+  /* Kein Mietwagen-Reiter mehr (02.11.2026), aus demselben Grund wie der
+     Flug-Reiter: Er fuehrt in einen Bestand, der nicht erhoben wird. */
   /* Kein eigener Flug-Reiter mehr.
      ------------------------------------------------------------------
      Der Nutzer am 02.10.2026: "Zusaetzlich koennen wir die Flugkarte,
@@ -1578,14 +1579,13 @@ function renderFooter() {
           <span class="brand-mark">V</span>
           <span class="brand-name">Voyara</span>
         </a>
-        <p>Hotels, Ferienwohnungen, Mietwagen und Flüge vergleichen und buchen.</p>
+        <p>Hotels und Ferienwohnungen vergleichen und buchen, Flug auf Wunsch dazu.</p>
         <p class="footer-partner">Voyara arbeitet mit Partnerhäusern zusammen. Für Buchungen bei Partnern erhält Voyara eine Provision; als Partner gekennzeichnete Angebote können bevorzugt gelistet sein.</p>
       </div>
       <div class="footer-col">
         <h4>Buchen</h4>
         <a href="results.html?type=hotel">Hotels</a>
         <a href="results.html?type=apartment">Ferienwohnungen</a>
-        <a href="results.html?type=car">Mietwagen</a>
         <a href="merkzettel.html">Merkzettel</a>
         <a href="faq.html">Häufige Fragen</a>
       </div>

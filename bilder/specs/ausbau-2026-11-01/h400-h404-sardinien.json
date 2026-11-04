@@ -1,0 +1,140 @@
+{
+ "hotels": [
+  {
+   "id": "h400",
+   "ziel": "sardinien",
+   "name": "La Pelosa Turmblick",
+   "ort": "Stintino",
+   "region": "Nordwesten",
+   "kategorie": "strand",
+   "sterne": 4,
+   "preis": 214,
+   "rating": 4.6,
+   "bewertungen": 586,
+   "strand": 0.3,
+   "zentrum": 2.1,
+   "flughafen": 58,
+   "extras": [
+    "pool",
+    "seaView",
+    "terrace"
+   ],
+   "kurz": "An der Pelosa, türkises Flachwasser, aragonesischer Turm vor der Bucht.",
+   "lang": "La Pelosa gilt als der schönste Strand Sardiniens und ist seit 2020 reservierungspflichtig, mit einer Obergrenze von anderthalbtausend Personen pro Tag, was ihn tatsächlich erträglich gemacht hat. Das Wasser ist auf zweihundert Metern hüfttief und über weißem Sand türkis, davor steht ein aragonesischer Wachturm von 1578 auf einer Felsinsel. Das Haus liegt dreihundert Meter dahinter, achtundzwanzig Zimmer, weiß und schlicht, zwei Drittel mit Blick auf Turm und Bucht. Becken im Garten. Die Reservierung für den Strand übernimmt das Haus. Zur Insel Asinara, einem Nationalpark und früheren Gefängnis, fahren Boote vom Hafen Stintino, zwei Kilometer entfernt.",
+   "highlights": [
+    "Dreihundert Meter zur Pelosa",
+    "Strandreservierung übernimmt das Haus",
+    "Blick auf den Turm von 1578",
+    "Boote zur Insel Asinara ab Stintino"
+   ]
+  },
+  {
+   "id": "h401",
+   "ziel": "sardinien",
+   "name": "Bosa Flussstadt",
+   "ort": "Bosa",
+   "region": "Westen",
+   "kategorie": "boutique",
+   "sterne": 3,
+   "preis": 158,
+   "rating": 4.6,
+   "bewertungen": 342,
+   "strand": 2.4,
+   "zentrum": 0.2,
+   "flughafen": 72,
+   "extras": [
+    "terrace"
+   ],
+   "kurz": "Bunte Altstadt am Temo, Burg über dem Haus, Strand mit dem Bus.",
+   "lang": "Bosa liegt am einzigen schiffbaren Fluss Sardiniens, und die Altstadt steigt in bunten Häusern vom Ufer zur Burg Serravalle hinauf, was von der Flussbrücke aus das beste Bild der Insel ergibt. Das Haus ist ein Stadthaus des sechzehnten Jahrhunderts in der Gasse unterhalb der Burg, vierzehn Zimmer, Natursteinwände, Holzbalken, Dachterrasse mit Blick über die Dächer. Zur Burg sind es zwölf Gehminuten bergauf, zum Flussufer mit den alten Gerbereien drei. Der Strand Bosa Marina liegt zweieinhalb Kilometer entfernt, der Bus fährt halbstündlich. Die Küstenstraße nach Alghero, fünfundvierzig Kilometer ohne ein einziges Haus, gehört zu den eindrucksvollsten Italiens.",
+   "highlights": [
+    "Stadthaus aus dem 16. Jahrhundert",
+    "Dachterrasse über der bunten Altstadt",
+    "Burg Serravalle in zwölf Minuten",
+    "Küstenstraße nach Alghero"
+   ]
+  },
+  {
+   "id": "h402",
+   "ziel": "sardinien",
+   "name": "Chia Dünen",
+   "ort": "Domus de Maria",
+   "region": "Südwesten",
+   "kategorie": "strand",
+   "sterne": 4,
+   "preis": 196,
+   "rating": 4.5,
+   "bewertungen": 424,
+   "strand": 0.2,
+   "zentrum": 4.2,
+   "flughafen": 68,
+   "extras": [
+    "pool",
+    "seaView",
+    "terrace"
+   ],
+   "kurz": "Hinter den Dünen von Chia, Wachturm auf dem Felsen, Surfstrand im Westen.",
+   "lang": "Chia liegt an der Südküste, wo Dünen mit Wacholder bis an das Wasser laufen und auf einem Felsen zwischen zwei Buchten der Turm von Chia steht. Die Ostbucht ist geschützt und flach, die Westbucht offen und bei Mistral das Surfrevier des Südens. Das Haus liegt hinter dem Dünengürtel, vierundzwanzig Zimmer, Stein, Holz, Leinen, die Hälfte mit Blick auf den Turm. Becken im Garten unter Pinien. Zum Sand sind es zweihundert Meter über einen Steg. Die Küstenstraße nach Teulada führt an einem halben Dutzend weiterer Buchten vorbei, die meisten ohne jede Bebauung. Nach Cagliari sind es sechzig Kilometer, zum Flughafen achtundsechzig.",
+   "highlights": [
+    "Zweihundert Meter über den Steg zum Strand",
+    "Geschützte und offene Bucht am selben Ort",
+    "Becken unter Pinien",
+    "Küstenstraße mit unbebauten Buchten"
+   ]
+  },
+  {
+   "id": "h403",
+   "ziel": "sardinien",
+   "name": "Supramonte Agriturismo",
+   "ort": "Urzulei",
+   "region": "Ogliastra",
+   "kategorie": "finca",
+   "sterne": 3,
+   "preis": 148,
+   "rating": 4.7,
+   "bewertungen": 286,
+   "strand": 22.0,
+   "zentrum": 3.8,
+   "flughafen": 96,
+   "extras": [
+    "pool",
+    "terrace",
+    "bikeRental"
+   ],
+   "kurz": "Hof im Supramonte, Schafskäse und Ferkel aus eigener Haltung, Schluchten ringsum.",
+   "lang": "Das Supramonte ist ein Kalkplateau im Osten der Insel, dünn besiedelt, mit Schluchten, Dolinen und Höhlen, und es gilt als die ursprünglichste Landschaft Sardiniens. Der Hof liegt auf siebenhundert Metern, zehn Zimmer in Steingebäuden, Becken auf der Terrasse, Blick über Eichenwälder. Gehalten werden dreihundert Schafe, der Pecorino wird im Haus gemacht, und das Abendessen ist ein Festmahl von sieben Gängen mit Ferkel am Spieß, das man nicht bestellt, sondern bekommt. Zur Gorropu-Schlucht, der tiefsten Italiens mit fünfhundert Metern Wand, sind es zwölf Kilometer, zur Bucht Cala Goloritzé vierundzwanzig, dorthin führt ein Pfad in einer Stunde hinunter. Räder stehen bereit, die Straßen sind leer und steil.",
+   "highlights": [
+    "Arbeitender Hof mit dreihundert Schafen",
+    "Pecorino aus eigener Herstellung",
+    "Zwölf Kilometer zur Gorropu-Schlucht",
+    "Becken auf der Terrasse über den Wäldern"
+   ]
+  },
+  {
+   "id": "h404",
+   "ziel": "sardinien",
+   "name": "Cagliari Castello",
+   "ort": "Cagliari",
+   "region": "Süden",
+   "kategorie": "stadt",
+   "sterne": 4,
+   "preis": 178,
+   "rating": 4.5,
+   "bewertungen": 624,
+   "strand": 5.8,
+   "zentrum": 0.2,
+   "flughafen": 9,
+   "extras": [
+    "terrace"
+   ],
+   "kurz": "Im Burgviertel über der Stadt, Poetto-Strand mit dem Bus, neun Kilometer zum Flughafen.",
+   "lang": "Cagliari ist auf Hügeln gebaut, und das Castello, das Burgviertel, liegt oben hinter pisanischen Mauern, mit Gassen, die für Esel angelegt wurden und für Autos nicht taugen. Das Haus ist ein Palazzo des achtzehnten Jahrhunderts, zwanzig Zimmer, Terrazzoböden, hohe Fenster, Dachterrasse mit Blick über die Stadt bis zu den Salinen und den Flamingos, die dort ganzjährig stehen. Zur Kathedrale sind es drei Gehminuten, zum Bastione di Saint Remy vier, zum Amphitheater acht. Der Stadtstrand Poetto, acht Kilometer lang, liegt sechs Kilometer entfernt, der Bus fährt alle zehn Minuten. Zum Flughafen sind es neun Kilometer, was Cagliari zur praktischsten Ankunft der Insel macht.",
+   "highlights": [
+    "Palazzo aus dem 18. Jahrhundert im Castello",
+    "Dachterrasse mit Blick auf die Salinen",
+    "Bus zum Poetto alle zehn Minuten",
+    "Neun Kilometer zum Flughafen"
+   ]
+  }
+ ]
+}

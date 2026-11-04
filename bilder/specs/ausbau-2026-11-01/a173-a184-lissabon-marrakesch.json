@@ -1,0 +1,346 @@
+{
+ "wohnungen": [
+  {
+   "id": "a173",
+   "ziel": "lissabon",
+   "name": "Alfama Azulejowohnung",
+   "ort": "Lissabon",
+   "region": "Alfama",
+   "preis": 162,
+   "rating": 4.6,
+   "bewertungen": 224,
+   "schlafzimmer": 2,
+   "baeder": 1,
+   "groesse": 64,
+   "gaeste": 4,
+   "strand": 12.0,
+   "zentrum": 1.2,
+   "reinigung": 80,
+   "extras": [
+    "terrace"
+   ],
+   "kurz": "In den Gassen der Alfama, Dachterrasse über den Ziegeldächern, Tram 28 um die Ecke.",
+   "lang": "Die Alfama hat das Erdbeben von 1755 überstanden und ist deshalb das einzige Viertel Lissabons, in dem die Gassen noch maurisch verlaufen, also eng, steil und ohne System. Die Wohnung liegt im obersten Stock eines Hauses aus dem achtzehnten Jahrhundert, zwei Schlafzimmer, Wohnküche, Azulejos im Treppenhaus und eine eigene Dachterrasse mit Blick auf den Tejo. Fünfundfünfzig Stufen, kein Aufzug, das Gepäck trägt man einmal. Zum Miradouro de Santa Luzia sind es vier Gehminuten, zum Castelo acht bergauf. Fado wird in drei Lokalen in Gehweite gesungen, zwei davon ohne Touristenprogramm.",
+   "highlights": [
+    "Eigene Dachterrasse über der Alfama",
+    "Vier Minuten zum Miradouro de Santa Luzia",
+    "Tram 28 um die Ecke",
+    "Fado in drei Lokalen in Gehweite"
+   ]
+  },
+  {
+   "id": "a174",
+   "ziel": "lissabon",
+   "name": "Graça Miradouro Studio",
+   "ort": "Lissabon",
+   "region": "Graça",
+   "preis": 124,
+   "rating": 4.4,
+   "bewertungen": 268,
+   "schlafzimmer": 1,
+   "baeder": 1,
+   "groesse": 44,
+   "gaeste": 2,
+   "strand": 13.0,
+   "zentrum": 1.8,
+   "reinigung": 55,
+   "extras": [
+    "balcony"
+   ],
+   "kurz": "Günstiges Studio in Graça, bester Aussichtspunkt der Stadt in Gehweite.",
+   "lang": "Graça liegt auf dem höchsten der sieben Hügel, und vom Miradouro da Senhora do Monte sieht man die ganze Stadt bis zum Fluss, ohne Eintritt und ohne Gedränge, wenn man früh kommt. Das Studio liegt hundertfünfzig Meter davon, ein Schlafzimmer, Wohnküche, kleiner Balkon zur Gasse. Für zwei Personen. Die Tram 28 hält vor der Tür, zur Alfama sind es zehn Gehminuten abwärts, zum Castelo fünfzehn. Die Gassen hier sind steil, wer mit Koffer kommt, nimmt das Taxi bis vor die Tür. Waschmaschine in der Wohnung, Bäckerei und Mercearia in derselben Straße.",
+   "highlights": [
+    "Hundertfünfzig Meter zum Miradouro",
+    "Tram 28 vor der Tür",
+    "Zehn Minuten abwärts in die Alfama",
+    "Günstigste Wohnung in Lissabon"
+   ]
+  },
+  {
+   "id": "a175",
+   "ziel": "lissabon",
+   "name": "Príncipe Real Etage",
+   "ort": "Lissabon",
+   "region": "Príncipe Real",
+   "preis": 196,
+   "rating": 4.7,
+   "bewertungen": 168,
+   "schlafzimmer": 2,
+   "baeder": 2,
+   "groesse": 98,
+   "gaeste": 4,
+   "strand": 14.0,
+   "zentrum": 1.4,
+   "reinigung": 100,
+   "extras": [
+    "balcony"
+   ],
+   "kurz": "Etagenwohnung am Garten von Príncipe Real, Stuck und Parkett, nach zehn still.",
+   "lang": "Príncipe Real liegt oberhalb des Bairro Alto um einen Garten mit einer Zeder, deren Krone auf Stützen gewachsen ist und zwanzig Meter Durchmesser hat. Darunter sitzen Leute, die hier wohnen. Die Wohnung nimmt eine ganze Etage eines Hauses von 1880 ein, zwei Schlafzimmer, zwei Bäder, Salon mit Stuckdecke, Wohnküche, zwei Balkone zur Straße. Zum Jardim sind es zwei Gehminuten, zum Miradouro de São Pedro de Alcântara sechs, zum Chiado zehn abwärts. Im Viertel haben sich Modeläden, Buchhandlungen und ein Markt in einem umgebauten Palast angesiedelt, und es ist nach zweiundzwanzig Uhr still, was im Bairro Alto nicht gilt.",
+   "highlights": [
+    "Ganze Etage in einem Haus von 1880",
+    "Zwei Minuten zum Jardim do Príncipe Real",
+    "Nach zweiundzwanzig Uhr still",
+    "Zwei Bäder und zwei Balkone"
+   ]
+  },
+  {
+   "id": "a176",
+   "ziel": "lissabon",
+   "name": "LX Factory Loft",
+   "ort": "Lissabon",
+   "region": "Alcântara",
+   "preis": 158,
+   "rating": 4.5,
+   "bewertungen": 192,
+   "schlafzimmer": 1,
+   "baeder": 1,
+   "groesse": 58,
+   "gaeste": 3,
+   "strand": 15.0,
+   "zentrum": 4.2,
+   "reinigung": 75,
+   "extras": [
+    "terrace"
+   ],
+   "kurz": "Loft auf dem Fabrikgelände unter der Brücke, Buchhandlung und Markt im Haus.",
+   "lang": "Die LX Factory ist ein Textilfabrikgelände von 1846 unter der Ponte 25 de Abril, auf dem heute Läden, Lokale, Ateliers und eine Buchhandlung in einer alten Druckerei untergebracht sind, mit Regalen bis zur Decke und einer Leiter auf Schienen. Das Loft liegt im obersten Geschoss eines der Gebäude, ein Schlafzimmer, offener Wohnraum mit Stahlfenstern, kleine Terrasse. Von oben hört man die Brücke, was manche als Nachteil und manche als Geräuschkulisse empfinden. Zum Fluss sind es dreihundert Meter, in die Baixa fünfzehn Minuten mit der Tram 15. Sonntags ist Markt auf dem Gelände.",
+   "highlights": [
+    "Loft auf dem LX-Factory-Gelände",
+    "Buchhandlung in alter Druckerei",
+    "Dreihundert Meter zum Fluss",
+    "Sonntagsmarkt vor der Tür"
+   ]
+  },
+  {
+   "id": "a177",
+   "ziel": "lissabon",
+   "name": "Belém Flusswohnung",
+   "ort": "Lissabon",
+   "region": "Belém",
+   "preis": 172,
+   "rating": 4.5,
+   "bewertungen": 186,
+   "schlafzimmer": 2,
+   "baeder": 1,
+   "groesse": 80,
+   "gaeste": 5,
+   "strand": 16.0,
+   "zentrum": 6.4,
+   "reinigung": 85,
+   "extras": [
+    "balcony",
+    "parking"
+   ],
+   "kurz": "In Belém am Fluss, Kloster und Pastéis zu Fuß, Zug nach Cascais gegenüber.",
+   "lang": "Belém liegt sechs Kilometer westlich des Zentrums am Tejo und hat auf einem Kilometer alles, was Portugals Seefahrtsgeschichte hergibt: den Torre de Belém, das Mosteiro dos Jerónimos, das Entdeckerdenkmal und, seit 1837, die Konditorei, in der die Pastéis de Belém nach einem Rezept gebacken werden, das drei Leute kennen. Die Wohnung liegt zwischen Kloster und Fluss, zwei Schlafzimmer mit fünf Betten, Wohnküche, Balkon zur Flussseite. Zum Kloster sind es fünf Gehminuten, zur Konditorei vier. Die Tram 15 fährt in zwanzig Minuten in die Baixa, der Zug nach Cascais hält gegenüber. Stellplatz gehört dazu.",
+   "highlights": [
+    "Fünf Minuten zum Mosteiro dos Jerónimos",
+    "Vier Minuten zu den Pastéis de Belém",
+    "Zug nach Cascais gegenüber",
+    "Fünf Betten und Stellplatz"
+   ]
+  },
+  {
+   "id": "a178",
+   "ziel": "lissabon",
+   "name": "Estrela Gartenwohnung",
+   "ort": "Lissabon",
+   "region": "Estrela",
+   "preis": 184,
+   "rating": 4.6,
+   "bewertungen": 142,
+   "schlafzimmer": 3,
+   "baeder": 2,
+   "groesse": 106,
+   "gaeste": 6,
+   "strand": 14.0,
+   "zentrum": 2.6,
+   "reinigung": 110,
+   "extras": [
+    "terrace",
+    "parking"
+   ],
+   "kurz": "Erdgeschoss am Jardim da Estrela, Garten hinter dem Haus, Tram 28 Endstation.",
+   "lang": "Der Jardim da Estrela ist ein Garten von 1842 mit Teichen, Enten, einem Pavillon und alten Bäumen, gegenüber der Basilika mit ihrer weißen Kuppel. Die Wohnung liegt im Erdgeschoss eines Hauses von 1890 an der Westseite, drei Schlafzimmer, zwei Bäder, Wohnküche, Azulejos im Flur und ein eigener Garten mit Palmen. Zur Tram 28, die hier ihre Endstation hat und damit noch leer ist, sind es drei Gehminuten, und das macht den Unterschied, weil man ab Martim Moniz keinen Platz bekommt. Mit sechs Betten und Garten ist die Wohnung für Familien gedacht. Zum Museu da Marioneta sechs Minuten, Stellplatz vorhanden.",
+   "highlights": [
+    "Eigener Garten mit Palmen",
+    "Tram 28 noch leer an der Endstation",
+    "Drei Schlafzimmer für sechs Personen",
+    "Am Jardim da Estrela"
+   ]
+  },
+  {
+   "id": "a179",
+   "ziel": "marrakesch",
+   "name": "Riadwohnung Medina",
+   "ort": "Marrakesch",
+   "region": "Medina",
+   "preis": 142,
+   "rating": 4.6,
+   "bewertungen": 168,
+   "schlafzimmer": 2,
+   "baeder": 1,
+   "groesse": 76,
+   "gaeste": 4,
+   "strand": null,
+   "zentrum": 0.6,
+   "reinigung": 70,
+   "extras": [
+    "terrace"
+   ],
+   "kurz": "Eigene Etage in einem Riad, Dachterrasse mit Atlas-Blick, Souks um die Ecke.",
+   "lang": "Ein Riad öffnet sich nach innen: von der Gasse führt eine schmale Tür in einen Hof mit Brunnen und Orangenbäumen, und von der Gasse hört man nichts. Diese Wohnung nimmt die obere Etage eines kleinen Riads ein, zwei Schlafzimmer, Wohnküche mit Tadelakt-Wänden, Zedernholzdecken und eine eigene Dachterrasse, von der man über die Medina auf den Atlas sieht, der von November bis April Schnee trägt. Zur Medersa Ben Youssef sind es vier Gehminuten, zum Jemaa el-Fna zwölf. Zur Gasse kommt kein Auto, Gepäck bringt ein Karren vom Taxistand. Klimaanlage in beiden Schlafzimmern.",
+   "highlights": [
+    "Eigene Etage in einem Riad",
+    "Dachterrasse mit Blick auf den Atlas",
+    "Vier Minuten zur Medersa Ben Youssef",
+    "Zedernholzdecken und Tadelakt"
+   ]
+  },
+  {
+   "id": "a180",
+   "ziel": "marrakesch",
+   "name": "Dar Kasbah",
+   "ort": "Marrakesch",
+   "region": "Kasbah",
+   "preis": 128,
+   "rating": 4.6,
+   "bewertungen": 142,
+   "schlafzimmer": 2,
+   "baeder": 1,
+   "groesse": 68,
+   "gaeste": 4,
+   "strand": null,
+   "zentrum": 1.1,
+   "reinigung": 65,
+   "extras": [
+    "terrace"
+   ],
+   "kurz": "Kleines Haus im Kasbah-Viertel, Saadier-Gräber um die Ecke, ruhiger als die Souks.",
+   "lang": "Die Kasbah ist der südliche Teil der Medina, im zwölften Jahrhundert als Herrschaftsviertel angelegt, und deutlich ruhiger als die Souks im Norden. Das Haus ist klein und auf zwei Etagen verteilt, zwei Schlafzimmer, Wohnküche, Hof mit Zitronenbaum und eine Dachterrasse mit Blick auf das Minarett der Kasbah-Moschee. Die Wände sind zwei Meter dick, was im Juli mehr hilft als jede Klimaanlage, die trotzdem vorhanden ist. Zu den Saadier-Gräbern sind es drei Gehminuten, zum Badi-Palast fünf, zum Jemaa el-Fna zwölf. Der Hausmeister wohnt nebenan und organisiert auf Wunsch den Hammam im Viertelbad.",
+   "highlights": [
+    "Hof mit Zitronenbaum",
+    "Drei Minuten zu den Saadier-Gräbern",
+    "Zwei Meter dicke Wände",
+    "Dachterrasse an der Kasbah-Moschee"
+   ]
+  },
+  {
+   "id": "a181",
+   "ziel": "marrakesch",
+   "name": "Palmeraie Villa Oliva",
+   "ort": "Marrakesch",
+   "region": "Palmeraie",
+   "preis": 216,
+   "rating": 4.7,
+   "bewertungen": 124,
+   "schlafzimmer": 3,
+   "baeder": 2,
+   "groesse": 128,
+   "gaeste": 6,
+   "strand": null,
+   "zentrum": 9.2,
+   "reinigung": 120,
+   "extras": [
+    "pool",
+    "terrace",
+    "parking"
+   ],
+   "kurz": "Ganze Villa in der Palmeraie mit eigenem Becken, Shuttle in die Medina.",
+   "lang": "Die Palmeraie ist ein Palmenhain von hundertfünfzigtausend Bäumen nordöstlich der Stadt, seit dem elften Jahrhundert bewässert, und dort liegen die Häuser weit auseinander, mit Platz, der in der Medina nicht zu haben ist. Die Villa hat drei Schlafzimmer, zwei Bäder, einen großen Wohnraum mit Kamin und ein eigenes Becken von zehn Metern im Garten unter Oliven. Für sechs Personen liegt der Preis pro Nacht unter zwei Hotelzimmern, und das Becken ist nicht geteilt. Zum Jemaa el-Fna sind es neun Kilometer, ein Shuttle fährt stündlich. Im Juli und August über vierzig Grad, dann ist November bis März die bessere Zeit.",
+   "highlights": [
+    "Eigenes Becken mit zehn Metern",
+    "Ganze Villa für sechs Personen",
+    "Garten unter Olivenbäumen",
+    "Stündlicher Shuttle in die Medina"
+   ]
+  },
+  {
+   "id": "a182",
+   "ziel": "marrakesch",
+   "name": "Gueliz Apartment",
+   "ort": "Marrakesch",
+   "region": "Gueliz",
+   "preis": 118,
+   "rating": 4.4,
+   "bewertungen": 196,
+   "schlafzimmer": 2,
+   "baeder": 1,
+   "groesse": 72,
+   "gaeste": 4,
+   "strand": null,
+   "zentrum": 2.2,
+   "reinigung": 60,
+   "extras": [
+    "balcony",
+    "parking"
+   ],
+   "kurz": "In der Neustadt, feste Preise im Viertel, Jardin Majorelle in Gehweite.",
+   "lang": "Gueliz wurde ab 1913 von den Franzosen als Neustadt neben die Medina gesetzt, mit Boulevards, Cafés und Läden, in denen Preise angeschrieben stehen. Wer nach drei Tagen Souk eine Pause braucht, wohnt hier richtig. Die Wohnung liegt im vierten Stock mit Aufzug, zwei Schlafzimmer, Wohnküche, Balkon zur Straße, Klimaanlage in allen Räumen. Zum Jardin Majorelle und dem Yves-Saint-Laurent-Museum sind es sechshundert Meter, zum Jemaa el-Fna zwei Kilometer oder zehn Minuten mit dem Taxi. Supermarkt im Haus, und das ist der eigentliche Vorteil gegenüber der Medina: man kann einkaufen und selbst kochen.",
+   "highlights": [
+    "Sechshundert Meter zum Jardin Majorelle",
+    "Supermarkt im Haus",
+    "Feste Preise im Viertel",
+    "Klimaanlage in allen Räumen"
+   ]
+  },
+  {
+   "id": "a183",
+   "ziel": "marrakesch",
+   "name": "Ourika Lehmhaus Setti",
+   "ort": "Setti Fatma",
+   "region": "Ourika-Tal",
+   "preis": 136,
+   "rating": 4.6,
+   "bewertungen": 98,
+   "schlafzimmer": 2,
+   "baeder": 1,
+   "groesse": 70,
+   "gaeste": 4,
+   "strand": null,
+   "zentrum": 42.0,
+   "reinigung": 70,
+   "extras": [
+    "terrace",
+    "parking"
+   ],
+   "kurz": "Lehmhaus am Fluss im Atlas, zehn Grad kühler als die Stadt.",
+   "lang": "Das Ourika-Tal beginnt vierzig Kilometer südlich von Marrakesch und steigt in den Hohen Atlas, und schon auf tausendfünfhundert Metern ist es zehn Grad kühler als in der Stadt, was im Sommer den Unterschied macht. Das Haus ist aus Lehm gebaut, zwei Schlafzimmer, Wohnküche mit Kamin, Terrasse über dem Fluss, dessen Rauschen nachts das einzige Geräusch ist. Von Setti Fatma führen Pfade zu sieben Wasserfällen, der erste ist in vierzig Minuten erreicht, der siebte in drei Stunden mit Führer. Berberdörfer kleben an den Hängen gegenüber. Einkaufen im Dorf, Stellplatz vorhanden, Heizung für die Winternächte.",
+   "highlights": [
+    "Lehmhaus mit Terrasse über dem Fluss",
+    "Zehn Grad kühler als die Stadt",
+    "Sieben Wasserfälle ab Setti Fatma",
+    "Kamin und Heizung für Winternächte"
+   ]
+  },
+  {
+   "id": "a184",
+   "ziel": "marrakesch",
+   "name": "Dar Mellah Studio",
+   "ort": "Marrakesch",
+   "region": "Mellah",
+   "preis": 96,
+   "rating": 4.3,
+   "bewertungen": 184,
+   "schlafzimmer": 1,
+   "baeder": 1,
+   "groesse": 42,
+   "gaeste": 2,
+   "strand": null,
+   "zentrum": 0.8,
+   "reinigung": 45,
+   "extras": [
+    "terrace"
+   ],
+   "kurz": "Günstiges Studio im jüdischen Viertel, Gewürzmarkt und Bahia-Palast zu Fuß.",
+   "lang": "Das Mellah war ab 1558 das jüdische Viertel von Marrakesch und ist heute der Teil der Medina mit dem Gewürzmarkt, dem Platz der Apotheker und den wenigsten Souvenirläden. Das Studio liegt im ersten Stock eines kleinen Hauses, ein Schlafzimmer, Wohnküche, Dachterrasse mit Matten und Blick auf die Koutoubia. Für zwei Personen. Unter hundert Euro in der Medina ist selten geworden. Zum Bahia-Palast sind es vier Gehminuten, zu den Saadier-Gräbern sechs, zum Jemaa el-Fna zwölf. Im Viertel essen Einheimische in vier Lokalen, die Vermieterin sagt, welche. Klimaanlage im Schlafzimmer.",
+   "highlights": [
+    "Dachterrasse mit Blick auf die Koutoubia",
+    "Vier Minuten zum Bahia-Palast",
+    "Unter hundert Euro in der Medina",
+    "Gewürzmarkt im Viertel"
+   ]
+  }
+ ]
+}

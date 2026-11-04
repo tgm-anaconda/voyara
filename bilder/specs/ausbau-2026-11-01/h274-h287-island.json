@@ -1,0 +1,375 @@
+{
+ "hotels": [
+  {
+   "id": "h274",
+   "ziel": "island",
+   "name": "Reykjavik Laugavegur",
+   "ort": "Reykjavík",
+   "region": "Hauptstadtregion",
+   "kategorie": "stadt",
+   "sterne": 4,
+   "preis": 224,
+   "rating": 4.4,
+   "bewertungen": 1142,
+   "strand": null,
+   "zentrum": 0.1,
+   "flughafen": 52,
+   "extras": [
+    "spa",
+    "terrace"
+   ],
+   "kurz": "An der Einkaufsstraße im Zentrum, Thermalbad Sundhöll zwei Straßen weiter.",
+   "lang": "Reykjavík ist die nördlichste Hauptstadt der Welt und für ihre Lage überraschend klein, man geht alles zu Fuß. Das Haus steht an der Laugavegur, achtundachtzig Zimmer, Beton, Holz, Wolle, mit Schallschutz, der an Wochenenden nötig ist. Das Thermalbad Sundhöll, von Guðjón Samúelsson entworfen, liegt zwei Straßen entfernt und ist für wenig Geld das ehrlichere Erlebnis als die Blaue Lagune. Dachterrasse mit Hot Pots und Blick auf Hallgrímskirkja und die Bucht. Touren starten am Haus, Golden Circle, Südküste, Nordlichter im Winter. Der Flughafen Keflavík ist zweiundfünfzig Kilometer entfernt, Flughafenbusse fahren vor der Tür ab.",
+   "highlights": [
+    "Mitten an der Laugavegur",
+    "Dachterrasse mit Hot Pots",
+    "Sundhöll zwei Straßen entfernt",
+    "Flughafenbus vor der Tür"
+   ]
+  },
+  {
+   "id": "h275",
+   "ziel": "island",
+   "name": "Vik Myrdalur",
+   "ort": "Vík í Mýrdal",
+   "region": "Südküste",
+   "kategorie": "boutique",
+   "sterne": 4,
+   "preis": 268,
+   "rating": 4.6,
+   "bewertungen": 524,
+   "strand": 0.6,
+   "zentrum": 0.4,
+   "flughafen": 228,
+   "extras": [
+    "terrace",
+    "seaView"
+   ],
+   "kurz": "Über dem schwarzen Strand von Reynisfjara, Felsnadeln vor dem Fenster.",
+   "lang": "Reynisfjara ist der bekannteste schwarze Strand Islands, mit Basaltsäulen im Hang und drei Felsnadeln im Wasser, von denen die Sage sagt, sie seien versteinerte Trolle. Das Haus steht oberhalb, achtzehn Zimmer, Lärche und Beton, Fenster bis zum Boden auf Strand und Nadeln. Baden ist hier verboten, die Wellen holen Leute vom Sand, das ist kein Hinweis, sondern Statistik. Zum Gletscher Mýrdalsjökull sind es zwanzig Kilometer, zum Wasserfall Skógafoss dreißig. Vík hat dreihundert Einwohner, einen Supermarkt und zwei Restaurants, der nächste Ort ist siebzig Kilometer entfernt. Abendkarte mit vier Gerichten, Lamm und Fisch.",
+   "highlights": [
+    "Blick auf Reynisfjara und die Felsnadeln",
+    "Zwanzig Kilometer zum Mýrdalsjökull",
+    "Fenster bis zum Boden",
+    "Dreißig Kilometer zum Skógafoss"
+   ]
+  },
+  {
+   "id": "h276",
+   "ziel": "island",
+   "name": "Jökulsarlon Eislodge",
+   "ort": "Hof",
+   "region": "Südostisland",
+   "kategorie": "luxus",
+   "sterne": 4,
+   "preis": 412,
+   "rating": 4.7,
+   "bewertungen": 386,
+   "strand": 2.4,
+   "zentrum": 12.0,
+   "flughafen": 420,
+   "extras": [
+    "spa",
+    "terrace"
+   ],
+   "kurz": "Zwanzig Kilometer von der Gletscherlagune, Hot Pots mit Blick auf den Vatnajökull.",
+   "lang": "Die Gletscherlagune Jökulsárlón ist ein See, in dem Eisberge treiben, die vom Breiðamerkurjökull abbrechen und über einen kurzen Fluss ins Meer hinaustreiben, wo sie am schwarzen Strand liegen bleiben. Das Haus liegt zwanzig Kilometer westlich, zweiundzwanzig Zimmer in einem flachen Bau mit Grasdach, alle nach Norden auf den Vatnajökull, Europas größten Gletscher. Im Hof liegen drei Hot Pots, geothermisch gespeist, rund um die Uhr offen. Von hier starten Gletscherwanderungen und Eishöhlentouren von November bis März. Die Küche arbeitet mit Langustinen aus Höfn und Lamm aus dem Tal, abends fünf Gänge. Der nächste Ort ist zwölf Kilometer entfernt, Lichtverschmutzung gibt es nicht.",
+   "highlights": [
+    "Zwanzig Kilometer zur Gletscherlagune",
+    "Drei Hot Pots mit Blick auf den Vatnajökull",
+    "Eishöhlentouren von November bis März",
+    "Langustinen aus Höfn"
+   ]
+  },
+  {
+   "id": "h277",
+   "ziel": "island",
+   "name": "Snaefellsnes Hellnar",
+   "ort": "Hellnar",
+   "region": "Snæfellsnes",
+   "kategorie": "boutique",
+   "sterne": 3,
+   "preis": 232,
+   "rating": 4.6,
+   "bewertungen": 348,
+   "strand": 0.3,
+   "zentrum": 0.2,
+   "flughafen": 234,
+   "extras": [
+    "terrace",
+    "seaView"
+   ],
+   "kurz": "An der Küste unter dem Snæfellsjökull, Klippenweg nach Arnarstapi ab Haus.",
+   "lang": "Die Halbinsel Snæfellsnes wird Island im Kleinen genannt, weil hier Gletscher, Lavafelder, Krater, Basaltklippen und schwarze Strände auf hundert Kilometern nebeneinanderliegen. Hellnar ist ein Weiler aus acht Häusern unter dem Snæfellsjökull, dem Vulkan, durch den Jules Verne seine Reise zum Mittelpunkt der Erde beginnen ließ. Das Haus hat vierzehn Zimmer, einfach, warm, mit Fenstern aufs Meer. Vom Hof führt der Klippenweg nach Arnarstapi, zweieinhalb Kilometer über Basaltformationen und Vogelfelsen. Kirkjufell, der fotografierteste Berg des Landes, liegt fünfzig Kilometer entfernt. Abendessen auf Anmeldung, Fisch aus Ólafsvík.",
+   "highlights": [
+    "Unter dem Snæfellsjökull",
+    "Klippenweg nach Arnarstapi ab Haus",
+    "Weiler aus acht Häusern",
+    "Fünfzig Kilometer zum Kirkjufell"
+   ]
+  },
+  {
+   "id": "h278",
+   "ziel": "island",
+   "name": "Akureyri Nordurland",
+   "ort": "Akureyri",
+   "region": "Nordisland",
+   "kategorie": "stadt",
+   "sterne": 4,
+   "preis": 196,
+   "rating": 4.4,
+   "bewertungen": 712,
+   "strand": 1.8,
+   "zentrum": 0.2,
+   "flughafen": 436,
+   "extras": [
+    "spa",
+    "terrace"
+   ],
+   "kurz": "Am Eyjafjörður, nördlichstes Skigebiet Islands, Thermalbad im Ort.",
+   "lang": "Akureyri liegt am Ende eines sechzig Kilometer langen Fjords und ist mit neunzehntausend Einwohnern die zweite Stadt des Landes, was dort schon Großstadt heißt. Das Haus steht im Zentrum, zweiundfünfzig Zimmer, Holz und Wolle, die oberen mit Blick über den Fjord auf die Berge gegenüber. Das Skigebiet Hlíðarfjall liegt sieben Kilometer entfernt und ist das größte Islands, mit Saison bis Mai. Das Thermalbad des Ortes hat drei Becken und Rutschen und ist der soziale Mittelpunkt. Vom Hafen fahren Walbeobachtungsboote, von Juni bis September mit guter Trefferquote. Nach Mývatn sind es hundert Kilometer, nach Húsavík fünfundsiebzig.",
+   "highlights": [
+    "Blick über den Eyjafjörður",
+    "Sieben Kilometer zum größten Skigebiet Islands",
+    "Thermalbad mit drei Becken im Ort",
+    "Walbeobachtung ab Hafen"
+   ]
+  },
+  {
+   "id": "h279",
+   "ziel": "island",
+   "name": "Myvatn Jarðbað",
+   "ort": "Reykjahlíð",
+   "region": "Nordisland",
+   "kategorie": "berg",
+   "sterne": 4,
+   "preis": 248,
+   "rating": 4.6,
+   "bewertungen": 462,
+   "strand": null,
+   "zentrum": 1.2,
+   "flughafen": 532,
+   "extras": [
+    "spa"
+   ],
+   "kurz": "Am Mývatn, Naturbad mit Silikatwasser drei Kilometer entfernt, Krater rundherum.",
+   "lang": "Der Mývatn ist ein flacher See in einem Vulkangebiet, und was ringsum liegt, erklärt die Fahrt: Pseudokrater bei Skútustaðir, das Lavalabyrinth Dimmuborgir, das Schwefelfeld Hverir, der Krater Víti. Das Haus liegt am Nordufer, dreißig Zimmer, Beton und Holz, Fenster auf den See. Das Mývatn Naturbad, das nordische Gegenstück zur Blauen Lagune mit Silikatwasser und ohne Gedränge, liegt drei Kilometer entfernt und ist im Hauspreis zweimal enthalten. Im Winter ist dies einer der besten Orte des Landes für Nordlichter, weil der Himmel oft klar steht. Die Mücken, die dem See den Namen geben, kommen im Juni und Juli und sind lästig, aber nicht stechend.",
+   "highlights": [
+    "Naturbad mit Silikatwasser in drei Kilometern",
+    "Zweimal Eintritt im Preis",
+    "Pseudokrater und Dimmuborgir in Reichweite",
+    "Klarer Himmel für Nordlichter"
+   ]
+  },
+  {
+   "id": "h280",
+   "ziel": "island",
+   "name": "Westfjorde Isafjörður",
+   "ort": "Ísafjörður",
+   "region": "Westfjorde",
+   "kategorie": "boutique",
+   "sterne": 3,
+   "preis": 206,
+   "rating": 4.5,
+   "bewertungen": 286,
+   "strand": 1.4,
+   "zentrum": 0.2,
+   "flughafen": 492,
+   "extras": [
+    "terrace",
+    "seaView"
+   ],
+   "kurz": "Im abgelegensten Teil Islands, Vogelfelsen Hornstrandir per Boot.",
+   "lang": "Die Westfjorde sind der Teil Islands, den die Ringstraße nicht berührt, und entsprechend kommen hier weniger Leute hin. Ísafjörður ist mit zweitausendsechshundert Einwohnern der Hauptort, liegt auf einer Sandbank in einem Fjord und ist von Bergwänden umschlossen, die im Winter die Sonne vier Wochen lang fernhalten. Das Haus steht im alten Hafenviertel in einem Holzgebäude von 1882, sechzehn Zimmer, Dielen, kleine Fenster, dicke Wände. Vom Hafen fahren Boote nach Hornstrandir, einem unbewohnten Naturschutzgebiet mit Polarfüchsen und Vogelfelsen, Tagestouren im Sommer. Zum Skigebiet Tungudalur sind es fünf Kilometer. Küche mit Fisch vom Kai, abends vier Gerichte.",
+   "highlights": [
+    "Holzgebäude von 1882 im Hafenviertel",
+    "Boote nach Hornstrandir ab Hafen",
+    "Fünf Kilometer zum Skigebiet",
+    "Abgelegenster Landesteil"
+   ]
+  },
+  {
+   "id": "h281",
+   "ziel": "island",
+   "name": "Hveragerdi Gewächshaus",
+   "ort": "Hveragerði",
+   "region": "Südisland",
+   "kategorie": "finca",
+   "sterne": 4,
+   "preis": 218,
+   "rating": 4.6,
+   "bewertungen": 418,
+   "strand": null,
+   "zentrum": 0.5,
+   "flughafen": 78,
+   "extras": [
+    "spa",
+    "bikeRental",
+    "terrace"
+   ],
+   "kurz": "Im Geothermalort, eigene Gewächshäuser, Hot Pots im Garten.",
+   "lang": "Hveragerði steht auf einem Geothermalfeld, so dicht, dass es im Ortszentrum dampfende Spalten gibt und die Gärtnereien seit hundert Jahren mit Erdwärme heizen. Hier wachsen Bananen, was in Island ein Scherz und gleichzeitig wahr ist. Das Haus gehört zu einer Gärtnerei, achtzehn Zimmer in einem Riegel neben den Gewächshäusern, Tomaten und Kräuter kommen aus dem Nachbargebäude auf den Tisch. Im Garten liegen zwei Hot Pots und eine Sauna. Das Tal Reykjadalur, in dem man in einem warmen Fluss baden kann, beginnt drei Kilometer entfernt, eine Stunde bergauf. Nach Reykjavík sind es vierzig Kilometer, zum Golden Circle eine Stunde.",
+   "highlights": [
+    "Gärtnerei mit eigenen Gewächshäusern",
+    "Zwei Hot Pots im Garten",
+    "Reykjadalur mit warmem Flussbad in drei Kilometern",
+    "Vierzig Kilometer nach Reykjavík"
+   ]
+  },
+  {
+   "id": "h282",
+   "ziel": "island",
+   "name": "Höfn Langustinen",
+   "ort": "Höfn",
+   "region": "Südostisland",
+   "kategorie": "stadt",
+   "sterne": 3,
+   "preis": 176,
+   "rating": 4.4,
+   "bewertungen": 342,
+   "strand": 0.4,
+   "zentrum": 0.3,
+   "flughafen": 496,
+   "extras": [
+    "seaView",
+    "terrace"
+   ],
+   "kurz": "Hafenort unter dem Vatnajökull, Langustinen als Ortsspezialität.",
+   "lang": "Höfn liegt auf einer Landspitze in einer Lagune, und über dem Ort stehen die Gletscherzungen des Vatnajökull so nah, dass sie bei klarem Wetter die ganze Nordseite einnehmen. Der Ort lebt von Langustinen, die hier gefangen und im August mit einem eigenen Fest gefeiert werden. Das Haus hat zwanzig Zimmer, einfach und sauber, die Hälfte mit Blick auf Lagune und Gletscher. Zum Strand an der Lagune sind es vierhundert Meter, zum Gletschertor Heinabergsjökull dreißig Kilometer über eine Schotterstraße. Das Restaurant im Haus kocht die Langustinen in Butter und mit Knoblauch, mehr braucht es nicht, und es ist abends voll.",
+   "highlights": [
+    "Blick auf Lagune und Vatnajökull",
+    "Langustinen als Ortsspezialität",
+    "Vierhundert Meter zum Lagunenstrand",
+    "Gletschertor in dreißig Kilometern"
+   ]
+  },
+  {
+   "id": "h283",
+   "ziel": "island",
+   "name": "Siglufjörður Heringshaus",
+   "ort": "Siglufjörður",
+   "region": "Nordisland",
+   "kategorie": "boutique",
+   "sterne": 4,
+   "preis": 212,
+   "rating": 4.6,
+   "bewertungen": 324,
+   "strand": 0.8,
+   "zentrum": 0.1,
+   "flughafen": 448,
+   "extras": [
+    "terrace",
+    "seaView",
+    "spa"
+   ],
+   "kurz": "Im ehemaligen Heringshafen am Nordrand, Museum und Skigebiet im Ort.",
+   "lang": "Siglufjörður war in den dreißiger Jahren der größte Heringshafen des Nordatlantiks mit zehntausend Saisonarbeitern, dann brach der Bestand zusammen und der Ort schrumpfte auf tausend Einwohner. Was blieb, ist ein außergewöhnliches Museum über diese Zeit und ein Hafen, der zu schön für seine Größe ist. Das Haus liegt am Kai in einer früheren Salzerei, achtzehn Zimmer, Holzbalken, Fenster auf das Wasser und die Wände des Fjords. Die Straße hierher führt durch zwei Tunnel, vorher war der Ort im Winter abgeschnitten. Im Haus Sauna mit Fjordblick, im Ort ein kleines Skigebiet und eine Bierbrauerei. Abends Fisch und Lamm, kurze Karte.",
+   "highlights": [
+    "Zimmer in einer früheren Salzerei",
+    "Heringsmuseum im Ort",
+    "Sauna mit Fjordblick",
+    "Kleines Skigebiet und Brauerei"
+   ]
+  },
+  {
+   "id": "h284",
+   "ziel": "island",
+   "name": "Selfoss Flusshaus",
+   "ort": "Selfoss",
+   "region": "Südisland",
+   "kategorie": "budget",
+   "sterne": 2,
+   "preis": 124,
+   "rating": 4.2,
+   "bewertungen": 386,
+   "strand": null,
+   "zentrum": 0.4,
+   "flughafen": 92,
+   "kurz": "Günstig am Ölfusá, Golden Circle und Südküste in einer Stunde.",
+   "lang": "Selfoss liegt am Fluss Ölfusá an der Hauptstraße nach Osten und ist der praktischste Standort für Südisland, weil von hier aus der Golden Circle, die Südküste und Reykjavík jeweils in etwa einer Stunde erreichbar sind. Das Haus hat zweiundzwanzig Zimmer, einfach möbliert, mit Dusche und WC, Küche zur Mitbenutzung im Erdgeschoss. Das halbiert die Kosten in einem Land, in dem ein Abendessen regelmäßig vierzig Euro kostet. Zum Thermalbad des Ortes sind es sechshundert Meter. Der Wasserfall Gullfoss liegt siebzig Kilometer entfernt, Geysir sechzig, Þingvellir fünfundfünfzig. Frühstück gibt es gegen Zuschlag, Supermarkt gegenüber.",
+   "highlights": [
+    "Küche zur Mitbenutzung",
+    "Golden Circle in einer Stunde",
+    "Sechshundert Meter zum Thermalbad",
+    "Supermarkt gegenüber"
+   ]
+  },
+  {
+   "id": "h285",
+   "ziel": "island",
+   "name": "Borgarnes Fjordhof",
+   "ort": "Borgarnes",
+   "region": "Westisland",
+   "kategorie": "familie",
+   "sterne": 3,
+   "preis": 186,
+   "rating": 4.4,
+   "bewertungen": 424,
+   "strand": 0.7,
+   "zentrum": 1.1,
+   "flughafen": 116,
+   "extras": [
+    "kidsClub"
+   ],
+   "kurz": "Am Borgarfjörður, Hot Pot im Garten, Pferdehof nebenan.",
+   "lang": "Borgarnes liegt an einem Fjord, über den eine lange Brücke führt, und ist für Familien der naheliegende erste Stopp hinter Reykjavík, hundertzwanzig Kilometer vom Flughafen. Das Haus liegt außerhalb am Wasser, vierundzwanzig Zimmer, die Hälfte Familienzimmer mit vier Betten, dazu Spielzimmer und ein Hot Pot im Garten, der abends das wichtigste Möbel ist. Nebenan steht ein Pferdehof, Islandpferde, Ausritte für Anfänger ab sechs Jahren. Die Lavahöhle Víðgelmir liegt siebzig Kilometer entfernt, der Wasserfall Hraunfossar sechzig. Halbpension mit Buffet, Kindertisch um halb sechs, Lunchpaket auf Wunsch.",
+   "highlights": [
+    "Hot Pot im Garten",
+    "Islandpferde auf dem Hof nebenan",
+    "Hundertzwanzig Kilometer vom Flughafen",
+    "Lavahöhle und Hraunfossar in Reichweite"
+   ]
+  },
+  {
+   "id": "h286",
+   "ziel": "island",
+   "name": "Egilsstadir Waldhaus",
+   "ort": "Egilsstaðir",
+   "region": "Ostisland",
+   "kategorie": "finca",
+   "sterne": 4,
+   "preis": 224,
+   "rating": 4.6,
+   "bewertungen": 298,
+   "strand": null,
+   "zentrum": 2.8,
+   "flughafen": 672,
+   "extras": [
+    "spa",
+    "bikeRental",
+    "terrace"
+   ],
+   "kurz": "Am Lagarfljót im größten Wald Islands, Rentiere in der Umgebung.",
+   "lang": "Ostisland hat zwei Dinge, die der Rest des Landes nicht hat: den größten Wald, Hallormsstaðaskógur, und wilde Rentiere, die im achtzehnten Jahrhundert eingeführt wurden und sich gehalten haben. Das Haus steht am See Lagarfljót am Waldrand, sechzehn Zimmer in einem Holzbau, Birke innen, Fenster auf das Wasser. Im See soll ein Wurm leben, Lagarfljótsormurinn, erstmals 1345 erwähnt, und darüber macht hier niemand Witze. Hot Pot und Sauna liegen am Ufer. Zum Wasserfall Hengifoss sind es dreißig Kilometer, nach Seyðisfjörður mit dem Pass siebenundzwanzig. Räder stehen bereit, die Waldwege sind gut. Abends vier Gänge mit Rentier und Forelle.",
+   "highlights": [
+    "Am Rand des größten Waldes Islands",
+    "Hot Pot und Sauna am See",
+    "Dreißig Kilometer zum Hengifoss",
+    "Rentiere in der Umgebung"
+   ]
+  },
+  {
+   "id": "h287",
+   "ziel": "island",
+   "name": "Grundarfjörður Kirkjufell",
+   "ort": "Grundarfjörður",
+   "region": "Snæfellsnes",
+   "kategorie": "budget",
+   "sterne": 2,
+   "preis": 142,
+   "rating": 4.2,
+   "bewertungen": 268,
+   "strand": 0.9,
+   "zentrum": 0.3,
+   "flughafen": 214,
+   "kurz": "Günstiges Haus am Fjord, Kirkjufell drei Kilometer entfernt.",
+   "lang": "Grundarfjörður hat neunhundert Einwohner, einen Fischhafen und den Nachbarn, der den Ort bekannt macht: der Kirkjufell, dreihundertdreiundsechzig Meter, steht drei Kilometer westlich und gilt als der am häufigsten fotografierte Berg Islands. Das Haus liegt an der Hauptstraße, achtzehn Zimmer, einfach, mit Dusche, Gemeinschaftsküche im Erdgeschoss. Für einen Ort auf Snæfellsnes ist der Preis bemerkenswert, die meisten Häuser der Halbinsel liegen deutlich darüber. Zum Thermalbad des Ortes sind es vierhundert Meter, zum Wasserfall Kirkjufellsfoss drei Kilometer, und im Winter stehen bei klarem Himmel die Nordlichter direkt über dem Berg. Supermarkt und zwei Restaurants im Ort.",
+   "highlights": [
+    "Drei Kilometer zum Kirkjufell",
+    "Gemeinschaftsküche im Haus",
+    "Vierhundert Meter zum Thermalbad",
+    "Günstigstes Haus auf Snæfellsnes"
+   ]
+  }
+ ]
+}

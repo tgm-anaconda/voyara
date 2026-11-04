@@ -1,0 +1,173 @@
+{
+ "wohnungen": [
+  {
+   "id": "a197",
+   "ziel": "kyoto",
+   "name": "Machiya Nishijin Haus",
+   "ort": "Kyoto",
+   "region": "Nishijin",
+   "preis": 206,
+   "rating": 4.7,
+   "bewertungen": 142,
+   "schlafzimmer": 2,
+   "baeder": 1,
+   "groesse": 78,
+   "gaeste": 4,
+   "strand": null,
+   "zentrum": 2.8,
+   "reinigung": 110,
+   "extras": [
+    "terrace"
+   ],
+   "kurz": "Ganzes Stadthaus im Weberviertel, Innengarten mit Moos, Tatami und Futons.",
+   "lang": "Nishijin ist seit dem fünfzehnten Jahrhundert das Weberviertel von Kyoto, und aus den Werkstätten hört man an manchen Straßen noch die Webstühle. Das Haus ist eine Machiya, schmal zur Straße und tief nach hinten, mit einem Innengarten in der Mitte, in dem Moos und ein Ahorn stehen. Zwei Zimmer mit Tatami und Futons, die man selbst legt, eine Küche mit Reiskocher und ein Hinoki-Holzbad. Keine Betten, keine Stühle, dafür Sitzkissen am niedrigen Tisch, und das ist hier der Punkt. Zum Kinkaku-ji sind es zwei Kilometer, zum Nijo-Schloss drei, zur Busstation hundertfünfzig Meter. Für vier Personen, Heizung im Winter über Klimageräte.",
+   "highlights": [
+    "Ganze Machiya mit Innengarten",
+    "Hinoki-Holzbad",
+    "Tatami und Futons statt Betten",
+    "Zwei Kilometer zum Goldenen Pavillon"
+   ]
+  },
+  {
+   "id": "a198",
+   "ziel": "kyoto",
+   "name": "Gion Gassenhaus",
+   "ort": "Kyoto",
+   "region": "Gion",
+   "preis": 248,
+   "rating": 4.7,
+   "bewertungen": 124,
+   "schlafzimmer": 2,
+   "baeder": 1,
+   "groesse": 68,
+   "gaeste": 4,
+   "strand": null,
+   "zentrum": 1.2,
+   "reinigung": 120,
+   "extras": [
+    "terrace"
+   ],
+   "kurz": "Kleines Haus in einer Gion-Gasse, Yasaka-Schrein in fünf Minuten.",
+   "lang": "Gion ist das Viertel der Teehäuser, und die Gassen zwischen Shijo und Shirakawa sind abends die stillsten der Stadt, sobald die Tagesgäste weg sind. Das Haus ist eng und auf zwei Etagen verteilt, zwei Zimmer mit Tatami, Wohnküche im Erdgeschoss, ein kleiner Hof mit Steinlaterne. Von der Gasse führt die Tür direkt in den Eingang, Schuhe bleiben dort. Zum Yasaka-Schrein sind es fünf Gehminuten, zum Kiyomizu-dera zwanzig bergauf, zum Pontocho zehn. Abends gehen hier Geiko und Maiko zu ihren Terminen, was man nicht bestellen kann und nicht fotografieren sollte. Reiskocher, Waschmaschine, Heizung über Klimageräte.",
+   "highlights": [
+    "Haus in einer stillen Gion-Gasse",
+    "Hof mit Steinlaterne",
+    "Fünf Minuten zum Yasaka-Schrein",
+    "Zehn Minuten zum Pontocho"
+   ]
+  },
+  {
+   "id": "a199",
+   "ziel": "kyoto",
+   "name": "Arashiyama Flusshaus",
+   "ort": "Kyoto",
+   "region": "Arashiyama",
+   "preis": 224,
+   "rating": 4.7,
+   "bewertungen": 118,
+   "schlafzimmer": 2,
+   "baeder": 1,
+   "groesse": 84,
+   "gaeste": 5,
+   "strand": null,
+   "zentrum": 9.2,
+   "reinigung": 115,
+   "extras": [
+    "terrace",
+    "parking"
+   ],
+   "kurz": "Am Hozu-Fluss, Bambuswald in vierhundert Metern, Terrasse über dem Wasser.",
+   "lang": "Arashiyama liegt im Westen am Fuß der Berge, und der Bambuswald dort ist der bekannteste Japans, am besten um sieben Uhr morgens, wenn noch niemand da ist. Das Haus steht am Hozu, zwei Zimmer mit Tatami und fünf Futons, eine Wohnküche mit Esstisch und eine Terrasse über dem Wasser, das hier breit und grün durch die Schlucht kommt. Zum Bambuswald sind es vierhundert Meter, zum Tenryu-ji sechshundert, zur Sagano-Romantikbahn ein Kilometer. Im November ist das Ahornlaub der Grund, früh zu buchen, im April die Kirschblüte. Stellplatz vorhanden, Waschmaschine, Fahrräder im Schuppen.",
+   "highlights": [
+    "Terrasse über dem Hozu",
+    "Vierhundert Meter zum Bambuswald",
+    "Fünf Futons und Esstisch",
+    "Fahrräder im Schuppen"
+   ]
+  },
+  {
+   "id": "a200",
+   "ziel": "kyoto",
+   "name": "Fushimi Sakehaus",
+   "ort": "Kyoto",
+   "region": "Fushimi",
+   "preis": 168,
+   "rating": 4.6,
+   "bewertungen": 108,
+   "schlafzimmer": 2,
+   "baeder": 1,
+   "groesse": 72,
+   "gaeste": 4,
+   "strand": null,
+   "zentrum": 5.8,
+   "reinigung": 85,
+   "extras": [
+    "terrace",
+    "bikeRental"
+   ],
+   "kurz": "Wohnung im Sake-Viertel, Kanal mit Lastbooten, Fushimi Inari mit vier Stationen.",
+   "lang": "Fushimi braut Sake, seit es dort Wasser gibt, und zwar weiches Wasser aus den Bergen, das den Sake milder macht als den aus dem Norden. Die Wohnung liegt in einem umgebauten Lagergebäude von 1912, zwei Zimmer, Wohnküche, weiße Wände und dunkles Holz, draußen der Kanal mit den alten Lastbooten. Räder stehen bereit, Kyoto ist flach und mit dem Rad schneller als mit dem Bus. Zum Fushimi Inari, dem Schrein mit den zehntausend roten Tori, sind es vier Stationen mit der Keihan-Bahn oder fünfundzwanzig Minuten mit dem Rad. Nach Uji sind es zwanzig Minuten mit der Bahn. Brauereien im Viertel bieten Verkostungen an.",
+   "highlights": [
+    "Lagergebäude einer Sake-Brauerei von 1912",
+    "Räder inklusive",
+    "Vier Stationen zum Fushimi Inari",
+    "Verkostungen im Viertel"
+   ]
+  },
+  {
+   "id": "a201",
+   "ziel": "kyoto",
+   "name": "Kamogawa Studio",
+   "ort": "Kyoto",
+   "region": "Demachiyanagi",
+   "preis": 124,
+   "rating": 4.4,
+   "bewertungen": 196,
+   "schlafzimmer": 1,
+   "baeder": 1,
+   "groesse": 38,
+   "gaeste": 2,
+   "strand": null,
+   "zentrum": 2.6,
+   "reinigung": 55,
+   "extras": [],
+   "kurz": "Günstiges Studio am Kamo-Delta, Räder leihbar, Shimogamo-Schrein zu Fuß.",
+   "lang": "Am Demachiyanagi teilt sich der Kamo in zwei Arme, und die Spitze dazwischen ist eine Wiese mit Trittsteinen über das Wasser, auf der Studenten sitzen. Das Studio liegt hundert Meter davon im zweiten Stock, ein Zimmer mit Bett, Küchenzeile, kleines Bad. Für zwei Personen. In Kyoto, wo Essen gehen schnell teuer wird, ist die eigene Küche der entscheidende Punkt, und der Supermarkt liegt gegenüber. Räder kann man leihen. Zur Universität Kyoto sind es zehn Gehminuten, zum Shimogamo-Schrein fünf, zum Philosophenweg zwanzig. Die Eizan-Bahn nach Kurama und Kibune fährt vom Bahnhof gegenüber.",
+   "highlights": [
+    "Hundert Meter zum Delta des Kamo",
+    "Supermarkt gegenüber",
+    "Eizan-Bahn nach Kurama gegenüber",
+    "Günstigste Wohnung in Kyoto"
+   ]
+  },
+  {
+   "id": "a202",
+   "ziel": "kyoto",
+   "name": "Higashiyama Familienhaus",
+   "ort": "Kyoto",
+   "region": "Higashiyama",
+   "preis": 212,
+   "rating": 4.6,
+   "bewertungen": 132,
+   "schlafzimmer": 3,
+   "baeder": 2,
+   "groesse": 104,
+   "gaeste": 6,
+   "strand": null,
+   "zentrum": 2.2,
+   "reinigung": 125,
+   "extras": [
+    "terrace",
+    "parking"
+   ],
+   "kurz": "Ganzes Haus für sechs, Kiyomizu-dera in zehn Minuten, zwei Bäder.",
+   "lang": "Higashiyama ist der Hang östlich des Flusses, auf dem die bekanntesten Tempel der Stadt stehen, und die Gassen Sannenzaka und Ninenzaka sind tagsüber voll und abends ab sieben leer. Das Haus liegt in einer Seitengasse darunter, drei Zimmer, zwei Bäder, eine Wohnküche mit Esstisch für sechs und ein kleiner Hof. Zwei Zimmer mit Tatami und Futons, eines mit Betten, also auch für Leute, die nicht am Boden schlafen wollen. Zum Kiyomizu-dera sind es zehn Gehminuten bergauf, zum Kodai-ji sechs, zum Yasaka-Schrein zwölf. Waschmaschine, Reiskocher, Kinderbett auf Anfrage, ein Stellplatz gehört dazu.",
+   "highlights": [
+    "Ganzes Haus für sechs Personen",
+    "Zwei Bäder, Tatami und Betten gemischt",
+    "Zehn Minuten zum Kiyomizu-dera",
+    "Stellplatz und Kinderbett"
+   ]
+  }
+ ]
+}

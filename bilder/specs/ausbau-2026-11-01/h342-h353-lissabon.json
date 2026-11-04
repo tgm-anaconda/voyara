@@ -1,0 +1,321 @@
+{
+ "hotels": [
+  {
+   "id": "h342",
+   "ziel": "lissabon",
+   "name": "Alfama Miradouro",
+   "ort": "Lissabon",
+   "region": "Alfama",
+   "kategorie": "boutique",
+   "sterne": 4,
+   "preis": 198,
+   "rating": 4.6,
+   "bewertungen": 624,
+   "strand": 12.0,
+   "zentrum": 1.2,
+   "flughafen": 7,
+   "extras": [
+    "terrace"
+   ],
+   "kurz": "In den Gassen der Alfama, Dachterrasse über dem Tejo, Tram 28 um die Ecke.",
+   "lang": "Die Alfama hat das Erdbeben von 1755 überstanden und ist deshalb das einzige Viertel Lissabons, in dem die Gassen noch maurisch verlaufen, also eng, steil und ohne System. Das Haus liegt in einer solchen Gasse, zwanzig Zimmer in einem Bau des achtzehnten Jahrhunderts, Azulejos im Treppenhaus, dicke Wände, kleine Fenster. Auf dem Dach eine Terrasse mit Blick über die Ziegeldächer auf den Tejo und die Brücke. Zum Miradouro de Santa Luzia sind es vier Gehminuten, zum Castelo acht bergauf, zur Kathedrale fünf. Die Tram 28 hält um die Ecke, zum Flughafen sind es sieben Kilometer. Frühstück auf dem Dach, Fado abends in drei Lokalen in Gehweite.",
+   "highlights": [
+    "Bau aus dem 18. Jahrhundert in der Alfama",
+    "Dachterrasse mit Blick auf den Tejo",
+    "Tram 28 um die Ecke",
+    "Sieben Kilometer zum Flughafen"
+   ]
+  },
+  {
+   "id": "h343",
+   "ziel": "lissabon",
+   "name": "Chiado Palacete",
+   "ort": "Lissabon",
+   "region": "Chiado",
+   "kategorie": "luxus",
+   "sterne": 5,
+   "preis": 386,
+   "rating": 4.7,
+   "bewertungen": 548,
+   "strand": 14.0,
+   "zentrum": 0.3,
+   "flughafen": 9,
+   "extras": [
+    "spa",
+    "terrace",
+    "pool"
+   ],
+   "kurz": "Palacete im Chiado, Spa im Gewölbe, Opernhaus und Buchläden zu Fuß.",
+   "lang": "Der Chiado ist das Viertel zwischen Baixa und Bairro Alto, in dem die Buchhandlungen, Cafés und das Opernhaus São Carlos stehen, und in dem Pessoa seine Nachmittage verbrachte. Das Haus ist ein Palacete von 1860, achtunddreißig Zimmer und Suiten, Kassettendecken, Marmortreppe, Fenster bis zum Boden, Bäder in portugiesischem Kalkstein. Der Spa liegt im Gewölbekeller, Becken, zwei Saunen, sechs Behandlungsräume. Auf dem Dach ein kleines Becken und Blick über die Baixa zur Burg. Zur Livraria Bertrand, der ältesten Buchhandlung der Welt, sind es drei Gehminuten, zum Elevador de Santa Justa fünf, zum Praça do Comércio acht.",
+   "highlights": [
+    "Palacete von 1860 im Chiado",
+    "Spa im Gewölbekeller",
+    "Dachbecken mit Blick zur Burg",
+    "Drei Minuten zur Livraria Bertrand"
+   ]
+  },
+  {
+   "id": "h344",
+   "ziel": "lissabon",
+   "name": "Belém Torre",
+   "ort": "Lissabon",
+   "region": "Belém",
+   "kategorie": "stadt",
+   "sterne": 4,
+   "preis": 178,
+   "rating": 4.4,
+   "bewertungen": 712,
+   "strand": 16.0,
+   "zentrum": 6.4,
+   "flughafen": 14,
+   "extras": [
+    "terrace",
+    "pool"
+   ],
+   "kurz": "In Belém am Fluss, Mosteiro dos Jerónimos und Pastéis de Belém zu Fuß.",
+   "lang": "Belém liegt sechs Kilometer westlich des Zentrums am Tejo und hat auf einem Kilometer alles, was Portugals Seefahrtsgeschichte hergibt: den Torre de Belém, das Mosteiro dos Jerónimos, das Entdeckerdenkmal und, seit 1837, die Konditorei, in der die Pastéis de Belém nach einem Rezept gebacken werden, das drei Leute kennen. Das Haus liegt zwischen Kloster und Fluss, achtundfünfzig Zimmer, hell, sachlich, die oberen mit Blick auf den Tejo. Zum Kloster sind es fünf Gehminuten, zur Konditorei vier, zum MAAT zehn. Die Tram 15 fährt in zwanzig Minuten in die Baixa, der Zug nach Cascais hält am Bahnhof gegenüber. Dachbecken und Terrasse.",
+   "highlights": [
+    "Fünf Minuten zum Mosteiro dos Jerónimos",
+    "Vier Minuten zu den Pastéis de Belém",
+    "Tram 15 in die Baixa",
+    "Zug nach Cascais gegenüber"
+   ]
+  },
+  {
+   "id": "h345",
+   "ziel": "lissabon",
+   "name": "Príncipe Real Jardim",
+   "ort": "Lissabon",
+   "region": "Príncipe Real",
+   "kategorie": "boutique",
+   "sterne": 4,
+   "preis": 216,
+   "rating": 4.7,
+   "bewertungen": 486,
+   "strand": 14.0,
+   "zentrum": 1.4,
+   "flughafen": 9,
+   "extras": [
+    "terrace",
+    "pool"
+   ],
+   "kurz": "Stadtpalais am Garten von Príncipe Real, Becken im Hof, Läden ringsum.",
+   "lang": "Príncipe Real liegt oberhalb des Bairro Alto um einen Garten mit einer Zeder, deren Krone auf Stützen gewachsen ist und zwanzig Meter Durchmesser hat. Darunter sitzen Leute, die hier wohnen. Das Haus ist ein Palais von 1877, achtzehn Zimmer, Azulejos, Stuck, Parkett, hinten ein Hof mit Becken und Zitrusbäumen. Zum Jardim sind es zwei Gehminuten, zum Miradouro de São Pedro de Alcântara sechs, zum Chiado zehn abwärts. Im Viertel haben sich Modeläden, Buchhandlungen und ein Markt in einem umgebauten Palast angesiedelt, und es ist nach zweiundzwanzig Uhr still, was im Bairro Alto nicht gilt. Frühstück im Hof bis halb zwölf.",
+   "highlights": [
+    "Palais von 1877 mit Becken im Hof",
+    "Zwei Minuten zum Jardim do Príncipe Real",
+    "Nach zweiundzwanzig Uhr still",
+    "Frühstück im Hof bis halb zwölf"
+   ]
+  },
+  {
+   "id": "h346",
+   "ziel": "lissabon",
+   "name": "LX Factory Rooms",
+   "ort": "Lissabon",
+   "region": "Alcântara",
+   "kategorie": "boutique",
+   "sterne": 3,
+   "preis": 158,
+   "rating": 4.5,
+   "bewertungen": 568,
+   "strand": 15.0,
+   "zentrum": 4.2,
+   "flughafen": 12,
+   "extras": [
+    "terrace"
+   ],
+   "kurz": "Auf dem Fabrikgelände unter der Brücke, Buchhandlung und Markt im Haus.",
+   "lang": "Die LX Factory ist ein Textilfabrikgelände von 1846 unter der Ponte 25 de Abril, auf dem heute Läden, Lokale, Ateliers und eine Buchhandlung in einer alten Druckerei untergebracht sind, mit Regalen bis zur Decke und einer Leiter auf Schienen. Das Haus steht mitten darin, zwanzig Zimmer, Sichtziegel, Stahlfenster, Betonböden, von oben hört man die Brücke, was manche als Nachteil und manche als Geräuschkulisse empfinden. Zum Fluss sind es dreihundert Meter, zum Museu de Arte Antiga zehn Gehminuten, in die Baixa fünfzehn Minuten mit der Tram 15. Sonntags ist Markt auf dem Gelände. Frühstück in einem der Lokale, das ist im Preis enthalten.",
+   "highlights": [
+    "Zimmer auf dem LX-Factory-Gelände",
+    "Buchhandlung in alter Druckerei",
+    "Dreihundert Meter zum Fluss",
+    "Sonntagsmarkt auf dem Gelände"
+   ]
+  },
+  {
+   "id": "h347",
+   "ziel": "lissabon",
+   "name": "Graça Vista",
+   "ort": "Lissabon",
+   "region": "Graça",
+   "kategorie": "budget",
+   "sterne": 2,
+   "preis": 92,
+   "rating": 4.3,
+   "bewertungen": 486,
+   "strand": 13.0,
+   "zentrum": 1.8,
+   "flughafen": 7,
+   "kurz": "Einfache Pension in Graça, einer der besten Aussichtspunkte der Stadt.",
+   "lang": "Graça liegt auf dem höchsten der sieben Hügel, und vom Miradouro da Senhora do Monte sieht man die ganze Stadt bis zum Fluss, ohne Eintritt und ohne Gedränge, wenn man früh kommt. Die Pension liegt hundertfünfzig Meter davon, sechzehn Zimmer, einfach, mit Dusche, Fliesenböden, sechs Zimmer mit Blick. Für unter hundert Euro in Lissabon ist das selten geworden. Die Tram 28 hält vor der Tür, zur Alfama sind es zehn Gehminuten abwärts, zum Castelo fünfzehn. Frühstück von halb acht bis zehn, einfach. Die Gassen hier sind steil, wer mit Koffer kommt, sollte das Taxi bis vor die Tür nehmen.",
+   "highlights": [
+    "Hundertfünfzig Meter zum Miradouro",
+    "Sechs Zimmer mit Blick über die Stadt",
+    "Tram 28 vor der Tür",
+    "Unter hundert Euro in Lissabon"
+   ]
+  },
+  {
+   "id": "h348",
+   "ziel": "lissabon",
+   "name": "Parque das Nações Rio",
+   "ort": "Lissabon",
+   "region": "Parque das Nações",
+   "kategorie": "familie",
+   "sterne": 4,
+   "preis": 172,
+   "rating": 4.4,
+   "bewertungen": 824,
+   "strand": 18.0,
+   "zentrum": 7.8,
+   "flughafen": 4,
+   "extras": [
+    "kidsClub",
+    "pool"
+   ],
+   "kurz": "Am Tejo im Expo-Viertel, Ozeanarium nebenan, vier Kilometer zum Flughafen.",
+   "lang": "Das Parque das Nações wurde für die Expo 1998 gebaut und ist das Gegenteil des alten Lissabon: breite Promenaden, Rasen, Seilbahn über dem Fluss und keine Kopfsteinpflaster-Steigungen, was mit Kinderwagen den Unterschied macht. Das Haus liegt am Wasser, achtundsechzig Zimmer, zwei Drittel Familienzimmer, dazu Pool mit Kinderbecken, Spielraum und Betreuung in den Ferien. Das Ozeanarium, eines der größten Europas, liegt dreihundert Meter entfernt, das Wissenschaftsmuseum zweihundert, die Seilbahnstation einhundert. Zum Flughafen sind es vier Kilometer, in die Baixa zwanzig Minuten mit der Metro. Halbpension mit Buffet, Kindertisch um halb sieben.",
+   "highlights": [
+    "Dreihundert Meter zum Ozeanarium",
+    "Vier Kilometer zum Flughafen",
+    "Pool mit Kinderbecken",
+    "Seilbahn über dem Tejo"
+   ]
+  },
+  {
+   "id": "h349",
+   "ziel": "lissabon",
+   "name": "Mouraria Azulejos",
+   "ort": "Lissabon",
+   "region": "Mouraria",
+   "kategorie": "boutique",
+   "sterne": 3,
+   "preis": 142,
+   "rating": 4.5,
+   "bewertungen": 412,
+   "strand": 12.0,
+   "zentrum": 1.0,
+   "flughafen": 7,
+   "extras": [
+    "terrace"
+   ],
+   "kurz": "Im ältesten Viertel, Fado-Geburtsort, Dachterrasse mit Burgblick.",
+   "lang": "Die Mouraria war nach der Rückeroberung 1147 das Viertel, in das die maurische Bevölkerung ziehen musste, und ist bis heute der am meisten gemischte Teil der Stadt, mit Läden aus China, Indien, Bangladesch und Mosambik in einer Straße. Hier entstand auch der Fado. Das Haus hat vierzehn Zimmer in einem Altbau, Azulejos an der Fassade, Fliesenböden innen, auf dem Dach eine Terrasse mit Blick auf das Castelo. Zur Praça da Figueira sind es sechs Gehminuten abwärts, zum Castelo zehn bergauf, zur Alfama acht. Frühstück auf dem Dach. Das Viertel ist abends lebendig und nicht laut, das ist nebenan im Bairro Alto anders.",
+   "highlights": [
+    "Im ältesten Viertel Lissabons",
+    "Dachterrasse mit Blick auf das Castelo",
+    "Azulejo-Fassade",
+    "Sechs Minuten zur Praça da Figueira"
+   ]
+  },
+  {
+   "id": "h350",
+   "ziel": "lissabon",
+   "name": "Baixa Pombalina",
+   "ort": "Lissabon",
+   "region": "Baixa",
+   "kategorie": "stadt",
+   "sterne": 4,
+   "preis": 186,
+   "rating": 4.4,
+   "bewertungen": 894,
+   "strand": 14.0,
+   "zentrum": 0.2,
+   "flughafen": 8,
+   "extras": [
+    "terrace",
+    "gym"
+   ],
+   "kurz": "Im Raster der Baixa, Praça do Comércio und Elevador zu Fuß, Metro vor der Tür.",
+   "lang": "Die Baixa wurde nach dem Erdbeben von 1755 in fünf Jahren neu gebaut, im Raster, mit erdbebensicheren Holzgerüsten in den Wänden, der sogenannten gaiola pombalina, und das ist die erste bewusst seismisch konstruierte Architektur Europas. Das Haus steht in einem dieser Blöcke, zweiundsechzig Zimmer, hohe Decken, Doppelfenster, sachlich eingerichtet. Zur Praça do Comércio sind es vier Gehminuten, zum Elevador de Santa Justa zwei, zum Rossio drei. Die Metro hält vor der Tür, der Flughafen liegt acht Kilometer entfernt, zwanzig Minuten mit der Bahn. Dachterrasse mit Blick auf den Tejo, Fitnessraum im Keller, Frühstück ab halb sieben.",
+   "highlights": [
+    "Pombalinischer Block von 1760",
+    "Zwei Minuten zum Elevador de Santa Justa",
+    "Metro vor der Tür",
+    "Dachterrasse mit Tejo-Blick"
+   ]
+  },
+  {
+   "id": "h351",
+   "ziel": "lissabon",
+   "name": "Estrela Jardim Rooms",
+   "ort": "Lissabon",
+   "region": "Estrela",
+   "kategorie": "finca",
+   "sterne": 4,
+   "preis": 192,
+   "rating": 4.6,
+   "bewertungen": 386,
+   "strand": 14.0,
+   "zentrum": 2.6,
+   "flughafen": 11,
+   "extras": [
+    "terrace",
+    "pool",
+    "bikeRental"
+   ],
+   "kurz": "Stadthaus am Jardim da Estrela, Garten mit Becken, Tram 28 Endstation.",
+   "lang": "Der Jardim da Estrela ist ein Garten von 1842 mit Teichen, Enten, einem Pavillon und alten Bäumen, gegenüber der Basilika mit ihrer weißen Kuppel. Das Haus liegt an der Westseite, sechzehn Zimmer in einem Stadthaus von 1890, Azulejos im Flur, Stuckdecken, hinten ein Garten mit Becken und Palmen. Zur Tram 28, die hier ihre Endstation hat und damit noch leer ist, sind es drei Gehminuten, was den Unterschied macht, weil man ab Martim Moniz keinen Platz bekommt. Zum Museu da Marioneta sind es sechs Minuten, zum Aussichtspunkt Santa Catarina fünfzehn. Räder stehen bereit, der Weg am Fluss nach Belém ist flach und sechs Kilometer lang.",
+   "highlights": [
+    "Stadthaus von 1890 am Jardim da Estrela",
+    "Garten mit Becken und Palmen",
+    "Tram 28 noch leer an der Endstation",
+    "Radweg am Fluss nach Belém"
+   ]
+  },
+  {
+   "id": "h352",
+   "ziel": "lissabon",
+   "name": "Cais do Sodré Apartments",
+   "ort": "Lissabon",
+   "region": "Cais do Sodré",
+   "kategorie": "apart",
+   "sterne": 3,
+   "preis": 164,
+   "rating": 4.3,
+   "bewertungen": 524,
+   "strand": 13.0,
+   "zentrum": 0.8,
+   "flughafen": 10,
+   "extras": [
+    "terrace"
+   ],
+   "kurz": "Apartments am Fluss, Time Out Market und Fähren nach Cacilhas im Haus.",
+   "lang": "Cais do Sodré war Hafenviertel und ist seit dem Umbau der Markthalle zum Time Out Market die Adresse, an der Lissabon isst. Das Haus steht zwei Häuser weiter, zwanzig Apartments von fünfunddreißig bis fünfundsechzig Quadratmetern, alle mit Küche, Waschmaschine und Balkon, die vorderen mit Blick auf den Tejo. Die Fähre nach Cacilhas fährt vom Terminal gegenüber in zehn Minuten über den Fluss, drüben liegen die Fischrestaurants, in denen die Lissabonner selbst essen. Zum Chiado sind es acht Gehminuten bergauf, zur Baixa sechs. Die Rua Nova do Carvalho, die rosa gestrichene Straße, liegt um die Ecke und ist bis vier Uhr nachts laut, hofseitige Wohnungen merken davon weniger.",
+   "highlights": [
+    "Zwei Häuser vom Time Out Market",
+    "Apartments mit Küche und Waschmaschine",
+    "Fähre nach Cacilhas gegenüber",
+    "Vorderwohnungen mit Tejo-Blick"
+   ]
+  },
+  {
+   "id": "h353",
+   "ziel": "lissabon",
+   "name": "Bairro Alto Casa",
+   "ort": "Lissabon",
+   "region": "Bairro Alto",
+   "kategorie": "boutique",
+   "sterne": 4,
+   "preis": 206,
+   "rating": 4.5,
+   "bewertungen": 568,
+   "strand": 14.0,
+   "zentrum": 0.9,
+   "flughafen": 9,
+   "extras": [
+    "terrace"
+   ],
+   "kurz": "Im Bairro Alto mit Schallschutzfenstern, Miradouro und Fado in Gehweite.",
+   "lang": "Das Bairro Alto ist tagsüber ein stilles Wohnviertel mit Wäsche an den Fenstern und ab zweiundzwanzig Uhr die lauteste Gegend Lissabons, weil die Leute mit ihren Gläsern auf der Straße stehen. Das Haus hat darauf reagiert: achtzehn Zimmer, dreifach verglaste Fenster, Zimmer zum Hof für alle, die früh schlafen. Innen Holzböden, Azulejos in den Bädern, ein Salon mit Kamin. Zum Miradouro de São Pedro de Alcântara sind es drei Gehminuten, zum Elevador da Bica fünf, zum Chiado sechs abwärts. Fado wird in vier Häusern in der Nachbarschaft gesungen, zwei davon ohne Touristenprogramm. Frühstück bis elf, weil das Viertel spät beginnt.",
+   "highlights": [
+    "Dreifach verglaste Fenster im Bairro Alto",
+    "Hofzimmer für früheren Schlaf",
+    "Drei Minuten zum Miradouro",
+    "Fado in vier Häusern der Nachbarschaft"
+   ]
+  }
+ ]
+}

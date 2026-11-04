@@ -1,0 +1,257 @@
+{
+ "hotels": [
+  {
+   "id": "h448",
+   "ziel": "kyoto",
+   "name": "Guesthouse Nishijin",
+   "ort": "Kyoto",
+   "region": "Nishijin",
+   "kategorie": "budget",
+   "sterne": 2,
+   "preis": 90,
+   "rating": 4.3,
+   "bewertungen": 486,
+   "strand": null,
+   "zentrum": 2.8,
+   "flughafen": 108,
+   "kurz": "Günstiges Gästehaus im Weberviertel, Küche zur Mitbenutzung, Busknoten nah.",
+   "lang": "Nishijin ist das Weberviertel, in dem seit dem fünfzehnten Jahrhundert Brokat hergestellt wird, und die Werkstätten stehen zwischen Wohnhäusern, ohne Schilder. Das Gästehaus hat achtzehn Zimmer, teils mit Tatami, teils mit Betten, Bäder im Flur, dazu eine Gemeinschaftsküche. Das ist in Kyoto bares Geld, weil Essengehen hier schnell teuer wird und der Supermarkt zwei Straßen weiter liegt. Zum Kinkaku-ji sind es zwei Kilometer mit dem Bus, zum Nijo-Schloss drei. Die Bushaltestelle vor der Tür ist ein Knoten mit vier Linien, und in Kyoto fährt man ohnehin Bus statt Bahn.",
+   "highlights": [
+    "Gemeinschaftsküche im Haus",
+    "Vier Buslinien vor der Tür",
+    "Zwei Kilometer zum Goldenen Pavillon",
+    "Werkstätten des Weberviertels ringsum"
+   ]
+  },
+  {
+   "id": "h449",
+   "ziel": "kyoto",
+   "name": "Toji Ryokan",
+   "ort": "Kyoto",
+   "region": "Minami",
+   "kategorie": "budget",
+   "sterne": 2,
+   "preis": 94,
+   "rating": 4.2,
+   "bewertungen": 412,
+   "strand": null,
+   "zentrum": 2.2,
+   "flughafen": 96,
+   "kurz": "Am Toji-Tempel mit der höchsten Pagode Japans, Hauptbahnhof zu Fuß.",
+   "lang": "Der Toji wurde 796 gegründet und hat mit siebenundfünfzig Metern die höchste Holzpagode Japans. Am einundzwanzigsten jedes Monats findet auf dem Gelände ein Flohmarkt mit tausend Ständen statt, auf dem man alles von Kimonos bis Werkzeug findet. Das Ryokan liegt zweihundert Meter entfernt, vierzehn Zimmer mit Tatami und Futon, Gemeinschaftsbad im japanischen Stil, einfach und sauber. Zum Hauptbahnhof sind es fünfzehn Gehminuten, von dort fährt der Haruka-Express in fünfundsiebzig Minuten zum Flughafen Kansai. Frühstück japanisch, abends gibt es im Viertel Nudelläden.",
+   "highlights": [
+    "Zweihundert Meter zum Toji mit der höchsten Pagode Japans",
+    "Flohmarkt am 21. jedes Monats",
+    "Fünfzehn Minuten zum Hauptbahnhof",
+    "Gemeinschaftsbad im japanischen Stil"
+   ]
+  },
+  {
+   "id": "h450",
+   "ziel": "kyoto",
+   "name": "Hostel Shichijo",
+   "ort": "Kyoto",
+   "region": "Shimogyo",
+   "kategorie": "budget",
+   "sterne": 2,
+   "preis": 88,
+   "rating": 4.2,
+   "bewertungen": 524,
+   "strand": null,
+   "zentrum": 1.4,
+   "flughafen": 100,
+   "kurz": "Günstig am Kamo, Sanjusangendo in Gehweite, Bahnhof zwei Stationen.",
+   "lang": "Die Shichijo-Straße führt vom Bahnhof zum Fluss und weiter nach Higashiyama, und auf halbem Weg liegt der Sanjusangendo mit seinen tausendundein vergoldeten Kannon-Figuren in einer einzigen hundertzwanzig Meter langen Halle. Das Haus liegt am westlichen Flussufer, zwanzig Zimmer, einfach, teils Tatami, teils Betten, eine Küche im Erdgeschoss und ein Trockenraum. Zum Sanjusangendo sind es zehn Gehminuten über die Brücke, zum Kyoto National Museum zwölf, zum Hauptbahnhof zwei Stationen oder fünfzehn Minuten zu Fuß. Am Flussufer kann man bis zum Pontocho laufen, zwanzig Minuten.",
+   "highlights": [
+    "Am Westufer des Kamo",
+    "Zehn Minuten zum Sanjusangendo",
+    "Küche und Trockenraum im Haus",
+    "Fünfzehn Minuten zum Hauptbahnhof"
+   ]
+  },
+  {
+   "id": "h451",
+   "ziel": "kyoto",
+   "name": "Takao Onsen Ryokan",
+   "ort": "Kyoto",
+   "region": "Ukyo",
+   "kategorie": "berg",
+   "sterne": 4,
+   "preis": 308,
+   "rating": 4.7,
+   "bewertungen": 324,
+   "strand": null,
+   "zentrum": 16.0,
+   "flughafen": 116,
+   "extras": [
+    "spa"
+   ],
+   "kurz": "Im Bergtal Takao, Onsen über dem Fluss, Ahornlaub im November.",
+   "lang": "Takao liegt sechzehn Kilometer nordwestlich im Tal des Kiyotaki, und die drei Tempel dort, Jingo-ji, Saimyo-ji und Kozan-ji, gehören zu den ältesten der Region. Kozan-ji besitzt die Tierkarikaturen aus dem zwölften Jahrhundert, die als erster Manga Japans gelten. Das Ryokan steht am Hang über dem Fluss, achtzehn Zimmer mit Tatami, Schiebewände, Blick ins Tal. Das Onsen hat ein Innen- und ein Außenbecken über dem Wasser, von sechs bis dreiundzwanzig Uhr offen. Im November ist das Ahornlaub hier eine Woche früher als in der Stadt und deutlich weniger besucht. Kaiseki mit sieben Gängen im Zimmer.",
+   "highlights": [
+    "Außenbecken über dem Fluss",
+    "Drei alte Tempel im Tal",
+    "Ahornlaub eine Woche früher als in der Stadt",
+    "Kaiseki im Zimmer"
+   ]
+  },
+  {
+   "id": "h452",
+   "ziel": "kyoto",
+   "name": "Kiyomizu Gojozaka",
+   "ort": "Kyoto",
+   "region": "Higashiyama",
+   "kategorie": "boutique",
+   "sterne": 4,
+   "preis": 232,
+   "rating": 4.6,
+   "bewertungen": 386,
+   "strand": null,
+   "zentrum": 2.0,
+   "flughafen": 104,
+   "extras": [
+    "terrace"
+   ],
+   "kurz": "An der Töpfergasse zum Kiyomizu, Werkstätten für Kiyomizu-Keramik.",
+   "lang": "Die Gojozaka ist der nördliche Aufstieg zum Kiyomizu-dera und war jahrhundertelang die Straße der Töpfer, die hier die Kiyomizu-Keramik brannten. Ein paar Werkstätten arbeiten noch, im August ist Keramikmarkt auf der ganzen Straße. Das Haus liegt in einem Kaufmannshaus, sechzehn Zimmer, Tatami und Betten gemischt, auf dem Dach eine Terrasse über die Ziegeldächer. Zum Kiyomizu-dera sind es acht Gehminuten bergauf, zum Kyoto National Museum zehn abwärts, zum Sanjusangendo zwölf. Frühstück japanisch oder westlich, abends gibt es eine kurze Karte mit Obanzai, der Kyotoer Hausmannskost.",
+   "highlights": [
+    "An der alten Töpfergasse",
+    "Acht Minuten zum Kiyomizu-dera",
+    "Dachterrasse über den Ziegeldächern",
+    "Obanzai am Abend"
+   ]
+  },
+  {
+   "id": "h453",
+   "ziel": "kyoto",
+   "name": "Shugakuin Villa House",
+   "ort": "Kyoto",
+   "region": "Sakyo",
+   "kategorie": "finca",
+   "sterne": 4,
+   "preis": 246,
+   "rating": 4.6,
+   "bewertungen": 268,
+   "strand": null,
+   "zentrum": 6.4,
+   "flughafen": 112,
+   "extras": [
+    "terrace",
+    "bikeRental"
+   ],
+   "kurz": "Am kaiserlichen Garten Shugakuin, Reisfelder ringsum, Eizan-Bahn.",
+   "lang": "Die Shugakuin-Villa wurde im siebzehnten Jahrhundert als kaiserlicher Rückzugsort am Hangfuß angelegt, mit drei Gartenebenen und einem künstlichen See, und zwischen den Gärten liegen bis heute Reisfelder, die zum Grundstück gehören. Besichtigung nur mit Anmeldung. Das Haus steht zweihundert Meter davon, vierzehn Zimmer, Tatami, Schiebewände, Blick über die Felder zum Hiei-Berg. Räder stehen bereit, der Weg am Takano-Fluss führt in zwanzig Minuten zum Demachiyanagi. Die Eizan-Bahn hält fünf Gehminuten entfernt. Abends kaiseki mit sechs Gängen, Gemüse aus der Umgebung.",
+   "highlights": [
+    "Zweihundert Meter zur Shugakuin-Villa",
+    "Blick über Reisfelder zum Hiei",
+    "Räder für den Weg am Fluss",
+    "Kaiseki mit Gemüse aus der Umgebung"
+   ]
+  },
+  {
+   "id": "h454",
+   "ziel": "kyoto",
+   "name": "Kamigamo Schreinhaus",
+   "ort": "Kyoto",
+   "region": "Kita",
+   "kategorie": "boutique",
+   "sterne": 4,
+   "preis": 212,
+   "rating": 4.6,
+   "bewertungen": 286,
+   "strand": null,
+   "zentrum": 5.2,
+   "flughafen": 112,
+   "extras": [
+    "terrace"
+   ],
+   "kurz": "Am ältesten Schrein Kyotos, Priesterhäuser am Bach, Weltkulturerbe.",
+   "lang": "Der Kamigamo-Schrein ist der älteste Kyotos, älter als die Stadt selbst, und entlang des Bachs davor steht eine Reihe von Priesterhäusern aus der Edo-Zeit, die unter Schutz stehen. Das Haus ist eines davon, zehn Zimmer, Tatami, Holzgalerie, ein Garten mit Moos und Ahorn am Wasser. Zum Schrein sind es drei Gehminuten, zum Botanischen Garten zwei Kilometer, zum Kamo-Ufer, an dem man bis ins Zentrum laufen kann, hundert Meter. Im Mai findet das Aoi-Matsuri statt, eine Prozession in Heian-Tracht, die hier endet. Frühstück japanisch im Garten, wenn es warm ist.",
+   "highlights": [
+    "Priesterhaus aus der Edo-Zeit",
+    "Drei Minuten zum ältesten Schrein Kyotos",
+    "Garten mit Moos und Ahorn am Bach",
+    "Aoi-Matsuri endet hier"
+   ]
+  },
+  {
+   "id": "h455",
+   "ziel": "kyoto",
+   "name": "Arashiyama Togetsu",
+   "ort": "Kyoto",
+   "region": "Arashiyama",
+   "kategorie": "luxus",
+   "sterne": 5,
+   "preis": 426,
+   "rating": 4.8,
+   "bewertungen": 342,
+   "strand": null,
+   "zentrum": 9.0,
+   "flughafen": 112,
+   "extras": [
+    "spa",
+    "terrace"
+   ],
+   "kurz": "An der Togetsukyo-Brücke, Onsen am Fluss, Boote auf dem Hozu.",
+   "lang": "Die Togetsukyo, die Brücke zum Mondübergang, steht seit dem neunten Jahrhundert an derselben Stelle und ist das Bild, das man von Arashiyama kennt. Das Haus liegt am Südufer, zwanzig Zimmer und Suiten, Zedernholz, Tatami, jedes mit Blick auf Fluss und Berg, einige mit eigenem Hinoki-Bad auf der Terrasse. Das Onsen wird aus einer Quelle gespeist, Innen- und Außenbecken am Wasser. Vom Steg fahren die flachen Boote den Hozu hinauf, im Sommer mit Kormoranfischern am Abend. Zum Bambuswald sind es zehn Gehminuten, zum Tenryu-ji acht. Kaiseki mit neun Gängen, Monatsmenü.",
+   "highlights": [
+    "An der Togetsukyo-Brücke",
+    "Onsen mit Außenbecken am Fluss",
+    "Suiten mit eigenem Hinoki-Bad",
+    "Kormoranfischer im Sommer"
+   ]
+  },
+  {
+   "id": "h456",
+   "ziel": "kyoto",
+   "name": "Kamo Familienhaus",
+   "ort": "Kyoto",
+   "region": "Kita",
+   "kategorie": "familie",
+   "sterne": 3,
+   "preis": 182,
+   "rating": 4.4,
+   "bewertungen": 412,
+   "strand": null,
+   "zentrum": 3.8,
+   "flughafen": 108,
+   "extras": [
+    "kidsClub"
+   ],
+   "kurz": "Am Flussufer mit Spielwiese, Familienzimmer mit Futons, Botanischer Garten nah.",
+   "lang": "Zwischen Kitaoji und Kamigamo ist der Kamo breit, flach und mit Trittsteinen versehen, und am Ufer liegen Wiesen, auf denen Kyotoer Kinder den Nachmittag verbringen. Das Haus steht hundertfünfzig Meter davon, sechsundzwanzig Zimmer, die Hälfte Familienzimmer mit vier Futons, was mit Kindern praktischer ist als Betten, weil nichts hoch ist. Ein Spielraum mit Tatami und Büchern, Betreuung an Wochenenden. Zum Botanischen Garten mit Gewächshaus und Spielplatz sind es siebenhundert Meter, zum Zoo vier Kilometer. Frühstück japanisch und westlich, abends Halbpension auf Wunsch.",
+   "highlights": [
+    "Hundertfünfzig Meter zur Spielwiese am Kamo",
+    "Familienzimmer mit vier Futons",
+    "Siebenhundert Meter zum Botanischen Garten",
+    "Spielraum mit Tatami"
+   ]
+  },
+  {
+   "id": "h457",
+   "ziel": "kyoto",
+   "name": "Karasuma Business Rooms",
+   "ort": "Kyoto",
+   "region": "Shimogyo",
+   "kategorie": "stadt",
+   "sterne": 3,
+   "preis": 158,
+   "rating": 4.3,
+   "bewertungen": 724,
+   "strand": null,
+   "zentrum": 0.8,
+   "flughafen": 100,
+   "extras": [
+    "gym"
+   ],
+   "kurz": "An der Shijo-Karasuma-Kreuzung, U-Bahn und Hankyu, Nishiki-Markt nah.",
+   "lang": "Shijo-Karasuma ist die Geschäftskreuzung Kyotos, wo die U-Bahn-Linie Karasuma und die Hankyu-Bahn nach Osaka aufeinandertreffen. Das Haus steht an der Ecke, achtundsiebzig Zimmer, kompakt, sachlich, Bäder aus einem Stück, Fenster dreifach verglast. Zum Nishiki-Markt sind es sechs Gehminuten, zum Pontocho zehn, zum Nijo-Schloss zwölf. Nach Osaka fährt die Hankyu in vierzig Minuten, zum Flughafen Kansai der Haruka ab Hauptbahnhof. Fitnessraum im Keller, Frühstücksbuffet ab halb sieben, Wäscheraum in jeder Etage. Für Geschäftsreisende gebaut und für alle anderen brauchbar.",
+   "highlights": [
+    "An der Kreuzung Shijo-Karasuma",
+    "Sechs Minuten zum Nishiki-Markt",
+    "Hankyu nach Osaka in vierzig Minuten",
+    "Wäscheraum in jeder Etage"
+   ]
+  }
+ ]
+}

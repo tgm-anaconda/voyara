@@ -1,0 +1,256 @@
+{
+ "hotels": [
+  {
+   "id": "h438",
+   "ziel": "newyork",
+   "name": "Astoria Rooms",
+   "ort": "New York",
+   "region": "Queens",
+   "kategorie": "budget",
+   "sterne": 2,
+   "preis": 126,
+   "rating": 4.2,
+   "bewertungen": 624,
+   "strand": null,
+   "zentrum": 6.4,
+   "flughafen": 16,
+   "kurz": "Günstig in Queens, griechische Tavernen im Viertel, Linie N in Midtown.",
+   "lang": "Astoria ist seit den fünfziger Jahren das griechische Viertel New Yorks und inzwischen auch das ägyptische, brasilianische und bangladeschische, mit entsprechend guter und billiger Küche entlang der Steinway Street und des Broadway. Das Haus hat vierzig Zimmer, klein, nüchtern, sauber, mit Klimaanlage und ordentlicher Verdunklung. Die Linie N hält drei Blocks entfernt und braucht achtzehn Minuten zur 42nd Street. Das Museum of the Moving Image und der Astoria Park mit Blick auf die Hell Gate Bridge sind in Gehweite. Zum Flughafen LaGuardia sind es fünf Kilometer, zum JFK sechzehn.",
+   "highlights": [
+    "Achtzehn Minuten zur 42nd Street",
+    "Fünf Kilometer nach LaGuardia",
+    "Tavernen an der Steinway Street",
+    "Astoria Park mit Blick auf die Hell Gate Bridge"
+   ]
+  },
+  {
+   "id": "h439",
+   "ziel": "newyork",
+   "name": "Jackson Heights Inn",
+   "ort": "New York",
+   "region": "Queens",
+   "kategorie": "budget",
+   "sterne": 2,
+   "preis": 122,
+   "rating": 4.1,
+   "bewertungen": 486,
+   "strand": null,
+   "zentrum": 9.2,
+   "flughafen": 18,
+   "kurz": "Im vielsprachigsten Viertel der Stadt, Linie 7, sechs Kilometer nach LaGuardia.",
+   "lang": "In Jackson Heights werden über hundertsechzig Sprachen gesprochen, und die Roosevelt Avenue unter der Hochbahn ist eine Aneinanderreihung kolumbianischer Bäckereien, tibetischer Momo-Stände und indischer Sweetshops. Das Haus liegt eine Straße abseits, vierunddreißig Zimmer, einfach, mit Klimaanlage, zur Rückseite ruhig. Die Linien 7, E, F, M und R halten alle an derselben Station vier Gehminuten entfernt, zur Grand Central sind es zweiundzwanzig Minuten. Zum Flughafen LaGuardia sechs Kilometer. Das Historic District mit seinen Gartenhöfen aus den zwanziger Jahren liegt zwei Blocks weiter.",
+   "highlights": [
+    "Fünf U-Bahnlinien an einer Station",
+    "Zweiundzwanzig Minuten zur Grand Central",
+    "Sechs Kilometer nach LaGuardia",
+    "Roosevelt Avenue mit Küche aus aller Welt"
+   ]
+  },
+  {
+   "id": "h440",
+   "ziel": "newyork",
+   "name": "Bay Ridge Harbour",
+   "ort": "New York",
+   "region": "Brooklyn",
+   "kategorie": "budget",
+   "sterne": 3,
+   "preis": 124,
+   "rating": 4.3,
+   "bewertungen": 412,
+   "strand": null,
+   "zentrum": 14.0,
+   "flughafen": 22,
+   "kurz": "Im Süden Brooklyns, Promenade unter der Verrazzano-Brücke, Linie R.",
+   "lang": "Bay Ridge liegt ganz im Süden Brooklyns, wo die Verrazzano-Narrows-Brücke nach Staten Island hinüberführt, und ist ein Wohnviertel mit Reihenhäusern, Bäckereien und einer Uferpromenade, auf der abends halb Brooklyn läuft. Das Haus hat achtundzwanzig Zimmer, einfach, mit Klimaanlage, einige mit Blick auf die Narrows. Zum Shore Road Park sind es vier Gehminuten, zur Fähre nach Manhattan zehn. Die Linie R hält fünf Gehminuten entfernt, zur Wall Street sind es fünfunddreißig Minuten. Die Third Avenue hat auf zwanzig Blocks mehr Restaurants als mancher Innenstadtbezirk.",
+   "highlights": [
+    "Promenade unter der Verrazzano-Brücke",
+    "Fähre nach Manhattan in zehn Minuten",
+    "Zimmer mit Blick auf die Narrows",
+    "Third Avenue mit Restaurants auf zwanzig Blocks"
+   ]
+  },
+  {
+   "id": "h441",
+   "ziel": "newyork",
+   "name": "Park Slope Brownstone",
+   "ort": "New York",
+   "region": "Brooklyn",
+   "kategorie": "boutique",
+   "sterne": 4,
+   "preis": 248,
+   "rating": 4.7,
+   "bewertungen": 486,
+   "strand": null,
+   "zentrum": 7.8,
+   "flughafen": 20,
+   "extras": [
+    "terrace"
+   ],
+   "kurz": "Reihenhaus am Prospect Park, Farmers Market am Samstag, Linie F.",
+   "lang": "Park Slope ist das Viertel der Brownstones mit Vortreppen, unter denen im Herbst die Kürbisse stehen, und am Prospect Park, den dieselben Leute entworfen haben wie den Central Park, nur später und mit mehr Erfahrung. Das Haus ist eines dieser Reihenhäuser von 1890, sechzehn Zimmer auf vier Etagen, Erkerfenster, Kamine in drei Zimmern, hinten ein Garten. Zum Park sind es zwei Blocks, zum Brooklyn Museum und dem Botanischen Garten zehn Gehminuten. Samstags ist Farmers Market am Grand Army Plaza. Die Linie F hält drei Blocks entfernt, nach Midtown sind es fünfundzwanzig Minuten.",
+   "highlights": [
+    "Brownstone von 1890 am Prospect Park",
+    "Drei Zimmer mit Kamin",
+    "Farmers Market am Grand Army Plaza",
+    "Zehn Minuten zum Botanischen Garten"
+   ]
+  },
+  {
+   "id": "h442",
+   "ziel": "newyork",
+   "name": "Red Hook Pier House",
+   "ort": "New York",
+   "region": "Brooklyn",
+   "kategorie": "boutique",
+   "sterne": 3,
+   "preis": 196,
+   "rating": 4.5,
+   "bewertungen": 324,
+   "strand": null,
+   "zentrum": 6.8,
+   "flughafen": 19,
+   "extras": [
+    "terrace",
+    "seaView"
+   ],
+   "kurz": "Am Wasser in Red Hook, Freiheitsstatue im Blick, Fähre nach Manhattan.",
+   "lang": "Red Hook ragt als Halbinsel in den Hafen und hat keine U-Bahn, dafür den besten Blick auf die Freiheitsstatue, den man von Land aus bekommt. Das Haus liegt in einem Speicher von 1869 am Pier, vierzehn Zimmer, Bruchsteinwände, Balken, Fenster bis zum Boden auf die Bucht. Die Fähre nach Wall Street fährt vom Pier nebenan in zwölf Minuten. Im Viertel gibt es eine Schlüsselanhänger-große Destillerie, eine Key-Lime-Bäckerei und ein Dutzend Werkstätten, abends wird es sehr still. Frühstück im Haus, Bus oder Fähre für alles Weitere.",
+   "highlights": [
+    "Speicher von 1869 am Pier",
+    "Blick auf die Freiheitsstatue",
+    "Fähre zur Wall Street in zwölf Minuten",
+    "Abends sehr still"
+   ]
+  },
+  {
+   "id": "h443",
+   "ziel": "newyork",
+   "name": "Morningside Columbia",
+   "ort": "New York",
+   "region": "Upper Manhattan",
+   "kategorie": "stadt",
+   "sterne": 3,
+   "preis": 186,
+   "rating": 4.4,
+   "bewertungen": 568,
+   "strand": null,
+   "zentrum": 6.2,
+   "flughafen": 32,
+   "kurz": "Am Campus der Columbia, Kathedrale nebenan, Linie 1.",
+   "lang": "Morningside Heights liegt zwischen zwei Parks auf einem Plateau über Harlem, mit dem Campus der Columbia University in der Mitte und der Cathedral of St. John the Divine daneben, die seit 1892 gebaut wird und immer noch nicht fertig ist. Das Haus hat zweiundfünfzig Zimmer, einfach und solide, viele mit Blick auf den Campus. Zur Kathedrale sind es vier Gehminuten, zum Riverside Park sechs, zum Central Park zehn. Die Linie 1 hält zwei Blocks entfernt, nach Times Square sind es achtzehn Minuten. Im Viertel gibt es Buchläden, Diners und das Hungarian Pastry Shop, in dem halb Columbia Hausarbeiten schreibt.",
+   "highlights": [
+    "Am Campus der Columbia University",
+    "Vier Minuten zur Kathedrale",
+    "Achtzehn Minuten zum Times Square",
+    "Riverside Park in sechs Minuten"
+   ]
+  },
+  {
+   "id": "h444",
+   "ziel": "newyork",
+   "name": "Bushwick Warehouse",
+   "ort": "New York",
+   "region": "Brooklyn",
+   "kategorie": "boutique",
+   "sterne": 3,
+   "preis": 178,
+   "rating": 4.4,
+   "bewertungen": 486,
+   "strand": null,
+   "zentrum": 8.4,
+   "flughafen": 18,
+   "extras": [
+    "terrace"
+   ],
+   "kurz": "Umgebaute Lagerhalle, Wandbilder im Viertel, Linie L nach Manhattan.",
+   "lang": "Bushwick war Industriegebiet und ist heute das Viertel mit der höchsten Dichte an Wandbildern in New York, das Bushwick Collective allein umfasst mehrere Straßenzüge. Das Haus liegt in einer Lagerhalle von 1920, zwanzig Zimmer, Sichtziegel, Stahlträger, Betonböden, auf dem Dach eine Terrasse mit Blick auf die Skyline. Die Linie L hält vier Blocks entfernt, zur Union Square sind es vierundzwanzig Minuten. Im Viertel gibt es Brauereien, Konzerträume und Restaurants, die abends voll und nachts noch voller sind. Wer Ruhe sucht, nimmt ein Zimmer zum Hof.",
+   "highlights": [
+    "Lagerhalle von 1920",
+    "Wandbilder des Bushwick Collective",
+    "Dachterrasse mit Skyline-Blick",
+    "Vierundzwanzig Minuten zur Union Square"
+   ]
+  },
+  {
+   "id": "h445",
+   "ziel": "newyork",
+   "name": "Flatiron Loft Suites",
+   "ort": "New York",
+   "region": "Flatiron",
+   "kategorie": "luxus",
+   "sterne": 5,
+   "preis": 468,
+   "rating": 4.7,
+   "bewertungen": 424,
+   "strand": null,
+   "zentrum": 1.8,
+   "flughafen": 24,
+   "extras": [
+    "spa",
+    "gym",
+    "terrace"
+   ],
+   "kurz": "Am Madison Square Park, Suiten mit hohen Decken, Spa im Haus.",
+   "lang": "Der Madison Square Park liegt zwischen Flatiron Building und Empire State und ist der Park, in dem Mittagspausen stattfinden, Hunde laufen und seit zwanzig Jahren Kunst im Freien steht. Das Haus ist ein Kaufhaus von 1907, dreißig Suiten, Deckenhöhen bis fünf Meter, Gusseisensäulen, Fenster über zwei Etagen. Der Spa liegt im Souterrain mit Dampfbad, Sauna und vier Behandlungsräumen. Zum Flatiron Building sind es zwei Gehminuten, zum Empire State acht, zum Union Square sechs. Das Restaurant arbeitet mit dem Union Square Greenmarket, der viermal in der Woche aufbaut.",
+   "highlights": [
+    "Kaufhaus von 1907 am Madison Square Park",
+    "Deckenhöhen bis fünf Meter",
+    "Spa mit vier Behandlungsräumen",
+    "Zwei Minuten zum Flatiron Building"
+   ]
+  },
+  {
+   "id": "h446",
+   "ziel": "newyork",
+   "name": "Crown Heights Garden",
+   "ort": "New York",
+   "region": "Brooklyn",
+   "kategorie": "familie",
+   "sterne": 3,
+   "preis": 168,
+   "rating": 4.3,
+   "bewertungen": 486,
+   "strand": null,
+   "zentrum": 9.6,
+   "flughafen": 17,
+   "extras": [
+    "kidsClub"
+   ],
+   "kurz": "Am Botanischen Garten, Kindermuseum nebenan, Familienzimmer mit Küche.",
+   "lang": "Crown Heights grenzt an den Prospect Park und hat mit dem Brooklyn Botanic Garden, dem Brooklyn Museum und dem Brooklyn Children's Museum, dem ältesten Kindermuseum der Welt, drei Adressen auf einem Quadratkilometer, die mit Kindern einen Tag füllen. Das Haus hat vierunddreißig Zimmer, die Hälfte Familienzimmer mit vier Betten und Küchenzeile. Betreuung läuft an Wochenenden und in den Ferien vormittags, dazu ein Spielraum. Zum Botanischen Garten sind es zehn Gehminuten, die Linien 2, 3, 4 und 5 halten in Gehweite, nach Manhattan sind es dreiundzwanzig Minuten.",
+   "highlights": [
+    "Zehn Minuten zum Botanischen Garten",
+    "Familienzimmer mit Küchenzeile",
+    "Kindermuseum im Viertel",
+    "Vier U-Bahnlinien in Gehweite"
+   ]
+  },
+  {
+   "id": "h447",
+   "ziel": "newyork",
+   "name": "Inwood Hill Lodge",
+   "ort": "New York",
+   "region": "Upper Manhattan",
+   "kategorie": "finca",
+   "sterne": 3,
+   "preis": 164,
+   "rating": 4.5,
+   "bewertungen": 286,
+   "strand": null,
+   "zentrum": 14.0,
+   "flughafen": 34,
+   "extras": [
+    "terrace",
+    "bikeRental"
+   ],
+   "kurz": "Am letzten Urwald Manhattans, Cloisters in Gehweite, Linie A.",
+   "lang": "Inwood liegt an der Nordspitze Manhattans, und der Inwood Hill Park ist das letzte Stück Wald der Insel, das nie gerodet wurde, mit Felshöhlen, in denen die Lenape lebten. Das Haus steht am Parkrand, achtzehn Zimmer, Holz und Leinen, eine Terrasse zu den Bäumen. Zu den Cloisters, dem mittelalterlichen Ableger des Metropolitan über dem Hudson, sind es fünfzehn Gehminuten durch den Fort Tryon Park. Räder stehen bereit, der Greenway am Hudson führt von hier aus bis zur Südspitze. Die Linie A hält drei Blocks entfernt und braucht dreißig Minuten zur 42nd Street.",
+   "highlights": [
+    "Am letzten Urwald Manhattans",
+    "Fünfzehn Minuten zu den Cloisters",
+    "Räder für den Hudson Greenway",
+    "Dreißig Minuten zur 42nd Street"
+   ]
+  }
+ ]
+}

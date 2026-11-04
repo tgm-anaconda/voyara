@@ -9,7 +9,7 @@ const INFO_PAGES = {
       <h3>Worum geht es genau?</h3>
       <p>Du benutzt die Seite so, wie du es zu Hause tun würdest: suchen, vergleichen, buchen. Alle Funktionen der Seite, auch der Reise-Assistent, stehen dir dabei offen. Was genau ausgewertet wird, erfährst du am Ende der Teilnahme.</p>
       <h3>Sind die Angebote echt?</h3>
-      <p>Nein. Alle Hotels, Ferienwohnungen, Mietwagen, Flüge, Preise und Bewertungen sind erfunden. Es können keine echten Buchungen ausgelöst werden und es fließt kein Geld.</p>`,
+      <p>Nein. Alle Hotels, Ferienwohnungen, Flüge, Preise und Bewertungen sind erfunden. Es können keine echten Buchungen ausgelöst werden und es fließt kein Geld.</p>`,
   },
   team: {
     title: "Forschungsteam",

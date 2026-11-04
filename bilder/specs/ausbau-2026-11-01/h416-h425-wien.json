@@ -1,0 +1,261 @@
+{
+ "hotels": [
+  {
+   "id": "h416",
+   "ziel": "wien",
+   "name": "Thermenhof Oberlaa",
+   "ort": "Wien",
+   "region": "Favoriten",
+   "kategorie": "luxus",
+   "sterne": 5,
+   "preis": 326,
+   "rating": 4.7,
+   "bewertungen": 486,
+   "strand": null,
+   "zentrum": 7.8,
+   "flughafen": 16,
+   "extras": [
+    "spa",
+    "pool",
+    "gym",
+    "terrace"
+   ],
+   "kurz": "Am Kurpark Oberlaa, Thermalwasser im Haus, U1 in die Innenstadt.",
+   "lang": "Oberlaa liegt im Süden Wiens auf einem Hügel über dem Kurpark, und darunter liegt Thermalwasser, das seit 1934 gefördert wird. Das Haus nutzt es im eigenen Bereich: zwei Becken, vier Saunen, ein Dampfbad und zehn Anwendungsräume über zwei Etagen. Zweiundfünfzig Zimmer, Eiche und Leinen, alle mit Loggia über den Park. Die Therme Wien gleich nebenan ist Europas größte Stadttherme und über einen eigenen Zugang erreichbar. Die U1 hält vierhundert Meter entfernt, zum Stephansplatz sind es siebzehn Minuten, zum Flughafen sechzehn Kilometer. Restaurant mit fünf Gängen, Küche aus dem Burgenland.",
+   "highlights": [
+    "Eigenes Thermalwasser über zwei Etagen",
+    "Therme Wien über eigenen Zugang",
+    "Siebzehn Minuten mit der U1 zum Stephansplatz",
+    "Sechzehn Kilometer zum Flughafen"
+   ]
+  },
+  {
+   "id": "h417",
+   "ziel": "wien",
+   "name": "Pension Ottakring",
+   "ort": "Wien",
+   "region": "Ottakring",
+   "kategorie": "budget",
+   "sterne": 2,
+   "preis": 78,
+   "rating": 4.2,
+   "bewertungen": 412,
+   "strand": null,
+   "zentrum": 4.6,
+   "flughafen": 24,
+   "kurz": "Günstige Pension im sechzehnten Bezirk, Brunnenmarkt und U3 in Gehweite.",
+   "lang": "Ottakring hat den Brunnenmarkt, den längsten Straßenmarkt Europas, und dahinter ein Viertel, in dem dreißig Nationen auf engem Raum wohnen und gut und billig gekocht wird. Die Pension liegt in einer Seitengasse, zwanzig Zimmer in einem Gründerzeithaus, einfach möbliert, mit Dusche und WC, hofseitig still. Zur U3 sind es sechs Gehminuten, zum Stephansplatz vierzehn Minuten Fahrt. Die Ottakringer Brauerei liegt zwei Straßen weiter und führt samstags durch den Betrieb. Frühstück von sieben bis zehn, einfach und reichlich. Für unter achtzig Euro in Wien ist die Lage bemerkenswert.",
+   "highlights": [
+    "Brunnenmarkt in Gehweite",
+    "Sechs Minuten zur U3",
+    "Vierzehn Minuten zum Stephansplatz",
+    "Unter achtzig Euro"
+   ]
+  },
+  {
+   "id": "h418",
+   "ziel": "wien",
+   "name": "Margaretner Hof",
+   "ort": "Wien",
+   "region": "Margareten",
+   "kategorie": "boutique",
+   "sterne": 4,
+   "preis": 178,
+   "rating": 4.6,
+   "bewertungen": 348,
+   "strand": null,
+   "zentrum": 2.4,
+   "flughafen": 20,
+   "extras": [
+    "terrace"
+   ],
+   "kurz": "Gründerzeithaus im fünften Bezirk, Innenhof, Naschmarkt in zehn Minuten.",
+   "lang": "Margareten liegt zwischen Wienzeile und Gürtel und ist einer der wenigen Innenbezirke, in denen es noch Werkstätten gibt. Das Haus steht in einer ruhigen Gasse, zweiundzwanzig Zimmer um einen Innenhof mit Ahorn, Parkett, Stuckdecken, Fenster zum Hof deutlich stiller als zur Straße. Zum Naschmarkt sind es zehn Gehminuten, zum Schloss Schönbrunn vier Stationen mit der U4, zur Kettenbrückengasse fünf Minuten. Frühstück im Hof, wenn das Wetter mitspielt, mit Brot von der Bäckerei Gragger. Abends kocht das Haus nicht, in Gehweite stehen fünfzehn Beisln.",
+   "highlights": [
+    "Innenhof mit Ahorn",
+    "Zehn Minuten zum Naschmarkt",
+    "Vier Stationen nach Schönbrunn",
+    "Frühstück im Hof"
+   ]
+  },
+  {
+   "id": "h419",
+   "ziel": "wien",
+   "name": "Währinger Villa",
+   "ort": "Wien",
+   "region": "Währing",
+   "kategorie": "finca",
+   "sterne": 4,
+   "preis": 196,
+   "rating": 4.6,
+   "bewertungen": 286,
+   "strand": null,
+   "zentrum": 4.2,
+   "flughafen": 26,
+   "extras": [
+    "terrace",
+    "bikeRental"
+   ],
+   "kurz": "Villa am Türkenschanzpark, Garten mit alten Bäumen, Straßenbahn 41.",
+   "lang": "Währing ist Villenbezirk, und der Türkenschanzpark mit seinen Hügeln, Teichen und exotischen Bäumen ist der schönste Park Wiens nach dem Prater. Das Haus ist eine Villa von 1898 am Parkrand, achtzehn Zimmer, hohe Fenster, Parkett, hinten ein Garten mit Platanen und einer Terrasse zum Frühstücken. Die Straßenbahn 41 fährt vor der Tür und braucht zwanzig Minuten zum Schottentor am Ring. Räder stehen bereit, der Weg durch den Park und weiter nach Grinzing ist flach. Zum Friedhof Währing, in dem Beethoven zuerst begraben lag, sind es sechs Gehminuten.",
+   "highlights": [
+    "Villa von 1898 am Türkenschanzpark",
+    "Garten mit Platanen",
+    "Straßenbahn 41 vor der Tür",
+    "Räder inklusive"
+   ]
+  },
+  {
+   "id": "h420",
+   "ziel": "wien",
+   "name": "Meidlinger Bahnhofshotel",
+   "ort": "Wien",
+   "region": "Meidling",
+   "kategorie": "stadt",
+   "sterne": 3,
+   "preis": 124,
+   "rating": 4.2,
+   "bewertungen": 624,
+   "strand": null,
+   "zentrum": 5.2,
+   "flughafen": 22,
+   "kurz": "Am Bahnhof Meidling, Schönbrunn zwei Stationen, Züge nach Graz und Salzburg.",
+   "lang": "Meidling ist zweitgrößter Fernbahnhof Wiens, und wer mit dem Zug anreist oder weiterfährt, spart hier den Umweg über den Hauptbahnhof. Das Haus steht zweihundert Meter vom Bahnhof, achtundfünfzig Zimmer, einfach und sauber, mit Doppelfenstern, die man braucht. Die U6 hält vor der Tür, nach Schönbrunn sind es zwei Stationen mit der U4, zur Innenstadt vierzehn Minuten. Im Viertel gibt es die Meidlinger Hauptstraße mit Markt und Geschäften, sonst wenig. Frühstücksbuffet ab halb sechs wegen der ersten Züge, Gepäckaufgabe auch nach dem Auschecken.",
+   "highlights": [
+    "Zweihundert Meter zum Fernbahnhof",
+    "Zwei Stationen nach Schönbrunn",
+    "Frühstück ab halb sechs",
+    "Gepäckaufgabe nach dem Auschecken"
+   ]
+  },
+  {
+   "id": "h421",
+   "ziel": "wien",
+   "name": "Donaustadt Seehotel",
+   "ort": "Wien",
+   "region": "Donaustadt",
+   "kategorie": "familie",
+   "sterne": 4,
+   "preis": 168,
+   "rating": 4.4,
+   "bewertungen": 712,
+   "strand": 1.2,
+   "zentrum": 8.4,
+   "flughafen": 14,
+   "extras": [
+    "kidsClub",
+    "pool"
+   ],
+   "kurz": "An der Alten Donau, Badeplätze und Tretboote, U1 in Gehweite.",
+   "lang": "Die Alte Donau ist ein abgetrennter Flussarm ohne Strömung, in dem die Wiener im Sommer baden, segeln und Tretboot fahren, und das Wasser erreicht im August dreiundzwanzig Grad. Das Haus liegt am Ufer, zweiundsechzig Zimmer, zwei Drittel Familienzimmer, dazu ein Becken mit Kinderbereich und Betreuung in den Ferien. Badeplatz und Bootsverleih sind in Gehweite, zur Donauinsel mit ihren Kiesstränden zwei Kilometer. Die U1 hält fünf Gehminuten entfernt, zum Stephansplatz sind es zwölf Minuten, zum Flughafen vierzehn Kilometer. Halbpension mit Buffet, Kindertisch um halb sieben.",
+   "highlights": [
+    "Direkt an der Alten Donau",
+    "Badeplatz und Bootsverleih in Gehweite",
+    "Zwölf Minuten mit der U1 ins Zentrum",
+    "Becken mit Kinderbereich"
+   ]
+  },
+  {
+   "id": "h422",
+   "ziel": "wien",
+   "name": "Hernalser Weinhof",
+   "ort": "Wien",
+   "region": "Hernals",
+   "kategorie": "finca",
+   "sterne": 3,
+   "preis": 148,
+   "rating": 4.5,
+   "bewertungen": 264,
+   "strand": null,
+   "zentrum": 5.8,
+   "flughafen": 27,
+   "extras": [
+    "terrace",
+    "bikeRental"
+   ],
+   "kurz": "Heuriger am Wienerwaldrand, eigener Wein, Straßenbahn 43.",
+   "lang": "Hernals geht am oberen Ende in den Wienerwald über, und dort oben in Dornbach stehen noch Heurigenhöfe mit eigenen Rieden. Dieser ist einer davon, zwölf Zimmer im umgebauten Pressgebäude, Gewölbe, Natursteinwände, Blick über die Weingärten auf die Stadt. Ist ausgesteckt, sitzt man im Hof zwischen Wienern. Der Wein kommt von drei Rieden am Hang, gekeltert wird im Haus. Die Straßenbahn 43 endet fünf Gehminuten entfernt und braucht zweiundzwanzig Minuten zum Schottentor. Räder stehen bereit, ins Zentrum geht es bergab, zurück nimmt man die Bahn.",
+   "highlights": [
+    "Heurigenhof mit eigenen Rieden",
+    "Gewölbe im Pressgebäude",
+    "Straßenbahn 43 in fünf Minuten",
+    "Wienerwald hinter dem Haus"
+   ]
+  },
+  {
+   "id": "h423",
+   "ziel": "wien",
+   "name": "Alsergrund Klinikviertel",
+   "ort": "Wien",
+   "region": "Alsergrund",
+   "kategorie": "stadt",
+   "sterne": 3,
+   "preis": 136,
+   "rating": 4.3,
+   "bewertungen": 486,
+   "strand": null,
+   "zentrum": 2.2,
+   "flughafen": 24,
+   "extras": [
+    "terrace"
+   ],
+   "kurz": "Am Alten AKH, drei Straßenbahnlinien, Ring in zwölf Minuten.",
+   "lang": "Rund um das Alte Allgemeine Krankenhaus, das heute Universitätscampus ist, liegt ein Viertel aus Gründerzeithäusern, Buchläden und Cafés, in denen gearbeitet wird. Das Haus steht an der Alser Straße, vierundvierzig Zimmer, nüchtern, hell, die hofseitigen deutlich ruhiger. Die Straßenbahnen 5, 33 und 43 halten im Umkreis von dreihundert Metern, zur Votivkirche sind es acht Gehminuten, zum Ring zwölf. Zum Sigmund-Freud-Museum in der Berggasse sechs. Frühstück von halb sieben bis zehn, Kaffee aus der Rösterei nebenan. Für die Lage ein ruhiger, unauffälliger Preis.",
+   "highlights": [
+    "Campus im Alten AKH gegenüber",
+    "Drei Straßenbahnlinien in Gehweite",
+    "Zwölf Minuten zum Ring",
+    "Sechs Minuten zum Freud-Museum"
+   ]
+  },
+  {
+   "id": "h424",
+   "ziel": "wien",
+   "name": "Brigittenauer Donauhof",
+   "ort": "Wien",
+   "region": "Brigittenau",
+   "kategorie": "apart",
+   "sterne": 3,
+   "preis": 132,
+   "rating": 4.3,
+   "bewertungen": 412,
+   "strand": 1.6,
+   "zentrum": 4.4,
+   "flughafen": 22,
+   "extras": [
+    "terrace"
+   ],
+   "kurz": "Apartments mit Küche am Donaukanal, Donauinsel in Gehweite.",
+   "lang": "Die Brigittenau liegt zwischen Donaukanal und Donau, unaufgeregt und gut angebunden. Das Haus hat sechsundzwanzig Apartments von fünfunddreißig bis siebzig Quadratmetern, alle mit Küche, Waschmaschine und Balkon, einige zum Wasser. Ab vier Nächten liegt der Preis unter einem Hotelzimmer, Supermarkt im Haus. Zum Donaukanalweg sind es zweihundert Meter, zur Donauinsel mit Kiesstränden und Grillplätzen anderthalb Kilometer. Die U6 hält sechs Gehminuten entfernt, zum Ring sind es sechzehn Minuten. Keine Rezeption rund um die Uhr, Schlüssel per Code.",
+   "highlights": [
+    "Apartments mit Küche und Waschmaschine",
+    "Zweihundert Meter zum Donaukanalweg",
+    "Donauinsel in anderthalb Kilometern",
+    "Supermarkt im Haus"
+   ]
+  },
+  {
+   "id": "h425",
+   "ziel": "wien",
+   "name": "Rudolfsheimer Markthof",
+   "ort": "Wien",
+   "region": "Rudolfsheim-Fünfhaus",
+   "kategorie": "budget",
+   "sterne": 2,
+   "preis": 86,
+   "rating": 4.1,
+   "bewertungen": 524,
+   "strand": null,
+   "zentrum": 3.8,
+   "flughafen": 23,
+   "kurz": "Günstig am Westbahnhof, U3 und U6, Schönbrunn drei Stationen.",
+   "lang": "Rudolfsheim grenzt an den Westbahnhof und ist der dichteste Bezirk Wiens, laut, lebendig und billig. Das Haus liegt an einer Seitenstraße, sechsundzwanzig Zimmer, einfach möbliert, mit Dusche und WC, Doppelfenster. Zum Westbahnhof sind es sieben Gehminuten, dort halten U3 und U6 und die Züge nach Westen. Nach Schönbrunn sind es drei Stationen, zur Mariahilfer Straße fünf Minuten zu Fuß an ihr oberes Ende. Im Viertel gibt es den Schwendermarkt und eine Reihe guter, günstiger Lokale. Frühstück gegen Zuschlag, Waschsalon gegenüber.",
+   "highlights": [
+    "Sieben Minuten zum Westbahnhof",
+    "U3 und U6 in Gehweite",
+    "Drei Stationen nach Schönbrunn",
+    "Schwendermarkt im Viertel"
+   ]
+  }
+ ]
+}

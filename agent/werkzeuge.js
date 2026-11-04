@@ -1477,11 +1477,9 @@ const Werkzeuge = {
       const fehlt = [];
 
       const namen = daten.namen || [];
-      const geburt = daten.geburt || [];
       const zeilen = [...document.querySelectorAll(".reisender-zeile")];
       for (let i = 0; i < zeilen.length; i++) {
         const feldName = this.finde(`#rName${i}`);
-        const feldGeburt = this.finde(`#rGeburt${i}`);
         if (feldName && !feldName.value.trim()) {
           const wert = namen[i] || (i === 0 && konto ? `${konto.vorname} ${konto.nachname}`.trim() : "");
           if (wert) {
@@ -1489,26 +1487,12 @@ const Werkzeuge = {
             geaendert.push(`Name ${i + 1}`);
           }
         }
-        if (feldGeburt && !feldGeburt.value && geburt[i]) {
-          await Zeiger.setzeWert(feldGeburt, geburt[i], { hinweis: `Geburtsdatum ${i + 1}` });
-          geaendert.push(`Geburtsdatum ${i + 1}`);
-        }
         if (feldName && !feldName.value.trim()) fehlt.push(`Name der ${i + 1}. Person`);
-        if (feldGeburt && !feldGeburt.value) fehlt.push(`Geburtsdatum der ${i + 1}. Person`);
       }
-
-      // Gepaeck: eine Ansage, alle Zeilen - das ist der Teil, der von Hand
-      // viermal dasselbe waere
-      if (daten.gepaeck) {
-        for (let i = 0; i < zeilen.length; i++) {
-          const feld = this.finde(`#rGepaeck${i}`);
-          if (feld && feld.value !== daten.gepaeck) {
-            await Zeiger.setzeWert(feld, daten.gepaeck, { hinweis: i === 0 ? "Gepäck" : "" });
-          }
-        }
-        const wort = { hand: "nur Handgepäck", 20: "Koffer bis 20 kg", 30: "Koffer bis 30 kg" }[daten.gepaeck];
-        if (wort) geaendert.push(`Gepäck: ${wort} für alle`);
-      }
+      /* Geburtsdatum und Gepaeck je Person sind mit der Entschlankung
+         entfallen (02.11.2026). Das Ausfuellen dafuer stand hier noch und
+         suchte Felder, die es nicht mehr gibt - stumm wirkungslos, aber es
+         haette den naechsten Leser glauben lassen, der Agent fuelle sie. */
 
       const feldMail = this.finde("#gMail");
       if (konto && feldMail && !feldMail.value.trim() && konto.mail) {

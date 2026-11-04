@@ -1,0 +1,1022 @@
+{
+  "stand": "2026-11-04",
+  "grund": "Massstab B (mindestens acht Objekte, egal wie gefiltert wird) scheiterte in vier Hotelfaellen an der Preisgrenze 150 EUR: Lissabon 7, Tirol 5, Suedtirol 6, New York 4. Die Luecke liegt jeweils im Band zwischen 115 und 155 EUR. New York ist der knappste Fall - deshalb stehen dort Haeuser in den Aussenbezirken, nicht in Manhattan. Nachtrag: Suedtirol brauchte zwei weitere Haeuser, weil die Belegungssimulation im Juli regelmaessig eines der Haeuser im Band als ausgebucht meldet - acht im Katalog sind dann nur sieben buchbare.",
+  "hotels": [
+    {
+      "id": "h522",
+      "ziel": "lissabon",
+      "name": "Pensão Graça",
+      "location": "Lissabon",
+      "region": "Graça",
+      "category": "budget",
+      "stars": 2,
+      "pricePerNight": 132,
+      "rating": 4.3,
+      "reviewCount": 612,
+      "shortDescription": "Familienpension über der Stadt, Dachterrasse mit Blick auf das Castelo, Tram 28 vor der Tür.",
+      "description": "Die Pension liegt in der Graça, oberhalb der Alfama, und wird seit drei Generationen von derselben Familie geführt. Vierzehn Zimmer in einem Haus von 1912, die Treppe ist eng, einen Aufzug gibt es nicht. Dafür steht auf dem Dach eine Terrasse, von der man über die Alfama hinweg auf das Castelo und den Tejo sieht; dort wird auch gefrühstückt. Die Tram 28 hält fünfzig Meter weiter, zu Fuß ist man in zwanzig Minuten in der Baixa, bergab leicht und bergauf nicht. Abends ist es in der Graça ruhiger als unten am Fluss, und die Tascas in der Nachbarschaft kochen für die Nachbarschaft.",
+      "highlights": [
+        "Dachterrasse mit Blick auf das Castelo",
+        "Tram 28 fünfzig Meter entfernt",
+        "Familienbetrieb in dritter Generation",
+        "Zwanzig Minuten zu Fuß in die Baixa"
+      ],
+      "distanceToBeach": null,
+      "distanceToCenter": 1.8,
+      "distanceToAirport": 6,
+      "amenities": [
+        "wifi",
+        "terrace"
+      ],
+      "boards": [
+        {
+          "key": "ohne",
+          "priceDelta": 0
+        },
+        {
+          "key": "fruehstueck",
+          "priceDelta": 11
+        }
+      ],
+      "rooms": [
+        {
+          "name": "Einzelzimmer",
+          "size": 11,
+          "maxGuests": 1,
+          "priceDelta": -22,
+          "features": [
+            "Eigenes Bad",
+            "Fenster zum Innenhof"
+          ]
+        },
+        {
+          "name": "Doppelzimmer",
+          "size": 16,
+          "maxGuests": 2,
+          "priceDelta": 0,
+          "features": [
+            "Eigenes Bad",
+            "Hohe Decken"
+          ]
+        },
+        {
+          "name": "Doppelzimmer mit Blick",
+          "size": 18,
+          "maxGuests": 2,
+          "priceDelta": 24,
+          "features": [
+            "Blick auf den Tejo",
+            "Kleiner Balkon"
+          ]
+        }
+      ],
+      "ratingBreakdown": {
+        "lage": 4.5,
+        "sauberkeit": 4.2,
+        "service": 4.7,
+        "preis": 4.6,
+        "ausstattung": 3.6,
+        "essen": 4.0
+      }
+    },
+    {
+      "id": "h523",
+      "ziel": "lissabon",
+      "name": "Hotel Anjos Central",
+      "location": "Lissabon",
+      "region": "Anjos",
+      "category": "budget",
+      "stars": 3,
+      "pricePerNight": 144,
+      "rating": 4.2,
+      "reviewCount": 1104,
+      "shortDescription": "Schlichtes Stadthotel an der Metro Anjos, acht Minuten in die Baixa, Schallschutzfenster.",
+      "description": "Anjos liegt nordöstlich des Zentrums an der grünen Metrolinie und ist das Viertel, in dem Lissabon noch arbeitet: Werkstätten, ein Markt, Restaurants ohne Speisekarte auf Englisch. Das Hotel hat achtunddreißig Zimmer auf sechs Etagen, 2020 renoviert, mit Schallschutzfenstern zur Straße hin, die hier nötig sind. Die Einrichtung ist zweckmäßig und sauber, das Frühstück ein Buffet ohne Überraschungen. Zur Metro sind es achtzig Meter, von dort acht Minuten in die Baixa und zwölf zum Bahnhof Oriente. Wer abends ausgehen will, ist in einer Viertelstunde am Cais do Sodré.",
+      "highlights": [
+        "Achtzig Meter zur Metro Anjos",
+        "Acht Minuten in die Baixa",
+        "Schallschutzfenster",
+        "2020 renoviert"
+      ],
+      "distanceToBeach": null,
+      "distanceToCenter": 2.4,
+      "distanceToAirport": 5,
+      "amenities": [
+        "wifi",
+        "aircon",
+        "bar"
+      ],
+      "boards": [
+        {
+          "key": "ohne",
+          "priceDelta": 0
+        },
+        {
+          "key": "fruehstueck",
+          "priceDelta": 12
+        }
+      ],
+      "rooms": [
+        {
+          "name": "Einzelzimmer",
+          "size": 12,
+          "maxGuests": 1,
+          "priceDelta": -24,
+          "features": [
+            "Eigenes Bad",
+            "Schreibtisch"
+          ]
+        },
+        {
+          "name": "Doppelzimmer",
+          "size": 17,
+          "maxGuests": 2,
+          "priceDelta": 0,
+          "features": [
+            "Klimaanlage",
+            "Schallschutzfenster"
+          ]
+        },
+        {
+          "name": "Dreibettzimmer",
+          "size": 22,
+          "maxGuests": 3,
+          "priceDelta": 26,
+          "features": [
+            "Zusatzbett",
+            "Klimaanlage"
+          ]
+        }
+      ],
+      "ratingBreakdown": {
+        "lage": 4.3,
+        "sauberkeit": 4.4,
+        "service": 4.1,
+        "preis": 4.5,
+        "ausstattung": 4.0,
+        "essen": 3.8
+      }
+    },
+    {
+      "id": "h524",
+      "ziel": "tirol",
+      "name": "Gasthof Zillertal",
+      "location": "Zell am Ziller",
+      "region": "Zillertal",
+      "category": "budget",
+      "stars": 3,
+      "pricePerNight": 118,
+      "rating": 4.5,
+      "reviewCount": 486,
+      "shortDescription": "Traditioneller Gasthof im Ortskern, eigene Küche, Zillertalbahn zwei Minuten entfernt.",
+      "description": "Der Gasthof steht seit 1891 am Ortsplatz von Zell am Ziller und ist weiterhin das, was er war: ein Wirtshaus mit Zimmern. Zweiundzwanzig Zimmer über zwei Etagen, getäfelt, mit neuen Bädern aus der Sanierung von 2018. In der Gaststube wird mittags und abends gekocht, Tiroler Küche, und am Stammtisch sitzen Einheimische. Die Zillertalbahn hält zwei Minuten entfernt, die Zillertal-Arena-Gondel fünf Gehminuten. Im Sommer beginnen am Ort Wanderwege zum Gerlossteinhaus und ins Zillergrund, im Winter liegt die Talabfahrt hinter dem Haus. Parken ist im Hof möglich.",
+      "highlights": [
+        "Gasthof seit 1891 am Ortsplatz",
+        "Eigene Küche, Tiroler Gerichte",
+        "Fünf Minuten zur Gondel",
+        "Zillertalbahn zwei Minuten entfernt"
+      ],
+      "distanceToBeach": null,
+      "distanceToCenter": 0.1,
+      "distanceToAirport": 62,
+      "amenities": [
+        "wifi",
+        "restaurant",
+        "bar",
+        "parking"
+      ],
+      "boards": [
+        {
+          "key": "ohne",
+          "priceDelta": 0
+        },
+        {
+          "key": "fruehstueck",
+          "priceDelta": 12
+        },
+        {
+          "key": "halbpension",
+          "priceDelta": 32
+        }
+      ],
+      "rooms": [
+        {
+          "name": "Einzelzimmer",
+          "size": 13,
+          "maxGuests": 1,
+          "priceDelta": -18,
+          "features": [
+            "Eigenes Bad",
+            "Holztäfelung"
+          ]
+        },
+        {
+          "name": "Doppelzimmer",
+          "size": 19,
+          "maxGuests": 2,
+          "priceDelta": 0,
+          "features": [
+            "Balkon zum Hof",
+            "Holztäfelung"
+          ]
+        },
+        {
+          "name": "Familienzimmer",
+          "size": 28,
+          "maxGuests": 4,
+          "priceDelta": 42,
+          "features": [
+            "Zwei Schlafräume",
+            "Balkon"
+          ]
+        }
+      ],
+      "ratingBreakdown": {
+        "lage": 4.6,
+        "sauberkeit": 4.4,
+        "service": 4.7,
+        "preis": 4.6,
+        "ausstattung": 4.0,
+        "essen": 4.6
+      }
+    },
+    {
+      "id": "h525",
+      "ziel": "tirol",
+      "name": "Pension Ötztal Blick",
+      "location": "Oetz",
+      "region": "Ötztal",
+      "category": "budget",
+      "stars": 2,
+      "pricePerNight": 128,
+      "rating": 4.3,
+      "reviewCount": 341,
+      "shortDescription": "Kleine Pension am Hang über Oetz, Frühstücksraum mit Blick ins Tal, Acherkogelbahn in zehn Minuten.",
+      "description": "Die Pension liegt am Südhang über Oetz, zweihundert Höhenmeter über dem Talboden, und hat von allen Zimmern Blick über das untere Ötztal. Zwölf Zimmer, einfach, aber mit Balkon, und ein Frühstücksraum mit Fenstern über die ganze Breite. Die Wirtsleute backen das Brot selbst. Zur Acherkogelbahn sind es zehn Autominuten, zum Piburger See zwanzig Gehminuten bergauf, nach Sölden eine halbe Stunde. Im Sommer ist der Ort Ausgangspunkt für den Ötztaler Urweg, im Winter liegt das Skigebiet Hochoetz vor der Tür. Der Bus ins Tal hält unten an der Straße, fünf Minuten zu Fuß.",
+      "highlights": [
+        "Talblick von allen Zimmern",
+        "Selbstgebackenes Brot zum Frühstück",
+        "Zehn Minuten zur Acherkogelbahn",
+        "Zwanzig Minuten zum Piburger See"
+      ],
+      "distanceToBeach": null,
+      "distanceToCenter": 1.1,
+      "distanceToAirport": 48,
+      "amenities": [
+        "wifi",
+        "parking"
+      ],
+      "boards": [
+        {
+          "key": "ohne",
+          "priceDelta": 0
+        },
+        {
+          "key": "fruehstueck",
+          "priceDelta": 14
+        }
+      ],
+      "rooms": [
+        {
+          "name": "Doppelzimmer",
+          "size": 18,
+          "maxGuests": 2,
+          "priceDelta": 0,
+          "features": [
+            "Balkon mit Talblick",
+            "Eigenes Bad"
+          ]
+        },
+        {
+          "name": "Dreibettzimmer",
+          "size": 23,
+          "maxGuests": 3,
+          "priceDelta": 22,
+          "features": [
+            "Zusatzbett",
+            "Balkon"
+          ]
+        },
+        {
+          "name": "Familienzimmer",
+          "size": 30,
+          "maxGuests": 5,
+          "priceDelta": 48,
+          "features": [
+            "Zwei Schlafräume",
+            "Großer Balkon"
+          ]
+        }
+      ],
+      "ratingBreakdown": {
+        "lage": 4.5,
+        "sauberkeit": 4.3,
+        "service": 4.6,
+        "preis": 4.5,
+        "ausstattung": 3.7,
+        "essen": 4.3
+      }
+    },
+    {
+      "id": "h526",
+      "ziel": "tirol",
+      "name": "Hotel Kufstein Altstadt",
+      "location": "Kufstein",
+      "region": "Unterinntal",
+      "category": "budget",
+      "stars": 3,
+      "pricePerNight": 142,
+      "rating": 4.4,
+      "reviewCount": 892,
+      "shortDescription": "Stadthotel am Inn unterhalb der Festung, Altstadt vor der Tür, Bahnhof in acht Minuten.",
+      "description": "Das Haus steht am Innufer in der Kufsteiner Altstadt, die Festung liegt auf dem Felsen direkt darüber. Sechsunddreißig Zimmer, 2017 umgebaut, die zum Fluss hin mit Blick auf das Wasser und die Berge des Kaisergebirges. Frühstück gibt es im Gewölbe im Erdgeschoss. Die Römerhofgasse mit den alten Wirtshäusern beginnt fünfzig Meter weiter, der Aufgang zur Festung hundert. Zum Bahnhof sind es acht Gehminuten, nach München mit dem Zug anderthalb Stunden, nach Innsbruck eine. Wer in den Kaiser will: Der Bus zur Kaiserlift-Talstation fährt vom Platz vor dem Haus.",
+      "highlights": [
+        "Am Innufer in der Altstadt",
+        "Hundert Meter zum Festungsaufgang",
+        "Acht Minuten zum Bahnhof",
+        "Bus zum Kaiserlift vor dem Haus"
+      ],
+      "distanceToBeach": null,
+      "distanceToCenter": 0.2,
+      "distanceToAirport": 88,
+      "amenities": [
+        "wifi",
+        "restaurant",
+        "bar",
+        "parking"
+      ],
+      "boards": [
+        {
+          "key": "ohne",
+          "priceDelta": 0
+        },
+        {
+          "key": "fruehstueck",
+          "priceDelta": 15
+        }
+      ],
+      "rooms": [
+        {
+          "name": "Einzelzimmer",
+          "size": 14,
+          "maxGuests": 1,
+          "priceDelta": -20,
+          "features": [
+            "Eigenes Bad",
+            "Schreibtisch"
+          ]
+        },
+        {
+          "name": "Doppelzimmer",
+          "size": 20,
+          "maxGuests": 2,
+          "priceDelta": 0,
+          "features": [
+            "Eigenes Bad",
+            "Sitzecke"
+          ]
+        },
+        {
+          "name": "Doppelzimmer Innblick",
+          "size": 22,
+          "maxGuests": 2,
+          "priceDelta": 26,
+          "features": [
+            "Blick auf den Inn",
+            "Französischer Balkon"
+          ]
+        }
+      ],
+      "ratingBreakdown": {
+        "lage": 4.7,
+        "sauberkeit": 4.4,
+        "service": 4.4,
+        "preis": 4.3,
+        "ausstattung": 4.2,
+        "essen": 4.2
+      }
+    },
+    {
+      "id": "h527",
+      "ziel": "suedtirol",
+      "name": "Gasthof Villnöss",
+      "location": "St. Peter",
+      "region": "Villnößtal",
+      "category": "budget",
+      "stars": 2,
+      "pricePerNight": 126,
+      "rating": 4.6,
+      "reviewCount": 374,
+      "shortDescription": "Gasthof im Villnößtal mit Blick auf die Geislerspitzen, eigener Hof, Abendessen aus der Region.",
+      "description": "St. Peter liegt im Villnößtal auf tausend Metern, und von der Terrasse des Gasthofs sieht man die Geislerspitzen so, wie sie auf den Ansichtskarten stehen. Sechzehn Zimmer, Lärchenholz, einfache Bäder, ein Haus ohne Lift. Zum Betrieb gehört ein kleiner Hof; Milch, Eier und Speck kommen von dort, das Abendessen wird auf Anmeldung serviert. Der Adolf-Munkel-Weg unter der Geislerwand beginnt zwanzig Autominuten weiter in Zanser Alm, die Seilbahn nach Brixen eine halbe Stunde. Im Winter ist das Tal ruhig, zum Skifahren fährt man nach Plose. Handyempfang ist im Haus lückenhaft, WLAN gibt es in der Stube.",
+      "highlights": [
+        "Blick auf die Geislerspitzen",
+        "Eigener Hof, Speck und Milch vom Haus",
+        "Zwanzig Minuten zur Zanser Alm",
+        "Abendessen auf Anmeldung"
+      ],
+      "distanceToBeach": null,
+      "distanceToCenter": 0.3,
+      "distanceToAirport": 62,
+      "amenities": [
+        "wifi",
+        "restaurant",
+        "parking",
+        "petsAllowed"
+      ],
+      "boards": [
+        {
+          "key": "ohne",
+          "priceDelta": 0
+        },
+        {
+          "key": "fruehstueck",
+          "priceDelta": 13
+        },
+        {
+          "key": "halbpension",
+          "priceDelta": 34
+        }
+      ],
+      "rooms": [
+        {
+          "name": "Doppelzimmer",
+          "size": 17,
+          "maxGuests": 2,
+          "priceDelta": 0,
+          "features": [
+            "Lärchenholz",
+            "Eigenes Bad"
+          ]
+        },
+        {
+          "name": "Doppelzimmer Geislerblick",
+          "size": 19,
+          "maxGuests": 2,
+          "priceDelta": 22,
+          "features": [
+            "Blick auf die Geisler",
+            "Balkon"
+          ]
+        },
+        {
+          "name": "Familienzimmer",
+          "size": 27,
+          "maxGuests": 4,
+          "priceDelta": 44,
+          "features": [
+            "Zwei Schlafräume",
+            "Balkon"
+          ]
+        }
+      ],
+      "ratingBreakdown": {
+        "lage": 4.8,
+        "sauberkeit": 4.5,
+        "service": 4.8,
+        "preis": 4.6,
+        "ausstattung": 3.8,
+        "essen": 4.7
+      }
+    },
+    {
+      "id": "h528",
+      "ziel": "suedtirol",
+      "name": "Pension Brixen Tor",
+      "location": "Brixen",
+      "region": "Eisacktal",
+      "category": "budget",
+      "stars": 3,
+      "pricePerNight": 138,
+      "rating": 4.3,
+      "reviewCount": 658,
+      "shortDescription": "Am Rand der Brixner Altstadt, Plose-Seilbahn mit dem Bus in zehn Minuten, Innenhof mit Garten.",
+      "description": "Die Pension liegt am nördlichen Rand der Brixner Altstadt, hinter dem Haus ein ummauerter Garten mit alten Obstbäumen, in dem im Sommer gefrühstückt wird. Zwanzig Zimmer, 2019 hergerichtet, schlicht und hell, die ruhigsten zum Garten. Zum Dom sind es sechs Gehminuten, zur Hofburg fünf, zum Bahnhof zwölf. Der Bus zur Plose-Seilbahn hält an der Ecke und braucht zehn Minuten. Brixen ist im Sommer Ausgangspunkt für das Eisacktal und die Radroute nach Bozen, im Winter liegt das Skigebiet Plose oberhalb. Im Haus gibt es einen Abstellraum für Räder und Ski.",
+      "highlights": [
+        "Garten mit Obstbäumen",
+        "Sechs Minuten zum Dom",
+        "Bus zur Plose an der Ecke",
+        "Abstellraum für Räder und Ski"
+      ],
+      "distanceToBeach": null,
+      "distanceToCenter": 0.5,
+      "distanceToAirport": 48,
+      "amenities": [
+        "wifi",
+        "parking",
+        "bikeRental"
+      ],
+      "boards": [
+        {
+          "key": "ohne",
+          "priceDelta": 0
+        },
+        {
+          "key": "fruehstueck",
+          "priceDelta": 14
+        }
+      ],
+      "rooms": [
+        {
+          "name": "Einzelzimmer",
+          "size": 13,
+          "maxGuests": 1,
+          "priceDelta": -20,
+          "features": [
+            "Eigenes Bad",
+            "Blick in den Garten"
+          ]
+        },
+        {
+          "name": "Doppelzimmer",
+          "size": 18,
+          "maxGuests": 2,
+          "priceDelta": 0,
+          "features": [
+            "Eigenes Bad",
+            "Sitzecke"
+          ]
+        },
+        {
+          "name": "Familienzimmer",
+          "size": 26,
+          "maxGuests": 4,
+          "priceDelta": 40,
+          "features": [
+            "Zwei Schlafräume",
+            "Blick in den Garten"
+          ]
+        }
+      ],
+      "ratingBreakdown": {
+        "lage": 4.5,
+        "sauberkeit": 4.4,
+        "service": 4.4,
+        "preis": 4.4,
+        "ausstattung": 4.1,
+        "essen": 4.0
+      }
+    },
+    {
+      "id": "h529",
+      "ziel": "newyork",
+      "name": "Long Island City Inn",
+      "location": "New York",
+      "region": "Long Island City",
+      "category": "budget",
+      "stars": 2,
+      "pricePerNight": 128,
+      "rating": 4.0,
+      "reviewCount": 1487,
+      "shortDescription": "Einfaches Haus in Queens, eine Station mit der 7 nach Manhattan, Blick auf die Skyline.",
+      "description": "Long Island City liegt in Queens direkt gegenüber von Midtown, getrennt nur durch den East River. Das Haus hat vierundfünfzig Zimmer auf acht Etagen, zweckmäßig eingerichtet, klein, wie es in New York üblich ist, mit Klimaanlage und Schallschutzfenstern. Von den oberen Etagen sieht man auf die Skyline von Manhattan. Die Station Courthouse Square liegt drei Gehminuten entfernt, mit der Linie 7 ist man in einer Station am Grand Central. Frühstück gibt es nicht im Haus, aber im Block zwei Diner und eine Bäckerei. Das MoMA PS1 ist in zehn Minuten zu Fuß erreicht, der Gantry Plaza State Park am Wasser in zwölf.",
+      "highlights": [
+        "Eine Station mit der 7 nach Manhattan",
+        "Skylineblick aus den oberen Etagen",
+        "Drei Minuten zur Subway",
+        "Zehn Minuten zum MoMA PS1"
+      ],
+      "distanceToBeach": null,
+      "distanceToCenter": 4.2,
+      "distanceToAirport": 13,
+      "amenities": [
+        "wifi",
+        "aircon"
+      ],
+      "boards": [
+        {
+          "key": "ohne",
+          "priceDelta": 0
+        }
+      ],
+      "rooms": [
+        {
+          "name": "Einzelzimmer",
+          "size": 11,
+          "maxGuests": 1,
+          "priceDelta": -26,
+          "features": [
+            "Klimaanlage",
+            "Eigenes Bad"
+          ]
+        },
+        {
+          "name": "Doppelzimmer",
+          "size": 15,
+          "maxGuests": 2,
+          "priceDelta": 0,
+          "features": [
+            "Klimaanlage",
+            "Schallschutzfenster"
+          ]
+        },
+        {
+          "name": "Doppelzimmer Skylineblick",
+          "size": 16,
+          "maxGuests": 2,
+          "priceDelta": 28,
+          "features": [
+            "Blick auf Midtown",
+            "Obere Etage"
+          ]
+        }
+      ],
+      "ratingBreakdown": {
+        "lage": 4.4,
+        "sauberkeit": 3.9,
+        "service": 3.9,
+        "preis": 4.5,
+        "ausstattung": 3.6,
+        "essen": 3.4
+      }
+    },
+    {
+      "id": "h530",
+      "ziel": "newyork",
+      "name": "Hotel Sunnyside Queens",
+      "location": "New York",
+      "region": "Sunnyside",
+      "category": "budget",
+      "stars": 2,
+      "pricePerNight": 134,
+      "rating": 4.1,
+      "reviewCount": 964,
+      "shortDescription": "Ruhiges Quartier in Queens, zwölf Minuten mit der 7 zum Times Square, Frühstück inklusive.",
+      "description": "Sunnyside ist ein Wohnviertel in Queens mit Backsteinhäusern aus den zwanziger Jahren, in dem vor allem Leute wohnen, die in Manhattan arbeiten. Das Hotel hat zweiundvierzig Zimmer, schlicht, sauber, mit Klimaanlage; die zur Rückseite sind leiser, weil die Linie 7 hier oberirdisch fährt. Frühstück ist im Preis enthalten, ein amerikanisches Buffet ohne Anspruch. Zur Station 46th Street sind es vier Gehminuten, von dort zwölf Minuten zum Times Square. Im Viertel gibt es irische Pubs, rumänische Bäckereien und ein türkisches Lokal, die alle länger hier sind als die Touristen. Zum LaGuardia Airport fährt ein Bus in zwanzig Minuten.",
+      "highlights": [
+        "Zwölf Minuten zum Times Square",
+        "Frühstück inklusive",
+        "Vier Minuten zur Station 46th Street",
+        "Zwanzig Minuten zum LaGuardia"
+      ],
+      "distanceToBeach": null,
+      "distanceToCenter": 6.1,
+      "distanceToAirport": 9,
+      "amenities": [
+        "wifi",
+        "aircon",
+        "parking"
+      ],
+      "boards": [
+        {
+          "key": "fruehstueck",
+          "priceDelta": 0
+        }
+      ],
+      "rooms": [
+        {
+          "name": "Einzelzimmer",
+          "size": 12,
+          "maxGuests": 1,
+          "priceDelta": -24,
+          "features": [
+            "Klimaanlage",
+            "Schreibtisch"
+          ]
+        },
+        {
+          "name": "Doppelzimmer",
+          "size": 16,
+          "maxGuests": 2,
+          "priceDelta": 0,
+          "features": [
+            "Klimaanlage",
+            "Eigenes Bad"
+          ]
+        },
+        {
+          "name": "Familienzimmer",
+          "size": 24,
+          "maxGuests": 4,
+          "priceDelta": 46,
+          "features": [
+            "Zwei Doppelbetten",
+            "Zur ruhigen Seite"
+          ]
+        }
+      ],
+      "ratingBreakdown": {
+        "lage": 4.2,
+        "sauberkeit": 4.1,
+        "service": 4.1,
+        "preis": 4.6,
+        "ausstattung": 3.7,
+        "essen": 3.9
+      }
+    },
+    {
+      "id": "h531",
+      "ziel": "newyork",
+      "name": "Bay Ridge Guesthouse",
+      "location": "New York",
+      "region": "Bay Ridge",
+      "category": "budget",
+      "stars": 3,
+      "pricePerNight": 142,
+      "rating": 4.4,
+      "reviewCount": 523,
+      "shortDescription": "Kleines Haus in Süd-Brooklyn, Promenade am Wasser, Blick auf die Verrazzano-Brücke.",
+      "description": "Bay Ridge liegt im Süden von Brooklyn am Ufer der Narrows, dort, wo die Verrazzano-Brücke nach Staten Island führt. Das Gästehaus ist ein umgebautes Reihenhaus mit elf Zimmern, mehr Pension als Hotel, geführt von einer Familie, die seit vierzig Jahren im Viertel wohnt. Frühstück wird am großen Tisch im Erdgeschoss serviert. Die Shore Road Promenade am Wasser liegt drei Straßen weiter, von dort sieht man die Brücke über die ganze Breite. Die Station Bay Ridge Avenue ist in sechs Minuten erreicht, mit der R braucht man vierzig Minuten nach Midtown - das ist der Preis für die Ruhe. Die Third Avenue mit ihren Lokalen beginnt an der Ecke.",
+      "highlights": [
+        "Blick auf die Verrazzano-Brücke",
+        "Frühstück am großen Tisch",
+        "Drei Straßen zur Shore Road Promenade",
+        "Familienbetrieb im Viertel"
+      ],
+      "distanceToBeach": null,
+      "distanceToCenter": 14,
+      "distanceToAirport": 21,
+      "amenities": [
+        "wifi",
+        "aircon",
+        "parking",
+        "petsAllowed"
+      ],
+      "boards": [
+        {
+          "key": "fruehstueck",
+          "priceDelta": 0
+        }
+      ],
+      "rooms": [
+        {
+          "name": "Einzelzimmer",
+          "size": 12,
+          "maxGuests": 1,
+          "priceDelta": -22,
+          "features": [
+            "Klimaanlage",
+            "Eigenes Bad"
+          ]
+        },
+        {
+          "name": "Doppelzimmer",
+          "size": 17,
+          "maxGuests": 2,
+          "priceDelta": 0,
+          "features": [
+            "Eigenes Bad",
+            "Erkerfenster"
+          ]
+        },
+        {
+          "name": "Doppelzimmer mit Brückenblick",
+          "size": 19,
+          "maxGuests": 2,
+          "priceDelta": 24,
+          "features": [
+            "Blick auf die Narrows",
+            "Obere Etage"
+          ]
+        }
+      ],
+      "ratingBreakdown": {
+        "lage": 4.1,
+        "sauberkeit": 4.6,
+        "service": 4.8,
+        "preis": 4.5,
+        "ausstattung": 4.0,
+        "essen": 4.4
+      }
+    },
+    {
+      "id": "h532",
+      "ziel": "newyork",
+      "name": "Harlem Parkside Hotel",
+      "location": "New York",
+      "region": "Harlem",
+      "category": "budget",
+      "stars": 3,
+      "pricePerNight": 148,
+      "rating": 4.2,
+      "reviewCount": 1316,
+      "shortDescription": "Am Nordrand des Central Park, zwei Linien vor der Tür, Brownstones in der Nachbarschaft.",
+      "description": "Das Haus steht an der 110th Street am Nordrand des Central Park, dort, wo der Park an Harlem grenzt. Achtundvierzig Zimmer in einem Backsteinbau von 1928, 2019 renoviert; die Zimmer sind klein, aber die Decken hoch, und von den oberen Etagen sieht man über die Bäume. Die Stationen Central Park North und Cathedral Parkway liegen beide in Gehweite, damit sind die Linien 2, 3, B und C erreichbar und Midtown in einer Viertelstunde. Frühstück gibt es im Haus oder in einem der Cafés an der Frederick Douglass Boulevard. Zum Apollo Theater sind es fünfzehn Gehminuten, in den Park zwei.",
+      "highlights": [
+        "Zwei Minuten in den Central Park",
+        "Vier Subway-Linien in Gehweite",
+        "Viertelstunde nach Midtown",
+        "Backsteinbau von 1928"
+      ],
+      "distanceToBeach": null,
+      "distanceToCenter": 7.4,
+      "distanceToAirport": 18,
+      "amenities": [
+        "wifi",
+        "aircon",
+        "bar",
+        "gym"
+      ],
+      "boards": [
+        {
+          "key": "ohne",
+          "priceDelta": 0
+        },
+        {
+          "key": "fruehstueck",
+          "priceDelta": 16
+        }
+      ],
+      "rooms": [
+        {
+          "name": "Einzelzimmer",
+          "size": 12,
+          "maxGuests": 1,
+          "priceDelta": -24,
+          "features": [
+            "Klimaanlage",
+            "Hohe Decken"
+          ]
+        },
+        {
+          "name": "Doppelzimmer",
+          "size": 16,
+          "maxGuests": 2,
+          "priceDelta": 0,
+          "features": [
+            "Klimaanlage",
+            "Eigenes Bad"
+          ]
+        },
+        {
+          "name": "Doppelzimmer Parkblick",
+          "size": 18,
+          "maxGuests": 2,
+          "priceDelta": 30,
+          "features": [
+            "Blick auf den Central Park",
+            "Obere Etage"
+          ]
+        }
+      ],
+      "ratingBreakdown": {
+        "lage": 4.6,
+        "sauberkeit": 4.2,
+        "service": 4.1,
+        "preis": 4.3,
+        "ausstattung": 4.0,
+        "essen": 3.8
+      }
+    },
+    {
+      "id": "h533",
+      "ziel": "suedtirol",
+      "name": "Gasthof Kastelruth Dorf",
+      "location": "Kastelruth",
+      "region": "Seiser Alm",
+      "category": "budget",
+      "stars": 3,
+      "pricePerNight": 134,
+      "rating": 4.4,
+      "reviewCount": 712,
+      "shortDescription": "Am Dorfplatz von Kastelruth, Seiser-Alm-Bahn in sieben Minuten, Stube mit eigener Küche.",
+      "description": "Kastelruth liegt auf einer Terrasse über dem Eisacktal, mit dem Schlern im Rücken, und der Gasthof steht direkt am Dorfplatz neben dem Glockenturm. Achtzehn Zimmer in einem Haus, das seit 1954 derselben Familie gehört, holzvertäfelt, mit neuen Bädern. In der Stube wird mittags und abends gekocht, Knödel und Gerstensuppe, und das Brot kommt vom Bäcker gegenüber. Die Talstation der Seiser-Alm-Bahn ist mit dem Bus in sieben Minuten erreicht, der Bus hält am Platz. Im Sommer beginnen oben auf der Alm die Wege zur Schlernhütte und zum Langkofel, im Winter gehört das Gebiet zum Dolomiti Superski. Wer mit dem Auto kommt: Die Garage liegt hinter dem Haus.",
+      "highlights": [
+        "Am Dorfplatz von Kastelruth",
+        "Sieben Minuten zur Seiser-Alm-Bahn",
+        "Eigene Küche, Südtiroler Gerichte",
+        "Garage hinter dem Haus"
+      ],
+      "distanceToBeach": null,
+      "distanceToCenter": 0.1,
+      "distanceToAirport": 56,
+      "amenities": [
+        "wifi",
+        "restaurant",
+        "bar",
+        "parking"
+      ],
+      "boards": [
+        {
+          "key": "ohne",
+          "priceDelta": 0
+        },
+        {
+          "key": "fruehstueck",
+          "priceDelta": 13
+        },
+        {
+          "key": "halbpension",
+          "priceDelta": 33
+        }
+      ],
+      "rooms": [
+        {
+          "name": "Einzelzimmer",
+          "size": 14,
+          "maxGuests": 1,
+          "priceDelta": -20,
+          "features": [
+            "Eigenes Bad",
+            "Holztäfelung"
+          ]
+        },
+        {
+          "name": "Doppelzimmer",
+          "size": 19,
+          "maxGuests": 2,
+          "priceDelta": 0,
+          "features": [
+            "Balkon zum Dorfplatz",
+            "Holztäfelung"
+          ]
+        },
+        {
+          "name": "Familienzimmer",
+          "size": 27,
+          "maxGuests": 4,
+          "priceDelta": 42,
+          "features": [
+            "Zwei Schlafräume",
+            "Balkon"
+          ]
+        }
+      ],
+      "ratingBreakdown": {
+        "lage": 4.7,
+        "sauberkeit": 4.4,
+        "service": 4.6,
+        "preis": 4.4,
+        "ausstattung": 4.1,
+        "essen": 4.5
+      }
+    },
+    {
+      "id": "h534",
+      "ziel": "suedtirol",
+      "name": "Pension Klausen Altstadt",
+      "location": "Klausen",
+      "region": "Eisacktal",
+      "category": "budget",
+      "stars": 2,
+      "pricePerNight": 122,
+      "rating": 4.3,
+      "reviewCount": 429,
+      "shortDescription": "In der mittelalterlichen Gasse von Klausen, Kloster Säben über dem Ort, Bahnhof zu Fuß erreichbar.",
+      "description": "Klausen ist eine Gasse: Die Altstadt besteht im Wesentlichen aus einer einzigen, und die Pension steht mittendrin, in einem Haus mit Erkern und einem Durchgang zum Innenhof. Vierzehn Zimmer, einfach, die zur Gasse hin mit Blick auf die Fassaden gegenüber, die zum Hof hin still. Gefrühstückt wird im Gewölbe. Über dem Ort auf dem Felsen liegt das Kloster Säben, der Aufstieg dauert vierzig Minuten und lohnt sich wegen des Blicks ins Tal. Der Bahnhof ist in zehn Gehminuten erreicht, Brixen mit dem Zug in neun Minuten, Bozen in dreißig. Mit dem Auto geht es in die Altstadt nicht hinein; der Parkplatz liegt am Fluss, zweihundert Meter entfernt.",
+      "highlights": [
+        "Mitten in der mittelalterlichen Gasse",
+        "Vierzig Minuten hinauf zum Kloster Säben",
+        "Zehn Minuten zum Bahnhof",
+        "Frühstück im Gewölbe"
+      ],
+      "distanceToBeach": null,
+      "distanceToCenter": 0.1,
+      "distanceToAirport": 52,
+      "amenities": [
+        "wifi",
+        "bar"
+      ],
+      "boards": [
+        {
+          "key": "ohne",
+          "priceDelta": 0
+        },
+        {
+          "key": "fruehstueck",
+          "priceDelta": 12
+        }
+      ],
+      "rooms": [
+        {
+          "name": "Einzelzimmer",
+          "size": 12,
+          "maxGuests": 1,
+          "priceDelta": -18,
+          "features": [
+            "Eigenes Bad",
+            "Erkerfenster"
+          ]
+        },
+        {
+          "name": "Doppelzimmer",
+          "size": 17,
+          "maxGuests": 2,
+          "priceDelta": 0,
+          "features": [
+            "Eigenes Bad",
+            "Blick in die Gasse"
+          ]
+        },
+        {
+          "name": "Dreibettzimmer",
+          "size": 22,
+          "maxGuests": 3,
+          "priceDelta": 24,
+          "features": [
+            "Zusatzbett",
+            "Zum ruhigen Innenhof"
+          ]
+        }
+      ],
+      "ratingBreakdown": {
+        "lage": 4.6,
+        "sauberkeit": 4.3,
+        "service": 4.4,
+        "preis": 4.5,
+        "ausstattung": 3.7,
+        "essen": 4.0
+      }
+    }
+  ]
+}

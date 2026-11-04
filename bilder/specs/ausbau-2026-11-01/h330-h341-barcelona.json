@@ -1,0 +1,320 @@
+{
+ "hotels": [
+  {
+   "id": "h330",
+   "ziel": "barcelona",
+   "name": "Casa Eixample",
+   "ort": "Barcelona",
+   "region": "Eixample",
+   "kategorie": "boutique",
+   "sterne": 4,
+   "preis": 206,
+   "rating": 4.6,
+   "bewertungen": 624,
+   "strand": 2.2,
+   "zentrum": 1.1,
+   "flughafen": 16,
+   "extras": [
+    "terrace"
+   ],
+   "kurz": "Modernisme-Wohnhaus am Passeig de Gràcia, Dachterrasse über den Blöcken.",
+   "lang": "Das Eixample ist Ildefons Cerdàs Raster von 1859, Blöcke mit abgeschrägten Ecken, und zwischen ihnen stehen die Häuser, für die Barcelona berühmt ist. Das Haus ist ein Wohnhaus von 1904, sechsundzwanzig Zimmer, Hydraulikfliesen auf den Böden, Stuckdecken, hohe Flügelfenster, in zwei Zimmern noch die originalen Glasschiebewände. Auf dem Dach eine Terrasse mit Becken, von der man über die Blöcke zur Sagrada Família sieht. Zur Casa Batlló sind es vier Gehminuten, zur Casa Milà sieben, zur Sagrada Família zwanzig. Die Metro L3 und L5 halten in Gehweite, zum Flughafen sind es mit dem Aerobus fünfundzwanzig Minuten.",
+   "highlights": [
+    "Wohnhaus von 1904 mit Hydraulikfliesen",
+    "Dachterrasse mit Becken",
+    "Vier Minuten zur Casa Batlló",
+    "Aerobus in 25 Minuten zum Flughafen"
+   ]
+  },
+  {
+   "id": "h331",
+   "ziel": "barcelona",
+   "name": "Barceloneta Beach House",
+   "ort": "Barcelona",
+   "region": "Barceloneta",
+   "kategorie": "strand",
+   "sterne": 4,
+   "preis": 224,
+   "rating": 4.4,
+   "bewertungen": 894,
+   "strand": 0.1,
+   "zentrum": 1.8,
+   "flughafen": 15,
+   "extras": [
+    "seaView",
+    "terrace"
+   ],
+   "kurz": "Am Strand von Barceloneta, Promenade vor der Tür, Altstadt in zehn Minuten.",
+   "lang": "Barceloneta ist ein Viertel aus schmalen Gassen zwischen Hafen und Strand, in den 1750er Jahren für Fischer gebaut und heute das einzige Stadtviertel Europas, in dem man vom Bett in zweihundert Schritten im Mittelmeer steht. Das Haus liegt an der Promenade, achtundfünfzig Zimmer, zwei Drittel mit Meerblick, alle mit Balkon. Zum Sand sind es hundert Meter. Die Altstadt beginnt zehn Gehminuten entfernt, zum Picasso-Museum sind es fünfzehn, zur Boquería zwanzig. Im Sommer ist der Strand voll und die Gassen nachts laut, im Oktober wird es beides nicht mehr. Zwei Dachbecken, Restaurant mit Fisch aus der Markthalle nebenan.",
+   "highlights": [
+    "Hundert Meter zum Strand",
+    "Zwei Drittel Zimmer mit Meerblick",
+    "Zehn Minuten zur Altstadt",
+    "Zwei Dachbecken"
+   ]
+  },
+  {
+   "id": "h332",
+   "ziel": "barcelona",
+   "name": "Gòtic Palau",
+   "ort": "Barcelona",
+   "region": "Ciutat Vella",
+   "kategorie": "luxus",
+   "sterne": 5,
+   "preis": 398,
+   "rating": 4.7,
+   "bewertungen": 568,
+   "strand": 1.6,
+   "zentrum": 0.2,
+   "flughafen": 16,
+   "extras": [
+    "spa",
+    "terrace",
+    "pool"
+   ],
+   "kurz": "Stadtpalast im gotischen Viertel, Spa im römischen Keller.",
+   "lang": "Das gotische Viertel steht auf der römischen Stadt Barcino, und wer in einem Keller gräbt, findet Mauern aus dem ersten Jahrhundert. In diesem Haus ist genau das passiert: beim Umbau kamen römische Fundamente zum Vorschein, heute liegt dort der Spa, mit Becken, zwei Saunen und sechs Behandlungsräumen zwischen antiken Mauern. Oben zweiunddreißig Zimmer in einem Stadtpalast des vierzehnten Jahrhunderts, Steinböden, Kassettendecken, Innenhof mit Arkaden. Zur Kathedrale sind es drei Gehminuten, zur Plaça del Rei zwei, zur Rambla sechs. Auf dem Dach ein Becken mit Blick über die Altstadtdächer. Restaurant mit katalanischer Karte und sieben Gängen.",
+   "highlights": [
+    "Stadtpalast aus dem 14. Jahrhundert",
+    "Spa zwischen römischen Mauern",
+    "Dachbecken über den Altstadtdächern",
+    "Drei Minuten zur Kathedrale"
+   ]
+  },
+  {
+   "id": "h333",
+   "ziel": "barcelona",
+   "name": "Gràcia Plaça Rooms",
+   "ort": "Barcelona",
+   "region": "Gràcia",
+   "kategorie": "boutique",
+   "sterne": 3,
+   "preis": 158,
+   "rating": 4.6,
+   "bewertungen": 486,
+   "strand": 3.4,
+   "zentrum": 2.4,
+   "flughafen": 19,
+   "extras": [
+    "terrace"
+   ],
+   "kurz": "An einem Platz in Gràcia, Park Güell in zwanzig Minuten, Viertel ohne Touristen.",
+   "lang": "Gràcia war bis 1897 eine eigene Stadt und fühlt sich noch so an: kleine Plätze mit Bäumen, auf denen abends die Nachbarn sitzen, enge Straßen, in denen Autos nicht lohnen. Das Haus steht an der Plaça de la Virreina, achtzehn Zimmer, Fliesenböden, Fensterläden aus Holz, drei Zimmer mit eigener Terrasse. Zum Park Güell sind es zwanzig Gehminuten bergauf, zur Casa Milà fünfzehn abwärts, zur Metro L3 fünf. Frühstück auf dem Platz, wenn das Wetter mitspielt, mit Brot aus der Bäckerei an der Ecke. Im August findet die Festa Major de Gràcia statt, eine Woche, in der die Straßen geschmückt und bis vier Uhr nachts voll sind.",
+   "highlights": [
+    "An der Plaça de la Virreina",
+    "Drei Zimmer mit eigener Terrasse",
+    "Zwanzig Minuten zum Park Güell",
+    "Frühstück auf dem Platz"
+   ]
+  },
+  {
+   "id": "h334",
+   "ziel": "barcelona",
+   "name": "Poblenou Fàbrica",
+   "ort": "Barcelona",
+   "region": "Sant Martí",
+   "kategorie": "boutique",
+   "sterne": 4,
+   "preis": 186,
+   "rating": 4.5,
+   "bewertungen": 542,
+   "strand": 0.5,
+   "zentrum": 3.8,
+   "flughafen": 19,
+   "extras": [
+    "pool",
+    "terrace",
+    "gym"
+   ],
+   "kurz": "Umgebaute Fabrik im Poblenou, Strand in fünf Minuten, Dachpool.",
+   "lang": "Poblenou war das Manchester Kataloniens, ein Viertel aus Textilfabriken, und als die Industrie ging, blieben Hallen mit Sheddächern, die heute Büros, Ateliers und dieses Hotel sind. Vierundvierzig Zimmer, Sichtziegel, Stahlträger, Betonböden, Fenster über drei Meter. Auf dem Dach ein Becken von fünfzehn Metern mit Blick auf den Torre Glòries. Zum Strand Bogatell sind es fünfhundert Meter, ein Strand, an dem Barcelonesen und nicht Reisegruppen liegen. Die Rambla del Poblenou mit ihren Lokalen beginnt vor der Tür, die Metro L4 hält zwei Blocks entfernt, zur Altstadt sind es zwölf Minuten mit der Bahn.",
+   "highlights": [
+    "Umgebaute Textilfabrik mit Sheddach",
+    "Dachbecken mit fünfzehn Metern",
+    "Fünfhundert Meter zum Strand Bogatell",
+    "Rambla del Poblenou vor der Tür"
+   ]
+  },
+  {
+   "id": "h335",
+   "ziel": "barcelona",
+   "name": "El Born Mercat",
+   "ort": "Barcelona",
+   "region": "Ciutat Vella",
+   "kategorie": "boutique",
+   "sterne": 4,
+   "preis": 212,
+   "rating": 4.6,
+   "bewertungen": 624,
+   "strand": 1.2,
+   "zentrum": 0.6,
+   "flughafen": 16,
+   "extras": [
+    "terrace"
+   ],
+   "kurz": "Am alten Markt El Born, Picasso-Museum und Santa Maria del Mar um die Ecke.",
+   "lang": "El Born liegt zwischen Kathedrale und Hafen und ist der Teil der Altstadt, in dem weniger Souvenirläden und mehr Werkstätten stehen. Das Haus liegt gegenüber dem alten Markt, einer Eisenkonstruktion von 1876, unter der beim Umbau eine ganze Straße der Stadt von 1700 freigelegt wurde und die heute als Ausgrabung begehbar ist. Zweiundzwanzig Zimmer, Balkenwerk, Steinwände, hofseitig still, drei Zimmer mit Blick auf die Markthalle. Zur Santa Maria del Mar sind es vier Gehminuten, zum Picasso-Museum drei, zum Parc de la Ciutadella sechs. Dachterrasse mit Bar, Frühstück bis halb zwölf.",
+   "highlights": [
+    "Gegenüber der Markthalle von 1876",
+    "Drei Minuten zum Picasso-Museum",
+    "Dachterrasse mit Bar",
+    "Frühstück bis halb zwölf"
+   ]
+  },
+  {
+   "id": "h336",
+   "ziel": "barcelona",
+   "name": "Sant Antoni Mercat Rooms",
+   "ort": "Barcelona",
+   "region": "Eixample",
+   "kategorie": "stadt",
+   "sterne": 3,
+   "preis": 148,
+   "rating": 4.4,
+   "bewertungen": 568,
+   "strand": 2.6,
+   "zentrum": 1.4,
+   "flughafen": 14,
+   "kurz": "Am Mercat de Sant Antoni, ruhiges Eixample-Viertel, Metro vor der Tür.",
+   "lang": "Sant Antoni ist der Teil des Eixample westlich der Rambla und das Viertel, in das Barcelonesen ziehen, wenn ihnen Gràcia zu teuer wird: Markthalle, Buchstände am Sonntag, Lokale, in denen man ohne Reservierung sitzt. Das Haus liegt gegenüber der Halle, vierundvierzig Zimmer, einfach, hell, mit Klimaanlage und Doppelfenstern. Zur Metro L2 sind es hundert Meter, zur Rambla acht Gehminuten, zum MACBA zehn, zum Montjuïc fünfzehn. Frühstück von sieben bis zehn, einfach, oder besser gegenüber in der Halle, wo es ab sechs Uhr Frühstück für Markthändler gibt. Für diesen Preis in dieser Lage ist das Haus verlässlich und unspektakulär.",
+   "highlights": [
+    "Gegenüber dem Mercat de Sant Antoni",
+    "Hundert Meter zur Metro L2",
+    "Acht Minuten zur Rambla",
+    "Markthallenfrühstück ab sechs Uhr"
+   ]
+  },
+  {
+   "id": "h337",
+   "ziel": "barcelona",
+   "name": "Vila Olímpica Mar",
+   "ort": "Barcelona",
+   "region": "Sant Martí",
+   "kategorie": "familie",
+   "sterne": 4,
+   "preis": 192,
+   "rating": 4.3,
+   "bewertungen": 812,
+   "strand": 0.2,
+   "zentrum": 3.2,
+   "flughafen": 18,
+   "extras": [
+    "kidsClub",
+    "pool"
+   ],
+   "kurz": "Am Olympiahafen, flacher Strand, Pool und Betreuung im Haus.",
+   "lang": "Die Vila Olímpica wurde für 1992 gebaut und hat deshalb etwas, das die Altstadt nicht hat: breite Straßen, Grünflächen und einen Strand ohne Gassen davor. Das Haus liegt zweihundert Meter vom Sand, zweiundsiebzig Zimmer, zwei Drittel Familienzimmer, viele mit Verbindungstür. Im Haus ein Pool mit Kinderbecken, ein Spielraum und Betreuung in den Ferien von zehn bis sechzehn Uhr. Der Strand Nova Icària hat flaches Wasser und Aufsicht, direkt daneben Spielplätze und ein Skatepark. Zum Zoo im Parc de la Ciutadella sind es zehn Minuten mit der Metro, zum Aquarium fünfzehn. Halbpension auf Wunsch, Kindertisch um halb sieben, was in Spanien schon früh ist.",
+   "highlights": [
+    "Zweihundert Meter zum Strand Nova Icària",
+    "Pool mit Kinderbecken",
+    "Betreuung in den Ferien",
+    "Zoo in zehn Minuten mit der Metro"
+   ]
+  },
+  {
+   "id": "h338",
+   "ziel": "barcelona",
+   "name": "Sarrià Jardí",
+   "ort": "Barcelona",
+   "region": "Sarrià-Sant Gervasi",
+   "kategorie": "finca",
+   "sterne": 4,
+   "preis": 224,
+   "rating": 4.6,
+   "bewertungen": 386,
+   "strand": 5.4,
+   "zentrum": 4.8,
+   "flughafen": 15,
+   "extras": [
+    "pool",
+    "terrace",
+    "bikeRental"
+   ],
+   "kurz": "Stadtvilla mit Garten im Oberstadtviertel, Tibidabo in Reichweite.",
+   "lang": "Sarrià war bis 1921 ein Dorf und ist heute das stillste Viertel Barcelonas, oben am Hang, mit Villen, Platanen und einer Markthalle, in der niemand Englisch spricht. Das Haus ist eine Villa von 1912 mit Garten, sechzehn Zimmer, Fliesenböden, Fensterläden, draußen ein Becken unter Zypressen. Zur Bahn Ferrocarril sind es sechs Gehminuten, zum Passeig de Gràcia zwölf Minuten mit der Bahn. Zum Tibidabo mit dem Vergnügungspark von 1899 fährt die Standseilbahn, von hier zwanzig Minuten. Räder stehen bereit, bergab geht es gut, bergauf weniger. Frühstück im Garten, abends wird nicht gekocht, im Viertel gibt es acht Restaurants.",
+   "highlights": [
+    "Stadtvilla von 1912 mit Garten",
+    "Becken unter Zypressen",
+    "Zwölf Minuten mit der Bahn ins Zentrum",
+    "Tibidabo in zwanzig Minuten"
+   ]
+  },
+  {
+   "id": "h339",
+   "ziel": "barcelona",
+   "name": "Sants Estació",
+   "ort": "Barcelona",
+   "region": "Sants-Montjuïc",
+   "kategorie": "budget",
+   "sterne": 2,
+   "preis": 94,
+   "rating": 4.1,
+   "bewertungen": 724,
+   "strand": 3.8,
+   "zentrum": 2.8,
+   "flughafen": 12,
+   "kurz": "Am Hauptbahnhof Sants, günstigste Lage mit guter Anbindung, zwölf Kilometer zum Flughafen.",
+   "lang": "Sants ist Bahnhofsviertel und wird deshalb unterschätzt, hat aber den praktischsten Anschluss der Stadt: Fernzüge nach Madrid und Frankreich, zwei Metrolinien, der Flughafenzug in zwanzig Minuten und zwölf Kilometer Straße zum Terminal. Das Haus liegt zwei Blocks vom Bahnhof, achtundvierzig Zimmer, einfach, mit Klimaanlage, Bäder klein aber neu. Zur Rambla sind es zehn Minuten mit der Metro, zum Camp Nou zwölf zu Fuß, zum Montjuïc fünfzehn. Frühstück gegen Zuschlag, Supermarkt und ein halbes Dutzend Bars in Gehweite. Für unter hundert Euro ist das in Barcelona eine Lage, die funktioniert, auch wenn das Viertel nichts hergibt.",
+   "highlights": [
+    "Zwei Blocks vom Bahnhof Sants",
+    "Flughafenzug in zwanzig Minuten",
+    "Zwölf Minuten zu Fuß zum Camp Nou",
+    "Unter hundert Euro mit Klimaanlage"
+   ]
+  },
+  {
+   "id": "h340",
+   "ziel": "barcelona",
+   "name": "Montjuïc Mirador",
+   "ort": "Barcelona",
+   "region": "Sants-Montjuïc",
+   "kategorie": "luxus",
+   "sterne": 4,
+   "preis": 286,
+   "rating": 4.6,
+   "bewertungen": 448,
+   "strand": 2.8,
+   "zentrum": 2.2,
+   "flughafen": 13,
+   "extras": [
+    "spa",
+    "pool",
+    "terrace"
+   ],
+   "kurz": "Am Hang des Montjuïc, Blick über Stadt und Hafen, Pool auf der Terrasse.",
+   "lang": "Der Montjuïc ist der Hügel über dem Hafen, auf dem 1929 die Weltausstellung und 1992 die Olympischen Spiele stattfanden, und von dem aus man die Stadt als Ganzes sieht. Das Haus liegt am Nordhang, achtunddreißig Zimmer, Stein, Holz, Leinen, alle mit Loggia nach Norden über die Stadt oder nach Süden auf den Hafen. Terrasse mit Becken auf zwei Ebenen. Zur Fundació Joan Miró sind es zehn Gehminuten, zum Nationalmuseum MNAC acht, zur Plaça Espanya fünfzehn abwärts oder sechs mit dem Bus. Der Spa hat zwei Saunen, Dampfbad und vier Behandlungsräume. Restaurant auf der Terrasse, abends fünf Gänge, mit dem Lichtermeer als Kulisse.",
+   "highlights": [
+    "Loggien über Stadt und Hafen",
+    "Terrassenbecken auf zwei Ebenen",
+    "Zehn Minuten zur Fundació Miró",
+    "Restaurant mit Blick über die Stadt"
+   ]
+  },
+  {
+   "id": "h341",
+   "ziel": "barcelona",
+   "name": "Raval Apartments",
+   "ort": "Barcelona",
+   "region": "Ciutat Vella",
+   "kategorie": "apart",
+   "sterne": 3,
+   "preis": 162,
+   "rating": 4.3,
+   "bewertungen": 586,
+   "strand": 1.4,
+   "zentrum": 0.5,
+   "flughafen": 15,
+   "extras": [
+    "terrace"
+   ],
+   "kurz": "Apartments mit Küche im Raval, Boquería und MACBA zu Fuß.",
+   "lang": "Der Raval liegt westlich der Rambla und ist das dichteste, lauteste und vielfältigste Viertel Barcelonas, mit dem MACBA, Plätzen voller Skateboards und Läden aus dreißig Ländern. Das Haus ist ein Altbau mit Lift, vierundzwanzig Apartments von fünfunddreißig bis siebzig Quadratmetern, alle mit Küche, Waschmaschine und Balkon zur Gasse oder zum Hof. Ab vier Nächten liegt der Preis deutlich unter einem Hotelzimmer gleicher Größe, zumal die Boquería acht Gehminuten entfernt ist und man dort besser einkauft als isst. Zur Rambla sind es drei Minuten, zum Hafen zehn, zur Metro L3 vier. Nachts ist es laut, die Hofseite merklich weniger.",
+   "highlights": [
+    "Apartments mit Küche und Waschmaschine",
+    "Acht Minuten zur Boquería",
+    "Drei Minuten zur Rambla",
+    "Hofseite deutlich ruhiger"
+   ]
+  }
+ ]
+}

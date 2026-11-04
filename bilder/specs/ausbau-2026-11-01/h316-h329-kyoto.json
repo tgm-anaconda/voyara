@@ -1,0 +1,371 @@
+{
+ "hotels": [
+  {
+   "id": "h316",
+   "ziel": "kyoto",
+   "name": "Machiya Nishijin",
+   "ort": "Kyoto",
+   "region": "Nishijin",
+   "kategorie": "boutique",
+   "sterne": 4,
+   "preis": 224,
+   "rating": 4.7,
+   "bewertungen": 386,
+   "strand": null,
+   "zentrum": 2.8,
+   "flughafen": 108,
+   "extras": [
+    "terrace"
+   ],
+   "kurz": "Umgebautes Stadthaus im Weberviertel, acht Zimmer, Innengarten mit Moos.",
+   "lang": "Nishijin ist seit dem fünfzehnten Jahrhundert das Weberviertel von Kyoto, und aus den Werkstätten hört man an manchen Straßen noch die Webstühle. Das Haus ist eine Machiya, ein traditionelles Stadthaus, schmal zur Straße und tief nach hinten, mit einem Innengarten in der Mitte, in dem Moos und ein Ahorn stehen. Acht Zimmer mit Tatami, Schiebewänden aus Papier und Futons, die abends gelegt werden. Baden im Hinoki-Holzbad, auf Zeit reserviert. Zum Kinkaku-ji, dem Goldenen Pavillon, sind es zwei Kilometer, zum Nijo-Schloss drei, zur Busstation hundertfünfzig Meter. Frühstück japanisch mit Reis, Fisch und Misosuppe, westlich auf Wunsch.",
+   "highlights": [
+    "Traditionelle Machiya mit Innengarten",
+    "Hinoki-Holzbad auf Reservierung",
+    "Zwei Kilometer zum Goldenen Pavillon",
+    "Tatami und Futon in allen Zimmern"
+   ]
+  },
+  {
+   "id": "h317",
+   "ziel": "kyoto",
+   "name": "Gion Shirakawa",
+   "ort": "Kyoto",
+   "region": "Gion",
+   "kategorie": "luxus",
+   "sterne": 5,
+   "preis": 486,
+   "rating": 4.8,
+   "bewertungen": 424,
+   "strand": null,
+   "zentrum": 1.2,
+   "flughafen": 102,
+   "extras": [
+    "spa",
+    "terrace"
+   ],
+   "kurz": "Am Shirakawa-Kanal im Geisha-Viertel, vierzehn Zimmer, Kirschbäume am Wasser.",
+   "lang": "Der Shirakawa ist ein Kanal von zwei Metern Breite, an dem Weidenbäume und Kirschbäume stehen und Holzhäuser direkt bis an das Wasser gebaut sind, und das ist die stillste Ecke von Gion. Das Haus hat vierzehn Zimmer, Zedernholz, Tatami, Papierwände, Bäder aus Hinoki, einige Zimmer mit eigener Terrasse zum Kanal. Abends gehen hier Geiko und Maiko zu ihren Terminen, was man nicht bestellen kann und nicht fotografieren sollte. Zum Kiyomizu-dera sind es zwanzig Gehminuten, zum Yasaka-Schrein fünf, zum Pontocho zehn. Küche kaiseki mit neun Gängen, auf Reservierung, dazu ein Frühstück, das im Zimmer serviert wird.",
+   "highlights": [
+    "Am Shirakawa-Kanal in Gion",
+    "Kaiseki mit neun Gängen",
+    "Zimmer mit Terrasse zum Wasser",
+    "Fünf Minuten zum Yasaka-Schrein"
+   ]
+  },
+  {
+   "id": "h318",
+   "ziel": "kyoto",
+   "name": "Arashiyama Bamboo Ryokan",
+   "ort": "Kyoto",
+   "region": "Arashiyama",
+   "kategorie": "finca",
+   "sterne": 4,
+   "preis": 342,
+   "rating": 4.7,
+   "bewertungen": 468,
+   "strand": null,
+   "zentrum": 9.2,
+   "flughafen": 114,
+   "extras": [
+    "spa",
+    "terrace"
+   ],
+   "kurz": "Am Bambuswald, Onsen aus eigener Quelle, Fluss Hozu vor dem Haus.",
+   "lang": "Arashiyama liegt im Westen am Fuß der Berge, und der Bambuswald dort ist der bekannteste Japans, am besten um sieben Uhr morgens, wenn noch niemand da ist. Das Ryokan hat achtzehn Zimmer, Tatami, Blick in den Garten oder auf den Hozu, der hier breit und grün durch die Schlucht kommt. Das Onsen wird aus einer eigenen Quelle gespeist, Innen- und Außenbecken, nach Geschlechtern getrennt, dazu zwei private Becken auf Reservierung. Zum Bambuswald sind es vierhundert Meter, zum Tenryu-ji sechshundert, zur Sagano-Romantikbahn ein Kilometer. Die Küche kocht kaiseki mit sieben Gängen im Zimmer, Frühstück ebenso. Im November ist das Ahornlaub der Grund, früh zu buchen.",
+   "highlights": [
+    "Onsen aus eigener Quelle",
+    "Vierhundert Meter zum Bambuswald",
+    "Kaiseki im Zimmer serviert",
+    "Blick auf den Hozu"
+   ]
+  },
+  {
+   "id": "h319",
+   "ziel": "kyoto",
+   "name": "Hotel Karasuma Oike",
+   "ort": "Kyoto",
+   "region": "Downtown",
+   "kategorie": "stadt",
+   "sterne": 4,
+   "preis": 186,
+   "rating": 4.4,
+   "bewertungen": 894,
+   "strand": null,
+   "zentrum": 0.3,
+   "flughafen": 100,
+   "extras": [
+    "gym"
+   ],
+   "kurz": "An der Kreuzung Karasuma Oike, zwei U-Bahnlinien, Bahnhof in fünf Minuten.",
+   "lang": "Karasuma Oike ist der Verkehrsknoten im Zentrum, dort kreuzen sich die beiden U-Bahnlinien Kyotos, und vom Hauptbahnhof sind es fünf Minuten mit der Bahn. Das Haus ist ein Neubau, hundertzweiundzwanzig Zimmer, hell, sachlich, kleine Bäder mit japanischer Wanne, Fenster dreifach verglast. Zum Nijo-Schloss sind es zehn Gehminuten, zum Nishiki-Markt acht, zum Pontocho zwölf. Vom Bahnhof Kyoto fährt der Haruka-Express in fünfundsiebzig Minuten zum Flughafen Kansai, der Shinkansen nach Tokio in zweieinviertel Stunden. Frühstücksbuffet japanisch und westlich ab halb sieben, Fitnessraum im Keller. Für Geschäftsreisende gebaut und für den Rest brauchbar.",
+   "highlights": [
+    "Zwei U-Bahnlinien an der Kreuzung",
+    "Fünf Minuten zum Hauptbahnhof",
+    "Acht Minuten zum Nishiki-Markt",
+    "Haruka-Express zum Flughafen"
+   ]
+  },
+  {
+   "id": "h320",
+   "ziel": "kyoto",
+   "name": "Kiyomizu Slope House",
+   "ort": "Kyoto",
+   "region": "Higashiyama",
+   "kategorie": "boutique",
+   "sterne": 4,
+   "preis": 248,
+   "rating": 4.6,
+   "bewertungen": 442,
+   "strand": null,
+   "zentrum": 2.2,
+   "flughafen": 104,
+   "extras": [
+    "terrace"
+   ],
+   "kurz": "An der Steigung zum Kiyomizu-dera, zehn Zimmer, Blick über die Dächer.",
+   "lang": "Die Gassen hinauf zum Kiyomizu-dera, Sannenzaka und Ninenzaka, sind gepflastert, von Holzhäusern gesäumt und tagsüber voll, abends ab sieben leer. Dann wohnt man dort gut. Das Haus liegt an der Steigung, zehn Zimmer, Tatami und Betten gemischt, in vier Zimmern ein Fenster über die Dächer von Higashiyama bis zum Turm des Bahnhofs. Zum Kiyomizu-dera sind es sechs Gehminuten bergauf, zum Kodai-ji vier, zum Yasaka-Schrein zehn. Das Haus öffnet morgens um sechs die Tür, weil der Tempel um sechs öffnet und das die einzige Stunde ohne Gedränge ist. Frühstück ab halb sieben, einfach und japanisch.",
+   "highlights": [
+    "An Sannenzaka zum Kiyomizu-dera",
+    "Sechs Minuten bergauf zum Tempel",
+    "Zimmer mit Blick über Higashiyama",
+    "Tür ab sechs Uhr offen"
+   ]
+  },
+  {
+   "id": "h321",
+   "ziel": "kyoto",
+   "name": "Fushimi Sake District",
+   "ort": "Kyoto",
+   "region": "Fushimi",
+   "kategorie": "finca",
+   "sterne": 3,
+   "preis": 168,
+   "rating": 4.6,
+   "bewertungen": 342,
+   "strand": null,
+   "zentrum": 5.8,
+   "flughafen": 92,
+   "extras": [
+    "terrace",
+    "bikeRental"
+   ],
+   "kurz": "Im Sake-Viertel, Brauerei im Haus, Fushimi Inari mit vier Stationen.",
+   "lang": "Fushimi braut Sake, seit es dort Wasser gibt, und zwar weiches Wasser aus den Bergen, das den Sake milder macht als den aus dem Norden. Das Haus gehört zu einer Brauerei und liegt in einem Lagergebäude von 1912, zwölf Zimmer, weiße Wände, dunkles Holz, draußen ein Kanal mit den alten Lastbooten. Im Keller wird verkostet, dreimal am Tag, und das Frühstück nutzt die Reste der Produktion, Sake-Kasu in der Suppe. Zum Fushimi Inari, dem Schrein mit den zehntausend roten Tori, sind es vier Stationen mit der Keihan-Bahn oder fünfundzwanzig Minuten mit dem Rad, die bereitstehen. Nach Uji sind es zwanzig Minuten mit der Bahn.",
+   "highlights": [
+    "Lagergebäude einer Sake-Brauerei",
+    "Verkostung dreimal am Tag",
+    "Vier Stationen zum Fushimi Inari",
+    "Räder für den Weg am Kanal"
+   ]
+  },
+  {
+   "id": "h322",
+   "ziel": "kyoto",
+   "name": "Ohara Mountain Ryokan",
+   "ort": "Kyoto",
+   "region": "Ohara",
+   "kategorie": "berg",
+   "sterne": 4,
+   "preis": 286,
+   "rating": 4.7,
+   "bewertungen": 286,
+   "strand": null,
+   "zentrum": 14.0,
+   "flughafen": 124,
+   "extras": [
+    "spa"
+   ],
+   "kurz": "Im Bergdorf nördlich der Stadt, Onsen und Moosgärten, Bus in einer Stunde.",
+   "lang": "Ohara liegt in einem Talkessel vierzehn Kilometer nördlich von Kyoto, und weil der Bus eine Stunde braucht, kommen hierher nur die, die es vorhaben. Dort stehen der Sanzen-in mit seinen Moosgärten und ein halbes Dutzend kleinerer Tempel, die man im November für sich hat, während in der Stadt die Wege dicht sind. Das Ryokan hat vierzehn Zimmer, Tatami, Schiebewände, Blick in den Garten oder auf den Bach. Das Onsen hat ein Außenbecken, das zwischen Felsen gesetzt ist, und ist von sechs bis dreiundzwanzig Uhr offen. Die Küche arbeitet mit Gemüse aus dem Tal, shojin ryori in der Tradition der Tempelküche, sechs Gänge, ohne Fleisch und ohne Verzicht.",
+   "highlights": [
+    "Bergdorf mit Moosgärten im Sanzen-in",
+    "Onsen mit Außenbecken zwischen Felsen",
+    "Tempelküche mit sechs Gängen",
+    "Im November deutlich leerer als die Stadt"
+   ]
+  },
+  {
+   "id": "h323",
+   "ziel": "kyoto",
+   "name": "Pontocho Riverside",
+   "ort": "Kyoto",
+   "region": "Pontocho",
+   "kategorie": "boutique",
+   "sterne": 4,
+   "preis": 268,
+   "rating": 4.6,
+   "bewertungen": 486,
+   "strand": null,
+   "zentrum": 0.8,
+   "flughafen": 102,
+   "extras": [
+    "terrace"
+   ],
+   "kurz": "In der Pontocho-Gasse am Kamo, Balkone über dem Fluss.",
+   "lang": "Pontocho ist eine Gasse von fünfhundert Metern Länge und zwei Metern Breite zwischen der Shijo-Straße und dem Sanjo, auf der einen Seite Laternen, auf der anderen Häuser, die mit dem Rücken zum Kamo stehen und im Sommer hölzerne Balkone über das Wasser bauen. Das Haus hat sechzehn Zimmer, acht davon mit einem solchen Balkon, Tatami, Papierwände, Bäder aus Hinoki. Nachts ist die Gasse voll und bis eins laut, die Flussseite ist ruhiger. Zum Nishiki-Markt sind es sechs Gehminuten, zum Gion über die Brücke vier, zum Nanzen-ji zwanzig. Frühstück im Zimmer oder am Fluss, japanisch, mit Tofu von Okutan.",
+   "highlights": [
+    "Acht Zimmer mit Balkon über dem Kamo",
+    "Mitten in der Pontocho-Gasse",
+    "Vier Minuten über die Brücke nach Gion",
+    "Frühstück am Fluss"
+   ]
+  },
+  {
+   "id": "h324",
+   "ziel": "kyoto",
+   "name": "Guesthouse Kamogawa",
+   "ort": "Kyoto",
+   "region": "Demachiyanagi",
+   "kategorie": "budget",
+   "sterne": 2,
+   "preis": 92,
+   "rating": 4.3,
+   "bewertungen": 524,
+   "strand": null,
+   "zentrum": 2.6,
+   "flughafen": 106,
+   "kurz": "Einfaches Gästehaus am Kamo-Delta, Küche zur Mitbenutzung, Räder leihbar.",
+   "lang": "Am Demachiyanagi teilt sich der Kamo in zwei Arme, und die Spitze dazwischen ist eine Wiese mit Trittsteinen über das Wasser, auf der Studenten sitzen. Das Gästehaus liegt hundert Meter davon, achtzehn Zimmer, teils mit Tatami, teils mit Betten, Bäder im Flur, eine Gemeinschaftsküche im Erdgeschoss. Das ist in Kyoto, wo Essen gehen schnell teuer wird, der entscheidende Punkt. Räder kann man leihen, die Stadt ist flach und mit dem Rad schneller als mit dem Bus. Zur Universität Kyoto sind es zehn Gehminuten, zum Shimogamo-Schrein fünf, zum Philosophenweg zwanzig. Die Eizan-Bahn nach Kurama fährt vom Bahnhof gegenüber.",
+   "highlights": [
+    "Am Delta des Kamo",
+    "Gemeinschaftsküche im Haus",
+    "Räder leihbar",
+    "Eizan-Bahn nach Kurama gegenüber"
+   ]
+  },
+  {
+   "id": "h325",
+   "ziel": "kyoto",
+   "name": "Kurama Onsen Lodge",
+   "ort": "Kyoto",
+   "region": "Kurama",
+   "kategorie": "berg",
+   "sterne": 3,
+   "preis": 212,
+   "rating": 4.6,
+   "bewertungen": 268,
+   "strand": null,
+   "zentrum": 16.0,
+   "flughafen": 128,
+   "extras": [
+    "spa"
+   ],
+   "kurz": "Im Bergwald am Kurama-dera, Außen-Onsen unter Zedern, Bahn ab Stadt.",
+   "lang": "Kurama liegt sechzehn Kilometer nördlich im Bergwald, erreichbar mit der Eizan-Bahn, die durch einen Tunnel aus Ahornzweigen fährt, der im November beleuchtet wird. Oben liegt der Kurama-dera auf einem Hang, dahinter führt ein Pfad über den Berg nach Kibune, zwei Stunden durch Zedernwald mit freiliegenden Wurzeln auf dem Weg. Das Haus hat sechzehn Zimmer, einfach, Tatami, dünne Wände, die Berge bis ans Fenster. Das Außen-Onsen liegt im Wald unter Zedern und ist auch für Tagesgäste offen, Hausgäste haben vor acht Uhr und nach zwanzig Uhr Vorrang. Küche mit Flussfisch und Bergkräutern, im Sommer serviert Kibune nebenan über dem Wasser.",
+   "highlights": [
+    "Außen-Onsen unter Zedern",
+    "Pfad über den Berg nach Kibune",
+    "Eizan-Bahn durch den Ahorntunnel",
+    "Küche mit Flussfisch und Bergkräutern"
+   ]
+  },
+  {
+   "id": "h326",
+   "ziel": "kyoto",
+   "name": "Nijo Castle House",
+   "ort": "Kyoto",
+   "region": "Nijo",
+   "kategorie": "familie",
+   "sterne": 3,
+   "preis": 176,
+   "rating": 4.4,
+   "bewertungen": 486,
+   "strand": null,
+   "zentrum": 1.6,
+   "flughafen": 104,
+   "extras": [
+    "kidsClub"
+   ],
+   "kurz": "Gegenüber dem Nijo-Schloss, Familienzimmer mit Tatami, Küche im Haus.",
+   "lang": "Das Nijo-Schloss hat Böden, die absichtlich knarren, damit niemand sich unbemerkt nähert, und das ist für Kinder der interessanteste Teil von Kyoto. Das Haus liegt gegenüber dem Westtor, achtundzwanzig Zimmer, die Hälfte Familienzimmer mit Tatami und vier Futons, was mit Kindern praktischer ist als Betten, weil nichts hoch ist. Eine Küche im Erdgeschoss steht offen, dazu ein Spielraum mit Tatami und Büchern. Zur U-Bahn Nijojo-mae sind es drei Gehminuten, zum Nijo-Bahnhof sieben, zum Nishiki-Markt fünfzehn. Frühstück japanisch und westlich. Kyotos Sommer ist schwül und für Kinder anstrengend, April und November sind die besseren Monate.",
+   "highlights": [
+    "Gegenüber dem Westtor des Nijo-Schlosses",
+    "Familienzimmer mit vier Futons",
+    "Küche und Spielraum im Haus",
+    "Drei Minuten zur U-Bahn"
+   ]
+  },
+  {
+   "id": "h327",
+   "ziel": "kyoto",
+   "name": "Uji Tea House",
+   "ort": "Uji",
+   "region": "Uji",
+   "kategorie": "finca",
+   "sterne": 4,
+   "preis": 196,
+   "rating": 4.7,
+   "bewertungen": 324,
+   "strand": null,
+   "zentrum": 17.0,
+   "flughafen": 86,
+   "extras": [
+    "terrace",
+    "bikeRental"
+   ],
+   "kurz": "Teehaus am Uji-Fluss, Matcha aus eigenem Anbau, Byodo-in in Gehweite.",
+   "lang": "Uji baut Tee an, seit im zwölften Jahrhundert die ersten Sträucher aus China kamen, und der Matcha von hier ist der Maßstab für den Rest Japans. Das Haus gehört zu einem Teegarten, zehn Zimmer in einem Holzbau am Fluss, Tatami, Schiebewände, Blick auf das Wasser und die Hängebrücke. Verkostung findet morgens statt, mit Erklärung, wie gerollt, gedämpft und gemahlen wird, danach kann man selbst mit dem Steinmahlwerk arbeiten, dreißig Gramm pro Stunde. Zum Byodo-in, dessen Phönixhalle auf der Zehn-Yen-Münze abgebildet ist, sind es acht Gehminuten. Nach Kyoto sind es zwanzig Minuten mit der JR-Bahn, zum Flughafen Kansai eine Stunde zwanzig.",
+   "highlights": [
+    "Teehaus mit eigenem Anbau",
+    "Verkostung und Mahlen am Steinwerk",
+    "Acht Minuten zum Byodo-in",
+    "Zwanzig Minuten mit der Bahn nach Kyoto"
+   ]
+  },
+  {
+   "id": "h328",
+   "ziel": "kyoto",
+   "name": "Kyoto Station Tower Rooms",
+   "ort": "Kyoto",
+   "region": "Shimogyo",
+   "kategorie": "stadt",
+   "sterne": 4,
+   "preis": 198,
+   "rating": 4.3,
+   "bewertungen": 1142,
+   "strand": null,
+   "zentrum": 1.8,
+   "flughafen": 98,
+   "extras": [
+    "gym",
+    "terrace"
+   ],
+   "kurz": "Am Hauptbahnhof, Shinkansen und Flughafenexpress unter dem Haus.",
+   "lang": "Der Bahnhof Kyoto ist ein Gebäude von Hiroshi Hara, siebzig Meter hoch, innen eine Halle wie eine Schlucht, mit einer Treppe über elf Stockwerke und einem Dachgarten, der frei zugänglich ist. Von dort fahren Shinkansen, JR-Linien, der Haruka-Express zum Flughafen Kansai in fünfundsiebzig Minuten und sämtliche Stadtbusse. Das Haus liegt an der Nordseite, hundertachtunddreißig Zimmer, sachlich, kompakt, mit guter Verdunklung und Bädern aus einem Stück. Zum Higashi Hongan-ji sind es fünf Gehminuten, zum Tofuku-ji zwei Stationen, zum Fushimi Inari drei. Frühstück ab halb sechs für die ersten Züge, Fitnessraum ganztägig, Gepäckaufgabe auch nach dem Auschecken.",
+   "highlights": [
+    "Direkt am Hauptbahnhof",
+    "Flughafenexpress in 75 Minuten",
+    "Frühstück ab halb sechs",
+    "Gepäckaufgabe nach dem Auschecken"
+   ]
+  },
+  {
+   "id": "h329",
+   "ziel": "kyoto",
+   "name": "Philosophenweg Residenz",
+   "ort": "Kyoto",
+   "region": "Sakyo",
+   "kategorie": "luxus",
+   "sterne": 5,
+   "preis": 438,
+   "rating": 4.8,
+   "bewertungen": 368,
+   "strand": null,
+   "zentrum": 3.4,
+   "flughafen": 108,
+   "extras": [
+    "spa",
+    "terrace"
+   ],
+   "kurz": "Am Philosophenweg, Ginkaku-ji und Nanzen-ji zu Fuß, Garten von 1910.",
+   "lang": "Der Philosophenweg führt zwei Kilometer an einem Kanal entlang vom Ginkaku-ji zum Nanzen-ji, gesäumt von fünfhundert Kirschbäumen, die Ende März blühen und dann den Weg für zwei Wochen unbrauchbar machen, weil zu viele Leute dort stehen. Das Haus liegt in einer Seitenstraße, achtzehn Zimmer und Suiten in einer Villa von 1910, Tatami und Betten gemischt, Bäder aus Hinoki, jedes Zimmer mit Blick in den Garten, der von einem Schüler Ogawa Jiheis angelegt wurde. Zum Ginkaku-ji sind es sieben Gehminuten, zum Nanzen-ji fünfzehn, zum Eikan-do acht. Das Onsen wird aus einem Tiefbrunnen gespeist, zwei Becken und zwei private. Kaiseki mit neun Gängen, ein Monatsmenü, das elfmal im Jahr wechselt.",
+   "highlights": [
+    "Villa von 1910 am Philosophenweg",
+    "Garten aus der Ogawa-Jihei-Schule",
+    "Sieben Minuten zum Ginkaku-ji",
+    "Onsen aus eigenem Tiefbrunnen"
+   ]
+  }
+ ]
+}

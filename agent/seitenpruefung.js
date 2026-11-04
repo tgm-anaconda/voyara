@@ -483,8 +483,28 @@ const Seitenpruefung = {
       this.befund(g, `buchungAbschliessen bricht ab: ${antwort.text}`);
     } else this.bestanden();
 
-    if (!document.getElementById("cVersicherung")?.checked) {
-      this.befund(g, "Nach dem Vorbereiten ist die Versicherung abgewaehlt - der Agent hat sie angefasst");
+    /* Nach dem Vorbereiten den Zustand pruefen, nicht den Knoten
+       (02.11.2026).
+       ------------------------------------------------------------------
+       Bis hierher stand hier `document.getElementById("cVersicherung")`.
+       Das setzte voraus, dass die Kasse nach dem Vorbereiten noch auf
+       Schritt eins steht - bei langem Formular stimmte das, weil dem
+       Agenten immer Geburtsdaten fehlten und er anhielt.
+
+       Seit der Entschlankung (nur noch Name, Mail, Ankunft) kann er das
+       Formular vollstaendig ausfuellen und springt auf die Pruefseite.
+       Dort gibt es den Haken nicht mehr, und die Pruefung meldete
+       "abgewaehlt", obwohl die Versicherung unveraendert gebucht war.
+
+       Gefragt ist der Zustand: Ist die Versicherung noch drin? Den haelt
+       `Kasse.stand()` auch auf Schritt zwei. Der Haken selbst wird eine
+       Zeile weiter oben schon geprueft, solange er dasteht. */
+    const standNachher = (typeof Kasse !== "undefined" && Kasse.stand) ? Kasse.stand() : null;
+    const nochDrin = standNachher ? standNachher.versicherung
+      : document.getElementById("cVersicherung")?.checked;
+    if (!nochDrin) {
+      this.befund(g, "Nach dem Vorbereiten ist die Versicherung abgewaehlt - der Agent hat sie angefasst",
+        { quelle: standNachher ? "Kasse.stand()" : "Haken auf der Seite" });
     } else this.bestanden();
 
     const bericht = (antwort?.text || "") + JSON.stringify(antwort?.daten || {});
@@ -577,23 +597,49 @@ const Seitenpruefung = {
       return;
     }
 
-    // 1. Deckt das ganze Fenster
+    /* Seit dem 01.11.2026 haengt die Haelfte dieser Pruefung am Zustand,
+       nicht am Arm (Hybridfassung).
+       ----------------------------------------------------------------
+       Arm B deckt das Bild nur noch, WAEHREND der Agent arbeitet. Im
+       Ruhezustand muss er umgekehrt wie Arm A aussehen - und das ist
+       genauso pruefbar. Beide Richtungen stehen deshalb hier, die alte
+       als Arbeits-, die neue als Ruhepruefung. Wer die Klasse
+       `agent-vollbild` versehentlich dauerhaft setzt, faellt bei der
+       Ruhepruefung auf. */
+    const vollbild = document.body.classList.contains("agent-vollbild");
     const k = rail.getBoundingClientRect();
     const deckt = k.left <= 1 && k.top <= 1
       && k.right >= window.innerWidth - 1 && k.bottom >= window.innerHeight - 1;
-    if (!deckt) {
-      this.befund("Arm B", "Der Chat deckt das Fenster nicht vollstaendig - die Seite scheint durch", {
-        chat: { l: Math.round(k.left), t: Math.round(k.top), r: Math.round(k.right), b: Math.round(k.bottom) },
-        fenster: { w: window.innerWidth, h: window.innerHeight },
-      });
-    } else this.bestanden();
-
-    // 2. Seite stillgelegt
     const main = document.querySelector(".app-main");
-    if (!main) this.befund("Arm B", "Kein .app-main gefunden - die Abschirmung kann nicht greifen");
-    else if (!main.hasAttribute("inert")) {
-      this.befund("Arm B", "Die Seite hinter dem Chat ist nur verdeckt, nicht stillgelegt (kein inert) - sie nimmt weiter Tastaturfokus");
-    } else this.bestanden();
+
+    if (vollbild) {
+      // 1. Waehrend der Arbeit: deckt das ganze Fenster
+      if (!deckt) {
+        this.befund("Arm B", "Der Chat deckt das Fenster waehrend der Arbeit nicht vollstaendig - die Seite scheint durch", {
+          chat: { l: Math.round(k.left), t: Math.round(k.top), r: Math.round(k.right), b: Math.round(k.bottom) },
+          fenster: { w: window.innerWidth, h: window.innerHeight },
+        });
+      } else this.bestanden();
+
+      // 2. Seite stillgelegt
+      if (!main) this.befund("Arm B", "Kein .app-main gefunden - die Abschirmung kann nicht greifen");
+      else if (!main.hasAttribute("inert")) {
+        this.befund("Arm B", "Die Seite hinter dem Chat ist nur verdeckt, nicht stillgelegt (kein inert) - sie nimmt weiter Tastaturfokus");
+      } else this.bestanden();
+    } else {
+      // 1b. Im Ruhezustand: darf das Fenster NICHT decken, sonst ist der
+      // Hybrid keiner und Arm B unterscheidet sich die ganze Sitzung
+      if (deckt) {
+        this.befund("Arm B", "Der Chat deckt das Fenster, obwohl der Agent nicht arbeitet - im Ruhezustand muss Arm B wie Arm A aussehen", {
+          chat: { l: Math.round(k.left), t: Math.round(k.top), r: Math.round(k.right), b: Math.round(k.bottom) },
+        });
+      } else this.bestanden();
+
+      // 2b. Und die Seite muss bedienbar sein, genau wie in Arm A
+      if (main && main.hasAttribute("inert")) {
+        this.befund("Arm B", "Die Seite ist stillgelegt, obwohl der Agent nicht arbeitet - dann kann die Person ausserhalb der Arbeit nicht selbst nachsehen");
+      } else this.bestanden();
+    }
 
     // 3. Zeiger und Klickring unsichtbar
     const zeiger = document.getElementById("agentZeiger");
@@ -655,9 +701,27 @@ const Seitenpruefung = {
       } else this.bestanden();
     }
 
-    // 7. Keine waagerechte Verschiebung der Seite hinter dem Chat
-    const links = parseFloat(window.getComputedStyle(main || document.body).marginLeft) || 0;
-    if (links > 1) {
+    /* 7. Keine waagerechte Verschiebung der Seite hinter dem Chat.
+       ------------------------------------------------------------------
+       Nur im Vollbild: im Ruhezustand IST der Rand von 380 Pixeln richtig,
+       dort steht die Seite ja neben dem Chat, in beiden Armen gleich.
+
+       Und nur, wenn der Rand ausgelaufen ist (01.11.2026): `margin-left`
+       ist mit .28s ueberblendet, und getComputedStyle liefert waehrend
+       der Ueberblendung den Zwischenwert. Wer in dieser Zeit misst,
+       findet den alten Rand von Arm A und meldet einen Fehler, den es
+       nicht gibt - genau das ist beim Umbau auf den Hybrid passiert.
+       Laeuft noch eine Ueberblendung, wird der Punkt uebersprungen und
+       nicht als bestanden gezaehlt. */
+    const ziel = main || document.body;
+    const laeuft = typeof ziel.getAnimations === "function"
+      && ziel.getAnimations().some((a) => String(a.transitionProperty || "").includes("margin"));
+    const links = (vollbild && !laeuft)
+      ? (parseFloat(window.getComputedStyle(ziel).marginLeft) || 0)
+      : 0;
+    if (laeuft && vollbild) {
+      console.info("Seitenpruefung: Rand laeuft noch aus, Punkt 7 uebersprungen");
+    } else if (links > 1) {
       this.befund("Arm B", "Die Seite hinter dem Chat ist nach rechts geschoben (Rand aus Arm A) - das zieht einen Scrollbalken auf", { marginLeft: links });
     } else this.bestanden();
   },
@@ -685,7 +749,13 @@ const Seitenpruefung = {
      Diese hier haelt drei Dinge fest, und nur unter 1040 Pixeln:
        1. Arm A deckt NICHT die ganze Hoehe (Kopfblatt, nicht Vollbild)
        2. Arm A zieht sich waehrend der Arbeit zurueck
-       3. Arm B tut das nicht
+       3. Arm B geht waehrend der Arbeit ins Vollbild, und die beiden Arme
+          unterscheiden sich dann voneinander
+
+     Punkt 3 war bis zum 01.11.2026 umgekehrt formuliert ("Arm B weicht
+     nicht"), weil das Vollbild damals dauerhaft galt. Mit der
+     Hybridfassung ist das Gegenteil richtig, und eine Pruefung, die
+     eine ueberholte Festlegung verteidigt, ist schlimmer als keine.
 
      Sie schaltet dafuer kurz die Klassen um und setzt sie danach zurueck -
      anders ist beides in einem Durchgang nicht zu messen.
@@ -700,7 +770,7 @@ const Seitenpruefung = {
     const rail = document.getElementById("agentRail");
     if (!rail || !document.body.classList.contains("agent-schublade")) return;
 
-    const warFenster = document.body.classList.contains("agent-fenster");
+    const warFenster = document.body.classList.contains("agent-vollbild");
     const warGesperrt = document.body.classList.contains("agent-gesperrt");
     const warOffen = document.body.classList.contains("agent-open");
     /* Gemessen wird die SICHTBARE Flaeche, nicht die Hoehe: Seit dem
@@ -720,23 +790,24 @@ const Seitenpruefung = {
          beim Laden das Aufblitzen verhindert. */
       document.body.classList.add("agent-lautlos");
       document.body.classList.add("agent-open");
-      document.body.classList.remove("agent-fenster", "agent-gesperrt");
+      document.body.classList.remove("agent-vollbild", "agent-gesperrt");
       const aRuhe = hoehe();
       document.body.classList.add("agent-gesperrt");
       const aArbeit = hoehe();
       document.body.classList.remove("agent-gesperrt");
-      document.body.classList.add("agent-fenster");
-      const bRuhe = hoehe();
+      /* Arm B im Ruhezustand ist jetzt derselbe Zustand wie Arm A: ohne
+         `agent-vollbild` gibt es keinen Unterschied mehr zu messen.
+         Gemessen wird deshalb der Zustand MIT Vollbild, also das, was in
+         Arm B waehrend der Arbeit passiert. */
+      const bRuhe = aRuhe;
       document.body.classList.add("agent-gesperrt");
+      document.body.classList.add("agent-vollbild");
       const bArbeit = hoehe();
 
       if (aRuhe >= window.innerHeight - 2) {
         this.befund("Telefon", `Arm A deckt die ganze Hoehe (${aRuhe} von ${window.innerHeight}) - dann ist er von Arm B nicht zu unterscheiden`);
       } else this.bestanden();
 
-      if (aRuhe === bRuhe) {
-        this.befund("Telefon", `Beide Arme sind gleich hoch (${aRuhe}) - der Eingriff faellt auf dem Telefon weg`);
-      } else this.bestanden();
 
       if (aArbeit >= aRuhe) {
         this.befund("Telefon", `Arm A zieht sich waehrend der Arbeit nicht zurueck (${aArbeit} von ${aRuhe} Pixeln bleiben sichtbar) - man sieht die Seite nicht, auf der er arbeitet`);
@@ -753,11 +824,24 @@ const Seitenpruefung = {
         this.befund("Telefon", "Die Sperrleiste hat keinen Ring - dann fehlt in Arm A waehrend der Arbeit jede Anzeige");
       } else if (leiste) this.bestanden();
 
-      if (bArbeit !== bRuhe) {
-        this.befund("Telefon", `Arm B weicht waehrend der Arbeit (${bArbeit} statt ${bRuhe}) - dort soll er gerade stehen bleiben`);
+      if (bArbeit <= bRuhe) {
+        this.befund("Telefon", `Arm B waechst waehrend der Arbeit nicht (${bArbeit} statt mehr als ${bRuhe}) - dann deckt er die Seite nicht`);
+      } else this.bestanden();
+      /* Der Vergleich der Arme gehoert seit dem 01.11.2026 in die
+         ARBEITSPHASE.
+         ----------------------------------------------------------------
+         Vorher verglich diese Pruefung die Ruhezustaende, und das war
+         richtig, solange Arm B dauerhaft Vollbild war. Im Hybrid ist
+         Gleichheit im Ruhezustand genau das Ziel - dort zu meckern hiesse,
+         den Umbau fuer kaputt zu erklaeren. Der Eingriff faellt auf dem
+         Telefon dann weg, wenn sich die Arme WAEHREND der Arbeit nicht
+         unterscheiden: Arm A faehrt aus dem Bild und gibt die Seite frei,
+         Arm B deckt sie. */
+      if (aArbeit === bArbeit) {
+        this.befund("Telefon", `Beide Arme sind waehrend der Arbeit gleich hoch (${aArbeit}) - der Eingriff faellt auf dem Telefon weg`);
       } else this.bestanden();
     } finally {
-      document.body.classList.toggle("agent-fenster", warFenster);
+      document.body.classList.toggle("agent-vollbild", warFenster);
       document.body.classList.toggle("agent-gesperrt", warGesperrt);
       document.body.classList.toggle("agent-open", warOffen);
       document.body.classList.toggle("agent-lautlos", warLautlos);

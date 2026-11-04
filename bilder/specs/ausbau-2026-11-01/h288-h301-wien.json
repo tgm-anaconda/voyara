@@ -1,0 +1,368 @@
+{
+ "hotels": [
+  {
+   "id": "h288",
+   "ziel": "wien",
+   "name": "Hotel Am Graben",
+   "ort": "Wien",
+   "region": "Innere Stadt",
+   "kategorie": "luxus",
+   "sterne": 5,
+   "preis": 386,
+   "rating": 4.7,
+   "bewertungen": 824,
+   "strand": null,
+   "zentrum": 0.1,
+   "flughafen": 19,
+   "extras": [
+    "spa",
+    "gym",
+    "terrace"
+   ],
+   "kurz": "Am Graben hinter dem Stephansdom, Spa im Gewölbe, Oper in acht Minuten.",
+   "lang": "Der Graben ist die Straße, an der Wien sich selbst zeigt, und das Haus steht mitten darin in einem Palais von 1874. Zweiundsechzig Zimmer, hohe Decken, Fischgrätparkett, Stoffe in Grün und Gold, ohne dass es nach Museum aussieht. Zur Oper sind es acht Gehminuten, zur Albertina fünf, zum Stephansdom zwei. Der Spa liegt im Ziegelgewölbe des Kellers, mit Becken, zwei Saunen und sechs Anwendungsräumen. Frühstück im Spiegelsaal bis halb zwölf, nachmittags Torte und Melange, abends ein Restaurant mit sechs Gängen und eine Bar, die bis zwei offen hat.",
+   "highlights": [
+    "Palais von 1874 am Graben",
+    "Spa im Ziegelgewölbe",
+    "Acht Minuten zur Oper",
+    "Frühstück bis halb zwölf"
+   ]
+  },
+  {
+   "id": "h289",
+   "ziel": "wien",
+   "name": "Pension Himmelpfortgasse",
+   "ort": "Wien",
+   "region": "Innere Stadt",
+   "kategorie": "budget",
+   "sterne": 2,
+   "preis": 86,
+   "rating": 4.2,
+   "bewertungen": 486,
+   "strand": null,
+   "zentrum": 0.3,
+   "flughafen": 20,
+   "kurz": "Einfache Pension im ersten Bezirk, Lage besser als der Preis vermuten lässt.",
+   "lang": "Die Himmelpfortgasse liegt zwischen Kärntner Straße und Stadtpark, drei Minuten vom Stephansdom, und dort eine Pension für unter hundert Euro zu finden ist der eigentliche Punkt. Vierzehn Zimmer im zweiten Stock eines Altbaus, Parkett, hohe Fenster, Bad im Zimmer, Aufzug vorhanden. Möbliert ist schlicht und ohne Anspruch. Frühstück wird im Zimmer nicht serviert, sondern in einem kleinen Raum zur Hofseite, von sieben bis zehn. Vor der Tür fährt keine Straßenbahn, es ist ruhig, und zu Oper, Albertina und Hofburg geht man jeweils unter zehn Minuten. Wer in Wien schlafen und draußen leben will, braucht nicht mehr.",
+   "highlights": [
+    "Erster Bezirk unter hundert Euro",
+    "Drei Minuten zum Stephansdom",
+    "Ruhige Gasse ohne Straßenbahn",
+    "Altbau mit Aufzug"
+   ]
+  },
+  {
+   "id": "h290",
+   "ziel": "wien",
+   "name": "Praterstern Design",
+   "ort": "Wien",
+   "region": "Leopoldstadt",
+   "kategorie": "stadt",
+   "sterne": 4,
+   "preis": 168,
+   "rating": 4.3,
+   "bewertungen": 724,
+   "strand": null,
+   "zentrum": 1.8,
+   "flughafen": 17,
+   "extras": [
+    "gym",
+    "terrace"
+   ],
+   "kurz": "Am Prater, Flughafenbahn in sechzehn Minuten, Dachterrasse über der Stadt.",
+   "lang": "Der Praterstern ist Verkehrsknoten und Parkeingang gleichzeitig: die Schnellbahn zum Flughafen braucht sechzehn Minuten, die U1 in die Innenstadt vier, und hinter dem Bahnhof beginnt der Grüne Prater mit der Hauptallee, vier Kilometer gerade unter Kastanien. Das Haus ist ein Neubau, hundertvierzehn Zimmer, Beton, Eiche, Leinen, schallgedämmte Fenster, die man braucht. Auf dem Dach eine Terrasse mit Bar und Blick über die Donau auf die Hochhäuser. Der Wurstelprater mit dem Riesenrad liegt zweihundert Meter entfernt. Frühstücksbuffet ab halb sieben, Fitnessraum rund um die Uhr offen.",
+   "highlights": [
+    "Sechzehn Minuten zum Flughafen",
+    "Dachterrasse mit Blick über die Donau",
+    "Zweihundert Meter zum Riesenrad",
+    "Hauptallee im Prater vor der Tür"
+   ]
+  },
+  {
+   "id": "h291",
+   "ziel": "wien",
+   "name": "Josefstädter Hof",
+   "ort": "Wien",
+   "region": "Josefstadt",
+   "kategorie": "boutique",
+   "sterne": 4,
+   "preis": 196,
+   "rating": 4.6,
+   "bewertungen": 412,
+   "strand": null,
+   "zentrum": 1.4,
+   "flughafen": 22,
+   "extras": [
+    "terrace"
+   ],
+   "kurz": "Biedermeierhaus im achten Bezirk, Innenhof mit Kastanie, Theater um die Ecke.",
+   "lang": "Die Josefstadt ist der kleinste Bezirk Wiens und der mit den meisten Beisln pro Quadratmeter. Das Haus steht in einer Seitengasse in einem Biedermeierbau von 1830, vierundzwanzig Zimmer um einen Innenhof, in dem eine Kastanie steht, die älter ist als die Elektrifizierung. Zimmer mit Parkett, Stuckdecken, Betten mit guten Matratzen und kein Fernseher in Sichtweite, auf Wunsch wird einer gebracht. Das Theater in der Josefstadt liegt vier Minuten entfernt, das Volkstheater acht, die Ringstraße zehn. Frühstück im Hof, wenn es warm ist, mit Brot von der Bäckerei Gragger. Abends wird nicht gekocht, dafür stehen zwölf Wirtshäuser in Gehweite.",
+   "highlights": [
+    "Biedermeierhaus von 1830",
+    "Innenhof mit alter Kastanie",
+    "Vier Minuten zum Theater in der Josefstadt",
+    "Frühstück im Hof"
+   ]
+  },
+  {
+   "id": "h292",
+   "ziel": "wien",
+   "name": "Neubau Loft Rooms",
+   "ort": "Wien",
+   "region": "Neubau",
+   "kategorie": "boutique",
+   "sterne": 3,
+   "preis": 152,
+   "rating": 4.5,
+   "bewertungen": 568,
+   "strand": null,
+   "zentrum": 1.6,
+   "flughafen": 23,
+   "extras": [
+    "terrace"
+   ],
+   "kurz": "Im siebten Bezirk zwischen Läden und Lokalen, zwanzig Zimmer im Hinterhaus.",
+   "lang": "Der siebte Bezirk ist das Viertel, in dem Wien am wenigsten nach Postkarte aussieht: kleine Läden, Zweitgeschäfte, Lokale, in denen Leute aus dem Viertel sitzen. Das Haus liegt im Hinterhaus eines Gründerzeitblocks, zwanzig Zimmer über drei Stockwerke, Sichtziegel, Stahlfenster, Böden aus geschliffenem Beton. Zum MuseumsQuartier sind es sechs Gehminuten, zur Mariahilfer Straße drei, zum Naschmarkt zwölf. Frühstück von acht bis elf mit Kaffee aus der Rösterei im Haus. Abends gibt es im Umkreis von dreihundert Metern mehr gute Lokale als in manchen Städten insgesamt.",
+   "highlights": [
+    "Hinterhaus im siebten Bezirk",
+    "Sechs Minuten zum MuseumsQuartier",
+    "Kaffee aus der Rösterei im Haus",
+    "Lokale im Umkreis von 300 Metern"
+   ]
+  },
+  {
+   "id": "h293",
+   "ziel": "wien",
+   "name": "Hotel Schönbrunn Park",
+   "ort": "Wien",
+   "region": "Hietzing",
+   "kategorie": "familie",
+   "sterne": 4,
+   "preis": 178,
+   "rating": 4.4,
+   "bewertungen": 864,
+   "strand": null,
+   "zentrum": 5.4,
+   "flughafen": 26,
+   "extras": [
+    "kidsClub",
+    "pool"
+   ],
+   "kurz": "Am Schlosspark Schönbrunn, Tiergarten in zehn Minuten, Hallenbad im Haus.",
+   "lang": "Schönbrunn ist für Familien die effizienteste Adresse in Wien: Schloss, der älteste Zoo der Welt, ein Irrgarten, eine Palmenhaus und ein Park, der kostenlos und riesig ist, alles auf einem Gelände. Das Haus liegt am östlichen Parkrand, achtundachtzig Zimmer, zwei Drittel Familienzimmer, viele mit Verbindungstür. Im Haus ein Hallenbad mit Kinderbecken, Spielzimmer und Betreuung an Nachmittagen. Zum Tiergartentor sind es zehn Gehminuten, zur U4 vier, in die Innenstadt zwölf Minuten mit der Bahn. Frühstücksbuffet ab halb sieben, abends Halbpension auf Wunsch mit Kindertisch um halb sechs.",
+   "highlights": [
+    "Am Schlosspark Schönbrunn",
+    "Zehn Minuten zum Tiergarten",
+    "Hallenbad mit Kinderbecken",
+    "Zwölf Minuten mit der U4 ins Zentrum"
+   ]
+  },
+  {
+   "id": "h294",
+   "ziel": "wien",
+   "name": "Grinzinger Weinhof",
+   "ort": "Wien",
+   "region": "Döbling",
+   "kategorie": "finca",
+   "sterne": 4,
+   "preis": 186,
+   "rating": 4.6,
+   "bewertungen": 386,
+   "strand": null,
+   "zentrum": 8.2,
+   "flughafen": 30,
+   "extras": [
+    "terrace",
+    "bikeRental"
+   ],
+   "kurz": "Heurigenhof in Grinzing, eigene Rieden am Nussberg, Straßenbahn ins Zentrum.",
+   "lang": "Grinzing ist formal Wien und faktisch ein Dorf am Stadtrand mit Weinbergen, die bis an die Häuser reichen. Der Hof ist ein arbeitender Weinbaubetrieb, sechzehn Zimmer im ehemaligen Pressgebäude, Gewölbe, Natursteinwände, Blick in den Garten. Der Wein kommt von eigenen Rieden am Nussberg, und wenn ausgesteckt ist, sitzt man im Hof zwischen Wienern, die zum Essen und nicht zum Fotografieren kommen. Die Straßenbahnlinie 38 fährt vor der Tür und braucht dreiundzwanzig Minuten zum Schottentor am Ring. Räder stehen bereit, der Weg durch die Weinberge nach Nussdorf dauert eine halbe Stunde.",
+   "highlights": [
+    "Arbeitender Weinbaubetrieb in Grinzing",
+    "Eigene Rieden am Nussberg",
+    "Linie 38 vor der Tür, 23 Minuten zum Ring",
+    "Räder für den Weg durch die Weinberge"
+   ]
+  },
+  {
+   "id": "h295",
+   "ziel": "wien",
+   "name": "Hotel Karlsplatz",
+   "ort": "Wien",
+   "region": "Wieden",
+   "kategorie": "stadt",
+   "sterne": 4,
+   "preis": 186,
+   "rating": 4.4,
+   "bewertungen": 692,
+   "strand": null,
+   "zentrum": 0.9,
+   "flughafen": 20,
+   "extras": [
+    "gym",
+    "terrace"
+   ],
+   "kurz": "Am Karlsplatz zwischen Secession und Naschmarkt, drei U-Bahnlinien unter dem Haus.",
+   "lang": "Der Karlsplatz ist kein schöner Platz, aber der nützlichste in Wien: drei U-Bahnlinien, die Karlskirche, die Secession, der Musikverein und der Naschmarkt liegen im Umkreis von fünfhundert Metern. Das Haus steht an der Ostseite, vierundneunzig Zimmer, nüchtern eingerichtet, Eiche und Grau, die oberen mit Blick auf die Kuppel der Karlskirche. Zum Naschmarkt sind es vier Gehminuten, dort frühstückt man besser als im Haus, was das Haus selbst sagt. Fitnessraum im Keller, Dachterrasse im Sommer offen. Vom Hauptbahnhof sind es zwei Stationen, vom Flughafen fünfundzwanzig Minuten mit der Bahn über Wien Mitte.",
+   "highlights": [
+    "Drei U-Bahnlinien unter dem Haus",
+    "Vier Minuten zum Naschmarkt",
+    "Blick auf die Karlskirche",
+    "Musikverein und Secession in Gehweite"
+   ]
+  },
+  {
+   "id": "h296",
+   "ziel": "wien",
+   "name": "Alsergrund Universitätshof",
+   "ort": "Wien",
+   "region": "Alsergrund",
+   "kategorie": "boutique",
+   "sterne": 3,
+   "preis": 142,
+   "rating": 4.4,
+   "bewertungen": 448,
+   "strand": null,
+   "zentrum": 2.1,
+   "flughafen": 24,
+   "extras": [
+    "terrace"
+   ],
+   "kurz": "Im neunten Bezirk am Alten AKH, Hof mit Kastanien, Ring in zehn Minuten.",
+   "lang": "Der Alsergrund ist Universitätsbezirk, und der Campus im Alten Allgemeinen Krankenhaus ist einer der angenehmsten Orte der Stadt: acht Höfe mit Kastanien, Lokalen und Leuten, die dort sitzen, ohne etwas zu müssen. Das Haus liegt gegenüber, achtzehn Zimmer in einem Gründerzeitbau, Parkett, hohe Fenster, hofseitig still. Zur Votivkirche sind es sechs Gehminuten, zum Ring zehn, zum Sigmund-Freud-Museum vier. Frühstück von sieben bis elf, Kaffee aus der Rösterei nebenan. Die Straßenbahnen 5, 33 und 43 fahren im Umkreis von dreihundert Metern, das deckt den halben Bezirk ab.",
+   "highlights": [
+    "Gegenüber dem Campus im Alten AKH",
+    "Zehn Minuten zum Ring",
+    "Vier Minuten zum Freud-Museum",
+    "Drei Straßenbahnlinien in Gehweite"
+   ]
+  },
+  {
+   "id": "h297",
+   "ziel": "wien",
+   "name": "Landstraßer Palais",
+   "ort": "Wien",
+   "region": "Landstraße",
+   "kategorie": "luxus",
+   "sterne": 5,
+   "preis": 348,
+   "rating": 4.7,
+   "bewertungen": 524,
+   "strand": null,
+   "zentrum": 1.6,
+   "flughafen": 18,
+   "extras": [
+    "spa",
+    "gym",
+    "terrace"
+   ],
+   "kurz": "Palais am Rand des dritten Bezirks, Belvedere in sechs Minuten, Flughafenzug am Haus.",
+   "lang": "Das Palais wurde 1783 für einen ungarischen Grafen gebaut und war danach Botschaft, Verwaltungsgebäude und Archiv, bevor es Hotel wurde. Achtundvierzig Zimmer und Suiten, hohe Räume, Doppelflügeltüren, moderne Bäder, draußen ein Garten mit Platanen. Zum Oberen Belvedere sind es sechs Gehminuten, zum Hundertwasserhaus zehn, zum Stadtpark zwölf. Der City Airport Train fährt von Wien Mitte, sechshundert Meter entfernt, in sechzehn Minuten zum Flughafen. Der Spa liegt im Souterrain mit Becken, Sauna, Dampfbad und Hamam. Restaurant mit sechs Gängen und einem Weinkeller, der sich auf österreichische Lagen beschränkt und das gründlich macht.",
+   "highlights": [
+    "Palais von 1783 mit Platanengarten",
+    "Sechs Minuten zum Belvedere",
+    "Flughafenzug in sechzehn Minuten",
+    "Spa mit Hamam im Souterrain"
+   ]
+  },
+  {
+   "id": "h298",
+   "ziel": "wien",
+   "name": "Mariahilfer Stadthaus",
+   "ort": "Wien",
+   "region": "Mariahilf",
+   "kategorie": "stadt",
+   "sterne": 3,
+   "preis": 132,
+   "rating": 4.3,
+   "bewertungen": 612,
+   "strand": null,
+   "zentrum": 2.2,
+   "flughafen": 24,
+   "kurz": "An der Mariahilfer Straße, U3 vor der Tür, Westbahnhof in vier Stationen.",
+   "lang": "Die Mariahilfer Straße ist die längste Einkaufsstraße Wiens und seit dem Umbau zur Begegnungszone leiser, als man denkt. Das Haus liegt an der Südseite, achtundfünfzig Zimmer, einfach und sauber, die hofseitigen deutlich ruhiger. Die U3 hält vor der Tür, zum Stephansplatz sind es vier Stationen, zum Westbahnhof ebenfalls vier in die andere Richtung. Zum MuseumsQuartier geht man zehn Minuten, zum Naschmarkt acht. Frühstück ist einfach und reicht, von halb sieben bis zehn. Für den Preis in dieser Lage ist das Haus eine der verlässlicheren Adressen der Stadt, auch wenn die Zimmer keine Überraschung sind.",
+   "highlights": [
+    "U3 direkt vor dem Haus",
+    "Vier Stationen zum Stephansplatz",
+    "Acht Minuten zum Naschmarkt",
+    "Hofzimmer deutlich ruhiger"
+   ]
+  },
+  {
+   "id": "h299",
+   "ziel": "wien",
+   "name": "Simmeringer Gasthof",
+   "ort": "Wien",
+   "region": "Simmering",
+   "kategorie": "budget",
+   "sterne": 2,
+   "preis": 74,
+   "rating": 4.0,
+   "bewertungen": 342,
+   "strand": null,
+   "zentrum": 6.8,
+   "flughafen": 13,
+   "kurz": "Günstigster Gasthof der Stadt, dreizehn Kilometer zum Flughafen, U3 in Gehweite.",
+   "lang": "Simmering ist Arbeiterbezirk und Industriegebiet und steht in keinem Reiseführer, hat aber zwei Vorzüge: es ist der Bezirk mit der kürzesten Strecke zum Flughafen, dreizehn Kilometer, und die Preise liegen bei der Hälfte dessen, was innerhalb des Rings verlangt wird. Der Gasthof hat sechzehn Zimmer über der Stube, einfach möbliert, mit Dusche und WC, gut geheizt. Die U3 ist sechs Gehminuten entfernt, in die Innenstadt sind es siebzehn Minuten. Der Zentralfriedhof liegt zwei Kilometer entfernt und ist, was Wiener schon lange wissen, einer der eindrücklichsten Orte der Stadt. In der Stube wird mittags und abends Wiener Küche gekocht, Portionen für Handwerker.",
+   "highlights": [
+    "Dreizehn Kilometer zum Flughafen",
+    "Günstigste Nacht in Wien",
+    "Siebzehn Minuten mit der U3 ins Zentrum",
+    "Wiener Küche in der Stube"
+   ]
+  },
+  {
+   "id": "h300",
+   "ziel": "wien",
+   "name": "Hotel Ringturm",
+   "ort": "Wien",
+   "region": "Innere Stadt",
+   "kategorie": "stadt",
+   "sterne": 4,
+   "preis": 212,
+   "rating": 4.5,
+   "bewertungen": 586,
+   "strand": null,
+   "zentrum": 0.6,
+   "flughafen": 21,
+   "extras": [
+    "gym",
+    "terrace"
+   ],
+   "kurz": "Am Schottenring mit Blick auf den Donaukanal, Straßenbahn rund um die Altstadt.",
+   "lang": "Der Schottenring ist der nördliche Abschnitt der Ringstraße, dort, wo sie auf den Donaukanal trifft. Das Haus steht an der Ecke, sechsundsechzig Zimmer, sachlich eingerichtet, Eiche und Filz, die oberen mit Blick über den Kanal auf die Leopoldstadt. Die Ringtram fährt vor der Tür einmal um die Altstadt, das ist die billigste Stadtrundfahrt Wiens. Zum Stephansdom sind es zwölf Gehminuten, zur Börse zwei, zum Rathausplatz acht, auf dem von November an der Christkindlmarkt steht. Frühstück ab halb sieben, abends eine Bar im Erdgeschoss mit kleiner Karte. Fitnessraum im Dachgeschoss mit Fenstern zum Ring.",
+   "highlights": [
+    "Am Ring mit Blick auf den Donaukanal",
+    "Ringtram vor der Tür",
+    "Zwölf Minuten zum Stephansdom",
+    "Fitnessraum im Dachgeschoss"
+   ]
+  },
+  {
+   "id": "h301",
+   "ziel": "wien",
+   "name": "Prater Apartments",
+   "ort": "Wien",
+   "region": "Leopoldstadt",
+   "kategorie": "apart",
+   "sterne": 3,
+   "preis": 148,
+   "rating": 4.4,
+   "bewertungen": 486,
+   "strand": null,
+   "zentrum": 2.4,
+   "flughafen": 16,
+   "extras": [
+    "terrace"
+   ],
+   "kurz": "Apartments mit Küche am Grünen Prater, günstiger bei längeren Aufenthalten.",
+   "lang": "Das Haus liegt an der Hauptallee am Rand des Grünen Praters, vier Kilometer gerader Weg unter Kastanien, auf dem morgens die halbe Stadt läuft. Zweiunddreißig Apartments von vierzig bis achtzig Quadratmetern, alle mit Küche, Waschmaschine und Balkon, eingerichtet mit dem, was man tatsächlich braucht. Ab vier Nächten wird es deutlich günstiger als ein Hotelzimmer, weil man selbst kocht und der Supermarkt im Haus ist. Zur U1 am Praterstern sind es sieben Gehminuten, zum Flughafen sechzehn Minuten mit der Schnellbahn. Das Stadion und die Krieau liegen in Gehweite, bei Spielen ist es laut. Keine Rezeption rund um die Uhr, Schlüssel per Code.",
+   "highlights": [
+    "Apartments mit Küche und Waschmaschine",
+    "An der Hauptallee im Grünen Prater",
+    "Supermarkt im Haus",
+    "Sechzehn Minuten zum Flughafen"
+   ]
+  }
+ ]
+}

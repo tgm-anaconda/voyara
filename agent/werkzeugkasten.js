@@ -96,6 +96,24 @@ const Werkzeugkasten = {
           nachricht_art: { type: "string", enum: ["antwort", "anweisung", "frage", "einwand", "unklar", "sonstiges"],
             description: "Was die letzte Nachricht der Person war. antwort = sie beantwortet die gestellte Frage (auch teilweise oder mit Zusatz). anweisung = sie sagt dir, was du tun sollst ('nimm das erste', 'buch das', 'zeig mir die Auswahl nochmal'). frage = sie will etwas von dir wissen. einwand = sie widerspricht, korrigiert oder lehnt etwas ab. unklar = sie versteht die Frage nicht oder fragt zurueck, was gemeint ist. sonstiges = passt in keines der Felder. Immer angeben." },
           ziel: text("Region aus dem Katalog, als id: mallorca, kreta, algarve, sardinien, teneriffa, barcelona, wien, lissabon, tirol, suedtirol, lappland, ostsee, marrakesch, kapstadt, krabi, island, newyork, kyoto. NUR, wenn die Person die Region selbst genannt hat - sonst leer lassen. Eine Region, die du fuer passend haeltst, gehoert nicht hierher: Dafuer gibt es regionen_vergleichen, und die Person entscheidet."),
+          /* Mehrere genannte Regionen und ausgeschlossene Regionen
+             (01.11.2026).
+             ----------------------------------------------------------
+             Dasselbe Muster wie bei zwei Flughaefen (flugAbAuswahl,
+             28.09.) und zwei Monaten (monate, 04.10.): Eine Aussage, fuer
+             die es kein Feld gibt, faellt durch, und fuer die Person sieht
+             es aus, als waere ihre Antwort nicht angekommen. "Mallorca
+             oder Kreta" passte in `ziel` nicht hinein, "nicht Marrakesch,
+             da war ich letztes Jahr" in gar kein Feld.
+
+             Methodisch ist das kein Komfort, sondern Pflicht: Wer eine
+             Region ablehnt und sie trotzdem in der Liste sieht, waehlt am
+             Ende moeglicherweise nach Region und nicht nach dem, was die
+             Studie messen will. Die Moeglichkeit muss es also geben -
+             gefragt wird danach aber nicht, die Zielfrage bleibt bei
+             "eher warm oder eher kalt". */
+          zieleAuswahl: { type: "array", items: { type: "string" }, description: "Region-ids, wenn die Person MEHRERE nennt, unter denen gesucht werden soll ('Mallorca oder Kreta', 'Spanien oder Portugal', 'zeig mir Mallorca, Kreta und Sardinien'). Dann ziel leer lassen. Nur Regionen, die sie selbst genannt hat - frag nicht danach und ergaenze nichts." },
+          zieleAus: { type: "array", items: { type: "string" }, description: "Region-ids, die die Person ausschliesst ('nicht Marrakesch, da war ich letztes Jahr', 'alles ausser Mallorca', 'Staedte bitte nicht'). Nur, wenn sie es sagt - frag nicht danach." },
           monat: zahl("Reisemonat 1-12. Ein Monat allein heisst: flexibel im Monat, ohne festes Datum."),
           /* Mehrere Monate (04.10.2026): "Juli oder August" passte in kein
              Feld - es wurde nichts gespeichert, und die Zeitfrage galt
@@ -187,8 +205,11 @@ const Werkzeugkasten = {
              deutlich haeufiger falsch, und ein Name ohne Geburtsdatum ist
              brauchbarer als ein verworfener Eintrag. */
           reisende: { type: "array", items: { type: "string" }, description: "Namen der Reisenden, wie sie im Ausweis stehen, in der Reihenfolge: erst die Erwachsenen, dann die Kinder. Nur, wenn die Person sie nennt." },
-          geburtsdaten: { type: "array", items: { type: "string" }, description: "Geburtsdaten als YYYY-MM-DD, in derselben Reihenfolge wie reisende. Nur genannte, nichts ausrechnen und nichts erfinden." },
-          gepaeck: { type: "string", enum: ["hand", "20", "30"], description: "Gepaeck fuer alle Reisenden, wenn die Person es sagt ('alle brauchen einen Koffer' = 20). hand = nur Handgepaeck." },
+          /* Geburtsdaten und Gepaeck sind am 03.11.2026 raus: Mit der
+             Entschlankung der Kasse (19 auf 8 Eingaben) gibt es die Felder
+             nicht mehr. Ein Schemafeld ohne Feld auf der Seite verspricht
+             dem Modell etwas, das der Agent nicht einloesen kann - er haette
+             Geburtsdaten erfragt und sie dann nirgends eintragen koennen. */
         }),
       f("regionen_zaehlen",
         "Zaehlt je Region des Katalogs, wie viele Haeuser es im gemerkten Monat fuer die gemerkte Gruppe gibt, mit Saison. Nutze es, wenn das Ziel offen ist, bevor du Regionen empfiehlst.",
@@ -272,7 +293,7 @@ const Werkzeugkasten = {
          - und was nicht darin steht, bleibt unbeantwortet. */
       f("faq_nachschlagen",
         "Schlaegt eine Frage zum Ablauf im FAQ der Seite nach: Buchung, Bezahlung, Stornierung, Check-in, "
-        + "Gepaeck, Kinder, Haustiere, Gebuehren, Merkzettel, Datenschutz, Flugklassen (was Premium Economy oder Business kostet), Verpflegung, Mietwagen und so weiter. "
+        + "Gepaeck, Kinder, Haustiere, Gebuehren, Merkzettel, Datenschutz, Flugklassen (was Premium Economy oder Business kostet), Verpflegung und so weiter. "
         + "Nimm es fuer alles, was den SERVICE betrifft, nicht fuer Fragen zu Haeusern, Regionen oder Preisen "
         + "einer bestimmten Unterkunft - dafuer gibt es suchen, haus_oeffnen und bewertungen_lesen. "
         + "Steht nichts im FAQ, sag, dass du dazu nichts hast, und erfinde keine Auskunft.",
@@ -291,12 +312,19 @@ const Werkzeugkasten = {
           naechte: zahl("Neue Zahl der Naechte"), id: text("Haus-id, wenn es um ein bestimmtes Haus geht (sonst das offene)"),
           nurPruefen: { type: "boolean", description: "true = nur nachsehen, ob und zu welchem Preis das Haus mit diesen Daten buchbar ist" } }),
       /* Mietwagen auf Wunsch (03.10.2026): Reiter oeffnen, suchen, drei
-         aehnliche Wagen im Fenster, einer davon der Partnerwagen. */
-      f("mietwagen_suchen",
-        "Sucht auf Wunsch der Person einen Mietwagen am Reiseziel: oeffnet den Reiter Mietwagen, stellt die Klasse ein und zeigt drei aehnliche Wagen in einem Fenster, aus dem die Person waehlt. "
-        + "Nur, wenn die Person einen Mietwagen will oder auf dein einmaliges Angebot ja sagt. Der Wagen wird getrennt von der Unterkunft gebucht.",
-        { klasse: { type: "string", enum: ["Kleinwagen", "Kompaktklasse", "SUV", "Van (7 Sitze)"], description: "Nur, wenn die Person eine Klasse nennt; sonst waehlt der Kern nach der Zahl der Reisenden" },
-          ziel: text("Region-id, wenn noch kein Ziel feststeht und die Person eins nennt") }),
+         aehnliche Wagen im Fenster, einer davon der Partnerwagen.
+         Seit dem 02.11.2026 ist der Mietwagen aus (Vorgabe aus der
+         Besprechung mit Kai), und seit dem 03.11. wird das Werkzeug dann
+         auch nicht mehr angeboten: Der Reiter in der Suchmaske ist weg,
+         das Werkzeug haette ihn also gar nicht mehr oeffnen koennen. Die
+         Umsetzung bleibt stehen - mit `?mietwagenFrage=1` ist alles
+         wieder da. */
+      ...(typeof STELLSCHRAUBEN !== "undefined" && STELLSCHRAUBEN.mietwagenFrage === false ? [] : [
+        f("mietwagen_suchen",
+          "Sucht auf Wunsch der Person einen Mietwagen am Reiseziel: oeffnet den Reiter Mietwagen, stellt die Klasse ein und zeigt drei aehnliche Wagen in einem Fenster, aus dem die Person waehlt. "
+          + "Nur, wenn die Person einen Mietwagen will oder auf dein einmaliges Angebot ja sagt. Der Wagen wird getrennt von der Unterkunft gebucht.",
+          { klasse: { type: "string", enum: ["Kleinwagen", "Kompaktklasse", "SUV", "Van (7 Sitze)"], description: "Nur, wenn die Person eine Klasse nennt; sonst waehlt der Kern nach der Zahl der Reisenden" },
+            ziel: text("Region-id, wenn noch kein Ziel feststeht und die Person eins nennt") })]),
       /* Ein bestimmtes Haus gezielt suchen (04.10.2026). Gemeldet: "Was
          wuerde das Hotel im August kosten?" - der Agent konnte nicht zur
          Liste zurueck und nur nach diesem Haus suchen. */
@@ -2611,8 +2639,75 @@ const Werkzeugkasten = {
         if (!roh) { p.zielId = null; }
         // Auch hier gilt: Eine Region, die niemand genannt hat, wird nicht
         // gesetzt. Sonst entscheidet das Modell das Reiseziel.
-        else if (id && (Werkzeugkasten.regionGenannt(kern.lauf, id) || p.zielId === id)) { setze("zielId", id); p.zielOffen = false; }
+        else if (id && (Werkzeugkasten.regionGenannt(kern.lauf, id) || p.zielId === id)) {
+          /* Widerspricht die Region der genannten Richtung, wird sie
+             NICHT gesetzt, sondern vorgemerkt - der Kern fragt dann im
+             selben Zug nach (01.11.2026, Wunsch des Nutzers: "da halt
+             immer, wenn ein Widerspruch besteht, dann fragen, also dass
+             da nichts automatisch gemacht wird"). */
+          if (Werkzeugkasten.widersprichtRichtung(p, id, kern.lauf)) {
+            p.zielVorgemerkt = id;
+            kern.notieren("ziel_vorgemerkt", { ziel: id, richtung: p.richtung });
+          } else { setze("zielId", id); p.zielOffen = false; delete p.zielVorgemerkt; }
+        }
         else if (id) kern.notieren("ziel_verworfen", { ziel: id, wo: "stand_merken" });
+      }
+      /* Mehrere Regionen und Ausschluesse - mit derselben Sperre wie beim
+         einzelnen Ziel: Was die Person nicht gesagt hat, wird nicht
+         gesetzt. Sonst entscheidet das Modell, wo gesucht wird. */
+      for (const feld of ["zieleAuswahl", "zieleAus"]) {
+        if (a[feld] === undefined) continue;
+        const roh = Array.isArray(a[feld]) ? a[feld] : [a[feld]];
+        const ids = [];
+        const weg = [];
+        for (const x of roh) {
+          const k = String(x).toLowerCase().trim();
+          const id = (typeof ZIEL_NACH_ID !== "undefined" && ZIEL_NACH_ID[k]) ? k
+            : ((typeof ZIELE !== "undefined" ? ZIELE : []).find((z) => z.name.toLowerCase() === k) || {}).id || null;
+          if (id && Werkzeugkasten.regionGenannt(kern.lauf, id)) ids.push(id);
+          else if (id) weg.push(id);
+        }
+        if (weg.length) kern.notieren("ziel_verworfen", { ziele: weg, wo: feld });
+        /* Dieselbe Regel wie beim einzelnen Ziel: Was der Richtung
+           widerspricht, wird vorgemerkt statt gesetzt. Nur bei der
+           Auswahl, nicht beim Ausschluss - wer eine Region ablehnt,
+           widerspricht niemandem. */
+        let nehmen = ids;
+        if (feld === "zieleAuswahl" && ids.length) {
+          const quer = ids.filter((id) => Werkzeugkasten.widersprichtRichtung(p, id, kern.lauf));
+          if (quer.length) {
+            nehmen = ids.filter((id) => !quer.includes(id));
+            p.zieleVorgemerkt = quer;
+            kern.notieren("ziel_vorgemerkt", { ziele: quer, richtung: p.richtung });
+          } else delete p.zieleVorgemerkt;
+        }
+        /* Ein Ausschluss wird nur ergaenzt, nie geleert (03.11.2026).
+           Der Kern liest abgelehnte Regionen inzwischen selbst mit
+           (`regionenLesen`). Duerfte das Modell `zieleAus` mit einer
+           leeren Liste ueberschreiben, waere die Ablehnung im naechsten
+           Zug wieder weg - und zwar lautlos. Eine Auswahl darf das
+           Modell weiter aufheben, das ist die Gegenrichtung. */
+        if (feld === "zieleAus") {
+          if (nehmen.length) {
+            const zusammen = [...new Set([...(p.zieleAus || []), ...nehmen])];
+            if (zusammen.length !== (p.zieleAus || []).length) setze(feld, zusammen);
+          } else if (!roh.length && (p.zieleAus || []).length) {
+            kern.notieren("ausschluss_nicht_geleert", { bleibt: p.zieleAus });
+          }
+        }
+        else if (!roh.length) setze(feld, []);
+        else if (nehmen.length) setze(feld, [...new Set(nehmen)]);
+      }
+      /* Eine Region kann nicht gleichzeitig gewuenscht und abgelehnt sein.
+         Die Ablehnung gewinnt: Sie ist die spaetere und deutlichere
+         Aussage ("gerne Mallorca oder Kreta" ... "Kreta aber nicht"). */
+      if (p.zieleAus?.length) {
+        const aus = new Set(p.zieleAus);
+        if (p.zielId && aus.has(p.zielId)) { p.zielId = null; geaendert.push("zielId"); }
+        if (p.zieleAuswahl?.length) {
+          const bleibt = p.zieleAuswahl.filter((id) => !aus.has(id));
+          if (bleibt.length !== p.zieleAuswahl.length) { p.zieleAuswahl = bleibt; geaendert.push("zieleAuswahl"); }
+        }
       }
       // "Offen" und "egal" nur, wenn die Person so etwas gesagt hat - auf
       // "hi" hatte das Modell sonst Ziel offen und Ueberblick gewuenscht
@@ -3160,10 +3255,6 @@ const Werkzeugkasten = {
           kern.lauf.namenUnklar = null;
         }
       }
-      if (Array.isArray(a.geburtsdaten) && a.geburtsdaten.length) {
-        const tage = a.geburtsdaten.map((x) => (/^\d{4}-\d{2}-\d{2}$/.test(String(x).trim()) ? String(x).trim() : ""));
-        if (tage.some(Boolean)) { p.reisendeGeburt = tage; geaendert.push("geburtsdaten"); }
-      }
       /* Die Zimmerwahl gilt nur, wenn es das Zimmer im gewaehlten Haus
          wirklich gibt - sonst stuende ein Name im Stand, den die Kasse
          nicht kennt. */
@@ -3173,7 +3264,6 @@ const Werkzeugkasten = {
         if (treffer) { setze("zimmerTyp", treffer.name); p.zimmerFuer = kern.lauf.gewaehlt || null; kern.lauf.zimmerGefragt = true; }
         else kern.notieren("zimmer_verworfen", { genannt: a.zimmerTyp, haus: kern.lauf.gewaehlt || null });
       }
-      if (a.gepaeck) setze("gepaeck", a.gepaeck);
       setze("verpflegung", a.verpflegung);
       Werkzeugkasten.getraenkeHinweis(kern, p);
       /* Ein Flug zur Ferienwohnung ist keine Frage des Wollens.
@@ -4290,10 +4380,34 @@ const Werkzeugkasten = {
          Economy kostet etwa 33 Euro pro Nacht und Zimmer mehr" - die
          Klasse betrifft den Flug pro Person, nicht die Nacht. */
       const flugpreise = treffer.some((t) => t.id === "f-klasse") ? Werkzeugkasten.flugKlassenPreise(kern.lauf.profil || {}) : null;
+      /* Die Zahlen sagt der Kern, nicht das Modell (03.11.2026).
+         --------------------------------------------------------------
+         Gemeldet: Auf "wie teuer ist das bei Business Class, Premium
+         Class" kamen zuerst HOTELpreise - die standen im Kontext, weil
+         der Agent kurz davor die Lage geschildert hatte, und das Modell
+         griff danach. Die Zahlen im Werkzeugergebnis waren richtig, nur
+         hat sie niemand ausgesprochen.
+
+         Also derselbe Weg wie beim Rundgang und bei der Lage: Der Kern
+         stellt den Satz aus den Daten in den Chat, und das Modell soll
+         ihn nicht wiederholen. Damit kann die Zahl nicht mehr aus dem
+         Zusammenhang stammen. */
+      if (flugpreise && flugpreise.proPersonHinUndZurueck) {
+        const teile = Object.entries(flugpreise.proPersonHinUndZurueck)
+          .map(([label, wert]) => `${label} ${typeof wert === "number" ? `${wert} €` : wert}`);
+        const wohin = flugpreise.ab && flugpreise.nach ? ` von ${flugpreise.ab} nach ${flugpreise.nach}` : "";
+        kern.sagen(`Die Klasse betrifft nur den Flug, nicht die Unterkunft.`
+          + ` Pro Person für Hin- und Rückflug${wohin}: ${teile.join(", ")}.`);
+        kern.logZeile(`Flugklassen nachgesehen: ${teile.join(", ")}`, "ergebnis");
+      }
       return {
         ergebnis: {
           gefunden: treffer.length,
-          ...(flugpreise ? { flugpreise, flugHinweis: "Nenn die Preise pro Person fuer Hin- und Rueckflug aus flugpreise - nicht pro Nacht und nicht pro Zimmer." } : {}),
+          ...(flugpreise ? { flugpreise,
+            flugHinweis: "Die Zahlen stehen schon im Chat - der Kern hat sie gesagt. Wiederhol sie NICHT "
+              + "und nenn in derselben Antwort keine Uebernachtungspreise: Die Klasse betrifft den Flug pro "
+              + "Person, nicht die Nacht und nicht das Zimmer. Sag hoechstens noch, wo man die Klasse "
+              + "einstellt, und stell dann die naechste Frage." } : {}),
           antworten: treffer.map((t) => ({ frage: t.frage, antwort: t.antwort })),
           hinweis: "Antworte mit dem, was in antworten steht - in deinen Worten, aber ohne etwas "
             + "hinzuzufuegen, was dort nicht steht. Eine Antwort reicht meistens; nenn nur dann eine "
@@ -4773,8 +4887,8 @@ const Werkzeugkasten = {
       if (stufe === 2 && Werkzeuge.seite() === "results" && r.i < r.ids.length) {
         kern.sperreAn();
         await Zeiger.warte(350);
-        if (Zeiger.abbruch) { kern.sperreAus(); kern.notieren("rundgang_abgebrochen", { bei: r.i }); return vorlegen(); }
-        kern.notieren("rundgang_ueber_liste", { naechstes: r.ids[r.i] });
+        if (Zeiger.abbruch) { kern.sperreAus(); kern.notieren("stichprobe_abgebrochen", { bei: r.i }); return fertig(); }
+        kern.notieren("stichprobe_ueber_liste", { naechstes: r.ids[r.i] });
         await hin(r.ids[r.i]);
         return { navigiert: true, stufe: 2 };
       }
@@ -4834,6 +4948,34 @@ const Werkzeugkasten = {
         const v = await kern.auswahlVorlegen(r.ids);
         return { ergebnis: v.ergebnis ?? v, log: v.log ?? null };
       };
+      /* Angehalten heisst angehalten (03.11.2026).
+         --------------------------------------------------------------
+         Gemeldet: "Ich hatte den Bot abgebrochen waehrend der letzten
+         Suche. Und er war eigentlich noch gerade dabei, die Bewertung
+         von einem der Haeuser zu lesen. Aber jetzt ist er einfach trotz
+         dem Abbruch, hat er mir jetzt die Auswahl von den vier Haeusern
+         gegeben."
+
+         Genau so stand es im Code: Jeder Abbruch im Rundgang rief
+         `vorlegen()` - also das, was die Person gerade gestoppt hatte.
+         Der Kern meldete im selben Zug "Ich mache erst weiter, wenn du
+         es sagst", und daneben erschien die fertige Auswahl.
+
+         Jetzt bleibt der Rundgang stehen, wo er war. `lauf.rundgang`
+         wird NICHT geleert - sagt die Person "mach weiter", setzt der
+         naechste Aufruf bei r.i fort. Vorgelegt wird erst, wenn der
+         Rundgang durch ist oder die Person es verlangt. */
+      const gestoppt = () => {
+        r.gestoppt = true;
+        kern.notieren("rundgang_abgebrochen", { bei: r.i, von: r.ids.length, vorgelegt: false });
+        kern.sichern();
+        return { ergebnis: {
+          angehalten: true,
+          angesehen: (r.gesehen || []).map((x) => x.id),
+          offen: r.ids.slice(r.i),
+          hinweis: "Die Person hat dich angehalten. Leg NICHTS vor und zaehl nichts auf - der Kern hat sich schon gemeldet.",
+        }, log: null };
+      };
       /* Die naechste Stufe steht fest, BEVOR die Seite wechselt.
          --------------------------------------------------------------
          Gemessen am 03.10.2026 (lokal, schneller Server): Der Klick auf
@@ -4855,7 +4997,7 @@ const Werkzeugkasten = {
         }
       };
 
-      if (Zeiger.abbruch) { kern.notieren("rundgang_abgebrochen", { bei: r.i }); return vorlegen(); }
+      if (Zeiger.abbruch) return gestoppt();
 
       if (stufe === 1) {
         kern.notieren("rundgang_start", { ids: r.ids });
@@ -4905,7 +5047,7 @@ const Werkzeugkasten = {
       if (stufe === 2 && Werkzeuge.seite() === "results" && r.i < r.ids.length) {
         kern.sperreAn();
         await Zeiger.warte(350);
-        if (Zeiger.abbruch) { kern.sperreAus(); kern.notieren("rundgang_abgebrochen", { bei: r.i }); return vorlegen(); }
+        if (Zeiger.abbruch) { kern.sperreAus(); return gestoppt(); }
         kern.notieren("rundgang_ueber_liste", { naechstes: r.ids[r.i] });
         await hin(r.ids[r.i]);
         return { navigiert: true, stufe: 2 };
@@ -4965,7 +5107,7 @@ const Werkzeugkasten = {
 
         r.i += 1;
         kern.sichern();
-        if (Zeiger.abbruch) { kern.notieren("rundgang_abgebrochen", { bei: r.i }); return vorlegen(); }
+        if (Zeiger.abbruch) return gestoppt();
         if (r.i < r.ids.length) {
           kern.sperreAn();
           stufeVorab(2);
@@ -4990,6 +5132,20 @@ const Werkzeugkasten = {
         kern.lauf.filterFremd = false;
         if (p.sortierung) await Werkzeuge.sortieren(p.sortierung === "bewertung" ? "rating" : "preis-asc");
         if (wieder.text) kern.logZeile(`Filter wieder gesetzt: ${wieder.text}`, "ergebnis");
+      }
+      /* Nach einem Stopp sagt die Person "mach weiter" - dann kommt der
+         Aufruf ohne Stufe herein, weil der ausstehende Aufruf mit dem
+         Anhalten verfallen ist. Ohne diese Weiche landete er hier unten
+         und legte vor, obwohl der Rundgang noch offen war. */
+      if (r.i < r.ids.length && !Zeiger.abbruch) {
+        kern.notieren("rundgang_fortgesetzt", { bei: r.i, von: r.ids.length });
+        delete r.gestoppt;
+        kern.sperreAn();
+        stufeVorab(2);
+        if (Werkzeuge.seite() === "results") { await hin(r.ids[r.i]); }
+        else if (r.zurueck) { await Zeiger.warte(250); location.href = r.zurueck; }
+        else await Werkzeuge.zurueckZurListe();
+        return { navigiert: true, stufe: 2 };
       }
       kern.sperreAus();
       kern.notieren("rundgang_fertig", { haeuser: (r.gesehen || []).length });
@@ -5344,7 +5500,7 @@ const Werkzeugkasten = {
       if (vor.daten?.wartetAufDaten || !vor.ok) {
         kern.notieren("formular_unvollstaendig", { fehlt: vor.daten?.fehlt || [] });
         return { ergebnis: { fehler: vor.text, fehlt: vor.daten?.fehlt || [],
-          hinweis: "Frag nach genau diesen Angaben, alle auf einmal in einem Satz - nicht Feld fuer Feld. Sobald sie da sind, merk sie mit stand_merken (reisende, geburtsdaten) und ruf buchung_vorbereiten noch einmal." }, log: vor.text };
+          hinweis: "Frag nach genau diesen Angaben, alle auf einmal in einem Satz - nicht Feld fuer Feld. Sobald sie da sind, merk sie mit stand_merken (reisende) und ruf buchung_vorbereiten noch einmal." }, log: vor.text };
       }
       kern.notieren("buchung_vorbereitet", { id: a.id, ausgefuellt: vor.daten?.geaendert || [] });
       const z = Werkzeuge.buchungsZusammenfassung();
@@ -5771,9 +5927,9 @@ const Werkzeugkasten = {
         if (p?.flug && v) zusatz = ` Da sind Flug und ${v} schon mit drin.`;
         else if (p?.flug) zusatz = " Da ist der Flug schon mit drin.";
         else if (v) zusatz = ` Da ist ${v} schon mit drin.`;
-        return `Hast du beim Preis eine feste Grenze für die ganze Reise, oder bist du da offen?${zusatz}`;
+        return `Hast du beim Preis eine feste Grenze, oder bist du da offen?${zusatz}`;
       },
-      nochmal: "Gibt es eine Obergrenze für die ganze Reise, die ich einhalten soll?",
+      nochmal: "Gibt es eine Obergrenze, die ich einhalten soll?",
       frage: "Ob sie beim Preis eine feste Grenze hat (gesamt fuer die Reise, oder pro Nacht, wenn sie das sagt) oder offen ist. Offen heisst preisEgal true. Eine Zahl ohne Zusatz ist das Gesamtbudget.", chips: "Feste Grenze | Offen" },
 
     verpflegung: {
@@ -5789,11 +5945,28 @@ const Werkzeugkasten = {
 
     wuensche: {
 
-      erklaerung: "Damit gewichte ich die Auswahl. Was du hier nennst, ziehe ich aus den Gästebewertungen heraus und vergleiche es zwischen den Häusern.",      satz: (p) => (p.kinder > 0
-        ? "Worauf achtet ihr bei der Unterkunft besonders? Zum Beispiel Pool, Kinderclub oder die Nähe zum Strand."
-        : "Worauf achtest du bei der Unterkunft besonders? Zum Beispiel Ruhe, gutes Essen oder die Lage."),
-      nochmal: "Gibt es noch etwas, worauf ich bei der Unterkunft achten soll?",
-      frage: "Worauf sie bei der Unterkunft achtet - offen gefragt, hoechstens drei Beispiele.", chips: "Sauberkeit | Essen | Lage | Ruhe" },
+      erklaerung: "Damit gewichte ich die Auswahl. Was du hier nennst, ziehe ich aus den Gästebewertungen heraus und vergleiche es zwischen den Häusern.",
+      /* Drei Runden, drei Saetze. Die zweite und dritte nennen, was schon
+         steht - sonst klingt das Nachhaken, als haette er nicht zugehoert. */
+      satz: (p, wk, lauf) => {
+        const runde = lauf?.gefragtWie?.wuensche || 0;
+        const schon = (p.kriterien || [])
+          .map((k) => (typeof Politik !== "undefined" ? Politik.kriterium(k.id)?.label : null))
+          .filter(Boolean);
+        const liste = typeof Politik !== "undefined" ? Politik.aufzaehlen(schon.map((x) => x.toLowerCase())) : schon.join(", ");
+        const dazu = schon.length ? ` neben ${liste}` : "";
+        if (runde >= 2) return `Fällt dir noch etwas ein${dazu}, oder soll ich mit der Suche weitermachen?`;
+        if (runde === 1) return `Fällt dir${dazu} noch etwas ein?`;
+        return p.kinder > 0
+          ? "Worauf achtet ihr bei der Unterkunft besonders? Zum Beispiel Pool, Kinderclub oder die Nähe zum Strand."
+          : "Worauf achtest du bei der Unterkunft besonders? Zum Beispiel Ruhe, gutes Essen oder die Lage.";
+      },
+      /* Kein `nochmal`: Die drei Fassungen stehen oben in `satz`, und
+         `themenSatz` wuerde `nochmal` ab dem zweiten Mal vorziehen. */
+      frage: "Worauf sie bei der Unterkunft achtet - offen gefragt, hoechstens drei Beispiele. Haengt im Satz ein Nachhaken ('Faellt dir noch etwas ein'), dann stell GENAU diese Frage und spring nicht zum naechsten Thema.",
+      chips: (p, wk, lauf) => ((lauf?.gefragtWie?.wuensche || 0) >= 1
+        ? "Nein, das war's | Ruhe | Lage | Sauberkeit"
+        : "Sauberkeit | Essen | Lage | Ruhe") },
   },
 
   /* Wie der Kern ein neu aufgenommenes Feld ausspricht.
@@ -5994,6 +6167,66 @@ const Werkzeugkasten = {
      das Modell eine vorschlagen, gibt es dafuer regionen_vergleichen -
      dann ist es ein Vorschlag, den die Person annehmen kann, und keine
      stille Festlegung. */
+  /* Passt eine genannte Region zur genannten Richtung?
+     ------------------------------------------------------------------
+     Gemessen wird an derselben Liste, die auch die Filterspalte fuellt
+     (`regionenFuerRichtung`). Eine zweite Schwelle waere eine zweite
+     Wahrheit: Der Agent koennte dann sagen "Mallorca ist nicht kalt" und
+     die Region trotzdem anhaken, oder umgekehrt.
+
+     Ohne Monat gibt es keine Temperatur und damit keinen belegbaren
+     Widerspruch - dann wird nicht gefragt. Ebenso bei Richtungen, die
+     keine Temperaturfrage sind (strand, stadt, berge). */
+  widersprichtRichtung(p, id, lauf = null) {
+    if (!p || !id || !p.richtung || !p.monat) return false;
+    if (!["warm", "kalt", "wintersonne"].includes(p.richtung)) return false;
+    if (typeof Politik === "undefined") return false;
+    const th = (Politik.THEMEN || []).find((t) => t.id === p.richtung);
+    if (!th) return false;
+    // Schon einmal gefragt und beantwortet: nicht erneut anhalten
+    if (lauf && (lauf.widerspruchGefragt || {})[id]) return false;
+    const erlaubt = this.regionenFuerRichtung(th, p);
+    if (!erlaubt || !erlaubt.length) return false;
+    return !erlaubt.includes(id);
+  },
+
+  /* Die Rueckfrage dazu - gebaut wie artRueckfrage, eine Frage je Zug.
+     Sie nennt die Temperatur, damit die Person entscheiden kann, statt
+     nur zu hoeren, dass etwas nicht passt. */
+  widerspruchRueckfrage(p, lauf) {
+    if (!p || !lauf) return null;
+    const vorgemerkt = [p.zielVorgemerkt, ...(p.zieleVorgemerkt || [])].filter(Boolean);
+    const id = vorgemerkt.find((x) => !(lauf.widerspruchGefragt || {})[x]);
+    if (!id) return null;
+    const z = typeof ZIEL_NACH_ID !== "undefined" ? ZIEL_NACH_ID[id] : null;
+    if (!z || !p.monat) return null;
+    const temp = typeof grad === "function" ? grad(z, p.monat) : null;
+    if (temp == null) return null;
+    const monat = typeof MONATSNAMEN !== "undefined" ? MONATSNAMEN[p.monat - 1] : `Monat ${p.monat}`;
+    const label = (Politik.THEMEN || []).find((t) => t.id === p.richtung)?.label || p.richtung;
+    const warm = p.richtung !== "kalt";
+    const satz = `${z.name} hat im ${monat} etwa ${temp} Grad und zählt damit nicht zu den Regionen, `
+      + `die ich als ${label} führe. Soll ich ${z.name} trotzdem dazunehmen, oder bleiben wir bei den `
+      + `${warm ? "warmen" : "kalten"} Regionen?`;
+    const dazu = `${z.name} trotzdem`;
+    const bleiben = `Bei den ${warm ? "warmen" : "kalten"} bleiben`;
+    const andere = vorgemerkt.filter((x) => x !== id);
+    return {
+      grund: `widerspruch_${id}`,
+      ziel: id,
+      satz,
+      chips: [dazu, bleiben],
+      /* Der Chip setzt, was die Frage anbietet. "Trotzdem" hebt die
+         Richtung auf, weil sie sonst im naechsten Zug dieselbe Region
+         wieder heraussortieren wuerde. */
+      wirkung: {
+        [dazu]: { zielId: id, zielOffen: false, richtung: null, zieleErlaubt: null,
+          zielVorgemerkt: null, zieleVorgemerkt: andere.length ? andere : null },
+        [bleiben]: { zielVorgemerkt: null, zieleVorgemerkt: andere.length ? andere : null },
+      },
+    };
+  },
+
   regionGenannt(lauf, id) {
     const z = typeof ZIEL_NACH_ID !== "undefined" ? ZIEL_NACH_ID[id] : null;
     if (!z) return false;
@@ -6391,7 +6624,15 @@ const Werkzeugkasten = {
          Endlosschleife kann daraus nicht werden: Nach zwei vergeblichen
          Anlaeufen nimmt der Kern "offen" an und sagt es. */
       verpflegung: !!(p.verpflegung || p.verpflegungEgal || p.typ === "apartment"),
-      wuensche: !!((p.kriterien || []).length || p.ausstattungEgal),
+      /* Nachgehakt wird zweimal (03.11.2026).
+         ----------------------------------------------------------------
+         Hier stand: ein genanntes Kriterium, und das Thema war erledigt.
+         Auf "Essen" kam deshalb sofort "Wie viele Haeuser soll ich dir
+         zusammenstellen?". Der Kern zaehlt die Runden (`wuenscheRunden`),
+         ab der dritten gilt das Thema als besprochen - oder sofort, wenn
+         die Person abwinkt (dann steht dort 99). */
+      wuensche: !!(p.ausstattungEgal || lauf?.wuenscheGenug
+        || ((p.kriterien || []).length && (lauf?.gefragtWie?.wuensche || 0) >= 3)),
       /* Der Anreisetag. Mit festen Daten aus der Suche ist er da, sonst
          muss die Person ihn nennen - ohne ihn laesst die Seite nicht
          buchen, und der Knopf auf der Hausseite bleibt gesperrt.
@@ -6502,6 +6743,12 @@ const Werkzeugkasten = {
     const angenommen = [];
     for (const [t, a] of Object.entries(ANNAHME)) {
       if (fertig[t] || (lauf.gefragtWie?.[t] || 0) < 2) continue;
+      /* Wer einen Wunsch genannt hat, setzt keine "besondere Ausstattung
+         nicht voraus" (03.11.2026). Beim Nachhaken wird die Frage jetzt
+         bis zu dreimal gestellt; ohne diese Zeile haette die Annahme nach
+         der zweiten Frage `ausstattungEgal` gesetzt und damit genau das
+         ueberschrieben, wonach gerade gefragt wurde. */
+      if (t === "wuensche" && (p.kriterien || []).length) continue;
       // Keine Annahme fasst an, was die Person selbst gesagt hat
       if ((a.schreibt || []).some((f) => p.vonPerson?.[f])) continue;
       /* Erst nachfragen, dann annehmen.
@@ -6748,7 +6995,10 @@ const Werkzeugkasten = {
       }
     }
     let frage = naechstes ? this.THEMEN[naechstes]?.frage : null;
+    // Chips duerfen wie der Satz vom Stand abhaengen - bei den Wuenschen
+    // steht ab der zweiten Runde "Nein, das war's" vorn.
     let chips = naechstes ? this.THEMEN[naechstes]?.chips : null;
+    if (typeof chips === "function") chips = chips(p, this, lauf);
     // Der fertige Fragesatz. Die Sonderfaelle darunter duerfen ihn ersetzen.
     let satz = naechstes ? this.themenSatz(naechstes, p, lauf) : null;
     const erklaerung = naechstes ? this.THEMEN[naechstes]?.erklaerung || null : null;
@@ -6792,10 +7042,17 @@ const Werkzeugkasten = {
          die Nachfrage fragte "fuer die ganze Unterkunft oder pro Nacht?".
          Ob ein Betrag pro Nacht gemeint ist, entscheidet preisDeutung an
          der Antwort ("pro Nacht" gesagt, oder die Hoehe gegen die Daten). */
+      /* Ohne Bezugsgroesse in der Frage (03.11.2026).
+         --------------------------------------------------------------
+         Wunsch des Nutzers: "Er soll einfach nur fragen, wie viel ist
+         dein Budget fuer die Reise? Weil man kann es ja auch als pro
+         Nacht angeben in Geld." Bis dahin stand "fuer die gesamte Reise"
+         in der Frage - das legt die Antwort auf eine Lesart fest, obwohl
+         `preisDeutung` beide auswerten kann. */
       satz = p.flug
-        ? "Wie hoch ist deine Grenze für die ganze Reise, mit Flug?"
-        : "Wie hoch ist deine Grenze für die ganze Reise?";
-      frage = "Sie hat gesagt, dass sie eine feste Grenze hat, aber noch keinen Betrag genannt. Frag nur nach der Zahl fuer die ganze Reise - nicht, ob pro Nacht oder gesamt.";
+        ? "Wie viel ist dein Budget für die Reise, mit Flug?"
+        : "Wie viel ist dein Budget für die Reise?";
+      frage = "Sie hat gesagt, dass sie eine feste Grenze hat, aber noch keinen Betrag genannt. Frag nur nach der Zahl - sag NICHT 'fuer die ganze Reise', 'gesamt' oder 'pro Nacht'. Ob der Betrag gesamt oder pro Nacht gemeint ist, klaert der Kern danach selbst.";
       chips = null;
     }
 
@@ -7427,6 +7684,89 @@ const Werkzeugkasten = {
      es schon eine eigene Zeile gibt. */
   ENGSTELLE_GRENZE: 15,
   ENGSTELLE_MINDESTGEWINN: 3,
+  /* Unter dieser Zahl bleibt es nicht beim Hinweis, sondern der Agent
+     fragt und wartet (Festlegung 01.11.2026). Begruendung des Nutzers:
+     Bei sehr wenigen Haeusern laesst sich kein Vergleichsset mehr bauen,
+     in dem die Preise nahe beieinanderliegen - dann entscheidet der
+     Preis und nicht das, was die Studie misst. Lieber einmal fragen als
+     ein Ergebnis liefern, das niemandem nutzt.
+
+     Fuenfzehn fuer den Hinweis, zehn fuer die Frage: Der Hinweis ist
+     billig, die Frage kostet einen Zug, und die erlebte Dauer ist selbst
+     eine Messgroesse.
+
+     Von fuenf auf zehn angehoben am 03.11.2026. Der Nutzer: "Es muessen
+     immer mindestens 8 vorliegen, egal wie die Filter sind. Aber dass,
+     wenn es weniger als 10 sind, immer noch gefragt werden, ob die Suche
+     erhoeht werden soll." Dahinter steht beides: Unter acht Objekten
+     entscheidet die Filterkette statt des Partnerlabels - und wie Leute
+     sich umentscheiden, wenn der Agent von sich aus eine Ausweitung
+     anbietet, ist eine eigene Beobachtung wert.
+
+     Dass die Frage selten bleibt, ist gemessen und nicht gehofft: Nach
+     dem Katalogausbau liegen 3 von 92 Hotel- und 7 von 72
+     Wohnungskombinationen unter zehn, keine einzige unter acht. */
+  ENGSTELLE_FRAGE_GRENZE: 10,
+  /* Was "lockern" fuer das jeweilige Feld bedeutet. Nur Felder, bei
+     denen die Lockerung eindeutig ist - Gruppengroesse und Reiseart
+     stehen bewusst nicht drin: Wer zu viert reist, reist zu viert. */
+  ENGSTELLE_LOCKERN: {
+    strand: () => ({ maxStrand: null, strandEgal: true }),
+    bewertung: () => ({ mindestbewertung: null, bewertungEgal: true }),
+    sterne: () => ({ mindestSterne: null }),
+    verpflegung: () => ({ verpflegung: null, verpflegungEgal: true }),
+    preis: (p) => ({ maxPreis: Math.round((p.maxPreis || 0) * 1.25) }),
+    gesamt: (p) => ({ budgetGesamt: Math.round((p.budgetGesamt || 0) * 1.25) }),
+    ziel: () => ({ zielId: null, zieleAuswahl: [], zielOffen: true }),
+    ausstattung: () => ({ ausstattungEgal: true, kriterien: [] }),
+    angebote: () => ({ nurAngebote: null }),
+    wlan: () => ({ wlanInklusive: null }),
+  },
+
+  /* Die Rueckfrage bei sehr wenigen Treffern. Gebaut wie artRueckfrage:
+     ein Satz, zwei Chips, eine Frage je Zug, und je Feld nur einmal. */
+  engstelleRueckfrage(p, lauf) {
+    if (!p || !lauf) return null;
+    const e = lauf.letzteEngstelle;
+    if (!e || e.jetzt >= this.ENGSTELLE_FRAGE_GRENZE) return null;
+    if ((lauf.engstelleGefragt || {})[e.feld]) return null;
+    const lockern = this.ENGSTELLE_LOCKERN[e.feld];
+    if (!lockern) return null;
+    let was = null;
+    try { was = this.ENGSTELLE[e.feld].call(this, p); } catch { was = null; }
+    if (!was) return null;
+    let werte = null;
+    try { werte = lockern(p); } catch { werte = null; }
+    if (!werte) return null;
+    const wohnung = this.seitenTyp(p) === "apartment";
+    const art = wohnung ? "Wohnungen" : "Häuser";
+    const haeuser = (n) => `${n} ${n === 1 ? (wohnung ? "Wohnung" : "Haus") : art}`;
+    const satz = `Mit deinen Vorgaben bleiben nur ${haeuser(e.jetzt)} übrig, und bei so wenigen `
+      + `lässt sich schlecht vergleichen. Am meisten nimmt ${was} weg: ohne diese Vorgabe wären es `
+      + `${e.ohne}. Soll ich die Suche ausweiten, oder ist dir die Vorgabe wichtig?`;
+    const ja = "Ja, Suche ausweiten";
+    const nein = "Nein, ist mir wichtig";
+    /* Dritter Weg bei den Ferienwohnungen: Statt die Vorgabe zu lockern,
+       kann der Agent auch Hotels dazunehmen. Das ist die eigentliche
+       Ausweitung - die Vorgabe bleibt, die Menge waechst. Er bietet es
+       nur an, wenn die Person die Art nicht selbst zur Bedingung gemacht
+       hat; wer ausdruecklich eine Wohnung will, bekommt kein Hotel
+       untergeschoben. */
+    const auchHotels = "Auch Hotels zeigen";
+    const darfAusweiten = wohnung && !p.vonPerson?.typ && e.feld !== "art";
+    const chips = darfAusweiten ? [ja, auchHotels, nein] : [ja, nein];
+    return {
+      grund: e.feld,
+      satz,
+      chips,
+      wirkung: {
+        [ja]: werte,
+        [nein]: {},
+        ...(darfAusweiten ? { [auchHotels]: { typ: "beides" } } : {}),
+      },
+    };
+  },
+
   ENGSTELLE: {
     gesamt: (p) => `dein Budget von ${Math.round(p.budgetGesamt).toLocaleString("de-DE")} € für die ganze Reise`,
     preis: (p) => `die Grenze von ${Math.round(p.maxPreis).toLocaleString("de-DE")} € pro Nacht`,
@@ -7468,6 +7808,16 @@ const Werkzeugkasten = {
     if (lauf) {
       if (lauf.engstelleGesagt === satz) return null;
       lauf.engstelleGesagt = satz;
+      /* Festhalten, was zuletzt eng war. Der Kern baut daraus die
+         Rueckfrage, wenn es sehr wenige sind - er sieht die Trefferliste
+         selbst nicht (01.11.2026). */
+      lauf.letzteEngstelle = { feld: beste.feld, ohne: beste.n, jetzt: liste.length };
+      /* Ins Protokoll, damit die Auswertung spaeter sieht, ob jemand in
+         eine enge Ecke geraten ist. Direkt in `lauf.protokoll`, weil
+         diese Funktion den Kern nicht kennt - dieselbe Liste, die auch
+         `kern.notieren` fuellt. */
+      (lauf.protokoll ||= []).push({ t: Date.now(), ereignis: "engstelle_hinweis",
+        feld: beste.feld, treffer: liste.length, ohne: beste.n });
     }
     return { feld: beste.feld, ohne: beste.n, jetzt: liste.length, satz };
   },
@@ -7764,8 +8114,17 @@ const Werkzeugkasten = {
     const inSaison = (id) => !p.monat || typeof saisonPassung !== "function"
       || typeof ZIEL_NACH_ID === "undefined" || !ZIEL_NACH_ID[id]
       || saisonPassung(ZIEL_NACH_ID[id], p.monat) >= 0.5;
-    const ziele = p.zielId ? [p.zielId]
-      : (p.zieleErlaubt?.length ? p.zieleErlaubt.filter(inSaison) : []);
+    /* Die Filterspalte kennt nur eine Erlaubnisliste, kein "ohne diese".
+       Ein Ausschluss wird deshalb zur Liste aller anderen Regionen -
+       anders bliebe das abgelehnte Ziel in der Liste stehen, und genau
+       das soll es nicht (01.11.2026). */
+    const aus = new Set(p.zieleAus || []);
+    const alleIds = (typeof ZIELE !== "undefined" ? ZIELE : []).map((z) => z.id);
+    const basis = p.zielId ? [p.zielId]
+      : (p.zieleAuswahl?.length ? p.zieleAuswahl
+        : (p.zieleErlaubt?.length ? p.zieleErlaubt.filter(inSaison)
+          : (aus.size ? alleIds.filter(inSaison) : [])));
+    const ziele = basis.filter((id) => !aus.has(id));
     return {
       ziele,
       /* Ein Gesamtbudget gehoert an den Gesamtregler.
@@ -8184,7 +8543,7 @@ const Werkzeugkasten = {
     + "Unterkuenfte suchen und filtern (suchen); Regionen und Monate vergleichen (regionen_vergleichen, monate_vergleichen); "
     + "Haeuser oeffnen und der Reihe nach ansehen (haus_oeffnen, haeuser_ansehen); Bewertungen lesen und nach Stichworten durchsuchen, z.B. Hund, WLAN, Rutschen, Alkohol (bewertungen_lesen, bewertungen_durchsuchen); "
     + "Monat, Anreisetag oder Naechte aendern, auch auf der Hausseite und in der Kasse (reisedaten_aendern); ein bestimmtes Haus gezielt suchen, auch mit anderem Monat oder anderer Dauer (haus_suchen); Fragen zu Ablauf, Zahlung, Storno, Flugklassen, Gepaeck nachschlagen (faq_nachschlagen); "
-    + "Flug zum Hotel dazurechnen (alle Flughaefen, alle Ziele, taeglich); auf Wunsch einen Mietwagen suchen (mietwagen_suchen); "
+    + "Flug zum Hotel dazurechnen (alle Flughaefen, alle Ziele, taeglich); "
     + "merken (merken); Zimmer, Verpflegung und Flug fuer die Buchung waehlen und die Buchung vorbereiten oder abschliessen, je nach Freigabe (buchung_vorbereiten, kasse_aendern, buchung_abschliessen).",
 
   grenzenText(p) {
@@ -8208,8 +8567,6 @@ const Werkzeugkasten = {
     const p = kern.lauf.profil || {};
     const daten = {
       namen: p.reisendeNamen || [],
-      geburt: p.reisendeGeburt || [],
-      gepaeck: p.gepaeck || null,
     };
     // Hat die Person die Ankunftszeit selbst gesagt, gilt die - vor jeder Rechnung
     if (p.ankunft) { daten.ankunft = p.ankunft; daten.ankunftGrund = "wie du gesagt hast"; return daten; }

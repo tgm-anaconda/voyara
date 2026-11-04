@@ -1,0 +1,111 @@
+{
+ "hotels": [
+  {
+   "id": "h386",
+   "ziel": "mallorca",
+   "name": "Son Bauló Dünenhotel",
+   "ort": "Can Picafort",
+   "region": "Can Picafort",
+   "kategorie": "strand",
+   "sterne": 4,
+   "preis": 158,
+   "rating": 4.4,
+   "bewertungen": 724,
+   "strand": 0.1,
+   "zentrum": 0.9,
+   "flughafen": 58,
+   "extras": [
+    "seaView",
+    "terrace"
+   ],
+   "kurz": "Hinter den Dünen von Son Bauló, flaches Wasser, Naturschutzgebiet nebenan.",
+   "lang": "Son Bauló liegt am Südende von Can Picafort, hinter einem Dünengürtel, der unter Schutz steht, und davor ein Strand, der flach ins Wasser läuft, was mit kleinen Kindern den Unterschied macht. Das Haus hat achtundfünfzig Zimmer, hell und einfach, zwei Drittel mit Balkon zur Seeseite. Zum Sand sind es achtzig Meter über einen Bohlenweg. Nördlich beginnt die Promenade nach Can Picafort, drei Kilometer ohne Straßenquerung, südlich das Feuchtgebiet S'Albufera, das größte der Balearen, mit Beobachtungshütten und zweihundertsiebzig Vogelarten. Nach Alcúdia sind es zwölf Kilometer, zum Flughafen achtundfünfzig.",
+   "highlights": [
+    "Achtzig Meter über den Bohlenweg zum Strand",
+    "Flaches Wasser für Kinder",
+    "Naturschutzgebiet S'Albufera im Süden",
+    "Promenade ohne Straßenquerung"
+   ]
+  },
+  {
+   "id": "h387",
+   "ziel": "mallorca",
+   "name": "Deià Cala Deià",
+   "ort": "Deià",
+   "region": "Serra de Tramuntana",
+   "kategorie": "luxus",
+   "sterne": 5,
+   "preis": 426,
+   "rating": 4.8,
+   "bewertungen": 386,
+   "strand": 1.8,
+   "zentrum": 0.4,
+   "flughafen": 36,
+   "extras": [
+    "pool",
+    "spa",
+    "terrace",
+    "seaView"
+   ],
+   "kurz": "Natursteinhaus über Deià, Tramuntana im Rücken, Cala Deià zu Fuß.",
+   "lang": "Deià klebt an einem Hang der Tramuntana, dreihundert Meter über dem Meer, und war ab den fünfziger Jahren der Ort, an dem Robert Graves wohnte und nach ihm eine Reihe von Leuten, die Ruhe suchten und Geld hatten. Das Haus ist ein Natursteinbau in Terrassen, vierundzwanzig Zimmer und Suiten, Olivenholz, Leinen, alle mit Blick über das Tal zum Wasser. Becken auf zwei Ebenen, Spa mit vier Räumen. Zur Cala Deià, einer Kiesbucht mit zwei Strandrestaurants, führt ein Pfad in fünfundzwanzig Minuten hinunter und in vierzig zurück. Der GR 221, der Trockensteinweg, läuft durch den Ort. Küche mit sieben Gängen, Gemüse aus dem eigenen Garten.",
+   "highlights": [
+    "Natursteinhaus in Terrassen über Deià",
+    "Becken auf zwei Ebenen",
+    "Pfad zur Cala Deià in 25 Minuten",
+    "Trockensteinweg GR 221 im Ort"
+   ]
+  },
+  {
+   "id": "h388",
+   "ziel": "mallorca",
+   "name": "Hostal Sóller Tram",
+   "ort": "Port de Sóller",
+   "region": "Port de Sóller",
+   "kategorie": "budget",
+   "sterne": 2,
+   "preis": 88,
+   "rating": 4.2,
+   "bewertungen": 486,
+   "strand": 0.3,
+   "zentrum": 0.2,
+   "flughafen": 38,
+   "kurz": "Günstiges Haus am Hafen, Straßenbahn nach Sóller, Bucht mit flachem Wasser.",
+   "lang": "Port de Sóller liegt in einer runden Bucht, die nur durch eine schmale Einfahrt offen ist, weshalb das Wasser dort still bleibt und auch im Oktober noch warm. Vom Hafen fährt eine Straßenbahn von 1913 in zwanzig Minuten nach Sóller, offen, holzgetäfelt und laut, und von dort der Schmalspurzug weiter nach Palma durch dreizehn Tunnel. Das Haus hat achtzehn Zimmer über einer Bar, einfach, mit Dusche, sechs mit Blick auf die Bucht. Zum Strand sind es dreihundert Meter. Für unter neunzig Euro ist das an diesem Teil der Küste ungewöhnlich. Zum Leuchtturm Cap Gros führt ein Weg in vierzig Minuten, von oben sieht man die ganze Tramuntana.",
+   "highlights": [
+    "Straßenbahn von 1913 vor der Tür",
+    "Dreihundert Meter zum Strand",
+    "Stilles Wasser in der runden Bucht",
+    "Unter neunzig Euro am Hafen"
+   ]
+  },
+  {
+   "id": "h389",
+   "ziel": "mallorca",
+   "name": "Finca Es Verger",
+   "ort": "Alaró",
+   "region": "Landesinneres",
+   "kategorie": "finca",
+   "sterne": 4,
+   "preis": 206,
+   "rating": 4.7,
+   "bewertungen": 342,
+   "strand": 22.0,
+   "zentrum": 3.4,
+   "flughafen": 28,
+   "extras": [
+    "pool",
+    "terrace",
+    "bikeRental"
+   ],
+   "kurz": "Olivenfinca unter dem Castell d'Alaró, eigenes Öl, Räder im Preis.",
+   "lang": "Alaró liegt am Südrand der Tramuntana, und über dem Ort stehen zwei Felsen, auf einem davon die Ruine des Castell d'Alaró, zu dem ein steiniger Weg in eineinhalb Stunden hinaufführt. Die Finca liegt am Hang darunter, sechzehn Zimmer in Gebäuden aus dem siebzehnten Jahrhundert, Natursteinwände, Olivenholzbalken, Becken zwischen den Bäumen. Die Oliven sind siebenhundert alt, das Öl wird im November gepresst und steht beim Frühstück auf dem Tisch. Räder gehören dazu, die Tramuntana-Routen beginnen an der Einfahrt und sind der Grund, warum im Februar und März Radprofis hier trainieren. Nach Palma sind es fünfundzwanzig Kilometer, zum Flughafen achtundzwanzig. Abends vier Gänge mit Gemüse aus dem Garten.",
+   "highlights": [
+    "Olivenfinca mit eigenem Öl",
+    "Becken zwischen alten Bäumen",
+    "Aufstieg zum Castell d'Alaró ab Ort",
+    "Räder für die Tramuntana-Routen"
+   ]
+  }
+ ]
+}

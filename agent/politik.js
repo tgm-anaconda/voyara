@@ -430,7 +430,7 @@ const Politik = {
     if (profil.maxPreis && (preis ?? item.pricePerNight) > profil.maxPreis) return false;
     if (profil.mindestSterne && (item.stars || 0) < profil.mindestSterne) return false;
     if (profil.mindestbewertung && (item.rating || 0) < profil.mindestbewertung) return false;
-    if (profil.zielId && item.ziel !== profil.zielId) return false;
+    if (!this.zielPasst(profil, item.ziel)) return false;
     if (profil.maxStrand != null && (item.distanceToBeach ?? 99) > profil.maxStrand) return false;
 
     // Personenzahl: bei Wohnungen die Hoechstbelegung, bei Hotels das
@@ -881,8 +881,8 @@ const Politik = {
     const filter = this.filterAusKriterien(profil.kriterien || []);
     const ausstattung = filter.ausstattung || [];
     const treffer = bestand.filter((h) => {
-      if (profil.zielId && h.ziel !== profil.zielId) return false;
-      if (profil.zielOffen !== true && !profil.zielId && profil.thema && !(this.THEMEN.find((t) => t.id === profil.thema)?.ziele || []).includes(h.ziel)) return false;
+      if (!this.zielPasst(profil, h.ziel)) return false;
+      if (profil.zielOffen !== true && !profil.zielId && !(profil.zieleAuswahl || []).length && profil.thema && !(this.THEMEN.find((t) => t.id === profil.thema)?.ziele || []).includes(h.ziel)) return false;
       if (ausstattung.some((a) => !(h.amenities || []).includes(a))) return false;
       const preis = typeof saisonpreis === "function" ? saisonpreis(h) : h.pricePerNight;
       return this.erfuellt(h, preis, profil);
@@ -982,6 +982,17 @@ const Politik = {
       (p) => { if (p.maxStrand != null) { delete p.maxStrand; return { feld: "maxStrand", text: "ohne Grenze zum Strand" }; } return null; },
       (p) => { if (p.mindestbewertung) { delete p.mindestbewertung; return { feld: "mindestbewertung", text: "ohne Mindestbewertung" }; } return null; },
       (p) => { if (p.mindestSterne) { delete p.mindestSterne; p.budget = null; return { feld: "mindestSterne", text: "ohne Sternevorgabe" }; } return null; },
+      /* Eine Auswahl mehrerer Regionen darf aufgehen, ein Ausschluss
+         nicht. Wer sagt "nicht Marrakesch, da war ich letztes Jahr", soll
+         Marrakesch auch dann nicht sehen, wenn der Rest zu wenig hergibt -
+         sonst entscheidet am Ende die Region und nicht das, was die
+         Studie messen will. Lieber ein zu kurzes Ergebnis als ein
+         stillschweigend aufgehobener Wunsch. */
+      (p) => {
+        if (!(p.zieleAuswahl || []).length) return null;
+        p.zieleAuswahl = []; p.zielOffen = true;
+        return { feld: "ziel", text: "in allen Regionen statt nur in den genannten" };
+      },
       (p) => { if (p.zielId) { p.zielOffen = true; p.zielId = null; return { feld: "ziel", text: "in allen Regionen" }; } return null; },
     ];
     let erste = null;
@@ -1006,6 +1017,7 @@ const Politik = {
     const personen = (p.erwachsene || 0) + (p.kinder || 0);
     if ((p.zimmer || 1) === 1 && personen >= 4) { p.zimmer = 2; this.nachtpreisAbleiten(p); return { feld: "zimmer", text: "zwei Zimmer statt einem" }; }
     if (p.maxPreis) { p.maxPreis = Math.round(p.maxPreis * 1.2); return { feld: "maxPreis", text: `bis ${p.maxPreis} € pro Nacht` }; }
+    if ((p.zieleAuswahl || []).length) { p.zieleAuswahl = []; p.zielOffen = true; return { feld: "ziel", text: "in allen Regionen statt nur in den genannten" }; }
     if (p.zielId) { p.zielOffen = true; p.zielId = null; return { feld: "ziel", text: "in allen Regionen" }; }
     return null;
   },
@@ -1307,10 +1319,14 @@ const Politik = {
       frage: "Wohin soll es gehen?",
       braucht: () => "Wohin die Reise gehen soll. Ein Land, eine Region oder eine Insel reicht. Wenn die Person Kinder erwaehnt hat, darfst du auch fragen, ob die schon einen Wunsch haben.",
       chips: ["Mallorca", "Kreta", "Tirol", "Ans Meer"],
-      ueberspringen: (p) => p.zielId != null || p.zielOffen === true,
+      ueberspringen: (p) => p.zielId != null || p.zielOffen === true
+        || (p.zieleAuswahl || []).length > 0,
       auswerten(text, p) {
         Politik.uebernehmen(text, p);
         if (p.zielId && typeof ZIEL_NACH_ID !== "undefined") return ZIEL_NACH_ID[p.zielId]?.name;
+        if ((p.zieleAuswahl || []).length && typeof ZIEL_NACH_ID !== "undefined") {
+          return Politik.aufzaehlen(p.zieleAuswahl.map((id) => ZIEL_NACH_ID[id]?.name || id));
+        }
         if (p.zielOffen) return "alle Regionen";
         return null;   // der Kern klaert Reiseart oder unbekannten Ort
       },
@@ -1485,6 +1501,19 @@ const Politik = {
     return profil;
   },
 
+  /* Darf eine Region ueberhaupt in die Auswahl? Eine Regel, drei
+     Aufrufstellen (Treffer zaehlen, Lage bestimmen, Vorschlaege bauen) -
+     vorher stand `profil.zielId` dreimal getrennt da, und ein neues Feld
+     haette an einer der Stellen gefehlt. Reihenfolge: ein festes Ziel
+     schlaegt eine Auswahl, der Ausschluss schlaegt beides. */
+  zielPasst(profil, id) {
+    if (!profil || !id) return true;
+    if ((profil.zieleAus || []).includes(id)) return false;
+    if (profil.zielId) return id === profil.zielId;
+    if ((profil.zieleAuswahl || []).length) return profil.zieleAuswahl.includes(id);
+    return true;
+  },
+
   // Was hat sich geaendert? In Worten, zum Vorlesen.
   aenderungen(vorher, nachher) {
     const raus = [];
@@ -1503,6 +1532,14 @@ const Politik = {
     if (vorher.zielId !== nachher.zielId && nachher.zielId && typeof ZIEL_NACH_ID !== "undefined") {
       raus.push(ZIEL_NACH_ID[nachher.zielId]?.name);
     }
+    const liste = (x) => (x || []).join(",");
+    const regionsname = (id) => (typeof ZIEL_NACH_ID !== "undefined" ? ZIEL_NACH_ID[id]?.name : null) || id;
+    if (liste(vorher.zieleAuswahl) !== liste(nachher.zieleAuswahl) && (nachher.zieleAuswahl || []).length) {
+      raus.push(this.aufzaehlen(nachher.zieleAuswahl.map(regionsname)));
+    }
+    if (liste(vorher.zieleAus) !== liste(nachher.zieleAus) && (nachher.zieleAus || []).length) {
+      raus.push(`ohne ${this.aufzaehlen(nachher.zieleAus.map(regionsname))}`);
+    }
     if (vorher.typ !== nachher.typ && nachher.artGenannt) {
       raus.push(nachher.typ === "apartment" ? "Ferienwohnung" : "Hotel");
     }
@@ -1518,12 +1555,20 @@ const Politik = {
      wenn etwas fehlt oder falsch drinsteht. */
   eckdaten(profil) {
     const raus = [];
+    const name = (id) => (typeof ZIEL_NACH_ID !== "undefined" ? ZIEL_NACH_ID[id]?.name : null) || id;
     if (profil.zielId && typeof ZIEL_NACH_ID !== "undefined") {
       raus.push({ feld: "Ziel", wert: ZIEL_NACH_ID[profil.zielId]?.name });
+    } else if ((profil.zieleAuswahl || []).length) {
+      raus.push({ feld: "Ziel", wert: this.aufzaehlen(profil.zieleAuswahl.map(name)) });
     } else if (profil.richtung) {
       raus.push({ feld: "Ziel", wert: this.THEMEN.find((t) => t.id === profil.richtung)?.label || profil.richtung });
     } else if (profil.zielOffen) {
       raus.push({ feld: "Ziel", wert: "alle Regionen" });
+    }
+    // Ein Ausschluss steht als eigene Zeile, nicht versteckt im Ziel -
+    // sonst kann die Person nicht pruefen, ob er angekommen ist.
+    if ((profil.zieleAus || []).length) {
+      raus.push({ feld: "Nicht", wert: this.aufzaehlen(profil.zieleAus.map(name)) });
     }
     if (profil.artGenannt) raus.push({ feld: "Art", wert: profil.typ === "apartment" ? "Ferienwohnung" : "Hotel" });
     else if (profil.artEgal) raus.push({ feld: "Art", wert: "Hotels und Ferienwohnungen" });
@@ -1614,7 +1659,7 @@ const Politik = {
       ...(typeof HOTELS !== "undefined" ? HOTELS : []),
       ...(typeof APARTMENTS !== "undefined" ? APARTMENTS : []),
     ].filter((o) => {
-      if (profil.zielId && o.ziel !== profil.zielId) return false;
+      if (!this.zielPasst(profil, o.ziel)) return false;
       if (profil.artGenannt && profil.typ) {
         const istWohnung = typeof APARTMENTS !== "undefined" && APARTMENTS.includes(o);
         if ((profil.typ === "apartment") !== istWohnung) return false;

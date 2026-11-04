@@ -1,0 +1,137 @@
+{
+ "hotels": [
+  {
+   "id": "h390",
+   "ziel": "kreta",
+   "name": "Elafonisi Dünenhaus",
+   "ort": "Elafonisi",
+   "region": "Westkreta",
+   "kategorie": "strand",
+   "sterne": 3,
+   "preis": 168,
+   "rating": 4.5,
+   "bewertungen": 412,
+   "strand": 0.2,
+   "zentrum": 12.0,
+   "flughafen": 148,
+   "extras": [
+    "seaView",
+    "terrace"
+   ],
+   "kurz": "Am rosa Sand von Elafonisi, Lagune mit knietiefem Wasser, Naturschutzgebiet.",
+   "lang": "Elafonisi ist eine Insel, die bei Ebbe über eine Sandbank zu Fuß erreichbar ist, und der Sand dort hat durch zerriebene Muschelschalen einen rosa Ton, der bei Nachmittagslicht deutlich zu sehen ist. Die Lagune zwischen Insel und Festland ist auf hundert Metern knietief, was mit Kindern unschlagbar ist. Das Haus liegt zweihundert Meter vom Wasser, vierzehn Zimmer, einfach und weiß, zehn mit Blick auf die Lagune. Der Ort besteht aus dem Haus, zwei Tavernen und einem Parkplatz, der im August voll ist und im Oktober leer. Nach Chania sind es siebzig Kilometer über eine Bergstraße, zur Samaria-Schlucht fünfzig.",
+   "highlights": [
+    "Zweihundert Meter zum rosa Sand",
+    "Knietiefe Lagune für Kinder",
+    "Naturschutzgebiet ohne Bebauung",
+    "Im Oktober fast leer"
+   ]
+  },
+  {
+   "id": "h391",
+   "ziel": "kreta",
+   "name": "Loutro Bucht Pension",
+   "ort": "Loutro",
+   "region": "Sfakia",
+   "kategorie": "budget",
+   "sterne": 2,
+   "preis": 96,
+   "rating": 4.5,
+   "bewertungen": 324,
+   "strand": 0.1,
+   "zentrum": 0.1,
+   "flughafen": 132,
+   "kurz": "Nur per Boot oder zu Fuß erreichbar, weiße Häuser am Wasser, keine Autos.",
+   "lang": "Loutro hat keine Straße. Man kommt mit dem Boot von Chora Sfakion in zwanzig Minuten oder zu Fuß über den Küstenpfad in zwei Stunden, und dadurch gibt es im Dorf keine Autos, nur zwanzig weiße Häuser in einer Bucht. Die Pension hat zwölf Zimmer, einfach, mit Dusche und Balkon über dem Wasser, nicht mehr als das. Vom Steg geht man ins Meer, das hier zwölf Meter vom Haus entfernt beginnt. Nach Westen führt der E4-Pfad zur Sweetwater Beach, eine Stunde über Felsen, nach Osten zur Marmara Beach und zur Aradena-Schlucht. Taverne mit Fisch vom Boot, abends sitzen alle Gäste des Dorfes an denselben vier Tavernen am Wasser.",
+   "highlights": [
+    "Ohne Straße, nur Boot oder Fußweg",
+    "Keine Autos im Dorf",
+    "Zwölf Meter vom Haus ins Wasser",
+    "E4-Pfad zur Sweetwater Beach"
+   ]
+  },
+  {
+   "id": "h392",
+   "ziel": "kreta",
+   "name": "Rethymno Venezianer",
+   "ort": "Rethymno",
+   "region": "Mittelkreta",
+   "kategorie": "boutique",
+   "sterne": 4,
+   "preis": 186,
+   "rating": 4.6,
+   "bewertungen": 586,
+   "strand": 0.4,
+   "zentrum": 0.2,
+   "flughafen": 72,
+   "extras": [
+    "terrace",
+    "pool"
+   ],
+   "kurz": "In der venezianischen Altstadt, Fortezza über dem Haus, Strand in fünf Minuten.",
+   "lang": "Rethymno hat die am besten erhaltene Altstadt Kretas, venezianisch gebaut, osmanisch überformt, mit Minaretten zwischen den Renaissancefassaden und Gassen, in denen keine Autos fahren. Das Haus ist ein venezianisches Stadthaus von 1590, achtzehn Zimmer um einen Innenhof mit Zisterne, Steinbögen, Holzdecken, Becken im Hof. Zur Fortezza, der Festung über der Stadt, sind es acht Gehminuten, zum venezianischen Hafen mit dem Leuchtturm fünf, zum Sandstrand vierhundert Meter. Der Strand zieht sich von hier zwölf Kilometer nach Osten. Frühstück im Hof, abends wird nicht gekocht, dafür stehen in der Altstadt vierzig Tavernen.",
+   "highlights": [
+    "Venezianisches Stadthaus von 1590",
+    "Becken im Innenhof mit Zisterne",
+    "Vierhundert Meter zum Strand",
+    "Fortezza in acht Gehminuten"
+   ]
+  },
+  {
+   "id": "h393",
+   "ziel": "kreta",
+   "name": "Balos Lagunenblick",
+   "ort": "Kissamos",
+   "region": "Westkreta",
+   "kategorie": "luxus",
+   "sterne": 4,
+   "preis": 286,
+   "rating": 4.7,
+   "bewertungen": 424,
+   "strand": 0.9,
+   "zentrum": 2.8,
+   "flughafen": 156,
+   "extras": [
+    "pool",
+    "spa",
+    "seaView",
+    "terrace"
+   ],
+   "kurz": "Über der Bucht von Kissamos, Balos und Gramvousa per Boot ab Hafen.",
+   "lang": "Die Lagune von Balos liegt an der Nordwestspitze Kretas zwischen zwei Halbinseln, hat türkises Wasser über weißem Sand und ist nur über eine Schotterstraße oder mit dem Boot erreichbar. Vom Hafen Kissamos fahren Boote, zwei Stunden, mit Halt an der Festungsinsel Gramvousa. Das Haus liegt über der Bucht von Kissamos, zweiunddreißig Zimmer, Stein und Leinen, alle mit Terrasse nach Norden auf das Wasser. Becken auf zwei Ebenen, Spa mit vier Räumen. Zum Sandstrand sind es neunhundert Meter abwärts. Zur Falassarna, dem besten Surfstrand der Insel, sind es zwanzig Kilometer. Abends fünf Gänge, Fisch und Lamm aus den Bergdörfern.",
+   "highlights": [
+    "Alle Zimmer mit Terrasse nach Norden",
+    "Boote nach Balos und Gramvousa ab Hafen",
+    "Becken auf zwei Ebenen",
+    "Falassarna in zwanzig Kilometern"
+   ]
+  },
+  {
+   "id": "h394",
+   "ziel": "kreta",
+   "name": "Lassithi Hochebene Hof",
+   "ort": "Tzermiado",
+   "region": "Lassithi",
+   "kategorie": "finca",
+   "sterne": 3,
+   "preis": 142,
+   "rating": 4.6,
+   "bewertungen": 286,
+   "strand": 38.0,
+   "zentrum": 0.6,
+   "flughafen": 62,
+   "extras": [
+    "terrace",
+    "bikeRental"
+   ],
+   "kurz": "Auf der Lassithi-Hochebene, 850 Meter, Windmühlen und Zeus-Höhle.",
+   "lang": "Die Lassithi-Hochebene liegt auf achthundertfünfzig Metern in einem Ring von Bergen, ist zehn Kilometer breit und vollständig von Hand bewirtschaftet, mit Steinmauern zwischen den Feldern und den Resten von zehntausend Windrädern, die früher Wasser hoben. Der Hof liegt am Nordrand, zwölf Zimmer in Gebäuden aus Naturstein, Holzbalken, Kamin im Aufenthaltsraum, weil es hier nachts auch im August abkühlt. Zur Dikteon-Höhle, in der Zeus geboren worden sein soll, sind es neun Kilometer. Räder stehen bereit, die Ebene ist flach und der Rundweg zwanzig Kilometer lang. Gekocht wird mit dem, was die Ebene hergibt, Kartoffeln, Bohnen, Lamm, abends drei Gänge.",
+   "highlights": [
+    "Hochebene auf 850 Metern",
+    "Natursteinhof mit Kamin",
+    "Neun Kilometer zur Zeus-Höhle",
+    "Räder für den Rundweg über die Ebene"
+   ]
+  }
+ ]
+}

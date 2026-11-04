@@ -1,0 +1,318 @@
+{
+ "hotels": [
+  {
+   "id": "h626",
+   "ziel": "cornwall",
+   "name": "Porthmeor House",
+   "ort": "St Ives",
+   "region": "West Cornwall",
+   "kategorie": "boutique",
+   "sterne": 4,
+   "preis": 232,
+   "rating": 4.7,
+   "bewertungen": 586,
+   "strand": 0.1,
+   "zentrum": 0.4,
+   "flughafen": 38,
+   "extras": [
+    "terrace",
+    "seaView"
+   ],
+   "kurz": "Über dem Porthmeor Beach, zwölf Zimmer, Surfschule und Tate am gleichen Strand.",
+   "lang": "Porthmeor ist der Strand, an dem St Ives nach Norden liegt und an dem die Wellen ankommen, weshalb hier sowohl die Surfschule als auch die Tate stehen. Das Haus ist ein viktorianisches Doppelhaus über der Strandpromenade, zwölf Zimmer, heller Putz, Dielen, in den Obergeschossen Erkerfenster mit Blick über die Bucht. Zum Sand sind es fünfzig Meter und zwei Stufen. Die Altstadt mit den Galerien beginnt hinter dem Haus, autofahren lohnt dort nicht, die Gassen sind dafür nicht gebaut. Frühstück bis halb elf, mit Räucherfisch von der Smokehouse in Newlyn.",
+   "highlights": [
+    "Fünfzig Meter zum Porthmeor Beach",
+    "Surfschule und Tate am gleichen Strand",
+    "Erkerzimmer mit Blick über die Bucht",
+    "Frühstück bis halb elf"
+   ]
+  },
+  {
+   "id": "h627",
+   "ziel": "cornwall",
+   "name": "The Camel Estuary",
+   "ort": "Padstow",
+   "region": "North Cornwall",
+   "kategorie": "luxus",
+   "sterne": 5,
+   "preis": 348,
+   "rating": 4.8,
+   "bewertungen": 424,
+   "strand": 0.6,
+   "zentrum": 0.8,
+   "flughafen": 22,
+   "extras": [
+    "spa",
+    "terrace",
+    "seaView"
+   ],
+   "kurz": "Über dem Camel-Mündungsarm, Küche mit eigenem Boot, Spa im Nebengebäude.",
+   "lang": "Padstow lebt von zwei Dingen, dem Hafen und dem Essen, und dieses Haus bringt beides zusammen: ein eigenes Boot bringt morgens, was der Küche in die Karte kommt, und wer will, fährt mit. Vierundzwanzig Zimmer in einem Haus aus dem achtzehnten Jahrhundert, dazu sechs im umgebauten Stall, alle mit Blick auf den Mündungsarm, der bei Ebbe zu Sandbänken wird. Das Spa liegt im Nebengebäude, zwei Behandlungsräume, Dampfbad, kein Lärm. Der Camel Trail beginnt am Hafen, achtzehn Kilometer flacher Radweg an der Mündung entlang bis Bodmin. Zum Sandstrand nach Harbour Cove sind es zehn Gehminuten über den Küstenweg.",
+   "highlights": [
+    "Eigenes Boot für die Küche",
+    "Blick auf den Camel-Mündungsarm",
+    "Spa im umgebauten Stall",
+    "Camel Trail ab Hafen"
+   ]
+  },
+  {
+   "id": "h628",
+   "ziel": "cornwall",
+   "name": "Fistral Surf Lodge",
+   "ort": "Newquay",
+   "region": "North Cornwall",
+   "kategorie": "budget",
+   "sterne": 2,
+   "preis": 94,
+   "rating": 4.1,
+   "bewertungen": 724,
+   "strand": 0.2,
+   "zentrum": 1.1,
+   "flughafen": 4,
+   "kurz": "Am Fistral Beach, Mehrbettzimmer, Boards und Anzüge im Haus.",
+   "lang": "Fistral ist der bekannteste Surfstrand Großbritanniens und läuft fast das ganze Jahr, am besten im Herbst, wenn die Atlantiktiefs anziehen und die Sommergäste weg sind. Die Lodge hat Doppelzimmer und Mehrbettzimmer, eine große Gemeinschaftsküche und einen Trockenraum, der auch im November funktioniert. Boards und Anzüge gibt es im Haus, Kurse morgens und am frühen Abend. Zum Flughafen Newquay sind es vier Kilometer, das ist für Cornwall ungewöhnlich kurz und macht ein Wochenende realistisch. Abends ist der Ort laut, wer Ruhe will, ist hier falsch.",
+   "highlights": [
+    "Zweihundert Meter zum Fistral Beach",
+    "Boards, Anzüge und Trockenraum im Haus",
+    "Vier Kilometer zum Flughafen",
+    "Beste Wellen im Herbst"
+   ]
+  },
+  {
+   "id": "h629",
+   "ziel": "cornwall",
+   "name": "Falmouth Harbour Rooms",
+   "ort": "Falmouth",
+   "region": "South Cornwall",
+   "kategorie": "stadt",
+   "sterne": 3,
+   "preis": 146,
+   "rating": 4.3,
+   "bewertungen": 512,
+   "strand": 0.9,
+   "zentrum": 0.2,
+   "flughafen": 48,
+   "extras": [
+    "terrace"
+   ],
+   "kurz": "Im Hafenviertel, Fähren zu den Flussdörfern vom Steg gegenüber.",
+   "lang": "Falmouth hat den dritttiefsten Naturhafen der Welt, was man der Stadt nicht ansieht, aber den Schiffen, die dort liegen. Das Haus steht in der Hafenstraße, zweiunddreißig Zimmer, die oberen mit Blick auf die Reede, die hinteren ruhiger und zum Garten. Vom Steg gegenüber fahren kleine Fähren nach St Mawes und flussaufwärts nach Truro, beides lohnt mehr als die Straße. Zum Stadtstrand Gyllyngvase sind es zehn Gehminuten, zum Nationalen Schifffahrtsmuseum zwei. Die Universität sorgt dafür, dass der Ort auch im Februar geöffnet hat, anders als die meisten Küstenorte hier.",
+   "highlights": [
+    "Im Hafenviertel am Naturhafen",
+    "Flussfähren nach St Mawes und Truro",
+    "Zehn Minuten zum Gyllyngvase Beach",
+    "Auch im Winter geöffnet"
+   ]
+  },
+  {
+   "id": "h630",
+   "ziel": "cornwall",
+   "name": "Sennen Cove Cottages",
+   "ort": "Sennen Cove",
+   "region": "Penwith",
+   "kategorie": "finca",
+   "sterne": 4,
+   "preis": 198,
+   "rating": 4.6,
+   "bewertungen": 318,
+   "strand": 0.2,
+   "zentrum": 0.3,
+   "flughafen": 62,
+   "extras": [
+    "terrace",
+    "bikeRental"
+   ],
+   "kurz": "Granithäuser über der Bucht am Land's End, Sandstrand unter den Fenstern.",
+   "lang": "Sennen Cove liegt zwei Kilometer vor Land's End und hat den letzten großen Sandstrand vor dem Atlantik, einen Kilometer hell und bei Westwind brauchbar zum Surfen. Die Cottages sind alte Granithäuser, acht Einheiten für zwei bis fünf Personen, dicke Wände, Kamin, Küche. Vor den Fenstern liegt die Bucht, hinter dem Ort beginnt der South West Coast Path, nach Norden zum Cape Cornwall, nach Süden um Land's End herum. Räder gibt es im Schuppen, allerdings ist hier alles steil. Im Dorf stehen eine Rettungsstation, ein Pub und eine Strandbude, der nächste Laden ist in Sennen oben am Berg.",
+   "highlights": [
+    "Kilometerlanger Sandstrand vor der Tür",
+    "Granithäuser mit Kamin",
+    "Coast Path in beide Richtungen ab Ort",
+    "Zwei Kilometer bis Land's End"
+   ]
+  },
+  {
+   "id": "h631",
+   "ziel": "cornwall",
+   "name": "Polperro Harbour Inn",
+   "ort": "Polperro",
+   "region": "South East Cornwall",
+   "kategorie": "boutique",
+   "sterne": 3,
+   "preis": 168,
+   "rating": 4.5,
+   "bewertungen": 448,
+   "strand": 0.4,
+   "zentrum": 0.1,
+   "flughafen": 68,
+   "extras": [
+    "terrace"
+   ],
+   "kurz": "Am Hafenbecken im engsten Fischerdorf der Küste, Autos bleiben oben.",
+   "lang": "Polperro ist so eng gebaut, dass Autos am oberen Ortsrand stehen bleiben müssen und Gepäck mit einem Elektrokarren hinuntergefahren wird. Der Gasthof steht am Hafenbecken, vierzehn Zimmer über der Schankstube, schiefe Böden, niedrige Türen, alles von 1710 und entsprechend charakterstark. Bei Hochwasser liegen die Boote auf Augenhöhe mit dem Fenster, bei Ebbe im Schlick. Zum Kiesstrand bei Chapel Pool sind es vier Minuten, zum Coast Path nach Looe eine gute Stunde. In der Schankstube wird abends gekocht, Krabbe, Makrele, Pasteten, und es wird voll.",
+   "highlights": [
+    "Direkt am Hafenbecken",
+    "Autofreier Ortskern",
+    "Gasthof von 1710",
+    "Coast Path nach Looe"
+   ]
+  },
+  {
+   "id": "h632",
+   "ziel": "cornwall",
+   "name": "Fowey Riverside",
+   "ort": "Fowey",
+   "region": "South Cornwall",
+   "kategorie": "luxus",
+   "sterne": 4,
+   "preis": 286,
+   "rating": 4.7,
+   "bewertungen": 392,
+   "strand": 1.2,
+   "zentrum": 0.3,
+   "flughafen": 58,
+   "extras": [
+    "spa",
+    "terrace",
+    "seaView"
+   ],
+   "kurz": "Weiß getünchtes Haus über dem Fowey-Fluss, Zimmer mit Blick auf die Segler.",
+   "lang": "Fowey liegt an einer Flussmündung, in der ständig gesegelt wird, und die ganze Stadt hängt an einem Hang über dem Wasser. Das Haus steht auf halber Höhe, achtundzwanzig Zimmer, weiß getüncht, Fenster bis zum Boden, von den meisten sieht man flussabwärts bis zur offenen See. Zum Strand bei Readymoney Cove sind es zwölf Gehminuten über einen Pfad durch den Wald, ein kleiner Sandstrand zwischen Felsen. Die Fähre nach Polruan fährt alle zehn Minuten und kostet wenig, drüben beginnt der Hall Walk. Küche abends mit sechs Gängen, mittags Austern und Brot auf der Terrasse.",
+   "highlights": [
+    "Blick flussabwärts bis zur See",
+    "Readymoney Cove in zwölf Minuten",
+    "Fähre nach Polruan alle zehn Minuten",
+    "Austern mittags auf der Terrasse"
+   ]
+  },
+  {
+   "id": "h633",
+   "ziel": "cornwall",
+   "name": "Port Isaac Fish Cellars",
+   "ort": "Port Isaac",
+   "region": "North Cornwall",
+   "kategorie": "boutique",
+   "sterne": 4,
+   "preis": 242,
+   "rating": 4.6,
+   "bewertungen": 356,
+   "strand": 0.3,
+   "zentrum": 0.2,
+   "flughafen": 30,
+   "extras": [
+    "terrace",
+    "seaView"
+   ],
+   "kurz": "Umgebaute Fischkeller am Hafen, zehn Zimmer, Hummer vom Boot vor dem Haus.",
+   "lang": "Die Keller am Hafen von Port Isaac dienten zweihundert Jahre dem Einsalzen von Pilchards, inzwischen sind es zehn Zimmer mit Granitwänden und Fenstern direkt über der Hafenmauer. Bei Sturm ist das Geräusch Teil des Zimmers. Die Boote vor dem Haus fangen Hummer und Krabben, und das Restaurant kauft genau dort, die Karte hängt deshalb vom Vormittag ab. Zum Kiesstrand im Hafen sind es dreißig Meter, zum Sandstrand nach Polzeath zwanzig Autominuten. Der Ort ist winzig, steil und im Sommer voll, im Oktober gehört er wieder den Fischern.",
+   "highlights": [
+    "Zimmer in alten Fischkellern",
+    "Hummer von den Booten vor dem Haus",
+    "Dreißig Meter zum Hafenstrand",
+    "Im Oktober deutlich ruhiger"
+   ]
+  },
+  {
+   "id": "h634",
+   "ziel": "cornwall",
+   "name": "Bude Cliff Hotel",
+   "ort": "Bude",
+   "region": "North Cornwall",
+   "kategorie": "familie",
+   "sterne": 3,
+   "preis": 152,
+   "rating": 4.3,
+   "bewertungen": 634,
+   "strand": 0.4,
+   "zentrum": 0.6,
+   "flughafen": 42,
+   "extras": [
+    "kidsClub"
+   ],
+   "kurz": "Über dem Summerleaze Beach, Meerwasserbecken am Strand, flaches Wasser für Kinder.",
+   "lang": "Bude hat zwei Strände nebeneinander und am Rand des einen ein Meerwasserbecken aus den zwanziger Jahren, das bei jeder Flut neu gefüllt wird und Kindern Wellen erspart. Das Hotel liegt oben am Kliff, achtundvierzig Zimmer, die Hälfte mit Verbindungstür, zur Seeseite mit Balkon. Betreuung läuft in den Ferien täglich vormittags, im Haus gibt es Spielzimmer und Tischtennis. Zum Canal, der mitten durch den Ort führt, sind es fünf Minuten, Tretboote und ein flacher Radweg daran entlang. Halbpension mit Buffet, der frühe Kindertisch ist um halb sechs.",
+   "highlights": [
+    "Meerwasserbecken am Strand",
+    "Vierhundert Meter zum Summerleaze Beach",
+    "Betreuung in den Ferien täglich",
+    "Tretboote am Canal"
+   ]
+  },
+  {
+   "id": "h635",
+   "ziel": "cornwall",
+   "name": "Mousehole Granite Rooms",
+   "ort": "Mousehole",
+   "region": "Penwith",
+   "kategorie": "budget",
+   "sterne": 2,
+   "preis": 102,
+   "rating": 4.2,
+   "bewertungen": 288,
+   "strand": 0.2,
+   "zentrum": 0.1,
+   "flughafen": 55,
+   "kurz": "Sechs einfache Zimmer im Granitdorf, Hafen und Kiesbucht vor der Tür.",
+   "lang": "Mousehole ist ein Dorf aus Granit um ein winziges Hafenbecken, mit Gassen, in denen zwei Menschen aneinander vorbeikommen und ein Auto nicht. Das Haus hat sechs Zimmer, zwei mit eigenem Bad, der Rest teilt sich zwei Bäder im Flur. Einfach, warm, sauber, mehr nicht und für den Preis in dieser Lage bemerkenswert. Die Kiesbucht im Hafen fällt bei Ebbe trocken, zum Sandstrand nach Penzance sind es drei Kilometer am Wasser entlang. Im Dezember wird der Hafen beleuchtet, das ist in Cornwall eine eigene Institution und der Ort dann voll.",
+   "highlights": [
+    "Mitten im Granitdorf am Hafen",
+    "Sechs Zimmer, zwei mit eigenem Bad",
+    "Drei Kilometer am Wasser nach Penzance",
+    "Hafenbeleuchtung im Dezember"
+   ]
+  },
+  {
+   "id": "h636",
+   "ziel": "cornwall",
+   "name": "Perranporth Dunes",
+   "ort": "Perranporth",
+   "region": "North Cornwall",
+   "kategorie": "strand",
+   "sterne": 4,
+   "preis": 186,
+   "rating": 4.4,
+   "bewertungen": 712,
+   "strand": 0.1,
+   "zentrum": 0.5,
+   "flughafen": 12,
+   "extras": [
+    "seaView",
+    "terrace"
+   ],
+   "kurz": "Hinter dem Dünengürtel, drei Kilometer Sandstrand, Bar im Sand nebenan.",
+   "lang": "Perranporth hat drei Kilometer Sand, der bei Ebbe so breit wird, dass man den Wasserrand kaum erkennt, und am Südende eine Bar, die direkt im Sand steht. Das Hotel liegt hinter dem Dünengürtel, sechsundfünfzig Zimmer, die oberen mit Blick über die Dünenkante auf die Brandung. Zum Strandaufgang sind es achtzig Meter durch das Gras. Die Wellen eignen sich für Anfänger, die Schule arbeitet am Nordende. Im Ort gibt es alles Nötige in zwei Straßen, und zum Flughafen Newquay sind es zwölf Kilometer, was einen späten Flug möglich macht.",
+   "highlights": [
+    "Achtzig Meter durch die Dünen zum Strand",
+    "Drei Kilometer Sand bei Ebbe",
+    "Surfschule für Anfänger am Nordende",
+    "Zwölf Kilometer zum Flughafen"
+   ]
+  },
+  {
+   "id": "h637",
+   "ziel": "cornwall",
+   "name": "Penzance Promenade",
+   "ort": "Penzance",
+   "region": "Penwith",
+   "kategorie": "stadt",
+   "sterne": 3,
+   "preis": 134,
+   "rating": 4.2,
+   "bewertungen": 466,
+   "strand": 0.3,
+   "zentrum": 0.7,
+   "flughafen": 52,
+   "extras": [
+    "terrace"
+   ],
+   "kurz": "An der Promenade mit Blick auf St Michael's Mount, Bahnhof und Hafen fußläufig.",
+   "lang": "Penzance ist das Ende der Bahnlinie aus London und damit der Ort, an dem Cornwall ohne Auto beginnt: Bahnhof, Hafen und Busbahnhof liegen zusammen, die Fähre nach den Scilly-Inseln geht von dort. Das Haus steht an der Promenade, sechsunddreißig Zimmer, die Vorderseite mit Blick über die Bucht auf St Michael's Mount, der bei Ebbe zu Fuß erreichbar ist. Neben dem Haus liegt das Jubilee Pool, ein dreieckiges Meerwasserbad von 1935, ein Teil davon geothermisch geheizt. Zum Kiesstrand sind es dreihundert Meter, zum Sandstrand nach Marazion vier Kilometer. Frühstück ab halb sieben wegen der Züge.",
+   "highlights": [
+    "Blick auf St Michael's Mount",
+    "Jubilee Pool direkt nebenan",
+    "Bahnhof, Hafen und Busbahnhof fußläufig",
+    "Frühstück ab halb sieben"
+   ]
+  }
+ ]
+}

@@ -1,0 +1,343 @@
+{
+ "hotels": [
+  {
+   "id": "h233",
+   "ziel": "tirol",
+   "name": "Hotel Arlberghaus",
+   "ort": "St. Anton am Arlberg",
+   "region": "Arlberg",
+   "kategorie": "berg",
+   "sterne": 4,
+   "preis": 268,
+   "rating": 4.6,
+   "bewertungen": 894,
+   "strand": null,
+   "zentrum": 0.3,
+   "flughafen": 102,
+   "extras": [
+    "spa"
+   ],
+   "kurz": "Hundert Meter zur Galzigbahn, Skiraum mit Schuhheizung, Sauna im Dachgeschoss.",
+   "lang": "St. Anton ist der Ort, an dem Skilauf in Österreich organisiert wurde, und das Gelände ist entsprechend: dreihundert Pistenkilometer im Verbund, davon ein auffällig großer Anteil schwarz. Das Haus liegt hundert Meter von der Galzigbahn, zweiundvierzig Zimmer, Zirbenholz, breite Südbalkone. Der Skiraum hat Schuhheizung und einen eigenen Ausgang zur Straße, man muss also nicht durch die Lobby stapfen. Oben im Dachgeschoss liegen zwei Saunen und ein Ruheraum mit Blick auf die Valluga. Abends fünf Gänge, danach ist der Ort für sein Nachtleben bekannt, was man als Warnung oder als Hinweis lesen kann.",
+   "highlights": [
+    "Hundert Meter zur Galzigbahn",
+    "Skiraum mit Schuhheizung",
+    "Zwei Saunen mit Blick auf die Valluga",
+    "Dreihundert Pistenkilometer im Verbund"
+   ]
+  },
+  {
+   "id": "h234",
+   "ziel": "tirol",
+   "name": "Ischgl Silvretta Lodge",
+   "ort": "Ischgl",
+   "region": "Paznaun",
+   "kategorie": "luxus",
+   "sterne": 5,
+   "preis": 426,
+   "rating": 4.7,
+   "bewertungen": 682,
+   "strand": null,
+   "zentrum": 0.2,
+   "flughafen": 108,
+   "extras": [
+    "spa",
+    "gym"
+   ],
+   "kurz": "Direkt an der Silvrettabahn, Spa über drei Etagen, Schneesicherheit bis Mai.",
+   "lang": "Ischgl liegt auf eintausendvierhundert Metern, und die Pisten gehen bis knapp dreitausend, weshalb hier bis Anfang Mai gefahren wird, wenn andere Gebiete längst grün sind. Das Haus steht neben der Silvrettabahn, sechsundfünfzig Zimmer und Suiten, Eiche, Stein, Glas, alle mit Loggia. Der Spa verteilt sich über drei Etagen, mit Innen- und Außenbecken, sechs Saunen, Eisgrotte und zwölf Anwendungsräumen. Die Grenze zur Schweiz läuft über das Skigebiet, Samnaun ist zollfrei und mit der Bahn erreichbar. Küche mit zwei Restaurants, eines mit Degustationsmenü, eines mit Tiroler Karte.",
+   "highlights": [
+    "Neben der Silvrettabahn",
+    "Spa über drei Etagen mit sechs Saunen",
+    "Skifahren bis Anfang Mai",
+    "Zollfreies Samnaun über die Piste"
+   ]
+  },
+  {
+   "id": "h235",
+   "ziel": "tirol",
+   "name": "Seefelder Hochplateau",
+   "ort": "Seefeld",
+   "region": "Seefelder Plateau",
+   "kategorie": "berg",
+   "sterne": 4,
+   "preis": 232,
+   "rating": 4.5,
+   "bewertungen": 748,
+   "strand": null,
+   "zentrum": 0.4,
+   "flughafen": 26,
+   "extras": [
+    "spa"
+   ],
+   "kurz": "Auf dem Plateau, zweihundertfünfzig Loipenkilometer, fünfundzwanzig Kilometer zum Flughafen.",
+   "lang": "Seefeld liegt auf einem Hochplateau über dem Inntal und hat zweimal olympische Nordische Spiele ausgetragen, das Loipennetz umfasst zweihundertfünfzig Kilometer und beginnt am Ortsrand. Für Abfahrt gibt es zwei kleinere Gebiete, Rosshütte und Gschwandtkopf, die für Familien reichen. Das Haus hat achtundvierzig Zimmer, Lärchenholz, Südbalkone, zum Ortszentrum vierhundert Meter. Sauna, Dampfbad und ein Hallenbad mit Blick auf das Karwendel. Der Flughafen Innsbruck liegt fünfundzwanzig Kilometer entfernt, eine knappe halbe Stunde, was für Tirol ungewöhnlich kurz ist. Halbpension mit vier Gängen und einer Suppe mittags für Rückkehrer.",
+   "highlights": [
+    "Loipennetz mit 250 Kilometern ab Ortsrand",
+    "Hallenbad mit Blick aufs Karwendel",
+    "Fünfundzwanzig Kilometer zum Flughafen",
+    "Zwei Skigebiete für Familien"
+   ]
+  },
+  {
+   "id": "h236",
+   "ziel": "tirol",
+   "name": "Mayrhofen Zillertalhof",
+   "ort": "Mayrhofen",
+   "region": "Zillertal",
+   "kategorie": "familie",
+   "sterne": 4,
+   "preis": 196,
+   "rating": 4.4,
+   "bewertungen": 1126,
+   "strand": null,
+   "zentrum": 0.5,
+   "flughafen": 68,
+   "extras": [
+    "kidsClub",
+    "spa"
+   ],
+   "kurz": "Skischule und Kinderland an der Ahornbahn, Hallenbad mit Rutsche.",
+   "lang": "Mayrhofen liegt am Ende des Zillertals, wo vier Seitentäler zusammenlaufen, und hat mit dem Hintertuxer Gletscher ein Gebiet in Reichweite, das ganzjährig geöffnet ist. Das Haus hat sechsundsiebzig Zimmer, zwei Drittel Familienzimmer, viele mit Verbindungstür. Die Skischule holt Kinder morgens am Haus ab und bringt sie zum Kinderland an der Ahornbahn, dreihundert Meter entfernt. Im Haus gibt es ein Hallenbad mit Rutsche, Spielzimmer und abends Betreuung bis einundzwanzig Uhr. Der Harakiri, die steilste Piste Österreichs mit achtundsiebzig Prozent, liegt im selben Gebiet und ist nicht für Kinder. Halbpension mit Buffet, früher Kindertisch.",
+   "highlights": [
+    "Skischule holt am Haus ab",
+    "Hallenbad mit Rutsche",
+    "Kinderland an der Ahornbahn",
+    "Hintertuxer Gletscher in Reichweite"
+   ]
+  },
+  {
+   "id": "h237",
+   "ziel": "tirol",
+   "name": "Alpbacher Bauernhof",
+   "ort": "Alpbach",
+   "region": "Alpbachtal",
+   "kategorie": "finca",
+   "sterne": 4,
+   "preis": 186,
+   "rating": 4.7,
+   "bewertungen": 486,
+   "strand": null,
+   "zentrum": 1.2,
+   "flughafen": 58,
+   "extras": [
+    "terrace",
+    "bikeRental"
+   ],
+   "kurz": "Arbeitender Hof im schönsten Dorf Österreichs, Milch und Käse aus eigener Herstellung.",
+   "lang": "Alpbach gilt als das schönste Dorf Österreichs, weil es seit 1953 eine Bauordnung hat, die ausschließlich Holzbauweise erlaubt, und das wurde durchgehalten. Der Hof liegt oberhalb am Hang, zwölf Zimmer im umgebauten Wirtschaftsteil, Altholz, Lehmputz, Blick über das Tal. Im Stall stehen achtzehn Kühe, gemolken wird um halb sechs und um siebzehn Uhr, zusehen ist erlaubt. Käse, Butter und Joghurt kommen aus der eigenen Küche, das Frühstück ist entsprechend. Zum Skigebiet Ski Juwel fährt der Bus unten an der Straße, im Sommer gehören Räder und die Wanderkarte dazu. Abendessen auf Anmeldung, drei Gänge aus dem, was der Hof hergibt.",
+   "highlights": [
+    "Arbeitender Hof mit achtzehn Kühen",
+    "Käse und Butter aus eigener Herstellung",
+    "Zusehen beim Melken erlaubt",
+    "Holzbauweise im ganzen Dorf"
+   ]
+  },
+  {
+   "id": "h238",
+   "ziel": "tirol",
+   "name": "Serfaus Familienresidenz",
+   "ort": "Serfaus",
+   "region": "Oberinntal",
+   "kategorie": "familie",
+   "sterne": 4,
+   "preis": 214,
+   "rating": 4.6,
+   "bewertungen": 962,
+   "strand": null,
+   "zentrum": 0.3,
+   "flughafen": 84,
+   "extras": [
+    "kidsClub",
+    "spa"
+   ],
+   "kurz": "Autofreies Dorf mit U-Bahn, größtes Kinderland der Alpen vor der Tür.",
+   "lang": "Serfaus ist autofrei und hat dafür eine Luftkissen-U-Bahn, die seit 1985 unterirdisch vom Ortsrand zur Seilbahn fährt, vier Stationen, kostenlos. Das macht das Dorf für Familien zu einem der einfachsten Skiorte der Alpen: Kinder können allein zur Bahn. Das Haus hat achtundsechzig Zimmer, überwiegend Familienzimmer, dazu Spielhaus, Hallenbad und Betreuung ab zwei Jahren, ganztägig. Das Kinderland am Berg ist nach eigener Angabe das größte der Alpen, mit eigenen Liften, Zauberteppichen und Hütten. Halbpension mit Buffet, Kinderbuffet um halb sechs, Erwachsene um neunzehn Uhr.",
+   "highlights": [
+    "Autofreies Dorf mit eigener U-Bahn",
+    "Betreuung ab zwei Jahren, ganztägig",
+    "Großes Kinderland mit eigenen Liften",
+    "Hallenbad und Spielhaus im Haus"
+   ]
+  },
+  {
+   "id": "h239",
+   "ziel": "tirol",
+   "name": "Gasthof Galtür",
+   "ort": "Galtür",
+   "region": "Paznaun",
+   "kategorie": "budget",
+   "sterne": 2,
+   "preis": 94,
+   "rating": 4.2,
+   "bewertungen": 342,
+   "strand": null,
+   "zentrum": 0.2,
+   "flughafen": 118,
+   "kurz": "Einfacher Gasthof im hintersten Paznaun, Bergbahn fünfhundert Meter entfernt.",
+   "lang": "Galtür liegt auf eintausendsechshundert Metern am Ende des Paznauntals, schneesicher und deutlich ruhiger als Ischgl zehn Kilometer talwärts. Der Gasthof hat zwanzig Zimmer über der Stube, einfach möbliert, mit Dusche und WC, gut geheizt. Zur Birkhahnbahn sind es fünfhundert Meter zu Fuß, das Gebiet Silvapark hat vierzig Pistenkilometer und selten Wartezeiten. Der Skibus nach Ischgl fährt mit dem Skipass kostenlos und braucht zwanzig Minuten, so kommt man günstig wohnend ins große Gebiet. In der Stube wird mittags und abends gekocht, Tiroler Karte, Portionen für Skifahrer.",
+   "highlights": [
+    "Fünfhundert Meter zur Birkhahnbahn",
+    "Skibus nach Ischgl im Skipass",
+    "Zwanzig Zimmer über der Stube",
+    "Schneesicher auf 1600 Metern"
+   ]
+  },
+  {
+   "id": "h240",
+   "ziel": "tirol",
+   "name": "Kühtai Bergkristall",
+   "ort": "Kühtai",
+   "region": "Sellraintal",
+   "kategorie": "berg",
+   "sterne": 4,
+   "preis": 242,
+   "rating": 4.5,
+   "bewertungen": 418,
+   "strand": null,
+   "zentrum": 0.1,
+   "flughafen": 42,
+   "extras": [
+    "spa"
+   ],
+   "kurz": "Höchstes Skidorf Österreichs auf 2020 Metern, Lift vor der Tür, vierzig Minuten zum Flughafen.",
+   "lang": "Kühtai liegt auf zweitausendzwanzig Metern und ist damit das höchstgelegene Skidorf Österreichs, was zwei Dinge bedeutet: Schnee von Dezember bis April ohne Kanonen und keinen Ort im üblichen Sinn, sondern eine Handvoll Häuser an der Passstraße. Das Haus hat vierunddreißig Zimmer, Holz und Loden, Südbalkone über das Hochtal. Der Lift beginnt sechzig Meter vor dem Eingang, Skiraum direkt daneben. Im Spa gibt es zwei Saunen, Dampfbad und ein Außenbecken, das im Winter dampft. Zum Flughafen Innsbruck sind es vierzig Minuten, was für diese Höhenlage auffällig kurz ist. Abendessen mit fünf Gängen, Alternativen gibt es im Ort kaum.",
+   "highlights": [
+    "Höchstes Skidorf Österreichs, 2020 Meter",
+    "Lift sechzig Meter vor dem Eingang",
+    "Außenbecken im Winter",
+    "Vierzig Minuten zum Flughafen"
+   ]
+  },
+  {
+   "id": "h241",
+   "ziel": "tirol",
+   "name": "Stubaier Gletscherhof",
+   "ort": "Neustift im Stubaital",
+   "region": "Stubaital",
+   "kategorie": "berg",
+   "sterne": 4,
+   "preis": 208,
+   "rating": 4.5,
+   "bewertungen": 724,
+   "strand": null,
+   "zentrum": 0.6,
+   "flughafen": 34,
+   "extras": [
+    "spa"
+   ],
+   "kurz": "Im Talort unter dem Gletscher, Skibus vor dem Haus, dreißig Minuten zum Flughafen.",
+   "lang": "Das Stubaital endet an Österreichs größtem Gletscherskigebiet, das von Oktober bis Juni geöffnet ist, und Neustift ist der Ort, in dem man dafür wohnt. Das Haus hat zweiundfünfzig Zimmer, Fichtenholz, breite Balkone, die meisten zum Talschluss. Der Skibus hält vor dem Haus und fährt alle zwanzig Minuten zur Gletscherbahn, Fahrzeit fünfzehn Minuten, mit dem Skipass kostenlos. Im Haus Sauna, Dampfbad, Hallenbad und ein Ruheraum mit Panoramafenster. Im Sommer beginnt der Stubaier Höhenweg im Tal, acht Etappen über achtzig Kilometer. Zum Flughafen Innsbruck sind es dreißig Minuten, Transfer auf Anfrage.",
+   "highlights": [
+    "Skibus vor dem Haus zur Gletscherbahn",
+    "Gletscherskigebiet von Oktober bis Juni",
+    "Hallenbad und Panorama-Ruheraum",
+    "Dreißig Minuten zum Flughafen"
+   ]
+  },
+  {
+   "id": "h242",
+   "ziel": "tirol",
+   "name": "Kitzbühel Streifhaus",
+   "ort": "Kitzbühel",
+   "region": "Kitzbüheler Alpen",
+   "kategorie": "luxus",
+   "sterne": 5,
+   "preis": 438,
+   "rating": 4.7,
+   "bewertungen": 586,
+   "strand": null,
+   "zentrum": 0.3,
+   "flughafen": 98,
+   "extras": [
+    "spa",
+    "gym"
+   ],
+   "kurz": "In der Altstadt, Hahnenkammbahn in fünf Minuten, Spa mit Blick auf den Wilden Kaiser.",
+   "lang": "Kitzbühel ist mittelalterliche Stadt und Skiort gleichzeitig, und die Streif, die berühmteste Abfahrt der Welt, endet im Ortsgebiet. Das Haus steht in der Altstadt in einem Bürgerhaus des sechzehnten Jahrhunderts, achtunddreißig Zimmer, hohe Gewölbe im Erdgeschoss, oben Parkett und Stoffe in gedeckten Farben. Zur Hahnenkammbahn sind es fünf Gehminuten. Der Spa liegt im Dachgeschoss, zwei Saunen, Außenbecken, Blick über die Dächer auf den Wilden Kaiser. Im Januar während des Rennens ist die Stadt voll und teuer, von Februar an wird es ruhiger. Restaurant mit Degustationsmenü, dazu eine Weinstube im Keller.",
+   "highlights": [
+    "Bürgerhaus aus dem 16. Jahrhundert",
+    "Fünf Minuten zur Hahnenkammbahn",
+    "Dachspa mit Blick auf den Wilden Kaiser",
+    "Weinstube im Gewölbekeller"
+   ]
+  },
+  {
+   "id": "h243",
+   "ziel": "tirol",
+   "name": "Lermooser Zugspitzblick",
+   "ort": "Lermoos",
+   "region": "Zugspitzarena",
+   "kategorie": "boutique",
+   "sterne": 4,
+   "preis": 198,
+   "rating": 4.6,
+   "bewertungen": 438,
+   "strand": null,
+   "zentrum": 0.4,
+   "flughafen": 64,
+   "extras": [
+    "spa",
+    "terrace"
+   ],
+   "kurz": "Blick über das Moor auf die Zugspitzwand, zwanzig Zimmer, keine Durchfahrt.",
+   "lang": "Lermoos liegt in einem flachen Talboden, dem Lermooser Moos, und auf der anderen Seite steht die Westwand des Wettersteins mit der Zugspitze, zweitausend Meter senkrecht aus der Ebene. Dieser Blick ist der Grund für das Haus und für seine Zimmerausrichtung: zwanzig Zimmer, alle nach Süden, alle mit Balkon oder Loggia. Innen Altholz und Leinen, keine Jagdtrophäen, was in Tirol eine Entscheidung ist. Zur Grubigsteinbahn sind es sechshundert Meter, zur Tiroler Zugspitzbahn in Ehrwald vier Kilometer. Sauna, Dampfbad und ein Außenpool, der im Winter auf achtunddreißig Grad geheizt wird. Abends vier Gänge mit kurzer Karte.",
+   "highlights": [
+    "Alle Zimmer nach Süden zur Zugspitzwand",
+    "Sechshundert Meter zur Grubigsteinbahn",
+    "Außenpool mit achtunddreißig Grad",
+    "Zwanzig Zimmer, kein Durchgangsverkehr"
+   ]
+  },
+  {
+   "id": "h244",
+   "ziel": "tirol",
+   "name": "Zeller Hofstube",
+   "ort": "Zell am Ziller",
+   "region": "Zillertal",
+   "kategorie": "budget",
+   "sterne": 3,
+   "preis": 112,
+   "rating": 4.3,
+   "bewertungen": 486,
+   "strand": null,
+   "zentrum": 0.3,
+   "flughafen": 58,
+   "kurz": "Günstiges Haus mitten im Zillertal, Zillertalbahn und Skibus fußläufig.",
+   "lang": "Zell am Ziller liegt in der Mitte des Tals, und das ist der praktische Vorteil: mit der Zillertalbahn und dem Skibus erreicht man von hier aus vier Skigebiete, ohne Auto. Das Haus hat vierundzwanzig Zimmer, einfach, mit Dusche und WC, einige mit Balkon zum Berg. Zur Rosenalmbahn sind es achthundert Meter oder zwei Stationen mit dem Bus, der mit dem Skipass nichts kostet. In der Stube unten gibt es mittags Suppe und abends drei Gerichte, Tiroler Küche, kein Buffet. Im Sommer ist das Haus Ausgangspunkt für die Tour auf den Gerlosstein und den Zillertaler Höhenweg. Frühstück ab halb sieben für die erste Bahn.",
+   "highlights": [
+    "Vier Skigebiete ohne Auto erreichbar",
+    "Achthundert Meter zur Rosenalmbahn",
+    "Skibus im Skipass inklusive",
+    "Frühstück ab halb sieben"
+   ]
+  },
+  {
+   "id": "h245",
+   "ziel": "tirol",
+   "name": "Sölden Bergwelt",
+   "ort": "Sölden",
+   "region": "Ötztal",
+   "kategorie": "berg",
+   "sterne": 4,
+   "preis": 252,
+   "rating": 4.4,
+   "bewertungen": 1042,
+   "strand": null,
+   "zentrum": 0.4,
+   "flughafen": 78,
+   "extras": [
+    "spa",
+    "gym"
+   ],
+   "kurz": "Zwischen beiden Gondelbahnen, zwei Gletscher im Gebiet, Ski bis Mai.",
+   "lang": "Sölden hat zwei Gletscher im Skigebiet und die drei Dreitausender der Big Three, an die jeweils eine Bergstation gebaut ist, weshalb hier bis Anfang Mai gefahren wird. Das Haus liegt zwischen Giggijochbahn und Gaislachkoglbahn, beide in sieben Gehminuten, mit Skidepot an der Talstation. Zweiundsiebzig Zimmer, Zirbe und Loden, Südbalkone. Spa mit zwei Saunen, Dampfbad, Innen- und Außenbecken sowie einem Fitnessraum, der im Herbst von Höhentrainingsgruppen genutzt wird. Der Ort hat Après-Ski in großem Umfang, die hausseitigen Zimmer sind dafür die ruhigeren. Halbpension mit fünf Gängen.",
+   "highlights": [
+    "Sieben Minuten zu beiden Gondelbahnen",
+    "Zwei Gletscher im Skigebiet",
+    "Skidepot an der Talstation",
+    "Innen- und Außenbecken"
+   ]
+  }
+ ]
+}

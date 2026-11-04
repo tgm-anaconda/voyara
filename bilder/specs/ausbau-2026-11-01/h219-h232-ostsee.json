@@ -1,0 +1,380 @@
+{
+ "hotels": [
+  {
+   "id": "h219",
+   "ziel": "ostsee",
+   "name": "Kurhaus Binz",
+   "ort": "Binz",
+   "region": "Rügen",
+   "kategorie": "luxus",
+   "sterne": 5,
+   "preis": 312,
+   "rating": 4.7,
+   "bewertungen": 864,
+   "strand": 0.1,
+   "zentrum": 0.2,
+   "flughafen": 132,
+   "extras": [
+    "spa",
+    "seaView",
+    "terrace"
+   ],
+   "kurz": "Bäderarchitektur an der Binzer Promenade, Thalasso und Seebrücke vor dem Haus.",
+   "lang": "Binz ist das größte Seebad auf Rügen, und die weißen Logierhäuser mit Balkonen und Türmchen stehen in einer Reihe entlang der Promenade. Dieses Haus ist das älteste darunter, hundertvier Zimmer, hohe Decken, Parkett, zur Seeseite französische Fenster mit Blick über die Bucht bis zur Granitz. Der Thalassobereich hat ein Meerwasserbecken, drei Saunen und acht Anwendungsräume und ist von Oktober bis März der eigentliche Grund für die Buchungen. Zum Sand sind es achtzig Meter, die Seebrücke liegt davor, von dort fahren Schiffe zu den Kreidefelsen. Die Küche arbeitet mit Fisch aus Sassnitz und Wild aus der Granitz, abends sechs Gänge.",
+   "highlights": [
+    "Achtzig Meter zum Strand",
+    "Thalasso mit Meerwasserbecken",
+    "Schiffe zu den Kreidefelsen ab Seebrücke",
+    "Bäderarchitektur von 1890"
+   ]
+  },
+  {
+   "id": "h220",
+   "ziel": "ostsee",
+   "name": "Villa Sellin",
+   "ort": "Sellin",
+   "region": "Rügen",
+   "kategorie": "boutique",
+   "sterne": 4,
+   "preis": 224,
+   "rating": 4.6,
+   "bewertungen": 486,
+   "strand": 0.3,
+   "zentrum": 0.4,
+   "flughafen": 136,
+   "extras": [
+    "terrace",
+    "seaView"
+   ],
+   "kurz": "Weiße Villa über der Steilküste, Tauchgondel an der Seebrücke nebenan.",
+   "lang": "Sellin liegt auf einer Steilküste, und die Hauptstraße endet an einer Treppe, die in zwei Läufen zum Strand hinunterführt, hundert Stufen mit Pause auf halber Höhe. Die Villa steht oben am Rand, achtzehn Zimmer, Stuck, Dielen, die vorderen mit Loggia über die Baumkronen hinweg aufs Wasser. Die Seebrücke unten hat eine Tauchgondel, die vier Meter unter die Oberfläche fährt, was im Oktober interessanter ist als im August, weil das Wasser klarer steht. Zum Sandstrand sind es dreihundert Meter und die Treppe. Frühstück bis elf, abends kleine Karte mit vier Gerichten.",
+   "highlights": [
+    "Loggia mit Blick über die Steilküste",
+    "Tauchgondel an der Seebrücke",
+    "Dreihundert Meter und hundert Stufen zum Strand",
+    "Achtzehn Zimmer in einer Bädervilla"
+   ]
+  },
+  {
+   "id": "h221",
+   "ziel": "ostsee",
+   "name": "Göhren Nordperd",
+   "ort": "Göhren",
+   "region": "Rügen",
+   "kategorie": "familie",
+   "sterne": 4,
+   "preis": 172,
+   "rating": 4.4,
+   "bewertungen": 718,
+   "strand": 0.2,
+   "zentrum": 0.7,
+   "flughafen": 142,
+   "extras": [
+    "kidsClub"
+   ],
+   "kurz": "Zwischen Nord- und Südstrand, flaches Wasser, Rasender Roland hält im Ort.",
+   "lang": "Göhren liegt auf einer Landzunge mit Strand auf beiden Seiten, was bei Wind praktisch ist: eine Seite ist immer im Schutz. Das Haus steht in der Mitte, zweiundsechzig Zimmer, mehr als die Hälfte Familienzimmer, viele mit Balkon. Der Südstrand ist flach und hat Aufsicht, der Nordstrand ist gröber und für größere Kinder interessanter. Betreuung läuft in den Ferien täglich, im Haus gibt es Spielzimmer, Kletterwand und Hallenbad. Der Rasende Roland, die Schmalspurbahn der Insel, hält fünf Minuten entfernt und fährt nach Binz, das ist für Kinder der halbe Urlaub.",
+   "highlights": [
+    "Strand auf beiden Seiten der Landzunge",
+    "Flacher Südstrand mit Aufsicht",
+    "Schmalspurbahn hält im Ort",
+    "Hallenbad und Kletterwand"
+   ]
+  },
+  {
+   "id": "h222",
+   "ziel": "ostsee",
+   "name": "Fischerhof Vitt",
+   "ort": "Putgarten",
+   "region": "Rügen",
+   "kategorie": "finca",
+   "sterne": 3,
+   "preis": 146,
+   "rating": 4.6,
+   "bewertungen": 264,
+   "strand": 0.8,
+   "zentrum": 1.6,
+   "flughafen": 152,
+   "extras": [
+    "bikeRental",
+    "terrace"
+   ],
+   "kurz": "Reetgedeckter Hof am Kap Arkona, acht Zimmer, kein Durchgangsverkehr.",
+   "lang": "Vitt ist ein Dorf aus zwölf reetgedeckten Häusern in einer Schlucht am Kap Arkona, denkmalgeschützt und für Autos gesperrt. Der Hof liegt am oberen Rand, acht Zimmer mit Lehmputz, kleinen Fenstern und Blick in den Garten. Zum Kiesstrand unten in der Bucht sind es achthundert Meter, zum Kap mit den beiden Leuchttürmen anderthalb Kilometer über den Hochuferweg. Räder stehen bereit, die Halbinsel Wittow ist flach und hat kaum Verkehr. Abends wird für die Hausgäste gekocht, ein Gericht, meistens Fisch, und wer länger bleibt, bekommt nicht zweimal dasselbe.",
+   "highlights": [
+    "Reetdachhof im autofreien Vitt",
+    "Achthundert Meter zur Kiesbucht",
+    "Hochuferweg zum Kap Arkona",
+    "Ein Abendgericht für Hausgäste"
+   ]
+  },
+  {
+   "id": "h223",
+   "ziel": "ostsee",
+   "name": "Seebad Ahlbeck",
+   "ort": "Ahlbeck",
+   "region": "Usedom",
+   "kategorie": "strand",
+   "sterne": 4,
+   "preis": 192,
+   "rating": 4.5,
+   "bewertungen": 926,
+   "strand": 0.1,
+   "zentrum": 0.3,
+   "flughafen": 204,
+   "extras": [
+    "spa",
+    "seaView",
+    "terrace"
+   ],
+   "kurz": "An der historischen Seebrücke, zwölf Kilometer Promenade bis nach Polen.",
+   "lang": "Von Ahlbeck führt die längste Strandpromenade Europas zwölf Kilometer über Heringsdorf und Bansin bis nach Swinemünde, durchgehend asphaltiert und ohne eine einzige Straßenquerung. Das Hotel liegt direkt an der Seebrücke von 1898, der ältesten erhaltenen Deutschlands, achtundsiebzig Zimmer, zwei Drittel mit Seeblick. Der Spa hat Meerwasserbecken, Sauna und Anwendungen, im Winter ist das Haus deshalb offen, wenn andere schließen. Zum Sand sind es fünfzig Meter. Usedom hat statistisch die meisten Sonnenstunden Deutschlands, was im September und Oktober am deutlichsten auffällt.",
+   "highlights": [
+    "An der Seebrücke von 1898",
+    "Zwölf Kilometer Promenade bis Polen",
+    "Zwei Drittel Zimmer mit Seeblick",
+    "Meerwasserbecken und Sauna"
+   ]
+  },
+  {
+   "id": "h224",
+   "ziel": "ostsee",
+   "name": "Villa Bansin",
+   "ort": "Bansin",
+   "region": "Usedom",
+   "kategorie": "boutique",
+   "sterne": 4,
+   "preis": 186,
+   "rating": 4.5,
+   "bewertungen": 412,
+   "strand": 0.2,
+   "zentrum": 0.3,
+   "flughafen": 198,
+   "extras": [
+    "terrace",
+    "seaView"
+   ],
+   "kurz": "Bädervilla am ruhigsten der drei Kaiserbäder, Buchenwald hinter dem Haus.",
+   "lang": "Bansin ist das kleinste und stillste der drei Kaiserbäder und hat den Vorteil, dass hinter dem Ort gleich der Buchenwald des Langen Berges anfängt. Die Villa steht in der zweiten Reihe, sechzehn Zimmer, Stuck an den Decken, Parkett, zur Seeseite Balkone mit Blick über die Dächer. Zum Strand sind es zweihundert Meter durch einen Park. Der Küstenwanderweg nach Ückeritz führt acht Kilometer durch Wald an der Steilküste, mit Abstiegen zum Wasser. Frühstück ist regional und reichlich, abends kocht das Haus nicht, dafür stehen vier Restaurants im Ort.",
+   "highlights": [
+    "Ruhigstes der drei Kaiserbäder",
+    "Zweihundert Meter durch den Park zum Strand",
+    "Küstenweg nach Ückeritz",
+    "Bädervilla mit Stuckdecken"
+   ]
+  },
+  {
+   "id": "h225",
+   "ziel": "ostsee",
+   "name": "Künstlerhaus Ahrenshoop",
+   "ort": "Ahrenshoop",
+   "region": "Fischland-Darß",
+   "kategorie": "boutique",
+   "sterne": 4,
+   "preis": 214,
+   "rating": 4.7,
+   "bewertungen": 486,
+   "strand": 0.3,
+   "zentrum": 0.4,
+   "flughafen": 62,
+   "extras": [
+    "terrace",
+    "spa"
+   ],
+   "kurz": "Reetgedecktes Haus im Künstlerort, Hohes Ufer und Bodden in zehn Minuten.",
+   "lang": "Ahrenshoop ist seit 1890 ein Künstlerort, und das ist nicht nur Werbung: es gibt ein Kunstmuseum, ein Dutzend Galerien und Häuser mit Ateliers im Dachgeschoss. Dieses hier ist eines davon, vierzehn Zimmer unter Reet, Holzböden, weiße Wände, in zwei Zimmern noch das alte Nordlicht. Der Ort liegt auf einer Landzunge, Ostsee im Norden mit dem Hohen Ufer, Bodden im Süden mit stillem Wasser, zwischen beiden sind es zehn Gehminuten. Zum Strand sind es dreihundert Meter. Sauna im Nebengebäude, Abendessen auf Anmeldung, drei Gänge.",
+   "highlights": [
+    "Reetdachhaus mit Atelierzimmern",
+    "Zehn Minuten von Ostsee zum Bodden",
+    "Hohes Ufer am Ortsrand",
+    "Kunstmuseum und Galerien im Ort"
+   ]
+  },
+  {
+   "id": "h226",
+   "ziel": "ostsee",
+   "name": "Wustrower Bodden",
+   "ort": "Wustrow",
+   "region": "Fischland-Darß",
+   "kategorie": "finca",
+   "sterne": 3,
+   "preis": 138,
+   "rating": 4.5,
+   "bewertungen": 318,
+   "strand": 0.6,
+   "zentrum": 0.5,
+   "flughafen": 58,
+   "extras": [
+    "bikeRental",
+    "terrace"
+   ],
+   "kurz": "Kapitänshaus am Boddenufer, Surfrevier vor dem Haus, Räder inklusive.",
+   "lang": "Wustrow liegt an der schmalsten Stelle des Fischlands, zwischen Ostsee und Saaler Bodden sind es achthundert Meter. Der Bodden ist flach, warm und windsicher, deshalb ist er eines der wichtigsten Reviere für Anfänger im Windsurfen und Kitesurfen an der Küste, und die Schule liegt direkt neben dem Haus. Das Haus selbst ist ein Kapitänshaus von 1848, zehn Zimmer, dicke Wände, Garten zum Wasser. Zum Ostseestrand sind es sechshundert Meter zu Fuß. Räder gehören dazu, nach Ahrenshoop sind es sieben Kilometer auf dem Deichweg, nach Dierhagen zehn in die andere Richtung.",
+   "highlights": [
+    "Kapitänshaus von 1848 am Bodden",
+    "Surfschule direkt nebenan",
+    "Sechshundert Meter zum Ostseestrand",
+    "Räder für den Deichweg"
+   ]
+  },
+  {
+   "id": "h227",
+   "ziel": "ostsee",
+   "name": "Hiddensee Inselhof",
+   "ort": "Vitte",
+   "region": "Hiddensee",
+   "kategorie": "finca",
+   "sterne": 3,
+   "preis": 164,
+   "rating": 4.6,
+   "bewertungen": 284,
+   "strand": 0.4,
+   "zentrum": 0.3,
+   "flughafen": 112,
+   "extras": [
+    "bikeRental",
+    "terrace"
+   ],
+   "kurz": "Auf der autofreien Insel, Pferdefuhrwerk vom Hafen, Strand über die Düne.",
+   "lang": "Auf Hiddensee gibt es keine Autos, nur Räder, Pferdefuhrwerke und einen Inselbus für die Älteren. Man kommt mit der Fähre von Schaprode, und ab dem Anleger geht es zu Fuß weiter. Der Hof liegt in Vitte, dem Hauptort, zwölf Zimmer in zwei Gebäuden um einen Hof, einfach und sauber, mit Garten. Über die Düne sind es vierhundert Meter zum Weststrand, der vierzehn Kilometer lang ist und an dem im Oktober niemand steht. Räder stehen bereit, die Insel ist siebzehn Kilometer lang und flach außer am Dornbusch im Norden. Abendessen gibt es im Haus, Fisch aus der Räucherei nebenan.",
+   "highlights": [
+    "Autofreie Insel, Anreise per Fähre",
+    "Vierhundert Meter zum Weststrand",
+    "Räder für die Inselrunde",
+    "Fisch aus der Räucherei nebenan"
+   ]
+  },
+  {
+   "id": "h228",
+   "ziel": "ostsee",
+   "name": "Boltenhagen Strandresidenz",
+   "ort": "Boltenhagen",
+   "region": "Mecklenburger Bucht",
+   "kategorie": "familie",
+   "sterne": 4,
+   "preis": 168,
+   "rating": 4.3,
+   "bewertungen": 688,
+   "strand": 0.2,
+   "zentrum": 0.4,
+   "flughafen": 102,
+   "extras": [
+    "kidsClub"
+   ],
+   "kurz": "Hinter der Steilküste, flacher Sandstrand, Hallenbad und Betreuung im Haus.",
+   "lang": "Boltenhagen hat vier Kilometer feinen Sand und hinter dem Strand eine Steilküste, die den Wind oben abfängt. Das Haus liegt in der zweiten Reihe, sechsundfünfzig Zimmer, zwei Drittel Familienzimmer mit vier Betten, die Vorderseite mit Balkon. Zum Strandaufgang sind es zweihundert Meter über die Promenade. Im Haus gibt es ein Hallenbad mit Kinderbecken, Spielzimmer und Betreuung, in den Ferien täglich von zehn bis sechzehn Uhr. Die Seebrücke liegt fünf Minuten entfernt, von dort fahren Ausflugsschiffe nach Wismar und Travemünde. Halbpension mit Buffet, Kindertisch um halb sechs.",
+   "highlights": [
+    "Zweihundert Meter zum flachen Sandstrand",
+    "Hallenbad mit Kinderbecken",
+    "Betreuung täglich in den Ferien",
+    "Ausflugsschiffe ab Seebrücke"
+   ]
+  },
+  {
+   "id": "h229",
+   "ziel": "ostsee",
+   "name": "Kühlungsborn Ostseeblick",
+   "ort": "Kühlungsborn",
+   "region": "Mecklenburger Bucht",
+   "kategorie": "strand",
+   "sterne": 4,
+   "preis": 182,
+   "rating": 4.4,
+   "bewertungen": 842,
+   "strand": 0.1,
+   "zentrum": 0.3,
+   "flughafen": 52,
+   "extras": [
+    "spa",
+    "seaView",
+    "terrace"
+   ],
+   "kurz": "An der längsten Strandpromenade Mecklenburgs, Molli-Bahn hält im Ort.",
+   "lang": "Kühlungsborn hat eine Promenade von dreieinhalb Kilometern, gesäumt von Bädervillen und einem Buchenwald, der bis an den Strand reicht. Das Hotel steht direkt daran, achtundsechzig Zimmer, zwei Drittel mit Blick auf das Wasser, alle mit Balkon. Zum Sand sind es sechzig Meter. Der Spa hat Meerwasserbecken, zwei Saunen und sechs Anwendungsräume. Die Molli, eine Dampfschmalspurbahn von 1886, hält im Ort und fährt über Heiligendamm nach Bad Doberan, eine dreiviertel Stunde durch Felder und mitten durch eine Straße in Bad Doberan hindurch. Küche abends mit fünf Gängen.",
+   "highlights": [
+    "Sechzig Meter zum Strand",
+    "Dreieinhalb Kilometer Promenade",
+    "Dampfbahn Molli hält im Ort",
+    "Meerwasserbecken und zwei Saunen"
+   ]
+  },
+  {
+   "id": "h230",
+   "ziel": "ostsee",
+   "name": "Warnemünde Leuchtturm",
+   "ort": "Warnemünde",
+   "region": "Rostock",
+   "kategorie": "stadt",
+   "sterne": 4,
+   "preis": 174,
+   "rating": 4.3,
+   "bewertungen": 964,
+   "strand": 0.3,
+   "zentrum": 0.2,
+   "flughafen": 38,
+   "extras": [
+    "terrace",
+    "seaView"
+   ],
+   "kurz": "Am Alten Strom, breitester Strand der Küste, Bahn nach Rostock alle zehn Minuten.",
+   "lang": "Warnemünde gehört zu Rostock und hat trotzdem den breitesten Strand der deutschen Ostseeküste, an manchen Stellen hundertfünfzig Meter Sand. Das Haus liegt am Alten Strom, dem alten Fischerhafen, wo die Kutter am Kai Fisch verkaufen, vierundvierzig Zimmer, die oberen mit Blick auf Hafen und Leuchtturm. Zum Strand sind es dreihundert Meter. Die S-Bahn nach Rostock fährt alle zehn Minuten und braucht zwanzig, was Stadt und Strand an einem Tag möglich macht. Im Ort liegen die Kreuzfahrtterminals, an Anlegetagen wird es voll, der Belegungsplan hängt im Haus aus.",
+   "highlights": [
+    "Am Alten Strom mit den Fischkuttern",
+    "Breitester Strand der Küste",
+    "S-Bahn nach Rostock alle zehn Minuten",
+    "Zimmer mit Blick auf den Leuchtturm"
+   ]
+  },
+  {
+   "id": "h231",
+   "ziel": "ostsee",
+   "name": "Pension Baabe",
+   "ort": "Baabe",
+   "region": "Rügen",
+   "kategorie": "budget",
+   "sterne": 2,
+   "preis": 82,
+   "rating": 4.1,
+   "bewertungen": 396,
+   "strand": 0.5,
+   "zentrum": 0.3,
+   "flughafen": 140,
+   "kurz": "Einfache Pension zwischen Kiefernwald und Strand, Frühstück inklusive.",
+   "lang": "Baabe liegt zwischen Sellin und Göhren und ist das unauffälligste der drei Bäder, was den Strand nicht schlechter macht: feiner Sand, flaches Wasser, und ein Kiefernwald, der bis fünfzig Meter an die Düne reicht. Die Pension hat sechzehn Zimmer, einfach möbliert, mit Dusche und WC, die Hälfte mit Balkon zum Garten. Zum Strandaufgang sind es fünfhundert Meter durch den Wald. Der Rasende Roland hält im Ort, nach Binz sind es vier Stationen. Frühstücksbuffet von sieben bis zehn, abends gibt es im Ort eine Handvoll Restaurants und eine Fischräucherei.",
+   "highlights": [
+    "Fünfhundert Meter durch den Kiefernwald zum Strand",
+    "Flaches Wasser und feiner Sand",
+    "Schmalspurbahn hält im Ort",
+    "Günstigstes Haus auf Rügen"
+   ]
+  },
+  {
+   "id": "h232",
+   "ziel": "ostsee",
+   "name": "Timmendorf Seeschlösschen",
+   "ort": "Timmendorfer Strand",
+   "region": "Lübecker Bucht",
+   "kategorie": "luxus",
+   "sterne": 5,
+   "preis": 288,
+   "rating": 4.6,
+   "bewertungen": 622,
+   "strand": 0.1,
+   "zentrum": 0.3,
+   "flughafen": 184,
+   "extras": [
+    "spa",
+    "seaView",
+    "terrace"
+   ],
+   "kurz": "An der Lübecker Bucht, Spa über zwei Etagen, Travemünde in zehn Minuten.",
+   "lang": "Timmendorfer Strand liegt an der Lübecker Bucht, die nach Osten offen und von Dänemark gedeckt ist, weshalb das Wasser hier im August bis zweiundzwanzig Grad erreicht. Das Haus steht an der Strandallee, zweiundachtzig Zimmer, zurückhaltend eingerichtet, Eiche und Leinen, die Seeseite mit Balkon. Zum Sand sind es siebzig Meter. Der Spa zieht sich über zwei Etagen, mit Meerwasserbecken, vier Saunen, Hamam und zehn Anwendungsräumen, und ist im Winter voller als im Sommer. Nach Travemünde sind es zehn Autominuten, nach Lübeck fünfundzwanzig. Abends sieben Gänge oder eine kurze Karte in der Bar.",
+   "highlights": [
+    "Siebzig Meter zum Strand",
+    "Spa über zwei Etagen mit vier Saunen",
+    "Zweiundzwanzig Grad Wasser im August",
+    "Lübeck in fünfundzwanzig Minuten"
+   ]
+  }
+ ]
+}

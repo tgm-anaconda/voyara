@@ -1,0 +1,374 @@
+{
+ "hotels": [
+  {
+   "id": "h246",
+   "ziel": "suedtirol",
+   "name": "Alta Badia Corvara",
+   "ort": "Corvara",
+   "region": "Alta Badia",
+   "kategorie": "berg",
+   "sterne": 4,
+   "preis": 268,
+   "rating": 4.6,
+   "bewertungen": 724,
+   "strand": null,
+   "zentrum": 0.3,
+   "flughafen": 248,
+   "extras": [
+    "spa"
+   ],
+   "kurz": "Am Fuß des Sassongher, Sellaronda ab Haus, Spa mit Heubad.",
+   "lang": "Corvara liegt im Zentrum der Sellaronda, der Runde um das Sellamassiv, und wer vor dem Haus die Ski anschnallt, ist nach vier Stunden und sechsundzwanzig Pistenkilometern wieder da. Das Haus hat vierundvierzig Zimmer, Fichte und Loden, Südbalkone auf den Sassongher. Im Spa gibt es Sauna, Dampfbad, Heubad und Behandlungen mit Latschenkiefer, eine Südtiroler Spezialität, die mehr ist als Dekoration. Die Küche kocht ladinisch und italienisch, Schlutzkrapfen und Pasta auf derselben Karte, abends fünf Gänge. Im Sommer beginnen am Ortsrand die Zustiege ins Naturpark Puez-Geisler.",
+   "highlights": [
+    "Sellaronda direkt ab Haus",
+    "Heubad und Latschenkiefer im Spa",
+    "Südbalkone auf den Sassongher",
+    "Ladinische und italienische Küche"
+   ]
+  },
+  {
+   "id": "h247",
+   "ziel": "suedtirol",
+   "name": "Ortisei Val Gardena",
+   "ort": "St. Ulrich",
+   "region": "Gröden",
+   "kategorie": "luxus",
+   "sterne": 5,
+   "preis": 412,
+   "rating": 4.7,
+   "bewertungen": 586,
+   "strand": null,
+   "zentrum": 0.2,
+   "flughafen": 232,
+   "extras": [
+    "spa",
+    "gym"
+   ],
+   "kurz": "Im Zentrum von St. Ulrich, drei Seilbahnen fußläufig, Spa über zwei Etagen.",
+   "lang": "St. Ulrich liegt in Gröden, dem Tal der Holzschnitzer, und hat drei Seilbahnen, die vom Ort in drei verschiedene Richtungen gehen: Seiser Alm, Seceda, Rasciesa. Alle drei sind zu Fuß erreichbar. Das Haus steht an der Fußgängerzone, achtundfünfzig Zimmer und Suiten, Eiche, Stein, Loden in gedeckten Farben, dazu Holzarbeiten örtlicher Schnitzer, die gelungen und nicht folkloristisch sind. Der Spa zieht sich über zwei Etagen, sechs Saunen, Innen- und Außenbecken, zwölf Anwendungsräume. Zwei Restaurants, eines mit Degustationsmenü, eines mit ladinischer Karte. Im Sommer ist die Seiser Alm, Europas größte Hochalm, mit einer Bahn erreichbar.",
+   "highlights": [
+    "Drei Seilbahnen zu Fuß erreichbar",
+    "Spa über zwei Etagen mit sechs Saunen",
+    "Direkt an der Fußgängerzone",
+    "Seiser Alm mit einer Bahn"
+   ]
+  },
+  {
+   "id": "h248",
+   "ziel": "suedtirol",
+   "name": "Seiser Alm Panorama",
+   "ort": "Kastelruth",
+   "region": "Seiser Alm",
+   "kategorie": "berg",
+   "sterne": 4,
+   "preis": 246,
+   "rating": 4.6,
+   "bewertungen": 542,
+   "strand": null,
+   "zentrum": 2.4,
+   "flughafen": 226,
+   "extras": [
+    "spa"
+   ],
+   "kurz": "Auf der Hochalm, Loipen und Pisten vor der Tür, Schlern im Blick.",
+   "lang": "Die Seiser Alm ist mit sechsundfünfzig Quadratkilometern die größte Hochalm Europas, und das Haus liegt mitten darauf, auf eintausendachthundert Metern, mit der Schlernwand gegenüber. Tagsüber ist der Zufahrtsweg für Autos gesperrt, Gäste kommen mit Bahn und Shuttle, was hier das Beste an der Einrichtung ist: ab vier Uhr nachmittags ist man praktisch allein auf der Alm. Achtunddreißig Zimmer, alle nach Süden, alle mit Balkon. Pisten und Loipen beginnen vor dem Haus. Im Spa Sauna, Dampfbad, Außenbecken mit Blick auf die Alm. Halbpension mit fünf Gängen, dazu eine Hüttenkarte mittags.",
+   "highlights": [
+    "Mitten auf der Seiser Alm, 1800 Meter",
+    "Zufahrt tagsüber für Autos gesperrt",
+    "Pisten und Loipen vor der Tür",
+    "Außenbecken mit Blick auf den Schlern"
+   ]
+  },
+  {
+   "id": "h249",
+   "ziel": "suedtirol",
+   "name": "Meraner Kurhaus",
+   "ort": "Meran",
+   "region": "Burggrafenamt",
+   "kategorie": "luxus",
+   "sterne": 5,
+   "preis": 368,
+   "rating": 4.7,
+   "bewertungen": 712,
+   "strand": null,
+   "zentrum": 0.2,
+   "flughafen": 204,
+   "extras": [
+    "spa",
+    "terrace"
+   ],
+   "kurz": "An der Kurpromenade, Palmen und Thermalbad, mildestes Klima Südtirols.",
+   "lang": "Meran liegt in einem Becken, das von drei Seiten von Bergen geschützt wird, weshalb hier Palmen und Zypressen wachsen und im Januar oft fünfzehn Grad gemessen werden. Das Haus steht an der Winterpromenade, achtundsechzig Zimmer, hohe Decken, Stuck, zur Südseite Balkone über die Passer. Der Spa arbeitet mit dem Thermalwasser des Ortes, zwei Becken, vier Saunen, zehn Anwendungsräume, dazu ein Zugang zur Therme Meran gleich gegenüber. Die Gärten von Trauttmansdorff liegen zwei Kilometer entfernt und sind auch im Oktober ein Grund für sich. Küche mit zwei Restaurants und einem Weinkeller, der sich auf Vinschgauer und Etschtaler Lagen konzentriert.",
+   "highlights": [
+    "An der Winterpromenade",
+    "Thermalwasser im eigenen Spa",
+    "Mildestes Klima Südtirols",
+    "Gärten von Trauttmansdorff in zwei Kilometern"
+   ]
+  },
+  {
+   "id": "h250",
+   "ziel": "suedtirol",
+   "name": "Weingut Kaltern",
+   "ort": "Kaltern",
+   "region": "Überetsch",
+   "kategorie": "finca",
+   "sterne": 4,
+   "preis": 216,
+   "rating": 4.7,
+   "bewertungen": 468,
+   "strand": null,
+   "zentrum": 1.8,
+   "flughafen": 168,
+   "extras": [
+    "terrace",
+    "bikeRental"
+   ],
+   "kurz": "Arbeitendes Weingut am Kalterer See, Verkostung im Keller, Räder inklusive.",
+   "lang": "Kaltern liegt über dem wärmsten Badesee der Alpen, und ringsum stehen Vernatsch und Weißburgunder in Reihen bis an die Hausmauern. Das Weingut arbeitet seit sechs Generationen, sechzehn Zimmer sind im früheren Wirtschaftsgebäude untergebracht, Natursteinwände, Eichenböden, Loggien in die Reben. Im Keller gibt es dreimal in der Woche Verkostung, dazu einen Rundgang durch Presse und Fässer. Zum See sind es anderthalb Kilometer, der im Sommer vierundzwanzig Grad hat und mit dem Rad in sieben Minuten erreichbar ist. Die Küche kocht mit dem Garten, abends vier Gänge, mittags Brot, Speck und Käse. Im Oktober wird gelesen, da darf man mithelfen.",
+   "highlights": [
+    "Arbeitendes Weingut, sechste Generation",
+    "Verkostung im eigenen Keller",
+    "Anderthalb Kilometer zum Kalterer See",
+    "Mithilfe bei der Lese im Oktober"
+   ]
+  },
+  {
+   "id": "h251",
+   "ziel": "suedtirol",
+   "name": "Brixner Hofburg",
+   "ort": "Brixen",
+   "region": "Eisacktal",
+   "kategorie": "boutique",
+   "sterne": 4,
+   "preis": 224,
+   "rating": 4.6,
+   "bewertungen": 528,
+   "strand": null,
+   "zentrum": 0.1,
+   "flughafen": 218,
+   "extras": [
+    "spa",
+    "terrace"
+   ],
+   "kurz": "In den Laubengängen der Altstadt, Plose-Bahn mit dem Bus in zehn Minuten.",
+   "lang": "Brixen ist die älteste Stadt Tirols und hat eine Altstadt mit Laubengängen, einem Dom mit romanischem Kreuzgang und einem Markt, der dreimal in der Woche stattfindet. Das Haus steht mitten darin in einem Bürgerhaus mit Gewölbekeller, zweiundzwanzig Zimmer, dicke Wände, Holzböden, hofseitig sehr still. Zur Plose-Bahn fährt der Stadtbus zehn Minuten, das Gebiet hat die längste Talabfahrt Südtirols mit neun Kilometern. Der Spa im Keller ist klein, aber mit Sauna, Dampfbad und einem Tauchbecken ausreichend. Im Dezember steht der Weihnachtsmarkt vor der Tür, dann ist die Stadt voll und das Haus früh ausgebucht.",
+   "highlights": [
+    "Bürgerhaus in den Laubengängen",
+    "Zehn Minuten mit dem Bus zur Plose",
+    "Längste Talabfahrt Südtirols",
+    "Spa im Gewölbekeller"
+   ]
+  },
+  {
+   "id": "h252",
+   "ziel": "suedtirol",
+   "name": "Kronplatz Familienhof",
+   "ort": "Reischach",
+   "region": "Pustertal",
+   "kategorie": "familie",
+   "sterne": 4,
+   "preis": 198,
+   "rating": 4.5,
+   "bewertungen": 864,
+   "strand": null,
+   "zentrum": 0.6,
+   "flughafen": 252,
+   "extras": [
+    "kidsClub",
+    "spa"
+   ],
+   "kurz": "An der Kronplatz-Talstation, Kinderland am Berg, Hallenbad mit Rutsche.",
+   "lang": "Der Kronplatz ist ein einzelner Berg mit einhundertzwanzig Pistenkilometern und zweiunddreißig Liften, und Reischach ist eine der drei Talstationen. Das Haus liegt vierhundert Meter davon entfernt, vierundsechzig Zimmer, zwei Drittel Familienzimmer mit vier Betten, viele mit Verbindungstür. Die Skischule holt am Haus ab, das Kinderland liegt oben am Berg mit eigenem Zauberteppich. Im Haus Hallenbad mit Rutsche, Spielzimmer, Betreuung in den Ferien ganztägig. Im Sommer sind die Drei Zinnen eine Stunde entfernt, der Pragser Wildsee eine halbe. Halbpension mit Buffet, Kindertisch um halb sechs.",
+   "highlights": [
+    "Vierhundert Meter zur Kronplatz-Talstation",
+    "Skischule holt am Haus ab",
+    "Hallenbad mit Rutsche",
+    "Drei Zinnen in einer Stunde"
+   ]
+  },
+  {
+   "id": "h253",
+   "ziel": "suedtirol",
+   "name": "Sextner Dolomiten",
+   "ort": "Sexten",
+   "region": "Hochpustertal",
+   "kategorie": "berg",
+   "sterne": 4,
+   "preis": 232,
+   "rating": 4.6,
+   "bewertungen": 486,
+   "strand": null,
+   "zentrum": 0.4,
+   "flughafen": 292,
+   "extras": [
+    "spa"
+   ],
+   "kurz": "Unter den Sextner Dolomiten, Drei Zinnen im Skiverbund, Sonnenuhr am Berg.",
+   "lang": "Über Sexten stehen fünf Gipfel, die zusammen eine Sonnenuhr bilden: Neunerkofel, Zehnerkofel, Elferkofel, Zwölferkofel, Einserkofel, benannt nach der Stunde, zu der die Sonne über ihnen steht. Das Haus hat vierzig Zimmer, Zirbe und Loden, alle mit Balkon nach Süden auf diese Reihe. Der Skiverbund Drei Zinnen hat elf Kilometer Talabfahrt und eine Verbindung bis Innichen. Im Spa Sauna, Dampfbad, Außenbecken und ein Ruheraum mit Panoramafenster. Im Sommer beginnen hier die Zustiege zum Paternkofel und zu den Drei Zinnen, der Bus zur Auronzohütte fährt ab Ortsmitte. Halbpension mit fünf Gängen und einer Hüttenjause mittags.",
+   "highlights": [
+    "Balkone auf die Sextner Sonnenuhr",
+    "Elf Kilometer Talabfahrt",
+    "Außenbecken und Panorama-Ruheraum",
+    "Bus zu den Drei Zinnen ab Ortsmitte"
+   ]
+  },
+  {
+   "id": "h254",
+   "ziel": "suedtirol",
+   "name": "Vinschgauer Apfelhof",
+   "ort": "Schlanders",
+   "region": "Vinschgau",
+   "kategorie": "finca",
+   "sterne": 3,
+   "preis": 156,
+   "rating": 4.6,
+   "bewertungen": 342,
+   "strand": null,
+   "zentrum": 1.2,
+   "flughafen": 234,
+   "extras": [
+    "bikeRental",
+    "terrace"
+   ],
+   "kurz": "Apfelhof am Sonnenhang, Waalwege vor der Tür, Räder und Saft aus eigener Presse.",
+   "lang": "Der Vinschgau ist das trockenste Tal der Alpen, weshalb die Bauern seit dem Mittelalter Waale angelegt haben, offene Kanäle, die Schmelzwasser quer über die Hänge führen, und entlang derer heute Wanderwege laufen. Der Hof liegt am Sonnenhang über Schlanders, zehn Zimmer im umgebauten Stadel, Lärchenholz, Blick über die Apfelplantagen auf die Ortlergruppe. Saft kommt aus der eigenen Presse, das Frühstück ist entsprechend und reichlich. Räder stehen bereit, der Radweg durch das Tal führt nach Mals und über den Reschenpass. Im Oktober wird geerntet, im Mai blühen die Plantagen, das sind die beiden Wochen, in denen das Tal am besten aussieht.",
+   "highlights": [
+    "Umgebauter Stadel am Sonnenhang",
+    "Waalwege ab Hof",
+    "Saft aus eigener Presse",
+    "Radweg durch den Vinschgau"
+   ]
+  },
+  {
+   "id": "h255",
+   "ziel": "suedtirol",
+   "name": "Gasthof Villnöss",
+   "ort": "St. Peter",
+   "region": "Villnösstal",
+   "kategorie": "budget",
+   "sterne": 2,
+   "preis": 92,
+   "rating": 4.3,
+   "bewertungen": 286,
+   "strand": null,
+   "zentrum": 0.2,
+   "flughafen": 222,
+   "kurz": "Einfacher Gasthof im Seitental, Geisler vor dem Fenster, Küche aus dem Dorf.",
+   "lang": "Das Villnösstal ist ein Seitental des Eisacktals, hat keinen Skizirkus und keine Durchgangsstraße, und endet unter der Geislergruppe, die zum Weltnaturerbe gehört. Reinhold Messner ist hier aufgewachsen. Der Gasthof hat sechzehn Zimmer über der Stube, einfach, mit Dusche und WC, acht mit Blick auf die Geisler. In der Stube wird mittags und abends gekocht, Südtiroler Karte, viel aus dem Dorf, der Preis liegt unter dem, was in Gröden eine Vorspeise kostet. Im Winter gibt es Loipen und Rodelbahnen, keine Lifte. Im Sommer beginnt am Ortsende der Weg zur Geisleralm, zwei Stunden, mit dem besten Blick auf die Nordwände.",
+   "highlights": [
+    "Seitental ohne Durchgangsverkehr",
+    "Blick auf die Geislergruppe",
+    "Küche mit Produkten aus dem Dorf",
+    "Weg zur Geisleralm ab Ortsende"
+   ]
+  },
+  {
+   "id": "h256",
+   "ziel": "suedtirol",
+   "name": "Rittner Horn Lodge",
+   "ort": "Klobenstein",
+   "region": "Ritten",
+   "kategorie": "boutique",
+   "sterne": 4,
+   "preis": 186,
+   "rating": 4.6,
+   "bewertungen": 372,
+   "strand": null,
+   "zentrum": 0.5,
+   "flughafen": 184,
+   "extras": [
+    "spa",
+    "terrace"
+   ],
+   "kurz": "Auf dem Hochplateau über Bozen, Seilbahn ins Tal, Erdpyramiden am Weg.",
+   "lang": "Der Ritten ist ein Hochplateau über Bozen, erreichbar mit einer Seilbahn, die zwölf Minuten braucht und viertausend Höhenmeter Differenz in Sicht bringt: unten die Stadt mit Palmen, oben Lärchenwiesen auf tausend Metern. Das Haus hat achtzehn Zimmer, Altholz und Leinen, Loggien nach Süden auf den Rosengarten. Die Erdpyramiden, Erosionssäulen aus Lehm, stehen zwanzig Gehminuten entfernt. Im Winter gibt es am Rittner Horn ein kleines Gebiet mit vier Liften, fünfzehn Pistenkilometern und leeren Hängen. Sauna, Dampfbad und ein Außenbecken mit Blick auf die Dolomiten. Abends vier Gänge, kurze Karte, Weine vom Ritten und aus Eppan.",
+   "highlights": [
+    "Hochplateau mit Seilbahn nach Bozen",
+    "Loggien auf den Rosengarten",
+    "Erdpyramiden in zwanzig Minuten",
+    "Kleines Skigebiet ohne Wartezeiten"
+   ]
+  },
+  {
+   "id": "h257",
+   "ziel": "suedtirol",
+   "name": "Sterzinger Laubenhaus",
+   "ort": "Sterzing",
+   "region": "Wipptal",
+   "kategorie": "stadt",
+   "sterne": 3,
+   "preis": 148,
+   "rating": 4.4,
+   "bewertungen": 424,
+   "strand": null,
+   "zentrum": 0.1,
+   "flughafen": 242,
+   "extras": [
+    "terrace"
+   ],
+   "kurz": "In den Sterzinger Lauben, Rosskopf-Bahn fußläufig, Brenner in zwanzig Minuten.",
+   "lang": "Sterzing hat eine Altstadt, die aus einer einzigen breiten Straße mit Laubengängen und dem Zwölferturm am Ende besteht, und das reicht völlig. Das Haus steht in den Lauben, sechsundzwanzig Zimmer, Gewölbe im Erdgeschoss, oben Holzböden, hofseitig ruhig. Zur Rosskopf-Bahn sind es sieben Gehminuten, das Gebiet ist klein und hat eine zehn Kilometer lange Rodelbahn, die abends beleuchtet wird. Der Brenner liegt zwanzig Autominuten entfernt, Innsbruck fünfzig, was das Haus zu einem brauchbaren Zwischenstopp macht. Joghurt aus Sterzing ist eine örtliche Industrie, das Frühstück nutzt das aus.",
+   "highlights": [
+    "In den Sterzinger Laubengängen",
+    "Sieben Minuten zur Rosskopf-Bahn",
+    "Beleuchtete Rodelbahn über zehn Kilometer",
+    "Innsbruck in fünfzig Minuten"
+   ]
+  },
+  {
+   "id": "h258",
+   "ziel": "suedtirol",
+   "name": "Eppaner Weinberghof",
+   "ort": "Eppan",
+   "region": "Überetsch",
+   "kategorie": "finca",
+   "sterne": 4,
+   "preis": 192,
+   "rating": 4.6,
+   "bewertungen": 396,
+   "strand": null,
+   "zentrum": 1.4,
+   "flughafen": 162,
+   "extras": [
+    "terrace",
+    "bikeRental"
+   ],
+   "kurz": "Ansitz zwischen Reben und Burgen, Bozen in zwanzig Minuten.",
+   "lang": "Über Eppan stehen auf engem Raum mehr Burgen als in jeder anderen Gegend Europas, Hocheppan, Boymont und Korb liegen innerhalb einer Wanderung. Der Ansitz selbst stammt aus dem sechzehnten Jahrhundert, vierzehn Zimmer, gewölbte Decken, Freskenreste in zwei Räumen, draußen ein Garten mit Pergola. Die Reben gehen bis an die Mauer, der Wein steht im Keller und kommt abends auf den Tisch. Zu den Montiggler Seen sind es zwei Kilometer, nach Bozen zwanzig Minuten mit dem Bus. Räder stehen bereit, der Radweg nach Kaltern ist flach. Abends vier Gänge mit Produkten aus der Umgebung, mittags nur Brot und Aufschnitt.",
+   "highlights": [
+    "Ansitz aus dem 16. Jahrhundert",
+    "Drei Burgen in Wanderweite",
+    "Eigener Wein im Keller",
+    "Zwanzig Minuten nach Bozen"
+   ]
+  },
+  {
+   "id": "h259",
+   "ziel": "suedtirol",
+   "name": "Pragser Seehaus",
+   "ort": "Prags",
+   "region": "Pustertal",
+   "kategorie": "boutique",
+   "sterne": 4,
+   "preis": 258,
+   "rating": 4.7,
+   "bewertungen": 448,
+   "strand": null,
+   "zentrum": 3.8,
+   "flughafen": 262,
+   "extras": [
+    "spa",
+    "terrace"
+   ],
+   "kurz": "Am Pragser Wildsee, Zufahrt ab zehn Uhr gesperrt, Boote am Steg.",
+   "lang": "Der Pragser Wildsee ist so bekannt geworden, dass die Zufahrt im Sommer von zehn bis sechzehn Uhr für Tagesgäste gesperrt wird, und das ist der eigentliche Vorzug dieses Hauses: Hausgäste dürfen durch, und ab dem Nachmittag steht man am See fast allein. Sechzehn Zimmer in einem Holzbau am Ufer, Lärche, Leinen, Fenster bis zum Boden auf Wasser und Seekofel. Ruderboote liegen am Steg und gehören dazu. Der Weg um den See dauert eine Stunde, der Aufstieg zum Seekofel vier. Im Winter ist die Straße geräumt, der See gefroren, und die Loipe läuft am Ufer entlang. Abends vier Gänge, Forelle aus dem Tal.",
+   "highlights": [
+    "Zufahrt für Hausgäste trotz Sperre",
+    "Ruderboote am Steg inklusive",
+    "Fenster bis zum Boden auf den See",
+    "Loipe am Ufer im Winter"
+   ]
+  }
+ ]
+}

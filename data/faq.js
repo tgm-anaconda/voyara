@@ -185,8 +185,11 @@ const FAQ = [
   { id: "f-filter", thema: "seite", frage: "Wie filtere ich die Trefferliste?",
     antwort: "Links neben der Liste stehen die Filter: Region, Preis pro Nacht, Gesamtpreis, Bewertung, Sterne, Ausstattung, Verpflegung und Strandnähe. Die Zahl neben jedem Filter sagt, wie viele Häuser danach übrig blieben.",
     stichworte: ["filter", "filtern", "eingrenzen", "sortieren", "suche verfeinern"] },
+  /* Geaendert am 03.11.2026: Der Reiter ist am 02.11. entfallen. Die Frage
+     bleibt stehen - sie wird gestellt, und eine Antwort, die auf einen
+     Reiter verweist, den es nicht mehr gibt, waere schlechter als keine. */
   { id: "f-mietwagen", thema: "seite", frage: "Kann ich auch einen Mietwagen buchen?",
-    antwort: "Ja, über den Reiter „Mietwagen“ in der Suche. Mietwagen werden getrennt von der Unterkunft gebucht.",
+    antwort: "Nein, Voyara vermittelt nur Unterkünfte und Flüge. Einen Mietwagen musst du woanders buchen.",
     stichworte: ["mietwagen", "auto", "wagen mieten", "leihwagen"] },
   { id: "f-kontakt", thema: "seite", frage: "Wie erreiche ich den Kundenservice?",
     antwort: "Telefonisch montags bis samstags von 8 bis 20 Uhr und per E-Mail; beides steht im Impressum. Bei einer laufenden Reise sind wir rund um die Uhr erreichbar.",

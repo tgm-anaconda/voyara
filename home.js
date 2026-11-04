@@ -65,7 +65,7 @@ function heroExtras() {
 
   document.getElementById("heroEyebrow").innerHTML = `${ICONS.sparkle} Kostenlos stornierbar bis 24 Stunden vor Anreise`;
   document.getElementById("heroTrust").innerHTML = `
-    <span>${ICONS.check} ${stays.length} Unterkünfte, ${CARS.length} Mietwagen, ${FLIGHTS.length} Flüge</span>
+    <span>${ICONS.check} ${stays.length} Unterkünfte, ${FLIGHTS.length} Flüge</span>
     <span>${ICONS.check} ⌀ ${avg.replace(".", ",")} von 5 Sternen</span>
     <span>${ICONS.check} ${totalReviews.toLocaleString("de-DE")} Gästebewertungen</span>`;
 }
@@ -150,25 +150,13 @@ function renderHotelSections() {
   });
 }
 
-// Mietwagen- und Flug-Teaser auf der Startseite
-function renderExtras() {
-  const cheapestCar = [...CARS].sort((a, b) => a.pricePerDay - b.pricePerDay)[0];
-  const cheapestFlight = [...FLIGHTS].sort((a, b) => a.price - b.price)[0];
-
-  document.getElementById("extrasRow").innerHTML = `
-    <a class="extra-card" href="results.html?type=car">
-      <div class="extra-icon">${ICONS.car}</div>
-      <div class="extra-body">
-        <strong>Mietwagen ab Flughafen Palma</strong>
-        <span>${CARS.length} Fahrzeuge von Kleinwagen bis Van</span>
-        <span class="extra-price">ab ${formatPrice(cheapestCar.pricePerDay)} pro Tag</span>
-      </div>
-    </a>
-    <!-- Keine Flugkachel mehr auf der Startseite.
-         Fluege werden nur noch zu einer Unterkunft gewaehlt, in der
-         Uebersicht mit der gekennzeichneten Partner-Airline. Ein zweiter
-         Weg dorthin ohne Kennzeichnung waere ein Leck in der Messung. -->`;
-}
+/* Kein Extras-Teaser mehr auf der Startseite (02.11.2026).
+   ------------------------------------------------------------------
+   Die Flugkachel ist am 02.10.2026 gefallen, weil ein zweiter Weg zum
+   Flug ohne gekennzeichnete Partner-Airline ein Leck in der Messung
+   gewesen waere. Jetzt faellt auch die Mietwagenkachel: Der Mietwagen
+   ist aus der Erhebung genommen (Besprechung mit Kai), und damit war der
+   Abschnitt leer. Er steht deshalb auch nicht mehr in index.html. */
 
 function renderUsps() {
   document.getElementById("uspGrid").innerHTML = USPS.map(
@@ -248,7 +236,6 @@ document.addEventListener("DOMContentLoaded", () => {
   SearchBox.mount("#searchBox");
   renderCategories();
   renderHotelSections();
-  renderExtras();
   renderRegions();
   renderUsps();
   renderPartners();

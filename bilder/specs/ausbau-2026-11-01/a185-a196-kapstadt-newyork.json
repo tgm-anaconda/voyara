@@ -1,0 +1,350 @@
+{
+ "wohnungen": [
+  {
+   "id": "a185",
+   "ziel": "kapstadt",
+   "name": "Camps Bay Apartment",
+   "ort": "Kapstadt",
+   "region": "Camps Bay",
+   "preis": 224,
+   "rating": 4.7,
+   "bewertungen": 168,
+   "schlafzimmer": 2,
+   "baeder": 2,
+   "groesse": 94,
+   "gaeste": 4,
+   "strand": 0.3,
+   "zentrum": 7.8,
+   "reinigung": 110,
+   "extras": [
+    "pool",
+    "balcony",
+    "parking",
+    "seaView"
+   ],
+   "kurz": "Balkon über dem Strand von Camps Bay, Becken in der Anlage, Zwölf Apostel im Rücken.",
+   "lang": "Camps Bay liegt an der Atlantikseite unter den Twelve Apostles, der Felskette hinter dem Tafelberg, und hat einen weißen Strand mit Palmen davor. Die Wohnung liegt im dritten Stock einer kleinen Anlage, zwei Schlafzimmer, zwei Bäder, Wohnküche mit Fenstern nach Westen und ein Balkon, auf dem man den Sonnenuntergang abwartet. In der Anlage ein Becken. Zum Strand sind es dreihundert Meter, das Wasser kommt aus dem Benguelastrom und hat vierzehn Grad, was die meisten einmal probieren. Die Seilbahn zum Tafelberg ist acht Kilometer entfernt, Restaurants und Supermarkt an der Strandstraße. Stellplatz in der Tiefgarage, Alarmanlage vorhanden.",
+   "highlights": [
+    "Balkon nach Westen über den Strand",
+    "Becken in der Anlage",
+    "Dreihundert Meter zum Sand",
+    "Acht Kilometer zur Tafelberg-Seilbahn"
+   ]
+  },
+  {
+   "id": "a186",
+   "ziel": "kapstadt",
+   "name": "Bo-Kaap Colour Flat",
+   "ort": "Kapstadt",
+   "region": "Bo-Kaap",
+   "preis": 164,
+   "rating": 4.6,
+   "bewertungen": 142,
+   "schlafzimmer": 2,
+   "baeder": 1,
+   "groesse": 72,
+   "gaeste": 4,
+   "strand": 2.4,
+   "zentrum": 0.8,
+   "reinigung": 85,
+   "extras": [
+    "terrace",
+    "parking"
+   ],
+   "kurz": "Wohnung im Viertel der bunten Häuser, Signal Hill über dem Dach, Zentrum zu Fuß.",
+   "lang": "Das Bo-Kaap liegt am Hang des Signal Hill und ist das Viertel der Cape Malay, der Nachkommen von Menschen, die ab dem siebzehnten Jahrhundert aus Südostasien verschleppt wurden. Die Häuser sind in starken Farben gestrichen, eine Tradition aus der Zeit nach der Abschaffung der Sklaverei. Die Wohnung nimmt das Obergeschoss eines solchen Hauses ein, zwei Schlafzimmer, Wohnküche, Dachterrasse mit Blick auf Tafelberg und Hafen. Zur Long Street sind es acht Gehminuten, zum Company's Garden zehn, zum Bo-Kaap-Museum drei. Nach Sonnenuntergang nimmt man ein Taxi, das sagen die Vermieter auch selbst. Stellplatz im Hof.",
+   "highlights": [
+    "Buntes Haus am Signal Hill",
+    "Dachterrasse mit Blick auf den Tafelberg",
+    "Acht Minuten zur Long Street",
+    "Stellplatz im Hof"
+   ]
+  },
+  {
+   "id": "a187",
+   "ziel": "kapstadt",
+   "name": "Sea Point Promenade Flat",
+   "ort": "Kapstadt",
+   "region": "Sea Point",
+   "preis": 186,
+   "rating": 4.5,
+   "bewertungen": 224,
+   "schlafzimmer": 2,
+   "baeder": 1,
+   "groesse": 80,
+   "gaeste": 5,
+   "strand": 0.3,
+   "zentrum": 4.2,
+   "reinigung": 90,
+   "extras": [
+    "pool",
+    "balcony",
+    "parking",
+    "seaView"
+   ],
+   "kurz": "An der Promenade, Meerwasserbecken nebenan, Wale von Juni bis Oktober.",
+   "lang": "Die Promenade von Sea Point zieht sich vier Kilometer am Atlantik entlang, mit Rasen, Spielplätzen und Leuten, die dort morgens und abends laufen, und sie ist der am besten genutzte öffentliche Raum der Stadt. Die Wohnung liegt im fünften Stock gegenüber, zwei Schlafzimmer mit fünf Betten, Wohnküche, Balkon mit Blick aufs Wasser. In der Anlage ein Becken. Das Meerwasserbecken Sea Point Pavilion, ein Freibad von 1951 mit fünfzig Metern und Blick auf die Brandung, liegt fünfhundert Meter entfernt. Von Juni bis Oktober ziehen Südliche Glattwale vorbei, oft von der Promenade aus zu sehen. Supermarkt im Haus, Stellplatz vorhanden.",
+   "highlights": [
+    "Balkon an der Promenade",
+    "Fünfhundert Meter zum Meerwasserbecken",
+    "Wale von Juni bis Oktober",
+    "Becken in der Anlage"
+   ]
+  },
+  {
+   "id": "a188",
+   "ziel": "kapstadt",
+   "name": "Constantia Weinberghaus",
+   "ort": "Kapstadt",
+   "region": "Constantia",
+   "preis": 238,
+   "rating": 4.7,
+   "bewertungen": 118,
+   "schlafzimmer": 3,
+   "baeder": 2,
+   "groesse": 136,
+   "gaeste": 6,
+   "strand": 9.4,
+   "zentrum": 14.0,
+   "reinigung": 130,
+   "extras": [
+    "pool",
+    "terrace",
+    "parking"
+   ],
+   "kurz": "Ganzes Haus zwischen Reben, eigenes Becken, Kirstenbosch in sechs Kilometern.",
+   "lang": "Constantia liegt auf der Ostseite des Tafelbergmassivs und ist das älteste Weinanbaugebiet außerhalb Europas, 1685 angelegt. Das Haus steht am Rand eines Gutes, drei Schlafzimmer, zwei Bäder, großer Wohnraum mit Kamin, Küche mit Esstisch für sechs und ein eigenes Becken im Garten, um das Eichen stehen. Reben bis an die Mauer. Verkostungen gibt es auf drei Gütern in Fahrradentfernung, zum Kirstenbosch, dem botanischen Garten am Berghang, sind es sechs Kilometer, nach Muizenberg an den warmen Indischen Ozean zehn. Ein Auto braucht man hier, zwei Stellplätze gehören dazu. Hausmeister wohnt auf dem Gelände.",
+   "highlights": [
+    "Eigenes Becken im Garten",
+    "Ganzes Haus für sechs Personen",
+    "Drei Weingüter in Radentfernung",
+    "Sechs Kilometer nach Kirstenbosch"
+   ]
+  },
+  {
+   "id": "a189",
+   "ziel": "kapstadt",
+   "name": "Muizenberg Beach Flat",
+   "ort": "Kapstadt",
+   "region": "Muizenberg",
+   "preis": 128,
+   "rating": 4.4,
+   "bewertungen": 196,
+   "schlafzimmer": 2,
+   "baeder": 1,
+   "groesse": 66,
+   "gaeste": 4,
+   "strand": 0.2,
+   "zentrum": 24.0,
+   "reinigung": 70,
+   "extras": [
+    "balcony",
+    "parking",
+    "seaView"
+   ],
+   "kurz": "Günstig am warmen Indischen Ozean, bunte Umkleidehäuschen vor dem Fenster.",
+   "lang": "Muizenberg liegt an der False Bay auf der anderen Seite der Halbinsel, und dort kommt das Wasser aus dem Indischen Ozean statt aus dem Atlantik, also zwanzig Grad statt vierzehn. Das macht den Strand zum Ort, an dem in Kapstadt Surfen gelernt wird, und die bunten Umkleidehäuschen davor sind das zweitbekannteste Motiv der Stadt. Die Wohnung liegt im zweiten Stock zweihundert Meter vom Sand, zwei Schlafzimmer, Wohnküche, Balkon mit Blick auf die Bucht. Trockenplatz für Neoprenanzüge auf dem Balkon, Verleih hundert Meter entfernt. Der Zug nach Kapstadt fährt in vierzig Minuten entlang der Küste, zu den Pinguinen von Boulders Beach sind es fünfzehn Kilometer.",
+   "highlights": [
+    "Zweihundert Meter zum warmen Indischen Ozean",
+    "Surfverleih hundert Meter entfernt",
+    "Pinguine in fünfzehn Kilometern",
+    "Günstigste Wohnung in Kapstadt"
+   ]
+  },
+  {
+   "id": "a190",
+   "ziel": "kapstadt",
+   "name": "Simon's Town Naval Flat",
+   "ort": "Simon's Town",
+   "region": "False Bay",
+   "preis": 172,
+   "rating": 4.6,
+   "bewertungen": 124,
+   "schlafzimmer": 2,
+   "baeder": 1,
+   "groesse": 74,
+   "gaeste": 4,
+   "strand": 0.5,
+   "zentrum": 38.0,
+   "reinigung": 85,
+   "extras": [
+    "terrace",
+    "parking",
+    "seaView"
+   ],
+   "kurz": "Im Marinehafen an der False Bay, Pinguine von Boulders Beach zu Fuß.",
+   "lang": "Simon's Town ist seit 1814 Marinestützpunkt, hat eine Hauptstraße mit viktorianischen Fassaden und zwei Kilometer weiter Boulders Beach, an dem seit 1982 eine Kolonie von Brillenpinguinen lebt, inzwischen rund zweitausend Tiere, zwischen Granitblöcken und auf Holzstegen zu beobachten. Die Wohnung liegt im Obergeschoss eines Offiziershauses von 1890, zwei Schlafzimmer, Wohnküche, Veranda mit Blick auf die Reede. Zum Strand sind es fünfhundert Meter, zu den Pinguinen zwanzig Gehminuten am Wasser entlang. Das Kap der Guten Hoffnung liegt sechzehn Kilometer südlich. Der Zug nach Kapstadt fährt an der Küste, eine Stunde. Stellplatz vorhanden.",
+   "highlights": [
+    "Veranda mit Blick auf die Reede",
+    "Zwanzig Minuten zu den Pinguinen",
+    "Kap der Guten Hoffnung in 16 Kilometern",
+    "Zug entlang der Küste nach Kapstadt"
+   ]
+  },
+  {
+   "id": "a191",
+   "ziel": "newyork",
+   "name": "Williamsburg Loft",
+   "ort": "New York",
+   "region": "Brooklyn",
+   "preis": 246,
+   "rating": 4.6,
+   "bewertungen": 224,
+   "schlafzimmer": 2,
+   "baeder": 1,
+   "groesse": 82,
+   "gaeste": 4,
+   "strand": null,
+   "zentrum": 5.8,
+   "reinigung": 120,
+   "extras": [
+    "balcony"
+   ],
+   "kurz": "Loft in Brooklyn, Skyline vom Fenster, Linie L in neun Minuten nach Manhattan.",
+   "lang": "Williamsburg liegt in Brooklyn gegenüber von Midtown, und die Aussicht von hier auf Manhattan ist die, die man eigentlich sucht, wenn man in Manhattan wohnt. Das Loft liegt im vierten Stock einer früheren Seilerei, zwei Schlafzimmer, offener Wohnraum mit Sichtziegeln und Stahlträgern, Fenster über die ganze Wand und ein kleiner Balkon zur Feuertreppe. Die Linie L fährt in neun Minuten zur 14th Street, die Fähre vom Pier zwei Blocks weiter nach Midtown in zwanzig. Im Viertel liegen Smorgasburg am Wochenende, die Brooklyn Brewery und die Domino Park Promenade am Fluss. Waschmaschine in der Wohnung, was in New York nicht selbstverständlich ist.",
+   "highlights": [
+    "Loft in einer früheren Seilerei",
+    "Linie L in neun Minuten nach Manhattan",
+    "Fähre nach Midtown vom Pier",
+    "Waschmaschine in der Wohnung"
+   ]
+  },
+  {
+   "id": "a192",
+   "ziel": "newyork",
+   "name": "Upper West Side Flat",
+   "ort": "New York",
+   "region": "Upper West Side",
+   "preis": 268,
+   "rating": 4.6,
+   "bewertungen": 186,
+   "schlafzimmer": 2,
+   "baeder": 1,
+   "groesse": 78,
+   "gaeste": 4,
+   "strand": null,
+   "zentrum": 4.2,
+   "reinigung": 125,
+   "extras": [],
+   "kurz": "Wohnung in einem Brownstone, zwei Blocks zum Central Park, Museum um die Ecke.",
+   "lang": "Die Upper West Side ist der Teil Manhattans, in dem Familien wohnen und nicht nur arbeiten, mit Brownstones, Buchhandlungen und Diners, die seit vierzig Jahren dasselbe machen. Die Wohnung liegt im dritten Stock eines Reihenhauses von 1898, zwei Schlafzimmer, Wohnküche, Stuckdecken und ein Erkerfenster zur Straße. Treppe mit Holzgeländer, kein Aufzug. Zum Central Park sind es zwei Blocks, zum Naturkundemuseum vier, zum Lincoln Center zwanzig Gehminuten. Die Linien 1, B und C halten jeweils in Gehweite. Supermarkt und Bagelladen in derselben Straße, und das ist für eine Woche mit Kindern mehr wert als jede Hotelleistung.",
+   "highlights": [
+    "Brownstone von 1898 mit Erkerfenster",
+    "Zwei Blocks zum Central Park",
+    "Vier Blocks zum Naturkundemuseum",
+    "Supermarkt und Bagelladen in der Straße"
+   ]
+  },
+  {
+   "id": "a193",
+   "ziel": "newyork",
+   "name": "Harlem Brownstone Etage",
+   "ort": "New York",
+   "region": "Harlem",
+   "preis": 192,
+   "rating": 4.5,
+   "bewertungen": 168,
+   "schlafzimmer": 2,
+   "baeder": 1,
+   "groesse": 86,
+   "gaeste": 4,
+   "strand": null,
+   "zentrum": 7.4,
+   "reinigung": 95,
+   "extras": [
+    "terrace"
+   ],
+   "kurz": "Ganze Etage in einem Brownstone, Apollo und Jazzclubs zu Fuß, Express nach Midtown.",
+   "lang": "Harlem ist seit hundert Jahren das Zentrum schwarzer Kultur in den USA, und was davon lebendig geblieben ist, findet man an einem Abend: das Apollo Theater mit der Amateur Night am Mittwoch, die Jazzclubs an der Lenox Avenue, die Gospelmessen am Sonntagmorgen. Die Wohnung nimmt eine ganze Etage eines Brownstones von 1905 ein, zwei Schlafzimmer, Wohnküche, Parkett und Zugang zur Dachterrasse über die Blockmitte. Zum Apollo sind es sechs Gehminuten, zum Studio Museum vier, zum nördlichen Central Park zehn. Die Linien A, B, C und D halten an der 125. Straße, zur Midtown sind es zwölf Minuten mit dem Express.",
+   "highlights": [
+    "Ganze Etage in einem Brownstone von 1905",
+    "Sechs Minuten zum Apollo Theater",
+    "Zugang zur Dachterrasse",
+    "Zwölf Minuten mit dem Express nach Midtown"
+   ]
+  },
+  {
+   "id": "a194",
+   "ziel": "newyork",
+   "name": "Long Island City Studio",
+   "ort": "New York",
+   "region": "Queens",
+   "preis": 178,
+   "rating": 4.4,
+   "bewertungen": 242,
+   "schlafzimmer": 1,
+   "baeder": 1,
+   "groesse": 52,
+   "gaeste": 2,
+   "strand": null,
+   "zentrum": 5.2,
+   "reinigung": 80,
+   "extras": [
+    "balcony",
+    "seaView"
+   ],
+   "kurz": "Günstig in Queens, eine Station nach Grand Central, Skyline vom Balkon.",
+   "lang": "Long Island City liegt in Queens direkt gegenüber von Midtown, und mit der Linie 7 ist man in einer Station an der Grand Central Station. Das macht das Viertel zu der Adresse, an der man für Manhattan-Nähe nicht Manhattan-Preise zahlt. Das Studio liegt im zwölften Stock eines Neubaus, ein Schlafzimmer, Wohnküche, Balkon mit Blick über den Fluss auf die Skyline, die von hier aus vollständig ist. Für zwei Personen. Der Gantry Plaza State Park liegt vor der Tür, mit den alten Verladekränen und der Pepsi-Leuchtreklame, das MoMA PS1 zehn Gehminuten entfernt. Zum Flughafen LaGuardia sind es neun Kilometer, zum JFK achtzehn.",
+   "highlights": [
+    "Balkon mit Blick auf die Skyline",
+    "Eine Station nach Grand Central",
+    "Neun Kilometer nach LaGuardia",
+    "Gantry Plaza State Park vor der Tür"
+   ]
+  },
+  {
+   "id": "a195",
+   "ziel": "newyork",
+   "name": "Chelsea Highline Apartment",
+   "ort": "New York",
+   "region": "Chelsea",
+   "preis": 286,
+   "rating": 4.6,
+   "bewertungen": 164,
+   "schlafzimmer": 2,
+   "baeder": 2,
+   "groesse": 88,
+   "gaeste": 4,
+   "strand": null,
+   "zentrum": 2.4,
+   "reinigung": 130,
+   "extras": [
+    "balcony"
+   ],
+   "kurz": "An der High Line, zwei Bäder, Whitney und Chelsea Market zu Fuß.",
+   "lang": "Die High Line ist eine stillgelegte Hochbahn, die über zweieinhalb Kilometer als Park durch Chelsea führt, und die Wohnung liegt im sechsten Stock eines Hauses daneben, auf Höhe der Bahn. Zwei Schlafzimmer, zwei Bäder, Wohnküche und ein Balkon zur Westseite, von dem man über den Hudson nach New Jersey sieht. Zum Whitney Museum sind es fünf Gehminuten, zum Chelsea Market sieben, zu den Galerien im Westen von Chelsea drei. Die Linien A, C und E halten vier Blocks entfernt. Portier im Haus, Waschmaschine in der Wohnung, Aufzug. Zum Flughafen JFK sind es fünfzig Minuten mit Bahn und AirTrain.",
+   "highlights": [
+    "Auf Höhe der High Line",
+    "Zwei Bäder und Balkon nach Westen",
+    "Fünf Minuten zum Whitney Museum",
+    "Portier und Aufzug im Haus"
+   ]
+  },
+  {
+   "id": "a196",
+   "ziel": "newyork",
+   "name": "Lower East Side Walkup",
+   "ort": "New York",
+   "region": "Lower East Side",
+   "preis": 164,
+   "rating": 4.2,
+   "bewertungen": 286,
+   "schlafzimmer": 1,
+   "baeder": 1,
+   "groesse": 44,
+   "gaeste": 3,
+   "strand": null,
+   "zentrum": 3.4,
+   "reinigung": 75,
+   "extras": [],
+   "kurz": "Günstige Wohnung in einem Mietshaus von 1904, Delis und Bars rundherum.",
+   "lang": "Die Lower East Side war über hundert Jahre das Einwanderungsviertel New Yorks, und die schmalen Mietshäuser mit den Feuertreppen an der Fassade stehen noch alle. Die Wohnung liegt im vierten Stock eines solchen Hauses, ein Schlafzimmer, Wohnküche, drei Betten auf vierundvierzig Quadratmetern, kein Aufzug, achtundsechzig Stufen. Wände sind dünn, Betten gut. Für Manhattan unter hundertachtzig Dollar ist das einer der wenigen Orte, der nicht Hostel heißt. Katz's Delicatessen liegt zwei Blocks entfernt, das Tenement Museum vier, die Williamsburg Bridge sechs. Die Linie F hält an der Delancey Street. Nachts ist das Viertel laut, Ohrstöpsel liegen bereit.",
+   "highlights": [
+    "Mietshaus von 1904 mit Feuertreppe",
+    "Unter 180 Dollar in Manhattan",
+    "Zwei Blocks zu Katz's Delicatessen",
+    "Linie F an der Delancey Street"
+   ]
+  }
+ ]
+}

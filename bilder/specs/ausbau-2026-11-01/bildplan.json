@@ -1,0 +1,4357 @@
+[
+ {
+  "id": "h219",
+  "ziel": "ostsee",
+  "bereich": "hotels",
+  "ordner": "hotels/h219-kurhaus-binz",
+  "bilder": {
+   "1": "ostsee/ort/221451.jpg",
+   "2": "ostsee/pool/53560.jpg",
+   "3": "ostsee/umgebung/1572665.jpg",
+   "4": "ostsee/zimmer/4217.jpg",
+   "5": "ostsee/essen/28625915.jpg"
+  }
+ },
+ {
+  "id": "h220",
+  "ziel": "ostsee",
+  "bereich": "hotels",
+  "ordner": "hotels/h220-villa-sellin",
+  "bilder": {
+   "1": "ostsee/ort/4815497.jpg",
+   "2": "ostsee/pool/11180295.jpg",
+   "3": "ostsee/umgebung/4579173.jpg",
+   "4": "ostsee/zimmer/798575.jpg",
+   "5": "ostsee/essen/36390541.jpg"
+  }
+ },
+ {
+  "id": "h221",
+  "ziel": "ostsee",
+  "bereich": "hotels",
+  "ordner": "hotels/h221-goehren-nordperd",
+  "bilder": {
+   "1": "ostsee/ort/6167851.jpg",
+   "2": "ostsee/pool/14982043.jpg",
+   "3": "ostsee/umgebung/5312370.jpg",
+   "4": "ostsee/zimmer/3225561.jpg",
+   "5": "ostsee/essen/38336334.jpg"
+  }
+ },
+ {
+  "id": "h222",
+  "ziel": "ostsee",
+  "bereich": "hotels",
+  "ordner": "hotels/h222-fischerhof-vitt",
+  "bilder": {
+   "1": "ostsee/ort/7014573.jpg",
+   "2": "ostsee/pool/15289739.jpg",
+   "3": "ostsee/umgebung/5312374.jpg",
+   "4": "ostsee/zimmer/4003788.jpg",
+   "5": "ostsee/essen/38336346.jpg"
+  }
+ },
+ {
+  "id": "h223",
+  "ziel": "ostsee",
+  "bereich": "hotels",
+  "ordner": "hotels/h223-seebad-ahlbeck",
+  "bilder": {
+   "1": "ostsee/ort/7561621.jpg",
+   "2": "ostsee/pool/15495258.jpg",
+   "3": "ostsee/umgebung/5484788.jpg",
+   "4": "ostsee/zimmer/4146210.jpg",
+   "5": "ostsee/essen/38336357.jpg"
+  }
+ },
+ {
+  "id": "h224",
+  "ziel": "ostsee",
+  "bereich": "hotels",
+  "ordner": "hotels/h224-villa-bansin",
+  "bilder": {
+   "1": "ostsee/ort/7561625.jpg",
+   "2": "ostsee/pool/15495260.jpg",
+   "3": "ostsee/umgebung/5484792.jpg",
+   "4": "ostsee/zimmer/4825701.jpg",
+   "5": "ostsee/essen/38928378.jpg"
+  }
+ },
+ {
+  "id": "h225",
+  "ziel": "ostsee",
+  "bereich": "hotels",
+  "ordner": "hotels/h225-kuenstlerhaus-ahrenshoop",
+  "bilder": {
+   "1": "ostsee/ort/10714125.jpg",
+   "2": "ostsee/pool/20385217.jpg",
+   "3": "ostsee/umgebung/7372992.jpg",
+   "4": "ostsee/zimmer/5304565.jpg",
+   "5": "ostsee/essen/38928388.jpg"
+  }
+ },
+ {
+  "id": "h226",
+  "ziel": "ostsee",
+  "bereich": "hotels",
+  "ordner": "hotels/h226-wustrower-bodden",
+  "bilder": {
+   "1": "ostsee/ort/13354250.jpg",
+   "2": "ostsee/pool/20888328.jpg",
+   "3": "ostsee/umgebung/9066211.jpg",
+   "4": "ostsee/zimmer/6115017.jpg",
+   "5": "ostsee/essen/38976005.jpg"
+  }
+ },
+ {
+  "id": "h227",
+  "ziel": "ostsee",
+  "bereich": "hotels",
+  "ordner": "hotels/h227-hiddensee-inselhof",
+  "bilder": {
+   "1": "ostsee/ort/14964957.jpg",
+   "2": "ostsee/pool/21383889.jpg",
+   "3": "ostsee/umgebung/9546061.jpg",
+   "4": "ostsee/zimmer/6444257.jpg",
+   "5": "ostsee/essen/39051147.jpg"
+  }
+ },
+ {
+  "id": "h228",
+  "ziel": "ostsee",
+  "bereich": "hotels",
+  "ordner": "hotels/h228-boltenhagen-strandresidenz",
+  "bilder": {
+   "1": "ostsee/ort/15918095.jpg",
+   "2": "ostsee/pool/26077540.jpg",
+   "3": "ostsee/umgebung/9964761.jpg",
+   "4": "ostsee/zimmer/6970068.jpg",
+   "5": "ostsee/essen/39328729.jpg"
+  }
+ },
+ {
+  "id": "h229",
+  "ziel": "ostsee",
+  "bereich": "hotels",
+  "ordner": "hotels/h229-kuehlungsborn-ostseeblick",
+  "bilder": {
+   "1": "ostsee/ort/18630830.jpg",
+   "2": "ostsee/pool/26077683.jpg",
+   "3": "ostsee/umgebung/11785309.jpg",
+   "4": "ostsee/zimmer/7031736.jpg",
+   "5": "ostsee/essen/3646.jpg"
+  }
+ },
+ {
+  "id": "h230",
+  "ziel": "ostsee",
+  "bereich": "hotels",
+  "ordner": "hotels/h230-warnemuende-leuchtturm",
+  "bilder": {
+   "1": "ostsee/ort/22690969.jpg",
+   "2": "ostsee/pool/26952023.jpg",
+   "3": "ostsee/umgebung/12936721.jpg",
+   "4": "ostsee/zimmer/7546279.jpg",
+   "5": "ostsee/essen/3656.jpg"
+  }
+ },
+ {
+  "id": "h231",
+  "ziel": "ostsee",
+  "bereich": "hotels",
+  "ordner": "hotels/h231-pension-baabe",
+  "bilder": {
+   "1": "ostsee/ort/22821029.jpg",
+   "2": "ostsee/pool/27104848.jpg",
+   "3": "ostsee/umgebung/12938468.jpg",
+   "4": "ostsee/zimmer/7546592.jpg",
+   "5": "ostsee/essen/9820.jpg"
+  }
+ },
+ {
+  "id": "h232",
+  "ziel": "ostsee",
+  "bereich": "hotels",
+  "ordner": "hotels/h232-timmendorf-seeschloesschen",
+  "bilder": {
+   "1": "ostsee/ort/27814202.jpg",
+   "2": "ostsee/pool/27208722.jpg",
+   "3": "ostsee/umgebung/12952379.jpg",
+   "4": "ostsee/zimmer/7765000.jpg",
+   "5": "ostsee/essen/66637.jpg"
+  }
+ },
+ {
+  "id": "h233",
+  "ziel": "tirol",
+  "bereich": "hotels",
+  "ordner": "hotels/h233-hotel-arlberghaus",
+  "bilder": {
+   "1": "tirol/ort/15245951.jpg",
+   "2": "tirol/wellness/3012297.jpg",
+   "3": "tirol/umgebung/24816307.jpg",
+   "4": "tirol/zimmer/4969871.jpg",
+   "5": "tirol/essen/949101.jpg"
+  }
+ },
+ {
+  "id": "h234",
+  "ziel": "tirol",
+  "bereich": "hotels",
+  "ordner": "hotels/h234-ischgl-silvretta-lodge",
+  "bilder": {
+   "1": "tirol/ort/19323563.jpg",
+   "2": "tirol/wellness/7598359.jpg",
+   "3": "tirol/umgebung/24816308.jpg",
+   "4": "tirol/zimmer/7745931.jpg",
+   "5": "tirol/essen/3709821.jpg"
+  }
+ },
+ {
+  "id": "h235",
+  "ziel": "tirol",
+  "bereich": "hotels",
+  "ordner": "hotels/h235-seefelder-hochplateau",
+  "bilder": {
+   "1": "tirol/ort/19576796.jpg",
+   "2": "tirol/wellness/7789646.jpg",
+   "3": "tirol/umgebung/25284386.jpg",
+   "4": "tirol/zimmer/7745994.jpg",
+   "5": "tirol/essen/10977734.jpg"
+  }
+ },
+ {
+  "id": "h236",
+  "ziel": "tirol",
+  "bereich": "hotels",
+  "ordner": "hotels/h236-mayrhofen-zillertalhof",
+  "bilder": {
+   "1": "tirol/ort/24446758.jpg",
+   "2": "tirol/wellness/8092430.jpg",
+   "3": "tirol/umgebung/27014230.jpg",
+   "4": "tirol/zimmer/11565824.jpg",
+   "5": "tirol/essen/29951931.jpg"
+  }
+ },
+ {
+  "id": "h237",
+  "ziel": "tirol",
+  "bereich": "hotels",
+  "ordner": "hotels/h237-alpbacher-bauernhof",
+  "bilder": {
+   "1": "tirol/ort/32282189.jpg",
+   "2": "tirol/wellness/9119662.jpg",
+   "3": "tirol/umgebung/27119226.jpg",
+   "4": "tirol/zimmer/19737829.jpg",
+   "5": "tirol/essen/37991050.jpg"
+  }
+ },
+ {
+  "id": "h238",
+  "ziel": "tirol",
+  "bereich": "hotels",
+  "ordner": "hotels/h238-serfaus-familienresidenz",
+  "bilder": {
+   "1": "tirol/ort/33237984.jpg",
+   "2": "tirol/wellness/17640381.jpg",
+   "3": "tirol/umgebung/27384541.jpg",
+   "4": "tirol/zimmer/20771843.jpg",
+   "5": "tirol/essen/38147027.jpg"
+  }
+ },
+ {
+  "id": "h239",
+  "ziel": "tirol",
+  "bereich": "hotels",
+  "ordner": "hotels/h239-gasthof-galtuer",
+  "bilder": {
+   "1": "tirol/ort/33342210.jpg",
+   "2": "tirol/wellness/18631421.jpg",
+   "3": "tirol/umgebung/28917746.jpg",
+   "4": "tirol/zimmer/22027929.jpg",
+   "5": "tirol/essen/38326405.jpg"
+  }
+ },
+ {
+  "id": "h240",
+  "ziel": "tirol",
+  "bereich": "hotels",
+  "ordner": "hotels/h240-kuehtai-bergkristall",
+  "bilder": {
+   "1": "tirol/ort/35383129.jpg",
+   "2": "tirol/wellness/21038556.jpg",
+   "3": "tirol/umgebung/29007150.jpg",
+   "4": "tirol/zimmer/26729319.jpg",
+   "5": "tirol/essen/38763034.jpg"
+  }
+ },
+ {
+  "id": "h241",
+  "ziel": "tirol",
+  "bereich": "hotels",
+  "ordner": "hotels/h241-stubaier-gletscherhof",
+  "bilder": {
+   "1": "tirol/ort/35426500.jpg",
+   "2": "tirol/wellness/23330922.jpg",
+   "3": "tirol/umgebung/30959278.jpg",
+   "4": "tirol/zimmer/26729321.jpg",
+   "5": "tirol/essen/38851255.jpg"
+  }
+ },
+ {
+  "id": "h242",
+  "ziel": "tirol",
+  "bereich": "hotels",
+  "ordner": "hotels/h242-kitzbuehel-streifhaus",
+  "bilder": {
+   "1": "tirol/ort/35426958.jpg",
+   "2": "tirol/wellness/31092892.jpg",
+   "3": "tirol/umgebung/31657048.jpg",
+   "4": "tirol/zimmer/26752642.jpg",
+   "5": "tirol/essen/38857620.jpg"
+  }
+ },
+ {
+  "id": "h243",
+  "ziel": "tirol",
+  "bereich": "hotels",
+  "ordner": "hotels/h243-lermooser-zugspitzblick",
+  "bilder": {
+   "1": "tirol/ort/36597107.jpg",
+   "2": "tirol/wellness/31092898.jpg",
+   "3": "tirol/umgebung/32168384.jpg",
+   "4": "tirol/zimmer/26859035.jpg",
+   "5": "tirol/essen/38889678.jpg"
+  }
+ },
+ {
+  "id": "h244",
+  "ziel": "tirol",
+  "bereich": "hotels",
+  "ordner": "hotels/h244-zeller-hofstube",
+  "bilder": {
+   "1": "tirol/ort/36634685.jpg",
+   "2": "tirol/wellness/31788108.jpg",
+   "3": "tirol/umgebung/32484866.jpg",
+   "4": "tirol/zimmer/30708770.jpg",
+   "5": "tirol/essen/38919328.jpg"
+  }
+ },
+ {
+  "id": "h245",
+  "ziel": "tirol",
+  "bereich": "hotels",
+  "ordner": "hotels/h245-soelden-bergwelt",
+  "bilder": {
+   "1": "tirol/ort/39130889.jpg",
+   "2": "tirol/wellness/32504779.jpg",
+   "3": "tirol/umgebung/32843145.jpg",
+   "4": "tirol/zimmer/30708771.jpg",
+   "5": "tirol/essen/38919341.jpg"
+  }
+ },
+ {
+  "id": "h246",
+  "ziel": "suedtirol",
+  "bereich": "hotels",
+  "ordner": "hotels/h246-alta-badia-corvara",
+  "bilder": {
+   "1": "suedtirol/ort/9921458.jpg",
+   "2": "suedtirol/wellness/282892.jpg",
+   "3": "suedtirol/umgebung/19830505.jpg",
+   "4": "suedtirol/zimmer/333955.jpg",
+   "5": "suedtirol/essen/7237776.jpg"
+  }
+ },
+ {
+  "id": "h247",
+  "ziel": "suedtirol",
+  "bereich": "hotels",
+  "ordner": "hotels/h247-ortisei-val-gardena",
+  "bilder": {
+   "1": "suedtirol/ort/10747565.jpg",
+   "2": "suedtirol/wellness/787871.jpg",
+   "3": "suedtirol/umgebung/27435338.jpg",
+   "4": "suedtirol/zimmer/545046.jpg",
+   "5": "suedtirol/essen/11043142.jpg"
+  }
+ },
+ {
+  "id": "h248",
+  "ziel": "suedtirol",
+  "bereich": "hotels",
+  "ordner": "hotels/h248-seiser-alm-panorama",
+  "bilder": {
+   "1": "suedtirol/ort/19796055.jpg",
+   "2": "suedtirol/wellness/6187415.jpg",
+   "3": "suedtirol/umgebung/27587146.jpg",
+   "4": "suedtirol/zimmer/5710698.jpg",
+   "5": "suedtirol/essen/34302384.jpg"
+  }
+ },
+ {
+  "id": "h249",
+  "ziel": "suedtirol",
+  "bereich": "hotels",
+  "ordner": "hotels/h249-meraner-kurhaus",
+  "bilder": {
+   "1": "suedtirol/ort/19900481.jpg",
+   "2": "suedtirol/wellness/7031707.jpg",
+   "3": "suedtirol/umgebung/27659770.jpg",
+   "4": "suedtirol/zimmer/7031721.jpg",
+   "5": "suedtirol/essen/34314145.jpg"
+  }
+ },
+ {
+  "id": "h250",
+  "ziel": "suedtirol",
+  "bereich": "hotels",
+  "ordner": "hotels/h250-weingut-kaltern",
+  "bilder": {
+   "1": "suedtirol/ort/20446158.jpg",
+   "2": "suedtirol/wellness/25358307.jpg",
+   "3": "suedtirol/umgebung/28374731.jpg",
+   "4": "suedtirol/zimmer/12277960.jpg",
+   "5": "suedtirol/essen/34314163.jpg"
+  }
+ },
+ {
+  "id": "h251",
+  "ziel": "suedtirol",
+  "bereich": "hotels",
+  "ordner": "hotels/h251-brixner-hofburg",
+  "bilder": {
+   "1": "suedtirol/ort/21274013.jpg",
+   "2": "suedtirol/wellness/28356604.jpg",
+   "3": "suedtirol/umgebung/28441078.jpg",
+   "4": "suedtirol/zimmer/12913379.jpg",
+   "5": "suedtirol/essen/35010020.jpg"
+  }
+ },
+ {
+  "id": "h252",
+  "ziel": "suedtirol",
+  "bereich": "hotels",
+  "ordner": "hotels/h252-kronplatz-familienhof",
+  "bilder": {
+   "1": "suedtirol/ort/29645388.jpg",
+   "2": "suedtirol/wellness/31092908.jpg",
+   "3": "suedtirol/umgebung/30004565.jpg",
+   "4": "suedtirol/zimmer/12913380.jpg",
+   "5": "suedtirol/essen/35116751.jpg"
+  }
+ },
+ {
+  "id": "h253",
+  "ziel": "suedtirol",
+  "bereich": "hotels",
+  "ordner": "hotels/h253-sextner-dolomiten",
+  "bilder": {
+   "1": "suedtirol/ort/30009130.jpg",
+   "2": "suedtirol/wellness/33517858.jpg",
+   "3": "suedtirol/umgebung/30234044.jpg",
+   "4": "suedtirol/zimmer/12913382.jpg",
+   "5": "suedtirol/essen/35116753.jpg"
+  }
+ },
+ {
+  "id": "h254",
+  "ziel": "suedtirol",
+  "bereich": "hotels",
+  "ordner": "hotels/h254-vinschgauer-apfelhof",
+  "bilder": {
+   "1": "suedtirol/ort/30471854.jpg",
+   "2": "suedtirol/wellness/34097624.jpg",
+   "3": "suedtirol/umgebung/30234047.jpg",
+   "4": "suedtirol/zimmer/14775080.jpg",
+   "5": "suedtirol/essen/35520587.jpg"
+  }
+ },
+ {
+  "id": "h255",
+  "ziel": "suedtirol",
+  "bereich": "hotels",
+  "ordner": "hotels/h255-gasthof-villnoess",
+  "bilder": {
+   "1": "suedtirol/ort/32279186.jpg",
+   "2": "suedtirol/wellness/35884499.jpg",
+   "3": "suedtirol/umgebung/32691546.jpg",
+   "4": "suedtirol/zimmer/27469712.jpg",
+   "5": "suedtirol/essen/38168267.jpg"
+  }
+ },
+ {
+  "id": "h256",
+  "ziel": "suedtirol",
+  "bereich": "hotels",
+  "ordner": "hotels/h256-rittner-horn-lodge",
+  "bilder": {
+   "1": "suedtirol/ort/32356427.jpg",
+   "2": "suedtirol/wellness/36077583.jpg",
+   "3": "suedtirol/umgebung/33208207.jpg",
+   "4": "suedtirol/zimmer/29252624.jpg",
+   "5": "suedtirol/essen/38230364.jpg"
+  }
+ },
+ {
+  "id": "h257",
+  "ziel": "suedtirol",
+  "bereich": "hotels",
+  "ordner": "hotels/h257-sterzinger-laubenhaus",
+  "bilder": {
+   "1": "suedtirol/ort/32608045.jpg",
+   "2": "suedtirol/wellness/36077586.jpg",
+   "3": "suedtirol/umgebung/33343533.jpg",
+   "4": "suedtirol/zimmer/30767884.jpg",
+   "5": "suedtirol/essen/38772134.jpg"
+  }
+ },
+ {
+  "id": "h258",
+  "ziel": "suedtirol",
+  "bereich": "hotels",
+  "ordner": "hotels/h258-eppaner-weinberghof",
+  "bilder": {
+   "1": "suedtirol/ort/33786361.jpg",
+   "2": "suedtirol/wellness/36077588.jpg",
+   "3": "suedtirol/umgebung/33786357.jpg",
+   "4": "suedtirol/zimmer/31031191.jpg",
+   "5": "suedtirol/essen/38885008.jpg"
+  }
+ },
+ {
+  "id": "h259",
+  "ziel": "suedtirol",
+  "bereich": "hotels",
+  "ordner": "hotels/h259-pragser-seehaus",
+  "bilder": {
+   "1": "suedtirol/ort/33843011.jpg",
+   "2": "suedtirol/wellness/36077591.jpg",
+   "3": "suedtirol/umgebung/33786367.jpg",
+   "4": "suedtirol/zimmer/32418081.jpg",
+   "5": "suedtirol/essen/38908369.jpg"
+  }
+ },
+ {
+  "id": "h260",
+  "ziel": "lappland",
+  "bereich": "hotels",
+  "ordner": "hotels/h260-levi-tunturihotelli",
+  "bilder": {
+   "1": "lappland/ort/416728.jpg",
+   "2": "lappland/wellness/37816613.jpg",
+   "3": "lappland/umgebung/1690015.jpg",
+   "4": "lappland/zimmer/30496214.jpg",
+   "5": "lappland/essen/3986669.jpg"
+  }
+ },
+ {
+  "id": "h261",
+  "ziel": "lappland",
+  "bereich": "hotels",
+  "ordner": "hotels/h261-glasiglu-inari",
+  "bilder": {
+   "1": "lappland/ort/803186.jpg",
+   "2": "lappland/wellness/276534.jpg",
+   "3": "lappland/umgebung/2004383.jpg",
+   "4": "lappland/zimmer/376531.jpg",
+   "5": "lappland/essen/11544401.jpg"
+  }
+ },
+ {
+  "id": "h262",
+  "ziel": "lappland",
+  "bereich": "hotels",
+  "ordner": "hotels/h262-pyhae-tunturi-lodge",
+  "bilder": {
+   "1": "lappland/ort/803270.jpg",
+   "2": "lappland/wellness/433626.jpg",
+   "3": "lappland/umgebung/3693623.jpg",
+   "4": "lappland/zimmer/763148.jpg",
+   "5": "lappland/essen/16171421.jpg"
+  }
+ },
+ {
+  "id": "h263",
+  "ziel": "lappland",
+  "bereich": "hotels",
+  "ordner": "hotels/h263-rovaniemi-arctic-house",
+  "bilder": {
+   "1": "lappland/ort/1493202.jpg",
+   "2": "lappland/wellness/775870.jpg",
+   "3": "lappland/umgebung/12736965.jpg",
+   "4": "lappland/zimmer/950054.jpg",
+   "5": "lappland/essen/30148726.jpg"
+  }
+ },
+ {
+  "id": "h264",
+  "ziel": "lappland",
+  "bereich": "hotels",
+  "ordner": "hotels/h264-yllaestunturi-huetten",
+  "bilder": {
+   "1": "lappland/ort/4623147.jpg",
+   "2": "lappland/wellness/2120625.jpg",
+   "3": "lappland/umgebung/12736972.jpg",
+   "4": "lappland/zimmer/4389960.jpg",
+   "5": "lappland/essen/30825224.jpg"
+  }
+ },
+ {
+  "id": "h265",
+  "ziel": "lappland",
+  "bereich": "hotels",
+  "ordner": "hotels/h265-kakslauttanen-waldsuiten",
+  "bilder": {
+   "1": "lappland/ort/12472553.jpg",
+   "2": "lappland/wellness/2485223.jpg",
+   "3": "lappland/umgebung/14475296.jpg",
+   "4": "lappland/zimmer/5867240.jpg",
+   "5": "lappland/essen/31349394.jpg"
+  }
+ },
+ {
+  "id": "h266",
+  "ziel": "lappland",
+  "bereich": "hotels",
+  "ordner": "hotels/h266-pallas-tunturihovi",
+  "bilder": {
+   "1": "lappland/ort/16171186.jpg",
+   "2": "lappland/wellness/2507007.jpg",
+   "3": "lappland/umgebung/17648893.jpg",
+   "4": "lappland/zimmer/6234172.jpg",
+   "5": "lappland/essen/38875688.jpg"
+  }
+ },
+ {
+  "id": "h267",
+  "ziel": "lappland",
+  "bereich": "hotels",
+  "ordner": "hotels/h267-kemi-eisbrecher-lodge",
+  "bilder": {
+   "1": "lappland/ort/16171418.jpg",
+   "2": "lappland/wellness/2961945.jpg",
+   "3": "lappland/umgebung/19896905.jpg",
+   "4": "lappland/zimmer/6728461.jpg",
+   "5": "lappland/essen/6223.jpg"
+  }
+ },
+ {
+  "id": "h268",
+  "ziel": "lappland",
+  "bereich": "hotels",
+  "ordner": "hotels/h268-hetta-fjellstation",
+  "bilder": {
+   "1": "lappland/ort/16835229.jpg",
+   "2": "lappland/wellness/2962114.jpg",
+   "3": "lappland/umgebung/19896919.jpg",
+   "4": "lappland/zimmer/6793180.jpg",
+   "5": "lappland/essen/273920.jpg"
+  }
+ },
+ {
+  "id": "h269",
+  "ziel": "lappland",
+  "bereich": "hotels",
+  "ordner": "hotels/h269-ruka-pohjola",
+  "bilder": {
+   "1": "lappland/ort/18711720.jpg",
+   "2": "lappland/wellness/4409364.jpg",
+   "3": "lappland/umgebung/19896929.jpg",
+   "4": "lappland/zimmer/6933085.jpg",
+   "5": "lappland/essen/1484528.jpg"
+  }
+ },
+ {
+  "id": "h270",
+  "ziel": "lappland",
+  "bereich": "hotels",
+  "ordner": "hotels/h270-sodankylae-flusshaus",
+  "bilder": {
+   "1": "lappland/ort/20620078.jpg",
+   "2": "lappland/wellness/4451216.jpg",
+   "3": "lappland/umgebung/20519070.jpg",
+   "4": "lappland/zimmer/7142744.jpg",
+   "5": "lappland/essen/1682691.jpg"
+  }
+ },
+ {
+  "id": "h271",
+  "ziel": "lappland",
+  "bereich": "hotels",
+  "ordner": "hotels/h271-saariselkae-aurora-chalets",
+  "bilder": {
+   "1": "lappland/ort/30301008.jpg",
+   "2": "lappland/wellness/4995108.jpg",
+   "3": "lappland/umgebung/20620077.jpg",
+   "4": "lappland/zimmer/7745982.jpg",
+   "5": "lappland/essen/1872892.jpg"
+  }
+ },
+ {
+  "id": "h272",
+  "ziel": "lappland",
+  "bereich": "hotels",
+  "ordner": "hotels/h272-torassieppi-rentierhof",
+  "bilder": {
+   "1": "lappland/ort/30667618.jpg",
+   "2": "lappland/wellness/5079145.jpg",
+   "3": "lappland/umgebung/26599022.jpg",
+   "4": "lappland/zimmer/7746085.jpg",
+   "5": "lappland/essen/2530386.jpg"
+  }
+ },
+ {
+  "id": "h273",
+  "ziel": "lappland",
+  "bereich": "hotels",
+  "ordner": "hotels/h273-olos-fjellhotel",
+  "bilder": {
+   "1": "lappland/ort/31014947.jpg",
+   "2": "lappland/wellness/5203620.jpg",
+   "3": "lappland/umgebung/27580476.jpg",
+   "4": "lappland/zimmer/7746951.jpg",
+   "5": "lappland/essen/2544826.jpg"
+  }
+ },
+ {
+  "id": "h274",
+  "ziel": "island",
+  "bereich": "hotels",
+  "ordner": "hotels/h274-reykjavik-laugavegur",
+  "bilder": {
+   "1": "island/ort/2820872.jpg",
+   "2": "island/wellness/208504.jpg",
+   "3": "island/umgebung/1741.jpg",
+   "4": "island/zimmer/19267233.jpg",
+   "5": "island/essen/6222.jpg"
+  }
+ },
+ {
+  "id": "h275",
+  "ziel": "island",
+  "bereich": "hotels",
+  "ordner": "hotels/h275-vik-myrdalur",
+  "bilder": {
+   "1": "island/ort/2859249.jpg",
+   "2": "island/wellness/212939.jpg",
+   "3": "island/umgebung/1398053.jpg",
+   "4": "island/zimmer/37066105.jpg",
+   "5": "island/essen/6230.jpg"
+  }
+ },
+ {
+  "id": "h276",
+  "ziel": "island",
+  "bereich": "hotels",
+  "ordner": "hotels/h276-joekulsarlon-eislodge",
+  "bilder": {
+   "1": "island/ort/5205901.jpg",
+   "2": "island/wellness/1469905.jpg",
+   "3": "island/umgebung/1442811.jpg",
+   "4": "island/zimmer/37066108.jpg",
+   "5": "island/essen/62097.jpg"
+  }
+ },
+ {
+  "id": "h277",
+  "ziel": "island",
+  "bereich": "hotels",
+  "ordner": "hotels/h277-snaefellsnes-hellnar",
+  "bilder": {
+   "1": "island/ort/6474882.jpg",
+   "2": "island/wellness/2217170.jpg",
+   "3": "island/umgebung/2850729.jpg",
+   "4": "island/zimmer/2705.jpg",
+   "5": "island/essen/70497.jpg"
+  }
+ },
+ {
+  "id": "h278",
+  "ziel": "island",
+  "bereich": "hotels",
+  "ordner": "hotels/h278-akureyri-nordurland",
+  "bilder": {
+   "1": "island/ort/6730813.jpg",
+   "2": "island/wellness/3964746.jpg",
+   "3": "island/umgebung/3147046.jpg",
+   "4": "island/zimmer/1590078.jpg",
+   "5": "island/essen/87221.jpg"
+  }
+ },
+ {
+  "id": "h279",
+  "ziel": "island",
+  "bereich": "hotels",
+  "ordner": "hotels/h279-myvatn-jar-ba",
+  "bilder": {
+   "1": "island/ort/7404306.jpg",
+   "2": "island/wellness/4045134.jpg",
+   "3": "island/umgebung/4061011.jpg",
+   "4": "island/zimmer/1701397.jpg",
+   "5": "island/essen/299348.jpg"
+  }
+ },
+ {
+  "id": "h280",
+  "ziel": "island",
+  "bereich": "hotels",
+  "ordner": "hotels/h280-westfjorde-isafjoer-ur",
+  "bilder": {
+   "1": "island/ort/10051203.jpg",
+   "2": "island/wellness/4177714.jpg",
+   "3": "island/umgebung/5111035.jpg",
+   "4": "island/zimmer/1879069.jpg",
+   "5": "island/essen/374052.jpg"
+  }
+ },
+ {
+  "id": "h281",
+  "ziel": "island",
+  "bereich": "hotels",
+  "ordner": "hotels/h281-hveragerdi-gewaechshaus",
+  "bilder": {
+   "1": "island/ort/10130131.jpg",
+   "2": "island/wellness/4177770.jpg",
+   "3": "island/umgebung/5111061.jpg",
+   "4": "island/zimmer/1912170.jpg",
+   "5": "island/essen/724670.jpg"
+  }
+ },
+ {
+  "id": "h282",
+  "ziel": "island",
+  "bereich": "hotels",
+  "ordner": "hotels/h282-hoefn-langustinen",
+  "bilder": {
+   "1": "island/ort/10517340.jpg",
+   "2": "island/wellness/5041953.jpg",
+   "3": "island/umgebung/5180110.jpg",
+   "4": "island/zimmer/2810264.jpg",
+   "5": "island/essen/735869.jpg"
+  }
+ },
+ {
+  "id": "h283",
+  "ziel": "island",
+  "bereich": "hotels",
+  "ordner": "hotels/h283-siglufjoer-ur-heringshaus",
+  "bilder": {
+   "1": "island/ort/17071144.jpg",
+   "2": "island/wellness/5733488.jpg",
+   "3": "island/umgebung/6598600.jpg",
+   "4": "island/zimmer/4573089.jpg",
+   "5": "island/essen/941861.jpg"
+  }
+ },
+ {
+  "id": "h284",
+  "ziel": "island",
+  "bereich": "hotels",
+  "ordner": "hotels/h284-selfoss-flusshaus",
+  "bilder": {
+   "1": "island/ort/19282475.jpg",
+   "2": "island/wellness/6012002.jpg",
+   "3": "island/umgebung/6702446.jpg",
+   "4": "island/zimmer/4641189.jpg",
+   "5": "island/essen/1310777.jpg"
+  }
+ },
+ {
+  "id": "h285",
+  "ziel": "island",
+  "bereich": "hotels",
+  "ordner": "hotels/h285-borgarnes-fjordhof",
+  "bilder": {
+   "1": "island/ort/19320678.jpg",
+   "2": "island/wellness/6012009.jpg",
+   "3": "island/umgebung/7350726.jpg",
+   "4": "island/zimmer/5120082.jpg",
+   "5": "island/essen/1439320.jpg"
+  }
+ },
+ {
+  "id": "h286",
+  "ziel": "island",
+  "bereich": "hotels",
+  "ordner": "hotels/h286-egilsstadir-waldhaus",
+  "bilder": {
+   "1": "island/ort/19496475.jpg",
+   "2": "island/wellness/6012017.jpg",
+   "3": "island/umgebung/8775543.jpg",
+   "4": "island/zimmer/5619177.jpg",
+   "5": "island/essen/1516416.jpg"
+  }
+ },
+ {
+  "id": "h287",
+  "ziel": "island",
+  "bereich": "hotels",
+  "ordner": "hotels/h287-grundarfjoer-ur-kirkjufell",
+  "bilder": {
+   "1": "island/ort/21704336.jpg",
+   "2": "island/wellness/6032411.jpg",
+   "3": "island/umgebung/10360767.jpg",
+   "4": "island/zimmer/5644265.jpg",
+   "5": "island/essen/2104568.jpg"
+  }
+ },
+ {
+  "id": "h288",
+  "ziel": "wien",
+  "bereich": "hotels",
+  "ordner": "hotels/h288-hotel-am-graben",
+  "bilder": {
+   "1": "wien/ort/672820.jpg",
+   "2": "wien/lobby/15736030.jpg",
+   "3": "wien/umgebung/337912.jpg",
+   "4": "wien/zimmer/40288991.jpg",
+   "5": "wien/essen/27818042.jpg"
+  }
+ },
+ {
+  "id": "h289",
+  "ziel": "wien",
+  "bereich": "hotels",
+  "ordner": "hotels/h289-pension-himmelpfortgasse",
+  "bilder": {
+   "1": "wien/ort/2169965.jpg",
+   "2": "wien/lobby/3745523.jpg",
+   "3": "wien/umgebung/2351399.jpg",
+   "4": "wien/zimmer/53603.jpg",
+   "5": "wien/essen/38337105.jpg"
+  }
+ },
+ {
+  "id": "h290",
+  "ziel": "wien",
+  "bereich": "hotels",
+  "ordner": "hotels/h290-praterstern-design",
+  "bilder": {
+   "1": "wien/ort/5222507.jpg",
+   "2": "wien/lobby/3770883.jpg",
+   "3": "wien/umgebung/4499745.jpg",
+   "4": "wien/zimmer/262048.jpg",
+   "5": "wien/essen/38769740.jpg"
+  }
+ },
+ {
+  "id": "h291",
+  "ziel": "wien",
+  "bereich": "hotels",
+  "ordner": "hotels/h291-josefstaedter-hof",
+  "bilder": {
+   "1": "wien/ort/5742945.jpg",
+   "2": "wien/lobby/5371554.jpg",
+   "3": "wien/umgebung/5986115.jpg",
+   "4": "wien/zimmer/279746.jpg",
+   "5": "wien/essen/39166239.jpg"
+  }
+ },
+ {
+  "id": "h292",
+  "ziel": "wien",
+  "bereich": "hotels",
+  "ordner": "hotels/h292-neubau-loft-rooms",
+  "bilder": {
+   "1": "wien/ort/7018635.jpg",
+   "2": "wien/lobby/5371557.jpg",
+   "3": "wien/umgebung/6545068.jpg",
+   "4": "wien/zimmer/3769715.jpg",
+   "5": "wien/essen/39866459.jpg"
+  }
+ },
+ {
+  "id": "h293",
+  "ziel": "wien",
+  "bereich": "hotels",
+  "ordner": "hotels/h293-hotel-schoenbrunn-park",
+  "bilder": {
+   "1": "wien/ort/8568542.jpg",
+   "2": "wien/lobby/5371558.jpg",
+   "3": "wien/umgebung/9250219.jpg",
+   "4": "wien/zimmer/5518758.jpg",
+   "5": "wien/essen/39866752.jpg"
+  }
+ },
+ {
+  "id": "h294",
+  "ziel": "wien",
+  "bereich": "hotels",
+  "ordner": "hotels/h294-grinzinger-weinhof",
+  "bilder": {
+   "1": "wien/ort/10621006.jpg",
+   "2": "wien/lobby/5371567.jpg",
+   "3": "wien/umgebung/11269298.jpg",
+   "4": "wien/zimmer/6186822.jpg",
+   "5": "wien/essen/40388307.jpg"
+  }
+ },
+ {
+  "id": "h295",
+  "ziel": "wien",
+  "bereich": "hotels",
+  "ordner": "hotels/h295-hotel-karlsplatz",
+  "bilder": {
+   "1": "wien/ort/10621017.jpg",
+   "2": "wien/lobby/5371912.jpg",
+   "3": "wien/umgebung/13070421.jpg",
+   "4": "wien/zimmer/6236640.jpg",
+   "5": "wien/essen/115837.jpg"
+  }
+ },
+ {
+  "id": "h296",
+  "ziel": "wien",
+  "bereich": "hotels",
+  "ordner": "hotels/h296-alsergrund-universitaetshof",
+  "bilder": {
+   "1": "wien/ort/10621044.jpg",
+   "2": "wien/lobby/5371919.jpg",
+   "3": "wien/umgebung/13464954.jpg",
+   "4": "wien/zimmer/6434610.jpg",
+   "5": "wien/essen/127255.jpg"
+  }
+ },
+ {
+  "id": "h297",
+  "ziel": "wien",
+  "bereich": "hotels",
+  "ordner": "hotels/h297-landstrasser-palais",
+  "bilder": {
+   "1": "wien/ort/11932419.jpg",
+   "2": "wien/lobby/5706136.jpg",
+   "3": "wien/umgebung/15252583.jpg",
+   "4": "wien/zimmer/6466281.jpg",
+   "5": "wien/essen/253580.jpg"
+  }
+ },
+ {
+  "id": "h298",
+  "ziel": "wien",
+  "bereich": "hotels",
+  "ordner": "hotels/h298-mariahilfer-stadthaus",
+  "bilder": {
+   "1": "wien/ort/11932423.jpg",
+   "2": "wien/lobby/6467627.jpg",
+   "3": "wien/umgebung/16632361.jpg",
+   "4": "wien/zimmer/6466283.jpg",
+   "5": "wien/essen/306059.jpg"
+  }
+ },
+ {
+  "id": "h299",
+  "ziel": "wien",
+  "bereich": "hotels",
+  "ordner": "hotels/h299-simmeringer-gasthof",
+  "bilder": {
+   "1": "wien/ort/11932432.jpg",
+   "2": "wien/lobby/6587862.jpg",
+   "3": "wien/umgebung/16632383.jpg",
+   "4": "wien/zimmer/6466285.jpg",
+   "5": "wien/essen/602211.jpg"
+  }
+ },
+ {
+  "id": "h300",
+  "ziel": "wien",
+  "bereich": "hotels",
+  "ordner": "hotels/h300-hotel-ringturm",
+  "bilder": {
+   "1": "wien/ort/13070424.jpg",
+   "2": "wien/lobby/6702601.jpg",
+   "3": "wien/umgebung/16912374.jpg",
+   "4": "wien/zimmer/6466292.jpg",
+   "5": "wien/essen/1352256.jpg"
+  }
+ },
+ {
+  "id": "h301",
+  "ziel": "wien",
+  "bereich": "hotels",
+  "ordner": "hotels/h301-prater-apartments",
+  "bilder": {
+   "1": "wien/ort/13070451.jpg",
+   "2": "wien/lobby/6712474.jpg",
+   "3": "wien/umgebung/18606458.jpg",
+   "4": "wien/zimmer/6862119.jpg",
+   "5": "wien/essen/1872882.jpg"
+  }
+ },
+ {
+  "id": "h302",
+  "ziel": "newyork",
+  "bereich": "hotels",
+  "ordner": "hotels/h302-the-highline-rooms",
+  "bilder": {
+   "1": "newyork/ort/4946670.jpg",
+   "2": "newyork/lobby/140982.jpg",
+   "3": "newyork/umgebung/33625.jpg",
+   "4": "newyork/zimmer/9282584.jpg",
+   "5": "newyork/essen/915065.jpg"
+  }
+ },
+ {
+  "id": "h303",
+  "ziel": "newyork",
+  "bereich": "hotels",
+  "ordner": "hotels/h303-soho-cast-iron",
+  "bilder": {
+   "1": "newyork/ort/5885234.jpg",
+   "2": "newyork/lobby/1778353.jpg",
+   "3": "newyork/umgebung/220757.jpg",
+   "4": "newyork/zimmer/1879061.jpg",
+   "5": "newyork/essen/1861786.jpg"
+  }
+ },
+ {
+  "id": "h304",
+  "ziel": "newyork",
+  "bereich": "hotels",
+  "ordner": "hotels/h304-williamsburg-loft",
+  "bilder": {
+   "1": "newyork/ort/7610412.jpg",
+   "2": "newyork/lobby/3201920.jpg",
+   "3": "newyork/umgebung/1634196.jpg",
+   "4": "newyork/zimmer/4153156.jpg",
+   "5": "newyork/essen/2220618.jpg"
+  }
+ },
+ {
+  "id": "h305",
+  "ziel": "newyork",
+  "bereich": "hotels",
+  "ordner": "hotels/h305-upper-west-side-brownstone",
+  "bilder": {
+   "1": "newyork/ort/9513915.jpg",
+   "2": "newyork/lobby/4753134.jpg",
+   "3": "newyork/umgebung/2350434.jpg",
+   "4": "newyork/zimmer/5137980.jpg",
+   "5": "newyork/essen/2566043.jpg"
+  }
+ },
+ {
+  "id": "h306",
+  "ziel": "newyork",
+  "bereich": "hotels",
+  "ordner": "hotels/h306-lower-east-side-tenement",
+  "bilder": {
+   "1": "newyork/ort/12385497.jpg",
+   "2": "newyork/lobby/4915824.jpg",
+   "3": "newyork/umgebung/2851667.jpg",
+   "4": "newyork/zimmer/5824491.jpg",
+   "5": "newyork/essen/2702789.jpg"
+  }
+ },
+ {
+  "id": "h307",
+  "ziel": "newyork",
+  "bereich": "hotels",
+  "ordner": "hotels/h307-tribeca-warehouse",
+  "bilder": {
+   "1": "newyork/ort/12838528.jpg",
+   "2": "newyork/lobby/5644365.jpg",
+   "3": "newyork/umgebung/4451949.jpg",
+   "4": "newyork/zimmer/5824516.jpg",
+   "5": "newyork/essen/2874780.jpg"
+  }
+ },
+ {
+  "id": "h308",
+  "ziel": "newyork",
+  "bereich": "hotels",
+  "ordner": "hotels/h308-midtown-grand-central",
+  "bilder": {
+   "1": "newyork/ort/15877693.jpg",
+   "2": "newyork/lobby/5824812.jpg",
+   "3": "newyork/umgebung/5847359.jpg",
+   "4": "newyork/zimmer/5824522.jpg",
+   "5": "newyork/essen/3394113.jpg"
+  }
+ },
+ {
+  "id": "h309",
+  "ziel": "newyork",
+  "bereich": "hotels",
+  "ordner": "hotels/h309-harlem-jazz-house",
+  "bilder": {
+   "1": "newyork/ort/18494495.jpg",
+   "2": "newyork/lobby/5824822.jpg",
+   "3": "newyork/umgebung/5854333.jpg",
+   "4": "newyork/zimmer/5825536.jpg",
+   "5": "newyork/essen/3394114.jpg"
+  }
+ },
+ {
+  "id": "h310",
+  "ziel": "newyork",
+  "bereich": "hotels",
+  "ordner": "hotels/h310-dumbo-bridge-view",
+  "bilder": {
+   "1": "newyork/ort/19860851.jpg",
+   "2": "newyork/lobby/5824824.jpg",
+   "3": "newyork/umgebung/6610694.jpg",
+   "4": "newyork/zimmer/5900818.jpg",
+   "5": "newyork/essen/3499599.jpg"
+  }
+ },
+ {
+  "id": "h311",
+  "ziel": "newyork",
+  "bereich": "hotels",
+  "ordner": "hotels/h311-hell-s-kitchen-theater-rooms",
+  "bilder": {
+   "1": "newyork/ort/20519877.jpg",
+   "2": "newyork/lobby/5824827.jpg",
+   "3": "newyork/umgebung/6833883.jpg",
+   "4": "newyork/zimmer/6123304.jpg",
+   "5": "newyork/essen/3859234.jpg"
+  }
+ },
+ {
+  "id": "h312",
+  "ziel": "newyork",
+  "bereich": "hotels",
+  "ordner": "hotels/h312-long-island-city-skyline",
+  "bilder": {
+   "1": "newyork/ort/20610686.jpg",
+   "2": "newyork/lobby/5824867.jpg",
+   "3": "newyork/umgebung/7078490.jpg",
+   "4": "newyork/zimmer/6429527.jpg",
+   "5": "newyork/essen/3933207.jpg"
+  }
+ },
+ {
+  "id": "h313",
+  "ziel": "newyork",
+  "bereich": "hotels",
+  "ordner": "hotels/h313-greenwich-village-townhouse",
+  "bilder": {
+   "1": "newyork/ort/33622493.jpg",
+   "2": "newyork/lobby/5825359.jpg",
+   "3": "newyork/umgebung/7180301.jpg",
+   "4": "newyork/zimmer/6434583.jpg",
+   "5": "newyork/essen/3938970.jpg"
+  }
+ },
+ {
+  "id": "h314",
+  "ziel": "newyork",
+  "bereich": "hotels",
+  "ordner": "hotels/h314-financial-district-tower",
+  "bilder": {
+   "1": "newyork/ort/34103736.jpg",
+   "2": "newyork/lobby/5845539.jpg",
+   "3": "newyork/umgebung/9736279.jpg",
+   "4": "newyork/zimmer/6434618.jpg",
+   "5": "newyork/essen/3953466.jpg"
+  }
+ },
+ {
+  "id": "h315",
+  "ziel": "newyork",
+  "bereich": "hotels",
+  "ordner": "hotels/h315-upper-east-side-museum-mile",
+  "bilder": {
+   "1": "newyork/ort/35299744.jpg",
+   "2": "newyork/lobby/5845543.jpg",
+   "3": "newyork/umgebung/10667908.jpg",
+   "4": "newyork/zimmer/6447393.jpg",
+   "5": "newyork/essen/4114069.jpg"
+  }
+ },
+ {
+  "id": "h316",
+  "ziel": "kyoto",
+  "bereich": "hotels",
+  "ordner": "hotels/h316-machiya-nishijin",
+  "bilder": {
+   "1": "kyoto/ort/34146.jpg",
+   "2": "kyoto/lobby/7543230.jpg",
+   "3": "kyoto/umgebung/161247.jpg",
+   "4": "kyoto/zimmer/96418.jpg",
+   "5": "kyoto/essen/1576399.jpg"
+  }
+ },
+ {
+  "id": "h317",
+  "ziel": "kyoto",
+  "bereich": "hotels",
+  "ordner": "hotels/h317-gion-shirakawa",
+  "bilder": {
+   "1": "kyoto/ort/402028.jpg",
+   "2": "kyoto/lobby/8780831.jpg",
+   "3": "kyoto/umgebung/707677.jpg",
+   "4": "kyoto/zimmer/210547.jpg",
+   "5": "kyoto/essen/5197127.jpg"
+  }
+ },
+ {
+  "id": "h318",
+  "ziel": "kyoto",
+  "bereich": "hotels",
+  "ordner": "hotels/h318-arashiyama-bamboo-ryokan",
+  "bilder": {
+   "1": "kyoto/ort/569893.jpg",
+   "2": "kyoto/lobby/9604677.jpg",
+   "3": "kyoto/umgebung/3285471.jpg",
+   "4": "kyoto/zimmer/271638.jpg",
+   "5": "kyoto/essen/7508611.jpg"
+  }
+ },
+ {
+  "id": "h319",
+  "ziel": "kyoto",
+  "bereich": "hotels",
+  "ordner": "hotels/h319-hotel-karasuma-oike",
+  "bilder": {
+   "1": "kyoto/ort/3011702.jpg",
+   "2": "kyoto/lobby/10421514.jpg",
+   "3": "kyoto/umgebung/7526792.jpg",
+   "4": "kyoto/zimmer/1743555.jpg",
+   "5": "kyoto/essen/7526813.jpg"
+  }
+ },
+ {
+  "id": "h320",
+  "ziel": "kyoto",
+  "bereich": "hotels",
+  "ordner": "hotels/h320-kiyomizu-slope-house",
+  "bilder": {
+   "1": "kyoto/ort/3130092.jpg",
+   "2": "kyoto/lobby/15376791.jpg",
+   "3": "kyoto/umgebung/7526819.jpg",
+   "4": "kyoto/zimmer/4607773.jpg",
+   "5": "kyoto/essen/10274618.jpg"
+  }
+ },
+ {
+  "id": "h321",
+  "ziel": "kyoto",
+  "bereich": "hotels",
+  "ordner": "hotels/h321-fushimi-sake-district",
+  "bilder": {
+   "1": "kyoto/ort/5745827.jpg",
+   "2": "kyoto/lobby/16514703.jpg",
+   "3": "kyoto/umgebung/7570843.jpg",
+   "4": "kyoto/zimmer/5461586.jpg",
+   "5": "kyoto/essen/10305013.jpg"
+  }
+ },
+ {
+  "id": "h322",
+  "ziel": "kyoto",
+  "bereich": "hotels",
+  "ordner": "hotels/h322-ohara-mountain-ryokan",
+  "bilder": {
+   "1": "kyoto/ort/6249542.jpg",
+   "2": "kyoto/lobby/16547092.jpg",
+   "3": "kyoto/umgebung/7570844.jpg",
+   "4": "kyoto/zimmer/6249716.jpg",
+   "5": "kyoto/essen/11986230.jpg"
+  }
+ },
+ {
+  "id": "h323",
+  "ziel": "kyoto",
+  "bereich": "hotels",
+  "ordner": "hotels/h323-pontocho-riverside",
+  "bilder": {
+   "1": "kyoto/ort/7526795.jpg",
+   "2": "kyoto/lobby/17269626.jpg",
+   "3": "kyoto/umgebung/10274592.jpg",
+   "4": "kyoto/zimmer/7792199.jpg",
+   "5": "kyoto/essen/16547076.jpg"
+  }
+ },
+ {
+  "id": "h324",
+  "ziel": "kyoto",
+  "bereich": "hotels",
+  "ordner": "hotels/h324-guesthouse-kamogawa",
+  "bilder": {
+   "1": "kyoto/ort/7526796.jpg",
+   "2": "kyoto/lobby/23224447.jpg",
+   "3": "kyoto/umgebung/10274597.jpg",
+   "4": "kyoto/zimmer/10274613.jpg",
+   "5": "kyoto/essen/16832195.jpg"
+  }
+ },
+ {
+  "id": "h325",
+  "ziel": "kyoto",
+  "bereich": "hotels",
+  "ordner": "hotels/h325-kurama-onsen-lodge",
+  "bilder": {
+   "1": "kyoto/ort/7526797.jpg",
+   "2": "kyoto/lobby/30491450.jpg",
+   "3": "kyoto/umgebung/10274626.jpg",
+   "4": "kyoto/zimmer/12232873.jpg",
+   "5": "kyoto/essen/17776605.jpg"
+  }
+ },
+ {
+  "id": "h326",
+  "ziel": "kyoto",
+  "bereich": "hotels",
+  "ordner": "hotels/h326-nijo-castle-house",
+  "bilder": {
+   "1": "kyoto/ort/7526803.jpg",
+   "2": "kyoto/lobby/31218428.jpg",
+   "3": "kyoto/umgebung/16226403.jpg",
+   "4": "kyoto/zimmer/13129824.jpg",
+   "5": "kyoto/essen/17873863.jpg"
+  }
+ },
+ {
+  "id": "h327",
+  "ziel": "kyoto",
+  "bereich": "hotels",
+  "ordner": "hotels/h327-uji-tea-house",
+  "bilder": {
+   "1": "kyoto/ort/7526809.jpg",
+   "2": "kyoto/lobby/31297142.jpg",
+   "3": "kyoto/umgebung/17080578.jpg",
+   "4": "kyoto/zimmer/16406734.jpg",
+   "5": "kyoto/essen/18000839.jpg"
+  }
+ },
+ {
+  "id": "h328",
+  "ziel": "kyoto",
+  "bereich": "hotels",
+  "ordner": "hotels/h328-kyoto-station-tower-rooms",
+  "bilder": {
+   "1": "kyoto/ort/7526814.jpg",
+   "2": "kyoto/lobby/31409473.jpg",
+   "3": "kyoto/umgebung/18849001.jpg",
+   "4": "kyoto/zimmer/19730417.jpg",
+   "5": "kyoto/essen/18008026.jpg"
+  }
+ },
+ {
+  "id": "h329",
+  "ziel": "kyoto",
+  "bereich": "hotels",
+  "ordner": "hotels/h329-philosophenweg-residenz",
+  "bilder": {
+   "1": "kyoto/ort/7571830.jpg",
+   "2": "kyoto/lobby/31692598.jpg",
+   "3": "kyoto/umgebung/18869703.jpg",
+   "4": "kyoto/zimmer/28251136.jpg",
+   "5": "kyoto/essen/18848540.jpg"
+  }
+ },
+ {
+  "id": "h330",
+  "ziel": "barcelona",
+  "bereich": "hotels",
+  "ordner": "hotels/h330-casa-eixample",
+  "bilder": {
+   "1": "barcelona/ort/248913.jpg",
+   "2": "barcelona/lobby/40470562.jpg",
+   "3": "barcelona/umgebung/89506.jpg",
+   "4": "barcelona/zimmer/16352838.jpg",
+   "5": "barcelona/essen/1001865.jpg"
+  }
+ },
+ {
+  "id": "h331",
+  "ziel": "barcelona",
+  "bereich": "hotels",
+  "ordner": "hotels/h331-barceloneta-beach-house",
+  "bilder": {
+   "1": "barcelona/ort/372499.jpg",
+   "2": "barcelona/lobby/258523.jpg",
+   "3": "barcelona/umgebung/2889277.jpg",
+   "4": "barcelona/zimmer/545034.jpg",
+   "5": "barcelona/essen/23384632.jpg"
+  }
+ },
+ {
+  "id": "h332",
+  "ziel": "barcelona",
+  "bereich": "hotels",
+  "ordner": "hotels/h332-gotic-palau",
+  "bilder": {
+   "1": "barcelona/ort/998736.jpg",
+   "2": "barcelona/lobby/1460138.jpg",
+   "3": "barcelona/umgebung/6206141.jpg",
+   "4": "barcelona/zimmer/817785.jpg",
+   "5": "barcelona/essen/24596510.jpg"
+  }
+ },
+ {
+  "id": "h333",
+  "ziel": "barcelona",
+  "bereich": "hotels",
+  "ordner": "hotels/h333-gracia-placa-rooms",
+  "bilder": {
+   "1": "barcelona/ort/1028902.jpg",
+   "2": "barcelona/lobby/4170018.jpg",
+   "3": "barcelona/umgebung/6392046.jpg",
+   "4": "barcelona/zimmer/1743231.jpg",
+   "5": "barcelona/essen/31046579.jpg"
+  }
+ },
+ {
+  "id": "h334",
+  "ziel": "barcelona",
+  "bereich": "hotels",
+  "ordner": "hotels/h334-poblenou-fabrica",
+  "bilder": {
+   "1": "barcelona/ort/1383773.jpg",
+   "2": "barcelona/lobby/4170045.jpg",
+   "3": "barcelona/umgebung/7151884.jpg",
+   "4": "barcelona/zimmer/5152695.jpg",
+   "5": "barcelona/essen/37118710.jpg"
+  }
+ },
+ {
+  "id": "h335",
+  "ziel": "barcelona",
+  "bereich": "hotels",
+  "ordner": "hotels/h335-el-born-mercat",
+  "bilder": {
+   "1": "barcelona/ort/2031990.jpg",
+   "2": "barcelona/lobby/4873350.jpg",
+   "3": "barcelona/umgebung/7182435.jpg",
+   "4": "barcelona/zimmer/6198658.jpg",
+   "5": "barcelona/essen/37311102.jpg"
+  }
+ },
+ {
+  "id": "h336",
+  "ziel": "barcelona",
+  "bereich": "hotels",
+  "ordner": "hotels/h336-sant-antoni-mercat-rooms",
+  "bilder": {
+   "1": "barcelona/ort/2379980.jpg",
+   "2": "barcelona/lobby/4906408.jpg",
+   "3": "barcelona/umgebung/8247821.jpg",
+   "4": "barcelona/zimmer/6207819.jpg",
+   "5": "barcelona/essen/39022992.jpg"
+  }
+ },
+ {
+  "id": "h337",
+  "ziel": "barcelona",
+  "bereich": "hotels",
+  "ordner": "hotels/h337-vila-olimpica-mar",
+  "bilder": {
+   "1": "barcelona/ort/4422503.jpg",
+   "2": "barcelona/lobby/5008395.jpg",
+   "3": "barcelona/umgebung/8910324.jpg",
+   "4": "barcelona/zimmer/6434586.jpg",
+   "5": "barcelona/essen/6216.jpg"
+  }
+ },
+ {
+  "id": "h338",
+  "ziel": "barcelona",
+  "bereich": "hotels",
+  "ordner": "hotels/h338-sarria-jardi",
+  "bilder": {
+   "1": "barcelona/ort/5869159.jpg",
+   "2": "barcelona/lobby/5567186.jpg",
+   "3": "barcelona/umgebung/11095716.jpg",
+   "4": "barcelona/zimmer/6436800.jpg",
+   "5": "barcelona/essen/693270.jpg"
+  }
+ },
+ {
+  "id": "h339",
+  "ziel": "barcelona",
+  "bereich": "hotels",
+  "ordner": "hotels/h339-sants-estacio",
+  "bilder": {
+   "1": "barcelona/ort/7064838.jpg",
+   "2": "barcelona/lobby/5828799.jpg",
+   "3": "barcelona/umgebung/11538409.jpg",
+   "4": "barcelona/zimmer/6438743.jpg",
+   "5": "barcelona/essen/696218.jpg"
+  }
+ },
+ {
+  "id": "h340",
+  "ziel": "barcelona",
+  "bereich": "hotels",
+  "ordner": "hotels/h340-montju-c-mirador",
+  "bilder": {
+   "1": "barcelona/ort/7200402.jpg",
+   "2": "barcelona/lobby/5869284.jpg",
+   "3": "barcelona/umgebung/11829041.jpg",
+   "4": "barcelona/zimmer/6444971.jpg",
+   "5": "barcelona/essen/2566034.jpg"
+  }
+ },
+ {
+  "id": "h341",
+  "ziel": "barcelona",
+  "bereich": "hotels",
+  "ordner": "hotels/h341-raval-apartments",
+  "bilder": {
+   "1": "barcelona/ort/8108784.jpg",
+   "2": "barcelona/lobby/6045328.jpg",
+   "3": "barcelona/umgebung/12655288.jpg",
+   "4": "barcelona/zimmer/6444972.jpg",
+   "5": "barcelona/essen/2756804.jpg"
+  }
+ },
+ {
+  "id": "h342",
+  "ziel": "lissabon",
+  "bereich": "hotels",
+  "ordner": "hotels/h342-alfama-miradouro",
+  "bilder": {
+   "1": "lissabon/ort/1529076.jpg",
+   "2": "lissabon/lobby/8306579.jpg",
+   "3": "lissabon/umgebung/316770.jpg",
+   "4": "lissabon/zimmer/31530645.jpg",
+   "5": "lissabon/essen/2547491.jpg"
+  }
+ },
+ {
+  "id": "h343",
+  "ziel": "lissabon",
+  "bereich": "hotels",
+  "ordner": "hotels/h343-chiado-palacete",
+  "bilder": {
+   "1": "lissabon/ort/1540247.jpg",
+   "2": "lissabon/lobby/9999094.jpg",
+   "3": "lissabon/umgebung/2009882.jpg",
+   "4": "lissabon/zimmer/38904535.jpg",
+   "5": "lissabon/essen/7595398.jpg"
+  }
+ },
+ {
+  "id": "h344",
+  "ziel": "lissabon",
+  "bereich": "hotels",
+  "ordner": "hotels/h344-belem-torre",
+  "bilder": {
+   "1": "lissabon/ort/1547736.jpg",
+   "2": "lissabon/lobby/12976931.jpg",
+   "3": "lissabon/umgebung/4330075.jpg",
+   "4": "lissabon/zimmer/39313987.jpg",
+   "5": "lissabon/essen/14654911.jpg"
+  }
+ },
+ {
+  "id": "h345",
+  "ziel": "lissabon",
+  "bereich": "hotels",
+  "ordner": "hotels/h345-principe-real-jardim",
+  "bilder": {
+   "1": "lissabon/ort/1855368.jpg",
+   "2": "lissabon/lobby/14783615.jpg",
+   "3": "lissabon/umgebung/6391878.jpg",
+   "4": "lissabon/zimmer/271655.jpg",
+   "5": "lissabon/essen/17929442.jpg"
+  }
+ },
+ {
+  "id": "h346",
+  "ziel": "lissabon",
+  "bereich": "hotels",
+  "ordner": "hotels/h346-lx-factory-rooms",
+  "bilder": {
+   "1": "lissabon/ort/2566574.jpg",
+   "2": "lissabon/lobby/14845954.jpg",
+   "3": "lissabon/umgebung/6391973.jpg",
+   "4": "lissabon/zimmer/4682144.jpg",
+   "5": "lissabon/essen/32147514.jpg"
+  }
+ },
+ {
+  "id": "h347",
+  "ziel": "lissabon",
+  "bereich": "hotels",
+  "ordner": "hotels/h347-graca-vista",
+  "bilder": {
+   "1": "lissabon/ort/2566579.jpg",
+   "2": "lissabon/lobby/16452298.jpg",
+   "3": "lissabon/umgebung/6391984.jpg",
+   "4": "lissabon/zimmer/5998134.jpg",
+   "5": "lissabon/essen/131900.jpg"
+  }
+ },
+ {
+  "id": "h348",
+  "ziel": "lissabon",
+  "bereich": "hotels",
+  "ordner": "hotels/h348-parque-das-nac-es-rio",
+  "bilder": {
+   "1": "lissabon/ort/4547509.jpg",
+   "2": "lissabon/lobby/20153408.jpg",
+   "3": "lissabon/umgebung/11574851.jpg",
+   "4": "lissabon/zimmer/6316053.jpg",
+   "5": "lissabon/essen/276720.jpg"
+  }
+ },
+ {
+  "id": "h349",
+  "ziel": "lissabon",
+  "bereich": "hotels",
+  "ordner": "hotels/h349-mouraria-azulejos",
+  "bilder": {
+   "1": "lissabon/ort/4917107.jpg",
+   "2": "lissabon/lobby/21033165.jpg",
+   "3": "lissabon/umgebung/12304115.jpg",
+   "4": "lissabon/zimmer/6438767.jpg",
+   "5": "lissabon/essen/992045.jpg"
+  }
+ },
+ {
+  "id": "h350",
+  "ziel": "lissabon",
+  "bereich": "hotels",
+  "ordner": "hotels/h350-baixa-pombalina",
+  "bilder": {
+   "1": "lissabon/ort/5819964.jpg",
+   "2": "lissabon/lobby/26977852.jpg",
+   "3": "lissabon/umgebung/14681498.jpg",
+   "4": "lissabon/zimmer/6444258.jpg",
+   "5": "lissabon/essen/1055040.jpg"
+  }
+ },
+ {
+  "id": "h351",
+  "ziel": "lissabon",
+  "bereich": "hotels",
+  "ordner": "hotels/h351-estrela-jardim-rooms",
+  "bilder": {
+   "1": "lissabon/ort/7595373.jpg",
+   "2": "lissabon/lobby/29775298.jpg",
+   "3": "lissabon/umgebung/14683081.jpg",
+   "4": "lissabon/zimmer/6487950.jpg",
+   "5": "lissabon/essen/1682538.jpg"
+  }
+ },
+ {
+  "id": "h352",
+  "ziel": "lissabon",
+  "bereich": "hotels",
+  "ordner": "hotels/h352-cais-do-sodre-apartments",
+  "bilder": {
+   "1": "lissabon/ort/7789476.jpg",
+   "2": "lissabon/lobby/30786091.jpg",
+   "3": "lissabon/umgebung/16021159.jpg",
+   "4": "lissabon/zimmer/6489089.jpg",
+   "5": "lissabon/essen/1843653.jpg"
+  }
+ },
+ {
+  "id": "h353",
+  "ziel": "lissabon",
+  "bereich": "hotels",
+  "ordner": "hotels/h353-bairro-alto-casa",
+  "bilder": {
+   "1": "lissabon/ort/12221813.jpg",
+   "2": "lissabon/lobby/31595229.jpg",
+   "3": "lissabon/umgebung/16079636.jpg",
+   "4": "lissabon/zimmer/6588577.jpg",
+   "5": "lissabon/essen/1861787.jpg"
+  }
+ },
+ {
+  "id": "h354",
+  "ziel": "teneriffa",
+  "bereich": "hotels",
+  "ordner": "hotels/h354-el-medano-windhaus",
+  "bilder": {
+   "1": "teneriffa/ort/2126968.jpg",
+   "2": "teneriffa/pool/30429867.jpg",
+   "3": "teneriffa/umgebung/15490440.jpg",
+   "4": "teneriffa/zimmer/30972870.jpg",
+   "5": "teneriffa/essen/30429865.jpg"
+  }
+ },
+ {
+  "id": "h355",
+  "ziel": "teneriffa",
+  "bereich": "hotels",
+  "ordner": "hotels/h355-los-gigantes-klippenhotel",
+  "bilder": {
+   "1": "teneriffa/ort/30327822.jpg",
+   "2": "teneriffa/pool/32636811.jpg",
+   "3": "teneriffa/umgebung/18951028.jpg",
+   "4": "teneriffa/zimmer/6487953.jpg",
+   "5": "teneriffa/essen/37745628.jpg"
+  }
+ },
+ {
+  "id": "h356",
+  "ziel": "teneriffa",
+  "bereich": "hotels",
+  "ordner": "hotels/h356-puerto-jardin-botanico",
+  "bilder": {
+   "1": "teneriffa/ort/30370004.jpg",
+   "2": "teneriffa/pool/33339156.jpg",
+   "3": "teneriffa/umgebung/20585826.jpg",
+   "4": "teneriffa/zimmer/6489099.jpg",
+   "5": "teneriffa/essen/38756059.jpg"
+  }
+ },
+ {
+  "id": "h357",
+  "ziel": "teneriffa",
+  "bereich": "hotels",
+  "ordner": "hotels/h357-garachico-lavabecken",
+  "bilder": {
+   "1": "teneriffa/ort/30370030.jpg",
+   "2": "teneriffa/pool/35087579.jpg",
+   "3": "teneriffa/umgebung/24604243.jpg",
+   "4": "teneriffa/zimmer/6585602.jpg",
+   "5": "teneriffa/essen/39766019.jpg"
+  }
+ },
+ {
+  "id": "h358",
+  "ziel": "teneriffa",
+  "bereich": "hotels",
+  "ordner": "hotels/h358-la-laguna-casa-colonial",
+  "bilder": {
+   "1": "teneriffa/ort/36452395.jpg",
+   "2": "teneriffa/pool/35193735.jpg",
+   "3": "teneriffa/umgebung/26844765.jpg",
+   "4": "teneriffa/zimmer/6782478.jpg",
+   "5": "teneriffa/essen/39794381.jpg"
+  }
+ },
+ {
+  "id": "h359",
+  "ziel": "teneriffa",
+  "bereich": "hotels",
+  "ordner": "hotels/h359-playa-paraiso-familienclub",
+  "bilder": {
+   "1": "teneriffa/ort/36680782.jpg",
+   "2": "teneriffa/pool/37395172.jpg",
+   "3": "teneriffa/umgebung/27099209.jpg",
+   "4": "teneriffa/zimmer/6970025.jpg",
+   "5": "teneriffa/essen/40649413.jpg"
+  }
+ },
+ {
+  "id": "h360",
+  "ziel": "teneriffa",
+  "bereich": "hotels",
+  "ordner": "hotels/h360-finca-teno-alto",
+  "bilder": {
+   "1": "teneriffa/ort/38305957.jpg",
+   "2": "teneriffa/pool/38844930.jpg",
+   "3": "teneriffa/umgebung/28897503.jpg",
+   "4": "teneriffa/zimmer/7060825.jpg",
+   "5": "teneriffa/essen/1105752.jpg"
+  }
+ },
+ {
+  "id": "h361",
+  "ziel": "teneriffa",
+  "bereich": "hotels",
+  "ordner": "hotels/h361-santa-cruz-auditorio",
+  "bilder": {
+   "1": "teneriffa/ort/39806195.jpg",
+   "2": "teneriffa/pool/33361743.jpg",
+   "3": "teneriffa/umgebung/28897511.jpg",
+   "4": "teneriffa/zimmer/7598116.jpg",
+   "5": "teneriffa/essen/2878739.jpg"
+  }
+ },
+ {
+  "id": "h362",
+  "ziel": "marrakesch",
+  "bereich": "hotels",
+  "ordner": "hotels/h362-riad-dar-bellarj",
+  "bilder": {
+   "1": "marrakesch/ort/943510.jpg",
+   "2": "marrakesch/lobby/2058690.jpg",
+   "3": "marrakesch/umgebung/273935.jpg",
+   "4": "marrakesch/zimmer/5504506.jpg",
+   "5": "marrakesch/essen/2291603.jpg"
+  }
+ },
+ {
+  "id": "h363",
+  "ziel": "marrakesch",
+  "bereich": "hotels",
+  "ordner": "hotels/h363-palais-hivernage",
+  "bilder": {
+   "1": "marrakesch/ort/947183.jpg",
+   "2": "marrakesch/lobby/4915832.jpg",
+   "3": "marrakesch/umgebung/972990.jpg",
+   "4": "marrakesch/zimmer/8541873.jpg",
+   "5": "marrakesch/essen/12990086.jpg"
+  }
+ },
+ {
+  "id": "h364",
+  "ziel": "marrakesch",
+  "bereich": "hotels",
+  "ordner": "hotels/h364-palmeraie-oasis",
+  "bilder": {
+   "1": "marrakesch/ort/951855.jpg",
+   "2": "marrakesch/lobby/6441047.jpg",
+   "3": "marrakesch/umgebung/1253752.jpg",
+   "4": "marrakesch/zimmer/18077067.jpg",
+   "5": "marrakesch/essen/18077172.jpg"
+  }
+ },
+ {
+  "id": "h365",
+  "ziel": "marrakesch",
+  "bereich": "hotels",
+  "ordner": "hotels/h365-dar-mellah",
+  "bilder": {
+   "1": "marrakesch/ort/1161927.jpg",
+   "2": "marrakesch/lobby/11218085.jpg",
+   "3": "marrakesch/umgebung/1684242.jpg",
+   "4": "marrakesch/zimmer/30726848.jpg",
+   "5": "marrakesch/essen/18375221.jpg"
+  }
+ },
+ {
+  "id": "h366",
+  "ziel": "marrakesch",
+  "bereich": "hotels",
+  "ordner": "hotels/h366-agafay-wuestencamp",
+  "bilder": {
+   "1": "marrakesch/ort/2058692.jpg",
+   "2": "marrakesch/lobby/12419176.jpg",
+   "3": "marrakesch/umgebung/5504563.jpg",
+   "4": "marrakesch/zimmer/31371139.jpg",
+   "5": "marrakesch/essen/28976449.jpg"
+  }
+ },
+ {
+  "id": "h367",
+  "ziel": "marrakesch",
+  "bereich": "hotels",
+  "ordner": "hotels/h367-gueliz-modern-rooms",
+  "bilder": {
+   "1": "marrakesch/ort/2369056.jpg",
+   "2": "marrakesch/lobby/17599656.jpg",
+   "3": "marrakesch/umgebung/5504566.jpg",
+   "4": "marrakesch/zimmer/31487925.jpg",
+   "5": "marrakesch/essen/30450191.jpg"
+  }
+ },
+ {
+  "id": "h368",
+  "ziel": "marrakesch",
+  "bereich": "hotels",
+  "ordner": "hotels/h368-kasbah-dar-lalla",
+  "bilder": {
+   "1": "marrakesch/ort/2610791.jpg",
+   "2": "marrakesch/lobby/20852593.jpg",
+   "3": "marrakesch/umgebung/6095564.jpg",
+   "4": "marrakesch/zimmer/31653063.jpg",
+   "5": "marrakesch/essen/30906049.jpg"
+  }
+ },
+ {
+  "id": "h369",
+  "ziel": "marrakesch",
+  "bereich": "hotels",
+  "ordner": "hotels/h369-ourika-flusslodge",
+  "bilder": {
+   "1": "marrakesch/ort/5224213.jpg",
+   "2": "marrakesch/lobby/28582585.jpg",
+   "3": "marrakesch/umgebung/6749656.jpg",
+   "4": "marrakesch/zimmer/33279021.jpg",
+   "5": "marrakesch/essen/31497982.jpg"
+  }
+ },
+ {
+  "id": "h370",
+  "ziel": "kapstadt",
+  "bereich": "hotels",
+  "ordner": "hotels/h370-camps-bay-cliffside",
+  "bilder": {
+   "1": "kapstadt/ort/1029620.jpg",
+   "2": "kapstadt/lobby/9564120.jpg",
+   "3": "kapstadt/umgebung/259447.jpg",
+   "4": "kapstadt/zimmer/37295909.jpg",
+   "5": "kapstadt/essen/32576428.jpg"
+  }
+ },
+ {
+  "id": "h371",
+  "ziel": "kapstadt",
+  "bereich": "hotels",
+  "ordner": "hotels/h371-bo-kaap-colour-house",
+  "bilder": {
+   "1": "kapstadt/ort/2022750.jpg",
+   "2": "kapstadt/lobby/39965658.jpg",
+   "3": "kapstadt/umgebung/305819.jpg",
+   "4": "kapstadt/zimmer/57686.jpg",
+   "5": "kapstadt/essen/39965656.jpg"
+  }
+ },
+ {
+  "id": "h372",
+  "ziel": "kapstadt",
+  "bereich": "hotels",
+  "ordner": "hotels/h372-waterfront-harbour-suites",
+  "bilder": {
+   "1": "kapstadt/ort/3736245.jpg",
+   "2": "kapstadt/lobby/39965659.jpg",
+   "3": "kapstadt/umgebung/1114173.jpg",
+   "4": "kapstadt/zimmer/545026.jpg",
+   "5": "kapstadt/essen/39965657.jpg"
+  }
+ },
+ {
+  "id": "h373",
+  "ziel": "kapstadt",
+  "bereich": "hotels",
+  "ordner": "hotels/h373-constantia-weingut",
+  "bilder": {
+   "1": "kapstadt/ort/3873556.jpg",
+   "2": "kapstadt/lobby/106937.jpg",
+   "3": "kapstadt/umgebung/1297790.jpg",
+   "4": "kapstadt/zimmer/545048.jpg",
+   "5": "kapstadt/essen/958545.jpg"
+  }
+ },
+ {
+  "id": "h374",
+  "ziel": "kapstadt",
+  "bereich": "hotels",
+  "ordner": "hotels/h374-muizenberg-surf-house",
+  "bilder": {
+   "1": "kapstadt/ort/3873558.jpg",
+   "2": "kapstadt/lobby/1768513.jpg",
+   "3": "kapstadt/umgebung/1480597.jpg",
+   "4": "kapstadt/zimmer/838815.jpg",
+   "5": "kapstadt/essen/998244.jpg"
+  }
+ },
+ {
+  "id": "h375",
+  "ziel": "kapstadt",
+  "bereich": "hotels",
+  "ordner": "hotels/h375-hout-bay-fisherman",
+  "bilder": {
+   "1": "kapstadt/ort/3874061.jpg",
+   "2": "kapstadt/lobby/1771748.jpg",
+   "3": "kapstadt/umgebung/2327413.jpg",
+   "4": "kapstadt/zimmer/1543439.jpg",
+   "5": "kapstadt/essen/1126728.jpg"
+  }
+ },
+ {
+  "id": "h376",
+  "ziel": "kapstadt",
+  "bereich": "hotels",
+  "ordner": "hotels/h376-sea-point-promenade",
+  "bilder": {
+   "1": "kapstadt/ort/3886611.jpg",
+   "2": "kapstadt/lobby/2036343.jpg",
+   "3": "kapstadt/umgebung/2342628.jpg",
+   "4": "kapstadt/zimmer/2082093.jpg",
+   "5": "kapstadt/essen/2068296.jpg"
+  }
+ },
+ {
+  "id": "h377",
+  "ziel": "kapstadt",
+  "bereich": "hotels",
+  "ordner": "hotels/h377-simon-s-town-naval-house",
+  "bilder": {
+   "1": "kapstadt/ort/5273519.jpg",
+   "2": "kapstadt/lobby/2385438.jpg",
+   "3": "kapstadt/umgebung/2407133.jpg",
+   "4": "kapstadt/zimmer/2416931.jpg",
+   "5": "kapstadt/essen/2498938.jpg"
+  }
+ },
+ {
+  "id": "h378",
+  "ziel": "krabi",
+  "bereich": "hotels",
+  "ordner": "hotels/h378-railay-beach-resort",
+  "bilder": {
+   "1": "krabi/ort/161224.jpg",
+   "2": "krabi/pool/133920.jpg",
+   "3": "krabi/umgebung/895549.jpg",
+   "4": "krabi/zimmer/90317.jpg",
+   "5": "krabi/essen/1234535.jpg"
+  }
+ },
+ {
+  "id": "h379",
+  "ziel": "krabi",
+  "bereich": "hotels",
+  "ordner": "hotels/h379-klong-muang-bay",
+  "bilder": {
+   "1": "krabi/ort/415708.jpg",
+   "2": "krabi/pool/189296.jpg",
+   "3": "krabi/umgebung/965198.jpg",
+   "4": "krabi/zimmer/90319.jpg",
+   "5": "krabi/essen/5030168.jpg"
+  }
+ },
+ {
+  "id": "h380",
+  "ziel": "krabi",
+  "bereich": "hotels",
+  "ordner": "hotels/h380-ao-nang-hillside",
+  "bilder": {
+   "1": "krabi/ort/3759941.jpg",
+   "2": "krabi/pool/261156.jpg",
+   "3": "krabi/umgebung/3799173.jpg",
+   "4": "krabi/zimmer/189333.jpg",
+   "5": "krabi/essen/7521555.jpg"
+  }
+ },
+ {
+  "id": "h381",
+  "ziel": "krabi",
+  "bereich": "hotels",
+  "ordner": "hotels/h381-koh-lanta-longbeach",
+  "bilder": {
+   "1": "krabi/ort/12681151.jpg",
+   "2": "krabi/pool/261348.jpg",
+   "3": "krabi/umgebung/4023516.jpg",
+   "4": "krabi/zimmer/408305.jpg",
+   "5": "krabi/essen/12210730.jpg"
+  }
+ },
+ {
+  "id": "h382",
+  "ziel": "krabi",
+  "bereich": "hotels",
+  "ordner": "hotels/h382-tubkaek-mountain-lodge",
+  "bilder": {
+   "1": "krabi/ort/12881942.jpg",
+   "2": "krabi/pool/261410.jpg",
+   "3": "krabi/umgebung/5247279.jpg",
+   "4": "krabi/zimmer/2029687.jpg",
+   "5": "krabi/essen/12561893.jpg"
+  }
+ },
+ {
+  "id": "h383",
+  "ziel": "krabi",
+  "bereich": "hotels",
+  "ordner": "hotels/h383-krabi-town-riverside",
+  "bilder": {
+   "1": "krabi/ort/14785040.jpg",
+   "2": "krabi/pool/660549.jpg",
+   "3": "krabi/umgebung/5312140.jpg",
+   "4": "krabi/zimmer/3555618.jpg",
+   "5": "krabi/essen/12866496.jpg"
+  }
+ },
+ {
+  "id": "h384",
+  "ziel": "krabi",
+  "bereich": "hotels",
+  "ordner": "hotels/h384-ao-thalane-kajaklodge",
+  "bilder": {
+   "1": "krabi/ort/14785044.jpg",
+   "2": "krabi/pool/756493.jpg",
+   "3": "krabi/umgebung/6873614.jpg",
+   "4": "krabi/zimmer/3555619.jpg",
+   "5": "krabi/essen/17634037.jpg"
+  }
+ },
+ {
+  "id": "h385",
+  "ziel": "krabi",
+  "bereich": "hotels",
+  "ordner": "hotels/h385-nopparat-thara-budget",
+  "bilder": {
+   "1": "krabi/ort/17622981.jpg",
+   "2": "krabi/pool/1488267.jpg",
+   "3": "krabi/umgebung/9344814.jpg",
+   "4": "krabi/zimmer/4995109.jpg",
+   "5": "krabi/essen/17748109.jpg"
+  }
+ },
+ {
+  "id": "h386",
+  "ziel": "mallorca",
+  "bereich": "hotels",
+  "ordner": "hotels/h386-son-baulo-duenenhotel",
+  "bilder": {
+   "1": "mallorca/ort/3436315.jpg",
+   "2": "mallorca/pool/170156.jpg",
+   "3": "mallorca/umgebung/1689393.jpg",
+   "4": "mallorca/zimmer/5774.jpg",
+   "5": "mallorca/essen/2992882.jpg"
+  }
+ },
+ {
+  "id": "h387",
+  "ziel": "mallorca",
+  "bereich": "hotels",
+  "ordner": "hotels/h387-deia-cala-deia",
+  "bilder": {
+   "1": "mallorca/ort/5741536.jpg",
+   "2": "mallorca/pool/16437593.jpg",
+   "3": "mallorca/umgebung/2353333.jpg",
+   "4": "mallorca/zimmer/210604.jpg",
+   "5": "mallorca/essen/10402479.jpg"
+  }
+ },
+ {
+  "id": "h388",
+  "ziel": "mallorca",
+  "bereich": "hotels",
+  "ordner": "hotels/h388-hostal-soller-tram",
+  "bilder": {
+   "1": "mallorca/ort/12671580.jpg",
+   "2": "mallorca/pool/27129668.jpg",
+   "3": "mallorca/umgebung/5511440.jpg",
+   "4": "mallorca/zimmer/2140972.jpg",
+   "5": "mallorca/essen/16715741.jpg"
+  }
+ },
+ {
+  "id": "h389",
+  "ziel": "mallorca",
+  "bereich": "hotels",
+  "ordner": "hotels/h389-finca-es-verger",
+  "bilder": {
+   "1": "mallorca/ort/16901228.jpg",
+   "2": "mallorca/pool/37166916.jpg",
+   "3": "mallorca/umgebung/18698725.jpg",
+   "4": "mallorca/zimmer/2725675.jpg",
+   "5": "mallorca/essen/16981064.jpg"
+  }
+ },
+ {
+  "id": "h390",
+  "ziel": "kreta",
+  "bereich": "hotels",
+  "ordner": "hotels/h390-elafonisi-duenenhaus",
+  "bilder": {
+   "1": "kreta/ort/140227.jpg",
+   "2": "kreta/pool/1711326.jpg",
+   "3": "kreta/umgebung/906961.jpg",
+   "4": "kreta/zimmer/38102667.jpg",
+   "5": "kreta/essen/13287304.jpg"
+  }
+ },
+ {
+  "id": "h391",
+  "ziel": "kreta",
+  "bereich": "hotels",
+  "ordner": "hotels/h391-loutro-bucht-pension",
+  "bilder": {
+   "1": "kreta/ort/984866.jpg",
+   "2": "kreta/pool/27594951.jpg",
+   "3": "kreta/umgebung/3839077.jpg",
+   "4": "kreta/zimmer/39760870.jpg",
+   "5": "kreta/essen/13922397.jpg"
+  }
+ },
+ {
+  "id": "h392",
+  "ziel": "kreta",
+  "bereich": "hotels",
+  "ordner": "hotels/h392-rethymno-venezianer",
+  "bilder": {
+   "1": "kreta/ort/1018350.jpg",
+   "2": "kreta/pool/33557908.jpg",
+   "3": "kreta/umgebung/4622356.jpg",
+   "4": "kreta/zimmer/129062.jpg",
+   "5": "kreta/essen/18144217.jpg"
+  }
+ },
+ {
+  "id": "h393",
+  "ziel": "kreta",
+  "bereich": "hotels",
+  "ordner": "hotels/h393-balos-lagunenblick",
+  "bilder": {
+   "1": "kreta/ort/1732423.jpg",
+   "2": "kreta/pool/37800642.jpg",
+   "3": "kreta/umgebung/5941309.jpg",
+   "4": "kreta/zimmer/545012.jpg",
+   "5": "kreta/essen/28704890.jpg"
+  }
+ },
+ {
+  "id": "h394",
+  "ziel": "kreta",
+  "bereich": "hotels",
+  "ordner": "hotels/h394-lassithi-hochebene-hof",
+  "bilder": {
+   "1": "kreta/ort/5827147.jpg",
+   "2": "kreta/pool/38169038.jpg",
+   "3": "kreta/umgebung/9244851.jpg",
+   "4": "kreta/zimmer/1410227.jpg",
+   "5": "kreta/essen/30310428.jpg"
+  }
+ },
+ {
+  "id": "h395",
+  "ziel": "algarve",
+  "bereich": "hotels",
+  "ordner": "hotels/h395-benagil-hoehlenblick",
+  "bilder": {
+   "1": "algarve/ort/919068.jpg",
+   "2": "algarve/pool/3807.jpg",
+   "3": "algarve/umgebung/1682701.jpg",
+   "4": "algarve/zimmer/1590080.jpg",
+   "5": "algarve/essen/20095784.jpg"
+  }
+ },
+ {
+  "id": "h396",
+  "ziel": "algarve",
+  "bereich": "hotels",
+  "ordner": "hotels/h396-sagres-windhaus",
+  "bilder": {
+   "1": "algarve/ort/2573973.jpg",
+   "2": "algarve/pool/374807.jpg",
+   "3": "algarve/umgebung/1751068.jpg",
+   "4": "algarve/zimmer/2029731.jpg",
+   "5": "algarve/essen/20104868.jpg"
+  }
+ },
+ {
+  "id": "h397",
+  "ziel": "algarve",
+  "bereich": "hotels",
+  "ordner": "hotels/h397-tavira-ilha",
+  "bilder": {
+   "1": "algarve/ort/17704774.jpg",
+   "2": "algarve/pool/5781061.jpg",
+   "3": "algarve/umgebung/2588255.jpg",
+   "4": "algarve/zimmer/2563388.jpg",
+   "5": "algarve/essen/33887501.jpg"
+  }
+ },
+ {
+  "id": "h398",
+  "ziel": "algarve",
+  "bereich": "hotels",
+  "ordner": "hotels/h398-monchique-bergquelle",
+  "bilder": {
+   "1": "algarve/ort/17877130.jpg",
+   "2": "algarve/pool/5802367.jpg",
+   "3": "algarve/umgebung/5802378.jpg",
+   "4": "algarve/zimmer/4205842.jpg",
+   "5": "algarve/essen/35239401.jpg"
+  }
+ },
+ {
+  "id": "h399",
+  "ziel": "algarve",
+  "bereich": "hotels",
+  "ordner": "hotels/h399-alvor-familienresort",
+  "bilder": {
+   "1": "algarve/ort/18588066.jpg",
+   "2": "algarve/pool/6497052.jpg",
+   "3": "algarve/umgebung/5943524.jpg",
+   "4": "algarve/zimmer/4989084.jpg",
+   "5": "algarve/essen/812860.jpg"
+  }
+ },
+ {
+  "id": "h400",
+  "ziel": "sardinien",
+  "bereich": "hotels",
+  "ordner": "hotels/h400-la-pelosa-turmblick",
+  "bilder": {
+   "1": "sardinien/ort/2844466.jpg",
+   "2": "sardinien/pool/11648290.jpg",
+   "3": "sardinien/umgebung/3944006.jpg",
+   "4": "sardinien/zimmer/39846222.jpg",
+   "5": "sardinien/essen/750071.jpg"
+  }
+ },
+ {
+  "id": "h401",
+  "ziel": "sardinien",
+  "bereich": "hotels",
+  "ordner": "hotels/h401-bosa-flussstadt",
+  "bilder": {
+   "1": "sardinien/ort/4678324.jpg",
+   "2": "sardinien/pool/13636589.jpg",
+   "3": "sardinien/umgebung/5908181.jpg",
+   "4": "sardinien/zimmer/3771837.jpg",
+   "5": "sardinien/essen/12325338.jpg"
+  }
+ },
+ {
+  "id": "h402",
+  "ziel": "sardinien",
+  "bereich": "hotels",
+  "ordner": "hotels/h402-chia-duenen",
+  "bilder": {
+   "1": "sardinien/ort/5227445.jpg",
+   "2": "sardinien/pool/18185834.jpg",
+   "3": "sardinien/umgebung/12078518.jpg",
+   "4": "sardinien/zimmer/6297079.jpg",
+   "5": "sardinien/essen/16145349.jpg"
+  }
+ },
+ {
+  "id": "h403",
+  "ziel": "sardinien",
+  "bereich": "hotels",
+  "ordner": "hotels/h403-supramonte-agriturismo",
+  "bilder": {
+   "1": "sardinien/ort/29794362.jpg",
+   "2": "sardinien/pool/18186077.jpg",
+   "3": "sardinien/umgebung/12367737.jpg",
+   "4": "sardinien/zimmer/6492390.jpg",
+   "5": "sardinien/essen/28210542.jpg"
+  }
+ },
+ {
+  "id": "h404",
+  "ziel": "sardinien",
+  "bereich": "hotels",
+  "ordner": "hotels/h404-cagliari-castello",
+  "bilder": {
+   "1": "sardinien/ort/30433262.jpg",
+   "2": "sardinien/pool/29006111.jpg",
+   "3": "sardinien/umgebung/13092438.jpg",
+   "4": "sardinien/zimmer/6538893.jpg",
+   "5": "sardinien/essen/29794318.jpg"
+  }
+ },
+ {
+  "id": "h405",
+  "ziel": "barcelona",
+  "bereich": "hotels",
+  "ordner": "hotels/h405-castelldefels-platja",
+  "bilder": {
+   "1": "barcelona/ort/9480864.jpg",
+   "2": "barcelona/lobby/6045341.jpg",
+   "3": "barcelona/umgebung/13408321.jpg",
+   "4": "barcelona/zimmer/6480204.jpg",
+   "5": "barcelona/essen/3649218.jpg"
+  }
+ },
+ {
+  "id": "h406",
+  "ziel": "barcelona",
+  "bereich": "hotels",
+  "ordner": "hotels/h406-sitges-familiar",
+  "bilder": {
+   "1": "barcelona/ort/10550817.jpg",
+   "2": "barcelona/lobby/6644710.jpg",
+   "3": "barcelona/umgebung/13426112.jpg",
+   "4": "barcelona/zimmer/6480210.jpg",
+   "5": "barcelona/essen/3756448.jpg"
+  }
+ },
+ {
+  "id": "h407",
+  "ziel": "barcelona",
+  "bereich": "hotels",
+  "ordner": "hotels/h407-badalona-marina",
+  "bilder": {
+   "1": "barcelona/ort/10900221.jpg",
+   "2": "barcelona/lobby/7511744.jpg",
+   "3": "barcelona/umgebung/14757444.jpg",
+   "4": "barcelona/zimmer/6523282.jpg",
+   "5": "barcelona/essen/4917159.jpg"
+  }
+ },
+ {
+  "id": "h408",
+  "ziel": "barcelona",
+  "bereich": "hotels",
+  "ordner": "hotels/h408-diagonal-mar-beach",
+  "bilder": {
+   "1": "barcelona/ort/10942077.jpg",
+   "2": "barcelona/lobby/7750093.jpg",
+   "3": "barcelona/umgebung/15193925.jpg",
+   "4": "barcelona/zimmer/6538944.jpg",
+   "5": "barcelona/essen/4946676.jpg"
+  }
+ },
+ {
+  "id": "h409",
+  "ziel": "barcelona",
+  "bereich": "hotels",
+  "ordner": "hotels/h409-garraf-spa-retreat",
+  "bilder": {
+   "1": "barcelona/ort/13441613.jpg",
+   "2": "barcelona/lobby/7750095.jpg",
+   "3": "barcelona/umgebung/15193926.jpg",
+   "4": "barcelona/zimmer/6580218.jpg",
+   "5": "barcelona/essen/5490998.jpg"
+  }
+ },
+ {
+  "id": "h410",
+  "ziel": "barcelona",
+  "bereich": "hotels",
+  "ordner": "hotels/h410-poble-sec-pension",
+  "bilder": {
+   "1": "barcelona/ort/14123682.jpg",
+   "2": "barcelona/lobby/7821092.jpg",
+   "3": "barcelona/umgebung/15193928.jpg",
+   "4": "barcelona/zimmer/6585759.jpg",
+   "5": "barcelona/essen/5904429.jpg"
+  }
+ },
+ {
+  "id": "h411",
+  "ziel": "barcelona",
+  "bereich": "hotels",
+  "ordner": "hotels/h411-sant-andreu-hostal",
+  "bilder": {
+   "1": "barcelona/ort/16959347.jpg",
+   "2": "barcelona/lobby/8236020.jpg",
+   "3": "barcelona/umgebung/15568942.jpg",
+   "4": "barcelona/zimmer/6585762.jpg",
+   "5": "barcelona/essen/6761494.jpg"
+  }
+ },
+ {
+  "id": "h412",
+  "ziel": "barcelona",
+  "bereich": "hotels",
+  "ordner": "hotels/h412-sant-gervasi-stadthaus",
+  "bilder": {
+   "1": "barcelona/ort/18291959.jpg",
+   "2": "barcelona/lobby/8918652.jpg",
+   "3": "barcelona/umgebung/15673211.jpg",
+   "4": "barcelona/zimmer/6663039.jpg",
+   "5": "barcelona/essen/7347154.jpg"
+  }
+ },
+ {
+  "id": "h413",
+  "ziel": "barcelona",
+  "bereich": "hotels",
+  "ordner": "hotels/h413-les-corts-camp-nou",
+  "bilder": {
+   "1": "barcelona/ort/19357844.jpg",
+   "2": "barcelona/lobby/9959382.jpg",
+   "3": "barcelona/umgebung/15792155.jpg",
+   "4": "barcelona/zimmer/6758516.jpg",
+   "5": "barcelona/essen/8252824.jpg"
+  }
+ },
+ {
+  "id": "h414",
+  "ziel": "barcelona",
+  "bereich": "hotels",
+  "ordner": "hotels/h414-horta-masia",
+  "bilder": {
+   "1": "barcelona/ort/19866599.jpg",
+   "2": "barcelona/lobby/10161222.jpg",
+   "3": "barcelona/umgebung/15792157.jpg",
+   "4": "barcelona/zimmer/6903223.jpg",
+   "5": "barcelona/essen/8286746.jpg"
+  }
+ },
+ {
+  "id": "h415",
+  "ziel": "barcelona",
+  "bereich": "hotels",
+  "ordner": "hotels/h415-el-clot-apartments",
+  "bilder": {
+   "1": "barcelona/ort/19866634.jpg",
+   "2": "barcelona/lobby/10580847.jpg",
+   "3": "barcelona/umgebung/16050835.jpg",
+   "4": "barcelona/zimmer/6933767.jpg",
+   "5": "barcelona/essen/9957346.jpg"
+  }
+ },
+ {
+  "id": "h416",
+  "ziel": "wien",
+  "bereich": "hotels",
+  "ordner": "hotels/h416-thermenhof-oberlaa",
+  "bilder": {
+   "1": "wien/ort/13070457.jpg",
+   "2": "wien/lobby/6758531.jpg",
+   "3": "wien/umgebung/18805373.jpg",
+   "4": "wien/zimmer/6916292.jpg",
+   "5": "wien/essen/2995275.jpg"
+  }
+ },
+ {
+  "id": "h417",
+  "ziel": "wien",
+  "bereich": "hotels",
+  "ordner": "hotels/h417-pension-ottakring",
+  "bilder": {
+   "1": "wien/ort/14018321.jpg",
+   "2": "wien/lobby/6876594.jpg",
+   "3": "wien/umgebung/29689465.jpg",
+   "4": "wien/zimmer/6957080.jpg",
+   "5": "wien/essen/3923437.jpg"
+  }
+ },
+ {
+  "id": "h418",
+  "ziel": "wien",
+  "bereich": "hotels",
+  "ordner": "hotels/h418-margaretner-hof",
+  "bilder": {
+   "1": "wien/ort/14253915.jpg",
+   "2": "wien/lobby/6899543.jpg",
+   "3": "wien/umgebung/29689469.jpg",
+   "4": "wien/zimmer/7061068.jpg",
+   "5": "wien/essen/3933205.jpg"
+  }
+ },
+ {
+  "id": "h419",
+  "ziel": "wien",
+  "bereich": "hotels",
+  "ordner": "hotels/h419-waehringer-villa",
+  "bilder": {
+   "1": "wien/ort/14568400.jpg",
+   "2": "wien/lobby/7906509.jpg",
+   "3": "wien/umgebung/29689505.jpg",
+   "4": "wien/zimmer/7061071.jpg",
+   "5": "wien/essen/4169411.jpg"
+  }
+ },
+ {
+  "id": "h420",
+  "ziel": "wien",
+  "bereich": "hotels",
+  "ordner": "hotels/h420-meidlinger-bahnhofshotel",
+  "bilder": {
+   "1": "wien/ort/14602292.jpg",
+   "2": "wien/lobby/8141957.jpg",
+   "3": "wien/umgebung/29791555.jpg",
+   "4": "wien/zimmer/7587295.jpg",
+   "5": "wien/essen/4441790.jpg"
+  }
+ },
+ {
+  "id": "h421",
+  "ziel": "wien",
+  "bereich": "hotels",
+  "ordner": "hotels/h421-donaustadt-seehotel",
+  "bilder": {
+   "1": "wien/ort/14799871.jpg",
+   "2": "wien/lobby/8753032.jpg",
+   "3": "wien/umgebung/31750011.jpg",
+   "4": "wien/zimmer/7598137.jpg",
+   "5": "wien/essen/4799818.jpg"
+  }
+ },
+ {
+  "id": "h422",
+  "ziel": "wien",
+  "bereich": "hotels",
+  "ordner": "hotels/h422-hernalser-weinhof",
+  "bilder": {
+   "1": "wien/ort/16131686.jpg",
+   "2": "wien/lobby/9198297.jpg",
+   "3": "wien/umgebung/31750015.jpg",
+   "4": "wien/zimmer/8082220.jpg",
+   "5": "wien/essen/5091144.jpg"
+  }
+ },
+ {
+  "id": "h423",
+  "ziel": "wien",
+  "bereich": "hotels",
+  "ordner": "hotels/h423-alsergrund-klinikviertel",
+  "bilder": {
+   "1": "wien/ort/16632345.jpg",
+   "2": "wien/lobby/10576704.jpg",
+   "3": "wien/umgebung/31750026.jpg",
+   "4": "wien/zimmer/8092386.jpg",
+   "5": "wien/essen/5371566.jpg"
+  }
+ },
+ {
+  "id": "h424",
+  "ziel": "wien",
+  "bereich": "hotels",
+  "ordner": "hotels/h424-brigittenauer-donauhof",
+  "bilder": {
+   "1": "wien/ort/16632425.jpg",
+   "2": "wien/lobby/10624643.jpg",
+   "3": "wien/umgebung/31779193.jpg",
+   "4": "wien/zimmer/8092390.jpg",
+   "5": "wien/essen/5706181.jpg"
+  }
+ },
+ {
+  "id": "h425",
+  "ziel": "wien",
+  "bereich": "hotels",
+  "ordner": "hotels/h425-rudolfsheimer-markthof",
+  "bilder": {
+   "1": "wien/ort/19449720.jpg",
+   "2": "wien/lobby/12284840.jpg",
+   "3": "wien/umgebung/31781001.jpg",
+   "4": "wien/zimmer/8135103.jpg",
+   "5": "wien/essen/7243885.jpg"
+  }
+ },
+ {
+  "id": "h426",
+  "ziel": "lissabon",
+  "bereich": "hotels",
+  "ordner": "hotels/h426-campo-de-ourique-thermal",
+  "bilder": {
+   "1": "lissabon/ort/13629819.jpg",
+   "2": "lissabon/lobby/31597977.jpg",
+   "3": "lissabon/umgebung/16767433.jpg",
+   "4": "lissabon/zimmer/6588582.jpg",
+   "5": "lissabon/essen/2079439.jpg"
+  }
+ },
+ {
+  "id": "h427",
+  "ziel": "lissabon",
+  "bereich": "hotels",
+  "ordner": "hotels/h427-avenidas-novas-spa",
+  "bilder": {
+   "1": "lissabon/ort/16549947.jpg",
+   "2": "lissabon/lobby/31688507.jpg",
+   "3": "lissabon/umgebung/17401507.jpg",
+   "4": "lissabon/zimmer/6903214.jpg",
+   "5": "lissabon/essen/2337786.jpg"
+  }
+ },
+ {
+  "id": "h428",
+  "ziel": "lissabon",
+  "bereich": "hotels",
+  "ordner": "hotels/h428-pens-o-anjos",
+  "bilder": {
+   "1": "lissabon/ort/16549951.jpg",
+   "2": "lissabon/lobby/34130184.jpg",
+   "3": "lissabon/umgebung/17831967.jpg",
+   "4": "lissabon/zimmer/6903221.jpg",
+   "5": "lissabon/essen/3192171.jpg"
+  }
+ },
+ {
+  "id": "h429",
+  "ziel": "lissabon",
+  "bereich": "hotels",
+  "ordner": "hotels/h429-madragoa-casa",
+  "bilder": {
+   "1": "lissabon/ort/17080139.jpg",
+   "2": "lissabon/lobby/36338758.jpg",
+   "3": "lissabon/umgebung/18181177.jpg",
+   "4": "lissabon/zimmer/6905769.jpg",
+   "5": "lissabon/essen/4005229.jpg"
+  }
+ },
+ {
+  "id": "h430",
+  "ziel": "lissabon",
+  "bereich": "hotels",
+  "ordner": "hotels/h430-alvalade-jardim",
+  "bilder": {
+   "1": "lissabon/ort/17330288.jpg",
+   "2": "lissabon/lobby/36364760.jpg",
+   "3": "lissabon/umgebung/19310521.jpg",
+   "4": "lissabon/zimmer/6956623.jpg",
+   "5": "lissabon/essen/4279102.jpg"
+  }
+ },
+ {
+  "id": "h431",
+  "ziel": "lissabon",
+  "bereich": "hotels",
+  "ordner": "hotels/h431-marvila-fabrikhotel",
+  "bilder": {
+   "1": "lissabon/ort/17564750.jpg",
+   "2": "lissabon/lobby/38133829.jpg",
+   "3": "lissabon/umgebung/19513616.jpg",
+   "4": "lissabon/zimmer/6956841.jpg",
+   "5": "lissabon/essen/5086612.jpg"
+  }
+ },
+ {
+  "id": "h432",
+  "ziel": "lissabon",
+  "bereich": "hotels",
+  "ordner": "hotels/h432-ajuda-palastblick",
+  "bilder": {
+   "1": "lissabon/ort/18226348.jpg",
+   "2": "lissabon/lobby/38942675.jpg",
+   "3": "lissabon/umgebung/19513709.jpg",
+   "4": "lissabon/zimmer/7045858.jpg",
+   "5": "lissabon/essen/5531703.jpg"
+  }
+ },
+ {
+  "id": "h433",
+  "ziel": "lissabon",
+  "bereich": "hotels",
+  "ordner": "hotels/h433-santos-design",
+  "bilder": {
+   "1": "lissabon/ort/18506335.jpg",
+   "2": "lissabon/lobby/39366841.jpg",
+   "3": "lissabon/umgebung/19513730.jpg",
+   "4": "lissabon/zimmer/7061070.jpg",
+   "5": "lissabon/essen/5605622.jpg"
+  }
+ },
+ {
+  "id": "h434",
+  "ziel": "lissabon",
+  "bereich": "hotels",
+  "ordner": "hotels/h434-penha-de-franca-mirante",
+  "bilder": {
+   "1": "lissabon/ort/19513424.jpg",
+   "2": "lissabon/lobby/39366843.jpg",
+   "3": "lissabon/umgebung/19640337.jpg",
+   "4": "lissabon/zimmer/7078727.jpg",
+   "5": "lissabon/essen/5676262.jpg"
+  }
+ },
+ {
+  "id": "h435",
+  "ziel": "lissabon",
+  "bereich": "hotels",
+  "ordner": "hotels/h435-benfica-quinta",
+  "bilder": {
+   "1": "lissabon/ort/19513731.jpg",
+   "2": "lissabon/lobby/39375935.jpg",
+   "3": "lissabon/umgebung/19952255.jpg",
+   "4": "lissabon/zimmer/7511705.jpg",
+   "5": "lissabon/essen/6487915.jpg"
+  }
+ },
+ {
+  "id": "h436",
+  "ziel": "lissabon",
+  "bereich": "hotels",
+  "ordner": "hotels/h436-olivais-apartments",
+  "bilder": {
+   "1": "lissabon/ort/20147019.jpg",
+   "2": "lissabon/lobby/39561527.jpg",
+   "3": "lissabon/umgebung/20147020.jpg",
+   "4": "lissabon/zimmer/7546560.jpg",
+   "5": "lissabon/essen/7078726.jpg"
+  }
+ },
+ {
+  "id": "h437",
+  "ziel": "lissabon",
+  "bereich": "hotels",
+  "ordner": "hotels/h437-lumiar-jardim-rooms",
+  "bilder": {
+   "1": "lissabon/ort/20147032.jpg",
+   "2": "lissabon/lobby/39758946.jpg",
+   "3": "lissabon/umgebung/20184764.jpg",
+   "4": "lissabon/zimmer/7556566.jpg",
+   "5": "lissabon/essen/7159837.jpg"
+  }
+ },
+ {
+  "id": "h438",
+  "ziel": "newyork",
+  "bereich": "hotels",
+  "ordner": "hotels/h438-astoria-rooms",
+  "bilder": {
+   "1": "newyork/ort/35309950.jpg",
+   "2": "newyork/lobby/5845668.jpg",
+   "3": "newyork/umgebung/12294409.jpg",
+   "4": "newyork/zimmer/6632977.jpg",
+   "5": "newyork/essen/4393008.jpg"
+  }
+ },
+ {
+  "id": "h439",
+  "ziel": "newyork",
+  "bereich": "hotels",
+  "ordner": "hotels/h439-jackson-heights-inn",
+  "bilder": {
+   "1": "newyork/ort/37785996.jpg",
+   "2": "newyork/lobby/5845669.jpg",
+   "3": "newyork/umgebung/13210898.jpg",
+   "4": "newyork/zimmer/7018244.jpg",
+   "5": "newyork/essen/4393018.jpg"
+  }
+ },
+ {
+  "id": "h440",
+  "ziel": "newyork",
+  "bereich": "hotels",
+  "ordner": "hotels/h440-bay-ridge-harbour",
+  "bilder": {
+   "1": "newyork/ort/764754.jpg",
+   "2": "newyork/lobby/5845672.jpg",
+   "3": "newyork/umgebung/15524477.jpg",
+   "4": "newyork/zimmer/7018246.jpg",
+   "5": "newyork/essen/4393021.jpg"
+  }
+ },
+ {
+  "id": "h441",
+  "ziel": "newyork",
+  "bereich": "hotels",
+  "ordner": "hotels/h441-park-slope-brownstone",
+  "bilder": {
+   "1": "newyork/ort/764759.jpg",
+   "2": "newyork/lobby/5847367.jpg",
+   "3": "newyork/umgebung/16042186.jpg",
+   "4": "newyork/zimmer/7018248.jpg",
+   "5": "newyork/essen/5491039.jpg"
+  }
+ },
+ {
+  "id": "h442",
+  "ziel": "newyork",
+  "bereich": "hotels",
+  "ordner": "hotels/h442-red-hook-pier-house",
+  "bilder": {
+   "1": "newyork/ort/1309154.jpg",
+   "2": "newyork/lobby/5863521.jpg",
+   "3": "newyork/umgebung/16921294.jpg",
+   "4": "newyork/zimmer/7018249.jpg",
+   "5": "newyork/essen/5531110.jpg"
+  }
+ },
+ {
+  "id": "h443",
+  "ziel": "newyork",
+  "bereich": "hotels",
+  "ordner": "hotels/h443-morningside-columbia",
+  "bilder": {
+   "1": "newyork/ort/1467589.jpg",
+   "2": "newyork/lobby/5955232.jpg",
+   "3": "newyork/umgebung/17085987.jpg",
+   "4": "newyork/zimmer/7018253.jpg",
+   "5": "newyork/essen/5531152.jpg"
+  }
+ },
+ {
+  "id": "h444",
+  "ziel": "newyork",
+  "bereich": "hotels",
+  "ordner": "hotels/h444-bushwick-warehouse",
+  "bilder": {
+   "1": "newyork/ort/2768311.jpg",
+   "2": "newyork/lobby/6460792.jpg",
+   "3": "newyork/umgebung/17146809.jpg",
+   "4": "newyork/zimmer/7018259.jpg",
+   "5": "newyork/essen/5840097.jpg"
+  }
+ },
+ {
+  "id": "h445",
+  "ziel": "newyork",
+  "bereich": "hotels",
+  "ordner": "hotels/h445-flatiron-loft-suites",
+  "bilder": {
+   "1": "newyork/ort/4444992.jpg",
+   "2": "newyork/lobby/6758528.jpg",
+   "3": "newyork/umgebung/19156378.jpg",
+   "4": "newyork/zimmer/7195720.jpg",
+   "5": "newyork/essen/6053925.jpg"
+  }
+ },
+ {
+  "id": "h446",
+  "ziel": "newyork",
+  "bereich": "hotels",
+  "ordner": "hotels/h446-crown-heights-garden",
+  "bilder": {
+   "1": "newyork/ort/4915830.jpg",
+   "2": "newyork/lobby/6876619.jpg",
+   "3": "newyork/umgebung/23103605.jpg",
+   "4": "newyork/zimmer/7195861.jpg",
+   "5": "newyork/essen/6369303.jpg"
+  }
+ },
+ {
+  "id": "h447",
+  "ziel": "newyork",
+  "bereich": "hotels",
+  "ordner": "hotels/h447-inwood-hill-lodge",
+  "bilder": {
+   "1": "newyork/ort/5845472.jpg",
+   "2": "newyork/lobby/6899342.jpg",
+   "3": "newyork/umgebung/24589244.jpg",
+   "4": "newyork/zimmer/7390645.jpg",
+   "5": "newyork/essen/6529785.jpg"
+  }
+ },
+ {
+  "id": "h448",
+  "ziel": "kyoto",
+  "bereich": "hotels",
+  "ordner": "hotels/h448-guesthouse-nishijin",
+  "bilder": {
+   "1": "kyoto/ort/9297097.jpg",
+   "2": "kyoto/lobby/32183295.jpg",
+   "3": "kyoto/umgebung/19031632.jpg",
+   "4": "kyoto/zimmer/31310668.jpg",
+   "5": "kyoto/essen/19730266.jpg"
+  }
+ },
+ {
+  "id": "h449",
+  "ziel": "kyoto",
+  "bereich": "hotels",
+  "ordner": "hotels/h449-toji-ryokan",
+  "bilder": {
+   "1": "kyoto/ort/9297098.jpg",
+   "2": "kyoto/lobby/32416085.jpg",
+   "3": "kyoto/umgebung/19432765.jpg",
+   "4": "kyoto/zimmer/31333517.jpg",
+   "5": "kyoto/essen/19775602.jpg"
+  }
+ },
+ {
+  "id": "h450",
+  "ziel": "kyoto",
+  "bereich": "hotels",
+  "ordner": "hotels/h450-hostel-shichijo",
+  "bilder": {
+   "1": "kyoto/ort/9297099.jpg",
+   "2": "kyoto/lobby/33013198.jpg",
+   "3": "kyoto/umgebung/19701493.jpg",
+   "4": "kyoto/zimmer/31355891.jpg",
+   "5": "kyoto/essen/19775744.jpg"
+  }
+ },
+ {
+  "id": "h451",
+  "ziel": "kyoto",
+  "bereich": "hotels",
+  "ordner": "hotels/h451-takao-onsen-ryokan",
+  "bilder": {
+   "1": "kyoto/ort/10274624.jpg",
+   "2": "kyoto/lobby/33897208.jpg",
+   "3": "kyoto/umgebung/21766387.jpg",
+   "4": "kyoto/zimmer/31729556.jpg",
+   "5": "kyoto/essen/20802562.jpg"
+  }
+ },
+ {
+  "id": "h452",
+  "ziel": "kyoto",
+  "bereich": "hotels",
+  "ordner": "hotels/h452-kiyomizu-gojozaka",
+  "bilder": {
+   "1": "kyoto/ort/15671672.jpg",
+   "2": "kyoto/lobby/34239719.jpg",
+   "3": "kyoto/umgebung/21766390.jpg",
+   "4": "kyoto/zimmer/31925413.jpg",
+   "5": "kyoto/essen/25186260.jpg"
+  }
+ },
+ {
+  "id": "h453",
+  "ziel": "kyoto",
+  "bereich": "hotels",
+  "ordner": "hotels/h453-shugakuin-villa-house",
+  "bilder": {
+   "1": "kyoto/ort/16412311.jpg",
+   "2": "kyoto/lobby/35399266.jpg",
+   "3": "kyoto/umgebung/24864052.jpg",
+   "4": "kyoto/zimmer/32654990.jpg",
+   "5": "kyoto/essen/29518256.jpg"
+  }
+ },
+ {
+  "id": "h454",
+  "ziel": "kyoto",
+  "bereich": "hotels",
+  "ordner": "hotels/h454-kamigamo-schreinhaus",
+  "bilder": {
+   "1": "kyoto/ort/16481403.jpg",
+   "2": "kyoto/lobby/36352197.jpg",
+   "3": "kyoto/umgebung/29241334.jpg",
+   "4": "kyoto/zimmer/33097437.jpg",
+   "5": "kyoto/essen/30037345.jpg"
+  }
+ },
+ {
+  "id": "h455",
+  "ziel": "kyoto",
+  "bereich": "hotels",
+  "ordner": "hotels/h455-arashiyama-togetsu",
+  "bilder": {
+   "1": "kyoto/ort/16514708.jpg",
+   "2": "kyoto/lobby/36352198.jpg",
+   "3": "kyoto/umgebung/29662420.jpg",
+   "4": "kyoto/zimmer/33250753.jpg",
+   "5": "kyoto/essen/30473581.jpg"
+  }
+ },
+ {
+  "id": "h456",
+  "ziel": "kyoto",
+  "bereich": "hotels",
+  "ordner": "hotels/h456-kamo-familienhaus",
+  "bilder": {
+   "1": "kyoto/ort/17501082.jpg",
+   "2": "kyoto/lobby/37067835.jpg",
+   "3": "kyoto/umgebung/30389541.jpg",
+   "4": "kyoto/zimmer/33987731.jpg",
+   "5": "kyoto/essen/30641690.jpg"
+  }
+ },
+ {
+  "id": "h457",
+  "ziel": "kyoto",
+  "bereich": "hotels",
+  "ordner": "hotels/h457-karasuma-business-rooms",
+  "bilder": {
+   "1": "kyoto/ort/17776655.jpg",
+   "2": "kyoto/lobby/37252643.jpg",
+   "3": "kyoto/umgebung/30987087.jpg",
+   "4": "kyoto/zimmer/35399259.jpg",
+   "5": "kyoto/essen/30996488.jpg"
+  }
+ },
+ {
+  "id": "h458",
+  "ziel": "kreta",
+  "bereich": "hotels",
+  "ordner": "hotels/h458-georgioupoli-familienbucht",
+  "bilder": {
+   "1": "kreta/ort/8253750.jpg",
+   "2": "kreta/pool/39180782.jpg",
+   "3": "kreta/umgebung/9995951.jpg",
+   "4": "kreta/zimmer/2387753.jpg",
+   "5": "kreta/essen/33684743.jpg"
+  }
+ },
+ {
+  "id": "h459",
+  "ziel": "kreta",
+  "bereich": "hotels",
+  "ordner": "hotels/h459-pension-palaiochora",
+  "bilder": {
+   "1": "kreta/ort/8815863.jpg",
+   "2": "kreta/pool/39364510.jpg",
+   "3": "kreta/umgebung/11690294.jpg",
+   "4": "kreta/zimmer/3847562.jpg",
+   "5": "kreta/essen/37448699.jpg"
+  }
+ },
+ {
+  "id": "h460",
+  "ziel": "kreta",
+  "bereich": "hotels",
+  "ordner": "hotels/h460-chania-hafenhaus",
+  "bilder": {
+   "1": "kreta/ort/8815865.jpg",
+   "2": "kreta/pool/39805014.jpg",
+   "3": "kreta/umgebung/13051114.jpg",
+   "4": "kreta/zimmer/3872927.jpg",
+   "5": "kreta/essen/1454531.jpg"
+  }
+ },
+ {
+  "id": "h461",
+  "ziel": "kreta",
+  "bereich": "hotels",
+  "ordner": "hotels/h461-agios-nikolaos-voulismeni",
+  "bilder": {
+   "1": "kreta/ort/11400750.jpg",
+   "2": "kreta/pool/40262762.jpg",
+   "3": "kreta/umgebung/13059620.jpg",
+   "4": "kreta/zimmer/4729825.jpg",
+   "5": "kreta/essen/1826387.jpg"
+  }
+ },
+ {
+  "id": "h462",
+  "ziel": "kreta",
+  "bereich": "hotels",
+  "ordner": "hotels/h462-matala-hoehlenbucht",
+  "bilder": {
+   "1": "kreta/ort/12009229.jpg",
+   "2": "kreta/pool/1053507.jpg",
+   "3": "kreta/umgebung/14090206.jpg",
+   "4": "kreta/zimmer/5357416.jpg",
+   "5": "kreta/essen/2349992.jpg"
+  }
+ },
+ {
+  "id": "h463",
+  "ziel": "kreta",
+  "bereich": "hotels",
+  "ordner": "hotels/h463-plakias-olivenhof",
+  "bilder": {
+   "1": "kreta/ort/12517800.jpg",
+   "2": "kreta/pool/1732412.jpg",
+   "3": "kreta/umgebung/14366535.jpg",
+   "4": "kreta/zimmer/5628406.jpg",
+   "5": "kreta/essen/4210026.jpg"
+  }
+ },
+ {
+  "id": "h464",
+  "ziel": "algarve",
+  "bereich": "hotels",
+  "ordner": "hotels/h464-vilalara-thalasso",
+  "bilder": {
+   "1": "algarve/ort/18672634.jpg",
+   "2": "algarve/pool/7877275.jpg",
+   "3": "algarve/umgebung/6073579.jpg",
+   "4": "algarve/zimmer/5240579.jpg",
+   "5": "algarve/essen/1113012.jpg"
+  }
+ },
+ {
+  "id": "h465",
+  "ziel": "algarve",
+  "bereich": "hotels",
+  "ordner": "hotels/h465-pens-o-olh-o",
+  "bilder": {
+   "1": "algarve/ort/19101571.jpg",
+   "2": "algarve/pool/14422509.jpg",
+   "3": "algarve/umgebung/6494020.jpg",
+   "4": "algarve/zimmer/5829778.jpg",
+   "5": "algarve/essen/1484527.jpg"
+  }
+ },
+ {
+  "id": "h466",
+  "ziel": "algarve",
+  "bereich": "hotels",
+  "ordner": "hotels/h466-lagos-ponta-da-piedade",
+  "bilder": {
+   "1": "algarve/ort/20647242.jpg",
+   "2": "algarve/pool/14563259.jpg",
+   "3": "algarve/umgebung/6494021.jpg",
+   "4": "algarve/zimmer/6806693.jpg",
+   "5": "algarve/essen/2291614.jpg"
+  }
+ },
+ {
+  "id": "h467",
+  "ziel": "algarve",
+  "bereich": "hotels",
+  "ordner": "hotels/h467-alte-serra-quinta",
+  "bilder": {
+   "1": "algarve/ort/27096726.jpg",
+   "2": "algarve/pool/16114200.jpg",
+   "3": "algarve/umgebung/6496979.jpg",
+   "4": "algarve/zimmer/6817184.jpg",
+   "5": "algarve/essen/4768987.jpg"
+  }
+ },
+ {
+  "id": "h468",
+  "ziel": "algarve",
+  "bereich": "hotels",
+  "ordner": "hotels/h468-albufeira-familienclub",
+  "bilder": {
+   "1": "algarve/ort/33686531.jpg",
+   "2": "algarve/pool/17865573.jpg",
+   "3": "algarve/umgebung/7279892.jpg",
+   "4": "algarve/zimmer/6962862.jpg",
+   "5": "algarve/essen/4791745.jpg"
+  }
+ },
+ {
+  "id": "h469",
+  "ziel": "algarve",
+  "bereich": "hotels",
+  "ordner": "hotels/h469-sagres-fortaleza-rooms",
+  "bilder": {
+   "1": "algarve/ort/34993098.jpg",
+   "2": "algarve/pool/18027831.jpg",
+   "3": "algarve/umgebung/7732830.jpg",
+   "4": "algarve/zimmer/7055754.jpg",
+   "5": "algarve/essen/5238238.jpg"
+  }
+ },
+ {
+  "id": "h470",
+  "ziel": "sardinien",
+  "bereich": "hotels",
+  "ordner": "hotels/h470-santa-margherita-familienbucht",
+  "bilder": {
+   "1": "sardinien/ort/35010404.jpg",
+   "2": "sardinien/pool/29018536.jpg",
+   "3": "sardinien/umgebung/13113292.jpg",
+   "4": "sardinien/zimmer/6758352.jpg",
+   "5": "sardinien/essen/33581478.jpg"
+  }
+ },
+ {
+  "id": "h471",
+  "ziel": "sardinien",
+  "bereich": "hotels",
+  "ordner": "hotels/h471-badesi-duenenresort",
+  "bilder": {
+   "1": "sardinien/ort/36461631.jpg",
+   "2": "sardinien/pool/29062245.jpg",
+   "3": "sardinien/umgebung/13113293.jpg",
+   "4": "sardinien/zimmer/6782338.jpg",
+   "5": "sardinien/essen/35438980.jpg"
+  }
+ },
+ {
+  "id": "h472",
+  "ziel": "sardinien",
+  "bereich": "hotels",
+  "ordner": "hotels/h472-porto-cervo-spa-residenz",
+  "bilder": {
+   "1": "sardinien/ort/37351325.jpg",
+   "2": "sardinien/pool/37220181.jpg",
+   "3": "sardinien/umgebung/25311811.jpg",
+   "4": "sardinien/zimmer/6782470.jpg",
+   "5": "sardinien/essen/36445107.jpg"
+  }
+ },
+ {
+  "id": "h473",
+  "ziel": "sardinien",
+  "bereich": "hotels",
+  "ordner": "hotels/h473-alghero-bastioni",
+  "bilder": {
+   "1": "sardinien/ort/37766750.jpg",
+   "2": "sardinien/pool/38146978.jpg",
+   "3": "sardinien/umgebung/27000385.jpg",
+   "4": "sardinien/zimmer/6782578.jpg",
+   "5": "sardinien/essen/36461647.jpg"
+  }
+ },
+ {
+  "id": "h474",
+  "ziel": "sardinien",
+  "bereich": "hotels",
+  "ordner": "hotels/h474-oliena-supramonte-hof",
+  "bilder": {
+   "1": "sardinien/ort/38542041.jpg",
+   "2": "sardinien/pool/38146979.jpg",
+   "3": "sardinien/umgebung/29006108.jpg",
+   "4": "sardinien/zimmer/6899434.jpg",
+   "5": "sardinien/essen/36494562.jpg"
+  }
+ },
+ {
+  "id": "h475",
+  "ziel": "sardinien",
+  "bereich": "hotels",
+  "ordner": "hotels/h475-villasimius-capo-carbonara",
+  "bilder": {
+   "1": "sardinien/ort/38612452.jpg",
+   "2": "sardinien/pool/38146985.jpg",
+   "3": "sardinien/umgebung/29006115.jpg",
+   "4": "sardinien/zimmer/7031739.jpg",
+   "5": "sardinien/essen/36511075.jpg"
+  }
+ },
+ {
+  "id": "h476",
+  "ziel": "sardinien",
+  "bereich": "hotels",
+  "ordner": "hotels/h476-pensione-carloforte",
+  "bilder": {
+   "1": "sardinien/ort/38853165.jpg",
+   "2": "sardinien/pool/38147037.jpg",
+   "3": "sardinien/umgebung/29011885.jpg",
+   "4": "sardinien/zimmer/7147299.jpg",
+   "5": "sardinien/essen/36909413.jpg"
+  }
+ },
+ {
+  "id": "h477",
+  "ziel": "teneriffa",
+  "bereich": "hotels",
+  "ordner": "hotels/h477-los-cristianos-wellnesshaus",
+  "bilder": {
+   "1": "teneriffa/ort/6726362.jpg",
+   "2": "teneriffa/pool/33641351.jpg",
+   "3": "teneriffa/umgebung/29845959.jpg",
+   "4": "teneriffa/zimmer/7745935.jpg",
+   "5": "teneriffa/essen/6617983.jpg"
+  }
+ },
+ {
+  "id": "h478",
+  "ziel": "teneriffa",
+  "bereich": "hotels",
+  "ordner": "hotels/h478-pension-la-orotava",
+  "bilder": {
+   "1": "teneriffa/ort/25742697.jpg",
+   "2": "teneriffa/pool/33843317.jpg",
+   "3": "teneriffa/umgebung/31277368.jpg",
+   "4": "teneriffa/zimmer/8089163.jpg",
+   "5": "teneriffa/essen/13185293.jpg"
+  }
+ },
+ {
+  "id": "h479",
+  "ziel": "tirol",
+  "bereich": "hotels",
+  "ordner": "hotels/h479-gasthof-nauders",
+  "bilder": {
+   "1": "tirol/ort/39407841.jpg",
+   "2": "tirol/wellness/36077590.jpg",
+   "3": "tirol/umgebung/33120640.jpg",
+   "4": "tirol/zimmer/30708776.jpg",
+   "5": "tirol/essen/38923624.jpg"
+  }
+ },
+ {
+  "id": "h480",
+  "ziel": "tirol",
+  "bereich": "hotels",
+  "ordner": "hotels/h480-kaunertaler-gletscherhof",
+  "bilder": {
+   "1": "tirol/ort/40388202.jpg",
+   "2": "tirol/wellness/36420274.jpg",
+   "3": "tirol/umgebung/33213154.jpg",
+   "4": "tirol/zimmer/31790464.jpg",
+   "5": "tirol/essen/38965482.jpg"
+  }
+ },
+ {
+  "id": "h481",
+  "ziel": "tirol",
+  "bereich": "hotels",
+  "ordner": "hotels/h481-lienzer-dolomitenhof",
+  "bilder": {
+   "1": "tirol/ort/40621635.jpg",
+   "2": "tirol/wellness/36768163.jpg",
+   "3": "tirol/umgebung/33237976.jpg",
+   "4": "tirol/zimmer/32418083.jpg",
+   "5": "tirol/essen/38973730.jpg"
+  }
+ },
+ {
+  "id": "h482",
+  "ziel": "tirol",
+  "bereich": "hotels",
+  "ordner": "hotels/h482-wildschoenau-bauernhof",
+  "bilder": {
+   "1": "tirol/ort/40621667.jpg",
+   "2": "tirol/wellness/36818210.jpg",
+   "3": "tirol/umgebung/35426968.jpg",
+   "4": "tirol/zimmer/34944270.jpg",
+   "5": "tirol/essen/56007.jpg"
+  }
+ },
+ {
+  "id": "h483",
+  "ziel": "suedtirol",
+  "bereich": "hotels",
+  "ordner": "hotels/h483-gasthof-ahrntal",
+  "bilder": {
+   "1": "suedtirol/ort/34314170.jpg",
+   "2": "suedtirol/wellness/36077603.jpg",
+   "3": "suedtirol/umgebung/34302383.jpg",
+   "4": "suedtirol/zimmer/32418084.jpg",
+   "5": "suedtirol/essen/38908394.jpg"
+  }
+ },
+ {
+  "id": "h484",
+  "ziel": "suedtirol",
+  "bereich": "hotels",
+  "ordner": "hotels/h484-pension-ultental",
+  "bilder": {
+   "1": "suedtirol/ort/34341444.jpg",
+   "2": "suedtirol/wellness/36077607.jpg",
+   "3": "suedtirol/umgebung/34302395.jpg",
+   "4": "suedtirol/zimmer/34549303.jpg",
+   "5": "suedtirol/essen/38946196.jpg"
+  }
+ },
+ {
+  "id": "h485",
+  "ziel": "suedtirol",
+  "bereich": "hotels",
+  "ordner": "hotels/h485-schnalstaler-gletscherhof",
+  "bilder": {
+   "1": "suedtirol/ort/36270504.jpg",
+   "2": "suedtirol/wellness/36420273.jpg",
+   "3": "suedtirol/umgebung/34656956.jpg",
+   "4": "suedtirol/zimmer/34838628.jpg",
+   "5": "suedtirol/essen/39013377.jpg"
+  }
+ },
+ {
+  "id": "h486",
+  "ziel": "suedtirol",
+  "bereich": "hotels",
+  "ordner": "hotels/h486-gsieser-talhof",
+  "bilder": {
+   "1": "suedtirol/ort/37149112.jpg",
+   "2": "suedtirol/wellness/36818204.jpg",
+   "3": "suedtirol/umgebung/35520937.jpg",
+   "4": "suedtirol/zimmer/37250173.jpg",
+   "5": "suedtirol/essen/39079201.jpg"
+  }
+ },
+ {
+  "id": "h487",
+  "ziel": "lappland",
+  "bereich": "hotels",
+  "ordner": "hotels/h487-gaestehaus-posio",
+  "bilder": {
+   "1": "lappland/ort/31040816.jpg",
+   "2": "lappland/wellness/5915174.jpg",
+   "3": "lappland/umgebung/28277446.jpg",
+   "4": "lappland/zimmer/8262620.jpg",
+   "5": "lappland/essen/2922313.jpg"
+  }
+ },
+ {
+  "id": "h488",
+  "ziel": "lappland",
+  "bereich": "hotels",
+  "ordner": "hotels/h488-salla-grenzlodge",
+  "bilder": {
+   "1": "lappland/ort/31126199.jpg",
+   "2": "lappland/wellness/5997975.jpg",
+   "3": "lappland/umgebung/28359749.jpg",
+   "4": "lappland/zimmer/9551391.jpg",
+   "5": "lappland/essen/3660703.jpg"
+  }
+ },
+ {
+  "id": "h489",
+  "ziel": "lappland",
+  "bereich": "hotels",
+  "ordner": "hotels/h489-utsjoki-nordkap-haus",
+  "bilder": {
+   "1": "lappland/ort/31126200.jpg",
+   "2": "lappland/wellness/6186770.jpg",
+   "3": "lappland/umgebung/28811165.jpg",
+   "4": "lappland/zimmer/9899875.jpg",
+   "5": "lappland/essen/3953852.jpg"
+  }
+ },
+ {
+  "id": "h490",
+  "ziel": "lappland",
+  "bereich": "hotels",
+  "ordner": "hotels/h490-oulanka-flusshuetten",
+  "bilder": {
+   "1": "lappland/ort/31126201.jpg",
+   "2": "lappland/wellness/6187427.jpg",
+   "3": "lappland/umgebung/30148708.jpg",
+   "4": "lappland/zimmer/10511536.jpg",
+   "5": "lappland/essen/4235045.jpg"
+  }
+ },
+ {
+  "id": "h491",
+  "ziel": "ostsee",
+  "bereich": "hotels",
+  "ordner": "hotels/h491-fehmarn-suedstrand-spa",
+  "bilder": {
+   "1": "ostsee/ort/27851189.jpg",
+   "2": "ostsee/pool/27646193.jpg",
+   "3": "ostsee/umgebung/13197087.jpg",
+   "4": "ostsee/zimmer/18587963.jpg",
+   "5": "ostsee/essen/265947.jpg"
+  }
+ },
+ {
+  "id": "h492",
+  "ziel": "ostsee",
+  "bereich": "hotels",
+  "ordner": "hotels/h492-pension-koserow",
+  "bilder": {
+   "1": "ostsee/ort/27852178.jpg",
+   "2": "ostsee/pool/30990767.jpg",
+   "3": "ostsee/umgebung/14682731.jpg",
+   "4": "ostsee/zimmer/19846387.jpg",
+   "5": "ostsee/essen/305972.jpg"
+  }
+ },
+ {
+  "id": "h493",
+  "ziel": "ostsee",
+  "bereich": "hotels",
+  "ordner": "hotels/h493-travemuende-lotsenhaus",
+  "bilder": {
+   "1": "ostsee/ort/28665544.jpg",
+   "2": "ostsee/pool/31579197.jpg",
+   "3": "ostsee/umgebung/17213518.jpg",
+   "4": "ostsee/zimmer/20604663.jpg",
+   "5": "ostsee/essen/416537.jpg"
+  }
+ },
+ {
+  "id": "h494",
+  "ziel": "ostsee",
+  "bereich": "hotels",
+  "ordner": "hotels/h494-lohme-steilkueste",
+  "bilder": {
+   "1": "ostsee/ort/28665550.jpg",
+   "2": "ostsee/pool/33710699.jpg",
+   "3": "ostsee/umgebung/17717563.jpg",
+   "4": "ostsee/zimmer/27604112.jpg",
+   "5": "ostsee/essen/555766.jpg"
+  }
+ },
+ {
+  "id": "h495",
+  "ziel": "marrakesch",
+  "bereich": "hotels",
+  "ordner": "hotels/h495-riad-zitoun",
+  "bilder": {
+   "1": "marrakesch/ort/5224231.jpg",
+   "2": "marrakesch/lobby/28582586.jpg",
+   "3": "marrakesch/umgebung/6771187.jpg",
+   "4": "marrakesch/zimmer/33950633.jpg",
+   "5": "marrakesch/essen/35496297.jpg"
+  }
+ },
+ {
+  "id": "h496",
+  "ziel": "marrakesch",
+  "bereich": "hotels",
+  "ordner": "hotels/h496-amelkis-golfresort",
+  "bilder": {
+   "1": "marrakesch/ort/5504460.jpg",
+   "2": "marrakesch/lobby/28582587.jpg",
+   "3": "marrakesch/umgebung/6807680.jpg",
+   "4": "marrakesch/zimmer/37424036.jpg",
+   "5": "marrakesch/essen/35509025.jpg"
+  }
+ },
+ {
+  "id": "h497",
+  "ziel": "marrakesch",
+  "bereich": "hotels",
+  "ordner": "hotels/h497-dar-essaouira-road",
+  "bilder": {
+   "1": "marrakesch/ort/5504557.jpg",
+   "2": "marrakesch/lobby/28582588.jpg",
+   "3": "marrakesch/umgebung/9726841.jpg",
+   "4": "marrakesch/zimmer/37424051.jpg",
+   "5": "marrakesch/essen/35787276.jpg"
+  }
+ },
+ {
+  "id": "h498",
+  "ziel": "marrakesch",
+  "bereich": "hotels",
+  "ordner": "hotels/h498-asni-atlashaus",
+  "bilder": {
+   "1": "marrakesch/ort/6758858.jpg",
+   "2": "marrakesch/lobby/28582589.jpg",
+   "3": "marrakesch/umgebung/10551201.jpg",
+   "4": "marrakesch/zimmer/38787222.jpg",
+   "5": "marrakesch/essen/35787278.jpg"
+  }
+ },
+ {
+  "id": "h499",
+  "ziel": "kapstadt",
+  "bereich": "hotels",
+  "ordner": "hotels/h499-blouberg-family-beach",
+  "bilder": {
+   "1": "kapstadt/ort/5566459.jpg",
+   "2": "kapstadt/lobby/3201919.jpg",
+   "3": "kapstadt/umgebung/2885986.jpg",
+   "4": "kapstadt/zimmer/2416933.jpg",
+   "5": "kapstadt/essen/2566033.jpg"
+  }
+ },
+ {
+  "id": "h500",
+  "ziel": "kapstadt",
+  "bereich": "hotels",
+  "ordner": "hotels/h500-franschhoek-spa-estate",
+  "bilder": {
+   "1": "kapstadt/ort/6158044.jpg",
+   "2": "kapstadt/lobby/4913488.jpg",
+   "3": "kapstadt/umgebung/2956401.jpg",
+   "4": "kapstadt/zimmer/4713245.jpg",
+   "5": "kapstadt/essen/2566037.jpg"
+  }
+ },
+ {
+  "id": "h501",
+  "ziel": "kapstadt",
+  "bereich": "hotels",
+  "ordner": "hotels/h501-woodstock-werkstatthotel",
+  "bilder": {
+   "1": "kapstadt/ort/6624560.jpg",
+   "2": "kapstadt/lobby/4916303.jpg",
+   "3": "kapstadt/umgebung/3339526.jpg",
+   "4": "kapstadt/zimmer/4913754.jpg",
+   "5": "kapstadt/essen/3038242.jpg"
+  }
+ },
+ {
+  "id": "h502",
+  "ziel": "kapstadt",
+  "bereich": "hotels",
+  "ordner": "hotels/h502-kalk-bay-fisherman",
+  "bilder": {
+   "1": "kapstadt/ort/6790338.jpg",
+   "2": "kapstadt/lobby/5330135.jpg",
+   "3": "kapstadt/umgebung/3821984.jpg",
+   "4": "kapstadt/zimmer/5825694.jpg",
+   "5": "kapstadt/essen/3779791.jpg"
+  }
+ },
+ {
+  "id": "h503",
+  "ziel": "krabi",
+  "bereich": "hotels",
+  "ordner": "hotels/h503-ao-nam-mao-bungalows",
+  "bilder": {
+   "1": "krabi/ort/33443525.jpg",
+   "2": "krabi/pool/1498792.jpg",
+   "3": "krabi/umgebung/11224489.jpg",
+   "4": "krabi/zimmer/6026720.jpg",
+   "5": "krabi/essen/19856566.jpg"
+  }
+ },
+ {
+  "id": "h504",
+  "ziel": "krabi",
+  "bereich": "hotels",
+  "ordner": "hotels/h504-koh-jum-beach-huts",
+  "bilder": {
+   "1": "krabi/ort/36697870.jpg",
+   "2": "krabi/pool/2057610.jpg",
+   "3": "krabi/umgebung/28544989.jpg",
+   "4": "krabi/zimmer/6146100.jpg",
+   "5": "krabi/essen/19856574.jpg"
+  }
+ },
+ {
+  "id": "h505",
+  "ziel": "krabi",
+  "bereich": "hotels",
+  "ordner": "hotels/h505-phi-phi-laem-tong",
+  "bilder": {
+   "1": "krabi/ort/36697899.jpg",
+   "2": "krabi/pool/2133508.jpg",
+   "3": "krabi/umgebung/29832600.jpg",
+   "4": "krabi/zimmer/6670659.jpg",
+   "5": "krabi/essen/19902301.jpg"
+  }
+ },
+ {
+  "id": "h506",
+  "ziel": "krabi",
+  "bereich": "hotels",
+  "ordner": "hotels/h506-khao-thong-mangrovenhof",
+  "bilder": {
+   "1": "krabi/ort/37919200.jpg",
+   "2": "krabi/pool/2155202.jpg",
+   "3": "krabi/umgebung/35126173.jpg",
+   "4": "krabi/zimmer/6699975.jpg",
+   "5": "krabi/essen/19995298.jpg"
+  }
+ },
+ {
+  "id": "h507",
+  "ziel": "island",
+  "bereich": "hotels",
+  "ordner": "hotels/h507-thingvellir-seehaus",
+  "bilder": {
+   "1": "island/ort/26970498.jpg",
+   "2": "island/wellness/6186740.jpg",
+   "3": "island/umgebung/10436179.jpg",
+   "4": "island/zimmer/5894560.jpg",
+   "5": "island/essen/4344577.jpg"
+  }
+ },
+ {
+  "id": "h508",
+  "ziel": "island",
+  "bereich": "hotels",
+  "ordner": "hotels/h508-vestmannaeyjar-inselhaus",
+  "bilder": {
+   "1": "island/ort/27128369.jpg",
+   "2": "island/wellness/6186752.jpg",
+   "3": "island/umgebung/10747636.jpg",
+   "4": "island/zimmer/6207456.jpg",
+   "5": "island/essen/4641197.jpg"
+  }
+ },
+ {
+  "id": "h509",
+  "ziel": "island",
+  "bereich": "hotels",
+  "ordner": "hotels/h509-laugarvatn-fontana",
+  "bilder": {
+   "1": "island/ort/27394324.jpg",
+   "2": "island/wellness/6188050.jpg",
+   "3": "island/umgebung/11523918.jpg",
+   "4": "island/zimmer/6284232.jpg",
+   "5": "island/essen/4641206.jpg"
+  }
+ },
+ {
+  "id": "h510",
+  "ziel": "island",
+  "bereich": "hotels",
+  "ordner": "hotels/h510-skagafjoerdur-pferdehof",
+  "bilder": {
+   "1": "island/ort/27694032.jpg",
+   "2": "island/wellness/6265831.jpg",
+   "3": "island/umgebung/11664252.jpg",
+   "4": "island/zimmer/6527058.jpg",
+   "5": "island/essen/4871271.jpg"
+  }
+ },
+ {
+  "id": "h511",
+  "ziel": "island",
+  "bereich": "hotels",
+  "ordner": "hotels/h511-guesthouse-hvolsvoellur",
+  "bilder": {
+   "1": "island/ort/29014368.jpg",
+   "2": "island/wellness/6344439.jpg",
+   "3": "island/umgebung/11962682.jpg",
+   "4": "island/zimmer/6580373.jpg",
+   "5": "island/essen/5083900.jpg"
+  }
+ },
+ {
+  "id": "a161",
+  "ziel": "barcelona",
+  "bereich": "wohnungen",
+  "ordner": "wohnungen/a161-eixample-fliesenwohnung",
+  "bilder": {
+   "1": "barcelona/ort/19866649.jpg",
+   "2": "barcelona/wohnen/1543447.jpg",
+   "3": "barcelona/kueche/5997963.jpg",
+   "4": "barcelona/zimmer/6934230.jpg",
+   "5": "barcelona/umgebung/16067331.jpg"
+  }
+ },
+ {
+  "id": "a162",
+  "ziel": "barcelona",
+  "bereich": "wohnungen",
+  "ordner": "wohnungen/a162-barceloneta-strandapartment",
+  "bilder": {
+   "1": "barcelona/ort/20358172.jpg",
+   "2": "barcelona/wohnen/1571468.jpg",
+   "3": "barcelona/kueche/6032398.jpg",
+   "4": "barcelona/zimmer/7028116.jpg",
+   "5": "barcelona/umgebung/16176614.jpg"
+  }
+ },
+ {
+  "id": "a163",
+  "ziel": "barcelona",
+  "bereich": "wohnungen",
+  "ordner": "wohnungen/a163-gracia-terrassenwohnung",
+  "bilder": {
+   "1": "barcelona/ort/20358174.jpg",
+   "2": "barcelona/wohnen/1631918.jpg",
+   "3": "barcelona/kueche/6198663.jpg",
+   "4": "barcelona/zimmer/7061727.jpg",
+   "5": "barcelona/umgebung/16841068.jpg"
+  }
+ },
+ {
+  "id": "a164",
+  "ziel": "barcelona",
+  "bereich": "wohnungen",
+  "ordner": "wohnungen/a164-poblenou-fabrikloft",
+  "bilder": {
+   "1": "barcelona/ort/25451643.jpg",
+   "2": "barcelona/wohnen/1918291.jpg",
+   "3": "barcelona/kueche/6207945.jpg",
+   "4": "barcelona/zimmer/7511704.jpg",
+   "5": "barcelona/umgebung/16984552.jpg"
+  }
+ },
+ {
+  "id": "a165",
+  "ziel": "barcelona",
+  "bereich": "wohnungen",
+  "ordner": "wohnungen/a165-sant-antoni-studio",
+  "bilder": {
+   "1": "barcelona/ort/27278829.jpg",
+   "2": "barcelona/wohnen/5745941.jpg",
+   "3": "barcelona/kueche/6265833.jpg",
+   "4": "barcelona/zimmer/7546777.jpg",
+   "5": "barcelona/umgebung/17405065.jpg"
+  }
+ },
+ {
+  "id": "a166",
+  "ziel": "barcelona",
+  "bereich": "wohnungen",
+  "ordner": "wohnungen/a166-sarria-gartenwohnung",
+  "bilder": {
+   "1": "barcelona/ort/27397512.jpg",
+   "2": "barcelona/wohnen/5853834.jpg",
+   "3": "barcelona/kueche/6283962.jpg",
+   "4": "barcelona/zimmer/7587293.jpg",
+   "5": "barcelona/umgebung/17646608.jpg"
+  }
+ },
+ {
+  "id": "a167",
+  "ziel": "wien",
+  "bereich": "wohnungen",
+  "ordner": "wohnungen/a167-altbau-josefstadt",
+  "bilder": {
+   "1": "wien/ort/19450300.jpg",
+   "2": "wien/wohnen/276678.jpg",
+   "3": "wien/kueche/4044795.jpg",
+   "4": "wien/zimmer/8135248.jpg",
+   "5": "wien/umgebung/33268594.jpg"
+  }
+ },
+ {
+  "id": "a168",
+  "ziel": "wien",
+  "bereich": "wohnungen",
+  "ordner": "wohnungen/a168-prater-familienwohnung",
+  "bilder": {
+   "1": "wien/ort/23484070.jpg",
+   "2": "wien/wohnen/1571469.jpg",
+   "3": "wien/kueche/4044798.jpg",
+   "4": "wien/zimmer/8135289.jpg",
+   "5": "wien/umgebung/33432872.jpg"
+  }
+ },
+ {
+  "id": "a169",
+  "ziel": "wien",
+  "bereich": "wohnungen",
+  "ordner": "wohnungen/a169-dachwohnung-neubau",
+  "bilder": {
+   "1": "wien/ort/23484071.jpg",
+   "2": "wien/wohnen/3965534.jpg",
+   "3": "wien/kueche/4781428.jpg",
+   "4": "wien/zimmer/8135495.jpg",
+   "5": "wien/umgebung/33466781.jpg"
+  }
+ },
+ {
+  "id": "a170",
+  "ziel": "wien",
+  "bereich": "wohnungen",
+  "ordner": "wohnungen/a170-grinzing-winzerhaus",
+  "bilder": {
+   "1": "wien/ort/27409759.jpg",
+   "2": "wien/wohnen/5507233.jpg",
+   "3": "wien/kueche/5041326.jpg",
+   "4": "wien/zimmer/8135499.jpg",
+   "5": "wien/umgebung/33634868.jpg"
+  }
+ },
+ {
+  "id": "a171",
+  "ziel": "wien",
+  "bereich": "wohnungen",
+  "ordner": "wohnungen/a171-studio-mariahilf",
+  "bilder": {
+   "1": "wien/ort/29686877.jpg",
+   "2": "wien/wohnen/5824803.jpg",
+   "3": "wien/kueche/6186519.jpg",
+   "4": "wien/zimmer/8141958.jpg",
+   "5": "wien/umgebung/33636686.jpg"
+  }
+ },
+ {
+  "id": "a172",
+  "ziel": "wien",
+  "bereich": "wohnungen",
+  "ordner": "wohnungen/a172-innere-stadt-palaiswohnung",
+  "bilder": {
+   "1": "wien/ort/29686878.jpg",
+   "2": "wien/wohnen/5998045.jpg",
+   "3": "wien/kueche/6265837.jpg",
+   "4": "wien/zimmer/8141962.jpg",
+   "5": "wien/umgebung/33998553.jpg"
+  }
+ },
+ {
+  "id": "a173",
+  "ziel": "lissabon",
+  "bereich": "wohnungen",
+  "ordner": "wohnungen/a173-alfama-azulejowohnung",
+  "bilder": {
+   "1": "lissabon/ort/24777941.jpg",
+   "2": "lissabon/wohnen/4409365.jpg",
+   "3": "lissabon/kueche/6597.jpg",
+   "4": "lissabon/zimmer/7598140.jpg",
+   "5": "lissabon/umgebung/20427648.jpg"
+  }
+ },
+ {
+  "id": "a174",
+  "ziel": "lissabon",
+  "bereich": "wohnungen",
+  "ordner": "wohnungen/a174-graca-miradouro-studio",
+  "bilder": {
+   "1": "lissabon/ort/26824154.jpg",
+   "2": "lissabon/wohnen/5824894.jpg",
+   "3": "lissabon/kueche/1080721.jpg",
+   "4": "lissabon/zimmer/7635919.jpg",
+   "5": "lissabon/umgebung/23384830.jpg"
+  }
+ },
+ {
+  "id": "a175",
+  "ziel": "lissabon",
+  "bereich": "wohnungen",
+  "ordner": "wohnungen/a175-principe-real-etage",
+  "bilder": {
+   "1": "lissabon/ort/27376690.jpg",
+   "2": "lissabon/wohnen/5825538.jpg",
+   "3": "lissabon/kueche/3288102.jpg",
+   "4": "lissabon/zimmer/7722164.jpg",
+   "5": "lissabon/umgebung/24407903.jpg"
+  }
+ },
+ {
+  "id": "a176",
+  "ziel": "lissabon",
+  "bereich": "wohnungen",
+  "ordner": "wohnungen/a176-lx-factory-loft",
+  "bilder": {
+   "1": "lissabon/ort/27583863.jpg",
+   "2": "lissabon/wohnen/6238613.jpg",
+   "3": "lissabon/kueche/3758019.jpg",
+   "4": "lissabon/zimmer/7746093.jpg",
+   "5": "lissabon/umgebung/25325640.jpg"
+  }
+ },
+ {
+  "id": "a177",
+  "ziel": "lissabon",
+  "bereich": "wohnungen",
+  "ordner": "wohnungen/a177-belem-flusswohnung",
+  "bilder": {
+   "1": "lissabon/ort/28961816.jpg",
+   "2": "lissabon/wohnen/6301169.jpg",
+   "3": "lissabon/kueche/4044786.jpg",
+   "4": "lissabon/zimmer/8082234.jpg",
+   "5": "lissabon/umgebung/26288655.jpg"
+  }
+ },
+ {
+  "id": "a178",
+  "ziel": "lissabon",
+  "bereich": "wohnungen",
+  "ordner": "wohnungen/a178-estrela-gartenwohnung",
+  "bilder": {
+   "1": "lissabon/ort/28962771.jpg",
+   "2": "lissabon/wohnen/6492396.jpg",
+   "3": "lissabon/kueche/4307564.jpg",
+   "4": "lissabon/zimmer/8092164.jpg",
+   "5": "lissabon/umgebung/26569976.jpg"
+  }
+ },
+ {
+  "id": "a179",
+  "ziel": "marrakesch",
+  "bereich": "wohnungen",
+  "ordner": "wohnungen/a179-riadwohnung-medina",
+  "bilder": {
+   "1": "marrakesch/ort/6769006.jpg",
+   "2": "marrakesch/wohnen/6077367.jpg",
+   "3": "marrakesch/kueche/6265838.jpg",
+   "4": "marrakesch/zimmer/39388302.jpg",
+   "5": "marrakesch/umgebung/10647686.jpg"
+  }
+ },
+ {
+  "id": "a180",
+  "ziel": "marrakesch",
+  "bereich": "wohnungen",
+  "ordner": "wohnungen/a180-dar-kasbah",
+  "bilder": {
+   "1": "marrakesch/ort/7835697.jpg",
+   "2": "marrakesch/wohnen/6480211.jpg",
+   "3": "marrakesch/kueche/6436799.jpg",
+   "4": "marrakesch/zimmer/1065883.jpg",
+   "5": "marrakesch/umgebung/11387345.jpg"
+  }
+ },
+ {
+  "id": "a181",
+  "ziel": "marrakesch",
+  "bereich": "wohnungen",
+  "ordner": "wohnungen/a181-palmeraie-villa-oliva",
+  "bilder": {
+   "1": "marrakesch/ort/10223439.jpg",
+   "2": "marrakesch/wohnen/6527037.jpg",
+   "3": "marrakesch/kueche/6508356.jpg",
+   "4": "marrakesch/zimmer/1329711.jpg",
+   "5": "marrakesch/umgebung/11387352.jpg"
+  }
+ },
+ {
+  "id": "a182",
+  "ziel": "marrakesch",
+  "bereich": "wohnungen",
+  "ordner": "wohnungen/a182-gueliz-apartment",
+  "bilder": {
+   "1": "marrakesch/ort/10277617.jpg",
+   "2": "marrakesch/wohnen/6636304.jpg",
+   "3": "marrakesch/kueche/6538939.jpg",
+   "4": "marrakesch/zimmer/1342492.jpg",
+   "5": "marrakesch/umgebung/12017701.jpg"
+  }
+ },
+ {
+  "id": "a183",
+  "ziel": "marrakesch",
+  "bereich": "wohnungen",
+  "ordner": "wohnungen/a183-ourika-lehmhaus-setti",
+  "bilder": {
+   "1": "marrakesch/ort/10306569.jpg",
+   "2": "marrakesch/wohnen/6758775.jpg",
+   "3": "marrakesch/kueche/6782481.jpg",
+   "4": "marrakesch/zimmer/3769979.jpg",
+   "5": "marrakesch/umgebung/13474313.jpg"
+  }
+ },
+ {
+  "id": "a184",
+  "ziel": "marrakesch",
+  "bereich": "wohnungen",
+  "ordner": "wohnungen/a184-dar-mellah-studio",
+  "bilder": {
+   "1": "marrakesch/ort/13766862.jpg",
+   "2": "marrakesch/wohnen/6758784.jpg",
+   "3": "marrakesch/kueche/6899443.jpg",
+   "4": "marrakesch/zimmer/4906520.jpg",
+   "5": "marrakesch/umgebung/14145449.jpg"
+  }
+ },
+ {
+  "id": "a185",
+  "ziel": "kapstadt",
+  "bereich": "wohnungen",
+  "ordner": "wohnungen/a185-camps-bay-apartment",
+  "bilder": {
+   "1": "kapstadt/ort/6930842.jpg",
+   "2": "kapstadt/wohnen/2459.jpg",
+   "3": "kapstadt/kueche/3589778.jpg",
+   "4": "kapstadt/zimmer/6121088.jpg",
+   "5": "kapstadt/umgebung/3873555.jpg"
+  }
+ },
+ {
+  "id": "a186",
+  "ziel": "kapstadt",
+  "bereich": "wohnungen",
+  "ordner": "wohnungen/a186-bo-kaap-colour-flat",
+  "bilder": {
+   "1": "kapstadt/ort/11264535.jpg",
+   "2": "kapstadt/wohnen/271648.jpg",
+   "3": "kapstadt/kueche/5502219.jpg",
+   "4": "kapstadt/zimmer/6180667.jpg",
+   "5": "kapstadt/umgebung/4098987.jpg"
+  }
+ },
+ {
+  "id": "a187",
+  "ziel": "kapstadt",
+  "bereich": "wohnungen",
+  "ordner": "wohnungen/a187-sea-point-promenade-flat",
+  "bilder": {
+   "1": "kapstadt/ort/12244973.jpg",
+   "2": "kapstadt/wohnen/271753.jpg",
+   "3": "kapstadt/kueche/5556177.jpg",
+   "4": "kapstadt/zimmer/6207820.jpg",
+   "5": "kapstadt/umgebung/4305030.jpg"
+  }
+ },
+ {
+  "id": "a188",
+  "ziel": "kapstadt",
+  "bereich": "wohnungen",
+  "ordner": "wohnungen/a188-constantia-weinberghaus",
+  "bilder": {
+   "1": "kapstadt/ort/13391630.jpg",
+   "2": "kapstadt/wohnen/813691.jpg",
+   "3": "kapstadt/kueche/5644353.jpg",
+   "4": "kapstadt/zimmer/6207825.jpg",
+   "5": "kapstadt/umgebung/4721707.jpg"
+  }
+ },
+ {
+  "id": "a189",
+  "ziel": "kapstadt",
+  "bereich": "wohnungen",
+  "ordner": "wohnungen/a189-muizenberg-beach-flat",
+  "bilder": {
+   "1": "kapstadt/ort/13521146.jpg",
+   "2": "kapstadt/wohnen/1444424.jpg",
+   "3": "kapstadt/kueche/6000683.jpg",
+   "4": "kapstadt/zimmer/6263036.jpg",
+   "5": "kapstadt/umgebung/4858541.jpg"
+  }
+ },
+ {
+  "id": "a190",
+  "ziel": "kapstadt",
+  "bereich": "wohnungen",
+  "ordner": "wohnungen/a190-simon-s-town-naval-flat",
+  "bilder": {
+   "1": "kapstadt/ort/30495228.jpg",
+   "2": "kapstadt/wohnen/2029665.jpg",
+   "3": "kapstadt/kueche/6186826.jpg",
+   "4": "kapstadt/zimmer/6436785.jpg",
+   "5": "kapstadt/umgebung/4873257.jpg"
+  }
+ },
+ {
+  "id": "a191",
+  "ziel": "newyork",
+  "bereich": "wohnungen",
+  "ordner": "wohnungen/a191-williamsburg-loft",
+  "bilder": {
+   "1": "newyork/ort/5845474.jpg",
+   "2": "newyork/wohnen/6143343.jpg",
+   "3": "newyork/kueche/100575.jpg",
+   "4": "newyork/zimmer/7749046.jpg",
+   "5": "newyork/umgebung/26839240.jpg"
+  }
+ },
+ {
+  "id": "a192",
+  "ziel": "newyork",
+  "bereich": "wohnungen",
+  "ordner": "wohnungen/a192-upper-west-side-flat",
+  "bilder": {
+   "1": "newyork/ort/5845489.jpg",
+   "2": "newyork/wohnen/6296918.jpg",
+   "3": "newyork/kueche/331107.jpg",
+   "4": "newyork/zimmer/7749049.jpg",
+   "5": "newyork/umgebung/27283274.jpg"
+  }
+ },
+ {
+  "id": "a193",
+  "ziel": "newyork",
+  "bereich": "wohnungen",
+  "ordner": "wohnungen/a193-harlem-brownstone-etage",
+  "bilder": {
+   "1": "newyork/ort/5845505.jpg",
+   "2": "newyork/wohnen/6315809.jpg",
+   "3": "newyork/kueche/534151.jpg",
+   "4": "newyork/zimmer/7786808.jpg",
+   "5": "newyork/umgebung/27585751.jpg"
+  }
+ },
+ {
+  "id": "a194",
+  "ziel": "newyork",
+  "bereich": "wohnungen",
+  "ordner": "wohnungen/a194-long-island-city-studio",
+  "bilder": {
+   "1": "newyork/ort/5845511.jpg",
+   "2": "newyork/wohnen/6523268.jpg",
+   "3": "newyork/kueche/1271940.jpg",
+   "4": "newyork/zimmer/7900862.jpg",
+   "5": "newyork/umgebung/27793440.jpg"
+  }
+ },
+ {
+  "id": "a195",
+  "ziel": "newyork",
+  "bereich": "wohnungen",
+  "ordner": "wohnungen/a195-chelsea-highline-apartment",
+  "bilder": {
+   "1": "newyork/ort/5845518.jpg",
+   "2": "newyork/wohnen/6585628.jpg",
+   "3": "newyork/kueche/1370082.jpg",
+   "4": "newyork/zimmer/7901156.jpg",
+   "5": "newyork/umgebung/28471487.jpg"
+  }
+ },
+ {
+  "id": "a196",
+  "ziel": "newyork",
+  "bereich": "wohnungen",
+  "ordner": "wohnungen/a196-lower-east-side-walkup",
+  "bilder": {
+   "1": "newyork/ort/5845536.jpg",
+   "2": "newyork/wohnen/6588575.jpg",
+   "3": "newyork/kueche/1467573.jpg",
+   "4": "newyork/zimmer/8089260.jpg",
+   "5": "newyork/umgebung/28746695.jpg"
+  }
+ },
+ {
+  "id": "a197",
+  "ziel": "kyoto",
+  "bereich": "wohnungen",
+  "ordner": "wohnungen/a197-machiya-nishijin-haus",
+  "bilder": {
+   "1": "kyoto/ort/17776656.jpg",
+   "2": "kyoto/wohnen/279614.jpg",
+   "3": "kyoto/kueche/89235.jpg",
+   "4": "kyoto/zimmer/35449990.jpg",
+   "5": "kyoto/umgebung/31223317.jpg"
+  }
+ },
+ {
+  "id": "a198",
+  "ziel": "kyoto",
+  "bereich": "wohnungen",
+  "ordner": "wohnungen/a198-gion-gassenhaus",
+  "bilder": {
+   "1": "kyoto/ort/17776658.jpg",
+   "2": "kyoto/wohnen/1571467.jpg",
+   "3": "kyoto/kueche/566887.jpg",
+   "4": "kyoto/zimmer/35449993.jpg",
+   "5": "kyoto/umgebung/31245147.jpg"
+  }
+ },
+ {
+  "id": "a199",
+  "ziel": "kyoto",
+  "bereich": "wohnungen",
+  "ordner": "wohnungen/a199-arashiyama-flusshaus",
+  "bilder": {
+   "1": "kyoto/ort/18257604.jpg",
+   "2": "kyoto/wohnen/1643383.jpg",
+   "3": "kyoto/kueche/4092029.jpg",
+   "4": "kyoto/zimmer/35680939.jpg",
+   "5": "kyoto/umgebung/31245154.jpg"
+  }
+ },
+ {
+  "id": "a200",
+  "ziel": "kyoto",
+  "bereich": "wohnungen",
+  "ordner": "wohnungen/a200-fushimi-sakehaus",
+  "bilder": {
+   "1": "kyoto/ort/18848761.jpg",
+   "2": "kyoto/wohnen/4177668.jpg",
+   "3": "kyoto/kueche/4389920.jpg",
+   "4": "kyoto/zimmer/36079886.jpg",
+   "5": "kyoto/umgebung/31409376.jpg"
+  }
+ },
+ {
+  "id": "a201",
+  "ziel": "kyoto",
+  "bereich": "wohnungen",
+  "ordner": "wohnungen/a201-kamogawa-studio",
+  "bilder": {
+   "1": "kyoto/ort/20382427.jpg",
+   "2": "kyoto/wohnen/4320374.jpg",
+   "3": "kyoto/kueche/4389959.jpg",
+   "4": "kyoto/zimmer/36352187.jpg",
+   "5": "kyoto/umgebung/31417180.jpg"
+  }
+ },
+ {
+  "id": "a202",
+  "ziel": "kyoto",
+  "bereich": "wohnungen",
+  "ordner": "wohnungen/a202-higashiyama-familienhaus",
+  "bilder": {
+   "1": "kyoto/ort/25998458.jpg",
+   "2": "kyoto/wohnen/4665034.jpg",
+   "3": "kyoto/kueche/4916163.jpg",
+   "4": "kyoto/zimmer/37252639.jpg",
+   "5": "kyoto/umgebung/31418061.jpg"
+  }
+ }
+]

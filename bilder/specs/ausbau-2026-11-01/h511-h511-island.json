@@ -1,0 +1,27 @@
+{
+ "hotels": [
+  {
+   "id": "h511",
+   "ziel": "island",
+   "name": "Guesthouse Hvolsvöllur",
+   "ort": "Hvolsvöllur",
+   "region": "Südisland",
+   "kategorie": "budget",
+   "sterne": 2,
+   "preis": 112,
+   "rating": 4.2,
+   "bewertungen": 342,
+   "strand": null,
+   "zentrum": 0.3,
+   "flughafen": 112,
+   "kurz": "Günstig an der Ringstraße, Küche zur Mitbenutzung, Südküste in einer Stunde.",
+   "lang": "Hvolsvöllur liegt an der Ringstraße zwischen Selfoss und Vík und ist für Südisland der praktischste Zwischenstopp: Seljalandsfoss ist in dreißig Minuten erreicht, Skógafoss in vierzig, Reynisfjara in einer Stunde, und die Hochlandpiste nach Þórsmörk beginnt im Ort. Das Gästehaus hat zwanzig Zimmer, einfach, mit Dusche und WC, dazu eine Gemeinschaftsküche im Erdgeschoss, was in Island den Unterschied macht, weil ein Abendessen regelmäßig vierzig Euro kostet. Der Supermarkt liegt gegenüber. Im Ort steht das Saga-Zentrum zur Njáls-Saga, die hier spielt. Nordlichter sieht man vom Parkplatz, das Umland ist flach und dunkel.",
+   "highlights": [
+    "Gemeinschaftsküche und Supermarkt gegenüber",
+    "Dreißig Minuten zum Seljalandsfoss",
+    "Hochlandpiste nach Þórsmörk ab Ort",
+    "Nordlichter vom Parkplatz"
+   ]
+  }
+ ]
+}

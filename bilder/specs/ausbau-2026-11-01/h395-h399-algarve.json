@@ -1,0 +1,143 @@
+{
+ "hotels": [
+  {
+   "id": "h395",
+   "ziel": "algarve",
+   "name": "Benagil Höhlenblick",
+   "ort": "Carvoeiro",
+   "region": "Westalgarve",
+   "kategorie": "boutique",
+   "sterne": 4,
+   "preis": 206,
+   "rating": 4.6,
+   "bewertungen": 586,
+   "strand": 0.3,
+   "zentrum": 0.8,
+   "flughafen": 58,
+   "extras": [
+    "pool",
+    "seaView",
+    "terrace"
+   ],
+   "kurz": "Über der Steilküste bei Carvoeiro, Benagil-Höhle per Kajak, Klippenweg ab Haus.",
+   "lang": "Die Höhle von Benagil ist eine Grotte mit einem Loch in der Decke, durch das Licht auf einen Sandstrand im Inneren fällt, und sie ist nur vom Wasser aus erreichbar, mit Kajak oder Boot. Das Haus liegt auf der Klippe zwischen Carvoeiro und Benagil, zweiundzwanzig Zimmer, weiß gekalkt, Terrassen zum Meer, Becken an der Kante. Der Klippenweg Percurso dos Sete Vales Suspensos beginnt vor der Tür und führt sechs Kilometer über die Felsnasen nach Marinha, dem Strand, den portugiesische Reiseführer seit dreißig Jahren als schönsten des Landes führen. Zum eigenen Strand sind es dreihundert Meter und eine Treppe. Abends vier Gänge, Fisch vom Markt in Portimão.",
+   "highlights": [
+    "Klippenweg Sete Vales ab Haus",
+    "Becken an der Klippenkante",
+    "Kajak zur Benagil-Höhle",
+    "Sechs Kilometer zur Praia da Marinha"
+   ]
+  },
+  {
+   "id": "h396",
+   "ziel": "algarve",
+   "name": "Sagres Windhaus",
+   "ort": "Sagres",
+   "region": "Westalgarve",
+   "kategorie": "strand",
+   "sterne": 3,
+   "preis": 152,
+   "rating": 4.4,
+   "bewertungen": 412,
+   "strand": 0.4,
+   "zentrum": 0.6,
+   "flughafen": 112,
+   "extras": [
+    "seaView",
+    "terrace"
+   ],
+   "kurz": "Am westlichsten Punkt Europas, Surfstrände auf beiden Seiten.",
+   "lang": "Sagres liegt an der Südwestecke Europas, wo Atlantik und Südküste aufeinandertreffen, und das bedeutet: wenn an einer Seite der Wind steht, ist die andere ruhig, oft innerhalb von vier Kilometern. Das macht den Ort zum verlässlichsten Surfrevier Portugals. Das Haus hat zwanzig Zimmer, einfach und hell, Trockenraum für Anzüge, Boards im Verleih, zwölf Zimmer mit Blick aufs Wasser. Zum Praia do Tonel sind es vierhundert Meter, zum Praia da Mareta sechshundert. Das Cabo de São Vicente mit dem Leuchtturm liegt sechs Kilometer westlich, dort steht eine Wurstbude, die sich die letzte Bratwurst vor Amerika nennt, und das stimmt geografisch.",
+   "highlights": [
+    "Surfstrände auf zwei Seiten",
+    "Trockenraum und Boardverleih",
+    "Vierhundert Meter zum Praia do Tonel",
+    "Sechs Kilometer zum Cabo de São Vicente"
+   ]
+  },
+  {
+   "id": "h397",
+   "ziel": "algarve",
+   "name": "Tavira Ilha",
+   "ort": "Tavira",
+   "region": "Ostalgarve",
+   "kategorie": "boutique",
+   "sterne": 4,
+   "preis": 186,
+   "rating": 4.6,
+   "bewertungen": 486,
+   "strand": 4.2,
+   "zentrum": 0.3,
+   "flughafen": 38,
+   "extras": [
+    "pool",
+    "terrace"
+   ],
+   "kurz": "Stadthaus in Tavira, Fähre zur Inselsandbank, Ria Formosa vor der Stadt.",
+   "lang": "Tavira liegt am Fluss Gilão, hat siebenunddreißig Kirchen, eine römische Brücke und keinen Strand, denn davor liegt die Ria Formosa, ein Lagunensystem aus Sandbänken, Kanälen und Salzgärten. Zum Strand fährt eine Fähre in fünfzehn Minuten zur Ilha de Tavira, elf Kilometer Sand mit flachem, warmem Wasser. Das Haus ist ein Stadthaus des achtzehnten Jahrhunderts, sechzehn Zimmer, Azulejos, Dachterrasse mit den typischen Walmdächern von Tavira in Sicht, Becken im Hof. Zur Fähre sind es sieben Gehminuten, zum Markt vier. Im Umland werden noch von Hand Salzgärten bewirtschaftet, Flamingos stehen in den Becken. Frühstück im Hof.",
+   "highlights": [
+    "Stadthaus aus dem 18. Jahrhundert",
+    "Fähre zur Ilha de Tavira in 15 Minuten",
+    "Becken im Innenhof",
+    "Salzgärten und Flamingos im Umland"
+   ]
+  },
+  {
+   "id": "h398",
+   "ziel": "algarve",
+   "name": "Monchique Bergquelle",
+   "ort": "Monchique",
+   "region": "Serra de Monchique",
+   "kategorie": "finca",
+   "sterne": 4,
+   "preis": 172,
+   "rating": 4.6,
+   "bewertungen": 342,
+   "strand": 24.0,
+   "zentrum": 2.4,
+   "flughafen": 74,
+   "extras": [
+    "pool",
+    "spa",
+    "terrace",
+    "bikeRental"
+   ],
+   "kurz": "In der Serra de Monchique, Thermalquelle im Tal, kühler als die Küste.",
+   "lang": "Die Serra de Monchique steigt hinter der Algarve auf neunhundert Meter, ist bewaldet und im Juli zehn Grad kühler als Faro, was den Unterschied zwischen Urlaub und Durchhalten macht. Die Finca liegt am Hang, vierzehn Zimmer in Natursteingebäuden, Terrassen in die Kastanienwälder, Becken zwischen Korkeichen. Im Tal liegt Caldas de Monchique, ein Thermalbad, das die Römer schon nutzten und in dem heute noch Wasser mit zweiunddreißig Grad aus dem Fels kommt. Zum Gipfel Fóia, dem höchsten Punkt der Algarve, sind es acht Kilometer, von oben sieht man beide Küsten. Räder stehen bereit, bergab bis zur Küste sind es vierundzwanzig Kilometer. Abends vier Gänge, Schwein und Gemüse aus der Serra.",
+   "highlights": [
+    "Zehn Grad kühler als die Küste",
+    "Becken zwischen Korkeichen",
+    "Thermalbad Caldas de Monchique im Tal",
+    "Acht Kilometer zum Gipfel Fóia"
+   ]
+  },
+  {
+   "id": "h399",
+   "ziel": "algarve",
+   "name": "Alvor Familienresort",
+   "ort": "Alvor",
+   "region": "Westalgarve",
+   "kategorie": "familie",
+   "sterne": 4,
+   "preis": 178,
+   "rating": 4.3,
+   "bewertungen": 824,
+   "strand": 0.5,
+   "zentrum": 1.2,
+   "flughafen": 62,
+   "extras": [
+    "pool",
+    "kidsClub",
+    "seaView"
+   ],
+   "kurz": "Zwischen Lagune und Strand, drei Becken, Holzsteg durch das Feuchtgebiet.",
+   "lang": "Alvor liegt an einer Flussmündung, in der eine Lagune mit Sandbänken, Fischerbooten und einem Holzsteg von drei Kilometern liegt, der durch das Feuchtgebiet führt und für Kinder interessanter ist als jeder Wasserpark. Das Haus liegt zwischen Lagune und Meer, achtundsiebzig Zimmer, zwei Drittel Familienzimmer, dazu drei Becken, eines mit Rutschen und eines beheizt. Betreuung läuft von zehn bis siebzehn Uhr ganzjährig. Zum Strand sind es fünfhundert Meter, breit, flach und mit Aufsicht. Der alte Fischerort mit der Hauptgasse und den Tavernen liegt einen Kilometer entfernt. Zum Flughafen Faro sind es zweiundsechzig Kilometer. All Inclusive buchbar, Kinderbuffet ab achtzehn Uhr.",
+   "highlights": [
+    "Drei Becken, eines mit Rutschen",
+    "Holzsteg durch das Feuchtgebiet",
+    "Fünfhundert Meter zum flachen Strand",
+    "Betreuung ganzjährig"
+   ]
+  }
+ ]
+}

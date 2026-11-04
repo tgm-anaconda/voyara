@@ -6,7 +6,7 @@ let step = 1;
 let nights = 7;
 let roomIdx = 0;
 let boardIdx = 0;
-let guest = { name: "", mail: "", phone: "", note: "" };
+let guest = { name: "", mail: "" };
 
 /* ==================================================================
    Die Buchungsstrecke als Arbeit
@@ -92,7 +92,9 @@ function readParams() {
     : [];
   reisende = Array.from({ length: b.personen }, (_, i) => ({
     name: ausKonto[i]?.name || (i === 0 ? guest.name : ""),
-    geburt: ausKonto[i]?.geburt || "",
+    /* Gepaeck bleibt fest auf Handgepaeck (02.11.2026): Die Wahl je Person
+       ist mit der Entschlankung entfallen, der Preis dafuer ist null. Das
+       Feld bleibt, weil die Preisrechnung es liest. */
     gepaeck: "hand",
     // Ab dem letzten Platz aufwaerts sind es die Kinder
     kind: i >= b.erwachsene,
@@ -113,8 +115,8 @@ function kasseSchluessel() { return `voyara_kasse_${entry.id}`; }
 function kasseMerken() {
   try {
     sessionStorage.setItem(kasseSchluessel(), JSON.stringify({
-      reisende: reisende.map((r) => ({ name: r.name, geburt: r.geburt, gepaeck: r.gepaeck })),
-      ankunft, versicherung, zahlung, mail: guest.mail, phone: guest.phone, note: guest.note,
+      reisende: reisende.map((r) => ({ name: r.name })),
+      ankunft, versicherung, zahlung, mail: guest.mail,
     }));
   } catch { /* ohne Speicher */ }
 }
@@ -126,15 +128,11 @@ function kasseHolen() {
     const r = reisende[i];
     if (!r) return;
     if (alt.name) r.name = alt.name;
-    if (alt.geburt) r.geburt = alt.geburt;
-    if (alt.gepaeck) r.gepaeck = alt.gepaeck;
   });
   if (g.ankunft) ankunft = g.ankunft;
   if (typeof g.versicherung === "boolean") versicherung = g.versicherung;
   if (g.zahlung) zahlung = g.zahlung;
   if (g.mail) guest.mail = g.mail;
-  if (g.phone) guest.phone = g.phone;
-  if (g.note) guest.note = g.note;
 }
 
 /* Was der Agent ueber die Kasse wissen darf: genau das, was dasteht.
@@ -258,23 +256,28 @@ function renderSteps() {
 
 function renderStep1() {
   const mitFlug = !!flugDazu();
+  /* Nur noch der Name je Reisendem (02.11.2026).
+     ------------------------------------------------------------------
+     Vorgabe aus der Besprechung mit Kai: die Kontaktdaten entschlacken und
+     die Strecke zeitlich kurz halten. Weggefallen sind Geburtsdatum und
+     Gepaeckwahl je Person - bei einer Familie zu viert waren das allein
+     acht Felder, und keines davon misst etwas.
+
+     Der Name bleibt je Person stehen: Er ist der eine Teil, den eine
+     Flugbuchung wirklich verlangt, und der Agent traegt ihn ohnehin
+     selbst ein. Auch die Versicherung und der Zahlungsaufschlag bleiben -
+     das sind Messgroessen, keine Formularlast. */
   const zeile = (r, i) => `
     <div class="reisender-zeile">
       <span class="reisender-nr">${i + 1}${r.kind ? " · Kind" : ""}</span>
       <div class="field"><label for="rName${i}">Name wie im Ausweis</label>
         <input class="input" id="rName${i}" data-r="${i}" data-feld="name" value="${r.name}" placeholder="${i === 0 ? "Alex Musterperson" : "Vor- und Nachname"}" required /></div>
-      <div class="field"><label for="rGeburt${i}">Geburtsdatum</label>
-        <input class="input" id="rGeburt${i}" data-r="${i}" data-feld="geburt" type="date" value="${r.geburt}" required /></div>
-      ${mitFlug ? `<div class="field"><label for="rGepaeck${i}">Gepäck</label>
-        <select class="select" id="rGepaeck${i}" data-r="${i}" data-feld="gepaeck">
-          ${GEPAECK.map((g) => `<option value="${g.id}" ${g.id === r.gepaeck ? "selected" : ""}>${g.label}${g.preis ? ` (+${g.preis} €)` : ""}</option>`).join("")}
-        </select></div>` : ""}
     </div>`;
 
   document.getElementById("checkoutMain").innerHTML = `
     <section class="panel">
       <h2>Deine Daten</h2>
-      <p class="hint" style="margin-bottom:16px">Reine Demo-Eingabe. Es werden keine Daten an einen Server gesendet und keine Zahlungsdaten abgefragt. Namen und Geburtsdaten dürfen erfunden sein.</p>
+      <p class="hint" style="margin-bottom:16px">Reine Demo-Eingabe. Es werden keine Daten an einen Server gesendet und keine Zahlungsdaten abgefragt. Die Namen dürfen erfunden sein.</p>
       <form id="guestForm" class="form-stack">
 
         <h3 class="formular-titel">Reisende</h3>
@@ -282,20 +285,14 @@ function renderStep1() {
         <div id="reisendeListe">${reisende.map(zeile).join("")}</div>
 
         <h3 class="formular-titel">Kontakt für die Buchung</h3>
-        <div class="form-two">
-          <div class="field"><label for="gMail">E-Mail</label><input class="input" id="gMail" type="email" value="${guest.mail}" required placeholder="alex@beispiel.de" /></div>
-          <div class="field"><label for="gPhone">Telefon (optional)</label><input class="input" id="gPhone" value="${guest.phone}" placeholder="+49 …" /></div>
-        </div>
+        <div class="field"><label for="gMail">E-Mail</label><input class="input" id="gMail" type="email" value="${guest.mail}" required placeholder="alex@beispiel.de" /></div>
 
         <h3 class="formular-titel">Ankunft</h3>
-        <div class="form-two">
-          <div class="field"><label for="cAnkunft">Voraussichtliche Ankunft am Haus</label>
-            <select class="select" id="cAnkunft" required>
-              <option value="">Bitte wählen</option>
-              ${ANKUNFTSZEITEN.map((z) => `<option value="${z}" ${z === ankunft ? "selected" : ""}>${z}</option>`).join("")}
-            </select></div>
-          <div class="field"><label for="gNote">Wunsch (optional)</label><input class="input" id="gNote" value="${guest.note}" placeholder="z. B. ruhiges Zimmer" /></div>
-        </div>
+        <div class="field"><label for="cAnkunft">Voraussichtliche Ankunft am Haus</label>
+          <select class="select" id="cAnkunft" required>
+            <option value="">Bitte wählen</option>
+            ${ANKUNFTSZEITEN.map((z) => `<option value="${z}" ${z === ankunft ? "selected" : ""}>${z}</option>`).join("")}
+          </select></div>
         <p class="hint">Die Rezeption ist rund um die Uhr besetzt. Ohne Angabe wird das Zimmer bis 18:00 gehalten.</p>
 
         <h3 class="formular-titel">Extras</h3>
@@ -338,18 +335,16 @@ function renderStep1() {
   document.getElementById("cVersicherung").addEventListener("change", (e) => { versicherung = e.target.checked; kasseMerken(); renderSummary(); });
   main.querySelectorAll(".js-zahlung").forEach((el) =>
     el.addEventListener("change", () => { zahlung = el.value; kasseMerken(); renderSummary(); }));
-  ["gMail", "gPhone", "gNote"].forEach((id) => document.getElementById(id)?.addEventListener("input", (e) => {
-    guest[{ gMail: "mail", gPhone: "phone", gNote: "note" }[id]] = e.target.value.trim();
+  document.getElementById("gMail")?.addEventListener("input", (e) => {
+    guest.mail = e.target.value.trim();
     kasseMerken();
-  }));
+  });
 
   document.getElementById("guestForm").addEventListener("submit", (e) => {
     e.preventDefault();
     guest = {
       name: reisende[0]?.name?.trim() || "",
       mail: document.getElementById("gMail").value.trim(),
-      phone: document.getElementById("gPhone").value.trim(),
-      note: document.getElementById("gNote").value.trim(),
     };
     kasseMerken();
     step = 2;
@@ -382,14 +377,12 @@ function renderStep2() {
       </div>
       <div class="review-block">
         <h3>Reisende</h3>
-        ${reisende.map((r, i) => `<div class="kv"><span>${i + 1}${r.kind ? " · Kind" : ""}</span><strong>${r.name || "—"}${r.geburt ? `, ${new Date(r.geburt).toLocaleDateString("de-DE")}` : ""}${p.flug ? ` · ${GEPAECK.find((g) => g.id === r.gepaeck)?.label || ""}` : ""}</strong></div>`).join("")}
+        ${reisende.map((r, i) => `<div class="kv"><span>${i + 1}${r.kind ? " · Kind" : ""}</span><strong>${r.name || "—"}</strong></div>`).join("")}
       </div>
       <div class="review-block">
         <h3>Kontakt und Ankunft</h3>
         <div class="kv"><span>E-Mail</span><strong>${guest.mail || "—"}</strong></div>
-        ${guest.phone ? `<div class="kv"><span>Telefon</span><strong>${guest.phone}</strong></div>` : ""}
         <div class="kv"><span>Ankunft am Haus</span><strong>${ankunft || "keine Angabe"}</strong></div>
-        ${guest.note ? `<div class="kv"><span>Wunsch</span><strong>${guest.note}</strong></div>` : ""}
       </div>
       <div class="review-block">
         <h3>Extras und Zahlung</h3>
@@ -422,7 +415,7 @@ function renderStep2() {
         flug: pl.flug ? { id: pl.flug.id, gesamt: pl.flug.gesamt, personen: pl.flug.personen } : null,
         versicherung, zahlung, gepaeck: pl.gepaeck,
         kartengebuehr: kartengebuehr(pl.total),
-        reisende: reisende.map((r) => ({ name: !!r.name, geburt: !!r.geburt, gepaeck: r.gepaeck })),
+        reisende: reisende.map((r) => ({ name: !!r.name })),
         ankunft: ankunft || null });
     }
     render();

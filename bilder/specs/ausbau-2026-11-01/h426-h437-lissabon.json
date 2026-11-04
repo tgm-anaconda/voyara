@@ -1,0 +1,318 @@
+{
+ "hotels": [
+  {
+   "id": "h426",
+   "ziel": "lissabon",
+   "name": "Campo de Ourique Thermal",
+   "ort": "Lissabon",
+   "region": "Campo de Ourique",
+   "kategorie": "luxus",
+   "sterne": 5,
+   "preis": 338,
+   "rating": 4.7,
+   "bewertungen": 424,
+   "strand": 14.0,
+   "zentrum": 3.2,
+   "flughafen": 10,
+   "extras": [
+    "spa",
+    "pool",
+    "terrace"
+   ],
+   "kurz": "Palacete im Wohnviertel, Spa über zwei Etagen, Markthalle um die Ecke.",
+   "lang": "Campo de Ourique liegt auf einem Plateau westlich des Zentrums und ist das Viertel, in dem Lissabonner wohnen: rechtwinklige Straßen, ein Markt, Konditoreien und kaum Steigungen, was in dieser Stadt die Ausnahme ist. Das Haus ist ein Palacete von 1902, vierunddreißig Zimmer und Suiten, Azulejos, Stuck, Parkett, Bäder in portugiesischem Kalkstein. Der Spa zieht sich über zwei Etagen, mit Becken, drei Saunen, Hamam und acht Anwendungsräumen, auf dem Dach ein kleines Becken mit Blick über die Stadt zum Fluss. Die Mercado de Campo de Ourique liegt vier Gehminuten entfernt, die Tram 28 sechs.",
+   "highlights": [
+    "Palacete von 1902 mit Spa über zwei Etagen",
+    "Dachbecken mit Blick zum Tejo",
+    "Vier Minuten zur Markthalle",
+    "Viertel ohne Steigungen"
+   ]
+  },
+  {
+   "id": "h427",
+   "ziel": "lissabon",
+   "name": "Avenidas Novas Spa",
+   "ort": "Lissabon",
+   "region": "Avenidas Novas",
+   "kategorie": "luxus",
+   "sterne": 4,
+   "preis": 334,
+   "rating": 4.6,
+   "bewertungen": 486,
+   "strand": 15.0,
+   "zentrum": 2.8,
+   "flughafen": 6,
+   "extras": [
+    "spa",
+    "pool",
+    "gym",
+    "terrace"
+   ],
+   "kurz": "An der Gulbenkian-Stiftung, Spa mit Becken, sechs Kilometer zum Flughafen.",
+   "lang": "Die Avenidas Novas wurden ab 1900 als Erweiterung nach Norden gebaut, mit breiten Alleen und Jacarandabäumen, die im Mai blau blühen. Das Haus steht gegenüber der Calouste-Gulbenkian-Stiftung, deren Sammlung und Garten zu den besten Adressen der Stadt gehören. Achtundfünfzig Zimmer, sachlich eingerichtet, Eiche und Leinen, alle mit Loggia. Im Spa ein Becken von achtzehn Metern, zwei Saunen, Dampfbad und sechs Anwendungsräume. Zur Metro sind es drei Gehminuten, zum Flughafen sechs Kilometer, in die Baixa zwölf Minuten mit der Bahn. Restaurant mit fünf Gängen, Weine aus dem Alentejo.",
+   "highlights": [
+    "Gegenüber der Gulbenkian-Stiftung",
+    "Becken mit achtzehn Metern im Spa",
+    "Sechs Kilometer zum Flughafen",
+    "Zwölf Minuten in die Baixa"
+   ]
+  },
+  {
+   "id": "h428",
+   "ziel": "lissabon",
+   "name": "Pensão Anjos",
+   "ort": "Lissabon",
+   "region": "Arroios",
+   "kategorie": "budget",
+   "sterne": 2,
+   "preis": 102,
+   "rating": 4.2,
+   "bewertungen": 568,
+   "strand": 13.0,
+   "zentrum": 1.8,
+   "flughafen": 6,
+   "kurz": "Günstige Pension an der Metro Anjos, Mouraria und Baixa zu Fuß.",
+   "lang": "Arroios ist der Bezirk mit den meisten Nationalitäten Lissabons, und entlang der Rua do Benformoso reihen sich Läden und Lokale aus einem Dutzend Ländern. Die Pension liegt an der Metro Anjos, zweiundzwanzig Zimmer, einfach, mit Dusche und WC, hofseitig ruhig, kein Aufzug. Zur Baixa sind es fünfzehn Gehminuten bergab, zur Mouraria acht, zum Flughafen sechs Kilometer und zwei Stationen mit der Metro. Frühstück von halb acht bis zehn. Für unter hundertzehn Euro ist das Haus in dieser Lage eine der verlässlicheren Adressen, auch wenn die Zimmer nichts hermachen.",
+   "highlights": [
+    "An der Metro Anjos",
+    "Fünfzehn Minuten in die Baixa",
+    "Zwei Stationen zum Flughafen",
+    "Unter hundertzehn Euro"
+   ]
+  },
+  {
+   "id": "h429",
+   "ziel": "lissabon",
+   "name": "Madragoa Casa",
+   "ort": "Lissabon",
+   "region": "Madragoa",
+   "kategorie": "budget",
+   "sterne": 2,
+   "preis": 98,
+   "rating": 4.3,
+   "bewertungen": 412,
+   "strand": 13.0,
+   "zentrum": 1.6,
+   "flughafen": 11,
+   "kurz": "Einfaches Haus im alten Fischerviertel, Tram 25, Museu de Arte Antiga nah.",
+   "lang": "Madragoa liegt zwischen Estrela und dem Fluss und war das Viertel der Fischerfrauen aus Ovar, die hier im achtzehnten Jahrhundert angesiedelt wurden. Die Gassen sind eng, die Häuser niedrig, die Wäsche hängt über der Straße. Das Haus hat sechzehn Zimmer, einfach, mit Dusche, Fliesenböden, ein kleiner Hof hinten. Die Tram 25 hält um die Ecke und ist die ruhigere Schwester der 28. Zum Museu Nacional de Arte Antiga sind es acht Gehminuten, zum Zeitpavillon am Fluss zehn, zur Baixa zwanzig. Frühstück gibt es im Café gegenüber und ist im Preis enthalten.",
+   "highlights": [
+    "Altes Fischerviertel mit engen Gassen",
+    "Tram 25 um die Ecke",
+    "Acht Minuten zum Museu de Arte Antiga",
+    "Frühstück im Café gegenüber"
+   ]
+  },
+  {
+   "id": "h430",
+   "ziel": "lissabon",
+   "name": "Alvalade Jardim",
+   "ort": "Lissabon",
+   "region": "Alvalade",
+   "kategorie": "stadt",
+   "sterne": 3,
+   "preis": 146,
+   "rating": 4.3,
+   "bewertungen": 486,
+   "strand": 15.0,
+   "zentrum": 4.2,
+   "flughafen": 4,
+   "extras": [
+    "terrace"
+   ],
+   "kurz": "Im Wohnviertel der fünfziger Jahre, vier Kilometer zum Flughafen.",
+   "lang": "Alvalade wurde ab 1945 als Modellviertel gebaut, mit niedrigen Blöcken, Innenhöfen, Grünstreifen und einem Markt, und es ist bis heute eines der angenehmsten Wohnviertel der Stadt. Das Haus steht an einem dieser Höfe, achtunddreißig Zimmer, hell und sachlich, viele mit Balkon zum Grün. Zum Flughafen sind es vier Kilometer, acht Minuten mit dem Taxi, und das macht die Adresse für An- und Abreisenächte zur praktischsten der Stadt. Die Metro hält fünf Gehminuten entfernt, in die Baixa sind es vierzehn Minuten. Im Viertel gibt es den Mercado de Alvalade und ein halbes Dutzend Tascas.",
+   "highlights": [
+    "Vier Kilometer zum Flughafen",
+    "Modellviertel von 1945",
+    "Vierzehn Minuten in die Baixa",
+    "Mercado de Alvalade im Viertel"
+   ]
+  },
+  {
+   "id": "h431",
+   "ziel": "lissabon",
+   "name": "Marvila Fabrikhotel",
+   "ort": "Lissabon",
+   "region": "Marvila",
+   "kategorie": "boutique",
+   "sterne": 4,
+   "preis": 168,
+   "rating": 4.5,
+   "bewertungen": 342,
+   "strand": 14.0,
+   "zentrum": 5.8,
+   "flughafen": 8,
+   "extras": [
+    "terrace"
+   ],
+   "kurz": "Umgebaute Weinlager am Fluss, Brauereien und Galerien im Viertel.",
+   "lang": "Marvila war Lissabons Industrieufer, mit Weinlagern, Fabriken und Werften, und seit ein paar Jahren ziehen Brauereien, Galerien und Werkstätten in die leeren Hallen. Das Haus liegt in einem Weinlager von 1890, zwanzig Zimmer, Gewölbe im Erdgeschoss, oben Sichtziegel und Stahlfenster, auf dem Dach eine Terrasse zum Fluss. Die Biblioteca de Marvila im alten Palast und der Jardim do Parque das Nações sind in Reichweite. Der Zug hält vier Gehminuten entfernt, in die Baixa sind es zwölf Minuten, zum Flughafen acht Kilometer. Abends vier Gerichte, Bier von nebenan.",
+   "highlights": [
+    "Zimmer in einem Weinlager von 1890",
+    "Dachterrasse zum Fluss",
+    "Brauereien und Galerien im Viertel",
+    "Zwölf Minuten mit dem Zug in die Baixa"
+   ]
+  },
+  {
+   "id": "h432",
+   "ziel": "lissabon",
+   "name": "Ajuda Palastblick",
+   "ort": "Lissabon",
+   "region": "Ajuda",
+   "kategorie": "boutique",
+   "sterne": 3,
+   "preis": 158,
+   "rating": 4.5,
+   "bewertungen": 288,
+   "strand": 16.0,
+   "zentrum": 6.8,
+   "flughafen": 13,
+   "extras": [
+    "terrace"
+   ],
+   "kurz": "Am Palácio da Ajuda, Botanischer Garten nebenan, Belém in zehn Minuten.",
+   "lang": "Ajuda liegt auf dem Hügel über Belém und ist eines der wenigen Viertel, die vom Erdbeben 1755 verschont blieben, weshalb der Hof danach hierher zog. Der Palácio da Ajuda steht bis heute da, halb fertig gebaut und vollständig eingerichtet. Das Haus liegt in einer Gasse daneben, sechzehn Zimmer, Azulejos im Flur, Dachterrasse mit Blick über den Fluss bis zur Brücke. Der Botanische Garten der Ajuda von 1768, der älteste Portugals, liegt dreihundert Meter entfernt. Nach Belém mit dem Kloster und den Pastéis sind es zehn Gehminuten bergab, zurück nimmt man den Bus.",
+   "highlights": [
+    "Neben dem Palácio da Ajuda",
+    "Botanischer Garten von 1768 in 300 Metern",
+    "Dachterrasse mit Blick zur Brücke",
+    "Zehn Minuten nach Belém"
+   ]
+  },
+  {
+   "id": "h433",
+   "ziel": "lissabon",
+   "name": "Santos Design",
+   "ort": "Lissabon",
+   "region": "Santos",
+   "kategorie": "boutique",
+   "sterne": 4,
+   "preis": 186,
+   "rating": 4.5,
+   "bewertungen": 424,
+   "strand": 13.0,
+   "zentrum": 1.8,
+   "flughafen": 11,
+   "extras": [
+    "terrace"
+   ],
+   "kurz": "Im Designviertel am Fluss, Tram 15 und 25, Cais do Sodré in zehn Minuten.",
+   "lang": "Santos liegt am Fluss zwischen Cais do Sodré und Alcântara und heißt seit den neunziger Jahren Design-Viertel, weil hier Möbelwerkstätten, Architekturbüros und eine Designhochschule sitzen. Das Haus steht in einem Palacete von 1880, vierundzwanzig Zimmer, hohe Räume, Dielen, zur Vorderseite Blick auf den Tejo. Auf dem Dach eine Terrasse mit Bar. Die Trams 15 und 25 halten vor der Tür, zum Time Out Market am Cais do Sodré sind es zehn Gehminuten am Wasser entlang, zum Museu de Arte Antiga sechs. Frühstück bis halb zwölf, abends wird nicht gekocht.",
+   "highlights": [
+    "Palacete von 1880 im Designviertel",
+    "Dachterrasse mit Bar",
+    "Trams 15 und 25 vor der Tür",
+    "Zehn Minuten zum Time Out Market"
+   ]
+  },
+  {
+   "id": "h434",
+   "ziel": "lissabon",
+   "name": "Penha de França Mirante",
+   "ort": "Lissabon",
+   "region": "Penha de França",
+   "kategorie": "stadt",
+   "sterne": 3,
+   "preis": 138,
+   "rating": 4.3,
+   "bewertungen": 386,
+   "strand": 13.0,
+   "zentrum": 2.4,
+   "flughafen": 7,
+   "extras": [
+    "terrace"
+   ],
+   "kurz": "Auf einem der sieben Hügel, Aussicht ohne Gedränge, Tram 28 in Gehweite.",
+   "lang": "Penha de França liegt auf einem der sieben Hügel nordöstlich der Alfama und hat mit dem Miradouro da Penha de França einen Aussichtspunkt, an dem auch im August niemand ansteht. Das Haus steht hundert Meter davon, zweiunddreißig Zimmer, einfach und hell, zwölf mit Blick über die Dächer zum Fluss. Auf dem Dach eine Terrasse. Zur Tram 28 sind es acht Gehminuten, zur Alfama zwölf bergab, zum Flughafen sieben Kilometer. Im Viertel gibt es Tascas, in denen das Mittagessen mit Wein unter zehn Euro kostet, und einen Markt am Samstag.",
+   "highlights": [
+    "Hundert Meter zum Miradouro",
+    "Zwölf Zimmer mit Blick zum Fluss",
+    "Acht Minuten zur Tram 28",
+    "Sieben Kilometer zum Flughafen"
+   ]
+  },
+  {
+   "id": "h435",
+   "ziel": "lissabon",
+   "name": "Benfica Quinta",
+   "ort": "Lissabon",
+   "region": "Benfica",
+   "kategorie": "finca",
+   "sterne": 4,
+   "preis": 172,
+   "rating": 4.6,
+   "bewertungen": 286,
+   "strand": 16.0,
+   "zentrum": 6.4,
+   "flughafen": 9,
+   "extras": [
+    "pool",
+    "terrace",
+    "bikeRental"
+   ],
+   "kurz": "Quinta mit Garten am Monsanto-Wald, Becken unter Orangenbäumen.",
+   "lang": "Benfica liegt am Westrand der Stadt unter dem Monsanto, einem Waldpark von zehn Quadratkilometern, der größer ist als der Central Park und in Lissabon regelmäßig vergessen wird. Die Quinta ist ein Landhaus des achtzehnten Jahrhunderts, vierzehn Zimmer, Azulejos, Steinböden, ein ummauerter Garten mit Becken unter Orangenbäumen. Zum Palácio Fronteira mit seinen Fliesengärten sind es anderthalb Kilometer. Räder stehen bereit, die Wege durch den Monsanto beginnen am Gartentor. Die Metro hält acht Gehminuten entfernt, in die Baixa sind es achtzehn Minuten, zum Flughafen neun Kilometer.",
+   "highlights": [
+    "Landhaus mit ummauertem Garten",
+    "Becken unter Orangenbäumen",
+    "Monsanto-Waldpark am Gartentor",
+    "Palácio Fronteira in anderthalb Kilometern"
+   ]
+  },
+  {
+   "id": "h436",
+   "ziel": "lissabon",
+   "name": "Olivais Apartments",
+   "ort": "Lissabon",
+   "region": "Olivais",
+   "kategorie": "apart",
+   "sterne": 3,
+   "preis": 136,
+   "rating": 4.3,
+   "bewertungen": 412,
+   "strand": 16.0,
+   "zentrum": 6.8,
+   "flughafen": 3,
+   "extras": [
+    "terrace",
+    "pool"
+   ],
+   "kurz": "Apartments mit Küche, drei Kilometer zum Flughafen, Metro ins Zentrum.",
+   "lang": "Olivais liegt zwischen Flughafen und Parque das Nações und ist ein Wohnviertel der fünfziger und sechziger Jahre mit viel Grün zwischen den Blöcken. Das Haus hat dreißig Apartments von vierzig bis achtzig Quadratmetern, alle mit Küche, Waschmaschine und Balkon, auf dem Dach ein Becken. Zum Flughafen sind es drei Kilometer, sechs Minuten mit dem Taxi, zur Metro fünf Gehminuten und in die Baixa sechzehn Minuten. Zum Ozeanarium im Parque das Nações zwei Kilometer. Ab vier Nächten liegt der Preis deutlich unter einem Hotelzimmer, Supermarkt und Markt in Gehweite.",
+   "highlights": [
+    "Drei Kilometer zum Flughafen",
+    "Apartments mit Küche und Waschmaschine",
+    "Dachbecken",
+    "Sechzehn Minuten mit der Metro in die Baixa"
+   ]
+  },
+  {
+   "id": "h437",
+   "ziel": "lissabon",
+   "name": "Lumiar Jardim Rooms",
+   "ort": "Lissabon",
+   "region": "Lumiar",
+   "kategorie": "boutique",
+   "sterne": 3,
+   "preis": 152,
+   "rating": 4.5,
+   "bewertungen": 264,
+   "strand": 16.0,
+   "zentrum": 6.2,
+   "flughafen": 5,
+   "extras": [
+    "terrace"
+   ],
+   "kurz": "Am Parque Quinta das Conchas, ruhig im Norden, fünf Kilometer zum Flughafen.",
+   "lang": "Lumiar war bis ins zwanzigste Jahrhundert ein Dorf mit Landgütern, und einige der Quintas sind heute öffentliche Parks, darunter die Quinta das Conchas mit alten Bäumen, Wiesen und einem Teich. Das Haus liegt am Parkrand, achtzehn Zimmer in einem Gebäude von 1930, Azulejos im Eingang, Holzböden, Terrasse zum Garten. Das Museu Nacional do Traje liegt in der Nachbar-Quinta. Zur Metro sind es sechs Gehminuten, in die Baixa achtzehn Minuten, zum Flughafen fünf Kilometer. Im Viertel steht die älteste Tasca Lissabons, die seit 1870 dieselbe Familie führt.",
+   "highlights": [
+    "Am Parque Quinta das Conchas",
+    "Haus von 1930 mit Terrasse zum Garten",
+    "Fünf Kilometer zum Flughafen",
+    "Älteste Tasca der Stadt im Viertel"
+   ]
+  }
+ ]
+}
