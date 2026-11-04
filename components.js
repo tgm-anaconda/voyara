@@ -753,6 +753,20 @@ const AgentPanel = {
     if (!rail) return;
     rail.innerHTML = renderAgentRail();
 
+    /* Der Ladevorhang faellt, sobald die Chatspalte steht (04.11.2026).
+       ------------------------------------------------------------------
+       Gemeldet: "Zuerst war gar kein Bot ausgeklappt, dann war er
+       aufgeklappt." Der Vorhang (`studie-wartet` in der Kopfzeile jeder
+       Seite) verschwand nach festen 1,5 Sekunden, unabhaengig davon, ob
+       die Spalte schon gezeichnet war. Faellt er zu frueh, sieht man die
+       Seite kurz ohne Chat und dann mit - genau dieses Aufklappen.
+       Der Zeitgeber in der Kopfzeile bleibt als Obergrenze bestehen,
+       damit der Vorhang auch dann faellt, wenn hier etwas schiefgeht;
+       diese Zeile kann ihn nur frueher aufheben, nie spaeter. */
+    requestAnimationFrame(() => {
+      document.documentElement.classList.remove("studie-wartet");
+    });
+
     // Die Begruessung uebernimmt der Kern (siehe Kern.start): Er leert den
     // Kasten und schreibt das gespeicherte Gespraech zurueck - eine hier
     // gesetzte Nachricht wuerde dabei geloescht. Ohne Agentencode bleibt das

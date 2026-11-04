@@ -3976,7 +3976,13 @@ const Kern = {
   AUSSCHLUSS_ENDE: /\b(lieber|sondern|stattdessen|statt ?dessen|aber|daf(ü|ue)r|am liebsten|gerne|gern)\b/i,
 
   regionenLesen(t) {
-    const satzTeile = String(t).split(/[.!?;]+|\bund\b(?=[^,]*\bnicht\b)/i);
+    /* Getrennt wird an Satzzeichen und an einem "und", hinter dem eine
+       Verneinung folgt ("am liebsten Kreta UND auf keinen Fall Mallorca").
+       Frueher stand hier nur "nicht" statt aller Verneinungswoerter, also
+       blieb "und auf keinen Fall" ungetrennt und nahm das Wunschziel mit. */
+    const verneinung = this.AUSSCHLUSS_WORT.source;
+    const trenner = new RegExp(`[.!?;]+|\\bund\\b(?=[^,]*${verneinung})`, "i");
+    const satzTeile = String(t).split(trenner).filter((x) => typeof x === "string");
     const p = this.lauf.profil || (this.lauf.profil = {});
     const raus = [];
     for (const teil of satzTeile) {
@@ -3984,13 +3990,31 @@ const Kern = {
       if (!m) continue;
       /* Das Verneinungswort kann vor der Region stehen ("nicht nach
          Lissabon") oder dahinter ("nimm Kreta bitte raus"). Gelesen wird
-         deshalb der ganze Teilsatz - abgeschnitten nur dort, wo ein Wort
-         ihn umdreht, und zwar nur, wenn dieses Wort NACH der Verneinung
-         kommt ("nicht Mallorca, lieber Kreta"). */
-      let feld = teil;
+         deshalb der ganze Teilsatz - aber nur zwischen den Woertern, die
+         ihn umdrehen.
+         ------------------------------------------------------------------
+         Beide Seiten muessen abgeschnitten werden, nicht nur die hintere
+         (gemeldet 04.11.2026): Bei "Gerne Kreta, aber Mallorca bitte
+         nicht" steht das "nicht" ganz am Ende, hinter ihm folgt also kein
+         Umkehrwort mehr - und ohne den vorderen Schnitt landete das
+         Wunschziel Kreta mit im Ausschluss. Gelesen wird deshalb vom
+         LETZTEN Umkehrwort VOR der Verneinung bis zum ERSTEN danach. */
+      const vor = teil.slice(0, m.index);
+      let start = 0;
+      for (const treffer of vor.matchAll(new RegExp(this.AUSSCHLUSS_ENDE.source, "gi"))) {
+        start = treffer.index + treffer[0].length;
+      }
+      /* Ein Komma VOR der Verneinung trennt genauso ("Barcelona waere
+         schoen, nur Kyoto nicht"). Eine Aufzaehlung HINTER der Verneinung
+         bleibt davon unberuehrt, weil dort kein Komma vor ihr steht:
+         "nicht nach Lissabon, Marrakesch und Wien" schliesst weiterhin
+         alle drei aus. */
+      const komma = vor.lastIndexOf(",");
+      if (komma + 1 > start) start = komma + 1;
       const nach = teil.slice(m.index + m[0].length);
       const ende = nach.match(this.AUSSCHLUSS_ENDE);
-      if (ende) feld = teil.slice(0, m.index + m[0].length + ende.index);
+      const bis = ende ? m.index + m[0].length + ende.index : teil.length;
+      const feld = teil.slice(start, bis);
       for (const z of (typeof ZIELE !== "undefined" ? ZIELE : [])) {
         const woerter = [z.name, z.id, z.region].filter(Boolean)
           .map((x) => String(x).toLowerCase()).filter((x) => x.length >= 3);

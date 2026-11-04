@@ -83,6 +83,24 @@ pruefe("ein zweiter Satz kommt dazu",
 pruefe("schon Ausgeschlossenes bleibt stehen",
   liest("und Wien bitte auch nicht", { zieleAus: ["lissabon"] }), ["lissabon", "wien"]);
 
+/* Umkehrwort VOR der Verneinung (gemeldet 04.11.2026).
+   --------------------------------------------------------------------
+   "Gerne Kreta, aber Mallorca bitte nicht" trug beide Regionen in den
+   Ausschluss ein: Das "nicht" steht am Satzende, hinter ihm folgt also
+   kein Umkehrwort mehr, und ohne einen Schnitt davor wurde der ganze
+   Teilsatz gelesen - samt Wunschziel. Gelesen wird jetzt vom letzten
+   Umkehrwort vor der Verneinung bis zum ersten danach. */
+pruefe("Wunsch vor dem 'aber' bleibt draussen",
+  liest("Gerne Kreta, aber Mallorca bitte nicht."), ["mallorca"]);
+pruefe("Wunsch vor dem 'aber', Verneinung in der Mitte",
+  liest("Kreta ja, aber nicht Mallorca."), ["mallorca"]);
+pruefe("'am liebsten' schneidet ebenfalls",
+  liest("Am liebsten Kreta und auf keinen Fall Mallorca."), ["mallorca"]);
+pruefe("'nur ... nicht' nach einem Wunsch",
+  liest("Barcelona wäre schön, nur Kyoto nicht."), ["kyoto"]);
+pruefe("Wunsch und Ablehnung ohne Umkehrwort dazwischen",
+  liest("Ohne Marrakesch bitte, am liebsten Sardinien."), ["marrakesch"]);
+
 // Das abgelehnte Ziel darf nicht gleichzeitig das feste Ziel sein
 (() => {
   const k = kernMit({ zielId: "marrakesch", zieleAuswahl: ["marrakesch", "kreta"] });
