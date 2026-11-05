@@ -209,11 +209,43 @@ pruefe("Zweite Frage: Annahme greift doch", typeof p5b.flugAb === "string" && !!
 /* Die Stelle in kern.js ist in den Zug eingebettet und von aussen nicht
    aufrufbar. Geprueft wird deshalb die Bedingung selbst - sie ist eine
    Oder-Verknuepfung ueber drei Quellen, und die dritte ist neu. */
-const quelltext = fs.readFileSync(alt ? quelle + "kern.js" : B + "agent/kern.js", "utf8");
+/* Wie beim Laden oben: haelt die Sicherung diese Datei nicht, kommt sie
+   aus dem Projekt. Sonst scheitert die Gegenprobe an einer fehlenden
+   Datei statt an altem Code. */
+const kernAlt = quelle + "kern.js";
+const quelltext = fs.readFileSync(alt && fs.existsSync(kernAlt) ? kernAlt : B + "agent/kern.js", "utf8");
 const stelle = quelltext.slice(quelltext.indexOf("const zeigtVerstaendnis"),
   quelltext.indexOf("const zeigtVerstaendnis") + 400);
 pruefe("Uebernommenes zaehlt als Verstaendnis",
   /zuletztGemerkt \|\| \[\]\)\.length > 0/.test(stelle), true);
+
+/* ====================================================================
+   7. Eine Engstelle je Nachricht, nicht zwei
+   ==================================================================== */
+/* Gefunden am 05.11.2026 beim Durchlauf am echten DOM, nicht gemeldet:
+   Bei einer festgelegten Region standen BEIDE Superlative in einer
+   Nachricht - "Am meisten nimmt die Festlegung auf diese Region weg:
+   ohne diese Vorgabe waeren es 6 statt 2" und "Am engsten ist dabei die
+   Mindestzahl an Sternen: Ohne sie waeren es 5". `engpass` kennt die
+   Region nur ohne `zielId`, `engstelle` kennt sie immer, also nennt
+   engpass den Zweitplatzierten und gibt ihn als den Ersten aus. */
+const engProfil = () => ({
+  typ: "hotel", artGenannt: true, zielId: "kreta", erwachsene: 2, kinder: 0,
+  naechte: 7, monat: 7, mindestSterne: 5, mindestbewertung: 4.5, maxStrand: 0.2,
+  vonPerson: { typ: true, zielId: true, mindestSterne: true, mindestbewertung: true, maxStrand: true },
+});
+let engSatz = "", engTreffer = -1;
+try {
+  const ep = engProfil();
+  const liste = WK.katalogTreffer(ep, WK.filterAusStand(ep));
+  engTreffer = liste.length;
+  engSatz = WK.lageSatz(liste, ep, WK.umfang(liste, ep), null, { }) || "";
+} catch (e) { engSatz = "FEHLER " + e.message; }
+const zaehlSuperlativ = (t) => (String(t).match(/Am meisten nimmt|Am engsten ist/g) || []).length;
+pruefe("Engstellen-Lage: der Fall hat wirklich zwei Treffer", engTreffer, 2);
+pruefe("Engstellen-Lage: nur EIN Superlativ im Satz", zaehlSuperlativ(engSatz), 1);
+pruefe("Engstellen-Lage: das Angebot zu lockern steht drin",
+  /lockern soll/.test(engSatz), true);
 
 console.log(`\n${gut} richtig, ${schlecht} falsch`);
 process.exit(schlecht ? 1 : 0);

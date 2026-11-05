@@ -8181,10 +8181,30 @@ const Werkzeugkasten = {
       return verb(m) === verb(alle[i - 1]) ? m.replace(/^(\d+)\s+\w+\s+/, "$1 ") : m;
     });
     if (merkmale.length) teile.push(`${gekuerzt.join(", ")}.`);
-    // Bleibt kaum etwas uebrig, steht dazu, woran es haengt
+    /* Bleibt kaum etwas uebrig, steht dazu, woran es haengt - aber nur
+       EINMAL.
+       ------------------------------------------------------------------
+       `engstelle` und `engpass` sind zwei Rechnungen mit zwei
+       Feldlisten: engpass kennt die Region nur, solange keine feststeht
+       (`!p.zielId`), engstelle kennt sie immer. Wer Kreta gewaehlt
+       hatte, bekam deshalb beide Saetze in einer Nachricht - "am
+       meisten nimmt die Festlegung auf diese Region weg: ohne diese
+       Vorgabe waeren es 6 statt 2" UND "am engsten ist dabei die
+       Mindestzahl an Sternen: Ohne sie waeren es 5". Also den Sieger und
+       den Zweiten, beide als den Ersten ausgegeben. Zwei Superlative in
+       einem Atemzug, die sich widersprechen - derselbe Fehler wie "nur
+       2" neben "waeren es 3".
+       Gefunden am 05.11.2026 beim Durchlauf am echten DOM.
+       Jetzt nennt die Nachricht eine Engstelle. Das Angebot zu lockern
+       haengt an ihr, egal welche der beiden Rechnungen sie gefunden
+       hat. */
     if (liste.length <= 2) {
-      const e = this.engpass(p);
-      if (e) teile.push(`Am engsten ist dabei ${e.label}: Ohne sie wären es ${e.haeuser}. Sag Bescheid, wenn ich sie lockern soll.`);
+      const schonGenannt = eng || this.engstelle(liste, p, null);
+      if (eng) teile.push("Sag Bescheid, wenn ich sie lockern soll.");
+      else if (!schonGenannt) {
+        const e = this.engpass(p);
+        if (e) teile.push(`Am engsten ist dabei ${e.label}: Ohne sie wären es ${e.haeuser}. Sag Bescheid, wenn ich sie lockern soll.`);
+      }
     }
     return teile.join(" ");
   },
