@@ -1968,8 +1968,8 @@ const Politik = {
     }
     if (gesamt != null) {
       teile.push(vorgaben.length
-        ? `Grundlage: Nach deinen Vorgaben (${this.aufzaehlen([...new Set(vorgaben)])}) bleiben ${gesamt} Häuser. Davon habe ich ${gesichtet || gesehen} im Detail durchgesehen.`
-        : `Grundlage: ${gesamt} Häuser standen zur Auswahl, ${gesichtet || gesehen} habe ich im Detail durchgesehen.`);
+        ? `Grundlage: Nach deinen Vorgaben (${this.aufzaehlen([...new Set(vorgaben)])}) bleiben ${Werkzeugkasten.artZahl(gesamt, profil)}. Davon habe ich ${gesichtet || gesehen} im Detail durchgesehen.`
+        : `Grundlage: ${Werkzeugkasten.artZahl(gesamt, profil)} standen zur Auswahl, ${gesichtet || gesehen} habe ich im Detail durchgesehen.`);
     }
 
     // 2. Nach welchem Verfahren habe ich ausgewaehlt?

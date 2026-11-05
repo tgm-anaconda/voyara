@@ -419,15 +419,15 @@ const Werkzeugkasten = {
     regionen_zaehlen: "Vergleicht Regionen und Zeiträume",
     regionen_vergleichen: "Vergleicht Regionen und Zeiträume",
     monate_vergleichen: "Vergleicht Regionen und Zeiträume",
-    suchen: "Sucht passende Unterkünfte",
-    haus_suchen: "Sucht passende Unterkünfte",
-    stichprobe_nehmen: "Sieht sich einzelne Häuser an",
-    haus_details: "Sieht sich einzelne Häuser an",
-    haus_oeffnen: "Sieht sich einzelne Häuser an",
-    haeuser_ansehen: "Sieht sich einzelne Häuser an",
+    suchen: "Sucht passende {art}",
+    haus_suchen: "Sucht passende {art}",
+    stichprobe_nehmen: "Sieht sich einzelne {art} an",
+    haus_details: "Sieht sich einzelne {art} an",
+    haus_oeffnen: "Sieht sich einzelne {art} an",
+    haeuser_ansehen: "Sieht sich einzelne {art} an",
     bewertungen_lesen: "Liest Bewertungen",
     bewertungen_durchsuchen: "Liest Bewertungen",
-    zurueck_zur_liste: "Sieht sich einzelne Häuser an",
+    zurueck_zur_liste: "Sieht sich einzelne {art} an",
     auswahl_vorlegen: "Stellt die Vorschläge zusammen",
     merken: "Merkt vor",
     mietwagen_suchen: "Sucht einen Mietwagen",
@@ -441,9 +441,18 @@ const Werkzeugkasten = {
     freigabe_aendern: null,
   },
 
-  phaseText(name) {
+  /* {art} wird beim Lesen eingesetzt, nicht beim Eintragen.
+     ------------------------------------------------------------------
+     Die Abbildung bleibt damit eine Tabelle aus Zeichenketten - die
+     Kernpruefung `phasenNeutral` vergleicht weiter zwei Aufrufe
+     miteinander, und weil die Art in beiden Armen dieselbe ist, bleibt
+     auch der Text in beiden Armen derselbe. */
+  phaseText(name, p = null) {
     const t = this.PHASEN[name];
-    return t === undefined ? "Arbeitet" : t;
+    if (t === undefined) return "Arbeitet";
+    if (!t) return t;
+    const profil = p || (typeof Kern !== "undefined" ? Kern.lauf?.profil : null) || {};
+    return t.replace("{art}", this.artWort(profil, true));
   },
 
   logText(name, a = {}, p = null) {
@@ -453,7 +462,7 @@ const Werkzeugkasten = {
       case "regionen_zaehlen": return "Zähle, in welchen Regionen es im Zeitraum etwas gibt";
       case "regionen_vergleichen": return `Vergleiche Regionen${a.aspekte?.length ? ` nach ${a.aspekte.join(", ")}` : ""}`;
       case "monate_vergleichen": return "Stelle die Liste nacheinander auf jeden Monat um";
-      case "stichprobe_nehmen": return "Sehe mir ein, zwei Häuser von innen an";
+      case "stichprobe_nehmen": return `Sehe mir ein, zwei ${this.artWort(p || {}, true)} von innen an`;
       case "suchen": {
         // Was tatsaechlich in die Maske geht - nicht "die Angaben"
         const t = [];
@@ -474,7 +483,7 @@ const Werkzeugkasten = {
       case "auswahl_vorlegen": return `Lege ${a.ids?.length || 0} Vorschläge vor`;
       case "haus_oeffnen": return `Öffne ${haus(a.id)}`;
       case "bewertungen_lesen": return `Lese die Bewertungen von ${haus(a.id)}${a.aspekt ? ` zum Thema ${a.aspekt}` : ""}`;
-      case "haeuser_ansehen": return "Sehe mir die Häuser der Reihe nach an";
+      case "haeuser_ansehen": return `Sehe mir die ${this.artWort(p || {}, true)} der Reihe nach an`;
       case "zurueck_zur_liste": return "Gehe zurück zur Trefferliste";
       case "merken": return `Setze ${haus(a.id)} auf den Merkzettel`;
       case "buchung_vorbereiten": return `Bereite die Buchung für ${haus(a.id)} vor`;
@@ -2490,6 +2499,40 @@ const Werkzeugkasten = {
     return mehrzahl ? "Unterkünfte" : "eine Unterkunft";
   },
 
+  /* "Häuser" war an zwanzig Stellen fest eingetippt.
+     ------------------------------------------------------------------
+     Gemeldet am 05.11.2026: "Beim Suchen von Hotels steht dort Häuser.
+     Teilweise stand, wenn der Agent gearbeitet hat, in dieser gruenen
+     Flaeche neben dem Agent Haeuser, suche Haeuser, was natuerlich nicht
+     richtig ist, wenn man gerade schon die Filter eingestellt hat, dass
+     nur Hotels gesucht werden."
+
+     `artWort` gab es laengst, aber nur dort, wo jemand daran gedacht
+     hat. Die Zaehlformen hier sind das Gegenstueck: EINE Stelle, die
+     weiss, wie die Art gerade heisst, und alle Saetze holen sie sich von
+     dort. `artEins` fuer "das Haus" / "das Hotel", `artZahl` fuer
+     "3 Hotels" / "1 Ferienwohnung".
+
+     Ohne Profil bleibt es bei "Unterkunft" - das ist nie falsch, nur
+     unspezifisch, und der Fehler laege dann beim Aufrufer. */
+  artEins(p, bestimmt = false) {
+    const t = this.seitenTyp(p);
+    if (t === "apartment") return bestimmt ? "die Ferienwohnung" : "Ferienwohnung";
+    if (t === "hotel") return bestimmt ? "das Hotel" : "Hotel";
+    return bestimmt ? "die Unterkunft" : "Unterkunft";
+  },
+
+  artZahl(n, p) {
+    return `${n} ${n === 1 ? this.artEins(p) : this.artWort(p, true)}`;
+  },
+
+  /* Dieselbe Frage von aussen, wo kein Profil zur Hand ist (Werkzeuge
+     bedienen die Seite und kennen nur den Kern). */
+  artWortJetzt(mehrzahl = true) {
+    const p = (typeof Kern !== "undefined" && Kern.lauf?.profil) || null;
+    return this.artWort(p || {}, mehrzahl);
+  },
+
   /* Bei "beides" sagt er, wie es sich aufteilt.
      ------------------------------------------------------------------
      Der Nutzer am 28.09.2026: "Dann wuerde ich empfehlen, dass er nicht
@@ -3936,6 +3979,14 @@ const Werkzeugkasten = {
            der ganze Rundgang ein zweites Mal - dieselben drei Haeuser,
            dieselben Saetze, noch einmal 45 Sekunden. Was zaehlt, ist
            nicht die Vorgabe, sondern welche Haeuser angesehen wurden. */
+        /* Zu wenig in der Liste: fragen, bevor irgendetwas laeuft.
+           --------------------------------------------------------------
+           Die Stelle liegt bewusst VOR dem Rundgang und vor dem Vorlegen -
+           beides ist Arbeit, die sich erledigt hat, wenn die Person die
+           Suche ausweiten will. Begruendung und Vorgeschichte stehen bei
+           Kern.engstelleVorRundgang. */
+        const halt = kern.engstelleVorRundgang(auswahl, p);
+        if (halt) return { ...basis, ...(halt.ergebnis || {}) };
         const rundgangSchluessel = engere.join(",");
         if (kern.darf("suchen") && aufDerListe && STELLSCHRAUBEN.rundgang !== false && kern.lauf.rundgangFuer !== rundgangSchluessel) {
           kern.lauf.rundgangFuer = rundgangSchluessel;
@@ -4035,6 +4086,7 @@ const Werkzeugkasten = {
         // einmal ausgefuellt (sonst lief der Agent zweimal durch die Leiste)
         if (!passtJetzt()) {
           kern.sperreAn();
+          kern.phase("Füllt die Suchmaske aus");
           // Mehrere Abflughaefen kommen als "Hamburg, Muenchen" - codeText
           // macht daraus "HAM,MUC". Dieselbe Funktion prueft oben nach.
           const abFuerMaske = typeof Flug === "undefined" ? "" : Flug.codeText(p.flugAb);
@@ -4063,6 +4115,7 @@ const Werkzeugkasten = {
         kern.notieren("maske_abweichung", { soll: maskeText(), ist: location.search });
       }
       kern.sperreAn();
+      kern.phase("Stellt die Filter ein");
       // Kein "Filter zuruecksetzen" mehr: filterSetzen gleicht Soll und Ist
       // Haken fuer Haken ab und laesst stehen, was stimmt (03.10.2026)
       const gesetzt = await Werkzeuge.filterSetzen(Werkzeugkasten.filterWerte(p));
@@ -4082,8 +4135,9 @@ const Werkzeugkasten = {
          fuer die Erhebung waere es eine ungewollte Manipulation der
          Reihenfolge, also genau dessen, was untersucht werden soll. */
       const nach = p.sortierung === "preis" ? "preis-asc" : (p.sortierung === "bewertung" ? "rating" : null);
-      if (nach) await Werkzeuge.sortieren(nach);
+      if (nach) { kern.phase("Sortiert die Liste"); await Werkzeuge.sortieren(nach); }
       let gelesen = { daten: { treffer: [] } };
+      kern.phase("Geht die Trefferliste durch");
       if (darfEmpfehlen) gelesen = await Werkzeuge.ergebnisseLesen(8);
       // Erste Umschau: einmal ganz durch die Liste, ohne in Haeuser zu gehen
       else if (Werkzeuge.seite() === "results") await Werkzeuge.listeUeberfliegen();
@@ -4106,6 +4160,7 @@ const Werkzeugkasten = {
       // hatte - fuer die Person nicht von einer Behauptung zu unterscheiden.
       if (darfEmpfehlen && liste.length) {
         kern.sperreAn();
+        kern.phase("Liest Bewertungen");
         const sicht = await Werkzeuge.bewertungenSichten(liste.slice(0, 5).map((h) => h.id));
         kern.sperreAus();
         const gesichtet = sicht.daten?.gesichtet || [];
@@ -5011,20 +5066,55 @@ const Werkzeugkasten = {
            kleine Zahl zum ersten Mal sieht. Gemeldet am 06.10.2026: "Du
            wolltest 4 Haeuser, mit deinen Vorgaben passen aber nur 1" war
            richtig, nannte aber nicht den Grund (es war das Budget). */
-        let engSatz = "";
-        if (r.ids.length < gewuenscht) {
+        /* Zwei Zahlen, zwei Gruende - und sie duerfen sich nicht mischen.
+           --------------------------------------------------------------
+           Gemeldet am 05.11.2026: "Dann am Ende ist natuerlich
+           rausgekommen, dass es nur 3 Haeuser sind, obwohl es eigentlich
+           nur 2 sind. Also dann hat er sich da auch verrechnet."
+
+           Verrechnet hat er sich nicht, er hat zwei verschiedene Zahlen
+           in einen Satz gelegt:
+
+             passend (3)   was die Vorgaben erfuellt - katalogTreffer
+             vorgelegt (2) was davon preislich vergleichbar ist -
+                           vergleichsSet nimmt bewusst lieber zwei
+                           vergleichbare als drei unvergleichbare
+
+           Im Chat stand "mit deinen Vorgaben passen aber nur 2" neben
+           "ohne diese Vorgabe waeren es 27 statt 3". Beide Zahlen
+           stimmten, der erste Satz schob aber eine Entscheidung ueber die
+           Vergleichbarkeit den Vorgaben der Person zu.
+
+           Jetzt wird der Pool EINMAL berechnet und jede Zahl zu ihrem
+           eigenen Grund gesagt. */
+        const pool = (() => {
+          try { return Werkzeugkasten.katalogTreffer(p, Werkzeugkasten.filterAusStand(p)); } catch { return null; }
+        })();
+        const passend = pool ? pool.length : r.ids.length;
+        const zahl = (n) => Werkzeugkasten.artZahl(n, p);
+        let vorne = "";
+        if (passend < gewuenscht) {
+          let engSatz = "";
           try {
-            const pool = Werkzeugkasten.katalogTreffer(p, Werkzeugkasten.filterAusStand(p));
-            const e = Werkzeugkasten.engstelle(pool, p, kern.lauf);
-            if (e) engSatz = `${e.satz} `;
+            const e = pool && Werkzeugkasten.engstelle(pool, p, kern.lauf);
+            if (e) engSatz = ` ${e.satz}`;
           } catch { engSatz = ""; }
+          vorne = `Du wolltest ${zahl(gewuenscht)}, mit deinen Vorgaben passen aber nur ${passend}.${engSatz} `;
+          /* Und wenn davon noch einmal weniger vorgelegt werden, ist das
+             ein zweiter Grund und gehoert als solcher dazu - sonst steht
+             gleich darunter eine dritte Zahl ohne Erklaerung. */
+          if (r.ids.length < passend) {
+            vorne += `Davon lege ich dir ${r.ids.length} vor, die preislich beieinanderliegen. `;
+          }
+        } else if (r.ids.length < gewuenscht) {
+          // Kein Mangel, sondern eine Entscheidung - also auch so gesagt
+          vorne = `Von den ${zahl(passend)} lege ich dir ${r.ids.length} vor: `
+            + `Die liegen preislich beieinander und lassen sich wirklich vergleichen. `;
         }
-        const weniger = r.ids.length < gewuenscht
-          ? `Du wolltest ${gewuenscht} Häuser, mit deinen Vorgaben passen aber nur ${r.ids.length}. ${engSatz}`
-          : "";
-        kern.sagen(weniger + (r.ids.length === 1
-          ? `Ich sehe mir das Haus jetzt genauer an.`
-          : `Ich sehe mir die ${r.ids.length} Häuser jetzt der Reihe nach genauer an. Nach jedem sage ich dir Bescheid.`));
+        kern.sagen(vorne + (r.ids.length === 1
+          ? `Ich sehe mir ${Werkzeugkasten.artEins(p, true)} jetzt genauer an.`
+          : `Ich sehe mir die ${zahl(r.ids.length)} jetzt der Reihe nach genauer an. Nach jedem sage ich dir Bescheid.`));
+        const weniger = passend < gewuenscht;
         if (weniger) kern.notieren("weniger_als_gewuenscht", { gewuenscht, vorgelegt: r.ids.length });
         // Die Adresse der Liste festhalten. Der Brotkrumenpfad auf der
         // Hausseite fuehrt zu "results.html?type=hotel" - ohne Monat,
@@ -5049,6 +5139,7 @@ const Werkzeugkasten = {
         await Zeiger.warte(350);
         if (Zeiger.abbruch) { kern.sperreAus(); return gestoppt(); }
         kern.notieren("rundgang_ueber_liste", { naechstes: r.ids[r.i] });
+        kern.phase("Geht zurück zur Trefferliste");
         await hin(r.ids[r.i]);
         return { navigiert: true, stufe: 2 };
       }
@@ -5057,6 +5148,7 @@ const Werkzeugkasten = {
         const id = r.ids[r.i];
         const wunsch = (p.kriterien || []).map((k) => Politik.kriterium(k.id)).find((k) => k?.aspekt);
         kern.sperreAn();
+        kern.phase(`Sieht sich ${getItemById(id)?.name || "ein Haus"} an`);
         const e = await Werkzeuge.hausPruefen(id, {
           aspekt: wunsch?.label || "",
           verpflegung: p.verpflegung || null,
@@ -6719,6 +6811,31 @@ const Werkzeugkasten = {
           const w = wk.guenstigsterFlughafen(ziele, x.flugAbAuswahl);
           if (w) { x.flugAb = w.ab; return; }
         }
+        /* Kein blindes Frankfurt mehr (05.11.2026).
+           --------------------------------------------------------------
+           Gemeldet: "Zusaetzlich war auch noch die Problematik mit dem
+           Flughafen, dass man gefragt hat, okay, welcher Flughafen ist
+           denn der naechste von Lueneburg? Das hat er dann richtig
+           beantwortet. Aber dann fuehrte das dazu, dass er dann einfach
+           Frankfurt als Flughafen genommen hat, was ja gar keinen Sinn
+           macht."
+
+           Hier stand ein fester Ortsname als Rueckfall - ein Flughafen,
+           von dem nie die Rede war, und im Testlauf stand er im selben
+           Zug neben "Hamburg und Hannover sind die naechstgelegenen".
+           Dieselbe Rechnung wie bei genannten Flughaefen, nur ueber
+           alle: der guenstigste fuer die zulaessigen Ziele. Das ist eine
+           Annahme, die sich begruenden laesst, und der Satz sagt sie an.
+           Frankfurt bleibt nur, wenn gar nicht gerechnet werden kann. */
+        /* Ohne `typeof Flug`-Vorbehalt: guenstigsterFlughafen rechnet mit
+           dem Flugkatalog (FLIGHTS) und braucht das Seitenmodul nicht.
+           Die Abfrage haette den Rueckfall genau dort abgeschaltet, wo er
+           gebraucht wird - naemlich ueberall ausserhalb der Seite. */
+        if (!x.flugAb) {
+          const ziele = x.zielId ? [x.zielId] : (x.zieleErlaubt || []);
+          const w = wk.guenstigsterFlughafen(ziele, null);
+          if (w) { x.flugAb = w.ab; return; }
+        }
         x.flugAb = x.flugAb || "Frankfurt";
       }, satz: "von welchem Flughafen du rechnest und dass sie das aendern kann",
         selbst: (x) => `Ich rechne erst mal ab ${x.flugAb}. Du kannst den Flughafen jederzeit ändern.` },
@@ -6751,6 +6868,23 @@ const Werkzeugkasten = {
       if (t === "wuensche" && (p.kriterien || []).length) continue;
       // Keine Annahme fasst an, was die Person selbst gesagt hat
       if ((a.schreibt || []).some((f) => p.vonPerson?.[f])) continue;
+      /* Wer zurueckfragt, hat nicht abgelehnt (05.11.2026).
+         ----------------------------------------------------------------
+         "ich wohne in Lueneburg welcher bietet sich dann an?" ist keine
+         ausgebliebene Antwort, sondern eine Frage - und sie kam genau zu
+         dem Thema, das gerade offen war. Die Annahme griff trotzdem, weil
+         sie nur zaehlt, wie oft gefragt wurde. Im Chat stand damit die
+         richtige Auskunft ("Hamburg und Hannover") neben einer Annahme,
+         die ihr widersprach.
+
+         Einmal zurueckstellen, nicht abschaffen: Beim naechsten Zug
+         greift die Annahme doch, sonst liesse sich der Fahrplan mit
+         Rueckfragen beliebig aufhalten. Dasselbe Muster wie bei
+         `nichtVerstanden` direkt darunter. */
+      if (lauf.nachrichtArt === "frage" && !(lauf.frageAufschub || {})[t]) {
+        (lauf.frageAufschub ||= {})[t] = true;
+        continue;
+      }
       /* Erst nachfragen, dann annehmen.
          ----------------------------------------------------------------
          Hat die Person geantwortet und der Agent sie nicht verstanden
@@ -7739,8 +7873,7 @@ const Werkzeugkasten = {
     try { werte = lockern(p); } catch { werte = null; }
     if (!werte) return null;
     const wohnung = this.seitenTyp(p) === "apartment";
-    const art = wohnung ? "Wohnungen" : "Häuser";
-    const haeuser = (n) => `${n} ${n === 1 ? (wohnung ? "Wohnung" : "Haus") : art}`;
+    const haeuser = (n) => this.artZahl(n, p);
     const satz = `Mit deinen Vorgaben bleiben nur ${haeuser(e.jetzt)} übrig, und bei so wenigen `
       + `lässt sich schlecht vergleichen. Am meisten nimmt ${was} weg: ohne diese Vorgabe wären es `
       + `${e.ohne}. Soll ich die Suche ausweiten, oder ist dir die Vorgabe wichtig?`;

@@ -835,8 +835,36 @@ const AgentPanel = {
     // Spalte entfaellt.
     const schublade = () => document.body.classList.contains("agent-schublade");
 
+    /* In der Schublade laesst sich der Chat nicht mehr schliessen.
+       ------------------------------------------------------------------
+       Festlegung des Nutzers vom 05.11.2026, zum zweiten Mal und
+       ausdruecklich: "Dazu soll man den Chatbot nicht mehr schliessen
+       koennen. Ich weiss nicht, warum das immer noch nicht richtig wieder
+       hinterlegt ist, dass man den Chatbot immer noch schliessen kann.
+       Das soll nicht moeglich sein."
+
+       Was das kostet, steht hier, damit es spaeter niemand suchen muss:
+       Der Umsetzungsplan vom 01.11.2026 fuehrte Schliessvorgaenge als
+       MESSGROESSE ("Arm, Kennzeichnung, Arbeitsphasen und
+       Schliessvorgaenge stehen in der Zeile"). In Arm B war der
+       geschlossene Chat der einzige Weg zur Seite, und wer ihn wegklickt,
+       um selbst nachzusehen, zeigt genau das Pruefinteresse, das die
+       Erhebung misst. Diese Spalte faellt damit weg; `agent_geschlossen`
+       und `Studie.chatUmgeschaltet(false)` koennen nicht mehr auftreten.
+
+       Der Chat ist jetzt fest: eine Spalte, die steht, und in Arm B
+       waechst sie waehrend der Arbeit auf das ganze Bild. Mehr Zustaende
+       gibt es nicht. Das Zusammenklappen zur schmalen Spalte
+       (`agent-collapsed`) betrifft nur die Seitenleisten-Fassung und
+       bleibt unberuehrt. */
     const umschalten = (soll) => {
       if (!schmal() && !schublade()) { document.body.classList.toggle("agent-collapsed"); return; }
+      if (schublade() && soll !== true) {
+        // Offen halten statt kommentarlos nichts tun - der Aufruf kam von
+        // einem Bedienelement, das es in dieser Fassung nicht mehr gibt.
+        document.body.classList.add("agent-open");
+        return;
+      }
       const offen = soll === undefined
         ? document.body.classList.toggle("agent-open")
         : (document.body.classList.toggle("agent-open", soll), soll);
@@ -851,6 +879,20 @@ const AgentPanel = {
       if (typeof Studie !== "undefined") Studie.chatUmgeschaltet?.(offen, "kopf");
     };
     this.umschalten = umschalten;
+
+    /* Weg, nicht versteckt.
+       ------------------------------------------------------------------
+       Erst per CSS ausgeblendet - und die Seitenpruefung meldete daraufhin
+       "der Ausgang ist beschriftet": Sie las die Beschriftung des Kindes,
+       und dessen `display` bleibt eigen, auch wenn der Vater verborgen
+       ist. Ein Knopf, der nur unsichtbar ist, ist noch da: anklickbar fuer
+       Skripte, auffindbar fuer die Tastatur, zaehlbar fuer Pruefungen.
+       Also raus aus dem Baum. */
+    if (schublade()) {
+      document.getElementById("agentCollapse")?.remove();
+      document.getElementById("agentGriff")?.remove();
+      document.getElementById("agentReiter")?.remove();
+    }
 
     /* Griff: antippen oder wischen
        ------------------------------------------------------------------
@@ -885,7 +927,9 @@ const AgentPanel = {
       if (gemerkt !== "0") { document.body.classList.add("agent-open"); this.ungelesenLeeren(); }
     }
 
-    document.getElementById("agentCollapse").addEventListener("click", (e) => {
+    // Nur noch in der Seitenleisten-Fassung vorhanden - in der Schublade
+    // ist der Knopf oben aus dem Baum genommen.
+    document.getElementById("agentCollapse")?.addEventListener("click", (e) => {
       e.stopPropagation();
       umschalten();
     });

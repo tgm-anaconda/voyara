@@ -110,6 +110,11 @@ const Zugang = {
 
   reiterBauen() {
     if (document.getElementById("agentReiter")) return;
+    /* In der Schubladenfassung gibt es den Reiter nicht mehr (05.11.2026):
+       Der Chat laesst sich nicht schliessen, also braucht es keinen Weg
+       zurueck zu ihm. Ohne diese Zeile baute reiterBauen ihn wieder auf,
+       nachdem AgentPanel.mount ihn entfernt hat. */
+    if (document.body.classList.contains("agent-schublade")) return;
     const b = document.createElement("button");
     b.type = "button";
     b.id = "agentReiter";

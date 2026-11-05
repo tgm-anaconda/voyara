@@ -370,9 +370,23 @@ const STELLSCHRAUBEN = {
         offen = sessionStorage.getItem("voyara_chat_offen");
         eingezogen = sessionStorage.getItem("voyara_chat_eingezogen");
       } catch { /* egal */ }
-      /* Beim allerersten Mal bleibt der Chat zu und faehrt gleich sichtbar
-         ein (Kern.chatEinziehen). Danach steht er offen da wie bisher. */
-      if (offen !== "0" && eingezogen === "1") document.body.classList.add("agent-open");
+      /* Der Chat steht von Anfang an offen (05.11.2026).
+         ----------------------------------------------------------------
+         Bisher blieb er beim allerersten Mal zu und fuhr nach zwei
+         Sekunden sichtbar ein (Kern.chatEinziehen). Genau das hat der
+         Nutzer beschrieben: "als ich die Seite geoeffnet hatte, und dann
+         quasi aus dem Anfangsempfang rausgekommen war und auf die
+         offizielle Seite kam, war zuerst der Bot nicht richtig, war gar
+         kein Bot ausgeklappt, dann war er aufgeklappt" - und im selben
+         Atemzug: "der soll jetzt ja wieder fix sein".
+
+         Eine Spalte, die sich nicht schliessen laesst, darf nicht mit
+         einem Aufklappen beginnen. `offen` wird nicht mehr abgefragt, weil
+         "0" seit heute nicht mehr entstehen kann; `eingezogen` wird hier
+         gesetzt, damit chatEinziehen gar nicht erst anlaeuft. */
+      void offen; void eingezogen;
+      document.body.classList.add("agent-open");
+      try { sessionStorage.setItem("voyara_chat_eingezogen", "1"); } catch { /* egal */ }
     } else {
       document.body.classList.remove("agent-schublade");
       document.body.classList.remove("agent-fenster");
@@ -2298,7 +2312,25 @@ const Kern = {
              Die konservative Richtung ist in beiden Faellen die richtige:
              Eine ausgebliebene Entschuldigung kostet nichts, eine falsche
              kostet das Zutrauen in den Agenten. */
+          /* Wer gerade etwas uebernommen hat, entschuldigt sich nicht.
+             ------------------------------------------------------------
+             Gemeldet am 05.11.2026 aus dem Testlauf: Auf "lappland ist
+             fuer mich keine option" antwortete der Agent
+
+               "Ich habe Lappland ausgeschlossen. Entschuldige, das habe
+                ich nicht sicher verstanden."
+
+             - zwei Saetze, die einander widersprechen. Verstanden hatte
+             er es, `regionenLesen` hatte den Ausschluss uebernommen und
+             die Merkleiste zeigte ihn. Die Entschuldigung haengt aber am
+             OFFENEN THEMA des Fahrplans, und zu dem hatte sie nichts
+             gesagt.
+
+             `zuletztGemerkt` wird je Zug geleert und fuehrt, was der Kern
+             aus diesem Zug in den Stand uebernommen hat. Steht da etwas,
+             ist etwas angekommen - auch wenn es ein anderes Thema war. */
           const zeigtVerstaendnis = !!this.lauf.verworfenImZug
+            || (this.lauf.zuletztGemerkt || []).length > 0
             || !!Werkzeugkasten.themaWortImText(offen, text);
           /* Der mittlere Fall: unsicher, nicht unverstanden.
              ------------------------------------------------------------
@@ -3047,8 +3079,8 @@ const Kern = {
            des Nutzers vom 25.10.2026. */
         const zeile = Werkzeugkasten.logText(call.function.name, args, this.lauf.profil || {});
         if (zeile) this.logZeile(zeile, "schritt");
-        const phase = Werkzeugkasten.phaseText(call.function.name);
-        if (phase) AgentPanel.status(phase);
+        const phase = Werkzeugkasten.phaseText(call.function.name, this.lauf.profil || null);
+        if (phase) this.phase(phase);
       }
       let r;
       if (this.istAngehalten()) {
@@ -3520,6 +3552,52 @@ const Kern = {
     return aufenthalt + (paket?.gesamt || 0);
   },
 
+  /* Erst fragen, dann laufen.
+     ------------------------------------------------------------------
+     Gemeldet am 05.11.2026: "Dazu war auch ein fataler Fehler, dass er
+     direkt angefangen hat mit der Recherche... Aber er hat dann
+     trotzdem, obwohl nur 2 Hotels moeglich waren mit den Filtern, hat er
+     dann direkt gestartet und hat schon die Analyse auch gemacht von den
+     Seiten."
+
+     Die Rueckfrage bei sehr wenigen Treffern gab es laengst
+     (ENGSTELLE_FRAGE_GRENZE, Festlegung 01.11.2026) - sie hing nur an
+     der falschen Stelle. Der Kern stellt seine Fragen im Block
+     `if (!nachricht.tool_calls)`, also erst, wenn das Modell nichts mehr
+     aufruft. Solange es Werkzeuge ruft, kommt er nicht zu Wort. Der
+     Rundgang IST ein Werkzeugaufruf - die Frage stand damit zwangslaeufig
+     hinter einer Minute Arbeit, die sie haette verhindern sollen.
+
+     Hier wird dieselbe Frage so gestellt, wie der Budget-Halt direkt
+     darunter es tut: vom Kern, sofort, mit Chips, und das Modell
+     schweigt dazu. Gezaehlt wird dabei die Liste, die wirklich auf die
+     Vorgaben passt - nicht das Vergleichsset, das daraus gebaut wird.
+     Die beiden auseinanderzuhalten ist der zweite Teil desselben
+     Befunds, siehe `haeuser_ansehen`. */
+  engstelleVorRundgang(liste, p) {
+    if (!liste?.length || !this.lauf) return null;
+    if (liste.length >= Werkzeugkasten.ENGSTELLE_FRAGE_GRENZE) return null;
+    /* engstelle() haelt `lauf.letzteEngstelle` fest - ohne diesen Lauf
+       weiss die Rueckfrage nicht, woran es liegt. Einmal je Stand, der
+       Satz selbst wird hier nicht ausgegeben. */
+    try { Werkzeugkasten.engstelle(liste, p, this.lauf); } catch { /* dann eben ohne */ }
+    const ef = Werkzeugkasten.engstelleRueckfrage(p, this.lauf);
+    if (!ef) return null;
+    (this.lauf.engstelleGefragt ||= {})[ef.grund] = true;
+    this.sagen(ef.satz);
+    this.gespraechPush({ role: "assistant", content: ef.satz });
+    this.lauf.chipWirkung = ef.wirkung || null;
+    this.lauf.chipThema = null;
+    this.lauf.chips = ef.chips;
+    AgentPanel.setSuggestions(this.lauf.chips);
+    this.lauf.kernWartet = true;
+    this.notieren("engstelle_vor_rundgang", { feld: ef.grund, treffer: liste.length });
+    this.sichern();
+    return { ergebnis: { nichtVorgelegt: true, grund: "zu wenige Treffer",
+      hinweis: "Der Chat hat die Person gefragt, ob die Suche ausgeweitet werden soll. "
+        + "Ruf KEIN Werkzeug und schreib nichts dazu - die Frage steht schon im Chat." } };
+  },
+
   budgetVorVorlage(kandidaten, p) {
     const budget = p.budgetGesamt;
     if (!budget || !p.naechte || !kandidaten.length) return null;
@@ -3532,7 +3610,7 @@ const Kern = {
     const name = (x) => (x.k.item || getItemById(x.k.id))?.name || x.k.id;
     if (ueber.length === preise.length && this.lauf.budgetBestaetigt !== budget) {
       const billig = Math.min(...preise.map((x) => x.gesamt));
-      const satz = `Bevor ich dir die Vorschläge zeige: Keines der passenden Häuser liegt in deinem Budget von ${euro(budget)}. `
+      const satz = `Bevor ich dir die Vorschläge zeige: Keine der passenden ${Werkzeugkasten.artWort(p, true)} liegt in deinem Budget von ${euro(budget)}. `
         + `Das günstigste kostet ${euro(billig)} für ${p.naechte} Nächte${p.flug ? " mit Flug" : ""}. `
         + "Soll ich sie dir trotzdem zeigen, oder ändern wir etwas am Budget oder an den Vorgaben?";
       this.sagen(satz);
@@ -4245,6 +4323,33 @@ const Kern = {
      versehentlicher Klick als Uebernahme. Ab jetzt ist jede eine
      Entscheidung - dafuer sind die Zahlen mit frueheren Testlaeufen
      nicht mehr vergleichbar. */
+  /* Was er gerade tut, nicht nur dass er etwas tut.
+     ------------------------------------------------------------------
+     Gemeldet am 05.11.2026: "Die Information links, was der Agent gerade
+     macht, war nicht richtig und auch nicht spezifisch genug. Da stand
+     dann einfach nur die ganze Zeit, sucht passende Unterkuenfte. Aber
+     als er zum Beispiel die Filter gesetzt hat, sollte dort stehen,
+     setzt Filter. Dann, wenn er auf der Hauptseite ist, sucht
+     Unterkuenfte. Wenn er die Bewertungen durchliest, analysiert
+     Bewertungen."
+
+     Er hat recht, und der Grund lag im Zuschnitt: Die Phase wurde je
+     WERKZEUGAUFRUF gesetzt, und `suchen` ist ein einziger Aufruf, der
+     die Maske fuellt, die Filter stellt, sortiert, die Liste abfaehrt
+     und Bewertungen sichtet. Eine Zeile fuer eine halbe Minute Arbeit.
+
+     `phase()` ist dieselbe Anzeige, nur auch von innen aufrufbar. Die
+     Texte bleiben in beiden Armen gleich (siehe Werkzeugkasten.PHASEN),
+     und sie stehen im Protokoll - die erlebte Dauer ist eine Messgroesse,
+     also muss nachvollziehbar sein, was in welcher Phase wie lange
+     sichtbar war. */
+  phase(text) {
+    if (!text || this._phase === text) return;
+    this._phase = text;
+    if (typeof AgentPanel !== "undefined") AgentPanel.status(text);
+    this.notieren?.("phase", { text });
+  },
+
   sperreAn() {
     if (document.getElementById("agentSperre")) return;
     const sperre = document.createElement("div");
@@ -4363,6 +4468,18 @@ const Kern = {
     const k = rail ? rail.getBoundingClientRect() : null;
     const daneben = k && k.width > 0 && k.right < window.innerWidth - 40;
     sperre.style.left = daneben ? `${Math.round(k.right)}px` : "0px";
+    /* Oben, aber nicht auf der Kopfzeile (05.11.2026).
+       ----------------------------------------------------------------
+       Die Leiste steht seit heute oben statt unten. Liegt die Seite
+       daneben, deckte sie dort die Suchleiste der Seite ab - sichtbar
+       bleiben soll aber, woran der Agent arbeitet. Also unter die
+       Kopfzeile, solange eine da ist. In Arm B deckt der Chat das ganze
+       Bild, dort gibt es keine Kopfzeile zu schonen und der Wert bleibt
+       beim Vorgabewert aus dem Stylesheet. */
+    const kopf = daneben ? document.querySelector(".site-header") : null;
+    const unten = kopf ? Math.round(kopf.getBoundingClientRect().bottom) : 0;
+    if (unten > 0) sperre.style.setProperty("--sperre-oben", `${unten + 12}px`);
+    else sperre.style.removeProperty("--sperre-oben");
   },
 
   sperreAus() {
@@ -4569,8 +4686,8 @@ const Kern = {
     regionen_zaehlen: "die Regionen durchgezählt habe",
     regionen_vergleichen: "die Regionen verglichen habe",
     monate_vergleichen: "die Monate verglichen habe",
-    stichprobe_nehmen: "mir Häuser von innen angesehen habe",
-    haeuser_ansehen: "die Häuser durchgegangen bin",
+    stichprobe_nehmen: "mir {art} von innen angesehen habe",
+    haeuser_ansehen: "die {art} durchgegangen bin",
     haus_details: "mir ein Haus genauer angesehen habe",
     haus_oeffnen: "ein Haus geöffnet habe",
     bewertungen_lesen: "die Bewertungen gelesen habe",
@@ -4588,7 +4705,8 @@ const Kern = {
     const mitten = !!(this.lauf.ausstehend || this.laeuft);
     if (h.text && !mitten) this.gespraechPush({ role: "user", content: h.text });
     const buchung = h.werkzeug === "buchung_abschliessen";
-    const taetigkeit = this.ANHALT_TAETIGKEIT[h.werkzeug] || "gearbeitet habe";
+    const taetigkeit = (this.ANHALT_TAETIGKEIT[h.werkzeug] || "gearbeitet habe")
+      .replace("{art}", Werkzeugkasten.artWort(this.lauf.profil || {}, true));
     const satz = buchung
       ? "Ich habe angehalten und nichts gebucht. Soll ich die Buchung doch abschließen?"
       : h.untaetig

@@ -612,10 +612,11 @@ const Seitenpruefung = {
     const offen = document.body.classList.contains("agent-open");
     if (!rail) { this.befund("Arm B", "Kein #agentRail auf der Seite"); return; }
     if (!offen) {
-      // Geschlossener Zustand: dann MUSS der Weg zurueck sichtbar sein
-      const reiter = document.getElementById("agentReiter");
-      if (!reiter) this.befund("Arm B", "Chat ist zu und es gibt keinen Weg zurueck (#agentReiter fehlt)");
-      else this.bestanden();
+      /* Bis zum 05.11.2026 war ein geschlossener Chat ein erlaubter
+         Zustand, und geprueft wurde nur, ob es einen Weg zurueck gibt.
+         Seit der Chat fest ist, darf dieser Zustand nicht mehr
+         vorkommen - er waere in Arm B eine offene Seite mitten im Zug. */
+      this.befund("Arm B", "Der Chat ist geschlossen - in dieser Fassung darf das nicht mehr vorkommen");
       return;
     }
 
@@ -684,19 +685,23 @@ const Seitenpruefung = {
         erstes: umrandet[0].className });
     } else this.bestanden();
 
-    // 5. Beschrifteter Ausgang
-    const zu = document.getElementById("agentCollapse");
-    const text = zu?.querySelector(".agent-zu-text");
-    const sichtbar = text && window.getComputedStyle(text).display !== "none";
-    const gesperrt = document.body.classList.contains("agent-gesperrt");
-    // Unter 1040 Pixeln bleibt es absichtlich beim Kreuz: Dort bricht der
-    // Name des Assistenten um und der Knopf laege auf ihm. Gilt in beiden
-    // Armen gleich; die Erhebung laeuft am Rechner.
-    const schmal = window.matchMedia("(max-width: 1040px)").matches;
-    if (!zu) this.befund("Arm B", "Kein Schliessknopf (#agentCollapse) im Chatkopf");
-    else if (gesperrt || schmal) this.bestanden();   // waehrend der Arbeit und auf schmalen Fenstern absichtlich ohne Wort
-    else if (!sichtbar) this.befund("Arm B", "Der Ausgang ist nur ein Kreuz - die Beschriftung fehlt");
-    else this.bestanden();
+    /* 5. Kein Ausgang - und zwar wirklich keiner (05.11.2026)
+       ----------------------------------------------------------------
+       Hier stand bis heute das Gegenteil: "Der Weg nach draussen ist
+       beschriftet, nicht nur ein Kreuz." Seit der Chat sich nicht mehr
+       schliessen laesst (Festlegung des Nutzers), ist das keine
+       Anforderung mehr, sondern ein Fehler.
+
+       Die alte Fassung haette den Umbau auch gar nicht bemerkt: Sie las
+       `display` der BESCHRIFTUNG, und das bleibt "inline", auch wenn der
+       Knopf darueber auf `display: none` steht. Ein per CSS verborgener
+       Knopf waere also als "beschrifteter Ausgang" durchgegangen. Jetzt
+       wird gefragt, was wirklich zaehlt: Ist das Element noch im Baum? */
+    for (const id of ["agentCollapse", "agentGriff", "agentReiter"]) {
+      const el = document.getElementById(id);
+      if (el) this.befund("Arm B", `#${id} ist noch da - der Chat laesst sich schliessen`, { id });
+      else this.bestanden();
+    }
 
     // 6. Log ueber dem Chat
     const bubble = document.querySelector(".log-bubble");

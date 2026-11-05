@@ -1605,8 +1605,25 @@ body.agent-collapsed .agent-head .icon-btn { margin-left: 0; transform: rotate(4
 }
 .sperre-uhr:empty { display: none; }
 
+/* Mittig ueber der SEITE, nicht ueber dem Fenster - und oben.
+   ------------------------------------------------------------------
+   Gemeldet am 05.11.2026: "Dazu wuerde ich mich freuen, dass der
+   Assistent arbeitet gerade mit dem Agent anhalten, mittig ist, nicht
+   von der ganzen Seite, sondern nur von dem Viewport rechts, also den
+   Chat da unabhaengig betrachtet. Und zusaetzlich koennen wir uns da
+   nochmal ueberlegen, ob er mittig unten oder oben platziert werden
+   sollte, weil ich finde, oben ist eher intuitiver und faellt eher
+   auf."
+
+   Die Leiste stand auf `position: fixed; left: 50%` und war damit auf
+   das FENSTER zentriert - also auch ueber die 380 Pixel Chatspalte
+   hinweg. `#agentSperre` beginnt laengst am rechten Rand der Spalte
+   (Kern.sperreAusrichten), nur nahm die Leiste daran nicht teil.
+   `absolute` statt `fixed` haengt sie an diesen Rahmen: In Arm A sitzt
+   sie damit mittig ueber der Seite, in Arm B ueber dem ganzen Bild -
+   dort IST der Chat das ganze Bild, und die Sperre beginnt bei 0. */
 .sperre-leiste {
-  position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%);
+  position: absolute; left: 50%; top: var(--sperre-oben, 14px); bottom: auto; transform: translateX(-50%);
   display: flex; align-items: center; gap: 10px;
   background: var(--ink-900); color: #fff;
   font-family: var(--font-body); font-size: .8rem;
@@ -2194,7 +2211,7 @@ body.agent-schublade .agent-input { padding-bottom: 12px; }
   /* Die Leiste ist jetzt die einzige Anzeige: etwas hoeher ueber dem
      Home-Balken und breiter, weil die Phase darin steht. */
   body.agent-schublade:not(.agent-vollbild).agent-gesperrt .sperre-leiste {
-    bottom: max(20px, env(safe-area-inset-bottom));
+    top: max(12px, env(safe-area-inset-top));
     max-width: calc(100vw - 24px);
   }
   body.agent-schublade:not(.agent-vollbild).agent-gesperrt .sperre-hinweis {
@@ -2362,6 +2379,17 @@ body.agent-schublade .agent-zu-text { display: inline; font-size: .76rem; font-w
    Nachpruefen bleibt also in beiden Armen dieselbe. Die Leiste "Der
    Assistent arbeitet gerade" steht dabei sichtbar im Bild. */
 body.agent-vollbild.agent-gesperrt #agentCollapse { visibility: hidden; }
+
+/* Kein Ausgang mehr aus dem Chat (05.11.2026).
+   ------------------------------------------------------------------
+   Siehe die Begruendung in components.js bei `umschalten`: Der Chat ist
+   in der Schubladenfassung fest. Schliessknopf, Griff und Reiter sind
+   damit Bedienelemente ohne Funktion - sie stehen nicht mehr im Bild.
+   Die Regeln sind bewusst ans Ende gestellt, damit sie die
+   Telefonregeln weiter oben schlagen, ohne dass dort etwas entfaellt. */
+body.agent-schublade #agentCollapse,
+body.agent-schublade #agentGriff,
+body.agent-schublade .agent-reiter { display: none !important; }
 
 /* Kein Rollbalken, solange der Vollbild-Chat offen ist.
    Die Seite bleibt scrollbar - der Agent muss sie scrollen koennen -,

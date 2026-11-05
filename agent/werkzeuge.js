@@ -583,7 +583,7 @@ const Werkzeuge = {
       await Zeiger.lies(karte, { dauer: 420, hinweis: "vergleiche" });
     };
     const r = await this.scrollDurch({
-      elemente: alle, halte: karten, beiHalt, zaehlwort: "Häusern", tempoMs: 22,
+      elemente: alle, halte: karten, beiHalt, zaehlwort: Werkzeugkasten.artWortJetzt(true), tempoMs: 22,
     });
     // Dieselbe Selbstpruefung wie bei den Bewertungen: Steht die Seite still,
     // waehrend der Agent "vergleicht", steht das im Protokoll. Bei wenigen
@@ -841,14 +841,14 @@ const Werkzeuge = {
       if (typeof Kern !== "undefined") Kern.notieren?.("haus_ueberflogen", { name, nr });
     };
 
-    const r = await this.scrollDurch({ elemente: karten, halte, beiHalt, zaehlwort: "Häusern", tempoMs: 22 });
+    const r = await this.scrollDurch({ elemente: karten, halte, beiHalt, zaehlwort: Werkzeugkasten.artWortJetzt(true), tempoMs: 22 });
     // Dieselbe Selbstpruefung wie bei den Bewertungen
     if (!r.gescrollt && karten.length > 6 && typeof Kern !== "undefined") {
       Kern.notieren?.("scroll_ohne_wirkung", { wo: "trefferliste_ueberflogen", karten: karten.length });
     }
     return {
       ok: true,
-      text: `${karten.length} Häuser durchgesehen.`,
+      text: `${Werkzeugkasten.artZahl(karten.length, Kern.lauf?.profil || {})} durchgesehen.`,
       daten: { karten: karten.length, gescrollt: r.gescrollt, angesehen: gesehen },
     };
   },
@@ -1137,6 +1137,7 @@ const Werkzeuge = {
     if (!item) return { ok: false, text: `${id} kenne ich nicht.` };
     const schritte = [];
 
+    if (typeof Kern !== "undefined") Kern.phase?.("Liest Bewertungen");
     const b = await this.bewertungenLesen(id, { aspekt, anzahl: 3 });
     if (b.daten?.durchgesehen) schritte.push(`${b.daten.durchgesehen.toLocaleString("de-DE")} Bewertungen durchgesehen`);
     else if (b.daten?.sichtbarGelesen) schritte.push(`${b.daten.sichtbarGelesen} Bewertungen gelesen`);
