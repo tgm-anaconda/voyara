@@ -638,7 +638,12 @@ const Kernpruefung = {
     for (const p of this.staende().slice(0, 300)) {
       for (const t of themen) {
         const probe = JSON.parse(JSON.stringify(p));
-        const lauf = { gespraech: [], gefragtWie: { [t]: 2 } };
+        /* Zweimal gefragt UND zweimal keine Antwort: Seit dem 06.11.2026
+           haengt die Annahme am zweiten Zaehler (ohneAntwort), weil eine
+           Rueckfrage keine ausgebliebene Antwort ist. Ohne ihn liefe
+           diese Pruefung ins Leere - sie fiele nicht auf, sie wuerde
+           nur nichts mehr pruefen. */
+        const lauf = { gespraech: [], gefragtWie: { [t]: 2 }, ohneAntwort: { [t]: 2 } };
         let fp = null;
         try { fp = Werkzeugkasten.fahrplan(probe, lauf); }
         catch (e) { fehler.push({ art: "annahme_absturz", thema: t, text: String(e && e.message), satz: "" }); continue; }

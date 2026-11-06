@@ -155,8 +155,12 @@ const gespr = [{ role: "user", content: "nicht nach Lissabon oder Marrakesch" }]
   // Wer dreimal gefragt wurde und nie etwas genannt hat, bekommt wie
   // bisher die Annahme ("keine besondere Ausstattung") - sonst dreht sich
   // das Gespraech im Kreis. Nur ueber einen GENANNTEN Wunsch geht sie nicht.
+  /* `ohneAntwort` steht seit dem 06.11.2026 daneben: Die Annahme haengt
+     nicht mehr daran, wie oft gefragt wurde, sondern daran, wie oft keine
+     Antwort kam. Gemeint ist hier derselbe Fall wie vorher - dreimal
+     gefragt, dreimal nichts genannt. */
   pruefe("ohne jeden Wunsch greift die Annahme",
-    fertigWuensche({ ...basis, kriterien: [] }, { gefragtWie: { wuensche: 3 }, gespraech: [], besprochen: {}, nichtVerstanden: {} }), true);
+    fertigWuensche({ ...basis, kriterien: [] }, { gefragtWie: { wuensche: 3 }, ohneAntwort: { wuensche: 3 }, gespraech: [], besprochen: {}, nichtVerstanden: {} }), true);
   pruefe("'keine besondere Ausstattung' schliesst weiter ab",
     fertigWuensche({ ...basis, kriterien: [], ausstattungEgal: true }, { gefragtWie: {}, gespraech: [], besprochen: {} }), true);
 

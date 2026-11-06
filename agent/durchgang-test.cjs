@@ -2,7 +2,7 @@
  *
  *   node agent/durchgang-test.cjs         der jetzige Stand, erwartet 0 falsch
  *   node agent/durchgang-test.cjs --alt   Gegenprobe am Stand davor
- *                                         (_backup/2026-11-05-befunde/)
+ *                                         (_backup/2026-11-06-vollbild-fahrplan/)
  *
  * Geprueft wird, was Logik ist:
  *
@@ -29,7 +29,7 @@
 const fs = require("fs"), vm = require("vm");
 const B = "/Users/tom-gabrielmielicki/Desktop/Bachelor Arbeit/Website/";
 const alt = process.argv.includes("--alt");
-const quelle = alt ? B + "_backup/2026-11-05-befunde/" : B;
+const quelle = alt ? B + "_backup/2026-11-06-vollbild-fahrplan/" : B;
 
 const ctx = { console, window: {},
   document: { querySelectorAll: () => [], querySelector: () => null, getElementById: () => null,
@@ -182,8 +182,11 @@ pruefe("Nicht zweimal fuer dasselbe Feld", zweimal, null);
    steht danach im Stand? Frankfurt waere der alte Rueckfall. */
 const flugProfil = () => ({ flug: true, typ: "hotel", monat: 10, naechte: 7,
   erwachsene: 2, kinder: 0, richtung: "kalt", vonPerson: {} });
-const flugLauf = () => ({ gefragtWie: { flugAb: 2 }, besprochen: {}, profil: null,
-  nachrichtArt: "antwort", protokoll: [] });
+/* `ohneAntwort` ist seit dem 06.11.2026 der Zaehler, an dem die Annahme
+   haengt - zweimal gefragt UND zweimal keine Antwort. `gefragtWie` steht
+   weiter daneben, es bestimmt nur noch die Formulierung der Frage. */
+const flugLauf = () => ({ gefragtWie: { flugAb: 2 }, ohneAntwort: { flugAb: 2 },
+  besprochen: {}, profil: null, nachrichtArt: "antwort", protokoll: [] });
 const p4 = flugProfil(); const l4 = flugLauf();
 try { WK.fahrplan(p4, l4); } catch { /* der Fahrplan braucht mehr Welt, die Annahme reicht */ }
 pruefe("Flughafen gesetzt", typeof p4.flugAb === "string" && p4.flugAb.length > 0, true);
@@ -246,6 +249,147 @@ pruefe("Engstellen-Lage: der Fall hat wirklich zwei Treffer", engTreffer, 2);
 pruefe("Engstellen-Lage: nur EIN Superlativ im Satz", zaehlSuperlativ(engSatz), 1);
 pruefe("Engstellen-Lage: das Angebot zu lockern steht drin",
   /lockern soll/.test(engSatz), true);
+
+/* ====================================================================
+   8. Rueckfrage und Korrektur sind keine ausgebliebenen Antworten
+   --------------------------------------------------------------------
+   Gemeldet am 06.11.2026: Auf "Hotel oder Ferienwohnung?" kam erst
+   "wann zaehlt man als Kind?", dann "dann sind wir doch 2 Erwachsene und
+   ein Kind". Der Kern zaehlte zwei vergebliche Anlaeufe, nahm "beides"
+   an und erzwang im selben Zug die Suche.
+
+   Geprueft wird die ganze Kette: die Wertung im Kern, der Zaehler, an
+   dem die Annahme haengt, und der Zwang zur Suche.
+   ==================================================================== */
+const kernStub = () => ({
+  lauf: { gefragtVorher: "art", antwortGewertet: false, frageBeantwortet: null,
+    nachrichtArt: "antwort", ohneAntwort: {}, klaertNoch: {} },
+  notieren() {},
+  antwortWerten: KN.antwortWerten,
+});
+/* Die Gegenprobe laeuft gegen einen Kern, der antwortWerten noch gar
+   nicht kennt. Dann soll die Pruefung FEHLSCHLAGEN und nicht abstuerzen -
+   ein Absturz misst eine fehlende Funktion, kein falsches Verhalten. */
+const werte = (urteil, art = "antwort", vor = {}) => {
+  const k = kernStub();
+  Object.assign(k.lauf.ohneAntwort, vor);
+  k.lauf.frageBeantwortet = urteil;
+  k.lauf.nachrichtArt = art;
+  if (typeof k.antwortWerten !== "function") return { ohneAntwort: { art: "antwortWerten fehlt" } };
+  k.antwortWerten();
+  return k.lauf;
+};
+pruefe("Rueckfrage zaehlt nicht als ausgebliebene Antwort",
+  werte("nein_klaert_noch").ohneAntwort.art || 0, 0);
+pruefe("Korrektur zaehlt nicht als ausgebliebene Antwort",
+  werte("nein_klaert_noch", "einwand").ohneAntwort.art || 0, 0);
+pruefe("Echtes Ausweichen zaehlt", werte("nein").ohneAntwort.art, 1);
+pruefe("Ohne Auskunft des Modells zaehlt es wie bisher",
+  werte(null).ohneAntwort.art, 1);
+pruefe("Eine Antwort setzt den Zaehler zurueck",
+  werte("ja", "antwort", { art: 1 }).ohneAntwort.art, 0);
+// Dreimal klaeren ohne je zu antworten: dann zaehlt es doch, sonst
+// liesse sich der Fahrplan mit Rueckfragen beliebig aufhalten
+let kDrei = kernStub();
+for (let i = 0; i < 3 && typeof kDrei.antwortWerten === "function"; i++) {
+  kDrei.lauf.antwortGewertet = false;
+  kDrei.lauf.frageBeantwortet = "nein_klaert_noch";
+  kDrei.antwortWerten();
+}
+pruefe("Dreimal klaeren ohne Antwort zaehlt doch", kDrei.lauf.ohneAntwort.art, 1);
+
+/* Die Annahme haengt am neuen Zaehler, nicht mehr an der Zahl der
+   Fragen. Derselbe Stand wie im gemeldeten Fall: zweimal nach der Art
+   gefragt, beide Male hat die Person geklaert statt geantwortet. */
+const artProfil = () => ({ monat: 12, naechte: 5, erwachsene: 2, kinder: 1,
+  kinderAlter: [17], zielOffen: true, flug: false, vonPerson: {} });
+const pA = artProfil();
+try { WK.fahrplan(pA, { gefragtWie: { art: 2 }, ohneAntwort: {}, besprochen: {}, protokoll: [] }); } catch { /* egal */ }
+pruefe("Zweimal gefragt, aber geklaert: keine Annahme zur Art",
+  !pA.artEgal && !pA.artGenannt, true);
+const pB = artProfil();
+try { WK.fahrplan(pB, { gefragtWie: { art: 2 }, ohneAntwort: { art: 2 }, besprochen: {}, protokoll: [] }); } catch { /* egal */ }
+pruefe("Zweimal ausgewichen: Annahme zur Art greift", !!pB.artEgal, true);
+
+/* Und die Suche laeuft nicht im selben Zug los, in dem die Annahme
+   gerade erst gefallen ist. */
+const laufC = { gefragtWie: { art: 2 }, ohneAntwort: { art: 2 }, besprochen: {},
+  protokoll: [], zugSeit: 1000, gesuchtMit: null };
+const pC = artProfil();
+let zwangC = null;
+try { zwangC = WK.zwang(pC, laufC); } catch (e) { zwangC = "FEHLER " + e.message; }
+pruefe("Annahme-Zug: noch keine Suche", zwangC !== "suchen", true);
+// Im naechsten Zug schon
+laufC.zugSeit = 2000;
+let zwangD = null;
+try { zwangD = WK.zwang(pC, laufC); } catch (e) { zwangD = "FEHLER " + e.message; }
+pruefe("Naechster Zug: jetzt wird gesucht", zwangD, "suchen");
+
+/* ====================================================================
+   9. Der Monat: ein Entschluss, nicht zwei
+   --------------------------------------------------------------------
+   Gemeldet am 06.11.2026: "Er hat gesagt, okay, dann empfehle ich
+   Dezember, hat aber trotzdem fuer Januar, Maerz und so rausgesucht."
+   Die stille Annahme und der sichtbare Vergleich liefen gleichzeitig.
+   ==================================================================== */
+const laufAnnahme = () => ({
+  uebersprungen: { zeit: true },
+  annahmeOffen: [{ thema: "zeit", text: "Ich nehme Dezember.", felder: { monat: 12 } },
+    { thema: "dauer", text: "Ich rechne mit einer Woche.", felder: { naechte: 7 } }],
+  uebersprungenNotiert: { zeit: true },
+});
+/* Wie oben bei antwortWerten: Kennt der alte Code die Funktion nicht,
+   soll die Pruefung fehlschlagen statt abzustuerzen. */
+const zurueckNehmen = (k, t) => (typeof WK.annahmeZuruecknehmen === "function"
+  ? WK.annahmeZuruecknehmen(k, t) : "annahmeZuruecknehmen fehlt");
+const kAn = { lauf: laufAnnahme(), notieren() {} };
+const zurueck = zurueckNehmen(kAn, "zeit");
+pruefe("Annahme zur Zeit wird zurueckgenommen", zurueck, true);
+pruefe("Ihr Satz steht nicht mehr an",
+  kAn.lauf.annahmeOffen.some((x) => x.thema === "zeit"), false);
+pruefe("Andere Annahmen bleiben unberuehrt",
+  kAn.lauf.annahmeOffen.map((x) => x.thema), ["dauer"]);
+pruefe("Nichts zurueckzunehmen meldet auch nichts",
+  zurueckNehmen({ lauf: { annahmeOffen: [] } }, "zeit"), false);
+
+/* Und der Satz der Rechnung nennt die richtige Zahl Monate. Im
+   gemeldeten Fall waren es vier, im Chat stand "die drei Monate". */
+const monatProfil = { typ: "hotel", artGenannt: true, erwachsene: 2, kinder: 0, naechte: 7, zielOffen: true };
+const satzVier = WK.monatWaehlen(monatProfil, [12, 1, 2, 3])?.satz || "";
+const satzZwei = WK.monatWaehlen(monatProfil, [6, 7])?.satz || "";
+pruefe("Vier verglichene Monate heissen nicht drei", /\bdrei\b/.test(satzVier), false);
+pruefe("Zwei verglichene Monate heissen nicht drei", /\bdrei\b/.test(satzZwei), false);
+pruefe("Der Satz laedt genau einmal zum Widerspruch ein",
+  (satzVier.match(/Sag (gern )?Bescheid/g) || []).length, 1);
+
+/* Und der Rahmen um diesen Satz, der ihn bisher verdoppelt hat. Er
+   entsteht im Fahrplan, also wird er dort abgeholt: Monat offen, zweimal
+   ohne Antwort - dann legt ANNAHME.zeit ihren Satz in annahmeOffen. */
+const zeitProfil = { typ: "hotel", artGenannt: true, erwachsene: 2, kinder: 0,
+  naechte: 7, zielOffen: true, flug: false, vonPerson: {} };
+const zeitLauf = { gefragtWie: { zeit: 2 }, ohneAntwort: { zeit: 2 }, besprochen: {}, protokoll: [] };
+try { WK.fahrplan(zeitProfil, zeitLauf); } catch { /* egal */ }
+const zeitSatz = (zeitLauf.annahmeOffen || []).find((x) => x.thema === "zeit")?.text || "";
+pruefe("Monatsannahme: der Satz steht ueberhaupt da", zeitSatz.length > 0, true);
+pruefe("Monatsannahme: nur einmal verglichen",
+  (zeitSatz.match(/verglichen/g) || []).length, 1);
+pruefe("Monatsannahme: nur einmal Bescheid sagen",
+  (zeitSatz.match(/Sag (gern )?Bescheid/g) || []).length, 1);
+
+/* Und der Auftrag ans Modell unterscheidet die beiden Faelle: Wer
+   klaert, bekommt nicht vorgehalten, nicht geantwortet zu haben. */
+const auftrag = (klaert) => {
+  const pp = { typ: "hotel", artGenannt: true, erwachsene: 2, kinder: 0, monat: 7,
+    naechte: 7, zielOffen: true, flug: false, vonPerson: {} };
+  delete pp.naechte;
+  const l = { gefragtWie: { dauer: 1 }, ohneAntwort: {}, klaertNoch: klaert ? { dauer: 1 } : {},
+    besprochen: {}, protokoll: [] };
+  try { return String(WK.fahrplan(pp, l).frage || ""); } catch (e) { return "FEHLER " + e.message; }
+};
+pruefe("Klaerende Rueckfrage: erst ihre Sache zu Ende",
+  /ZUERST ihre Sache zu Ende/.test(auftrag(true)), true);
+pruefe("Echtes Ausweichen: der alte Auftrag bleibt",
+  /nicht eingegangen/.test(auftrag(false)), true);
 
 console.log(`\n${gut} richtig, ${schlecht} falsch`);
 process.exit(schlecht ? 1 : 0);

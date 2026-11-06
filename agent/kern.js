@@ -363,7 +363,22 @@ const STELLSCHRAUBEN = {
     if (fenster || STELLSCHRAUBEN.zugang === "schublade") {
       document.body.classList.add("agent-schublade");
       document.body.classList.toggle("agent-fenster", fenster);
-      document.body.classList.toggle("agent-vollbild", dauer);
+      /* Das Vollbild ueberlebt den Seitenwechsel (06.11.2026).
+         ----------------------------------------------------------------
+         Es stand bisher nur bei `fensterDauer` hier, und im Hybrid kam es
+         nach einem Seitenwechsel erst mit dem naechsten Schritt der
+         Werkzeugkette zurueck - nach dem Ladevorhang (1500 ms) und der
+         Wartezeit vor dem Fortsetzen (600 ms). Dazwischen lag Arm B als
+         380 Pixel breite Schublade mit voll sichtbarer Seite da, bei
+         jedem Wechsel zur Hausseite und zurueck.
+
+         Der Merker sagt, ob der Agent mitten im Zug ist; dieselbe Quelle,
+         aus der die Kopfzeile schon den dunklen Vorhang zieht. Damit
+         deckt das Vollbild die Seite vom ersten Zeichnen an, und der
+         Vorhang geht in es ueber statt in die Seite. */
+      let arbeitet = false;
+      try { arbeitet = sessionStorage.getItem("voyara_arbeitet") === "1"; } catch { /* egal */ }
+      document.body.classList.toggle("agent-vollbild", dauer || (fenster && arbeitet));
       let offen = null;
       let eingezogen = null;
       try {
@@ -1052,6 +1067,12 @@ const Kern = {
     // Ein Werkzeug hatte die Seite gewechselt: dort weitermachen
     if (this.lauf.ausstehend) {
       AgentPanel.arbeitetAn();
+      /* Sperre und Vollbild sofort, nicht erst mit dem naechsten Schritt
+         (06.11.2026). Beide sind mit der alten Seite verschwunden; bis
+         fortsetzenNachLaden 600 ms spaeter das naechste Werkzeug anwirft,
+         stuende die Seite sonst offen und bedienbar da - in Arm B sogar
+         voll sichtbar. Das war die groesste der gemeldeten Luecken. */
+      this.sperreAn();
       // Nach einem Seitenwechsel mitten im Zug: Die Anzeige ist mit dem
       // alten Kasten verschwunden und wird hier neu aufgebaut.
       const weiter = this.weiterText();
@@ -1061,6 +1082,15 @@ const Kern = {
     } else if (this.lauf.phase === "gespraech" && this.lauf.verlauf.length) {
       AgentPanel.status("online");
     }
+    /* Die Notbremse zum Vollbild ueber den Seitenwechsel.
+       ------------------------------------------------------------------
+       Oben wird es aus dem Merker gesetzt, bevor der Lauf geladen ist -
+       das muss so sein, sonst blitzt die Seite auf. Hier ist der Lauf da,
+       und damit die Gegenprobe: Liegt gar keine Werkzeugkette an, war der
+       Merker ein Rest (die Person hat mitten im Zug neu geladen oder den
+       Reiter geschlossen). Dann geht das Vollbild sofort wieder zu, statt
+       die Seite fuer den Rest der Sitzung zu verdecken. */
+    if (!this.lauf.ausstehend && !this.laeuft) this.vollbildAus(true);
   },
 
   /* Was der Agent gerade tut, nach einem Seitenwechsel (03.11.2026).
@@ -1896,6 +1926,15 @@ const Kern = {
        Lauf und ueberlebt damit einen Seitenwechsel mitten im Zug. */
     this.lauf.schritteVon = (this.lauf.log || []).length;
     this.lauf.zugSeit = Date.now();
+    /* Welche Frage diese Nachricht beantworten sollte.
+       ----------------------------------------------------------------
+       `lauf.gefragt` wird am ENDE eines Zuges auf das Thema gesetzt, das
+       der Agent gerade gefragt hat - noch bevor zugBeenden laeuft. Wer
+       die eingehende Nachricht bewerten will, braucht den Stand von
+       vorhin, nicht den von gleich. Also hier festhalten. */
+    this.lauf.gefragtVorher = this.lauf.gefragt || null;
+    this.lauf.antwortGewertet = false;
+    this.lauf.frageBeantwortet = null;
     AgentPanel.arbeitetAn();
     // Die Arbeitsanzeige steht im Gespraech, dort wo gleich die Antwort
     // steht. Sie klammert genau einen Zug: hier an, in zugBeenden aus.
@@ -2237,6 +2276,10 @@ const Kern = {
         // zusammensetzt, und den, der die Chips setzt.
         const freierZug = ["frage", "einwand", "unklar", "sonstiges"].includes(this.lauf.nachrichtArt);
         if (!nachricht.tool_calls) {
+          // Falls das Modell in diesem Zug kein stand_merken gerufen hat:
+          // Die Nachricht wird trotzdem gewertet, bevor der Fahrplan
+          // daraus eine Annahme macht.
+          this.antwortWerten();
           fpJetzt = Werkzeugkasten.fahrplan(this.lauf.profil || {}, this.lauf);
           /* Eine Rueckfrage, die einmal vorgeht.
              ------------------------------------------------------------
@@ -2965,10 +3008,67 @@ const Kern = {
     return [];
   },
 
+  /* Hat die Person die offene Frage beantwortet? (06.11.2026)
+     ==================================================================
+     Der Kern nimmt nach zwei vergeblichen Anlaeufen das Naheliegende an
+     (ANNAHME im Fahrplan). Bis hierher zaehlte er dafuer, wie oft er
+     GEFRAGT hat - und wertete damit jede Nachricht, die keine glatte
+     Antwort war, als Verweigerung.
+
+     Gemeldet am 06.11.2026: Auf die Frage nach Hotel oder Ferienwohnung
+     kam "Kurze Frage noch, aber wann zaehlt man als Kind?", danach "dann
+     sind wir doch 2 Erwachsene und ein Kind". Beides sind keine
+     Verweigerungen, beides ist Klaeren. Der Kern zaehlte zwei vergebliche
+     Anlaeufe, nahm "beides" an, war damit suchbereit und erzwang die
+     Suche - mitten im Gespraech.
+
+     Ob eine Nachricht eine Antwort war, ist eine Bedeutungsfrage und
+     gehoert dem Modell; was daraus folgt, gehoert dem Kern. Das Modell
+     meldet es ueber `frage_beantwortet` in stand_merken zurueck, hier
+     wird daraus der Zaehler, an dem die Annahme haengt:
+
+       ja / teilweise      Zaehler zurueck auf null
+       nein_klaert_noch    zaehlt NICHT - die Person ist beim Thema
+       nein                zaehlt
+       ohne Auskunft       zaehlt (wie bisher)
+
+     Damit sich der Fahrplan nicht beliebig mit Rueckfragen aufhalten
+     laesst, zaehlt auch "klaert noch" ab dem dritten Mal in Folge.
+
+     Gewertet wird genau einmal je Nachricht der Person. Gerufen wird es
+     aus stand_merken (dort steht das Urteil des Modells) und zur
+     Sicherheit noch einmal, bevor die Antwort zusammengesetzt wird -
+     falls das Modell in diesem Zug gar kein stand_merken ruft. */
+  antwortWerten() {
+    if (this.lauf.antwortGewertet) return;
+    this.lauf.antwortGewertet = true;
+    const t = this.lauf.gefragtVorher;
+    if (!t) return;
+    const urteil = this.lauf.frageBeantwortet
+      || (["frage", "einwand", "unklar"].includes(this.lauf.nachrichtArt) ? "nein_klaert_noch" : "nein");
+    const ohne = (this.lauf.ohneAntwort ||= {});
+    const klaert = (this.lauf.klaertNoch ||= {});
+    if (urteil === "ja" || urteil === "teilweise" || urteil === "keine_frage_offen") {
+      ohne[t] = 0; klaert[t] = 0;
+    } else if (urteil === "nein_klaert_noch") {
+      klaert[t] = (klaert[t] || 0) + 1;
+      if (klaert[t] >= 3) ohne[t] = (ohne[t] || 0) + 1;
+    } else {
+      ohne[t] = (ohne[t] || 0) + 1;
+    }
+    this.notieren("frage_gewertet", { thema: t, urteil, vomModell: !!this.lauf.frageBeantwortet,
+      ohneAntwort: ohne[t] || 0, klaertNoch: klaert[t] || 0 });
+  },
+
   zugBeenden() {
     this.laeuft = false;
     if (this.lauf.phase === "arbeitet") this.lauf.phase = "gespraech";
     this.sperreAus();
+    /* Und hier geht Arm B wieder zu - erst hier. Nicht, solange eine
+       Werkzeugkette ueber einen Seitenwechsel laeuft: zugBeenden kommt
+       bei jedem Laden vorbei, der Zug ist dann nicht vorbei. Dieselbe
+       Bedingung wie bei der Begruendung weiter unten. */
+    this.vollbildAus();
     AgentPanel.arbeitetAus();
     // Erst die Schritte ablegen, dann den Ring entfernen: Der Block setzt
     // sich an genau dessen Stelle, also vor die Antwort dieses Zuges.
@@ -3845,6 +3945,9 @@ const Kern = {
     } finally {
       this.laeuft = false;
       this.sperreAus();
+      // Die Kasse geht nicht durch zug(), also auch nicht durch
+      // zugBeenden - das Vollbild muss hier selbst zugemacht werden.
+      this.vollbildAus();
       AgentPanel.arbeitetAus?.();
     }
     this.sagenUndMerken(teile.join(" "));
@@ -4407,25 +4510,68 @@ const Kern = {
        dagegen genau die Phase, in der der Agent auf der SEITE arbeitet -
        und nur die soll Arm B verdecken.
 
-       `fensterDauer` bleibt aussen vor: dort ist das Vollbild schon beim
-       Start gesetzt und darf am Ende der Arbeit nicht abgeraeumt werden. */
-    if (typeof STELLSCHRAUBEN !== "undefined" && STELLSCHRAUBEN.zugang === "fenster") {
-      document.body.classList.add("agent-vollbild");
-    }
-    /* Der Ladevorhang muss die Arbeitsphase kennen (01.11.2026).
-       ------------------------------------------------------------------
-       Beim Seitenwechsel liegt bis zum ersten Zeichnen ein Vorhang ueber
-       der Seite; in Arm B ist er dunkel, damit der Wechsel hinter dem
-       Vollbild nicht aufblitzt. Das stand bisher am Arm - mit dem Hybrid
-       waere Arm B dadurch bei JEDEM Seitenwechsel dunkel, auch im
-       Ruhezustand, und damit von Arm A zu unterscheiden.
-
-       Die Kopfzeile der Seiten liest deshalb diesen Schalter, und er
-       muss im sessionStorage stehen: vor dem ersten Zeichnen gibt es
-       noch kein Skript, das den Zustand kennt. */
-    try { sessionStorage.setItem("voyara_arbeitet", "1"); } catch { /* egal */ }
+       Aufgehen tut es hier, ZU geht es nicht hier, sondern erst am Ende
+       des Zuges (vollbildAus in zugBeenden). Warum, steht dort. */
+    this.vollbildAn();
     this.sperreAusrichten();
     this.scrollSperre(true);
+  },
+
+  /* Das Vollbild gehoert dem ZUG, nicht dem einzelnen Schritt
+     (06.11.2026).
+     ==================================================================
+     Gemeldet nach dem ersten Durchgang durch Arm B: "dass die Seite dann
+     tatsaechlich immer so zurueckspringt, dass man teilweise, wenn er
+     scrollt, dann noch kurz die Seite wieder sieht, und dass es nicht
+     konsequent das Overlay bleibt. Das wirkt super unprofessionell und
+     verbuggt."
+
+     Er hat genau hingesehen. `sperreAn` und `sperreAus` stehen 68-mal im
+     Werkzeugkasten, um jeden einzelnen Teilschritt herum - allein in
+     `suchen` geht die Sperre zwischen "Filter einstellen" und
+     "Bewertungen lesen" einmal aus und gleich wieder an. Solange das
+     Vollbild an der Sperre hing, war jedes dieser Paare ein Auf- und
+     Zuklappen: gemessen 1200 Pixel, 380 Pixel, 1200 Pixel, mit 0,28
+     Sekunden Uebergang und einem Rollbalken, der mitwandert.
+
+     Dazu die groessere Luecke beim Seitenwechsel: Der Ladevorhang
+     verschwindet nach 1500 ms, die ausstehende Werkzeugkette laeuft erst
+     nach 600 ms weiter, und das Vollbild kam erst mit deren naechstem
+     `sperreAn` zurueck. Gemessen nach einem Neuladen mit gesetztem
+     Arbeitsmerker: `voyara_arbeitet: "1"`, Vorhang da - und der Body ohne
+     `agent-vollbild`, die Spalte bei 380 Pixeln.
+
+     Jetzt gilt: AN beim ersten Schritt des Zuges, AUS erst, wenn der
+     Agent das Wort zurueckgibt (zugBeenden ohne offene Werkzeugkette)
+     oder die Person uebernimmt. Dazwischen passiert nichts, egal wie oft
+     die Sperre kommt und geht.
+
+     Der Merker im sessionStorage haengt an derselben Entscheidung: Die
+     Kopfzeilen der Seiten lesen ihn, um den Ladevorhang dunkel zu faerben
+     (results.html und die anderen), und vor dem ersten Zeichnen gibt es
+     kein Skript, das den Zustand sonst kennen koennte. Er muss also genau
+     dann stehen, wenn das Vollbild steht - sonst ist der Vorhang hell,
+     wo er dunkel sein muesste, oder umgekehrt.
+
+     `fensterDauer` bleibt aussen vor: dort ist das Vollbild schon beim
+     Start gesetzt und darf nie abgeraeumt werden. */
+  imFenster() { return typeof STELLSCHRAUBEN !== "undefined" && STELLSCHRAUBEN.zugang === "fenster"; },
+
+  vollbildAn() {
+    if (!this.imFenster()) return;
+    document.body.classList.add("agent-vollbild");
+    try { sessionStorage.setItem("voyara_arbeitet", "1"); } catch { /* egal */ }
+  },
+
+  /* Ohne `erzwingen` bleibt das Vollbild stehen, solange eine
+     Werkzeugkette ueber einen Seitenwechsel laeuft: `zugBeenden` kommt
+     bei jedem Laden vorbei, obwohl der Zug weitergeht - genau dort riss
+     die Luecke vorher auf. Die Uebernahme durch die Person erzwingt. */
+  vollbildAus(erzwingen = false) {
+    if (!this.imFenster()) return;
+    if (!erzwingen && this.lauf?.ausstehend) return;
+    document.body.classList.remove("agent-vollbild");
+    try { sessionStorage.setItem("voyara_arbeitet", "0"); } catch { /* egal */ }
   },
 
   /* Auch Scrollen sperren (04.10.2026).
@@ -4482,15 +4628,27 @@ const Kern = {
     else sperre.style.removeProperty("--sperre-oben");
   },
 
-  sperreAus() {
+  /* Auch die Sperre gehoert dem Zug (06.11.2026).
+     ------------------------------------------------------------------
+     Zwei Dinge haben sich hier geaendert. Erstens: Das Vollbild wird
+     hier NICHT mehr genommen, es gehoert dem Zug (vollbildAn/
+     vollbildAus). Zweitens dasselbe fuer die Sperre selbst.
+
+     Die Werkzeuge rufen sperreAn und sperreAus um jeden Teilschritt
+     herum, auch dort, wo gleich der naechste Schritt folgt. Die Leiste
+     "Der Assistent arbeitet gerade" samt Haltknopf verschwand dadurch
+     zwischen zwei Schritten und kam wieder - und das Scrollen war in
+     genau diesen Luecken frei, obwohl der Agent weiterarbeitete. Der
+     eigentliche Grund der Sperre steht bei scrollSperre: Die Seite soll
+     unberuehrt bleiben, SOLANGE der Agent arbeitet. Das ist der ganze
+     Zug, nicht der einzelne Schritt.
+
+     Gilt fuer beide Arme gleich - die Leiste ist keine Beobachtbarkeit,
+     sondern Mechanik, und sie muss in Arm A und Arm B dieselbe sein. */
+  sperreAus(erzwingen = false) {
+    if (!erzwingen && (this.laeuft || this.lauf?.ausstehend)) return;
     document.getElementById("agentSperre")?.remove();
     document.body.classList.remove("agent-gesperrt");
-    // Gegenstueck zu sperreAn: nur die Hybridfassung faehrt zurueck,
-    // `fensterDauer` behaelt sein Vollbild ueber die ganze Sitzung.
-    if (typeof STELLSCHRAUBEN !== "undefined" && STELLSCHRAUBEN.zugang === "fenster") {
-      document.body.classList.remove("agent-vollbild");
-    }
-    try { sessionStorage.setItem("voyara_arbeitet", "0"); } catch { /* egal */ }
     this.scrollSperre(false);
   },
 
@@ -4532,7 +4690,10 @@ const Kern = {
 
   anhalten(quelle, text = null) {
     Zeiger.anhalten();
-    this.sperreAus();
+    // Wer uebernimmt, bekommt die Seite - auch mitten in einer
+    // Werkzeugkette. Deshalb beides erzwungen.
+    this.sperreAus(true);
+    this.vollbildAus(true);
     const a = this.lauf.ausstehend;
     const werkzeug = a?.calls?.[a.i]?.function?.name || this.lauf.letztesWerkzeug || null;
     if (!this.lauf.anhalt || this.lauf.anhalt.gesagt) {

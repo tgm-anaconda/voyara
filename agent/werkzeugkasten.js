@@ -95,6 +95,27 @@ const Werkzeugkasten = {
              wieder - nicht angehaengt an dieselbe Nachricht. */
           nachricht_art: { type: "string", enum: ["antwort", "anweisung", "frage", "einwand", "unklar", "sonstiges"],
             description: "Was die letzte Nachricht der Person war. antwort = sie beantwortet die gestellte Frage (auch teilweise oder mit Zusatz). anweisung = sie sagt dir, was du tun sollst ('nimm das erste', 'buch das', 'zeig mir die Auswahl nochmal'). frage = sie will etwas von dir wissen. einwand = sie widerspricht, korrigiert oder lehnt etwas ab. unklar = sie versteht die Frage nicht oder fragt zurueck, was gemeint ist. sonstiges = passt in keines der Felder. Immer angeben." },
+          /* Die zweite Haelfte der Bruecke (06.11.2026).
+             ----------------------------------------------------------
+             `nachricht_art` sagt, WAS die Nachricht war. Dieses Feld
+             sagt, was sie FUER DIE OFFENE FRAGE bedeutet - und das ist
+             die Angabe, auf die der Kern wirklich wartet.
+
+             Der Nutzer nach dem Durchgang vom 06.11.2026: "Bei so
+             Verstaendnisthemen, bei so Wiederholungsthemen ist es super
+             essentiell, dass das Modell versteht, okay, die Antwort auf
+             die Frage wurde jetzt noch nicht gegeben, und das an den
+             Kern dann auch rueckmeldet. Der Kern kann das natuerlich
+             nicht unbedingt nachvollziehen, ob das jetzt eher eine
+             Rueckfrage war oder eine Beantwortung."
+
+             Genau so ist die Arbeitsteilung gedacht: Das Verstehen
+             gehoert dem Modell, das Handeln dem Kern. Der Kern zaehlte
+             bis hierher nur, wie oft er gefragt hat, und schloss daraus
+             auf Verweigerung - deshalb nahm er nach zwei Anlaeufen an,
+             obwohl die Person beide Male mitten im Klaeren war. */
+          frage_beantwortet: { type: "string", enum: ["ja", "teilweise", "nein_klaert_noch", "nein", "keine_frage_offen"],
+            description: "Was die letzte Nachricht der Person fuer die zuletzt von dir gestellte Frage bedeutet. ja = sie hat sie beantwortet. teilweise = ein Teil steht, ein Teil fehlt. nein_klaert_noch = sie hat NICHT geantwortet, ist aber beim Thema: sie fragt zurueck, korrigiert eine fruehere Angabe, ueberlegt laut oder braucht erst eine Auskunft von dir ('wann zaehlt man als Kind?', 'dann sind wir doch zwei Erwachsene'). nein = sie geht nicht darauf ein und auch nicht auf das Thema. keine_frage_offen = du hattest gar nichts gefragt. Immer angeben und ehrlich: Bei nein_klaert_noch fragt der Assistent weiter, bei nein nimmt er irgendwann das Naheliegende an." },
           ziel: text("Region aus dem Katalog, als id: mallorca, kreta, algarve, sardinien, teneriffa, barcelona, wien, lissabon, tirol, suedtirol, lappland, ostsee, marrakesch, kapstadt, krabi, island, newyork, kyoto. NUR, wenn die Person die Region selbst genannt hat - sonst leer lassen. Eine Region, die du fuer passend haeltst, gehoert nicht hierher: Dafuer gibt es regionen_vergleichen, und die Person entscheidet."),
           /* Mehrere genannte Regionen und ausgeschlossene Regionen
              (01.11.2026).
@@ -210,7 +231,15 @@ const Werkzeugkasten = {
              nicht mehr. Ein Schemafeld ohne Feld auf der Seite verspricht
              dem Modell etwas, das der Agent nicht einloesen kann - er haette
              Geburtsdaten erfragt und sie dann nirgends eintragen koennen. */
-        }),
+        /* Die beiden Einordnungen sind Pflicht (06.11.2026).
+           ----------------------------------------------------------------
+           Sie standen bisher als "Immer angeben" in der Beschreibung, und
+           das Modell hielt sich meist daran. Meistens reicht hier nicht:
+           Ohne die Rueckmeldung faellt der Kern auf seine alte Zaehlung
+           zurueck und nimmt irgendwann an, obwohl die Person noch klaert -
+           genau der gemeldete Fall. Was der Kern zum Weiterrechnen
+           braucht, wird deshalb verlangt, nicht erbeten. */
+        }, ["nachricht_art", "frage_beantwortet"]),
       f("regionen_zaehlen",
         "Zaehlt je Region des Katalogs, wie viele Haeuser es im gemerkten Monat fuer die gemerkte Gruppe gibt, mit Saison. Nutze es, wenn das Ziel offen ist, bevor du Regionen empfiehlst.",
         {}),
@@ -2920,6 +2949,28 @@ const Werkzeugkasten = {
              ist dann nicht schlechter als vorher, nur unsichtbar - und
              eine Entscheidung ohne Begruendung waere das Schlechtere. */
           if (kern.darf("suchen") && STELLSCHRAUBEN.monatsvergleich !== false) {
+            /* Der sichtbare Vergleich schlaegt die stille Annahme
+               (06.11.2026).
+               ----------------------------------------------------------
+               Gemeldet: "Er hat gesagt, okay, dann empfehle ich Dezember,
+               hat aber trotzdem fuer Januar, Maerz und so rausgesucht."
+
+               Beides lief gleichzeitig. Der Fahrplan wird am Anfang des
+               Zuges gebaut, und weil die Monatsfrage zweimal ohne Antwort
+               geblieben war, griff dort ANNAHME.zeit: Sie rechnete den
+               Monat still aus und legte den Satz "Ich nehme Dezember"
+               bereit. Danach erst kam dieses Werkzeug und setzte den
+               SICHTBAREN Vergleich an - der dieselbe Wahl noch einmal
+               traf, nachdem die Liste ueber vier Monate gelaufen war.
+
+               Fuer die Person las sich das wie ein Widerspruch, und sie
+               hatte recht: Es war einer. Der Vergleich ist das Bessere -
+               er zeigt, woher die Wahl kommt. Also tritt die Annahme ab,
+               samt ihrem Satz; der Monat im Stand bleibt als vorlaeufiger
+               stehen, damit ueberhaupt gesucht werden kann. */
+            if (Werkzeugkasten.annahmeZuruecknehmen(kern, "zeit")) {
+              kern.notieren("annahme_zurueckgenommen", { thema: "zeit", wegen: "monatsvergleich" });
+            }
             // Vorlaeufig der erste Monat, damit ueberhaupt gesucht werden
             // kann. Der Vergleich laeuft danach und entscheidet endgueltig.
             if (!p.monat) { p.monat = kandidatenMonate[0]; kern.standAnzeigen(); }
@@ -3503,6 +3554,14 @@ const Werkzeugkasten = {
          keine Annahme schreibt darauf. */
       kern.lauf.nachrichtArt = ["antwort", "anweisung", "frage", "einwand", "unklar", "sonstiges"].includes(a.nachricht_art)
         ? a.nachricht_art : "antwort";
+      /* Die Rueckmeldung des Modells zur offenen Frage. Fehlt sie, wird
+         nichts geraten: `null` heisst "keine Auskunft", und der Kern
+         faellt auf seine alte Zaehlung zurueck (siehe `offeneAntwort`). */
+      kern.lauf.frageBeantwortet = ["ja", "teilweise", "nein_klaert_noch", "nein", "keine_frage_offen"].includes(a.frage_beantwortet)
+        ? a.frage_beantwortet : null;
+      // Und sofort auswerten: Der Fahrplan weiter unten in diesem Werkzeug
+      // liest den Zaehler schon.
+      kern.antwortWerten?.();
       p.vonPerson = p.vonPerson || {};
       for (const f of geaendert) p.vonPerson[f] = true;
       /* Was die Aenderung bewirkt, sagt der Kern - immer.
@@ -6146,6 +6205,28 @@ const Werkzeugkasten = {
      stellt die Liste auf jeden Monat, sagt an, was er tut, und setzt den
      Monat mit Grund. Ein Anreisetag der Person legt den Monat fest -
      dann wird nicht verglichen. */
+  /* Eine Annahme wieder einkassieren, bevor sie gesagt wurde.
+     ------------------------------------------------------------------
+     Annahmen des Fahrplans warten in `lauf.annahmeOffen`, bis eine
+     Nachricht zusammengesetzt wird. Stellt sich im selben Zug heraus,
+     dass es einen besseren Weg gibt - einen sichtbaren Vergleich statt
+     einer stillen Rechnung -, muss die Annahme verschwinden koennen.
+     Sonst stehen beide im Chat und widersprechen sich.
+
+     Was im Stand steht, bleibt stehen: Der Wert ist als vorlaeufiger
+     brauchbar, und wer ihn loescht, nimmt dem naechsten Schritt die
+     Grundlage. Zurueckgenommen wird nur das Wort darueber. */
+  annahmeZuruecknehmen(kern, thema) {
+    const l = kern?.lauf;
+    if (!l) return false;
+    const hatte = !!(l.uebersprungen || {})[thema]
+      || (l.annahmeOffen || []).some((x) => x.thema === thema);
+    if (l.annahmeOffen) l.annahmeOffen = l.annahmeOffen.filter((x) => x.thema !== thema);
+    if (l.uebersprungen) delete l.uebersprungen[thema];
+    if (l.uebersprungenNotiert) delete l.uebersprungenNotiert[thema];
+    return hatte;
+  },
+
   monateAnsetzen(kern, p, monate, quelle = "kern") {
     const liste = [...new Set(monate)].sort((a, b) => a - b).slice(0, 4);
     if (liste.length < 2) return false;
@@ -6416,7 +6497,13 @@ const Werkzeugkasten = {
     } else if (teuerste && teuerste.monat !== wahl.monat && wahl.schnitt != null && teuerste.schnitt >= wahl.schnitt * 1.08) {
       satz = `Dann nehme ich ${name(wahl.monat)}: Da liegt die Nacht im Schnitt bei ${wahl.schnitt} €, im ${name(teuerste.monat)} bei ${teuerste.schnitt} €.`;
     } else {
-      satz = `Ich habe die drei Monate verglichen - bei Auswahl und Preis unterscheiden sie sich kaum. Ich nehme ${name(wahl.monat)}, den nächstgelegenen.`;
+      /* Hier stand "die drei Monate" fest im Satz. Im gemeldeten Fall vom
+         06.11.2026 waren es vier (Dezember bis Maerz), und der Chat sagte
+         trotzdem drei - eine Zahl, die niemand nachrechnen kann, ohne an
+         allem anderen zu zweifeln. */
+      const WORT = { 2: "beide", 3: "alle drei", 4: "alle vier" };
+      const wieViele = WORT[bewertet.length] || `alle ${bewertet.length}`;
+      satz = `Ich habe ${wieViele} Monate verglichen - bei Auswahl und Preis unterscheiden sie sich kaum. Ich nehme ${name(wahl.monat)}, den nächstgelegenen.`;
     }
     return { ...wahl, satz: `${satz} Sag Bescheid, wenn dir ein anderer lieber ist.` };
   },
@@ -6775,14 +6862,29 @@ const Werkzeugkasten = {
         x.monat = w ? w.monat : monate[0];
         lauf.monatGrund = { satz: w ? w.satz : null, jahreszeit: jz ? jz.name : null, monate };
       }, satz: "mit welchem Monat du rechnest, warum, und dass sie ihn jederzeit aendern kann",
+        /* Der Satz sagte alles zweimal (06.11.2026).
+           --------------------------------------------------------------
+           Im Chat stand: "Dann bist du beim Monat flexibel. Ich habe die
+           naechsten Monate verglichen. Ich habe die drei Monate verglichen
+           - ... Ich nehme Dezember ... Sag Bescheid, wenn dir ein anderer
+           lieber ist. Sag gern Bescheid, wenn ein anderer Monat besser
+           passt." Zweimal verglichen, zweimal Bescheid sagen.
+
+           Der Rahmen hier und der Satz aus `monatWaehlen` sagten dasselbe.
+           Der Rahmen sagt jetzt nur noch, woran es liegt (die Person ist
+           flexibel); welcher Monat es wird, warum, und dass sie das
+           aendern kann, steht im Satz der Rechnung. Fehlt der, steht hier
+           ein eigener - sonst bliebe die Einladung ganz weg. */
         selbst: (x) => {
           const g = lauf.monatGrund || {};
           const M = (m) => (typeof MONATSNAMEN !== "undefined" ? MONATSNAMEN[m - 1] : `Monat ${m}`);
           const JZ = { fruehling: "Frühling", sommer: "Sommer", herbst: "Herbst", winter: "Winter" };
           const vorne = g.jahreszeit
-            ? `Dann bist du im ${JZ[g.jahreszeit] || g.jahreszeit} flexibel. Ich habe ${(g.monate || []).map(M).join(", ").replace(/, ([^,]*)$/, " und $1")} verglichen.`
-            : `Dann bist du beim Monat flexibel. Ich habe die nächsten Monate verglichen.`;
-          return `${vorne} ${g.satz || `Ich rechne erst mal mit ${M(x.monat)}.`} Sag gern Bescheid, wenn ein anderer Monat besser passt.`;
+            ? `Dann bist du im ${JZ[g.jahreszeit] || g.jahreszeit} flexibel.`
+            : `Dann bist du beim Monat flexibel.`;
+          const grund = g.satz
+            || `Ich rechne erst mal mit ${M(x.monat)}. Sag gern Bescheid, wenn ein anderer Monat besser passt.`;
+          return `${vorne} ${grund}`;
         } },
       weiter: { schreibt: ["weiter"], setzen: (x) => { x.weiter = "schauen"; } },
       beratung: { schreibt: ["beratung"], setzen: (x) => { x.beratung = "auswahl"; } },
@@ -6859,7 +6961,20 @@ const Werkzeugkasten = {
     };
     const angenommen = [];
     for (const [t, a] of Object.entries(ANNAHME)) {
-      if (fertig[t] || (lauf.gefragtWie?.[t] || 0) < 2) continue;
+      /* Gezaehlt werden vergebliche Anlaeufe, nicht gestellte Fragen
+         (06.11.2026).
+         ----------------------------------------------------------------
+         Hier stand `lauf.gefragtWie[t] < 2`: zweimal gefragt, also wurde
+         angenommen - ganz gleich, was die Person geantwortet hatte. Eine
+         Rueckfrage und eine Korrektur reichten damit aus, um die Art der
+         Unterkunft anzunehmen und die Suche loszutreten. Was eine Antwort
+         war und was nicht, meldet jetzt das Modell zurueck; der Kern
+         rechnet es in `lauf.ohneAntwort` um (Kern.antwortWerten).
+
+         `gefragtWie` bleibt, wofuer es gedacht war: Es sagt, wie oft die
+         Frage schon im Chat stand, und sorgt dafuer, dass sie beim
+         zweiten Mal anders klingt. */
+      if (fertig[t] || (lauf.ohneAntwort?.[t] || 0) < 2) continue;
       /* Wer einen Wunsch genannt hat, setzt keine "besondere Ausstattung
          nicht voraus" (03.11.2026). Beim Nachhaken wird die Frage jetzt
          bis zu dreimal gestellt; ohne diese Zeile haette die Annahme nach
@@ -6908,6 +7023,20 @@ const Werkzeugkasten = {
       if (JSON.stringify((a.schreibt || []).map((f) => p[f] ?? null)) === vorFeldern) continue;
       fertig[t] = true;
       (lauf.uebersprungen ||= {})[t] = true;
+      /* Eine frische Annahme loest keine Suche aus (06.11.2026).
+         ----------------------------------------------------------------
+         `suchbereit` haengt an zeit, reisende, kinderAlter und art. Fiel
+         das letzte dieser Themen einer Annahme zum Opfer, war der Kern im
+         SELBEN Zug suchbereit und erzwang die Suche (zwang) - die Person
+         las "ich zeige dir erst mal beides" und sah im selben Atemzug die
+         Liste anlaufen, ohne je zugestimmt zu haben.
+
+         Die Annahme wird jetzt erst gesagt. Die Suche kommt im naechsten
+         Zug, und bis dahin kann die Person widersprechen. Der Merker
+         traegt den Zeitstempel des Zuges, gilt also genau fuer diesen. */
+      if (["zeit", "reisende", "kinderAlter", "art"].includes(t) && lauf.zugSeit) {
+        lauf.annahmeFrisch = lauf.zugSeit;
+      }
       if (a.satz) {
         angenommen.push((lauf.nichtVerstanden?.[t] || 0) >= 2
           ? `dass du ihre Angabe nicht sicher lesen konntest und erst einmal davon ausgehst, ${a.satz}`
@@ -7354,7 +7483,21 @@ const Werkzeugkasten = {
        ob ihr ein Hotel wollt?"). Deshalb steht jetzt ausdruecklich da,
        dass die Frage anders klingen muss und keine Metafrage sein darf. */
     if (naechstes && (lauf.gefragtWie?.[naechstes] || 0) >= 1) {
-      frage = `Sie ist auf diese Frage nicht eingegangen, sondern hat etwas anderes gesagt. Geh in einem Satz darauf ein und stell die Frage dann ANDERS als beim ersten Mal - anderer Satzbau, andere Beispiele, nicht woertlich gleich. Frag nicht, ob du fragen sollst, und sag nicht, dass du schon gefragt hast. Worum es geht: ${frage}`;
+      /* Zwei verschiedene Faelle, zwei verschiedene Auftraege
+         (06.11.2026).
+         ----------------------------------------------------------------
+         Hier stand nur einer: "Sie ist auf diese Frage nicht eingegangen,
+         sondern hat etwas anderes gesagt." Das stimmt fuer jemanden, der
+         ausweicht. Fuer jemanden, der gerade zurueckfragt oder eine
+         fruehere Angabe richtigstellt, stimmt es nicht - der ist mitten
+         im Thema, und ein Agent, der ihm das vorhaelt, hat nicht
+         zugehoert. Das Modell meldet den Unterschied zurueck
+         (frage_beantwortet), der Kern zaehlt ihn in `klaertNoch`, und
+         hier wird er zum Auftrag: erst die Sache der Person zu Ende
+         bringen, dann die eigene Frage. */
+      frage = (lauf.klaertNoch?.[naechstes] || 0) > 0
+        ? `Sie klaert gerade noch etwas, statt diese Frage zu beantworten - eine Rueckfrage oder eine Korrektur. Bring ZUERST ihre Sache zu Ende: Antworte vollstaendig auf das, was sie wissen will oder richtiggestellt hat, und bestaetige die Korrektur. Erst danach, im selben Zug, stell diese Frage noch einmal, ANDERS als beim ersten Mal. Halte ihr nicht vor, dass sie nicht geantwortet hat, und fang nicht von einem anderen Thema an. Worum es geht: ${frage}`
+        : `Sie ist auf diese Frage nicht eingegangen, sondern hat etwas anderes gesagt. Geh in einem Satz darauf ein und stell die Frage dann ANDERS als beim ersten Mal - anderer Satzbau, andere Beispiele, nicht woertlich gleich. Frag nicht, ob du fragen sollst, und sag nicht, dass du schon gefragt hast. Worum es geht: ${frage}`;
     }
     // Was der Kern angenommen hat, weil zweimal keine Antwort kam, wird
     // gesagt - nicht stillschweigend gesetzt.
@@ -7407,6 +7550,22 @@ const Werkzeugkasten = {
     }
 
     const fp = this.fahrplan(p, lauf);
+    /* Keine erste Suche in dem Zug, in dem ein Kernthema gerade erst
+       angenommen wurde (06.11.2026).
+       ------------------------------------------------------------------
+       `suchbereit` haengt an zeit, reisende, kinderAlter und art. Wurde
+       das letzte dieser Themen eben angenommen, weil zweimal keine
+       Antwort kam, dann hat die Person davon noch kein Wort gelesen - und
+       sah trotzdem die Liste anlaufen. Gemeldet am 06.11.2026, zusammen
+       mit der Ursache eine Ebene tiefer (ohneAntwort).
+
+       Die Annahme wird in diesem Zug gesagt, gesucht wird im naechsten.
+       Beide Suchregeln sind gemeint, die erste Suche und die Phase
+       "suche" - sonst greift einfach die andere. Ist schon einmal
+       gesucht worden, bleibt alles wie bisher: Dann geht es nicht mehr um
+       den ersten Sprung in die Liste. */
+    const annahmeJetzt = !!lauf.annahmeFrisch && lauf.annahmeFrisch === lauf.zugSeit;
+    if (annahmeJetzt && !lauf.gesuchtMit) return null;
     // Die erste Suche, sobald der Kern der Eckdaten steht - nicht erst,
     // wenn alles geklaert ist
     if (fp.suchbereit && !lauf.gesuchtMit) return "suchen";

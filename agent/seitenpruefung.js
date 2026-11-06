@@ -875,6 +875,72 @@ const Seitenpruefung = {
     }
   },
 
+  /* Bleibt das Vollbild ueber den ganzen Zug stehen? (06.11.2026)
+     ==================================================================
+     Gemeldet nach dem ersten Durchgang durch Arm B: "dass es nicht
+     konsequent das Overlay bleibt". Ursache war, dass `agent-vollbild`
+     an der Sperre hing, und die Werkzeuge setzen die Sperre um JEDEN
+     Teilschritt - zwischen zwei Schritten klappte der Chat auf 380 Pixel
+     zusammen und die Seite lag offen da.
+
+     Geprueft wird hier genau die Naht, an der es aufriss: ein Schritt zu
+     Ende, der naechste noch nicht angefangen. Dazwischen darf sich
+     nichts bewegen. Gemessen wird am echten DOM, nicht an der Klasse -
+     eine Klasse, die niemand mehr liest, bestuende die Pruefung auch. */
+  vollbildHaeltDurch() {
+    if (typeof Kern === "undefined" || typeof STELLSCHRAUBEN === "undefined") return;
+    if (STELLSCHRAUBEN.zugang !== "fenster") return;
+    /* Haelt der Kern das Vollbild gar nicht selbst, ist genau das der
+       Befund - und zwar einer, der sich melden laesst, statt die ganze
+       Pruefung mit einem Absturz zu beenden. Gegengeprueft am 06.11.2026
+       gegen den Stand von vorher: Dort misst dieselbe Stelle 1200, 380,
+       1200 Pixel. */
+    if (typeof Kern.vollbildAus !== "function") {
+      this.befund("Arm B", "Der Kern haelt das Vollbild nicht ueber den Zug (vollbildAus fehlt) - es haengt dann am einzelnen Arbeitsschritt");
+      return;
+    }
+    const rail = document.getElementById("agentRail");
+    if (!rail) return;
+    const breite = () => Math.round(rail.getBoundingClientRect().width);
+
+    const warLaeuft = Kern.laeuft;
+    const warVollbild = document.body.classList.contains("agent-vollbild");
+    const warGesperrt = document.body.classList.contains("agent-gesperrt");
+    const warLautlos = document.body.classList.contains("agent-lautlos");
+    const warSperre = document.getElementById("agentSperre");
+    try {
+      document.body.classList.add("agent-lautlos");
+      Kern.laeuft = true;                  // wie in zug()
+      Kern.sperreAn();
+      const imSchritt = breite();
+      Kern.sperreAus();                    // ein Teilschritt ist fertig
+      const zwischenSchritten = breite();
+      Kern.sperreAn();
+      const naechsterSchritt = breite();
+      Kern.sperreAus();
+      Kern.laeuft = false;
+      Kern.vollbildAus(true);
+      Kern.sperreAus(true);
+      const nachDemZug = breite();
+
+      if (zwischenSchritten < imSchritt) {
+        this.befund("Arm B", `Der Chat faellt zwischen zwei Arbeitsschritten auf ${zwischenSchritten} von ${imSchritt} Pixeln zusammen - die Seite blitzt auf`,
+          { imSchritt, zwischenSchritten, naechsterSchritt });
+      } else this.bestanden();
+
+      if (nachDemZug >= imSchritt) {
+        this.befund("Arm B", `Der Chat bleibt nach dem Zug im Vollbild (${nachDemZug} Pixel) - dann ist Arm B nicht mehr im Ruhezustand wie Arm A`,
+          { imSchritt, nachDemZug });
+      } else this.bestanden();
+    } finally {
+      Kern.laeuft = warLaeuft;
+      if (!warSperre) { document.getElementById("agentSperre")?.remove(); }
+      document.body.classList.toggle("agent-vollbild", warVollbild);
+      document.body.classList.toggle("agent-gesperrt", warGesperrt);
+      document.body.classList.toggle("agent-lautlos", warLautlos);
+    }
+  },
+
   async laufen() {
     this.befunde = [];
     this.geprueft = 0;
@@ -887,6 +953,7 @@ const Seitenpruefung = {
       this.fragebogen();
       this.armB();
       this.armA();
+      this.vollbildHaeltDurch();
       this.armeAufDemTelefon();
     } catch (e) {
       this.befund("Ablauf", `Die Pruefung ist gestolpert: ${e.message}`, { stack: String(e.stack).slice(0, 200) });
