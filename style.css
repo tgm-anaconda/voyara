@@ -693,8 +693,14 @@ body.agent-collapsed .agent-head .icon-btn { margin-left: 0; transform: rotate(4
   scroll-snap-type: x proximity;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
-  /* Bis an den Rand schieben, ohne dass die Karten am Rand kleben */
+  /* Bis an den Rand schieben, ohne dass die Karten am Rand kleben.
+     scroll-padding muss dieselbe Einrueckung noch einmal nennen: ohne
+     sie rastet die erste Karte buendig am Rand des Scrollbereichs ein
+     und schiebt die Reihe um genau diese 22 Pixel nach links - der
+     Abstand steht dann zwar in der Polsterung, ist aber weggescrollt.
+     Gemeldet am 06.11.2026, nachgemessen als scrollLeft: 22. */
   padding: 2px 22px 8px; margin: 0 -22px;
+  scroll-padding: 0 22px;
 }
 .hotel-reihe::-webkit-scrollbar { width: 0; height: 0; }
 .hotel-reihe > * { flex: 0 0 286px; scroll-snap-align: start; }
@@ -1485,7 +1491,7 @@ body.agent-collapsed .agent-head .icon-btn { margin-left: 0; transform: rotate(4
   .hotel-grid > * { width: 80%; max-width: 300px; }
   /* Die Reihe ist am Rechner schon eine Reihe - auf dem Handy braucht
      sie nur die schmalere Karte und den Rand der anderen Gitter. */
-  .hotel-reihe { padding: 2px 16px 8px; margin: 0 -16px; }
+  .hotel-reihe { padding: 2px 16px 8px; margin: 0 -16px; scroll-padding: 0 16px; }
   .hotel-reihe > * { flex: 0 0 80%; max-width: 300px; }
   .quote-grid > * { width: 76%; }
 
