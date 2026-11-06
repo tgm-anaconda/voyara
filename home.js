@@ -115,29 +115,74 @@ function regionsbildOderErsatz(region) {
   return "";
 }
 
+/* Die ACHTZEHN Reiseziele, nicht die Unterorte.
+   --------------------------------------------------------------------
+   Gezaehlt wurde bisher das Feld `region` - das ist der Ort innerhalb
+   des Ziels ("Playa de Palma", "Serra de Tramuntana", "Aekaeslompolo").
+   Davon gab es 69, nach dem Katalogausbau am 04.11.2026 waren es 315,
+   139 davon mit einem einzigen Haus. Der Abschnitt wuchs damit auf
+   45 Reihen und 10.949 Pixel - fast zwei Drittel der ganzen Startseite.
+   Die Ueberschrift sagt ohnehin "Ziele fuer jede Jahreszeit", und die
+   Ziele sind die achtzehn aus data/ziele.js. Jetzt drei Reihen.
+
+   Und der Verweis geht auf UNTERKUENFTE, nicht auf Hotels: Die Kachel
+   zaehlt Hotels und Ferienwohnungen zusammen ("2 Unterkuenfte"), zeigte
+   aber eine Liste, die nur die Hotels kannte. Bei Kolari stand deshalb
+   "2 Unterkuenfte" auf der Kachel und "1 von 475 Ergebnissen" auf der
+   Liste. Gemeldet am 06.11.2026. */
 function renderRegions() {
   const counts = {};
-  [...HOTELS, ...APARTMENTS].forEach((h) => (counts[h.region] = (counts[h.region] || 0) + 1));
+  [...HOTELS, ...APARTMENTS].forEach((h) => (counts[h.ziel] = (counts[h.ziel] || 0) + 1));
 
-  document.getElementById("regionRow").innerHTML = Object.entries(counts)
-    .sort((a, b) => b[1] - a[1])
+  document.getElementById("regionRow").innerHTML = ZIELE
+    .filter((z) => counts[z.id])
+    .sort((a, b) => counts[b.id] - counts[a.id])
     .map(
-      ([region, count]) => `
-    <a class="category-tile region-tile" href="results.html?type=hotel&q=${encodeURIComponent(region)}">
-      <div class="region-bild" data-bild="${regionsbildOderErsatz(region)}"></div>
-      <strong>${region}</strong>
-      <span>${count} ${count === 1 ? "Unterkunft" : "Unterkünfte"}</span>
+      (z) => `
+    <a class="category-tile region-tile" href="results.html?type=unterkunft&ziel=${encodeURIComponent(z.id)}">
+      <div class="region-bild" data-bild="${zielbild(z)}"></div>
+      <strong>${z.name}</strong>
+      <span>${counts[z.id]} ${counts[z.id] === 1 ? "Unterkunft" : "Unterkünfte"}</span>
     </a>`
     )
     .join("");
   applyScenes(document.getElementById("regionRow"));
 }
 
+/* Bild fuer eine Zielkachel: erst ein eigenes Regionsbild unter dem
+   Zielnamen, sonst das Ortsbild des bestbewerteten Hauses im Ziel -
+   dieselbe Regel wie vorher, nur eine Ebene hoeher. */
+function zielbild(z) {
+  const eigenes = regionsbild(regionSlug(z.name));
+  if (eigenes) return eigenes;
+
+  const imZiel = [...HOTELS, ...APARTMENTS]
+    .filter((h) => h.ziel === z.id)
+    .sort((a, b) => b.rating - a.rating);
+  for (const item of imZiel) {
+    const ortsbild = (BILDER[item.id] || []).find((f) => f.endsWith("/1.jpg"));
+    if (ortsbild) return ortsbild;
+  }
+  return "";
+}
+
 function renderHotelSections() {
-  const top = [...HOTELS].sort((a, b) => b.rating - a.rating).slice(0, 4);
+  /* Zwoelf statt vier, dafuer in einer waagrecht schiebbaren Reihe
+     (.hotel-reihe).
+     ------------------------------------------------------------------
+     Vier Karten passten in der Studienbreite (Chatspalte 380 px,
+     Inhalt 1060) nicht in eine Reihe: Das Raster bildete drei Spalten,
+     die vierte Karte stand allein darunter, daneben viel Weissraum.
+     Vier sind zugleich zu wenige, um "besonders gut bewertet" zu
+     zeigen. Eine Reihe loest beides - sie ist immer eine Reihe hoch,
+     egal wie breit das Fenster ist, und es passen mehr hinein.
+     Zwoelf, nicht alle: 534 Karten waeren eine lange Reihe und viele
+     Bilder; wer mehr will, hat den Verweis "Alle ansehen" daneben.
+     Gewuenscht von Ben, 06.11.2026. */
+  const top = [...HOTELS].sort((a, b) => b.rating - a.rating).slice(0, 12);
   document.getElementById("topHotels").innerHTML = top.map(stayCard).join("");
 
-  const apts = [...APARTMENTS].sort((a, b) => b.rating - a.rating).slice(0, 4);
+  const apts = [...APARTMENTS].sort((a, b) => b.rating - a.rating).slice(0, 12);
   document.getElementById("topApartments").innerHTML = apts.map(stayCard).join("");
 
   const deals = HOTELS.filter((h) => h.oldPrice);

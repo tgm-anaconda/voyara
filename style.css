@@ -636,6 +636,16 @@ body.agent-collapsed .agent-head .icon-btn { margin-left: 0; transform: rotate(4
    5. Kategorien-Kacheln
    ================================================================= */
 .category-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(132px, 1fr)); gap: 12px; }
+/* Acht Arten, und auto-fit legte sieben in die erste Reihe - die achte
+   stand allein darunter. Wie viele Spalten auto-fit bildet, haengt an
+   der Breite, und die haengt hier an der Chatspalte: bei 1060 px Inhalt
+   sind es sieben, bei 900 sechs, bei 760 fuenf. Nur die sieben erzeugen
+   den Einzelgaenger, und sieben ist der Normalfall.
+   Vier feste Spalten ergeben immer 4+4, bei jeder Breite. Nebenbei
+   passen "Boutique-Hotel" und "Guenstig & einfach" damit in eine Zeile.
+   Gilt nur fuer die Arten - die Regionsreihe teilt sich die Klasse und
+   haette mit vier Spalten noch mehr Reihen. */
+#categoryRow { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .category-tile {
   background: #fff; border: 1px solid var(--line); border-radius: var(--r-lg); padding: 16px 14px;
   text-align: left; cursor: pointer; font-family: var(--font-body); text-decoration: none; color: inherit;
@@ -649,7 +659,45 @@ body.agent-collapsed .agent-head .icon-btn { margin-left: 0; transform: rotate(4
 /* =================================================================
    6. Hotelkarten
    ================================================================= */
-.hotel-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(266px, 1fr)); gap: 20px; }
+/* auto-FIT, nicht auto-fill: Die Startseite zeigt in zwei Abschnitten
+   nur drei Karten. auto-fill legt auch leere Spalten an, die drei
+   Karten blieben dann schmal am linken Rand kleben; auto-fit laesst die
+   leeren Spalten weg und die drei fuellen die Reihe.
+   266 auf 240 heruntergesetzt, damit drei Karten schon ab 740 px Inhalt
+   nebeneinander passen statt erst ab 818 - mit der 380-px-Chatspalte
+   sind das Fenster ab 1120 statt erst ab 1200. Bei den Angeboten (15
+   Karten) aendert sich dadurch in der Studienbreite nichts, es bleiben
+   drei Spalten. */
+.hotel-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; }
+
+/* Waagrechte Reihe statt Raster, fuer "Besonders gut bewertet" und
+   "Ferienwohnungen mit Kueche".
+   --------------------------------------------------------------------
+   Vier Karten im Raster ergaben in der Studienbreite drei plus eine
+   allein darunter, mit viel Weissraum daneben - und vier sind zu
+   wenige fuer eine Auswahl. Als Reihe bleibt der Abschnitt eine
+   Kartenhoehe hoch, bei jeder Fensterbreite, und es passen zwoelf
+   hinein. Das Handy macht das fuer alle Raster schon so (siehe unten);
+   hier gilt es auch am Rechner.
+
+   Die feste Kartenbreite ist Absicht: Bei 1060 px Inhalt sind drei
+   Karten voll zu sehen und die vierte angeschnitten. Dieser Anschnitt
+   IST der Hinweis, dass die Reihe weitergeht - ohne ihn sieht sie aus
+   wie ein Raster, das zufaellig aufhoert. Einen sichtbaren Balken gibt
+   es dafuer bewusst nicht; Ben hat am 05.11.2026 gemeldet, dass ein
+   auftauchender Scrollbalken stoert. */
+.hotel-reihe {
+  display: flex; gap: 20px;
+  overflow-x: auto; overscroll-behavior-x: contain;
+  touch-action: pan-x pinch-zoom;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  /* Bis an den Rand schieben, ohne dass die Karten am Rand kleben */
+  padding: 2px 22px 8px; margin: 0 -22px;
+}
+.hotel-reihe::-webkit-scrollbar { width: 0; height: 0; }
+.hotel-reihe > * { flex: 0 0 286px; scroll-snap-align: start; }
 
 .hotel-card {
   background: #fff; border: 1px solid var(--line); border-radius: var(--r-lg); overflow: hidden;
@@ -1435,6 +1483,10 @@ body.agent-collapsed .agent-head .icon-btn { margin-left: 0; transform: rotate(4
   }
   .category-row > * { width: 46%; }
   .hotel-grid > * { width: 80%; max-width: 300px; }
+  /* Die Reihe ist am Rechner schon eine Reihe - auf dem Handy braucht
+     sie nur die schmalere Karte und den Rand der anderen Gitter. */
+  .hotel-reihe { padding: 2px 16px 8px; margin: 0 -16px; }
+  .hotel-reihe > * { flex: 0 0 80%; max-width: 300px; }
   .quote-grid > * { width: 76%; }
 
   /* Die Vorteile bleiben gestapelt - vier kurze Kaesten sind kein

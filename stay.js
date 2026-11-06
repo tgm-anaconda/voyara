@@ -405,7 +405,11 @@ function renderSimilar() {
   if (!similar.length) { document.getElementById("similarPanel").remove(); return; }
 
   const panel = document.getElementById("similarPanel");
-  panel.innerHTML = `<h2>Ähnliche Unterkünfte</h2><div class="hotel-grid">${similar.map(stayCard).join("")}</div>`;
+  /* Dieselbe Reihe wie auf der Startseite. Der Kasten ist hier nur
+     624 px breit, es passten also zwei Karten nebeneinander und die
+     dritte stand allein darunter - genau der Einzelgaenger, den Ben am
+     06.11.2026 gemeldet hat, nur an der dritten Stelle. */
+  panel.innerHTML = `<h2>Ähnliche Unterkünfte</h2><div class="hotel-reihe">${similar.map(stayCard).join("")}</div>`;
   applyScenes(panel);
   bindWishButtons(panel);
 }
