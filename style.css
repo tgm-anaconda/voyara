@@ -193,7 +193,13 @@ img, svg { max-width: 100%; }
    `scrollbar-width` fuer Firefox, die Pseudoklasse fuer die anderen. */
 .agent-messages { scrollbar-width: none; }
 .agent-messages::-webkit-scrollbar { width: 0; height: 0; }
-.agent-messages .msg { max-width: 92%; font-size: .93rem; line-height: 1.62; }
+/* Zeilenumbrueche im Text bleiben stehen (09.11.2026). Der Kern schreibt
+   seit heute Aufzaehlungen mit echten Umbruechen - bei "kalt" stehen die
+   Regionen untereinander. Ohne diese Zeile faltet der Browser sie zu
+   einem Fliesstext zusammen, und genau das war der Wunsch nicht:
+   "Vielleicht untereinander so als Stichpunkte, damit man das auch
+   sinnvoll in diesem Chat erkennen kann." */
+.agent-messages .msg { max-width: 92%; font-size: .93rem; line-height: 1.62; white-space: pre-wrap; }
 /* Die Antwort steht als Text, nicht in einem Kasten.
    `border: none` muss ausdruecklich dastehen: Die allgemeine Regel
    `.msg.bot` weiter unten (fuer den hellen Chat auf der Seite) bringt

@@ -1474,7 +1474,25 @@ const Kern = {
     const p = this.lauf.profil || {};
     const fp = Werkzeugkasten.fahrplan(p, this.lauf);
     const bekannt = this.standKurz();
-    const chipsHinweis = fp.naechstes ? (fp.chips ? ` Chips etwa: ${fp.chips}.` : " Keine CHIPS-Zeile - die Frage ist offen.") : "";
+    /* Feste Antwortmoeglichkeiten sind die Auswahl, nicht ein Angebot
+       (09.11.2026).
+       ----------------------------------------------------------------
+       Gemeldet: Auf "was ist der unterschied der drei preislich?" kam
+       "Moechtest du lieber in der guenstigeren Economy fliegen, oder soll
+       ich dir auch die anderen Klassen zeigen?" - und danach noch einmal
+       dieselbe Frage. Der Nutzer: "Das macht gar keinen Sinn. Der musste
+       einfach eine Entscheidung verlangen und nicht andere Klassen
+       zeigen. Es gibt einfach nur drei."
+
+       Er hat recht: Die drei standen in derselben Nachricht, es gab
+       nichts mehr zu zeigen. Das Modell hatte die Chips als Vorschlaege
+       gelesen, aus denen es etwas machen darf, statt als die vollstaendige
+       Auswahl. Jetzt steht dabei, was sie sind. */
+    const chipsHinweis = fp.naechstes
+      ? (fp.chips
+        ? ` Das sind die moeglichen Antworten, vollstaendig: ${fp.chips}. Verlange eine Wahl daraus. Biete nicht an, sie zu zeigen, aufzuzaehlen oder zu erklaeren - sie stehen bereits da - und erfinde keine weitere Moeglichkeit daneben.`
+        : " Keine CHIPS-Zeile - die Frage ist offen.")
+      : "";
     /* Wohin die Antwort gehoert (06.10.2026).
        ----------------------------------------------------------------
        Bis hierher bekam das Modell den Themennamen, einen Hinweis zur
@@ -2726,7 +2744,21 @@ const Kern = {
                Saetze ("Alles klar.", "Juni merke ich mir.") bleiben: Unter
                vier Inhaltswoertern ist der Anteil kein Mass. */
             const woerter = (x) => new Set(String(x).toLowerCase().match(/[a-zäöüß]{5,}/g) || []);
-            const kernWoerter = woerter(fpJetzt.satz);
+            /* Verglichen wird mit allem, was der Kern in diesem Zug sagt -
+               nicht nur mit seiner Frage (09.11.2026).
+               ----------------------------------------------------------
+               Gemeldet: "Alles klar, bis 25 Grad. Damit kommt Tirol dazu -
+               jetzt 3 Regionen statt 2." und in der naechsten Blase
+               "Alles klar, bis 25 Grad, damit kommt Tirol als dritte
+               Region dazu." Der erste Satz kam vom Kern (`abgeleitet`),
+               der zweite vom Modell.
+
+               Die Umschreibungssperre eine Zeile tiefer gab es laengst,
+               sie verglich aber nur mit der FRAGE des Kerns - und die
+               ging hier um den Flug. Was der Kern in derselben Nachricht
+               sonst noch sagt, war ihr unbekannt. Jetzt zaehlt alles
+               davon, und derselbe Satz kommt nicht zweimal. */
+            const kernWoerter = woerter(`${(this.lauf.abgeleitet || []).map((x) => x.satz).join(" ")} ${annahmen} ${fpJetzt.satz}`);
             const sagtDasselbe = (x) => {
               const w = [...woerter(x)];
               // Drei Inhaltswoerter reichen: "Die Filter sind schon

@@ -52,17 +52,25 @@ for (const f of ["data/ziele.js", "data/hotels.js", "data/inventory.js", "data/a
   /* Die Sicherung haelt nur die geaenderten Dateien, flach abgelegt.
      Alles andere kommt aus dem Projekt - sonst misst die Gegenprobe
      fehlende Dateien statt alten Code. */
-  const flach = quelle + f.replace("agent/", "");
-  const pfad = (f.startsWith("agent/") && fs.existsSync(flach)) ? flach : B + f;
+  /* Auch Datendateien kommen aus der Sicherung, wenn sie dort liegen -
+     sonst misst die Gegenprobe zu einem alten Code den neuen Katalog,
+     und Pruefungen zur Ausstattung bestehen auf beiden Seiten (gefunden
+     am 09.11.2026). */
+  const flach = quelle + f.replace(/^(agent|data)\//, "");
+  // Nur in der Gegenprobe: Ohne --alt ist `quelle` die Projektwurzel, und
+  // der flache Name trifft dort andere Dateien (faq.js statt data/faq.js).
+  const pfad = (alt && fs.existsSync(flach)) ? flach : B + f;
   try { vm.runInContext(fs.readFileSync(pfad, "utf8"), ctx, { filename: f }); }
   catch (e) { console.log("LADEFEHLER", f, e.message.slice(0, 160)); process.exit(2); }
 }
-vm.runInContext("this.WK=typeof Werkzeugkasten!=='undefined'?Werkzeugkasten:null;"
+vm.runInContext("this.PO=typeof Politik!=='undefined'?Politik:null;"
+  + "this.AL=typeof AMENITY_LABELS!=='undefined'?AMENITY_LABELS:null;"
+  + "this.WK=typeof Werkzeugkasten!=='undefined'?Werkzeugkasten:null;"
   + "this.KN=typeof Kern!=='undefined'?Kern:null;"
   // Die Kataloge sind `const` im Skript und haengen nicht am Kontext -
   // geholt wird deshalb ueber den Werkzeugkasten, von innen.
   + "this.KAT=Werkzeugkasten.katalog({ typ: 'hotel' });", ctx);
-const { WK, KN, KAT } = ctx;
+const { WK, KN, KAT, PO, AL } = ctx;
 if (!WK || !KN) { console.log("Werkzeugkasten oder Kern nicht geladen"); process.exit(2); }
 
 let gut = 0, schlecht = 0;
@@ -81,9 +89,11 @@ const OFFEN = {};
    1. Wortwahl - "Haeuser" nur noch, wo es stimmt
    ==================================================================== */
 pruefe("artZahl 3 Hotels", WK.artZahl?.(3, HOTEL), "3 Hotels");
-pruefe("artZahl 1 Hotel", WK.artZahl?.(1, HOTEL), "1 Hotel");
+/* Bei eins steht seit dem 09.11.2026 das Wort statt der Ziffer: "nur 1
+   Hotel uebrig" las sich wie ein Platzhalter, der nicht gefuellt wurde. */
+pruefe("artZahl 1 Hotel", WK.artZahl?.(1, HOTEL), "ein Hotel");
 pruefe("artZahl 2 Ferienwohnungen", WK.artZahl?.(2, WOHNUNG), "2 Ferienwohnungen");
-pruefe("artZahl 1 Ferienwohnung", WK.artZahl?.(1, WOHNUNG), "1 Ferienwohnung");
+pruefe("artZahl 1 Ferienwohnung", WK.artZahl?.(1, WOHNUNG), "eine Ferienwohnung");
 pruefe("artZahl 5 Unterkuenfte ohne Art", WK.artZahl?.(5, OFFEN), "5 Unterkünfte");
 pruefe("artEins bestimmt (Hotel)", WK.artEins?.(HOTEL, true), "das Hotel");
 pruefe("artEins bestimmt (Wohnung)", WK.artEins?.(WOHNUNG, true), "die Ferienwohnung");
@@ -438,6 +448,53 @@ const liesReisende = async (text, felder, urteil = "ja") => {
   // Und ohne Rueckendeckung des Modells gilt weiter die alte Vorsicht
   const ohne = await liesReisende("Mir ist das Wetter wichtig", { erwachsene: 2, kinder: 0 }, "nein");
   pruefe("Reisende: ohne Bezug zur Frage wird nichts gesetzt", ohne.erwachsene, null);
+
+  /* ==================================================================
+     11. Die Befunde vom 09.11.2026, zweite Haelfte
+     ================================================================== */
+  // Ausstattung: tolerant genug, um nicht jede Suche zu erwuergen
+  const anteil = (merkmal) => {
+    const liste = WK.katalog({});
+    const n = liste.filter((h) => (h.amenities || []).includes(merkmal)).length;
+    return Math.round((100 * n) / liste.length);
+  };
+  pruefe("Haustiere sind kein Sonderfall mehr (mind. 25 %)", anteil("petsAllowed") >= 25, true);
+  pruefe("Whirlpool gibt es ueberhaupt", anteil("whirlpool") > 0, true);
+  pruefe("Sauna gibt es ueberhaupt", anteil("sauna") > 0, true);
+  pruefe("Garten gibt es ueberhaupt", anteil("garten") > 0, true);
+  pruefe("Alle neuen Merkmale haben eine Beschriftung",
+    ["whirlpool", "sauna", "garten"].every((m) => AL && AL[m]), true);
+
+  /* Die Engstelle benennt das Merkmal, an dem es haengt - nicht die
+     ganze Ausstattung. Gemeldet: "Da muss er darauf hinweisen, welche
+     Begrenzungen in der Kombination das Problem sind." */
+  const engP = { typ: "hotel", artGenannt: true, richtung: "kalt", maxGrad: 25, erwachsene: 3, kinder: 0,
+    monat: 8, naechte: 11, flug: true, flugAb: "Hamburg", verpflegung: "fruehstueck",
+    budgetGesamt: 2450, ausstattung: ["petsAllowed", "bar", "pool"], vonPerson: {} };
+  const engListe = WK.katalogTreffer(engP, WK.filterAusStand(engP));
+  /* Wie oben: Kennt der alte Code die Funktion nicht, soll die Pruefung
+     fehlschlagen statt abzustuerzen. */
+  const engE = typeof WK.ausstattungEngste === "function" ? WK.ausstattungEngste(engP) : null;
+  pruefe("Engstelle: ein einzelnes Merkmal sticht heraus", !!engE, true);
+  pruefe("Engstelle: alle Wuensche einzeln gerechnet", engE ? engE.einzeln.length : 0, 3);
+  const engR = WK.engstelle(engListe, engP, {});
+  pruefe("Engstelle: der Satz nennt das Merkmal, nicht 'die gewuenschte Ausstattung'",
+    engR ? /die Vorgabe „/.test(engR.satz) : false, true);
+  pruefe("Engstelle: die Zahl gehoert zu diesem Merkmal",
+    engR && engE ? engR.ohne === engE.ohne : false, true);
+  // Und gelockert wird nur dieses eine Merkmal
+  const gelockert = WK.ENGSTELLE_LOCKERN.ausstattung(engP) || {};
+  pruefe("Engstelle: nur das engste Merkmal faellt weg",
+    gelockert.ausstattung ? gelockert.ausstattung.length : -1, 2);
+
+  /* Regionen untereinander, wenn es wenige sind */
+  const kaltP = { typ: "hotel", artGenannt: true, richtung: "kalt", erwachsene: 3, kinder: 0, monat: 8, naechte: 11 };
+  const th = (PO.THEMEN || []).find((t) => t.id === "kalt");
+  kaltP.zieleErlaubt = WK.regionenFuerRichtung(th, kaltP);
+  const kaltSatz = WK.richtungSatz(kaltP) || "";
+  pruefe("Kalt: die Regionen stehen untereinander", /\n•/.test(kaltSatz), true);
+  pruefe("Kalt: kein irrefuehrendes 'darunter'", /darunter/.test(kaltSatz), false);
+  pruefe("Kalt: jede Region mit Zahl der Haeuser", (kaltSatz.match(/Hotels|Hotel\b/g) || []).length >= 2, true);
 
   console.log(`\n${gut} richtig, ${schlecht} falsch`);
   process.exit(schlecht ? 1 : 0);

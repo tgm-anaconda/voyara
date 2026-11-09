@@ -833,8 +833,25 @@ const Werkzeugkasten = {
     // Genannt werden die drei mit der groessten Auswahl, aber der
     // Temperatur nach geordnet - sonst springen die Zahlen im Satz
     // ("Krabi 32, Teneriffa 21, Kapstadt 27").
-    const namen = nachAuswahl.slice(0, 3)
-      .sort((a, b) => (warm ? grad(b, p.monat) - grad(a, p.monat) : grad(a, p.monat) - grad(b, p.monat)))
+    /* Alle Regionen, wenn es wenige sind - und untereinander
+       (09.11.2026).
+       ----------------------------------------------------------------
+       Gemeldet: "Er soll bitte auch, wenn man kalt auswaehlt als Region,
+       direkt alle Regionen nennen, die zur Verfuegung stehen. Vielleicht
+       untereinander so als Stichpunkte, damit man das auch sinnvoll in
+       diesem Chat erkennen kann."
+
+       Vorher standen immer hoechstens drei da, hinter dem Wort
+       "darunter" - und bei zwei oder drei Regionen insgesamt war
+       "darunter" schlicht falsch, es waren ja alle. Bis sechs stehen
+       jetzt alle, jede in einer Zeile mit der Zahl der Haeuser daneben.
+       Darueber bleibt es bei den dreien im Fliesstext, sonst wird aus
+       einer Antwort eine Tapete. */
+    const ALLE_GRENZE = 6;
+    const nachGrad = (a, b) => (warm ? grad(b, p.monat) - grad(a, p.monat) : grad(a, p.monat) - grad(b, p.monat));
+    const alleNennen = mit.length <= ALLE_GRENZE;
+    const namen = (alleNennen ? [...mit] : nachAuswahl.slice(0, 3))
+      .sort(nachGrad)
       .map((z) => `${z.name} (${grad(z, p.monat)} Grad)`);
     const monat = MONATSNAMEN[p.monat - 1];
     /* Grenze und Spanne getrennt. "Davon liegen 78 in einer Gegend mit 22
@@ -843,8 +860,14 @@ const Werkzeugkasten = {
        kaelteste Region darueber. Jetzt steht beides da, und was was ist. */
     const basis = p.mindestGrad != null ? p.mindestGrad : (warm ? 22 : 12);
     const grenze = warm ? Math.min(basis, von) : Math.max(basis, bis);
-    return `${warm ? "Warm" : "Kalt"} heißt für mich ${warm ? "ab" : "bis"} ${grenze} Grad. Im ${monat} sind das ${mit.length} Regionen mit ${von} bis ${bis} Grad, darunter ${namen.join(", ")}.`
-      + (ohneSchluss ? "" : " Sag Bescheid, wenn dir eine andere Grenze lieber ist.");
+    const kopf = `${warm ? "Warm" : "Kalt"} heißt für mich ${warm ? "ab" : "bis"} ${grenze} Grad. Im ${monat} sind das ${mit.length} ${mit.length === 1 ? "Region" : "Regionen"} mit ${von} bis ${bis} Grad`;
+    const schluss = ohneSchluss ? "" : " Sag Bescheid, wenn dir eine andere Grenze lieber ist.";
+    if (alleNennen) {
+      const zeilen = (alleNennen ? [...mit] : []).sort(nachGrad)
+        .map((z) => `• ${z.name} (${grad(z, p.monat)} Grad, ${this.artZahl(haeuser(z.id), p)})`);
+      return `${kopf}:\n${zeilen.join("\n")}${schluss ? `\n${schluss.trim()}` : ""}`;
+    }
+    return `${kopf}, darunter ${namen.join(", ")}.${schluss}`;
   },
 
   /* Gesagt wird es einmal je Stand - und wieder, wenn die Person die
@@ -2563,7 +2586,11 @@ const Werkzeugkasten = {
   },
 
   artZahl(n, p) {
-    return `${n} ${n === 1 ? this.artEins(p) : this.artWort(p, true)}`;
+    // "nur 1 Hotel uebrig" las sich wie ein Platzhalter, der nicht
+    // gefuellt wurde. Bei eins steht das Wort da, mit dem Geschlecht der
+    // Art: ein Hotel, eine Ferienwohnung, eine Unterkunft (09.11.2026).
+    if (n !== 1) return `${n} ${this.artWort(p, true)}`;
+    return `${this.seitenTyp(p) === "hotel" ? "ein" : "eine"} ${this.artEins(p)}`;
   },
 
   /* Dieselbe Frage von aussen, wo kein Profil zur Hand ist (Werkzeuge
@@ -2714,6 +2741,28 @@ const Werkzeugkasten = {
         else a.mindestbewertung = n;
       }
       const gesagt = (muster, letzte = 3) => kern.lauf.gespraech.filter((n) => n.role === "user").slice(-letzte).some((n) => muster.test(String(n.content)));
+      /* Wer fuer eine Angabe einsteht (09.11.2026)
+         ==================================================================
+         An mehreren Stellen hier unten pruefte der Kern die Angabe des
+         Modells mit einer Wortliste nach und loeschte sie, wenn kein Wort
+         passte. Bei den Reisenden ist das heute aufgefallen: "Ich und
+         meine Mutter" stand nicht in der Liste, "Ich und meine Freundin"
+         schon - und damit entschied der Zufall des Wortes, ob die
+         richtige Angabe ankam.
+
+         Die Listen waren nie als Verstaendnis gedacht. Sie sollten
+         verhindern, dass das Modell auf "hi" ein ganzes Profil erfindet.
+         Dafuer gibt es seit dem 06.11.2026 etwas Besseres: Das Modell
+         sagt zurueck, ob die Nachricht die offene Frage beantwortet hat.
+         Sagt es ja, und ging es dabei um genau dieses Thema, dann steht
+         es fuer die Angabe ein und der Kern prueft sie nicht nach.
+
+         Was bleibt: alles, wo die Angabe nicht aus dem Satz folgen KANN -
+         Anreisetag, Alter der Kinder, eine unbestimmte Mehrzahl. Dort
+         waere ein Wert immer geraten, egal wie gut das Modell versteht,
+         und er landet in den Studiendaten. */
+      const beantwortet = (...themen) => ["ja", "teilweise"].includes(a.frage_beantwortet)
+        && themen.includes(kern.lauf.gefragtVorher);
       if (a.ziel !== undefined) {
         const roh = String(a.ziel).toLowerCase().trim();
         let id = null;
@@ -2804,8 +2853,8 @@ const Werkzeugkasten = {
       // Antworten auf die Frage "schauen oder klaeren" und "selbst oder drei"
       // zaehlen nur, wenn die letzte Nachricht so etwas sagt - auf "Hotel"
       // hatte das Modell sonst "schauen" eingetragen
-      if (a.weiter && !gesagt(/schau|seh(en)?\b|zeig|guck|los\b|klär|klaer|erst ?mal|eckdaten|angaben|weiter|noch (ein paar|mehr|etwas|was)|nur zu|gern|ja\b|nein\b|ok\b|passt/i, 1)) { verworfen.push("weiter"); delete a.weiter; }
-      if (a.vorgehen && !gesagt(/selbst|selber|filter|drei|top|raussuch|\bsuch|\bsuchst\b|für mich|fuer mich|übernimm|uebernimm|vorschl|favorit|liste|schau|zeig|empfehl|wähl|waehl|aussuch/i, 1)) { verworfen.push("vorgehen"); delete a.vorgehen; }
+      if (a.weiter && !beantwortet("weiter") && !gesagt(/schau|seh(en)?\b|zeig|guck|los\b|klär|klaer|erst ?mal|eckdaten|angaben|weiter|noch (ein paar|mehr|etwas|was)|nur zu|gern|ja\b|nein\b|ok\b|passt/i, 1)) { verworfen.push("weiter"); delete a.weiter; }
+      if (a.vorgehen && !beantwortet("vorgehen") && !gesagt(/selbst|selber|filter|drei|top|raussuch|\bsuch|\bsuchst\b|für mich|fuer mich|übernimm|uebernimm|vorschl|favorit|liste|schau|zeig|empfehl|wähl|waehl|aussuch/i, 1)) { verworfen.push("vorgehen"); delete a.vorgehen; }
       // Die Wahl "selbst oder drei" gibt es erst nach der Lage; vorher ist
       // "erst mal schauen" die Antwort auf "schauen oder klaeren" (weiter)
       // Wer gleich im ersten Satz "such mir drei raus" schreibt, hat die
@@ -3044,7 +3093,7 @@ const Werkzeugkasten = {
       // Ohne feste Daten wird flexibel im Monat gesucht - keine Entscheidung
       // des Modells, sondern die einzige Lesart von "im Oktober"
       p.flexibel = !(p.von && p.bis);
-      if (a.naechte && !p.naechte && !gesagt(/\d|woche|tage|nächte|naechte|übernacht|uebernacht|wochenende|lang|kurz|eine|zwei|drei|vier|fünf|fuenf|sechs|sieben|acht|neun|zehn|zwölf|zwoelf|vierzehn/i)) {
+      if (a.naechte && !p.naechte && !beantwortet("dauer") && !gesagt(/\d|woche|tage|nächte|naechte|übernacht|uebernacht|wochenende|lang|kurz|eine|zwei|drei|vier|fünf|fuenf|sechs|sieben|acht|neun|zehn|zwölf|zwoelf|vierzehn/i)) {
         kern.notieren("naechte_verworfen", { naechte: a.naechte }); delete a.naechte;
       }
       setze("naechte", a.naechte);
@@ -3075,11 +3124,9 @@ const Werkzeugkasten = {
          nichts oder etwas anderes, gilt wie bisher die Wortliste als
          zweiter Weg - dann hat niemand die Verantwortung uebernommen. */
       const ZAHL = /\d|\b(ein|eine|einem|einen|zwei|drei|vier|fünf|fuenf|sechs|sieben|acht|zweit|dritt|viert|fünft|fuenft|sechst|kein|keine|ohne|allein|alleine|beide|zwilling|sohn|tochter|frau|mann|freundin|freund|partner|eltern|paar|erwachsene)\b/i;
-      const gruppeWarGefragt = ["reisende", "kinderAlter"].includes(kern.lauf.gefragtVorher);
-      const modellStehtDafuerEin = ["ja", "teilweise"].includes(a.frage_beantwortet) && gruppeWarGefragt;
       for (const f of ["personenGesamt", "erwachsene", "kinder"]) {
         if (a[f] != null && p[f === "personenGesamt" ? "personen" : f] == null
-          && !gesagt(ZAHL, 1) && !modellStehtDafuerEin) {
+          && !gesagt(ZAHL, 1) && !beantwortet("reisende", "kinderAlter")) {
           kern.notieren("reisende_verworfen", { feld: f, wert: a[f] }); delete a[f];
         }
       }
@@ -3368,9 +3415,16 @@ const Werkzeugkasten = {
            war filterbar (petsAllowed steht an jedem Haus), stand aber
            nicht in der Liste und fiel deshalb unter den Tisch. Jetzt
            steht es drin. */
+        /* Drei Merkmale dazu (09.11.2026): Whirlpool, Sauna und ein
+           Sitzplatz im Freien. "Whirlpool" landete bisher beim Pool und
+           "Hollywoodschaukel" nirgends - der Wunsch fiel still unter den
+           Tisch, und in der Uebersicht stand nichts davon. */
         const WORT = {
-          pool: /pool|schwimmbad|schwimmen|baden/i,
-          spa: /spa|wellness|sauna|massage|therme/i,
+          pool: /\bpool\b|schwimmbad|schwimmen|baden/i,
+          whirlpool: /whirlpool|jacuzzi|sprudelbad|hot ?tub/i,
+          sauna: /sauna|dampfbad|schwitz/i,
+          garten: /garten|liegewiese|hollywoodschaukel|h(?:ä|ae)ngematte|sitzplatz im freien|drau(?:ß|ss)en sitzen|grill/i,
+          spa: /spa|wellness|massage|therme/i,
           kidsClub: /kinderclub|kinderbetreuung|animation|betreuung|miniclub/i,
           familyFriendly: /famili|kinderfreundlich|mit (den )?kindern|kindgerecht/i,
           beachfront: /direkt am strand|erste reihe|strandlage|am strand liegen|direkt ans meer|direkt am meer/i,
@@ -8072,9 +8126,45 @@ const Werkzeugkasten = {
     preis: (p) => ({ maxPreis: Math.round((p.maxPreis || 0) * 1.25) }),
     gesamt: (p) => ({ budgetGesamt: Math.round((p.budgetGesamt || 0) * 1.25) }),
     ziel: () => ({ zielId: null, zieleAuswahl: [], zielOffen: true }),
-    ausstattung: () => ({ ausstattungEgal: true, kriterien: [] }),
+    /* Gelockert wird das Merkmal, an dem es haengt - nicht alle.
+       Vorher warf diese Zeile saemtliche Wuensche weg, auch die, die gar
+       nichts kosteten. */
+    ausstattung: (p) => {
+      const e = Werkzeugkasten.ausstattungEngste(p);
+      if (!e) return { ausstattungEgal: true, kriterien: [] };
+      return { ausstattung: (p.ausstattung || []).filter((x) => x !== e.merkmal) };
+    },
     angebote: () => ({ nurAngebote: null }),
     wlan: () => ({ wlanInklusive: null }),
+  },
+
+  /* Welches einzelne Ausstattungsmerkmal die Liste zusammendrueckt.
+     ------------------------------------------------------------------
+     Gerechnet wird wie in `engstelle`, nur eine Ebene tiefer: einmal je
+     Merkmal, jedes Mal nur dieses eine weggelassen. Zurueck kommt das
+     teuerste, mit der Zahl, die ohne es dastuende - und die Liste aller
+     Merkmale mit ihrem Preis, damit der Satz sie nennen kann.
+
+     Null, wenn nur ein Merkmal gewuenscht ist (dann sagt schon die Ebene
+     darueber alles) oder wenn kein einzelnes heraussticht. */
+  ausstattungEngste(p) {
+    const gewollt = p?.ausstattung || [];
+    if (gewollt.length < 2 || typeof Auswahl === "undefined") return null;
+    const katalog = this.katalog(p);
+    const vg = this.vorgaben(p, this.filterAusStand(p));
+    let jetzt = 0;
+    try { jetzt = Auswahl.treffer(katalog, vg).length; } catch { return null; }
+    const einzeln = [];
+    for (const merkmal of gewollt) {
+      const ohneDies = { ...vg, ausstattung: gewollt.filter((x) => x !== merkmal) };
+      let n = 0;
+      try { n = Auswahl.treffer(katalog, ohneDies).length; } catch { continue; }
+      einzeln.push({ merkmal, ohne: n, gewinn: n - jetzt });
+    }
+    if (!einzeln.length) return null;
+    einzeln.sort((a, b) => b.gewinn - a.gewinn);
+    if (einzeln[0].gewinn < 1) return null;
+    return { ...einzeln[0], jetzt, einzeln };
   },
 
   /* Die Rueckfrage bei sehr wenigen Treffern. Gebaut wie artRueckfrage:
@@ -8094,9 +8184,22 @@ const Werkzeugkasten = {
     if (!werte) return null;
     const wohnung = this.seitenTyp(p) === "apartment";
     const haeuser = (n) => this.artZahl(n, p);
-    const satz = `Mit deinen Vorgaben bleiben nur ${haeuser(e.jetzt)} übrig, und bei so wenigen `
+    /* Bei mehreren Wuenschen steht dabei, was jeder einzelne kostet.
+       Gemeldet am 09.11.2026: "Er muss darauf hinweisen, welche
+       Begrenzungen in der Kombination das Problem sind. Das muss er viel
+       genauer erklaeren." */
+    let aufschluesselung = "";
+    if (e.feld === "ausstattung") {
+      const ae = this.ausstattungEngste(p);
+      if (ae && ae.einzeln.length > 1) {
+        const name = (m) => (typeof AMENITY_LABELS !== "undefined" && AMENITY_LABELS[m]) || m;
+        aufschluesselung = " Einzeln gerechnet: "
+          + ae.einzeln.map((x) => `ohne „${name(x.merkmal)}“ ${x.ohne}`).join(", ") + ".";
+      }
+    }
+    const satz = `Mit deinen Vorgaben ${e.jetzt === 1 ? "bleibt" : "bleiben"} nur ${haeuser(e.jetzt)} übrig, und bei so wenigen `
       + `lässt sich schlecht vergleichen. Am meisten nimmt ${was} weg: ohne diese Vorgabe wären es `
-      + `${e.ohne}. Soll ich die Suche ausweiten, oder ist dir die Vorgabe wichtig?`;
+      + `${e.ohne}.${aufschluesselung} Soll ich die Suche ausweiten, oder ist dir die Vorgabe wichtig?`;
     const ja = "Ja, Suche ausweiten";
     const nein = "Nein, ist mir wichtig";
     /* Dritter Weg bei den Ferienwohnungen: Statt die Vorgabe zu lockern,
@@ -8131,10 +8234,32 @@ const Werkzeugkasten = {
     strand: (p) => (p.maxStrand < 1 ? `die ${Math.round(p.maxStrand * 1000)} m zum Strand` : `die ${p.maxStrand} km zum Strand`),
     bewertung: (p) => `die Mindestbewertung von ${String(p.mindestbewertung).replace(".", ",")}`,
     sterne: (p) => `die Vorgabe von mindestens ${p.mindestSterne} Sternen`,
-    ausstattung: () => "die gewünschte Ausstattung",
+    /* Nicht mehr "die gewünschte Ausstattung" (09.11.2026).
+       ----------------------------------------------------------------
+       Gemeldet: "Es ist dumm, dass er fragt, ob er die gesamten Vorgaben
+       von der Ausstattung entfernen soll. Da muss er darauf hinweisen,
+       welche Begrenzungen in der Kombination das Problem sind."
+
+       Stimmt. Es waren drei Wuensche, einer davon hat die Liste
+       zusammengedrueckt, und der Agent bot an, alle drei wegzuwerfen.
+       `ausstattungEngste` rechnet jedes Merkmal einzeln durch und nennt
+       das, an dem es haengt. Nur wenn sich keines heraushebt, steht hier
+       wieder die Mehrzahl. */
+    ausstattung: (p) => {
+      /* Nicht `this`: Die Eintraege hier sind Pfeilfunktionen, und
+         `.call(this, p)` in `engstelle` kann deren `this` nicht umbiegen -
+         es bleibt der Modulrahmen. Genau daran war `art` eine Zeile
+         weiter unten still gestorben (09.11.2026 gefunden): Der Aufruf
+         warf, der Fehler wurde geschluckt, und die Engstelle "Hotel oder
+         Ferienwohnung" kam nie zustande. */
+      const e = Werkzeugkasten.ausstattungEngste(p);
+      if (!e) return "die gewünschte Ausstattung";
+      const name = (typeof AMENITY_LABELS !== "undefined" && AMENITY_LABELS[e.merkmal]) || e.merkmal;
+      return `die Vorgabe „${name}“`;
+    },
     angebote: () => "die Vorgabe, dass es reduziert sein soll",
     wlan: () => "die Vorgabe, dass WLAN ohne Aufpreis dabei ist",
-    art: (p) => (this.seitenTyp(p) === "apartment" ? "die Beschränkung auf Ferienwohnungen" : "die Beschränkung auf Hotels"),
+    art: (p) => (Werkzeugkasten.seitenTyp(p) === "apartment" ? "die Beschränkung auf Ferienwohnungen" : "die Beschränkung auf Hotels"),
   },
 
   engstelle(liste, p, lauf = null) {
@@ -8150,6 +8275,15 @@ const Werkzeugkasten = {
       if (!beste || n > beste.n) beste = { feld, n };
     }
     if (!beste) return null;
+    /* Nennt die Beschriftung ein einzelnes Ausstattungsmerkmal, muss die
+       Zahl daneben auch dieses Merkmal meinen (09.11.2026). `beste.n`
+       laesst die ganze Ausstattung weg - im Satz stuenden dann "Pool"
+       und die Zahl fuer "ohne alle Wuensche" nebeneinander, und die
+       beiden widersprechen sich. */
+    if (beste.feld === "ausstattung") {
+      const ae = this.ausstattungEngste(p);
+      if (ae) beste = { feld: "ausstattung", n: ae.ohne };
+    }
     let was = null;
     try { was = this.ENGSTELLE[beste.feld].call(this, p); } catch { was = null; }
     if (!was) return null;

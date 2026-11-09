@@ -646,9 +646,25 @@ const Werkzeuge = {
        Jetzt zaehlt, was wirklich durch das Fenster gelaufen ist: Eine
        Karte zaehlt, sobald ihre Oberkante den unteren Rand erreicht hat.
        Die Zahl kann damit gar nicht mehr von der Bewegung abweichen. */
+    /* Gezaehlt wird die Oberkante, aber mit Abzug (09.11.2026).
+       ------------------------------------------------------------------
+       Gemeldet: "Er hat bei 476 aufgehoert, was an sich auch richtig war,
+       aber er war noch nicht mit allen Hotels durch optisch."
+
+       Nachgemessen: Der Zaehler stand bei 476 von 476, als noch 643
+       Pixel zu scrollen waren. Grund war diese Zeile - eine Karte galt
+       als gesehen, sobald ihre OBERKANTE den unteren Fensterrand
+       erreichte. Die letzten Karten eines Fensters zaehlten damit immer
+       eine Fensterhoehe zu frueh, und am Ende stand die volle Zahl da,
+       waehrend unten noch Haeuser vorbeiliefen.
+
+       Jetzt zaehlt eine Karte, wenn sie wirklich im Bild war: ihre
+       Oberkante muss die Mitte des Fensters passiert haben. Die Zahl
+       laeuft damit der Bewegung hinterher statt voraus, und das ist die
+       richtige Richtung - sie beschreibt, was man gesehen HAT. */
     const kanten = elemente.map((el) => window.scrollY + el.getBoundingClientRect().top);
     const gesehen = (bisY) => {
-      const rand = bisY + window.innerHeight;
+      const rand = bisY + window.innerHeight * 0.5;
       let n = 0;
       for (const k of kanten) if (k <= rand) n++;
       return Math.min(gesamt, n);
@@ -657,6 +673,37 @@ const Werkzeuge = {
        wie Lesen statt wie Blaettern, und zwischen zwei Schritten aendert
        sich der Zaehler um wenige Karten statt um ein Dutzend. Die
        Gesamtdauer bleibt gleich, der Takt passt sich an. */
+    /* Der Zeiger faehrt mit (09.11.2026)
+       ------------------------------------------------------------------
+       Gemeldet: "Dieser Cursor mit der Suche ist irgendwie unten links
+       gewesen, obwohl er schon bei den Hotels runtergescrollt hat. Der
+       war irgendwie verbuggt und nicht an der richtigen Stelle."
+
+       Richtig gesehen, und es war kein Fehler, sondern eine Luecke:
+       Diese Schleife hat den Zeiger nie angefasst. Er stand da, wo ihn
+       die letzte Handlung abgestellt hatte - bei der Filterspalte, also
+       unten links -, und zaehlte von dort aus Hotels, die ganz woanders
+       vorbeiliefen. Nur an den Haltepunkten sprang er auf eine Karte.
+
+       Jetzt bleibt er an der Karte, die gerade in der Mitte des Fensters
+       steht. Gesetzt wird die Stelle ohne Animation (`setzePosition`):
+       `bewegeZu` wuerde bei jedem Schritt eine eigene Fahrt starten und
+       die Schleife ausbremsen. */
+    const zeigerMitfuehren = () => {
+      if (Zeiger.armB?.() || !Zeiger.el) return;
+      const mitte = window.innerHeight * 0.42;
+      let beste = null, abstand = Infinity;
+      for (const el of elemente) {
+        const k = el.getBoundingClientRect();
+        if (k.bottom < 0 || k.top > window.innerHeight) continue;
+        const d = Math.abs(k.top + k.height / 2 - mitte);
+        if (d < abstand) { abstand = d; beste = k; }
+      }
+      if (!beste) return;
+      Zeiger.zeigen();
+      Zeiger.setzePosition(Math.round(beste.left + Math.min(beste.width * 0.3, 120)),
+        Math.round(Math.max(8, Math.min(window.innerHeight - 40, beste.top + 26))));
+    };
     const schritt = Math.max(140, Math.round(window.innerHeight * 0.35));
     /* Der Durchlauf soll ueberall gleich lang wirken, egal ob 100 oder
        253 Karten darunterliegen - sonst zieht sich eine lange Liste
@@ -704,7 +751,9 @@ const Werkzeuge = {
        weiche Scrollen zu einem Haltepunkt lief ohne Zahl, und am Ende
        stand der Sprung. Jetzt liest ein Takt alle 40 ms die echte
        Position - die Zahl laeuft mit, Karte fuer Karte. */
-    const ticker = zaehlwort ? setInterval(beschriften, 40) : null;
+    // Derselbe Takt fuehrt den Zeiger mit - auch waehrend des weichen
+    // Scrollens zu einem Haltepunkt, wo die Schleife unten nicht laeuft.
+    const ticker = setInterval(() => { zeigerMitfuehren(); if (zaehlwort) beschriften(); }, 40);
     try {
     while (y < bis && !Zeiger.abbruch) {
       y = Math.min(bis, y + schritt);
@@ -724,6 +773,7 @@ const Werkzeuge = {
       }
       window.scrollTo({ top: y, behavior: "instant" });   // "instant": style.css setzt scroll-behavior: smooth, und mit "auto" lief die Seite dem Zaehler hinterher
       weiteste = Math.max(weiteste, window.scrollY);
+      zeigerMitfuehren();
       beschriften();
       await Zeiger.warte(takt);
     }

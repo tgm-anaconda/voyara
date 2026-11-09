@@ -20,6 +20,13 @@ const AMENITY_LABELS = {
   bikeRental: "Fahrradverleih",
   seaView: "Zimmer mit Meerblick",
   terrace: "Dachterrasse",
+  /* Drei Merkmale dazu (09.11.2026). Gemeldet: "Bei der Ausstattung auf
+     jeden Fall noch ein paar Punkte ergaenzen, da gibt es immer noch zu
+     wenig." Gesucht waren Whirlpool und ein Sitzplatz im Freien; beides
+     hatte kein Feld, und der Wunsch fiel damit durch. */
+  whirlpool: "Whirlpool",
+  sauna: "Sauna",
+  garten: "Garten mit Sitzplatz",
 };
 
 const CATEGORY_LABELS = {
@@ -110,7 +117,7 @@ const HOTELS = [
     distanceToBeach: 0,
     distanceToCenter: 6.4,
     distanceToAirport: 6,
-    amenities: ["pool", "beachfront", "wifi", "restaurant", "bar", "aircon", "familyFriendly", "seaView", "parking", "gym"],
+    amenities: ["pool", "beachfront", "wifi", "restaurant", "bar", "aircon", "familyFriendly", "seaView", "parking", "gym", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 26 },
@@ -154,7 +161,7 @@ const HOTELS = [
     distanceToBeach: 14,
     distanceToCenter: 24,
     distanceToAirport: 32,
-    amenities: ["pool", "wifi", "restaurant", "parking", "aircon", "bikeRental", "petsAllowed", "adultsOnly"],
+    amenities: ["pool", "wifi", "restaurant", "parking", "aircon", "bikeRental", "petsAllowed", "adultsOnly", "whirlpool", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 32 },
@@ -241,7 +248,7 @@ const HOTELS = [
     distanceToBeach: 3.5,
     distanceToCenter: 0.2,
     distanceToAirport: 10,
-    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "gym", "aircon", "terrace", "parking", "adultsOnly"],
+    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "gym", "aircon", "terrace", "parking", "adultsOnly", "petsAllowed", "whirlpool", "sauna", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 45 },
@@ -285,7 +292,7 @@ const HOTELS = [
     distanceToBeach: 0,
     distanceToCenter: 12,
     distanceToAirport: 42,
-    amenities: ["pool", "beachfront", "wifi", "restaurant", "bar", "parking", "bikeRental", "aircon", "petsAllowed"],
+    amenities: ["pool", "beachfront", "wifi", "restaurant", "bar", "parking", "bikeRental", "aircon", "petsAllowed", "spa", "whirlpool", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 34 },
@@ -328,7 +335,7 @@ const HOTELS = [
     distanceToBeach: 3.2,
     distanceToCenter: 0.1,
     distanceToAirport: 9,
-    amenities: ["wifi", "bar", "aircon", "restaurant"],
+    amenities: ["wifi", "bar", "aircon", "restaurant", "petsAllowed"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 13 },
@@ -372,7 +379,7 @@ const HOTELS = [
     distanceToBeach: 0.3,
     distanceToCenter: 1.1,
     distanceToAirport: 64,
-    amenities: ["pool", "wifi", "restaurant", "bar", "gym", "aircon", "familyFriendly", "kidsClub", "parking", "spa"],
+    amenities: ["pool", "wifi", "restaurant", "bar", "gym", "aircon", "familyFriendly", "kidsClub", "parking", "spa", "petsAllowed", "sauna", "garten"],
     boards: [
       { key: "halb", priceDelta: 0 },
       { key: "voll", priceDelta: 28 },
@@ -417,7 +424,7 @@ const HOTELS = [
     distanceToBeach: 4.2,
     distanceToCenter: 0.9,
     distanceToAirport: 34,
-    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "parking", "aircon", "terrace", "adultsOnly", "seaView"],
+    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "parking", "aircon", "terrace", "adultsOnly", "seaView", "whirlpool", "sauna"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 62 },
@@ -460,7 +467,7 @@ const HOTELS = [
     distanceToBeach: 0.7,
     distanceToCenter: 2.4,
     distanceToAirport: 54,
-    amenities: ["pool", "wifi", "parking", "aircon", "familyFriendly", "bikeRental"],
+    amenities: ["pool", "wifi", "parking", "aircon", "familyFriendly", "bikeRental", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -503,7 +510,7 @@ const HOTELS = [
     distanceToBeach: 0.15,
     distanceToCenter: 0.6,
     distanceToAirport: 51,
-    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "familyFriendly", "kidsClub", "parking"],
+    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "familyFriendly", "kidsClub", "parking", "petsAllowed"],
     boards: [
       { key: "halb", priceDelta: 0 },
       { key: "voll", priceDelta: 22 },
@@ -547,7 +554,7 @@ const HOTELS = [
     distanceToBeach: 7.5,
     distanceToCenter: 3.2,
     distanceToAirport: 36,
-    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "parking", "bikeRental", "petsAllowed"],
+    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "parking", "bikeRental", "petsAllowed", "sauna", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 29 },
@@ -585,7 +592,7 @@ const HOTELS = [
     distanceToBeach: 0.05,
     distanceToCenter: 0.3,
     distanceToAirport: 64,
-    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "beachfront", "familyFriendly", "kidsClub", "parking", "gym", "seaView"],
+    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "beachfront", "familyFriendly", "kidsClub", "parking", "gym", "seaView", "whirlpool", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 26 },
@@ -623,7 +630,7 @@ const HOTELS = [
     distanceToBeach: 8.4,
     distanceToCenter: 0.05,
     distanceToAirport: 52,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "petsAllowed", "bikeRental"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "petsAllowed", "bikeRental", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -660,7 +667,7 @@ const HOTELS = [
     distanceToBeach: 1.2,
     distanceToCenter: 0.9,
     distanceToAirport: 33,
-    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "aircon", "adultsOnly", "gym", "parking", "seaView", "terrace"],
+    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "aircon", "adultsOnly", "gym", "parking", "seaView", "terrace", "whirlpool", "sauna"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 48 },
@@ -697,7 +704,7 @@ const HOTELS = [
     distanceToBeach: 0.1,
     distanceToCenter: 1.6,
     distanceToAirport: 58,
-    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "familyFriendly", "kidsClub", "parking", "gym", "bikeRental"],
+    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "familyFriendly", "kidsClub", "parking", "gym", "bikeRental", "whirlpool", "garten"],
     boards: [
       { key: "halb", priceDelta: 0 },
       { key: "voll", priceDelta: 32 },
@@ -735,7 +742,7 @@ const HOTELS = [
     distanceToBeach: 24.0,
     distanceToCenter: 3.2,
     distanceToAirport: 41,
-    amenities: ["pool", "wifi", "restaurant", "aircon", "parking", "petsAllowed", "bikeRental", "terrace"],
+    amenities: ["pool", "wifi", "restaurant", "aircon", "parking", "petsAllowed", "bikeRental", "terrace", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 38 },
@@ -772,7 +779,7 @@ const HOTELS = [
     distanceToBeach: 0.3,
     distanceToCenter: 5.8,
     distanceToAirport: 6,
-    amenities: ["wifi", "aircon", "bar", "terrace"],
+    amenities: ["wifi", "aircon", "bar", "terrace", "petsAllowed"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 9 },
@@ -810,7 +817,7 @@ const HOTELS = [
     distanceToBeach: 0.15,
     distanceToCenter: 0.7,
     distanceToAirport: 47,
-    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "beachfront", "parking", "bikeRental", "seaView", "spa"],
+    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "beachfront", "parking", "bikeRental", "seaView", "spa", "whirlpool", "sauna"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 29 },
@@ -885,7 +892,7 @@ const HOTELS = [
     distanceToBeach: 2.6,
     distanceToCenter: 0.2,
     distanceToAirport: 9,
-    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "aircon", "terrace", "gym", "adultsOnly"],
+    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "aircon", "terrace", "gym", "adultsOnly", "whirlpool"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 44 },
@@ -922,7 +929,7 @@ const HOTELS = [
     distanceToBeach: 11.5,
     distanceToCenter: 0.4,
     distanceToAirport: 25,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "parking", "spa", "bikeRental"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "parking", "spa", "bikeRental", "whirlpool", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 36 },
@@ -960,7 +967,7 @@ const HOTELS = [
     distanceToBeach: 0.2,
     distanceToCenter: 1.1,
     distanceToAirport: 52,
-    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "familyFriendly", "kidsClub", "parking", "gym", "spa", "bikeRental"],
+    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "familyFriendly", "kidsClub", "parking", "gym", "spa", "bikeRental", "sauna", "garten"],
     boards: [
       { key: "halb", priceDelta: 0 },
       { key: "voll", priceDelta: 28 },
@@ -1036,7 +1043,7 @@ const HOTELS = [
     distanceToBeach: 14.0,
     distanceToCenter: 0.9,
     distanceToAirport: 68,
-    amenities: ["pool", "wifi", "restaurant", "aircon", "parking", "petsAllowed", "bikeRental", "terrace"],
+    amenities: ["pool", "wifi", "restaurant", "aircon", "parking", "petsAllowed", "bikeRental", "terrace", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 27 },
@@ -1073,7 +1080,7 @@ const HOTELS = [
     distanceToBeach: 0.08,
     distanceToCenter: 1.4,
     distanceToAirport: 60,
-    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "beachfront", "familyFriendly", "parking", "gym", "seaView", "spa"],
+    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "beachfront", "familyFriendly", "parking", "gym", "seaView", "spa", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 30 },
@@ -1111,7 +1118,7 @@ const HOTELS = [
     distanceToBeach: 0.25,
     distanceToCenter: 0.6,
     distanceToAirport: 22,
-    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "familyFriendly", "parking", "seaView", "terrace", "spa"],
+    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "familyFriendly", "parking", "seaView", "terrace", "spa", "whirlpool"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 28 },
@@ -1149,7 +1156,7 @@ const HOTELS = [
     distanceToBeach: 1.4,
     distanceToCenter: 0.05,
     distanceToAirport: 15,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "seaView", "petsAllowed"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "seaView", "petsAllowed", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 17 },
@@ -1186,7 +1193,7 @@ const HOTELS = [
     distanceToBeach: 0.5,
     distanceToCenter: 1.8,
     distanceToAirport: 68,
-    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "aircon", "adultsOnly", "parking", "seaView", "terrace", "gym"],
+    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "aircon", "adultsOnly", "parking", "seaView", "terrace", "gym", "petsAllowed", "sauna"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 52 },
@@ -1223,7 +1230,7 @@ const HOTELS = [
     distanceToBeach: 0.3,
     distanceToCenter: 1.6,
     distanceToAirport: 62,
-    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace", "seaView", "adultsOnly"],
+    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace", "seaView", "adultsOnly", "petsAllowed", "whirlpool", "sauna", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 48 },
@@ -1286,7 +1293,7 @@ const HOTELS = [
     distanceToBeach: 0.15,
     distanceToCenter: 0.8,
     distanceToAirport: 54,
-    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "familyFriendly", "kidsClub", "parking", "seaView", "beachfront"],
+    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "familyFriendly", "kidsClub", "parking", "seaView", "beachfront", "spa", "sauna", "garten"],
     boards: [
       { key: "halb", priceDelta: 0 },
       { key: "voll", priceDelta: 30 },
@@ -1318,7 +1325,7 @@ const HOTELS = [
     distanceToBeach: 6.5,
     distanceToCenter: 0.2,
     distanceToAirport: 12,
-    amenities: ["wifi", "aircon", "bar"],
+    amenities: ["wifi", "aircon", "bar", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 10 },
@@ -1349,7 +1356,7 @@ const HOTELS = [
     distanceToBeach: 1.8,
     distanceToCenter: 1.2,
     distanceToAirport: 115,
-    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "beachfront", "parking", "seaView"],
+    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "beachfront", "parking", "seaView", "petsAllowed", "whirlpool"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 28 },
@@ -1381,7 +1388,7 @@ const HOTELS = [
     distanceToBeach: 0.4,
     distanceToCenter: 8.5,
     distanceToAirport: 32,
-    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace", "seaView", "adultsOnly"],
+    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace", "seaView", "adultsOnly", "whirlpool"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 48 },
@@ -1412,7 +1419,7 @@ const HOTELS = [
     distanceToBeach: 21,
     distanceToCenter: 3.4,
     distanceToAirport: 38,
-    amenities: ["pool", "wifi", "restaurant", "aircon", "parking", "terrace", "bikeRental", "petsAllowed"],
+    amenities: ["pool", "wifi", "restaurant", "aircon", "parking", "terrace", "bikeRental", "petsAllowed", "whirlpool"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 34 },
@@ -1443,7 +1450,7 @@ const HOTELS = [
     distanceToBeach: 0.2,
     distanceToCenter: 0.9,
     distanceToAirport: 96,
-    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "beachfront", "parking", "seaView"],
+    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "beachfront", "parking", "seaView", "spa", "whirlpool"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 28 },
@@ -1475,7 +1482,7 @@ const HOTELS = [
     distanceToBeach: 42,
     distanceToCenter: 0.6,
     distanceToAirport: 112,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "petsAllowed"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "petsAllowed", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -1506,7 +1513,7 @@ const HOTELS = [
     distanceToBeach: 0.1,
     distanceToCenter: 1.1,
     distanceToAirport: 42,
-    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "beachfront", "parking", "seaView"],
+    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "beachfront", "parking", "seaView", "petsAllowed"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 28 },
@@ -1538,7 +1545,7 @@ const HOTELS = [
     distanceToBeach: 1.3,
     distanceToCenter: 0.7,
     distanceToAirport: 34,
-    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace", "adultsOnly"],
+    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace", "adultsOnly", "petsAllowed"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 48 },
@@ -1569,7 +1576,7 @@ const HOTELS = [
     distanceToBeach: 3.8,
     distanceToCenter: 0.3,
     distanceToAirport: 58,
-    amenities: ["pool", "wifi", "aircon", "parking", "familyFriendly", "kitchen", "petsAllowed"],
+    amenities: ["pool", "wifi", "aircon", "parking", "familyFriendly", "kitchen", "petsAllowed", "whirlpool"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 15 },
@@ -1601,7 +1608,7 @@ const HOTELS = [
     distanceToBeach: 9.2,
     distanceToCenter: 1.4,
     distanceToAirport: 29,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "petsAllowed"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -1633,7 +1640,7 @@ const HOTELS = [
     distanceToBeach: 0.4,
     distanceToCenter: 1.8,
     distanceToAirport: 18,
-    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "familyFriendly", "kidsClub", "parking", "seaView"],
+    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "familyFriendly", "kidsClub", "parking", "seaView", "spa", "whirlpool"],
     boards: [
       { key: "halb", priceDelta: 0 },
       { key: "voll", priceDelta: 30 },
@@ -1696,7 +1703,7 @@ const HOTELS = [
     distanceToBeach: 1.2,
     distanceToCenter: 0.2,
     distanceToAirport: 14,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "spa"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -1727,7 +1734,7 @@ const HOTELS = [
     distanceToBeach: 2.1,
     distanceToCenter: 0.5,
     distanceToAirport: 13,
-    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace", "adultsOnly"],
+    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace", "adultsOnly", "whirlpool", "sauna", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 48 },
@@ -1758,7 +1765,7 @@ const HOTELS = [
     distanceToBeach: 1.1,
     distanceToCenter: 3.2,
     distanceToAirport: 19,
-    amenities: ["wifi", "aircon", "bar"],
+    amenities: ["wifi", "aircon", "bar", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 10 },
@@ -1789,7 +1796,7 @@ const HOTELS = [
     distanceToBeach: 0.3,
     distanceToCenter: 3.8,
     distanceToAirport: 18,
-    amenities: ["pool", "wifi", "aircon", "parking", "familyFriendly", "kitchen"],
+    amenities: ["pool", "wifi", "aircon", "parking", "familyFriendly", "kitchen", "whirlpool"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 15 },
@@ -1821,7 +1828,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.8,
     distanceToAirport: 21,
-    amenities: ["spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace"],
+    amenities: ["spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace", "pool", "petsAllowed", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 48 },
@@ -1914,7 +1921,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 1.3,
     distanceToAirport: 20,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "spa", "pool", "sauna", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -2007,7 +2014,7 @@ const HOTELS = [
     distanceToBeach: 7.9,
     distanceToCenter: 2.4,
     distanceToAirport: 9,
-    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace"],
+    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace", "sauna"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 48 },
@@ -2038,7 +2045,7 @@ const HOTELS = [
     distanceToBeach: 7.1,
     distanceToCenter: 0.3,
     distanceToAirport: 8,
-    amenities: ["pool", "wifi", "aircon", "parking", "familyFriendly", "kitchen"],
+    amenities: ["pool", "wifi", "aircon", "parking", "familyFriendly", "kitchen", "petsAllowed", "whirlpool"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 15 },
@@ -2070,7 +2077,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.5,
     distanceToAirport: 86,
-    amenities: ["spa", "wifi", "restaurant", "bar", "parking", "terrace", "gym"],
+    amenities: ["spa", "wifi", "restaurant", "bar", "parking", "terrace", "gym", "whirlpool", "sauna", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 38 },
@@ -2103,7 +2110,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.7,
     distanceToAirport: 72,
-    amenities: ["pool", "wifi", "restaurant", "bar", "familyFriendly", "kidsClub", "parking", "spa"],
+    amenities: ["pool", "wifi", "restaurant", "bar", "familyFriendly", "kidsClub", "parking", "spa", "sauna"],
     boards: [
       { key: "halb", priceDelta: 0 },
       { key: "voll", priceDelta: 30 },
@@ -2135,7 +2142,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 1.9,
     distanceToAirport: 24,
-    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "gym", "parking", "terrace", "adultsOnly"],
+    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "gym", "parking", "terrace", "adultsOnly", "petsAllowed", "sauna"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 48 },
@@ -2197,7 +2204,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 4.2,
     distanceToAirport: 92,
-    amenities: ["wifi", "restaurant", "bar", "terrace", "spa", "adultsOnly", "parking"],
+    amenities: ["wifi", "restaurant", "bar", "terrace", "spa", "adultsOnly", "parking", "whirlpool", "sauna"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -2228,7 +2235,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.4,
     distanceToAirport: 198,
-    amenities: ["spa", "wifi", "restaurant", "bar", "parking", "terrace", "gym"],
+    amenities: ["spa", "wifi", "restaurant", "bar", "parking", "terrace", "gym", "petsAllowed", "whirlpool", "sauna", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 38 },
@@ -2291,7 +2298,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 6.4,
     distanceToAirport: 86,
-    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "gym", "parking", "terrace", "adultsOnly"],
+    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "gym", "parking", "terrace", "adultsOnly", "petsAllowed", "sauna"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 48 },
@@ -2353,7 +2360,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 11,
     distanceToAirport: 14,
-    amenities: ["wifi", "restaurant", "bar", "terrace", "spa", "parking"],
+    amenities: ["wifi", "restaurant", "bar", "terrace", "spa", "parking", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -2384,7 +2391,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 7.5,
     distanceToAirport: 9,
-    amenities: ["spa", "wifi", "restaurant", "bar", "parking", "terrace", "gym"],
+    amenities: ["spa", "wifi", "restaurant", "bar", "parking", "terrace", "gym", "whirlpool", "sauna", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 38 },
@@ -2416,7 +2423,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 9.2,
     distanceToAirport: 28,
-    amenities: ["spa", "wifi", "restaurant", "bar", "gym", "parking", "terrace", "adultsOnly"],
+    amenities: ["spa", "wifi", "restaurant", "bar", "gym", "parking", "terrace", "adultsOnly", "sauna"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 48 },
@@ -2479,7 +2486,7 @@ const HOTELS = [
     distanceToBeach: 0.1,
     distanceToCenter: 0.4,
     distanceToAirport: 118,
-    amenities: ["wifi", "restaurant", "bar", "beachfront", "parking", "seaView", "bikeRental"],
+    amenities: ["wifi", "restaurant", "bar", "beachfront", "parking", "seaView", "bikeRental", "petsAllowed", "sauna"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 28 },
@@ -2511,7 +2518,7 @@ const HOTELS = [
     distanceToBeach: 14,
     distanceToCenter: 4.6,
     distanceToAirport: 96,
-    amenities: ["wifi", "restaurant", "bar", "terrace", "bikeRental", "parking", "petsAllowed"],
+    amenities: ["wifi", "restaurant", "bar", "terrace", "bikeRental", "parking", "petsAllowed", "sauna", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -2542,7 +2549,7 @@ const HOTELS = [
     distanceToBeach: 0.5,
     distanceToCenter: 1.2,
     distanceToAirport: 88,
-    amenities: ["wifi", "restaurant", "bar", "familyFriendly", "kidsClub", "parking", "bikeRental"],
+    amenities: ["wifi", "restaurant", "bar", "familyFriendly", "kidsClub", "parking", "bikeRental", "garten"],
     boards: [
       { key: "halb", priceDelta: 0 },
       { key: "voll", priceDelta: 30 },
@@ -2606,7 +2613,7 @@ const HOTELS = [
     distanceToBeach: 0.25,
     distanceToCenter: 1.1,
     distanceToAirport: 34,
-    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "familyFriendly", "kidsClub", "parking", "seaView"],
+    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "familyFriendly", "kidsClub", "parking", "seaView", "spa", "sauna"],
     boards: [
       { key: "halb", priceDelta: 0 },
       { key: "voll", priceDelta: 30 },
@@ -2638,7 +2645,7 @@ const HOTELS = [
     distanceToBeach: 0.3,
     distanceToCenter: 0.1,
     distanceToAirport: 78,
-    amenities: ["wifi", "aircon", "bar", "seaView"],
+    amenities: ["wifi", "aircon", "bar", "seaView", "petsAllowed"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 10 },
@@ -2669,7 +2676,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.6,
     distanceToAirport: 7,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "pool"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "pool", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -2700,7 +2707,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 8.4,
     distanceToAirport: 12,
-    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace"],
+    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace", "petsAllowed", "whirlpool"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 48 },
@@ -2731,7 +2738,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 2.4,
     distanceToAirport: 5,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "pool"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "pool", "whirlpool"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 18 },
@@ -2762,7 +2769,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.2,
     distanceToAirport: 58,
-    amenities: ["wifi", "aircon", "bar", "terrace", "parking"],
+    amenities: ["wifi", "aircon", "bar", "terrace", "parking", "petsAllowed"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 10 },
@@ -2855,7 +2862,7 @@ const HOTELS = [
     distanceToBeach: 0.4,
     distanceToCenter: 7.2,
     distanceToAirport: 28,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "pool", "seaView", "adultsOnly"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "pool", "seaView", "adultsOnly", "spa"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -2886,7 +2893,7 @@ const HOTELS = [
     distanceToBeach: 0.15,
     distanceToCenter: 9.6,
     distanceToAirport: 32,
-    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "beachfront", "parking", "seaView"],
+    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "beachfront", "parking", "seaView", "whirlpool"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 28 },
@@ -2983,7 +2990,7 @@ const HOTELS = [
     distanceToBeach: 0.2,
     distanceToCenter: 8.1,
     distanceToAirport: 29,
-    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace", "seaView"],
+    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace", "seaView", "whirlpool", "sauna"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 48 },
@@ -3045,7 +3052,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 6.8,
     distanceToAirport: 98,
-    amenities: ["wifi", "restaurant", "bar", "terrace", "spa", "parking"],
+    amenities: ["wifi", "restaurant", "bar", "terrace", "spa", "parking", "sauna"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -3076,7 +3083,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.4,
     distanceToAirport: 48,
-    amenities: ["wifi", "restaurant", "bar", "terrace"],
+    amenities: ["wifi", "restaurant", "bar", "terrace", "petsAllowed"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 18 },
@@ -3138,7 +3145,7 @@ const HOTELS = [
     distanceToBeach: 1.2,
     distanceToCenter: 0.2,
     distanceToAirport: 186,
-    amenities: ["wifi", "bar", "kitchen", "parking"],
+    amenities: ["wifi", "bar", "kitchen", "parking", "petsAllowed", "sauna"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 10 },
@@ -3169,7 +3176,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 2.6,
     distanceToAirport: 26,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "spa", "pool"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -3200,7 +3207,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.9,
     distanceToAirport: 24,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "gym"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "gym", "spa", "pool", "whirlpool"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 18 },
@@ -3231,7 +3238,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 1.4,
     distanceToAirport: 22,
-    amenities: ["spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace"],
+    amenities: ["spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace", "pool", "sauna", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 48 },
@@ -3262,7 +3269,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 7.8,
     distanceToAirport: 18,
-    amenities: ["wifi", "aircon", "bar"],
+    amenities: ["wifi", "aircon", "bar", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 10 },
@@ -3293,7 +3300,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 1.2,
     distanceToAirport: 78,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "spa", "pool", "sauna"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -3324,7 +3331,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 8.4,
     distanceToAirport: 86,
-    amenities: ["wifi", "restaurant", "aircon", "parking", "terrace", "bikeRental", "spa"],
+    amenities: ["wifi", "restaurant", "aircon", "parking", "terrace", "bikeRental", "spa", "pool", "petsAllowed"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 34 },
@@ -3355,7 +3362,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 2.1,
     distanceToAirport: 80,
-    amenities: ["spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace"],
+    amenities: ["spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace", "pool", "sauna"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 48 },
@@ -3417,7 +3424,7 @@ const HOTELS = [
     distanceToBeach: 4.8,
     distanceToCenter: 0.9,
     distanceToAirport: 34,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "pool", "parking"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "pool", "parking", "spa", "sauna"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -3448,7 +3455,7 @@ const HOTELS = [
     distanceToBeach: 6.5,
     distanceToCenter: 3.1,
     distanceToAirport: 52,
-    amenities: ["pool", "wifi", "restaurant", "aircon", "parking", "terrace", "bikeRental"],
+    amenities: ["pool", "wifi", "restaurant", "aircon", "parking", "terrace", "bikeRental", "whirlpool", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 34 },
@@ -3479,7 +3486,7 @@ const HOTELS = [
     distanceToBeach: 0.1,
     distanceToCenter: 0.9,
     distanceToAirport: 48,
-    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "beachfront", "parking", "seaView", "spa"],
+    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "beachfront", "parking", "seaView", "spa", "petsAllowed", "whirlpool"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 28 },
@@ -3542,7 +3549,7 @@ const HOTELS = [
     distanceToBeach: 4.2,
     distanceToCenter: 0.3,
     distanceToAirport: 14,
-    amenities: ["wifi", "aircon", "bar"],
+    amenities: ["wifi", "aircon", "bar", "petsAllowed"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 10 },
@@ -3604,7 +3611,7 @@ const HOTELS = [
     distanceToBeach: 0.6,
     distanceToCenter: 1.2,
     distanceToAirport: 18,
-    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "familyFriendly", "kidsClub", "parking", "spa"],
+    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "familyFriendly", "kidsClub", "parking", "spa", "sauna"],
     boards: [
       { key: "halb", priceDelta: 0 },
       { key: "voll", priceDelta: 30 },
@@ -3636,7 +3643,7 @@ const HOTELS = [
     distanceToBeach: 0.15,
     distanceToCenter: 1.6,
     distanceToAirport: 38,
-    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "beachfront", "parking", "seaView", "spa"],
+    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "beachfront", "parking", "seaView", "spa", "petsAllowed", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 28 },
@@ -3699,7 +3706,7 @@ const HOTELS = [
     distanceToBeach: 0.2,
     distanceToCenter: 2.4,
     distanceToAirport: 68,
-    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace", "seaView", "beachfront"],
+    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace", "seaView", "beachfront", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 48 },
@@ -3730,7 +3737,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.2,
     distanceToAirport: 52,
-    amenities: ["wifi", "aircon", "bar"],
+    amenities: ["wifi", "aircon", "bar", "petsAllowed", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 10 },
@@ -3823,7 +3830,7 @@ const HOTELS = [
     distanceToBeach: 0.3,
     distanceToCenter: 1.1,
     distanceToAirport: 86,
-    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "beachfront", "parking", "seaView"],
+    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "beachfront", "parking", "seaView", "spa", "whirlpool", "sauna"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 28 },
@@ -3855,7 +3862,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 1.8,
     distanceToAirport: 62,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "pool"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "pool", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -3886,7 +3893,7 @@ const HOTELS = [
     distanceToBeach: 0.4,
     distanceToCenter: 1.9,
     distanceToAirport: 32,
-    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace", "seaView", "beachfront"],
+    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace", "seaView", "beachfront", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 48 },
@@ -3917,7 +3924,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.2,
     distanceToAirport: 94,
-    amenities: ["wifi", "aircon", "bar"],
+    amenities: ["wifi", "aircon", "bar", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 10 },
@@ -3948,7 +3955,7 @@ const HOTELS = [
     distanceToBeach: 0.35,
     distanceToCenter: 6.2,
     distanceToAirport: 41,
-    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "familyFriendly", "kidsClub", "parking"],
+    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "familyFriendly", "kidsClub", "parking", "spa", "sauna", "garten"],
     boards: [
       { key: "halb", priceDelta: 0 },
       { key: "voll", priceDelta: 30 },
@@ -3980,7 +3987,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 5.4,
     distanceToAirport: 48,
-    amenities: ["pool", "wifi", "restaurant", "aircon", "parking", "terrace", "bikeRental"],
+    amenities: ["pool", "wifi", "restaurant", "aircon", "parking", "terrace", "bikeRental", "petsAllowed"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 34 },
@@ -4011,7 +4018,7 @@ const HOTELS = [
     distanceToBeach: 0.4,
     distanceToCenter: 1.3,
     distanceToAirport: 98,
-    amenities: ["wifi", "restaurant", "bar", "beachfront", "parking", "seaView", "spa"],
+    amenities: ["wifi", "restaurant", "bar", "beachfront", "parking", "seaView", "spa", "whirlpool", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 28 },
@@ -4043,7 +4050,7 @@ const HOTELS = [
     distanceToBeach: 0.15,
     distanceToCenter: 0.3,
     distanceToAirport: 112,
-    amenities: ["wifi", "restaurant", "bar", "terrace", "seaView"],
+    amenities: ["wifi", "restaurant", "bar", "terrace", "seaView", "spa", "pool", "whirlpool"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -4105,7 +4112,7 @@ const HOTELS = [
     distanceToBeach: 0.7,
     distanceToCenter: 1,
     distanceToAirport: 126,
-    amenities: ["wifi", "restaurant", "bar", "familyFriendly", "kidsClub", "parking", "spa"],
+    amenities: ["wifi", "restaurant", "bar", "familyFriendly", "kidsClub", "parking", "spa", "petsAllowed", "whirlpool"],
     boards: [
       { key: "halb", priceDelta: 0 },
       { key: "voll", priceDelta: 30 },
@@ -4168,7 +4175,7 @@ const HOTELS = [
     distanceToBeach: 0.1,
     distanceToCenter: 0.6,
     distanceToAirport: 72,
-    amenities: ["spa", "wifi", "restaurant", "bar", "gym", "parking", "terrace", "seaView"],
+    amenities: ["spa", "wifi", "restaurant", "bar", "gym", "parking", "terrace", "seaView", "pool", "sauna"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 48 },
@@ -4198,7 +4205,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.6,
     distanceToAirport: 72,
-    amenities: ["spa", "wifi", "restaurant", "bar", "parking", "terrace", "gym"],
+    amenities: ["spa", "wifi", "restaurant", "bar", "parking", "terrace", "gym", "petsAllowed", "whirlpool", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 38 },
@@ -4262,7 +4269,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 1.1,
     distanceToAirport: 96,
-    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "gym", "parking", "terrace"],
+    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "gym", "parking", "terrace", "whirlpool", "sauna"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 48 },
@@ -4293,7 +4300,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.2,
     distanceToAirport: 66,
-    amenities: ["wifi", "bar"],
+    amenities: ["wifi", "bar", "sauna"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 10 },
@@ -4324,7 +4331,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 1.6,
     distanceToAirport: 52,
-    amenities: ["spa", "wifi", "restaurant", "bar", "parking", "terrace", "gym"],
+    amenities: ["spa", "wifi", "restaurant", "bar", "parking", "terrace", "gym", "petsAllowed", "sauna"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 38 },
@@ -4356,7 +4363,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 1.2,
     distanceToAirport: 88,
-    amenities: ["wifi", "restaurant", "bar", "terrace", "spa"],
+    amenities: ["wifi", "restaurant", "bar", "terrace", "spa", "pool", "petsAllowed", "whirlpool", "sauna", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -4387,7 +4394,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 2.4,
     distanceToAirport: 42,
-    amenities: ["spa", "wifi", "restaurant", "bar", "parking", "terrace", "gym"],
+    amenities: ["spa", "wifi", "restaurant", "bar", "parking", "terrace", "gym", "petsAllowed", "whirlpool", "sauna", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 38 },
@@ -4419,7 +4426,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 1.8,
     distanceToAirport: 28,
-    amenities: ["pool", "wifi", "restaurant", "parking", "terrace", "bikeRental"],
+    amenities: ["pool", "wifi", "restaurant", "parking", "terrace", "bikeRental", "petsAllowed", "sauna"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 34 },
@@ -4450,7 +4457,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.9,
     distanceToAirport: 74,
-    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "gym", "parking", "terrace"],
+    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "gym", "parking", "terrace", "whirlpool"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 48 },
@@ -4481,7 +4488,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 1.6,
     distanceToAirport: 22,
-    amenities: ["wifi", "bar"],
+    amenities: ["wifi", "bar", "sauna"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 10 },
@@ -4512,7 +4519,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 1.1,
     distanceToAirport: 78,
-    amenities: ["pool", "wifi", "restaurant", "bar", "familyFriendly", "kidsClub", "parking", "spa"],
+    amenities: ["pool", "wifi", "restaurant", "bar", "familyFriendly", "kidsClub", "parking", "spa", "whirlpool"],
     boards: [
       { key: "halb", priceDelta: 0 },
       { key: "voll", priceDelta: 30 },
@@ -4544,7 +4551,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 3.2,
     distanceToAirport: 34,
-    amenities: ["wifi", "restaurant", "bar", "terrace", "spa"],
+    amenities: ["wifi", "restaurant", "bar", "terrace", "spa", "whirlpool", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -4574,7 +4581,7 @@ const HOTELS = [
     distanceToBeach: 0.2,
     distanceToCenter: 1.4,
     distanceToAirport: 19,
-    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "beachfront", "parking", "seaView", "spa"],
+    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "beachfront", "parking", "seaView", "spa", "sauna"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 28 },
@@ -4637,7 +4644,7 @@ const HOTELS = [
     distanceToBeach: 1.2,
     distanceToCenter: 1,
     distanceToAirport: 38,
-    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace", "seaView"],
+    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace", "seaView", "whirlpool", "sauna", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 48 },
@@ -4731,7 +4738,7 @@ const HOTELS = [
     distanceToBeach: 3.8,
     distanceToCenter: 1.4,
     distanceToAirport: 32,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "spa"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "spa", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -4762,7 +4769,7 @@ const HOTELS = [
     distanceToBeach: 0.1,
     distanceToCenter: 0.4,
     distanceToAirport: 34,
-    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "beachfront", "parking", "seaView", "spa"],
+    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "beachfront", "parking", "seaView", "spa", "whirlpool", "sauna", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 28 },
@@ -4794,7 +4801,7 @@ const HOTELS = [
     distanceToBeach: 2.4,
     distanceToCenter: 2,
     distanceToAirport: 26,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "spa"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "spa", "petsAllowed", "sauna", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -4825,7 +4832,7 @@ const HOTELS = [
     distanceToBeach: 0.6,
     distanceToCenter: 3.2,
     distanceToAirport: 28,
-    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace", "seaView"],
+    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace", "seaView", "petsAllowed", "sauna"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 48 },
@@ -4856,7 +4863,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.4,
     distanceToAirport: 16,
-    amenities: ["wifi", "aircon", "bar"],
+    amenities: ["wifi", "aircon", "bar", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 10 },
@@ -4887,7 +4894,7 @@ const HOTELS = [
     distanceToBeach: 0.15,
     distanceToCenter: 1.2,
     distanceToAirport: 72,
-    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "familyFriendly", "kidsClub", "parking", "spa"],
+    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "familyFriendly", "kidsClub", "parking", "spa", "whirlpool", "sauna", "garten"],
     boards: [
       { key: "halb", priceDelta: 0 },
       { key: "voll", priceDelta: 30 },
@@ -4919,7 +4926,7 @@ const HOTELS = [
     distanceToBeach: 0.25,
     distanceToCenter: 4.8,
     distanceToAirport: 32,
-    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "beachfront", "parking", "seaView", "spa"],
+    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "beachfront", "parking", "seaView", "spa", "whirlpool", "sauna"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 28 },
@@ -4950,7 +4957,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 1.8,
     distanceToAirport: 26,
-    amenities: ["spa", "wifi", "restaurant", "bar", "parking", "terrace", "gym"],
+    amenities: ["spa", "wifi", "restaurant", "bar", "parking", "terrace", "gym", "sauna", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 38 },
@@ -5013,7 +5020,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 12,
     distanceToAirport: 9,
-    amenities: ["spa", "wifi", "restaurant", "bar", "gym", "parking", "terrace"],
+    amenities: ["spa", "wifi", "restaurant", "bar", "gym", "parking", "terrace", "sauna", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 48 },
@@ -5044,7 +5051,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.6,
     distanceToAirport: 86,
-    amenities: ["wifi", "bar"],
+    amenities: ["wifi", "bar", "sauna"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 10 },
@@ -5075,7 +5082,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 2.6,
     distanceToAirport: 58,
-    amenities: ["wifi", "restaurant", "bar", "familyFriendly", "kidsClub", "parking", "spa"],
+    amenities: ["wifi", "restaurant", "bar", "familyFriendly", "kidsClub", "parking", "spa", "petsAllowed", "whirlpool"],
     boards: [
       { key: "halb", priceDelta: 0 },
       { key: "voll", priceDelta: 30 },
@@ -5107,7 +5114,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 1.2,
     distanceToAirport: 34,
-    amenities: ["spa", "wifi", "restaurant", "bar", "parking", "terrace", "gym"],
+    amenities: ["spa", "wifi", "restaurant", "bar", "parking", "terrace", "gym", "sauna", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 38 },
@@ -5139,7 +5146,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 6.4,
     distanceToAirport: 24,
-    amenities: ["wifi", "restaurant", "bar", "terrace", "spa"],
+    amenities: ["wifi", "restaurant", "bar", "terrace", "spa", "whirlpool", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -5170,7 +5177,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 3.8,
     distanceToAirport: 6,
-    amenities: ["spa", "wifi", "restaurant", "bar", "parking", "terrace", "gym"],
+    amenities: ["spa", "wifi", "restaurant", "bar", "parking", "terrace", "gym", "sauna", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 38 },
@@ -5202,7 +5209,7 @@ const HOTELS = [
     distanceToBeach: 2.1,
     distanceToCenter: 3.4,
     distanceToAirport: 186,
-    amenities: ["spa", "wifi", "restaurant", "bar", "gym", "parking", "terrace"],
+    amenities: ["spa", "wifi", "restaurant", "bar", "gym", "parking", "terrace", "petsAllowed"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 48 },
@@ -5233,7 +5240,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.9,
     distanceToAirport: 62,
-    amenities: ["wifi", "bar"],
+    amenities: ["wifi", "bar", "sauna"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 10 },
@@ -5296,7 +5303,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 2.2,
     distanceToAirport: 128,
-    amenities: ["spa", "wifi", "restaurant", "bar", "parking", "terrace", "gym"],
+    amenities: ["spa", "wifi", "restaurant", "bar", "parking", "terrace", "gym", "whirlpool"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 38 },
@@ -5329,7 +5336,7 @@ const HOTELS = [
     distanceToBeach: 0.05,
     distanceToCenter: 1.8,
     distanceToAirport: 78,
-    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "beachfront", "parking", "seaView", "spa", "familyFriendly"],
+    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "beachfront", "parking", "seaView", "spa", "familyFriendly", "whirlpool", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 28 },
@@ -5361,7 +5368,7 @@ const HOTELS = [
     distanceToBeach: 0.2,
     distanceToCenter: 0.6,
     distanceToAirport: 108,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "seaView", "parking"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "seaView", "parking", "petsAllowed"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -5392,7 +5399,7 @@ const HOTELS = [
     distanceToBeach: 0.1,
     distanceToCenter: 2.4,
     distanceToAirport: 24,
-    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "familyFriendly", "kidsClub", "parking", "beachfront", "seaView", "gym"],
+    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "familyFriendly", "kidsClub", "parking", "beachfront", "seaView", "gym", "spa", "sauna"],
     boards: [
       { key: "halb", priceDelta: 0 },
       { key: "voll", priceDelta: 30 },
@@ -5424,7 +5431,7 @@ const HOTELS = [
     distanceToBeach: 0.15,
     distanceToCenter: 1.2,
     distanceToAirport: 96,
-    amenities: ["pool", "wifi", "aircon", "parking", "familyFriendly", "seaView", "terrace"],
+    amenities: ["pool", "wifi", "aircon", "parking", "familyFriendly", "seaView", "terrace", "petsAllowed"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 15 },
@@ -5456,7 +5463,7 @@ const HOTELS = [
     distanceToBeach: 0.1,
     distanceToCenter: 2.8,
     distanceToAirport: 62,
-    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace", "beachfront", "seaView", "familyFriendly"],
+    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace", "beachfront", "seaView", "familyFriendly", "whirlpool", "sauna", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 48 },
@@ -5551,7 +5558,7 @@ const HOTELS = [
     distanceToBeach: 0.25,
     distanceToCenter: 0.9,
     distanceToAirport: 92,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "seaView", "pool"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "seaView", "pool", "petsAllowed", "whirlpool"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -5582,7 +5589,7 @@ const HOTELS = [
     distanceToBeach: 0.2,
     distanceToCenter: 3.5,
     distanceToAirport: 40,
-    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "familyFriendly", "kidsClub", "parking", "seaView", "gym"],
+    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "familyFriendly", "kidsClub", "parking", "seaView", "gym", "spa", "sauna"],
     boards: [
       { key: "halb", priceDelta: 0 },
       { key: "voll", priceDelta: 30 },
@@ -5646,7 +5653,7 @@ const HOTELS = [
     distanceToBeach: 0.3,
     distanceToCenter: 1,
     distanceToAirport: 24,
-    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace", "beachfront", "seaView", "familyFriendly"],
+    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace", "beachfront", "seaView", "familyFriendly", "petsAllowed", "whirlpool", "sauna", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 48 },
@@ -5677,7 +5684,7 @@ const HOTELS = [
     distanceToBeach: 0.2,
     distanceToCenter: 3,
     distanceToAirport: 36,
-    amenities: ["wifi", "aircon", "bar", "terrace"],
+    amenities: ["wifi", "aircon", "bar", "terrace", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 10 },
@@ -5709,7 +5716,7 @@ const HOTELS = [
     distanceToBeach: 0.05,
     distanceToCenter: 2.2,
     distanceToAirport: 210,
-    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "beachfront", "parking", "seaView", "familyFriendly", "spa"],
+    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "beachfront", "parking", "seaView", "familyFriendly", "spa", "whirlpool", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 28 },
@@ -5741,7 +5748,7 @@ const HOTELS = [
     distanceToBeach: 0.3,
     distanceToCenter: 2.5,
     distanceToAirport: 52,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "seaView", "parking"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "seaView", "parking", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -5772,7 +5779,7 @@ const HOTELS = [
     distanceToBeach: 0.15,
     distanceToCenter: 2,
     distanceToAirport: 138,
-    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "familyFriendly", "kidsClub", "parking", "seaView", "bikeRental"],
+    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "familyFriendly", "kidsClub", "parking", "seaView", "bikeRental", "garten"],
     boards: [
       { key: "halb", priceDelta: 0 },
       { key: "voll", priceDelta: 30 },
@@ -5836,7 +5843,7 @@ const HOTELS = [
     distanceToBeach: 0.1,
     distanceToCenter: 6.5,
     distanceToAirport: 14,
-    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace", "beachfront", "seaView"],
+    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace", "beachfront", "seaView", "sauna", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 48 },
@@ -5899,7 +5906,7 @@ const HOTELS = [
     distanceToBeach: 0.05,
     distanceToCenter: 1.5,
     distanceToAirport: 96,
-    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "beachfront", "parking", "seaView", "spa", "familyFriendly"],
+    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "beachfront", "parking", "seaView", "spa", "familyFriendly", "whirlpool", "sauna", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 28 },
@@ -5962,7 +5969,7 @@ const HOTELS = [
     distanceToBeach: 0.15,
     distanceToCenter: 1,
     distanceToAirport: 18,
-    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "familyFriendly", "kidsClub", "parking", "seaView", "gym"],
+    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "familyFriendly", "kidsClub", "parking", "seaView", "gym", "whirlpool"],
     boards: [
       { key: "halb", priceDelta: 0 },
       { key: "voll", priceDelta: 30 },
@@ -5994,7 +6001,7 @@ const HOTELS = [
     distanceToBeach: 0.1,
     distanceToCenter: 0.4,
     distanceToAirport: 8,
-    amenities: ["pool", "wifi", "aircon", "parking", "familyFriendly", "seaView", "terrace"],
+    amenities: ["pool", "wifi", "aircon", "parking", "familyFriendly", "seaView", "terrace", "petsAllowed"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 15 },
@@ -6026,7 +6033,7 @@ const HOTELS = [
     distanceToBeach: 0.3,
     distanceToCenter: 8,
     distanceToAirport: 42,
-    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace", "beachfront", "seaView", "familyFriendly"],
+    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace", "beachfront", "seaView", "familyFriendly", "sauna"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 48 },
@@ -6057,7 +6064,7 @@ const HOTELS = [
     distanceToBeach: 0.25,
     distanceToCenter: 0.3,
     distanceToAirport: 95,
-    amenities: ["wifi", "aircon", "bar", "terrace"],
+    amenities: ["wifi", "aircon", "bar", "terrace", "petsAllowed", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 10 },
@@ -6108,7 +6115,7 @@ const HOTELS = [
     distanceToBeach: 0.3,
     distanceToCenter: 7.4,
     distanceToAirport: 26,
-    amenities: ["wifi", "pool", "restaurant", "bar", "aircon", "parking", "kidsClub", "familyFriendly", "seaView"],
+    amenities: ["wifi", "pool", "restaurant", "bar", "aircon", "parking", "kidsClub", "familyFriendly", "seaView", "petsAllowed"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 21 },
@@ -6140,7 +6147,7 @@ const HOTELS = [
     distanceToBeach: 0.05,
     distanceToCenter: 18.6,
     distanceToAirport: 31,
-    amenities: ["wifi", "pool", "restaurant", "bar", "aircon", "parking", "beachfront", "kidsClub", "familyFriendly", "gym"],
+    amenities: ["wifi", "pool", "restaurant", "bar", "aircon", "parking", "beachfront", "kidsClub", "familyFriendly", "gym", "petsAllowed", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 34 },
@@ -6172,7 +6179,7 @@ const HOTELS = [
     distanceToBeach: 11.2,
     distanceToCenter: 9.8,
     distanceToAirport: 17,
-    amenities: ["wifi", "restaurant", "bar", "terrace", "parking", "spa", "adultsOnly"],
+    amenities: ["wifi", "restaurant", "bar", "terrace", "parking", "spa", "adultsOnly", "whirlpool", "sauna"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 46 },
@@ -6233,7 +6240,7 @@ const HOTELS = [
     distanceToBeach: 0.2,
     distanceToCenter: 26.4,
     distanceToAirport: 34,
-    amenities: ["wifi", "restaurant", "bar", "parking", "terrace", "petsAllowed", "familyFriendly", "bikeRental"],
+    amenities: ["wifi", "restaurant", "bar", "parking", "terrace", "petsAllowed", "familyFriendly", "bikeRental", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 32 },
@@ -6326,7 +6333,7 @@ const HOTELS = [
     distanceToBeach: 1.4,
     distanceToCenter: 11.8,
     distanceToAirport: 29,
-    amenities: ["wifi", "pool", "spa", "restaurant", "bar", "aircon", "parking", "gym", "seaView", "terrace"],
+    amenities: ["wifi", "pool", "spa", "restaurant", "bar", "aircon", "parking", "gym", "seaView", "terrace", "whirlpool", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 68 },
@@ -6357,7 +6364,7 @@ const HOTELS = [
     distanceToBeach: 1.1,
     distanceToCenter: 38.6,
     distanceToAirport: 32,
-    amenities: ["wifi", "restaurant", "bar", "parking", "terrace", "bikeRental"],
+    amenities: ["wifi", "restaurant", "bar", "parking", "terrace", "bikeRental", "petsAllowed"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 28 },
@@ -6388,7 +6395,7 @@ const HOTELS = [
     distanceToBeach: 14.8,
     distanceToCenter: 15.2,
     distanceToAirport: 19,
-    amenities: ["wifi", "pool", "restaurant", "bar", "parking", "kidsClub", "familyFriendly", "spa", "gym", "bikeRental"],
+    amenities: ["wifi", "pool", "restaurant", "bar", "parking", "kidsClub", "familyFriendly", "spa", "gym", "bikeRental", "petsAllowed"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 38 },
@@ -6420,7 +6427,7 @@ const HOTELS = [
     distanceToBeach: 0.1,
     distanceToCenter: 12.4,
     distanceToAirport: 24,
-    amenities: ["wifi", "pool", "restaurant", "bar", "aircon", "parking", "beachfront", "kidsClub", "familyFriendly", "gym", "spa"],
+    amenities: ["wifi", "pool", "restaurant", "bar", "aircon", "parking", "beachfront", "kidsClub", "familyFriendly", "gym", "spa", "sauna", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 30 },
@@ -6452,7 +6459,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 72.6,
     distanceToAirport: 54,
-    amenities: ["wifi", "pool", "restaurant", "bar", "parking", "terrace", "bikeRental", "adultsOnly"],
+    amenities: ["wifi", "pool", "restaurant", "bar", "parking", "terrace", "bikeRental", "adultsOnly", "spa", "petsAllowed", "whirlpool", "sauna"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 58 },
@@ -6483,7 +6490,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.6,
     distanceToAirport: 6,
-    amenities: ["wifi", "pool", "restaurant", "terrace", "aircon", "spa"],
+    amenities: ["wifi", "pool", "restaurant", "terrace", "aircon", "spa", "sauna", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 34 },
@@ -6513,7 +6520,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 12.4,
     distanceToAirport: 16,
-    amenities: ["wifi", "pool", "restaurant", "bar", "aircon", "parking", "kidsClub", "familyFriendly", "spa", "gym"],
+    amenities: ["wifi", "pool", "restaurant", "bar", "aircon", "parking", "kidsClub", "familyFriendly", "spa", "gym", "petsAllowed", "whirlpool", "sauna"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 32 },
@@ -6575,7 +6582,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 58.4,
     distanceToAirport: 62,
-    amenities: ["wifi", "pool", "restaurant", "terrace", "parking", "petsAllowed", "bikeRental"],
+    amenities: ["wifi", "pool", "restaurant", "terrace", "parking", "petsAllowed", "bikeRental", "whirlpool", "garten"],
     boards: [
       { key: "halb", priceDelta: 0 },
       { key: "voll", priceDelta: 38 },
@@ -6606,7 +6613,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 2.1,
     distanceToAirport: 5,
-    amenities: ["wifi", "pool", "restaurant", "bar", "aircon", "parking", "gym"],
+    amenities: ["wifi", "pool", "restaurant", "bar", "aircon", "parking", "gym", "whirlpool"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 28 },
@@ -6637,7 +6644,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 1.2,
     distanceToAirport: 8,
-    amenities: ["wifi", "pool", "spa", "restaurant", "bar", "aircon", "terrace", "adultsOnly"],
+    amenities: ["wifi", "pool", "spa", "restaurant", "bar", "aircon", "terrace", "adultsOnly", "whirlpool"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 62 },
@@ -6668,7 +6675,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 4.8,
     distanceToAirport: 9,
-    amenities: ["wifi", "pool", "aircon", "parking", "familyFriendly", "petsAllowed"],
+    amenities: ["wifi", "pool", "aircon", "parking", "familyFriendly", "petsAllowed", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 12 },
@@ -6699,7 +6706,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 34.2,
     distanceToAirport: 38,
-    amenities: ["wifi", "pool", "spa", "restaurant", "bar", "terrace", "parking", "adultsOnly"],
+    amenities: ["wifi", "pool", "spa", "restaurant", "bar", "terrace", "parking", "adultsOnly", "sauna"],
     boards: [
       { key: "halb", priceDelta: 0 },
       { key: "voll", priceDelta: 54 },
@@ -6729,7 +6736,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 1.4,
     distanceToAirport: 7,
-    amenities: ["wifi", "terrace"],
+    amenities: ["wifi", "terrace", "petsAllowed"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 9 },
@@ -6760,7 +6767,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 7.2,
     distanceToAirport: 11,
-    amenities: ["wifi", "pool", "restaurant", "bar", "aircon", "parking", "kidsClub", "familyFriendly"],
+    amenities: ["wifi", "pool", "restaurant", "bar", "aircon", "parking", "kidsClub", "familyFriendly", "whirlpool", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 26 },
@@ -6792,7 +6799,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.8,
     distanceToAirport: 7,
-    amenities: ["wifi", "pool", "restaurant", "terrace", "aircon", "spa"],
+    amenities: ["wifi", "pool", "restaurant", "terrace", "aircon", "spa", "sauna"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 36 },
@@ -6822,7 +6829,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 9.6,
     distanceToAirport: 12,
-    amenities: ["wifi", "pool", "spa", "restaurant", "bar", "aircon", "parking", "gym", "familyFriendly"],
+    amenities: ["wifi", "pool", "spa", "restaurant", "bar", "aircon", "parking", "gym", "familyFriendly", "whirlpool", "sauna"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 48 },
@@ -6854,7 +6861,7 @@ const HOTELS = [
     distanceToBeach: 0.05,
     distanceToCenter: 18.2,
     distanceToAirport: 28,
-    amenities: ["wifi", "pool", "restaurant", "bar", "aircon", "parking", "beachfront", "kidsClub", "familyFriendly", "spa"],
+    amenities: ["wifi", "pool", "restaurant", "bar", "aircon", "parking", "beachfront", "kidsClub", "familyFriendly", "spa", "whirlpool", "sauna", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 30 },
@@ -6886,7 +6893,7 @@ const HOTELS = [
     distanceToBeach: 0.08,
     distanceToCenter: 14.6,
     distanceToAirport: 26,
-    amenities: ["wifi", "pool", "restaurant", "bar", "aircon", "parking", "beachfront", "spa", "gym", "seaView"],
+    amenities: ["wifi", "pool", "restaurant", "bar", "aircon", "parking", "beachfront", "spa", "gym", "seaView", "petsAllowed", "sauna", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 34 },
@@ -6917,7 +6924,7 @@ const HOTELS = [
     distanceToBeach: 0.4,
     distanceToCenter: 22.8,
     distanceToAirport: 32,
-    amenities: ["wifi", "pool", "spa", "restaurant", "bar", "aircon", "parking", "terrace", "adultsOnly"],
+    amenities: ["wifi", "pool", "spa", "restaurant", "bar", "aircon", "parking", "terrace", "adultsOnly", "sauna"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 64 },
@@ -6948,7 +6955,7 @@ const HOTELS = [
     distanceToBeach: 0.4,
     distanceToCenter: 0.3,
     distanceToAirport: 22,
-    amenities: ["wifi", "aircon", "parking"],
+    amenities: ["wifi", "aircon", "parking", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 8 },
@@ -7010,7 +7017,7 @@ const HOTELS = [
     distanceToBeach: 0.6,
     distanceToCenter: 8.4,
     distanceToAirport: 18,
-    amenities: ["wifi", "restaurant", "terrace", "bikeRental"],
+    amenities: ["wifi", "restaurant", "terrace", "bikeRental", "petsAllowed"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 18 },
@@ -7041,7 +7048,7 @@ const HOTELS = [
     distanceToBeach: 0.2,
     distanceToCenter: 14.8,
     distanceToAirport: 22,
-    amenities: ["wifi", "pool", "restaurant", "bar", "aircon", "parking", "kidsClub", "familyFriendly", "spa", "gym", "seaView"],
+    amenities: ["wifi", "pool", "restaurant", "bar", "aircon", "parking", "kidsClub", "familyFriendly", "spa", "gym", "seaView", "whirlpool", "sauna"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 32 },
@@ -7073,7 +7080,7 @@ const HOTELS = [
     distanceToBeach: 0.15,
     distanceToCenter: 28.4,
     distanceToAirport: 38,
-    amenities: ["wifi", "pool", "restaurant", "bar", "aircon", "parking", "seaView", "familyFriendly"],
+    amenities: ["wifi", "pool", "restaurant", "bar", "aircon", "parking", "seaView", "familyFriendly", "whirlpool"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 28 },
@@ -7105,7 +7112,7 @@ const HOTELS = [
     distanceToBeach: 8.2,
     distanceToCenter: 32.6,
     distanceToAirport: 28,
-    amenities: ["wifi", "pool", "restaurant", "terrace", "parking", "petsAllowed", "bikeRental"],
+    amenities: ["wifi", "pool", "restaurant", "terrace", "parking", "petsAllowed", "bikeRental", "whirlpool"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 38 },
@@ -7167,7 +7174,7 @@ const HOTELS = [
     distanceToBeach: 0.1,
     distanceToCenter: 0.2,
     distanceToAirport: 132,
-    amenities: ["spa", "wifi", "restaurant", "bar", "gym", "parking", "terrace", "seaView"],
+    amenities: ["spa", "wifi", "restaurant", "bar", "gym", "parking", "terrace", "seaView", "pool", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 48 },
@@ -7198,7 +7205,7 @@ const HOTELS = [
     distanceToBeach: 0.3,
     distanceToCenter: 0.4,
     distanceToAirport: 136,
-    amenities: ["wifi", "restaurant", "bar", "terrace", "seaView"],
+    amenities: ["wifi", "restaurant", "bar", "terrace", "seaView", "spa", "pool", "sauna", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -7229,7 +7236,7 @@ const HOTELS = [
     distanceToBeach: 0.2,
     distanceToCenter: 0.7,
     distanceToAirport: 142,
-    amenities: ["wifi", "restaurant", "bar", "familyFriendly", "kidsClub", "parking"],
+    amenities: ["wifi", "restaurant", "bar", "familyFriendly", "kidsClub", "parking", "pool", "sauna"],
     boards: [
       { key: "halb", priceDelta: 0 },
       { key: "voll", priceDelta: 30 },
@@ -7292,7 +7299,7 @@ const HOTELS = [
     distanceToBeach: 0.1,
     distanceToCenter: 0.3,
     distanceToAirport: 204,
-    amenities: ["wifi", "restaurant", "bar", "beachfront", "parking", "seaView", "spa", "terrace"],
+    amenities: ["wifi", "restaurant", "bar", "beachfront", "parking", "seaView", "spa", "terrace", "pool", "sauna"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 28 },
@@ -7324,7 +7331,7 @@ const HOTELS = [
     distanceToBeach: 0.2,
     distanceToCenter: 0.3,
     distanceToAirport: 198,
-    amenities: ["wifi", "restaurant", "bar", "terrace", "seaView"],
+    amenities: ["wifi", "restaurant", "bar", "terrace", "seaView", "spa", "pool", "whirlpool", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -7355,7 +7362,7 @@ const HOTELS = [
     distanceToBeach: 0.3,
     distanceToCenter: 0.4,
     distanceToAirport: 62,
-    amenities: ["wifi", "restaurant", "bar", "terrace", "spa"],
+    amenities: ["wifi", "restaurant", "bar", "terrace", "spa", "pool", "petsAllowed"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -7386,7 +7393,7 @@ const HOTELS = [
     distanceToBeach: 0.6,
     distanceToCenter: 0.5,
     distanceToAirport: 58,
-    amenities: ["wifi", "restaurant", "parking", "terrace", "bikeRental"],
+    amenities: ["wifi", "restaurant", "parking", "terrace", "bikeRental", "petsAllowed", "sauna"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 34 },
@@ -7448,7 +7455,7 @@ const HOTELS = [
     distanceToBeach: 0.2,
     distanceToCenter: 0.4,
     distanceToAirport: 102,
-    amenities: ["wifi", "restaurant", "bar", "familyFriendly", "kidsClub", "parking"],
+    amenities: ["wifi", "restaurant", "bar", "familyFriendly", "kidsClub", "parking", "pool", "sauna", "garten"],
     boards: [
       { key: "halb", priceDelta: 0 },
       { key: "voll", priceDelta: 30 },
@@ -7480,7 +7487,7 @@ const HOTELS = [
     distanceToBeach: 0.1,
     distanceToCenter: 0.3,
     distanceToAirport: 52,
-    amenities: ["wifi", "restaurant", "bar", "beachfront", "parking", "seaView", "spa", "terrace"],
+    amenities: ["wifi", "restaurant", "bar", "beachfront", "parking", "seaView", "spa", "terrace", "pool", "sauna"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 28 },
@@ -7512,7 +7519,7 @@ const HOTELS = [
     distanceToBeach: 0.3,
     distanceToCenter: 0.2,
     distanceToAirport: 38,
-    amenities: ["wifi", "restaurant", "bar", "terrace", "seaView"],
+    amenities: ["wifi", "restaurant", "bar", "terrace", "seaView", "pool", "petsAllowed", "whirlpool", "sauna"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 18 },
@@ -7543,7 +7550,7 @@ const HOTELS = [
     distanceToBeach: 0.5,
     distanceToCenter: 0.3,
     distanceToAirport: 140,
-    amenities: ["wifi", "bar"],
+    amenities: ["wifi", "bar", "sauna", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 10 },
@@ -7574,7 +7581,7 @@ const HOTELS = [
     distanceToBeach: 0.1,
     distanceToCenter: 0.3,
     distanceToAirport: 184,
-    amenities: ["spa", "wifi", "restaurant", "bar", "gym", "parking", "terrace", "seaView"],
+    amenities: ["spa", "wifi", "restaurant", "bar", "gym", "parking", "terrace", "seaView", "pool", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 48 },
@@ -7605,7 +7612,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.3,
     distanceToAirport: 102,
-    amenities: ["spa", "wifi", "restaurant", "bar", "parking", "terrace", "gym"],
+    amenities: ["spa", "wifi", "restaurant", "bar", "parking", "terrace", "gym", "pool", "whirlpool", "sauna"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 38 },
@@ -7637,7 +7644,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.2,
     distanceToAirport: 108,
-    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "gym", "parking", "terrace"],
+    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "gym", "parking", "terrace", "petsAllowed", "whirlpool", "sauna"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 48 },
@@ -7668,7 +7675,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.4,
     distanceToAirport: 26,
-    amenities: ["spa", "wifi", "restaurant", "bar", "parking", "terrace", "gym"],
+    amenities: ["spa", "wifi", "restaurant", "bar", "parking", "terrace", "gym", "sauna"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 38 },
@@ -7700,7 +7707,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.5,
     distanceToAirport: 68,
-    amenities: ["pool", "wifi", "restaurant", "bar", "familyFriendly", "kidsClub", "parking", "spa"],
+    amenities: ["pool", "wifi", "restaurant", "bar", "familyFriendly", "kidsClub", "parking", "spa", "petsAllowed", "whirlpool", "sauna"],
     boards: [
       { key: "halb", priceDelta: 0 },
       { key: "voll", priceDelta: 30 },
@@ -7795,7 +7802,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.2,
     distanceToAirport: 118,
-    amenities: ["wifi", "bar"],
+    amenities: ["wifi", "bar", "petsAllowed", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 10 },
@@ -7826,7 +7833,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.1,
     distanceToAirport: 42,
-    amenities: ["spa", "wifi", "restaurant", "bar", "parking", "terrace", "gym"],
+    amenities: ["spa", "wifi", "restaurant", "bar", "parking", "terrace", "gym", "pool", "petsAllowed", "sauna", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 38 },
@@ -7858,7 +7865,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.6,
     distanceToAirport: 34,
-    amenities: ["spa", "wifi", "restaurant", "bar", "parking", "terrace", "gym"],
+    amenities: ["spa", "wifi", "restaurant", "bar", "parking", "terrace", "gym", "whirlpool", "sauna", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 38 },
@@ -7890,7 +7897,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.3,
     distanceToAirport: 98,
-    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "gym", "parking", "terrace"],
+    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "gym", "parking", "terrace", "whirlpool", "sauna", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 48 },
@@ -7921,7 +7928,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.4,
     distanceToAirport: 64,
-    amenities: ["wifi", "restaurant", "bar", "terrace", "spa"],
+    amenities: ["wifi", "restaurant", "bar", "terrace", "spa", "sauna"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -7952,7 +7959,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.3,
     distanceToAirport: 58,
-    amenities: ["wifi", "bar"],
+    amenities: ["wifi", "bar", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 10 },
@@ -7983,7 +7990,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.4,
     distanceToAirport: 78,
-    amenities: ["spa", "wifi", "restaurant", "bar", "parking", "terrace", "gym"],
+    amenities: ["spa", "wifi", "restaurant", "bar", "parking", "terrace", "gym", "pool", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 38 },
@@ -8015,7 +8022,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.3,
     distanceToAirport: 248,
-    amenities: ["spa", "wifi", "restaurant", "bar", "parking", "terrace", "gym"],
+    amenities: ["spa", "wifi", "restaurant", "bar", "parking", "terrace", "gym", "pool", "petsAllowed", "whirlpool"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 38 },
@@ -8047,7 +8054,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.2,
     distanceToAirport: 232,
-    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "gym", "parking", "terrace"],
+    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "gym", "parking", "terrace", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 48 },
@@ -8110,7 +8117,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.2,
     distanceToAirport: 204,
-    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "gym", "parking", "terrace"],
+    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "gym", "parking", "terrace", "petsAllowed", "whirlpool"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 48 },
@@ -8141,7 +8148,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 1.8,
     distanceToAirport: 168,
-    amenities: ["pool", "wifi", "restaurant", "parking", "terrace", "bikeRental"],
+    amenities: ["pool", "wifi", "restaurant", "parking", "terrace", "bikeRental", "sauna", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 34 },
@@ -8172,7 +8179,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.1,
     distanceToAirport: 218,
-    amenities: ["wifi", "restaurant", "bar", "terrace", "spa"],
+    amenities: ["wifi", "restaurant", "bar", "terrace", "spa", "petsAllowed", "whirlpool", "sauna"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -8203,7 +8210,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.6,
     distanceToAirport: 252,
-    amenities: ["pool", "wifi", "restaurant", "bar", "familyFriendly", "kidsClub", "parking", "spa"],
+    amenities: ["pool", "wifi", "restaurant", "bar", "familyFriendly", "kidsClub", "parking", "spa", "garten"],
     boards: [
       { key: "halb", priceDelta: 0 },
       { key: "voll", priceDelta: 30 },
@@ -8235,7 +8242,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.4,
     distanceToAirport: 292,
-    amenities: ["spa", "wifi", "restaurant", "bar", "parking", "terrace", "gym"],
+    amenities: ["spa", "wifi", "restaurant", "bar", "parking", "terrace", "gym", "sauna"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 38 },
@@ -8267,7 +8274,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 1.2,
     distanceToAirport: 234,
-    amenities: ["pool", "wifi", "restaurant", "parking", "terrace", "bikeRental"],
+    amenities: ["pool", "wifi", "restaurant", "parking", "terrace", "bikeRental", "sauna"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 34 },
@@ -8298,7 +8305,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.2,
     distanceToAirport: 222,
-    amenities: ["wifi", "bar"],
+    amenities: ["wifi", "bar", "sauna"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 10 },
@@ -8329,7 +8336,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.5,
     distanceToAirport: 184,
-    amenities: ["wifi", "restaurant", "bar", "terrace", "spa"],
+    amenities: ["wifi", "restaurant", "bar", "terrace", "spa", "sauna"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -8391,7 +8398,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 1.4,
     distanceToAirport: 162,
-    amenities: ["pool", "wifi", "restaurant", "parking", "terrace", "bikeRental"],
+    amenities: ["pool", "wifi", "restaurant", "parking", "terrace", "bikeRental", "whirlpool"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 34 },
@@ -8422,7 +8429,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 3.8,
     distanceToAirport: 262,
-    amenities: ["wifi", "restaurant", "bar", "terrace", "spa"],
+    amenities: ["wifi", "restaurant", "bar", "terrace", "spa", "pool", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -8453,7 +8460,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.2,
     distanceToAirport: 18,
-    amenities: ["spa", "wifi", "restaurant", "bar", "parking", "terrace", "gym"],
+    amenities: ["spa", "wifi", "restaurant", "bar", "parking", "terrace", "gym", "petsAllowed", "sauna", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 38 },
@@ -8485,7 +8492,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 2.1,
     distanceToAirport: 42,
-    amenities: ["spa", "wifi", "restaurant", "bar", "gym", "parking", "terrace"],
+    amenities: ["spa", "wifi", "restaurant", "bar", "gym", "parking", "terrace", "petsAllowed", "whirlpool"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 48 },
@@ -8516,7 +8523,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.4,
     distanceToAirport: 58,
-    amenities: ["spa", "wifi", "restaurant", "bar", "parking", "terrace", "gym"],
+    amenities: ["spa", "wifi", "restaurant", "bar", "parking", "terrace", "gym", "sauna", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 38 },
@@ -8548,7 +8555,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.2,
     distanceToAirport: 9,
-    amenities: ["wifi", "restaurant", "bar", "terrace", "spa"],
+    amenities: ["wifi", "restaurant", "bar", "terrace", "spa", "sauna"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 18 },
@@ -8579,7 +8586,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 1.4,
     distanceToAirport: 52,
-    amenities: ["wifi", "restaurant", "parking", "terrace", "bikeRental"],
+    amenities: ["wifi", "restaurant", "parking", "terrace", "bikeRental", "petsAllowed", "sauna"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 34 },
@@ -8610,7 +8617,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 8.2,
     distanceToAirport: 34,
-    amenities: ["spa", "wifi", "restaurant", "bar", "gym", "parking", "terrace"],
+    amenities: ["spa", "wifi", "restaurant", "bar", "gym", "parking", "terrace", "sauna"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 48 },
@@ -8641,7 +8648,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 12,
     distanceToAirport: 68,
-    amenities: ["spa", "wifi", "restaurant", "bar", "parking", "terrace", "gym"],
+    amenities: ["spa", "wifi", "restaurant", "bar", "parking", "terrace", "gym", "petsAllowed", "sauna"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 38 },
@@ -8704,7 +8711,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.8,
     distanceToAirport: 12,
-    amenities: ["wifi", "bar"],
+    amenities: ["wifi", "bar", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 10 },
@@ -8735,7 +8742,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.3,
     distanceToAirport: 28,
-    amenities: ["wifi", "restaurant", "bar", "familyFriendly", "kidsClub", "parking", "spa"],
+    amenities: ["wifi", "restaurant", "bar", "familyFriendly", "kidsClub", "parking", "spa", "petsAllowed", "whirlpool", "sauna"],
     boards: [
       { key: "halb", priceDelta: 0 },
       { key: "voll", priceDelta: 30 },
@@ -8798,7 +8805,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.9,
     distanceToAirport: 28,
-    amenities: ["wifi", "restaurant", "parking", "terrace", "bikeRental"],
+    amenities: ["wifi", "restaurant", "parking", "terrace", "bikeRental", "petsAllowed", "sauna", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 34 },
@@ -8829,7 +8836,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 6.4,
     distanceToAirport: 74,
-    amenities: ["wifi", "restaurant", "bar", "familyFriendly", "kidsClub", "parking"],
+    amenities: ["wifi", "restaurant", "bar", "familyFriendly", "kidsClub", "parking", "sauna"],
     boards: [
       { key: "halb", priceDelta: 0 },
       { key: "voll", priceDelta: 30 },
@@ -8861,7 +8868,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 5.2,
     distanceToAirport: 66,
-    amenities: ["spa", "wifi", "restaurant", "bar", "parking", "terrace", "gym"],
+    amenities: ["spa", "wifi", "restaurant", "bar", "parking", "terrace", "gym", "petsAllowed", "whirlpool"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 38 },
@@ -8893,7 +8900,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.1,
     distanceToAirport: 52,
-    amenities: ["wifi", "restaurant", "bar", "terrace", "spa"],
+    amenities: ["wifi", "restaurant", "bar", "terrace", "spa", "whirlpool"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 18 },
@@ -8924,7 +8931,7 @@ const HOTELS = [
     distanceToBeach: 0.6,
     distanceToCenter: 0.4,
     distanceToAirport: 228,
-    amenities: ["wifi", "restaurant", "bar", "terrace", "seaView"],
+    amenities: ["wifi", "restaurant", "bar", "terrace", "seaView", "petsAllowed"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -8955,7 +8962,7 @@ const HOTELS = [
     distanceToBeach: 2.4,
     distanceToCenter: 12,
     distanceToAirport: 420,
-    amenities: ["spa", "wifi", "restaurant", "bar", "gym", "parking", "terrace"],
+    amenities: ["spa", "wifi", "restaurant", "bar", "gym", "parking", "terrace", "whirlpool"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 48 },
@@ -8986,7 +8993,7 @@ const HOTELS = [
     distanceToBeach: 0.3,
     distanceToCenter: 0.2,
     distanceToAirport: 234,
-    amenities: ["wifi", "restaurant", "bar", "terrace", "seaView"],
+    amenities: ["wifi", "restaurant", "bar", "terrace", "seaView", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -9017,7 +9024,7 @@ const HOTELS = [
     distanceToBeach: 1.8,
     distanceToCenter: 0.2,
     distanceToAirport: 436,
-    amenities: ["wifi", "restaurant", "bar", "terrace", "spa"],
+    amenities: ["wifi", "restaurant", "bar", "terrace", "spa", "sauna"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 18 },
@@ -9048,7 +9055,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 1.2,
     distanceToAirport: 532,
-    amenities: ["spa", "wifi", "restaurant", "bar", "parking", "terrace", "gym"],
+    amenities: ["spa", "wifi", "restaurant", "bar", "parking", "terrace", "gym", "sauna"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 38 },
@@ -9080,7 +9087,7 @@ const HOTELS = [
     distanceToBeach: 1.4,
     distanceToCenter: 0.2,
     distanceToAirport: 492,
-    amenities: ["wifi", "restaurant", "bar", "terrace", "seaView"],
+    amenities: ["wifi", "restaurant", "bar", "terrace", "seaView", "petsAllowed"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -9111,7 +9118,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.5,
     distanceToAirport: 78,
-    amenities: ["wifi", "restaurant", "parking", "terrace", "bikeRental", "spa"],
+    amenities: ["wifi", "restaurant", "parking", "terrace", "bikeRental", "spa", "whirlpool"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 34 },
@@ -9142,7 +9149,7 @@ const HOTELS = [
     distanceToBeach: 0.4,
     distanceToCenter: 0.3,
     distanceToAirport: 496,
-    amenities: ["wifi", "restaurant", "bar", "terrace", "seaView"],
+    amenities: ["wifi", "restaurant", "bar", "terrace", "seaView", "sauna"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 18 },
@@ -9173,7 +9180,7 @@ const HOTELS = [
     distanceToBeach: 0.8,
     distanceToCenter: 0.1,
     distanceToAirport: 448,
-    amenities: ["wifi", "restaurant", "bar", "terrace", "seaView", "spa"],
+    amenities: ["wifi", "restaurant", "bar", "terrace", "seaView", "spa", "whirlpool"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -9235,7 +9242,7 @@ const HOTELS = [
     distanceToBeach: 0.7,
     distanceToCenter: 1.1,
     distanceToAirport: 116,
-    amenities: ["wifi", "restaurant", "bar", "familyFriendly", "kidsClub", "parking"],
+    amenities: ["wifi", "restaurant", "bar", "familyFriendly", "kidsClub", "parking", "sauna"],
     boards: [
       { key: "halb", priceDelta: 0 },
       { key: "voll", priceDelta: 30 },
@@ -9267,7 +9274,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 2.8,
     distanceToAirport: 672,
-    amenities: ["wifi", "restaurant", "parking", "terrace", "bikeRental", "spa"],
+    amenities: ["wifi", "restaurant", "parking", "terrace", "bikeRental", "spa", "petsAllowed"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 34 },
@@ -9298,7 +9305,7 @@ const HOTELS = [
     distanceToBeach: 0.9,
     distanceToCenter: 0.3,
     distanceToAirport: 214,
-    amenities: ["wifi", "bar"],
+    amenities: ["wifi", "bar", "petsAllowed", "sauna", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 10 },
@@ -9329,7 +9336,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.1,
     distanceToAirport: 19,
-    amenities: ["spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace"],
+    amenities: ["spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace", "pool", "petsAllowed", "whirlpool", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 48 },
@@ -9360,7 +9367,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.3,
     distanceToAirport: 20,
-    amenities: ["wifi", "aircon", "bar"],
+    amenities: ["wifi", "aircon", "bar", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 10 },
@@ -9391,7 +9398,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 1.8,
     distanceToAirport: 17,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "gym"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "gym", "spa", "pool", "sauna"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 18 },
@@ -9422,7 +9429,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 1.4,
     distanceToAirport: 22,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "spa", "pool", "whirlpool"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -9453,7 +9460,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 1.6,
     distanceToAirport: 23,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "petsAllowed"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -9484,7 +9491,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 5.4,
     distanceToAirport: 26,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "familyFriendly", "kidsClub", "parking", "pool"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "familyFriendly", "kidsClub", "parking", "pool", "spa", "petsAllowed", "sauna"],
     boards: [
       { key: "halb", priceDelta: 0 },
       { key: "voll", priceDelta: 30 },
@@ -9516,7 +9523,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 8.2,
     distanceToAirport: 30,
-    amenities: ["wifi", "restaurant", "aircon", "parking", "terrace", "bikeRental"],
+    amenities: ["wifi", "restaurant", "aircon", "parking", "terrace", "bikeRental", "spa", "pool", "sauna", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 34 },
@@ -9547,7 +9554,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.9,
     distanceToAirport: 20,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "gym"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "gym", "spa", "pool", "petsAllowed", "sauna"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 18 },
@@ -9609,7 +9616,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 1.6,
     distanceToAirport: 18,
-    amenities: ["spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace"],
+    amenities: ["spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace", "pool", "sauna"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 48 },
@@ -9702,7 +9709,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.6,
     distanceToAirport: 21,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "gym"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "gym", "spa", "pool", "petsAllowed", "whirlpool", "sauna"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 18 },
@@ -9733,7 +9740,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 2.4,
     distanceToAirport: 16,
-    amenities: ["wifi", "aircon", "parking", "familyFriendly", "terrace"],
+    amenities: ["wifi", "aircon", "parking", "familyFriendly", "terrace", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 15 },
@@ -9765,7 +9772,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 2.4,
     distanceToAirport: 25,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "gym"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "gym", "spa", "pool", "petsAllowed", "whirlpool", "sauna"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -9796,7 +9803,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 3.2,
     distanceToAirport: 22,
-    amenities: ["spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace"],
+    amenities: ["spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace", "pool", "sauna", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 48 },
@@ -9827,7 +9834,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 5.8,
     distanceToAirport: 20,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "gym"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "gym", "spa", "pool", "petsAllowed"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -9889,7 +9896,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 3.4,
     distanceToAirport: 20,
-    amenities: ["wifi", "aircon", "bar"],
+    amenities: ["wifi", "aircon", "bar", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 10 },
@@ -9951,7 +9958,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.8,
     distanceToAirport: 27,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "gym"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "gym", "spa", "pool", "whirlpool"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 18 },
@@ -10013,7 +10020,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 4.6,
     distanceToAirport: 19,
-    amenities: ["spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace"],
+    amenities: ["spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace", "pool"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 48 },
@@ -10106,7 +10113,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 3,
     distanceToAirport: 23,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "spa", "pool", "whirlpool"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -10137,7 +10144,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 4,
     distanceToAirport: 21,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "gym", "spa"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "gym", "spa", "pool", "whirlpool"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 18 },
@@ -10168,7 +10175,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 5,
     distanceToAirport: 28,
-    amenities: ["spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace"],
+    amenities: ["spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace", "pool", "whirlpool", "sauna"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 48 },
@@ -10199,7 +10206,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 2.8,
     distanceToAirport: 108,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "pool", "petsAllowed", "whirlpool"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -10230,7 +10237,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 1.2,
     distanceToAirport: 102,
-    amenities: ["spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace"],
+    amenities: ["spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace", "pool", "sauna", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 48 },
@@ -10261,7 +10268,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 9.2,
     distanceToAirport: 114,
-    amenities: ["wifi", "restaurant", "aircon", "parking", "terrace", "bikeRental", "spa"],
+    amenities: ["wifi", "restaurant", "aircon", "parking", "terrace", "bikeRental", "spa", "pool", "sauna"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 34 },
@@ -10323,7 +10330,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 2.2,
     distanceToAirport: 104,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "spa", "pool", "petsAllowed"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -10354,7 +10361,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 5.8,
     distanceToAirport: 92,
-    amenities: ["wifi", "restaurant", "aircon", "parking", "terrace", "bikeRental"],
+    amenities: ["wifi", "restaurant", "aircon", "parking", "terrace", "bikeRental", "petsAllowed"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 34 },
@@ -10385,7 +10392,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 14,
     distanceToAirport: 124,
-    amenities: ["spa", "wifi", "restaurant", "bar", "parking", "terrace", "gym"],
+    amenities: ["spa", "wifi", "restaurant", "bar", "parking", "terrace", "gym", "pool", "petsAllowed", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 38 },
@@ -10417,7 +10424,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.8,
     distanceToAirport: 102,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "spa", "pool"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -10448,7 +10455,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 2.6,
     distanceToAirport: 106,
-    amenities: ["wifi", "aircon", "bar"],
+    amenities: ["wifi", "aircon", "bar", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 10 },
@@ -10479,7 +10486,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 16,
     distanceToAirport: 128,
-    amenities: ["spa", "wifi", "restaurant", "bar", "parking", "terrace", "gym"],
+    amenities: ["spa", "wifi", "restaurant", "bar", "parking", "terrace", "gym", "whirlpool", "sauna"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 38 },
@@ -10511,7 +10518,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 1.6,
     distanceToAirport: 104,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "familyFriendly", "kidsClub", "parking"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "familyFriendly", "kidsClub", "parking", "petsAllowed", "garten"],
     boards: [
       { key: "halb", priceDelta: 0 },
       { key: "voll", priceDelta: 30 },
@@ -10574,7 +10581,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 1.8,
     distanceToAirport: 98,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "gym"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "gym", "petsAllowed"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 18 },
@@ -10605,7 +10612,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 3.4,
     distanceToAirport: 108,
-    amenities: ["spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace"],
+    amenities: ["spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace", "pool", "petsAllowed", "whirlpool", "sauna"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 48 },
@@ -10636,7 +10643,7 @@ const HOTELS = [
     distanceToBeach: 2.2,
     distanceToCenter: 1.1,
     distanceToAirport: 16,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "spa", "petsAllowed"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -10667,7 +10674,7 @@ const HOTELS = [
     distanceToBeach: 0.1,
     distanceToCenter: 1.8,
     distanceToAirport: 15,
-    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "beachfront", "parking", "seaView", "terrace"],
+    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "beachfront", "parking", "seaView", "terrace", "spa"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 28 },
@@ -10699,7 +10706,7 @@ const HOTELS = [
     distanceToBeach: 1.6,
     distanceToCenter: 0.2,
     distanceToAirport: 16,
-    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace"],
+    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 48 },
@@ -10761,7 +10768,7 @@ const HOTELS = [
     distanceToBeach: 0.5,
     distanceToCenter: 3.8,
     distanceToAirport: 19,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "pool", "gym"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "pool", "gym", "whirlpool"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -10792,7 +10799,7 @@ const HOTELS = [
     distanceToBeach: 1.2,
     distanceToCenter: 0.6,
     distanceToAirport: 16,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "spa", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -10823,7 +10830,7 @@ const HOTELS = [
     distanceToBeach: 2.6,
     distanceToCenter: 1.4,
     distanceToAirport: 14,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "petsAllowed"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 18 },
@@ -10854,7 +10861,7 @@ const HOTELS = [
     distanceToBeach: 0.2,
     distanceToCenter: 3.2,
     distanceToAirport: 18,
-    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "familyFriendly", "kidsClub", "parking"],
+    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "familyFriendly", "kidsClub", "parking", "spa", "whirlpool", "sauna", "garten"],
     boards: [
       { key: "halb", priceDelta: 0 },
       { key: "voll", priceDelta: 30 },
@@ -10886,7 +10893,7 @@ const HOTELS = [
     distanceToBeach: 5.4,
     distanceToCenter: 4.8,
     distanceToAirport: 15,
-    amenities: ["pool", "wifi", "restaurant", "aircon", "parking", "terrace", "bikeRental"],
+    amenities: ["pool", "wifi", "restaurant", "aircon", "parking", "terrace", "bikeRental", "spa", "petsAllowed", "sauna"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 34 },
@@ -10917,7 +10924,7 @@ const HOTELS = [
     distanceToBeach: 3.8,
     distanceToCenter: 2.8,
     distanceToAirport: 12,
-    amenities: ["wifi", "aircon", "bar"],
+    amenities: ["wifi", "aircon", "bar", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 10 },
@@ -10979,7 +10986,7 @@ const HOTELS = [
     distanceToBeach: 1.4,
     distanceToCenter: 0.5,
     distanceToAirport: 15,
-    amenities: ["pool", "wifi", "aircon", "parking", "familyFriendly", "terrace"],
+    amenities: ["pool", "wifi", "aircon", "parking", "familyFriendly", "terrace", "whirlpool"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 15 },
@@ -11011,7 +11018,7 @@ const HOTELS = [
     distanceToBeach: 12,
     distanceToCenter: 1.2,
     distanceToAirport: 7,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "spa", "pool"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -11073,7 +11080,7 @@ const HOTELS = [
     distanceToBeach: 16,
     distanceToCenter: 6.4,
     distanceToAirport: 14,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "pool"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "pool", "spa", "sauna"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 18 },
@@ -11104,7 +11111,7 @@ const HOTELS = [
     distanceToBeach: 14,
     distanceToCenter: 1.4,
     distanceToAirport: 9,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "pool"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "pool", "spa"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -11135,7 +11142,7 @@ const HOTELS = [
     distanceToBeach: 15,
     distanceToCenter: 4.2,
     distanceToAirport: 12,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "petsAllowed"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -11166,7 +11173,7 @@ const HOTELS = [
     distanceToBeach: 13,
     distanceToCenter: 1.8,
     distanceToAirport: 7,
-    amenities: ["wifi", "aircon", "bar"],
+    amenities: ["wifi", "aircon", "bar", "petsAllowed"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 10 },
@@ -11197,7 +11204,7 @@ const HOTELS = [
     distanceToBeach: 18,
     distanceToCenter: 7.8,
     distanceToAirport: 4,
-    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "familyFriendly", "kidsClub", "parking"],
+    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "familyFriendly", "kidsClub", "parking", "spa", "petsAllowed", "whirlpool", "sauna"],
     boards: [
       { key: "halb", priceDelta: 0 },
       { key: "voll", priceDelta: 30 },
@@ -11260,7 +11267,7 @@ const HOTELS = [
     distanceToBeach: 14,
     distanceToCenter: 0.2,
     distanceToAirport: 8,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "gym"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "gym", "spa", "petsAllowed", "sauna"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 18 },
@@ -11291,7 +11298,7 @@ const HOTELS = [
     distanceToBeach: 14,
     distanceToCenter: 2.6,
     distanceToAirport: 11,
-    amenities: ["pool", "wifi", "restaurant", "aircon", "parking", "terrace", "bikeRental"],
+    amenities: ["pool", "wifi", "restaurant", "aircon", "parking", "terrace", "bikeRental", "spa"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 34 },
@@ -11322,7 +11329,7 @@ const HOTELS = [
     distanceToBeach: 13,
     distanceToCenter: 0.8,
     distanceToAirport: 10,
-    amenities: ["pool", "wifi", "aircon", "parking", "familyFriendly", "terrace"],
+    amenities: ["pool", "wifi", "aircon", "parking", "familyFriendly", "terrace", "petsAllowed", "whirlpool", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 15 },
@@ -11354,7 +11361,7 @@ const HOTELS = [
     distanceToBeach: 14,
     distanceToCenter: 0.9,
     distanceToAirport: 9,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "spa", "pool", "whirlpool", "sauna"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -11417,7 +11424,7 @@ const HOTELS = [
     distanceToBeach: 0.4,
     distanceToCenter: 0.5,
     distanceToAirport: 42,
-    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace", "seaView"],
+    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace", "seaView", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 48 },
@@ -11448,7 +11455,7 @@ const HOTELS = [
     distanceToBeach: 0.6,
     distanceToCenter: 0.8,
     distanceToAirport: 78,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "pool"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "pool", "spa"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -11541,7 +11548,7 @@ const HOTELS = [
     distanceToBeach: 0.3,
     distanceToCenter: 1.6,
     distanceToAirport: 24,
-    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "familyFriendly", "kidsClub", "parking", "seaView"],
+    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "familyFriendly", "kidsClub", "parking", "seaView", "spa", "whirlpool", "sauna"],
     boards: [
       { key: "halb", priceDelta: 0 },
       { key: "voll", priceDelta: 30 },
@@ -11604,7 +11611,7 @@ const HOTELS = [
     distanceToBeach: 7.2,
     distanceToCenter: 0.4,
     distanceToAirport: 62,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "pool"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "pool", "whirlpool"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 18 },
@@ -11635,7 +11642,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.4,
     distanceToAirport: 7,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "pool"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "pool", "spa", "petsAllowed", "whirlpool"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -11666,7 +11673,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 1.4,
     distanceToAirport: 4,
-    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace"],
+    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace", "petsAllowed", "sauna"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 48 },
@@ -11697,7 +11704,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 9.2,
     distanceToAirport: 14,
-    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "familyFriendly", "kidsClub", "parking"],
+    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "familyFriendly", "kidsClub", "parking", "spa", "petsAllowed", "sauna"],
     boards: [
       { key: "halb", priceDelta: 0 },
       { key: "voll", priceDelta: 30 },
@@ -11729,7 +11736,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.8,
     distanceToAirport: 6,
-    amenities: ["wifi", "aircon", "bar", "terrace"],
+    amenities: ["wifi", "aircon", "bar", "terrace", "petsAllowed", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 10 },
@@ -11760,7 +11767,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 32,
     distanceToAirport: 36,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "pool"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "pool", "spa", "sauna"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -11791,7 +11798,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 2.2,
     distanceToAirport: 5,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "pool", "gym"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "pool", "gym", "whirlpool"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 18 },
@@ -11822,7 +11829,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 1.1,
     distanceToAirport: 6,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -11884,7 +11891,7 @@ const HOTELS = [
     distanceToBeach: 0.2,
     distanceToCenter: 7.8,
     distanceToAirport: 28,
-    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace", "seaView"],
+    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace", "seaView", "whirlpool"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 48 },
@@ -11915,7 +11922,7 @@ const HOTELS = [
     distanceToBeach: 2.4,
     distanceToCenter: 0.8,
     distanceToAirport: 21,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "spa", "petsAllowed", "sauna"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -11946,7 +11953,7 @@ const HOTELS = [
     distanceToBeach: 1.2,
     distanceToCenter: 1.8,
     distanceToAirport: 22,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "pool", "gym", "seaView"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "pool", "gym", "seaView", "spa", "sauna", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 18 },
@@ -11977,7 +11984,7 @@ const HOTELS = [
     distanceToBeach: 9.4,
     distanceToCenter: 14,
     distanceToAirport: 26,
-    amenities: ["pool", "wifi", "restaurant", "aircon", "parking", "terrace", "bikeRental", "spa"],
+    amenities: ["pool", "wifi", "restaurant", "aircon", "parking", "terrace", "bikeRental", "spa", "whirlpool", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 34 },
@@ -12008,7 +12015,7 @@ const HOTELS = [
     distanceToBeach: 0.2,
     distanceToCenter: 24,
     distanceToAirport: 26,
-    amenities: ["wifi", "aircon", "bar"],
+    amenities: ["wifi", "aircon", "bar", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 10 },
@@ -12039,7 +12046,7 @@ const HOTELS = [
     distanceToBeach: 0.4,
     distanceToCenter: 18,
     distanceToAirport: 34,
-    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "familyFriendly", "kidsClub", "parking"],
+    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "familyFriendly", "kidsClub", "parking", "whirlpool", "garten"],
     boards: [
       { key: "halb", priceDelta: 0 },
       { key: "voll", priceDelta: 30 },
@@ -12071,7 +12078,7 @@ const HOTELS = [
     distanceToBeach: 0.3,
     distanceToCenter: 4.2,
     distanceToAirport: 25,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "pool", "gym", "seaView"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "pool", "gym", "seaView", "spa", "sauna"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 18 },
@@ -12102,7 +12109,7 @@ const HOTELS = [
     distanceToBeach: 0.5,
     distanceToCenter: 38,
     distanceToAirport: 44,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "pool", "seaView"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "pool", "seaView", "spa", "whirlpool", "sauna"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -12133,7 +12140,7 @@ const HOTELS = [
     distanceToBeach: 0.1,
     distanceToCenter: 1.2,
     distanceToAirport: 34,
-    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "beachfront", "parking", "seaView", "terrace"],
+    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "beachfront", "parking", "seaView", "terrace", "spa", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 28 },
@@ -12165,7 +12172,7 @@ const HOTELS = [
     distanceToBeach: 0.1,
     distanceToCenter: 12,
     distanceToAirport: 32,
-    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace", "seaView"],
+    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace", "seaView", "whirlpool"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 48 },
@@ -12196,7 +12203,7 @@ const HOTELS = [
     distanceToBeach: 0.6,
     distanceToCenter: 0.4,
     distanceToAirport: 26,
-    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "familyFriendly", "kidsClub", "parking", "seaView"],
+    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "familyFriendly", "kidsClub", "parking", "seaView", "petsAllowed", "whirlpool"],
     boards: [
       { key: "halb", priceDelta: 0 },
       { key: "voll", priceDelta: 30 },
@@ -12228,7 +12235,7 @@ const HOTELS = [
     distanceToBeach: 0,
     distanceToCenter: 2.8,
     distanceToAirport: 88,
-    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "beachfront", "parking", "seaView", "terrace"],
+    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "beachfront", "parking", "seaView", "terrace", "spa", "sauna"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 28 },
@@ -12260,7 +12267,7 @@ const HOTELS = [
     distanceToBeach: 0.2,
     distanceToCenter: 16,
     distanceToAirport: 36,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "pool", "spa", "seaView"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "pool", "spa", "seaView", "sauna"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -12291,7 +12298,7 @@ const HOTELS = [
     distanceToBeach: 14,
     distanceToCenter: 0.2,
     distanceToAirport: 12,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "pool"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "pool", "petsAllowed"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 18 },
@@ -12322,7 +12329,7 @@ const HOTELS = [
     distanceToBeach: 1.4,
     distanceToCenter: 18,
     distanceToAirport: 30,
-    amenities: ["pool", "wifi", "restaurant", "aircon", "parking", "terrace", "bikeRental"],
+    amenities: ["pool", "wifi", "restaurant", "aircon", "parking", "terrace", "bikeRental", "petsAllowed", "whirlpool", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 34 },
@@ -12353,7 +12360,7 @@ const HOTELS = [
     distanceToBeach: 0.3,
     distanceToCenter: 2.4,
     distanceToAirport: 24,
-    amenities: ["wifi", "aircon", "bar"],
+    amenities: ["wifi", "aircon", "bar", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 10 },
@@ -12384,7 +12391,7 @@ const HOTELS = [
     distanceToBeach: 0.1,
     distanceToCenter: 0.9,
     distanceToAirport: 58,
-    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "beachfront", "parking", "seaView", "terrace"],
+    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "beachfront", "parking", "seaView", "terrace", "whirlpool"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 28 },
@@ -12447,7 +12454,7 @@ const HOTELS = [
     distanceToBeach: 0.3,
     distanceToCenter: 0.2,
     distanceToAirport: 38,
-    amenities: ["wifi", "aircon", "bar"],
+    amenities: ["wifi", "aircon", "bar", "petsAllowed"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 10 },
@@ -12478,7 +12485,7 @@ const HOTELS = [
     distanceToBeach: 22,
     distanceToCenter: 3.4,
     distanceToAirport: 28,
-    amenities: ["pool", "wifi", "restaurant", "aircon", "parking", "terrace", "bikeRental"],
+    amenities: ["pool", "wifi", "restaurant", "aircon", "parking", "terrace", "bikeRental", "spa", "petsAllowed", "sauna", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 34 },
@@ -12509,7 +12516,7 @@ const HOTELS = [
     distanceToBeach: 0.2,
     distanceToCenter: 12,
     distanceToAirport: 148,
-    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "beachfront", "parking", "seaView", "terrace"],
+    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "beachfront", "parking", "seaView", "terrace", "spa", "petsAllowed", "sauna"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 28 },
@@ -12572,7 +12579,7 @@ const HOTELS = [
     distanceToBeach: 0.4,
     distanceToCenter: 0.2,
     distanceToAirport: 72,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "pool"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "pool", "spa", "petsAllowed", "whirlpool"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -12603,7 +12610,7 @@ const HOTELS = [
     distanceToBeach: 0.9,
     distanceToCenter: 2.8,
     distanceToAirport: 156,
-    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace", "seaView"],
+    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace", "seaView", "whirlpool"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 48 },
@@ -12634,7 +12641,7 @@ const HOTELS = [
     distanceToBeach: 38,
     distanceToCenter: 0.6,
     distanceToAirport: 62,
-    amenities: ["pool", "wifi", "restaurant", "aircon", "parking", "terrace", "bikeRental"],
+    amenities: ["pool", "wifi", "restaurant", "aircon", "parking", "terrace", "bikeRental", "petsAllowed", "whirlpool"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 34 },
@@ -12665,7 +12672,7 @@ const HOTELS = [
     distanceToBeach: 0.3,
     distanceToCenter: 0.8,
     distanceToAirport: 58,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "pool", "seaView"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "pool", "seaView", "spa", "sauna"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -12696,7 +12703,7 @@ const HOTELS = [
     distanceToBeach: 0.4,
     distanceToCenter: 0.6,
     distanceToAirport: 112,
-    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "beachfront", "parking", "seaView", "terrace"],
+    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "beachfront", "parking", "seaView", "terrace", "petsAllowed", "whirlpool", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 28 },
@@ -12728,7 +12735,7 @@ const HOTELS = [
     distanceToBeach: 4.2,
     distanceToCenter: 0.3,
     distanceToAirport: 38,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "pool"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "pool", "spa", "sauna", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -12759,7 +12766,7 @@ const HOTELS = [
     distanceToBeach: 24,
     distanceToCenter: 2.4,
     distanceToAirport: 74,
-    amenities: ["pool", "wifi", "restaurant", "aircon", "parking", "terrace", "bikeRental", "spa"],
+    amenities: ["pool", "wifi", "restaurant", "aircon", "parking", "terrace", "bikeRental", "spa", "whirlpool", "sauna"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 34 },
@@ -12790,7 +12797,7 @@ const HOTELS = [
     distanceToBeach: 0.5,
     distanceToCenter: 1.2,
     distanceToAirport: 62,
-    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "familyFriendly", "kidsClub", "parking", "seaView"],
+    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "familyFriendly", "kidsClub", "parking", "seaView", "spa", "sauna"],
     boards: [
       { key: "halb", priceDelta: 0 },
       { key: "voll", priceDelta: 30 },
@@ -12822,7 +12829,7 @@ const HOTELS = [
     distanceToBeach: 0.3,
     distanceToCenter: 2.1,
     distanceToAirport: 58,
-    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "beachfront", "parking", "seaView", "terrace"],
+    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "beachfront", "parking", "seaView", "terrace", "spa", "whirlpool", "sauna"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 28 },
@@ -12885,7 +12892,7 @@ const HOTELS = [
     distanceToBeach: 0.2,
     distanceToCenter: 4.2,
     distanceToAirport: 68,
-    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "beachfront", "parking", "seaView", "terrace"],
+    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "beachfront", "parking", "seaView", "terrace", "spa", "sauna"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 28 },
@@ -12917,7 +12924,7 @@ const HOTELS = [
     distanceToBeach: 22,
     distanceToCenter: 3.8,
     distanceToAirport: 96,
-    amenities: ["pool", "wifi", "restaurant", "aircon", "parking", "terrace", "bikeRental"],
+    amenities: ["pool", "wifi", "restaurant", "aircon", "parking", "terrace", "bikeRental", "whirlpool"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 34 },
@@ -12948,7 +12955,7 @@ const HOTELS = [
     distanceToBeach: 5.8,
     distanceToCenter: 0.2,
     distanceToAirport: 9,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "spa", "whirlpool", "sauna"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 18 },
@@ -12979,7 +12986,7 @@ const HOTELS = [
     distanceToBeach: 0.2,
     distanceToCenter: 18,
     distanceToAirport: 9,
-    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "familyFriendly", "kidsClub", "parking", "seaView"],
+    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "familyFriendly", "kidsClub", "parking", "seaView", "garten"],
     boards: [
       { key: "halb", priceDelta: 0 },
       { key: "voll", priceDelta: 30 },
@@ -13011,7 +13018,7 @@ const HOTELS = [
     distanceToBeach: 0.3,
     distanceToCenter: 36,
     distanceToAirport: 26,
-    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "familyFriendly", "kidsClub", "parking", "seaView"],
+    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "familyFriendly", "kidsClub", "parking", "seaView", "spa", "whirlpool"],
     boards: [
       { key: "halb", priceDelta: 0 },
       { key: "voll", priceDelta: 30 },
@@ -13043,7 +13050,7 @@ const HOTELS = [
     distanceToBeach: 0.2,
     distanceToCenter: 9.4,
     distanceToAirport: 24,
-    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "familyFriendly", "kidsClub", "parking"],
+    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "familyFriendly", "kidsClub", "parking", "petsAllowed", "whirlpool", "garten"],
     boards: [
       { key: "halb", priceDelta: 0 },
       { key: "voll", priceDelta: 30 },
@@ -13075,7 +13082,7 @@ const HOTELS = [
     distanceToBeach: 0.3,
     distanceToCenter: 5.2,
     distanceToAirport: 20,
-    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "beachfront", "parking", "seaView", "terrace"],
+    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "beachfront", "parking", "seaView", "terrace", "whirlpool"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 28 },
@@ -13107,7 +13114,7 @@ const HOTELS = [
     distanceToBeach: 0.6,
     distanceToCenter: 38,
     distanceToAirport: 28,
-    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace", "seaView"],
+    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace", "seaView", "sauna"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 48 },
@@ -13169,7 +13176,7 @@ const HOTELS = [
     distanceToBeach: 4.8,
     distanceToCenter: 5.4,
     distanceToAirport: 22,
-    amenities: ["wifi", "aircon", "bar"],
+    amenities: ["wifi", "aircon", "bar", "petsAllowed", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 10 },
@@ -13200,7 +13207,7 @@ const HOTELS = [
     distanceToBeach: 5.2,
     distanceToCenter: 3.4,
     distanceToAirport: 16,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "pool"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "pool", "spa", "whirlpool", "sauna"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -13262,7 +13269,7 @@ const HOTELS = [
     distanceToBeach: 6.8,
     distanceToCenter: 6.2,
     distanceToAirport: 22,
-    amenities: ["pool", "wifi", "restaurant", "aircon", "parking", "terrace", "bikeRental"],
+    amenities: ["pool", "wifi", "restaurant", "aircon", "parking", "terrace", "bikeRental", "petsAllowed"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 34 },
@@ -13325,7 +13332,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 7.8,
     distanceToAirport: 16,
-    amenities: ["spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace", "pool"],
+    amenities: ["spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace", "pool", "sauna"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 48 },
@@ -13356,7 +13363,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 4.6,
     distanceToAirport: 24,
-    amenities: ["wifi", "aircon", "bar"],
+    amenities: ["wifi", "aircon", "bar", "petsAllowed"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 10 },
@@ -13387,7 +13394,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 2.4,
     distanceToAirport: 20,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "spa", "pool", "sauna"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -13418,7 +13425,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 4.2,
     distanceToAirport: 26,
-    amenities: ["wifi", "restaurant", "aircon", "parking", "terrace", "bikeRental"],
+    amenities: ["wifi", "restaurant", "aircon", "parking", "terrace", "bikeRental", "spa", "pool", "sauna", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 34 },
@@ -13449,7 +13456,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 5.2,
     distanceToAirport: 22,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "petsAllowed"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 18 },
@@ -13480,7 +13487,7 @@ const HOTELS = [
     distanceToBeach: 1.2,
     distanceToCenter: 8.4,
     distanceToAirport: 14,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "familyFriendly", "kidsClub", "parking", "pool"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "familyFriendly", "kidsClub", "parking", "pool", "spa", "petsAllowed", "sauna", "garten"],
     boards: [
       { key: "halb", priceDelta: 0 },
       { key: "voll", priceDelta: 30 },
@@ -13543,7 +13550,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 2.2,
     distanceToAirport: 24,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "petsAllowed"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 18 },
@@ -13574,7 +13581,7 @@ const HOTELS = [
     distanceToBeach: 1.6,
     distanceToCenter: 4.4,
     distanceToAirport: 22,
-    amenities: ["wifi", "aircon", "parking", "familyFriendly", "terrace"],
+    amenities: ["wifi", "aircon", "parking", "familyFriendly", "terrace", "petsAllowed", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 15 },
@@ -13637,7 +13644,7 @@ const HOTELS = [
     distanceToBeach: 14,
     distanceToCenter: 3.2,
     distanceToAirport: 10,
-    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace"],
+    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace", "whirlpool"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 48 },
@@ -13668,7 +13675,7 @@ const HOTELS = [
     distanceToBeach: 15,
     distanceToCenter: 2.8,
     distanceToAirport: 6,
-    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace"],
+    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace", "sauna", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 48 },
@@ -13699,7 +13706,7 @@ const HOTELS = [
     distanceToBeach: 13,
     distanceToCenter: 1.8,
     distanceToAirport: 6,
-    amenities: ["wifi", "aircon", "bar"],
+    amenities: ["wifi", "aircon", "bar", "petsAllowed"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 10 },
@@ -13792,7 +13799,7 @@ const HOTELS = [
     distanceToBeach: 14,
     distanceToCenter: 5.8,
     distanceToAirport: 8,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "spa", "petsAllowed", "whirlpool", "sauna", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -13823,7 +13830,7 @@ const HOTELS = [
     distanceToBeach: 16,
     distanceToCenter: 6.8,
     distanceToAirport: 13,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "petsAllowed"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -13854,7 +13861,7 @@ const HOTELS = [
     distanceToBeach: 13,
     distanceToCenter: 1.8,
     distanceToAirport: 11,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "spa", "whirlpool"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -13916,7 +13923,7 @@ const HOTELS = [
     distanceToBeach: 16,
     distanceToCenter: 6.4,
     distanceToAirport: 9,
-    amenities: ["pool", "wifi", "restaurant", "aircon", "parking", "terrace", "bikeRental"],
+    amenities: ["pool", "wifi", "restaurant", "aircon", "parking", "terrace", "bikeRental", "spa", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 34 },
@@ -13947,7 +13954,7 @@ const HOTELS = [
     distanceToBeach: 16,
     distanceToCenter: 6.8,
     distanceToAirport: 3,
-    amenities: ["pool", "wifi", "aircon", "parking", "familyFriendly", "terrace"],
+    amenities: ["pool", "wifi", "aircon", "parking", "familyFriendly", "terrace", "petsAllowed", "whirlpool", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 15 },
@@ -14041,7 +14048,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 9.2,
     distanceToAirport: 18,
-    amenities: ["wifi", "aircon", "bar"],
+    amenities: ["wifi", "aircon", "bar", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 10 },
@@ -14103,7 +14110,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 7.8,
     distanceToAirport: 20,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "spa", "pool", "petsAllowed"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -14134,7 +14141,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 6.8,
     distanceToAirport: 19,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "seaView"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "seaView", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -14165,7 +14172,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 6.2,
     distanceToAirport: 32,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "petsAllowed"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 18 },
@@ -14227,7 +14234,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 1.8,
     distanceToAirport: 24,
-    amenities: ["spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace"],
+    amenities: ["spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace", "pool", "whirlpool", "sauna"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 48 },
@@ -14321,7 +14328,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 2.8,
     distanceToAirport: 108,
-    amenities: ["wifi", "aircon", "bar"],
+    amenities: ["wifi", "aircon", "bar", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 10 },
@@ -14352,7 +14359,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 2.2,
     distanceToAirport: 96,
-    amenities: ["wifi", "aircon", "bar"],
+    amenities: ["wifi", "aircon", "bar", "petsAllowed", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 10 },
@@ -14383,7 +14390,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 1.4,
     distanceToAirport: 100,
-    amenities: ["wifi", "aircon", "bar"],
+    amenities: ["wifi", "aircon", "bar", "petsAllowed"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 10 },
@@ -14414,7 +14421,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 16,
     distanceToAirport: 116,
-    amenities: ["spa", "wifi", "restaurant", "bar", "parking", "terrace", "gym"],
+    amenities: ["spa", "wifi", "restaurant", "bar", "parking", "terrace", "gym", "pool", "sauna", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 38 },
@@ -14446,7 +14453,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 2,
     distanceToAirport: 104,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "spa", "pool", "petsAllowed", "whirlpool", "sauna"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -14477,7 +14484,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 6.4,
     distanceToAirport: 112,
-    amenities: ["wifi", "restaurant", "aircon", "parking", "terrace", "bikeRental"],
+    amenities: ["wifi", "restaurant", "aircon", "parking", "terrace", "bikeRental", "spa", "pool", "sauna"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 34 },
@@ -14539,7 +14546,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 9,
     distanceToAirport: 112,
-    amenities: ["spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace"],
+    amenities: ["spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace", "pool", "whirlpool", "sauna"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 48 },
@@ -14570,7 +14577,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 3.8,
     distanceToAirport: 108,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "familyFriendly", "kidsClub", "parking"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "familyFriendly", "kidsClub", "parking", "garten"],
     boards: [
       { key: "halb", priceDelta: 0 },
       { key: "voll", priceDelta: 30 },
@@ -14602,7 +14609,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.8,
     distanceToAirport: 100,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "gym"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "gym", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 18 },
@@ -14633,7 +14640,7 @@ const HOTELS = [
     distanceToBeach: 0.2,
     distanceToCenter: 0.6,
     distanceToAirport: 38,
-    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "familyFriendly", "kidsClub", "parking", "seaView"],
+    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "familyFriendly", "kidsClub", "parking", "seaView", "spa", "sauna"],
     boards: [
       { key: "halb", priceDelta: 0 },
       { key: "voll", priceDelta: 30 },
@@ -14696,7 +14703,7 @@ const HOTELS = [
     distanceToBeach: 0.9,
     distanceToCenter: 0.1,
     distanceToAirport: 16,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "spa", "sauna", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -14727,7 +14734,7 @@ const HOTELS = [
     distanceToBeach: 0.4,
     distanceToCenter: 0.2,
     distanceToAirport: 64,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "pool"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "pool", "spa", "petsAllowed", "sauna"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 18 },
@@ -14758,7 +14765,7 @@ const HOTELS = [
     distanceToBeach: 0.1,
     distanceToCenter: 0.2,
     distanceToAirport: 72,
-    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "beachfront", "parking", "seaView", "terrace"],
+    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "beachfront", "parking", "seaView", "terrace", "petsAllowed", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 28 },
@@ -14821,7 +14828,7 @@ const HOTELS = [
     distanceToBeach: 0.3,
     distanceToCenter: 2.8,
     distanceToAirport: 52,
-    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace", "seaView"],
+    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace", "seaView", "whirlpool", "sauna", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 48 },
@@ -14883,7 +14890,7 @@ const HOTELS = [
     distanceToBeach: 0.5,
     distanceToCenter: 1.4,
     distanceToAirport: 78,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "pool", "seaView"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "pool", "seaView", "spa"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -14914,7 +14921,7 @@ const HOTELS = [
     distanceToBeach: 28,
     distanceToCenter: 1.2,
     distanceToAirport: 42,
-    amenities: ["pool", "wifi", "restaurant", "aircon", "parking", "terrace", "bikeRental"],
+    amenities: ["pool", "wifi", "restaurant", "aircon", "parking", "terrace", "bikeRental", "whirlpool"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 34 },
@@ -14945,7 +14952,7 @@ const HOTELS = [
     distanceToBeach: 0.4,
     distanceToCenter: 1.6,
     distanceToAirport: 38,
-    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "familyFriendly", "kidsClub", "parking", "seaView"],
+    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "familyFriendly", "kidsClub", "parking", "seaView", "spa"],
     boards: [
       { key: "halb", priceDelta: 0 },
       { key: "voll", priceDelta: 30 },
@@ -14977,7 +14984,7 @@ const HOTELS = [
     distanceToBeach: 0.8,
     distanceToCenter: 0.3,
     distanceToAirport: 112,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "petsAllowed"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 18 },
@@ -15008,7 +15015,7 @@ const HOTELS = [
     distanceToBeach: 0.2,
     distanceToCenter: 3.4,
     distanceToAirport: 42,
-    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "familyFriendly", "kidsClub", "parking", "seaView"],
+    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "familyFriendly", "kidsClub", "parking", "seaView", "spa", "whirlpool", "sauna"],
     boards: [
       { key: "halb", priceDelta: 0 },
       { key: "voll", priceDelta: 30 },
@@ -15040,7 +15047,7 @@ const HOTELS = [
     distanceToBeach: 0.3,
     distanceToCenter: 2.8,
     distanceToAirport: 48,
-    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "familyFriendly", "kidsClub", "parking"],
+    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "familyFriendly", "kidsClub", "parking", "whirlpool"],
     boards: [
       { key: "halb", priceDelta: 0 },
       { key: "voll", priceDelta: 30 },
@@ -15103,7 +15110,7 @@ const HOTELS = [
     distanceToBeach: 1.2,
     distanceToCenter: 0.1,
     distanceToAirport: 12,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "seaView"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "seaView", "spa", "sauna"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -15165,7 +15172,7 @@ const HOTELS = [
     distanceToBeach: 0.1,
     distanceToCenter: 3.8,
     distanceToAirport: 58,
-    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "beachfront", "parking", "seaView", "terrace"],
+    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "beachfront", "parking", "seaView", "terrace", "spa", "whirlpool", "sauna"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 28 },
@@ -15197,7 +15204,7 @@ const HOTELS = [
     distanceToBeach: 1.8,
     distanceToCenter: 0.2,
     distanceToAirport: 86,
-    amenities: ["wifi", "aircon", "bar"],
+    amenities: ["wifi", "aircon", "bar", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 10 },
@@ -15228,7 +15235,7 @@ const HOTELS = [
     distanceToBeach: 0.3,
     distanceToCenter: 0.8,
     distanceToAirport: 16,
-    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace", "seaView"],
+    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace", "seaView", "whirlpool", "sauna"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 48 },
@@ -15321,7 +15328,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.4,
     distanceToAirport: 96,
-    amenities: ["spa", "wifi", "restaurant", "bar", "parking", "terrace", "gym"],
+    amenities: ["spa", "wifi", "restaurant", "bar", "parking", "terrace", "gym", "sauna"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 38 },
@@ -15353,7 +15360,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.6,
     distanceToAirport: 172,
-    amenities: ["spa", "wifi", "restaurant", "bar", "parking", "terrace", "gym"],
+    amenities: ["spa", "wifi", "restaurant", "bar", "parking", "terrace", "gym", "petsAllowed"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 38 },
@@ -15385,7 +15392,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 1.4,
     distanceToAirport: 72,
-    amenities: ["pool", "wifi", "restaurant", "parking", "terrace", "bikeRental"],
+    amenities: ["pool", "wifi", "restaurant", "parking", "terrace", "bikeRental", "petsAllowed"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 34 },
@@ -15416,7 +15423,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.2,
     distanceToAirport: 272,
-    amenities: ["wifi", "bar"],
+    amenities: ["wifi", "bar", "petsAllowed", "sauna"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 10 },
@@ -15447,7 +15454,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.3,
     distanceToAirport: 212,
-    amenities: ["wifi", "bar"],
+    amenities: ["wifi", "bar", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 10 },
@@ -15478,7 +15485,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.2,
     distanceToAirport: 232,
-    amenities: ["spa", "wifi", "restaurant", "bar", "parking", "terrace", "gym"],
+    amenities: ["spa", "wifi", "restaurant", "bar", "parking", "terrace", "gym", "whirlpool", "sauna", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 38 },
@@ -15510,7 +15517,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 1.1,
     distanceToAirport: 262,
-    amenities: ["pool", "wifi", "restaurant", "parking", "terrace", "bikeRental", "spa"],
+    amenities: ["pool", "wifi", "restaurant", "parking", "terrace", "bikeRental", "spa", "petsAllowed", "whirlpool", "sauna"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 34 },
@@ -15541,7 +15548,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.4,
     distanceToAirport: 118,
-    amenities: ["wifi", "bar"],
+    amenities: ["wifi", "bar", "sauna"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 10 },
@@ -15572,7 +15579,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.8,
     distanceToAirport: 152,
-    amenities: ["spa", "wifi", "restaurant", "bar", "parking", "terrace", "gym"],
+    amenities: ["spa", "wifi", "restaurant", "bar", "parking", "terrace", "gym", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 38 },
@@ -15604,7 +15611,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 1.2,
     distanceToAirport: 168,
-    amenities: ["wifi", "restaurant", "parking", "terrace", "bikeRental"],
+    amenities: ["wifi", "restaurant", "parking", "terrace", "bikeRental", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 34 },
@@ -15635,7 +15642,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 38,
     distanceToAirport: 58,
-    amenities: ["wifi", "restaurant", "parking", "terrace", "bikeRental"],
+    amenities: ["wifi", "restaurant", "parking", "terrace", "bikeRental", "petsAllowed", "sauna"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 34 },
@@ -15666,7 +15673,7 @@ const HOTELS = [
     distanceToBeach: 0.2,
     distanceToCenter: 1.8,
     distanceToAirport: 148,
-    amenities: ["spa", "wifi", "restaurant", "bar", "gym", "parking", "terrace", "seaView"],
+    amenities: ["spa", "wifi", "restaurant", "bar", "gym", "parking", "terrace", "seaView", "pool"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 48 },
@@ -15697,7 +15704,7 @@ const HOTELS = [
     distanceToBeach: 0.4,
     distanceToCenter: 0.3,
     distanceToAirport: 188,
-    amenities: ["wifi", "bar"],
+    amenities: ["wifi", "bar", "petsAllowed", "sauna"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 10 },
@@ -15728,7 +15735,7 @@ const HOTELS = [
     distanceToBeach: 0.2,
     distanceToCenter: 0.4,
     distanceToAirport: 176,
-    amenities: ["wifi", "restaurant", "bar", "terrace", "seaView"],
+    amenities: ["wifi", "restaurant", "bar", "terrace", "seaView", "spa", "pool", "sauna"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -15759,7 +15766,7 @@ const HOTELS = [
     distanceToBeach: 0.9,
     distanceToCenter: 0.4,
     distanceToAirport: 148,
-    amenities: ["wifi", "restaurant", "bar", "terrace", "seaView"],
+    amenities: ["wifi", "restaurant", "bar", "terrace", "seaView", "petsAllowed", "sauna"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -15790,7 +15797,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.5,
     distanceToAirport: 7,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "pool"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "pool", "spa", "sauna", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -15852,7 +15859,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 3.2,
     distanceToAirport: 8,
-    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "familyFriendly", "kidsClub", "parking"],
+    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "familyFriendly", "kidsClub", "parking", "spa", "whirlpool", "sauna", "garten"],
     boards: [
       { key: "halb", priceDelta: 0 },
       { key: "voll", priceDelta: 30 },
@@ -15884,7 +15891,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 46,
     distanceToAirport: 48,
-    amenities: ["pool", "wifi", "restaurant", "aircon", "parking", "terrace", "bikeRental"],
+    amenities: ["pool", "wifi", "restaurant", "aircon", "parking", "terrace", "bikeRental", "petsAllowed", "whirlpool"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 34 },
@@ -15915,7 +15922,7 @@ const HOTELS = [
     distanceToBeach: 0.2,
     distanceToCenter: 18,
     distanceToAirport: 24,
-    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "familyFriendly", "kidsClub", "parking", "seaView"],
+    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "familyFriendly", "kidsClub", "parking", "seaView", "petsAllowed", "garten"],
     boards: [
       { key: "halb", priceDelta: 0 },
       { key: "voll", priceDelta: 30 },
@@ -15947,7 +15954,7 @@ const HOTELS = [
     distanceToBeach: 48,
     distanceToCenter: 72,
     distanceToAirport: 62,
-    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace", "bikeRental"],
+    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace", "bikeRental", "petsAllowed", "whirlpool", "sauna"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 48 },
@@ -15978,7 +15985,7 @@ const HOTELS = [
     distanceToBeach: 3.2,
     distanceToCenter: 2.6,
     distanceToAirport: 16,
-    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "terrace", "petsAllowed", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -16009,7 +16016,7 @@ const HOTELS = [
     distanceToBeach: 0.6,
     distanceToCenter: 26,
     distanceToAirport: 28,
-    amenities: ["wifi", "aircon", "bar"],
+    amenities: ["wifi", "aircon", "bar", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 10 },
@@ -16040,7 +16047,7 @@ const HOTELS = [
     distanceToBeach: 0.3,
     distanceToCenter: 5.6,
     distanceToAirport: 28,
-    amenities: ["wifi", "aircon", "bar"],
+    amenities: ["wifi", "aircon", "bar", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 10 },
@@ -16071,7 +16078,7 @@ const HOTELS = [
     distanceToBeach: 0,
     distanceToCenter: 4.2,
     distanceToAirport: 64,
-    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "beachfront", "parking", "seaView", "terrace"],
+    amenities: ["pool", "wifi", "restaurant", "bar", "aircon", "beachfront", "parking", "seaView", "terrace", "whirlpool"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 28 },
@@ -16103,7 +16110,7 @@ const HOTELS = [
     distanceToBeach: 0.1,
     distanceToCenter: 6.8,
     distanceToAirport: 72,
-    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace", "seaView"],
+    amenities: ["pool", "spa", "wifi", "restaurant", "bar", "aircon", "gym", "parking", "terrace", "seaView", "whirlpool", "sauna"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 48 },
@@ -16134,7 +16141,7 @@ const HOTELS = [
     distanceToBeach: 2.2,
     distanceToCenter: 16,
     distanceToAirport: 26,
-    amenities: ["pool", "wifi", "restaurant", "aircon", "parking", "terrace", "bikeRental"],
+    amenities: ["pool", "wifi", "restaurant", "aircon", "parking", "terrace", "bikeRental", "whirlpool"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 34 },
@@ -16165,7 +16172,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 48,
     distanceToAirport: 72,
-    amenities: ["wifi", "restaurant", "bar", "terrace", "spa"],
+    amenities: ["wifi", "restaurant", "bar", "terrace", "spa", "petsAllowed", "whirlpool", "sauna", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -16196,7 +16203,7 @@ const HOTELS = [
     distanceToBeach: 1.2,
     distanceToCenter: 0.3,
     distanceToAirport: 142,
-    amenities: ["wifi", "restaurant", "bar", "terrace", "seaView"],
+    amenities: ["wifi", "restaurant", "bar", "terrace", "seaView", "sauna"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -16227,7 +16234,7 @@ const HOTELS = [
     distanceToBeach: 0.4,
     distanceToCenter: 0.6,
     distanceToAirport: 96,
-    amenities: ["spa", "wifi", "restaurant", "bar", "parking", "terrace", "gym"],
+    amenities: ["spa", "wifi", "restaurant", "bar", "parking", "terrace", "gym", "whirlpool"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 38 },
@@ -16259,7 +16266,7 @@ const HOTELS = [
     distanceToBeach: 14,
     distanceToCenter: 1.2,
     distanceToAirport: 342,
-    amenities: ["wifi", "restaurant", "parking", "terrace", "bikeRental"],
+    amenities: ["wifi", "restaurant", "parking", "terrace", "bikeRental", "petsAllowed", "sauna"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
       { key: "halb", priceDelta: 34 },
@@ -16290,7 +16297,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.3,
     distanceToAirport: 112,
-    amenities: ["wifi", "bar"],
+    amenities: ["wifi", "bar", "petsAllowed", "sauna"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 10 },
@@ -16322,7 +16329,7 @@ const HOTELS = [
     shortDescription: "Kleines Haus hundertfünfzig Meter vom Strand der Barceloneta, Dachterrasse mit Blick aufs Wasser.",
     description: "Das Haus steht in einer Seitengasse der Barceloneta, benannt nach dem Barackenviertel, das hier bis 1966 am Strand stand. Vierundzwanzig Zimmer auf fünf Etagen, schlicht eingerichtet, mit Schallschutzfenstern, die in diesem Viertel nötig sind. Auf dem Dach eine Terrasse mit Liegen und Blick über die Dächer aufs Mittelmeer. Zum Strand sind es hundertfünfzig Meter, zur Markthalle der Barceloneta vier Gehminuten, zur Metro Barceloneta sechs. Frühstück gibt es im Erdgeschoss, es ist ordentlich und nicht mehr. Wer abends Ruhe braucht, sollte ein Zimmer zum Innenhof nehmen.",
     highlights: ["Hundertfünfzig Meter zum Strand","Dachterrasse mit Meerblick","Vier Minuten zur Markthalle","Schallschutzfenster"],
-    amenities: ["wifi","restaurant","bar","aircon","beachfront","terrace"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "beachfront", "terrace"],
     distanceToBeach: 0.15, distanceToCenter: 1.6, distanceToAirport: 14,
     ratingBreakdown: { lage: 4.3, sauberkeit: 4.4, service: 4.6, fruehstueck: 4.6, preis: 4.6, zimmer: 4.3 },
     rooms: [
@@ -16341,7 +16348,7 @@ const HOTELS = [
     shortDescription: "Vierhundert Zimmer am Strand Nova Icària, Pool auf dem Dach, Hafen nebenan.",
     description: "Das Haus wurde für die Spiele von 1992 gebaut und gehört zu den Hotels, die seitdem die Strandfront der Vila Olímpica prägen. Zweihundertvierzig Zimmer, die meisten mit Balkon, auf dem Dach ein Pool mit Blick über den Port Olímpic. Zum Strand Nova Icària sind es zweihundert Meter, zur Metro Ciutadella fünf Minuten, in die Altstadt zwanzig. Der Strandabschnitt hier ist breiter und ruhiger als die Barceloneta. Frühstücksbuffet, Fitnessraum, ein Restaurant mit katalanischer Karte. Das Viertel ist abends still, die Lokale liegen am Hafen zweihundert Meter weiter.",
     highlights: ["Zweihundert Meter zum Strand Nova Icària","Dachpool über dem Port Olímpic","Ruhiger als die Barceloneta","Fünf Minuten zur Metro"],
-    amenities: ["wifi","restaurant","bar","aircon","pool","beachfront","terrace"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "pool", "beachfront", "terrace", "spa", "sauna", "garten"],
     distanceToBeach: 0.2, distanceToCenter: 2.2, distanceToAirport: 15,
     ratingBreakdown: { lage: 4.5, sauberkeit: 4.6, service: 4.3, fruehstueck: 4.3, preis: 4.8, zimmer: 4.5 },
     rooms: [
@@ -16360,7 +16367,7 @@ const HOTELS = [
     shortDescription: "Günstige Pension in der Barceloneta, zweihundertfünfzig Meter zum Sand.",
     description: "Achtzehn Zimmer über zwei Etagen in einem Haus von 1890, schmal geschnitten wie alles in diesem Viertel. Die Zimmer sind klein, sauber und einfach, einige mit Gemeinschaftsbad auf dem Gang, was den Preis erklärt. Kein Aufzug. Zum Strand sind es zweihundertfünfzig Meter, zur Metro Barceloneta fünf Gehminuten, zum Hafen drei. Frühstück gibt es nicht, dafür eine Küche zur Mitbenutzung und einen Aufenthaltsraum. Die Familie, der das Haus gehört, wohnt im Erdgeschoss und ist seit drei Generationen da. Für den Preis die beste Lage am Strand.",
     highlights: ["Zweihundertfünfzig Meter zum Strand","Günstigstes Strandhaus der Stadt","Küche zur Mitbenutzung","Familienbetrieb seit drei Generationen"],
-    amenities: ["wifi","aircon","bar"],
+    amenities: ["wifi", "aircon", "bar", "petsAllowed"],
     distanceToBeach: 0.25, distanceToCenter: 1.8, distanceToAirport: 14,
     ratingBreakdown: { lage: 4.2, sauberkeit: 4.3, service: 4, fruehstueck: 4, preis: 4, zimmer: 4.2 },
     rooms: [
@@ -16379,7 +16386,7 @@ const HOTELS = [
     shortDescription: "Boutiquehaus in Poblenou, dreihundert Meter zum Strand Bogatell.",
     description: "Eine ehemalige Druckerei, die zu einem Haus mit zweiunddreißig Zimmern umgebaut wurde; die Stahlträger stehen noch, die Böden sind aus gegossenem Beton, und in der Lobby hängen Arbeiten von Künstlern aus dem Viertel. Zum Strand Bogatell sind es dreihundert Meter, zur Rambla del Poblenou fünf Gehminuten, zur Metro Llacuna vier. Der Bogatell ist der Strand, an dem die Barceloner selbst liegen. Frühstück à la carte, Bar auf der Dachterrasse, ein kleiner Wellnessbereich mit Sauna im Untergeschoss. Fahrräder kann man im Haus leihen.",
     highlights: ["Dreihundert Meter zum Strand Bogatell","Umgebaute Druckerei mit Stahlträgern","Wellnessbereich mit Sauna","Fahrräder im Haus"],
-    amenities: ["wifi","restaurant","bar","aircon","spa","terrace","bikeRental"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "spa", "terrace", "bikeRental", "petsAllowed", "garten"],
     distanceToBeach: 0.3, distanceToCenter: 3.2, distanceToAirport: 16,
     ratingBreakdown: { lage: 4.8, sauberkeit: 4.4, service: 4.6, fruehstueck: 4.6, preis: 4.6, zimmer: 4.8 },
     rooms: [
@@ -16398,7 +16405,7 @@ const HOTELS = [
     shortDescription: "Familienhotel am ruhigsten Stadtstrand, Pool und Kinderbecken.",
     description: "Das Haus liegt am östlichen Ende der Strandfront, wo der Llevant-Strand beginnt, der ruhigste der Stadt. Hundertachtzig Zimmer, davon vierzig Familienzimmer für vier Personen, auf der Gartenebene ein Pool mit separatem Kinderbecken. Zum Strand sind es dreihundertfünfzig Meter, zur Metro El Maresme fünf Gehminuten, in die Altstadt fünfundzwanzig. Das Einkaufszentrum Diagonal Mar liegt nebenan, was mit Kindern bei Regen praktisch ist. Halbpension möglich, das Buffet ist auf Familien ausgelegt. Der Strandabschnitt hat einen bewachten Bereich und flaches Wasser.",
     highlights: ["Pool mit separatem Kinderbecken","Vierzig Familienzimmer für vier","Ruhigster Stadtstrand mit flachem Wasser","Fünf Minuten zur Metro"],
-    amenities: ["wifi","restaurant","bar","aircon","pool","familyFriendly","parking","kidsClub"],
+    amenities: ["wifi", "restaurant", "bar", "aircon", "pool", "familyFriendly", "parking", "kidsClub", "garten"],
     distanceToBeach: 0.35, distanceToCenter: 4.2, distanceToAirport: 18,
     ratingBreakdown: { lage: 4.6, sauberkeit: 4.2, service: 4.4, fruehstueck: 4.4, preis: 4.4, zimmer: 4.1 },
     rooms: [
@@ -16426,7 +16433,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.2,
     distanceToAirport: 190,
-    amenities: ["wifi","parking"],
+    amenities: ["wifi", "parking"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 12 },
@@ -16457,7 +16464,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.4,
     distanceToAirport: 115,
-    amenities: ["wifi","parking","restaurant"],
+    amenities: ["wifi", "parking", "restaurant", "sauna", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 14 },
@@ -16488,7 +16495,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 8,
     distanceToAirport: 196,
-    amenities: ["wifi","parking","petsAllowed"],
+    amenities: ["wifi", "parking", "petsAllowed", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 13 },
@@ -16520,7 +16527,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.9,
     distanceToAirport: 2,
-    amenities: ["wifi","parking","spa"],
+    amenities: ["wifi", "parking", "spa", "petsAllowed", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 14 },
@@ -16551,7 +16558,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.1,
     distanceToAirport: 173,
-    amenities: ["wifi","restaurant","bar"],
+    amenities: ["wifi", "restaurant", "bar", "sauna"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -16582,7 +16589,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 1.8,
     distanceToAirport: 6,
-    amenities: ["wifi","terrace"],
+    amenities: ["wifi", "terrace"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 11 },
@@ -16613,7 +16620,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 2.4,
     distanceToAirport: 5,
-    amenities: ["wifi","aircon","bar"],
+    amenities: ["wifi", "aircon", "bar", "petsAllowed", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 12 },
@@ -16644,7 +16651,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.1,
     distanceToAirport: 62,
-    amenities: ["wifi","restaurant","bar","parking"],
+    amenities: ["wifi", "restaurant", "bar", "parking", "petsAllowed", "sauna"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 12 },
@@ -16676,7 +16683,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 1.1,
     distanceToAirport: 48,
-    amenities: ["wifi","parking"],
+    amenities: ["wifi", "parking", "petsAllowed", "sauna"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 14 },
@@ -16707,7 +16714,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.2,
     distanceToAirport: 88,
-    amenities: ["wifi","restaurant","bar","parking"],
+    amenities: ["wifi", "restaurant", "bar", "parking", "sauna"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 15 },
@@ -16738,7 +16745,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.3,
     distanceToAirport: 62,
-    amenities: ["wifi","restaurant","parking","petsAllowed"],
+    amenities: ["wifi", "restaurant", "parking", "petsAllowed"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 13 },
@@ -16770,7 +16777,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.5,
     distanceToAirport: 48,
-    amenities: ["wifi","parking","bikeRental"],
+    amenities: ["wifi", "parking", "bikeRental", "sauna", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 14 },
@@ -16801,7 +16808,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 4.2,
     distanceToAirport: 13,
-    amenities: ["wifi","aircon"],
+    amenities: ["wifi", "aircon", "petsAllowed"],
     boards: [
       { key: "ohne", priceDelta: 0 },
     ],
@@ -16831,7 +16838,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 6.1,
     distanceToAirport: 9,
-    amenities: ["wifi","aircon","parking"],
+    amenities: ["wifi", "aircon", "parking", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
     ],
@@ -16861,7 +16868,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 14,
     distanceToAirport: 21,
-    amenities: ["wifi","aircon","parking","petsAllowed"],
+    amenities: ["wifi", "aircon", "parking", "petsAllowed", "garten"],
     boards: [
       { key: "fruehstueck", priceDelta: 0 },
     ],
@@ -16891,7 +16898,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 7.4,
     distanceToAirport: 18,
-    amenities: ["wifi","aircon","bar","gym"],
+    amenities: ["wifi", "aircon", "bar", "gym", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 16 },
@@ -16922,7 +16929,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.1,
     distanceToAirport: 56,
-    amenities: ["wifi","restaurant","bar","parking"],
+    amenities: ["wifi", "restaurant", "bar", "parking", "petsAllowed"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 13 },
@@ -16954,7 +16961,7 @@ const HOTELS = [
     distanceToBeach: null,
     distanceToCenter: 0.1,
     distanceToAirport: 52,
-    amenities: ["wifi","bar"],
+    amenities: ["wifi", "bar", "petsAllowed", "sauna", "garten"],
     boards: [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: 12 },
