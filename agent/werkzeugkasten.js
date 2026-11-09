@@ -181,8 +181,19 @@ const Werkzeugkasten = {
           anzahlVorschlaege: zahl("Wie viele Haeuser sie vorgelegt haben will, wenn sie eine Zahl nennt (2 bis 6). Ohne Angabe leer lassen."),
           naechte: zahl("Zahl der Naechte"),
           personenGesamt: zahl("Nur die Gesamtzahl, wenn die Person sie so nennt ('zu viert', 'vier Leute') - dann erwachsene und kinder leer lassen und nachfragen. Kosewoerter wie 'mein Bengel', 'unser Spross', 'die Kleine' meinen ein Kind, keinen Erwachsenen; das Alter fragst du."),
-          erwachsene: zahl("Zahl der Erwachsenen - nur, wenn die Person sie ausdruecklich nennt"),
-          kinder: zahl("Zahl der Kinder (0, wenn ausdruecklich keine) - nur, wenn die Person sie ausdruecklich nennt"),
+          /* "Nur, wenn die Person sie ausdruecklich nennt" stand hier bis
+             zum 09.11.2026. Ein folgsames Modell traegt dann bei "ich und
+             meine Mutter" nichts ein - es ist ja keine Zahl gefallen. Der
+             Nutzer dazu: "Das Modell muss doch verstehen, dass da jetzt
+             eine Angabe kam und dass es 2 Personen sind. Das muss es doch
+             wohl bestimmen koennen."
+
+             Es kann, und es soll. Die Grenze ist nicht, ob eine Ziffer
+             dasteht, sondern ob die Zahl aus dem Satz FOLGT. Genannte
+             Menschen lassen sich zaehlen, eine unbestimmte Mehrzahl
+             nicht. */
+          erwachsene: zahl("Zahl der Erwachsenen. Trag sie ein, sobald sie sich aus dem Gesagten eindeutig ergibt - auch ohne Ziffer: 'ich und meine Mutter', 'mit meinem Cousin', 'meine Schwester und ich' sind je 2 Erwachsene, 'nur ich' ist 1. Bei einer unbestimmten Mehrzahl ('mit Freunden', 'meine Clique') traegst du nichts ein und fragst nach."),
+          kinder: zahl("Zahl der Kinder (0, wenn keine dabei sind - auch das ergibt sich oft aus dem Satz: wer 'ich und meine Mutter' sagt, reist ohne Kinder). Trag sie ein, sobald sie sich eindeutig ergibt. Bei einer unbestimmten Mehrzahl ('mit den Kindern') traegst du NICHTS ein und fragst, wie viele es sind."),
           kinderAlter: { type: "array", items: { type: "integer" }, description: "Alter der Kinder in Jahren" },
           typ: { type: "string", enum: ["hotel", "apartment"], description: "Hotel oder Ferienwohnung" },
           zimmer: zahl("Zahl der Zimmer (Hotel)"),
@@ -3037,11 +3048,61 @@ const Werkzeugkasten = {
         kern.notieren("naechte_verworfen", { naechte: a.naechte }); delete a.naechte;
       }
       setze("naechte", a.naechte);
-      // Zahlen zu den Reisenden nur, wenn die Person eine genannt hat - aus
-      // "mit den Kindern" wurden sonst zwei Kinder
+      /* Wer die Zahl der Reisenden lesen darf (09.11.2026)
+         ==================================================================
+         Hier stand eine Wortliste: Zahlen zu den Reisenden wurden nur
+         uebernommen, wenn die letzte Nachricht eines von rund dreissig
+         Woertern enthielt. "Ich und meine Freundin" stand darin, "Ich und
+         meine Mutter" nicht - und damit wurde die richtige Angabe des
+         Modells geloescht und der Agent fragte noch einmal.
+
+         Gemeldet am 09.11.2026: "Man kann diese Aussagen mit ich und
+         meine Mutter und so nicht abdecken im Kern. Es kann so viele
+         unterschiedliche Sachen sein. Ich und mein Cousin, ich und mein
+         Freund, ich und meine Freundesgruppe und so weiter. Und dann
+         macht es schon nur Sinn, wenn das Modell da klug antwortet."
+
+         Er hat recht, und die Liste war auch nie als Verstaendnis
+         gedacht. Sie sollte EINEN Fehler abfangen: Aus "mit den Kindern"
+         machte das Modell frueher zwei Kinder - eine unbestimmte Mehrzahl,
+         aus der sich keine Zahl ergibt. Dafuer stand sie da, und dafuer
+         bleibt sie, aber nur noch dort (siehe `unbestimmteMehrzahl` unten).
+
+         Fuer alles andere entscheidet jetzt das Modell, und es sagt seit
+         dem 06.11.2026 ausdruecklich zurueck, ob die Nachricht die offene
+         Frage beantwortet hat (`frage_beantwortet`). Sagt es ja, nimmt der
+         Kern die Zahl, ohne sie mit einem Regex zu ueberstimmen. Sagt es
+         nichts oder etwas anderes, gilt wie bisher die Wortliste als
+         zweiter Weg - dann hat niemand die Verantwortung uebernommen. */
       const ZAHL = /\d|\b(ein|eine|einem|einen|zwei|drei|vier|fünf|fuenf|sechs|sieben|acht|zweit|dritt|viert|fünft|fuenft|sechst|kein|keine|ohne|allein|alleine|beide|zwilling|sohn|tochter|frau|mann|freundin|freund|partner|eltern|paar|erwachsene)\b/i;
+      const gruppeWarGefragt = ["reisende", "kinderAlter"].includes(kern.lauf.gefragtVorher);
+      const modellStehtDafuerEin = ["ja", "teilweise"].includes(a.frage_beantwortet) && gruppeWarGefragt;
       for (const f of ["personenGesamt", "erwachsene", "kinder"]) {
-        if (a[f] != null && p[f === "personenGesamt" ? "personen" : f] == null && !gesagt(ZAHL, 1)) { kern.notieren("reisende_verworfen", { feld: f, wert: a[f] }); delete a[f]; }
+        if (a[f] != null && p[f === "personenGesamt" ? "personen" : f] == null
+          && !gesagt(ZAHL, 1) && !modellStehtDafuerEin) {
+          kern.notieren("reisende_verworfen", { feld: f, wert: a[f] }); delete a[f];
+        }
+      }
+      /* Die unbestimmte Mehrzahl - der eine Fall, den die Liste oben
+         wirklich abfangen sollte.
+         ----------------------------------------------------------------
+         "Mit den Kindern", "mit der Familie", "mit meinen Jungs": Dass
+         Kinder dabei sind, steht fest, wie viele nicht. Eine Zahl, die
+         trotzdem kommt, ist geraten - und sie landet in den Studiendaten,
+         als haette die Person sie genannt. Gefragt wird also nach.
+
+         Das gilt ab jetzt auch, wenn das Modell fuer seine Angabe
+         einsteht: Hier geht es nicht darum, ob es die Frage verstanden
+         hat, sondern darum, dass im Satz keine Zahl steckt, die es lesen
+         koennte. "Ich und meine Mutter" ist davon nicht betroffen - dort
+         faellt kein Wort ueber Kinder. */
+      /* Ohne Wortgrenze am Ende: "mit den KindernN" ist derselbe Fall wie
+         "mit den Kinder", und `\bkinder\b` traf die gebeugte Form nicht. */
+      const MEHRZAHL = /\b(kinder|kids|famili|j(?:u|ü)ngs|m(?:ae|ä)dels|leute|freunde|kollegen|geschwister|enkel|clique|truppe|gruppe)/i;
+      if (a.kinder > 0 && p.kinder == null && gesagt(MEHRZAHL, 1) && !gesagt(ZAHL, 1)) {
+        kern.notieren("menge_unbestimmt", { feld: "kinder", wert: a.kinder });
+        delete a.kinder;
+        if (a.erwachsene != null && !gesagt(/\d|zwei|drei|vier|fünf|fuenf|erwachsene/i, 1)) delete a.erwachsene;
       }
       /* "4 oder mehr" ist keine Vier.
          ----------------------------------------------------------------

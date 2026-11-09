@@ -2,7 +2,7 @@
  *
  *   node agent/durchgang-test.cjs         der jetzige Stand, erwartet 0 falsch
  *   node agent/durchgang-test.cjs --alt   Gegenprobe am Stand davor
- *                                         (_backup/2026-11-06-vollbild-fahrplan/)
+ *                                         (_backup/2026-11-09-reisende/)
  *
  * Geprueft wird, was Logik ist:
  *
@@ -29,7 +29,7 @@
 const fs = require("fs"), vm = require("vm");
 const B = "/Users/tom-gabrielmielicki/Desktop/Bachelor Arbeit/Website/";
 const alt = process.argv.includes("--alt");
-const quelle = alt ? B + "_backup/2026-11-06-vollbild-fahrplan/" : B;
+const quelle = alt ? B + "_backup/2026-11-09-reisende/" : B;
 
 const ctx = { console, window: {},
   document: { querySelectorAll: () => [], querySelector: () => null, getElementById: () => null,
@@ -391,5 +391,54 @@ pruefe("Klaerende Rueckfrage: erst ihre Sache zu Ende",
 pruefe("Echtes Ausweichen: der alte Auftrag bleibt",
   /nicht eingegangen/.test(auftrag(false)), true);
 
-console.log(`\n${gut} richtig, ${schlecht} falsch`);
-process.exit(schlecht ? 1 : 0);
+/* ====================================================================
+   10. "Ich und meine Mutter" sind zwei Erwachsene
+   --------------------------------------------------------------------
+   Gemeldet am 09.11.2026. Das Modell hatte es verstanden, der Kern hat
+   seine Angabe weggeworfen: Zahlen zu den Reisenden galten nur, wenn die
+   letzte Nachricht ein Wort aus einer festen Liste enthielt. "Freundin"
+   stand darin, "Mutter" nicht.
+
+   Jetzt entscheidet das Modell (frage_beantwortet), und der Kern haelt
+   nur noch die unbestimmte Mehrzahl zurueck - den einen Fall, fuer den
+   die Liste urspruenglich gedacht war.
+   ==================================================================== */
+const reiseStub = (text) => ({
+  lauf: { profil: {}, gespraech: [{ role: "user", content: text }], besprochen: {},
+    gefragt: "reisende", gefragtVorher: "reisende" },
+  ereignisse: [],
+  notieren(e, d) { this.ereignisse.push(e + (d && d.feld ? `(${d.feld})` : "")); },
+  sichern() {}, standAnzeigen() {}, sagen() {}, darf: () => true,
+  antwortWerten() {}, logZeile() {}, standKurz: () => "",
+});
+const liesReisende = async (text, felder, urteil = "ja") => {
+  const k = reiseStub(text);
+  try {
+    await WK.ausfuehren("stand_merken",
+      { nachricht_art: "antwort", frage_beantwortet: urteil, ...felder }, k, 1);
+  } catch { /* der Rest des Werkzeugs braucht die Seite */ }
+  const p = k.lauf.profil;
+  return { erwachsene: p.erwachsene ?? null, kinder: p.kinder ?? null, personen: p.personen ?? null };
+};
+
+(async () => {
+  // Genannte Menschen lassen sich zaehlen - egal mit welchem Wort
+  for (const satz of ["Ich und meine Mutter", "Ich und mein Cousin",
+    "meine Schwester und ich", "Ich und mein Kumpel", "Ich und meine Freundin"]) {
+    const r = await liesReisende(satz, { erwachsene: 2, kinder: 0 });
+    pruefe(`Reisende: "${satz}" ergibt 2 Erwachsene`, r.erwachsene, 2);
+    pruefe(`Reisende: "${satz}" ergibt 0 Kinder`, r.kinder, 0);
+  }
+  // Eine unbestimmte Mehrzahl bleibt offen - sonst steht eine geratene
+  // Zahl in den Studiendaten, als haette die Person sie genannt
+  for (const satz of ["Ich fahre mit den Kindern", "mit meiner Familie", "wir fahren mit Freunden"]) {
+    const r = await liesReisende(satz, { erwachsene: 2, kinder: 2 });
+    pruefe(`Reisende: "${satz}" bleibt offen`, r.kinder, null);
+  }
+  // Und ohne Rueckendeckung des Modells gilt weiter die alte Vorsicht
+  const ohne = await liesReisende("Mir ist das Wetter wichtig", { erwachsene: 2, kinder: 0 }, "nein");
+  pruefe("Reisende: ohne Bezug zur Frage wird nichts gesetzt", ohne.erwachsene, null);
+
+  console.log(`\n${gut} richtig, ${schlecht} falsch`);
+  process.exit(schlecht ? 1 : 0);
+})();
