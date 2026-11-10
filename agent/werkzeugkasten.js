@@ -6949,6 +6949,46 @@ const Werkzeugkasten = {
        und geht weiter. Keine Annahme ist endgueltig - die Person kann
        jederzeit widersprechen, und der Stand in der Leiste zeigt, was
        angenommen wurde. */
+    /* Gezaehlt wird hier, wo `fertig` steht (10.11.2026)
+       ==================================================================
+       Am 06.11. hatte ich die Zaehlung an das Urteil des Modells
+       gehaengt: Sagt es "beantwortet", wird zurueckgesetzt. Der
+       Pruefstand von heute zeigt, was daraus wird - 14 Gespraeche, 91
+       gestellte Themen, `thema_uebersprungen: 0`. Die Annahme hat kein
+       einziges Mal gegriffen, und 27-mal stand dieselbe Frage zum
+       dritten Mal im Chat.
+
+       Der Grund: Das Modell meldet fast jede Nachricht als Antwort. Tut
+       es das, ohne dass ein Wert ankommt - weil es das Feld nicht
+       gesetzt hat oder weil der Wert anderswo haengenblieb -, wurde der
+       Zaehler bei jeder Runde wieder auf null gestellt. Er konnte die
+       Zwei gar nicht mehr erreichen.
+
+       Was zaehlt, ist nicht, was das Modell ueber die Nachricht sagt,
+       sondern ob das Thema danach steht. Das weiss nur diese Stelle:
+       `fertig` ist eine Zeile darueber gerechnet. Das Urteil des Modells
+       behaelt seine Rolle, aber die richtige: Wer gerade zurueckfragt
+       oder korrigiert, bekommt zwei Runden Nachsicht, bevor gezaehlt
+       wird. Danach zaehlt es doch, sonst laesst sich der Fahrplan mit
+       Rueckfragen endlos aufhalten.
+
+       Einmal je Zug, deshalb der Merker auf `zugSeit`: Der Fahrplan wird
+       in einem Zug mehrfach gerufen. */
+    if (lauf.gefragtVorher && lauf.zugSeit && lauf.ohneGezaehlt !== lauf.zugSeit) {
+      lauf.ohneGezaehlt = lauf.zugSeit;
+      const t = lauf.gefragtVorher;
+      const ohne = (lauf.ohneAntwort ||= {});
+      const klaert = (lauf.klaertNoch ||= {});
+      if (fertig[t]) { ohne[t] = 0; klaert[t] = 0; }
+      else if (lauf.frageBeantwortet === "nein_klaert_noch" && (klaert[t] || 0) < 2) {
+        klaert[t] = (klaert[t] || 0) + 1;
+      } else {
+        ohne[t] = (ohne[t] || 0) + 1;
+      }
+      (lauf.protokoll ||= []).push({ t: Date.now(), ereignis: "runde_gewertet", thema: t,
+        geschlossen: !!fertig[t], urteil: lauf.frageBeantwortet || null,
+        ohneAntwort: ohne[t] || 0, klaertNoch: klaert[t] || 0 });
+    }
     const ANNAHME = {
       /* Auch der Monat wird irgendwann angenommen.
          ----------------------------------------------------------------

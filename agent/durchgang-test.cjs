@@ -2,7 +2,7 @@
  *
  *   node agent/durchgang-test.cjs         der jetzige Stand, erwartet 0 falsch
  *   node agent/durchgang-test.cjs --alt   Gegenprobe am Stand davor
- *                                         (_backup/2026-11-09-reisende/)
+ *                                         (_backup/2026-11-10-zaehler/)
  *
  * Geprueft wird, was Logik ist:
  *
@@ -29,7 +29,7 @@
 const fs = require("fs"), vm = require("vm");
 const B = "/Users/tom-gabrielmielicki/Desktop/Bachelor Arbeit/Website/";
 const alt = process.argv.includes("--alt");
-const quelle = alt ? B + "_backup/2026-11-09-reisende/" : B;
+const quelle = alt ? B + "_backup/2026-11-10-zaehler/" : B;
 
 const ctx = { console, window: {},
   document: { querySelectorAll: () => [], querySelector: () => null, getElementById: () => null,
@@ -271,42 +271,34 @@ pruefe("Engstellen-Lage: das Angebot zu lockern steht drin",
    Geprueft wird die ganze Kette: die Wertung im Kern, der Zaehler, an
    dem die Annahme haengt, und der Zwang zur Suche.
    ==================================================================== */
-const kernStub = () => ({
-  lauf: { gefragtVorher: "art", antwortGewertet: false, frageBeantwortet: null,
-    nachrichtArt: "antwort", ohneAntwort: {}, klaertNoch: {} },
-  notieren() {},
-  antwortWerten: KN.antwortWerten,
-});
-/* Die Gegenprobe laeuft gegen einen Kern, der antwortWerten noch gar
-   nicht kennt. Dann soll die Pruefung FEHLSCHLAGEN und nicht abstuerzen -
-   ein Absturz misst eine fehlende Funktion, kein falsches Verhalten. */
-const werte = (urteil, art = "antwort", vor = {}) => {
-  const k = kernStub();
-  Object.assign(k.lauf.ohneAntwort, vor);
-  k.lauf.frageBeantwortet = urteil;
-  k.lauf.nachrichtArt = art;
-  if (typeof k.antwortWerten !== "function") return { ohneAntwort: { art: "antwortWerten fehlt" } };
-  k.antwortWerten();
-  return k.lauf;
+/* Gezaehlt wird seit dem 10.11.2026 im Fahrplan, wo steht, ob das Thema
+   danach wirklich geschlossen ist. Vorher hing die Zaehlung am Urteil
+   des Modells - und wurde zurueckgesetzt, sobald es "beantwortet"
+   meldete, auch ohne dass ein Wert ankam. Im Pruefstand hiess das: 91
+   gestellte Themen, keine einzige Annahme. */
+const runde = (urteil, vor = {}, klaert = {}, geschlossen = false) => {
+  const p = { typ: "hotel", artGenannt: true, erwachsene: 2, kinder: 0, monat: 7,
+    zielOffen: true, flug: false, vonPerson: {} };
+  if (geschlossen) p.naechte = 7;
+  const lauf = { gefragtVorher: "dauer", zugSeit: Date.now() + Math.random(),
+    frageBeantwortet: urteil, ohneAntwort: { ...vor }, klaertNoch: { ...klaert },
+    gefragtWie: { dauer: 2 }, besprochen: {}, protokoll: [] };
+  try { WK.fahrplan(p, lauf); } catch { /* der Fahrplan braucht mehr Welt */ }
+  return { ohne: lauf.ohneAntwort.dauer ?? null, klaert: lauf.klaertNoch.dauer ?? null };
 };
-pruefe("Rueckfrage zaehlt nicht als ausgebliebene Antwort",
-  werte("nein_klaert_noch").ohneAntwort.art || 0, 0);
-pruefe("Korrektur zaehlt nicht als ausgebliebene Antwort",
-  werte("nein_klaert_noch", "einwand").ohneAntwort.art || 0, 0);
-pruefe("Echtes Ausweichen zaehlt", werte("nein").ohneAntwort.art, 1);
-pruefe("Ohne Auskunft des Modells zaehlt es wie bisher",
-  werte(null).ohneAntwort.art, 1);
-pruefe("Eine Antwort setzt den Zaehler zurueck",
-  werte("ja", "antwort", { art: 1 }).ohneAntwort.art, 0);
-// Dreimal klaeren ohne je zu antworten: dann zaehlt es doch, sonst
-// liesse sich der Fahrplan mit Rueckfragen beliebig aufhalten
-let kDrei = kernStub();
-for (let i = 0; i < 3 && typeof kDrei.antwortWerten === "function"; i++) {
-  kDrei.lauf.antwortGewertet = false;
-  kDrei.lauf.frageBeantwortet = "nein_klaert_noch";
-  kDrei.antwortWerten();
-}
-pruefe("Dreimal klaeren ohne Antwort zaehlt doch", kDrei.lauf.ohneAntwort.art, 1);
+pruefe("Rueckfrage zaehlt nicht als ausgebliebene Antwort", runde("nein_klaert_noch").ohne || 0, 0);
+pruefe("Rueckfrage wird aber vermerkt", runde("nein_klaert_noch").klaert, 1);
+pruefe("Echtes Ausweichen zaehlt", runde("nein").ohne, 1);
+pruefe("Ohne Auskunft des Modells zaehlt es wie bisher", runde(null).ohne, 1);
+pruefe("Ein geschlossenes Thema setzt den Zaehler zurueck",
+  runde("ja", { dauer: 1 }, {}, true).ohne, 0);
+/* Und der Fall, an dem der Pruefstand gescheitert ist: Das Modell meldet
+   "beantwortet", aber es kam nichts an. Frueher: Zaehler zurueck auf
+   null, die Frage wiederholte sich endlos. */
+pruefe("'Beantwortet' ohne Wert zaehlt trotzdem", runde("ja", { dauer: 1 }).ohne, 2);
+// Dreimal klaeren ohne Antwort: ab der dritten Runde zaehlt es doch
+pruefe("Dreimal klaeren ohne Antwort zaehlt doch",
+  runde("nein_klaert_noch", {}, { dauer: 2 }).ohne, 1);
 
 /* Die Annahme haengt am neuen Zaehler, nicht mehr an der Zahl der
    Fragen. Derselbe Stand wie im gemeldeten Fall: zweimal nach der Art

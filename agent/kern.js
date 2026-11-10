@@ -3071,25 +3071,27 @@ const Kern = {
      aus stand_merken (dort steht das Urteil des Modells) und zur
      Sicherheit noch einmal, bevor die Antwort zusammengesetzt wird -
      falls das Modell in diesem Zug gar kein stand_merken ruft. */
+  /* Was die Nachricht fuer die offene Frage bedeutet - fuer das
+     Protokoll, nicht mehr fuer die Rechnung (10.11.2026).
+     ==================================================================
+     Gezaehlt wird seit heute im Fahrplan, wo steht, ob das Thema danach
+     wirklich geschlossen ist (`runde_gewertet`). Hier lag die Zaehlung
+     bis zum Pruefstand von heute - und sie setzte den Zaehler zurueck,
+     sobald das Modell "beantwortet" meldete, auch wenn gar kein Wert
+     ankam. Ergebnis: 91 gestellte Themen, keine einzige Annahme, 27-mal
+     dieselbe Frage zum dritten Mal.
+
+     Was bleibt, ist die Notiz: Wie das Modell die Nachricht eingeordnet
+     hat, gehoert in die Studiendaten - daran laesst sich spaeter lesen,
+     wie gut die Verstaendigung zwischen Modell und Kern lief. */
   antwortWerten() {
     if (this.lauf.antwortGewertet) return;
     this.lauf.antwortGewertet = true;
     const t = this.lauf.gefragtVorher;
     if (!t) return;
-    const urteil = this.lauf.frageBeantwortet
-      || (["frage", "einwand", "unklar"].includes(this.lauf.nachrichtArt) ? "nein_klaert_noch" : "nein");
-    const ohne = (this.lauf.ohneAntwort ||= {});
-    const klaert = (this.lauf.klaertNoch ||= {});
-    if (urteil === "ja" || urteil === "teilweise" || urteil === "keine_frage_offen") {
-      ohne[t] = 0; klaert[t] = 0;
-    } else if (urteil === "nein_klaert_noch") {
-      klaert[t] = (klaert[t] || 0) + 1;
-      if (klaert[t] >= 3) ohne[t] = (ohne[t] || 0) + 1;
-    } else {
-      ohne[t] = (ohne[t] || 0) + 1;
-    }
-    this.notieren("frage_gewertet", { thema: t, urteil, vomModell: !!this.lauf.frageBeantwortet,
-      ohneAntwort: ohne[t] || 0, klaertNoch: klaert[t] || 0 });
+    this.notieren("frage_gewertet", { thema: t,
+      urteil: this.lauf.frageBeantwortet || "ohne_auskunft",
+      art: this.lauf.nachrichtArt || null });
   },
 
   zugBeenden() {
