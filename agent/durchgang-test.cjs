@@ -2,7 +2,7 @@
  *
  *   node agent/durchgang-test.cjs         der jetzige Stand, erwartet 0 falsch
  *   node agent/durchgang-test.cjs --alt   Gegenprobe am Stand davor
- *                                         (_backup/2026-11-10-zaehler/)
+ *                                         (_backup/2026-11-10-keindrittesmal/)
  *
  * Geprueft wird, was Logik ist:
  *
@@ -29,7 +29,7 @@
 const fs = require("fs"), vm = require("vm");
 const B = "/Users/tom-gabrielmielicki/Desktop/Bachelor Arbeit/Website/";
 const alt = process.argv.includes("--alt");
-const quelle = alt ? B + "_backup/2026-11-10-zaehler/" : B;
+const quelle = alt ? B + "_backup/2026-11-10-keindrittesmal/" : B;
 
 const ctx = { console, window: {},
   document: { querySelectorAll: () => [], querySelector: () => null, getElementById: () => null,
@@ -305,10 +305,19 @@ pruefe("Dreimal klaeren ohne Antwort zaehlt doch",
    gefragt, beide Male hat die Person geklaert statt geantwortet. */
 const artProfil = () => ({ monat: 12, naechte: 5, erwachsene: 2, kinder: 1,
   kinderAlter: [17], zielOffen: true, flug: false, vonPerson: {} });
+/* Hier stand bis zum 10.11.2026 das Gegenteil: zweimal gefragt, die
+   Person hat beide Male geklaert statt geantwortet - dann sollte NICHT
+   angenommen werden. Der Nutzer hat das aufgehoben und den haerteren
+   Anspruch gesetzt: Eine Frage steht nie ein drittes Mal im Chat, egal
+   was dazwischen passiert ist. Also klaert der Kern jetzt auch hier. */
 const pA = artProfil();
-try { WK.fahrplan(pA, { gefragtWie: { art: 2 }, ohneAntwort: {}, besprochen: {}, protokoll: [] }); } catch { /* egal */ }
-pruefe("Zweimal gefragt, aber geklaert: keine Annahme zur Art",
+try { WK.fahrplan(pA, { gefragtWie: { art: 1 }, ohneAntwort: {}, besprochen: {}, protokoll: [] }); } catch { /* egal */ }
+pruefe("Einmal gefragt: noch keine Annahme zur Art",
   !pA.artEgal && !pA.artGenannt, true);
+const pA2 = artProfil();
+try { WK.fahrplan(pA2, { gefragtWie: { art: 2 }, ohneAntwort: {}, klaertNoch: { art: 1 }, besprochen: {}, protokoll: [] }); } catch { /* egal */ }
+pruefe("Zweimal gefragt: der Kern klaert es selbst, auch nach einer Rueckfrage",
+  !!pA2.artEgal, true);
 const pB = artProfil();
 try { WK.fahrplan(pB, { gefragtWie: { art: 2 }, ohneAntwort: { art: 2 }, besprochen: {}, protokoll: [] }); } catch { /* egal */ }
 pruefe("Zweimal ausgewichen: Annahme zur Art greift", !!pB.artEgal, true);
@@ -487,6 +496,71 @@ const liesReisende = async (text, felder, urteil = "ja") => {
   pruefe("Kalt: die Regionen stehen untereinander", /\n•/.test(kaltSatz), true);
   pruefe("Kalt: kein irrefuehrendes 'darunter'", /darunter/.test(kaltSatz), false);
   pruefe("Kalt: jede Region mit Zahl der Haeuser", (kaltSatz.match(/Hotels|Hotel\b/g) || []).length >= 2, true);
+
+  /* ==================================================================
+     12. Eine Frage steht nie ein drittes Mal im Chat
+     --------------------------------------------------------------------
+     Anspruch des Nutzers vom 10.11.2026: "Ich würde schon den Anspruch
+     haben, dass so ein Wächter gar nicht zum Tragen kommt. Also dass man
+     das Ganze so aufbaut, dass eine dreimalige Nennung ausgeschlossen
+     ist."
+
+     Ausgeschlossen heisst: Es gibt keinen Pfad dorthin, nicht "es ist
+     selten". Deshalb wird es hier nicht gemessen, sondern durchgespielt -
+     ein Mensch, der auf keine einzige Frage antwortet, durch alle
+     Kombinationen von Art, Vorgehen und Flug. Der Fahrplan muss jedes
+     Thema von sich aus schliessen und bis zu den Vorschlaegen kommen.
+
+     Genau dieser Fall fehlte im Netz: Die Kernpruefung spielt tausende
+     Gespraeche, aber in jedem davon antwortet die Person auf jede Frage.
+     Mein Fehler vom 06.11. lebte in der Luecke dazwischen. */
+  const stummerDurchlauf = (start) => {
+    const p = { flexibel: true, ...start };
+    const lauf = { gespraech: [], gefragtWie: {}, ohneAntwort: {}, klaertNoch: {},
+      besprochen: {}, protokoll: [], gesuchtMit: null, gefiltertMit: null, zugSeit: 1 };
+    const gestellt = [];
+    for (let i = 0; i < 40; i++) {
+      lauf.zugSeit = i + 1;          // jeder Durchgang ist ein eigener Zug
+      const fp = WK.fahrplan(p, lauf);
+      const erzwungen = WK.zwang(p, lauf);
+      if (erzwungen === "suchen" || fp.phase === "suche") {
+        lauf.gesuchtMit = fp.schluessel;
+        lauf.gefiltertMit = WK.filterSchluessel(p);
+        if (p.vorgehen) lauf.vorgehenFuer = fp.schluessel + p.vorgehen;
+        continue;
+      }
+      if (fp.phase === "vorschlaege" || fp.phase === "selbst") return { gestellt, fertig: true };
+      if (!fp.naechstes) return { gestellt, fertig: false, grund: `SACKGASSE(${fp.phase})` };
+      // Die Frage steht im Chat - und die Person antwortet nicht
+      gestellt.push(fp.naechstes);
+      lauf.gefragtWie[fp.naechstes] = (lauf.gefragtWie[fp.naechstes] || 0) + 1;
+      lauf.gefragtVorher = fp.naechstes;
+      lauf.frageBeantwortet = "nein";
+    }
+    return { gestellt, fertig: false, grund: "ABBRUCH_NACH_40" };
+  };
+
+  let schlimmste = 0, haengt = 0, laeufe = 0, beispiel = null;
+  for (const art of ["hotel", "apartment", null]) {
+    for (const vorgehen of [null, "top3", "selbst"]) {
+      for (const flug of [null, true, false]) {
+        const start = {};
+        if (art) { start.typ = art; start.artGenannt = true; }
+        if (vorgehen) start.vorgehen = vorgehen;
+        if (flug !== null) start.flug = flug;
+        const r = stummerDurchlauf(start);
+        laeufe++;
+        const zaehl = {};
+        for (const t of r.gestellt) zaehl[t] = (zaehl[t] || 0) + 1;
+        const max = Math.max(0, ...Object.values(zaehl));
+        if (max > schlimmste) { schlimmste = max; beispiel = { start, zaehl }; }
+        if (!r.fertig) { haengt++; if (!beispiel || max <= schlimmste) beispiel = { start, grund: r.grund, zaehl }; }
+      }
+    }
+  }
+  pruefe("Stumme Durchlaeufe: alle gespielt", laeufe, 27);
+  pruefe("Keine Frage steht ein drittes Mal", schlimmste <= 2 ? "hoechstens zweimal" : `${schlimmste}-mal: ${JSON.stringify(beispiel)}`, "hoechstens zweimal");
+  pruefe("Kein Durchlauf bleibt stehen", haengt === 0 ? "keiner" : `${haengt}: ${JSON.stringify(beispiel)}`, "keiner");
 
   console.log(`\n${gut} richtig, ${schlecht} falsch`);
   process.exit(schlecht ? 1 : 0);

@@ -6684,14 +6684,50 @@ const Werkzeugkasten = {
     const t = this.THEMEN[thema];
     if (!t) return null;
     const mal = lauf.gefragtWie?.[thema] || 0;
-    if (typeof t.satz === "function") return (mal >= 1 && t.nochmal) ? t.nochmal : t.satz(p, this, lauf);
-    if (Array.isArray(t.satz)) {
+    let satz = null;
+    if (typeof t.satz === "function") satz = (mal >= 1 && t.nochmal) ? t.nochmal : t.satz(p, this, lauf);
+    else if (Array.isArray(t.satz)) {
       // Ein Eintrag darf auch eine Funktion sein, wenn der Satz aus den
       // Daten kommt (die Liste der Flughaefen)
       const e = t.satz[Math.min(mal, t.satz.length - 1)];
-      return typeof e === "function" ? e(p, this, lauf) : e;
+      satz = typeof e === "function" ? e(p, this, lauf) : e;
+    } else satz = t.satz || null;
+    /* Der zweite Anlauf sagt, was sonst passiert (10.11.2026)
+       ------------------------------------------------------------------
+       Seit heute ist nach zwei Anlaeufen Schluss: Der Kern klaert das
+       Thema dann selbst. Wenn das so ist, muss es vorher dastehen -
+       sonst wird aus einer Entscheidung des Agenten eine Ueberraschung,
+       und genau darueber hat sich der Nutzer am 09.11. beschwert ("Dann
+       hat er einfach die Suche gestartet").
+
+       Also: Beim letzten Anlauf haengt die Ausweichloesung an der Frage.
+       Wer nicht antworten will, muss nicht - er weiss nur, womit der
+       Agent danach rechnet, und kann widersprechen. */
+    if (satz && mal >= 1) {
+      const a = this.ANNAHME_SAETZE?.[thema];
+      if (a) satz = `${satz} ${typeof a === "function" ? a(p, this) : a}`;
     }
-    return t.satz || null;
+    return satz;
+  },
+
+  /* Der Halbsatz, der beim zweiten Anlauf an der Frage haengt. Er sagt
+     dasselbe wie die Annahme, nur im Voraus und als Angebot. Themen ohne
+     Eintrag bekommen keinen - bei manchen waere er albern ("sonst nehme
+     ich an, dass du nirgendwohin willst"). */
+  ANNAHME_SAETZE: {
+    zeit: "Wenn du dich nicht festlegen willst, suche ich dir den Monat mit der größten Auswahl.",
+    reisende: "Sonst rechne ich erst mal mit zwei Erwachsenen.",
+    kinderAlter: "Sonst rechne ich vorläufig mit acht Jahren - vor der Buchung brauche ich es genau.",
+    art: "Wenn es dir gleich ist, zeige ich dir beides.",
+    dauer: "Sonst rechne ich mit einer Woche.",
+    zimmer: "Sonst nehme ich ein gemeinsames Zimmer.",
+    flug: "Sonst suche ich erst mal ohne Flug.",
+    flugKlasse: "Sonst rechne ich mit Economy.",
+    vorgehen: "Sonst suche ich dir selbst etwas heraus.",
+    anzahl: "Sonst stelle ich dir drei zusammen.",
+    preis: "Sonst lege ich dich beim Preis nicht fest.",
+    verpflegung: "Sonst lasse ich die Verpflegung offen.",
+    wuensche: "Sonst suche ich ohne besondere Vorgabe weiter.",
   },
 
 
@@ -7045,6 +7081,47 @@ const Werkzeugkasten = {
       beratung: { schreibt: ["beratung"], setzen: (x) => { x.beratung = "auswahl"; } },
       vorgehen: { schreibt: ["vorgehen"], setzen: (x) => { x.vorgehen = "top3"; } },
       ziel: { schreibt: ["zielId", "richtung", "zielOffen"], setzen: (x) => { x.zielOffen = true; } },
+      /* Vier Themen hatten bis zum 10.11.2026 gar keinen Ausweg
+         ================================================================
+         `reisende`, `kinderAlter`, `zimmer` und `anzahl` standen nicht in
+         dieser Liste. Kam dort keine Antwort, konnte der Fahrplan nicht
+         weiter - er fragte wieder, und wieder. Solange die Annahme am
+         Zaehler haengt, faellt das nicht auf; mit der harten Grenze von
+         zwei Anlaeufen waere das Gespraech dort stehengeblieben.
+
+         Deshalb bekommt jedes Thema, das gefragt werden kann, einen Weg
+         nach vorn. Was dabei der Kern entschieden hat, steht in
+         `vonPerson` NICHT drin und ist in der Auswertung damit von einer
+         Angabe der Person zu unterscheiden. */
+      reisende: { schreibt: ["erwachsene", "kinder", "personen"], setzen: (x) => {
+        /* Die naheliegende Lesart, und nur sie: Wer eine Gesamtzahl
+           genannt hat, bekommt sie als Erwachsene, sofern nie von
+           Kindern die Rede war. Sonst zwei Erwachsene - die haeufigste
+           Reisegruppe im Katalog und die einzige Zahl, die sich ohne
+           jeden Anhaltspunkt begruenden laesst. */
+        if (x.personen != null && x.erwachsene == null && x.kinder == null) { x.erwachsene = x.personen; x.kinder = 0; }
+        else { x.erwachsene = x.erwachsene ?? 2; x.kinder = x.kinder ?? 0; x.personen = x.erwachsene + x.kinder; }
+      }, satz: "mit wie vielen Reisenden du rechnest",
+        selbst: (x) => `Ich rechne erst mal mit ${x.erwachsene} ${x.erwachsene === 1 ? "Erwachsenem" : "Erwachsenen"}${x.kinder ? ` und ${x.kinder} ${x.kinder === 1 ? "Kind" : "Kindern"}` : " ohne Kinder"}. Sag gern Bescheid, wenn ihr anders unterwegs seid.` },
+      /* Das Alter ist der einzige Wert hier, den der Kern nicht wirklich
+         wissen kann - und er geht in Preis und Belegung ein. Er wird
+         deshalb besonders deutlich gesagt UND vor der Buchung noch
+         einmal gebraucht: Die Kasse fragt nach dem Geburtsdatum, dort
+         faellt eine falsche Annahme auf, bevor sie Geld kostet. */
+      kinderAlter: { schreibt: ["kinderAlter"], setzen: (x) => {
+        const n = x.kinder || 0;
+        if (!n) { x.kinderAlter = []; return; }
+        const da = (x.kinderAlter || []).slice(0, n);
+        while (da.length < n) da.push(8);
+        x.kinderAlter = da;
+      }, satz: "dass du vorlaeufig mit acht Jahren rechnest und das Alter vor der Buchung brauchst",
+        selbst: (x) => `Ich rechne vorläufig mit ${(x.kinder || 0) === 1 ? "acht Jahren" : "je acht Jahren"} - das Alter brauche ich vor der Buchung noch genau, weil Preis und Zimmer daran hängen.` },
+      zimmer: { schreibt: ["zimmer"], setzen: (x) => { x.zimmer = 1; },
+        satz: "dass du mit einem gemeinsamen Zimmer rechnest",
+        selbst: "Ich rechne erst mal mit einem gemeinsamen Zimmer. Zwei getrennte gehen auch, sag einfach Bescheid." },
+      anzahl: { schreibt: ["anzahlVorschlaege"], setzen: (x) => { x.anzahlVorschlaege = 3; },
+        satz: "dass du drei Haeuser zusammenstellst",
+        selbst: "Ich stelle dir erst mal drei Häuser zusammen." },
       /* Offen heisst offen.
          ----------------------------------------------------------------
          Hier stand `x.typ = "hotel"` - kam zweimal keine Antwort, suchte
@@ -7129,7 +7206,30 @@ const Werkzeugkasten = {
          `gefragtWie` bleibt, wofuer es gedacht war: Es sagt, wie oft die
          Frage schon im Chat stand, und sorgt dafuer, dass sie beim
          zweiten Mal anders klingt. */
-      if (fertig[t] || (lauf.ohneAntwort?.[t] || 0) < 2) continue;
+      /* Zweimal gefragt ist Schluss (10.11.2026)
+         ----------------------------------------------------------------
+         Der Nutzer: "Ich würde schon den Anspruch haben, dass so ein
+         Wächter gar nicht zum Tragen kommt. Also dass man das Ganze so
+         aufbaut, dass eine dreimalige Nennung ausgeschlossen ist."
+
+         Das ist die härtere und die bessere Forderung, und sie macht
+         diese Zeile wieder einfach: Nicht ein Zähler mit Nachsicht
+         entscheidet, sondern wie oft die Frage im Chat STAND. Zweimal
+         ist die Grenze, danach klärt der Kern das Thema selbst. Damit
+         ist ein drittes Mal nicht unwahrscheinlich, sondern unmöglich -
+         es gibt keinen Pfad mehr dorthin.
+
+         Das nimmt einen Teil meiner Konstruktion vom 06.11. zurück, und
+         zwar bewusst. Deren Anlass waren zwei andere Fehler (die Angabe
+         der Person wurde verworfen, und die Annahme riss die Suche mit),
+         die inzwischen an ihrer eigenen Stelle behoben sind. Der Zähler
+         `ohneAntwort` bleibt - er misst jetzt die Verständigung zwischen
+         Modell und Kern für die Auswertung, statt den Ablauf zu steuern.
+
+         Preis, offen gesagt: Wer zurückfragt, verbraucht einen der zwei
+         Anläufe. Dafür kündigt der zweite Anlauf an, womit der Kern
+         sonst rechnet (siehe themenSatz) - niemand wird überrascht. */
+      if (fertig[t] || (lauf.gefragtWie?.[t] || 0) < 2) continue;
       /* Wer einen Wunsch genannt hat, setzt keine "besondere Ausstattung
          nicht voraus" (03.11.2026). Beim Nachhaken wird die Frage jetzt
          bis zu dreimal gestellt; ohne diese Zeile haette die Annahme nach
