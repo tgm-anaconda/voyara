@@ -242,6 +242,35 @@ const Werkzeugkasten = {
              nicht mehr. Ein Schemafeld ohne Feld auf der Seite verspricht
              dem Modell etwas, das der Agent nicht einloesen kann - er haette
              Geburtsdaten erfragt und sie dann nirgends eintragen koennen. */
+          /* Was du nur gedeutet hast, sagst du (12.11.2026).
+             ----------------------------------------------------------
+             Der Nutzer am 12.11.2026, zu meinem Vorschlag, der Kern
+             solle nach einer Annahme Korrekturkarten anbieten: "Bei der
+             Korrekturkarte wuerde ich darauf setzen, dass er das nicht
+             annimmt, sondern fragt, ob er das richtig verstanden hat,
+             also dass er - nur wenn er sich nicht sicher ist - dann
+             nachfragt. Aber nicht zu schnell Sachen annehmen soll. Weil
+             wir sonst wieder eine neue Fehlerquelle einbauen."
+
+             Genau diese Fehlerquelle hatte er die Woche vorher
+             mehrfach: "ich und meine Mutter" wurde zu zwei Erwachsenen,
+             und ob das richtig war, hat niemand gefragt. Die Deutung
+             selbst war in Ordnung - still war sie falsch.
+
+             Deshalb traegt das Modell hier ein, welche Felder es
+             GEDEUTET hat, statt sie gesagt bekommen zu haben. Der Kern
+             uebernimmt den Wert (sonst geht es nicht weiter) und stellt
+             EINE geschlossene Rueckfrage dazu, mit den Korrekturen als
+             Karten. Danach ist das Feld erledigt - die Rueckfrage kommt
+             nie zweimal zum selben Feld.
+
+             Fuer Datum und Preis gab es das schon (datumWiderspruch
+             seit 02.10., preisDeutung mit dem Satz "hoechstens 5000 €
+             insgesamt"). Neu ist nur, dass es fuer jedes Feld geht, bei
+             dem das Modell deutet - und dass das Modell selbst sagt,
+             wann es noetig ist. */
+          unsicher: { type: "array", items: { type: "string" },
+            description: "Namen der Felder aus diesem Aufruf, deren Wert du aus der Aussage GEDEUTET hast und bei denen du dir nicht sicher bist, z. B. erwachsene, wenn 'ich und meine Mutter' auch Mutter mit Kind heissen koennte. Nur bei echter Mehrdeutigkeit - was klar gesagt wurde ('wir sind drei'), gehoert nicht hierher. Der Assistent fragt dann einmal nach, ob er es richtig verstanden hat." },
         /* Die beiden Einordnungen sind Pflicht (06.11.2026).
            ----------------------------------------------------------------
            Sie standen bisher als "Immer angeben" in der Beschreibung, und
@@ -3679,6 +3708,37 @@ const Werkzeugkasten = {
       kern.antwortWerten?.();
       p.vonPerson = p.vonPerson || {};
       for (const f of geaendert) p.vonPerson[f] = true;
+      /* Gedeutete Felder vormerken (12.11.2026).
+         ----------------------------------------------------------------
+         `vonPerson` bleibt gesetzt, auch wenn das Modell unsicher ist:
+         Der Wert kommt aus ihrer Aussage, nur eben gedeutet. Ohne
+         `vonPerson` koennte eine Annahme des Kerns ihn ueberschreiben -
+         das war der Fehler vom 27.09., und der bleibt zu.
+
+         Gemerkt wird nur, was in diesem Aufruf wirklich geschrieben
+         wurde und wofuer es eine Rueckfrage gibt. Nennt das Modell ein
+         Feld, das es nicht angefasst hat, bleibt es liegen und wird
+         notiert - das ist dann ein Befund ueber das Modell, nicht ueber
+         die Person. */
+      /* Hat die Person der Deutung widersprochen? Dann steht der neue
+         Wert jetzt da, und die Rueckfrage hat genau das getan, wofuer sie
+         gebaut ist. */
+      const ab = kern.lauf.rueckfrageAbrechnen;
+      if (ab && geaendert.includes(ab.feld)) {
+        kern.lauf.rueckfrageAbrechnen = null;
+        kern.notieren("verstaendnis_korrigiert", { feld: ab.feld, vorher: ab.wert, jetzt: p[ab.feld] ?? null });
+      }
+      const unsicherRoh = Array.isArray(a.unsicher) ? a.unsicher.map(String) : [];
+      if (unsicherRoh.length) {
+        const nutzbar = unsicherRoh.filter((f) => geaendert.includes(f)
+          && Werkzeugkasten.RUECKFRAGE_FELDER[f] && !kern.lauf.rueckversichert?.[f]);
+        const daneben = unsicherRoh.filter((f) => !geaendert.includes(f));
+        if (daneben.length) kern.notieren("unsicher_ohne_feld", { felder: daneben });
+        if (nutzbar.length) {
+          kern.lauf.unsicher = [...new Set([...(kern.lauf.unsicher || []), ...nutzbar])];
+          kern.notieren("unsicher_gemeldet", { felder: nutzbar });
+        }
+      }
       /* Was die Aenderung bewirkt, sagt der Kern - immer.
          ----------------------------------------------------------------
          Der Nutzer am 02.10.2026: "Wenn man eine Aenderung macht, muss er
@@ -6730,6 +6790,105 @@ const Werkzeugkasten = {
     wuensche: "Sonst suche ich ohne besondere Vorgabe weiter.",
   },
 
+
+  /* Die Verstaendnis-Rueckfrage (12.11.2026).
+     ------------------------------------------------------------------
+     Eine Karte je Feld, das das Modell deuten musste. Der Satz nennt die
+     Deutung im Klartext, die Karten tragen die Korrektur - ein Klick,
+     und der richtige Wert steht, ohne dass noch ein Satz durch das
+     Modell muss. Genau das war die Fehlerquelle, die der Nutzer
+     vermeiden wollte.
+
+     Aufbau wie bei ANNAHME_SAETZE: Felder ohne Eintrag bekommen keine
+     Rueckfrage. Lieber still weiterarbeiten als eine Frage stellen, die
+     sich niemand erklaeren kann ("Habe ich die Sortierung richtig
+     verstanden?").
+
+     Die erste Karte bestaetigt immer, und sie steht vorn: Wer nur kurz
+     nicken will, muss nicht suchen.
+
+     Nur vier Felder, und das ist Absicht. Fuer Ziel, Flughafen, Klasse,
+     Art und Verpflegung fragt `TIPPFEHLER` schon ("Meinst du Kreta?"),
+     fuer den Preis sagt `preisDeutung` seine Lesart im naechsten Satz
+     ("hoechstens 5000 € insgesamt"). Ein zweiter Mechanismus mit
+     derselben Frageform waere keine Verbesserung, sondern eine zweite
+     Stelle, die irren kann. Uebrig bleiben die Felder, bei denen aus
+     einem Satz eine Zahl wird - und genau dort lagen die gemeldeten
+     Fehler ("ich und meine Mutter"). */
+  RUECKFRAGE_FELDER: {
+    erwachsene: (p, W) => {
+      const e = p.erwachsene, k = p.kinder || 0;
+      if (!Number.isFinite(e)) return null;
+      const wer = k > 0
+        ? `${W.zahlWort(e)} Erwachsene und ${W.zahlWort(k)} ${k === 1 ? "Kind" : "Kinder"}`
+        : `${W.zahlWort(e)} Erwachsene${e === 1 ? "r" : ""}`;
+      return {
+        satz: `Kurz zur Sicherheit: Ich habe dich so verstanden, dass ihr ${wer} seid. Stimmt das?`,
+        chips: ["Ja, genau", "2 Erwachsene", "2 Erwachsene, 1 Kind", "Wir sind mehr"],
+      };
+    },
+    kinderAlter: (p, W) => {
+      const a = (p.kinderAlter || []).filter((x) => Number.isFinite(x));
+      if (!a.length) return null;
+      return {
+        satz: `Kurz zur Sicherheit: Ich rechne mit ${a.length === 1 ? "einem Kind" : `${W.zahlWort(a.length)} Kindern`} `
+          + `von ${a.join(" und ")} Jahren. Stimmt das?`,
+        chips: ["Ja, genau", "Anderes Alter"],
+      };
+    },
+    naechte: (p) => {
+      if (!Number.isFinite(p.naechte)) return null;
+      return {
+        satz: `Kurz zur Sicherheit: Ich rechne mit ${p.naechte} Nächten. Stimmt das?`,
+        chips: ["Ja, genau", "7 Nächte", "10 Nächte", "14 Nächte"],
+      };
+    },
+    zimmer: (p, W) => {
+      if (!Number.isFinite(p.zimmer)) return null;
+      return {
+        satz: `Kurz zur Sicherheit: Ich rechne mit ${p.zimmer === 1 ? "einem Zimmer" : `${W.zahlWort(p.zimmer)} Zimmern`}. Stimmt das?`,
+        chips: ["Ja, genau", "Ein Zimmer", "Zwei Zimmer"],
+      };
+    },
+  },
+
+  // "zwei Erwachsene" liest sich besser als "2 Erwachsene"
+  ZAHL_WORT: ["null", "ein", "zwei", "drei", "vier", "fünf", "sechs", "sieben", "acht", "neun", "zehn"],
+  zahlWort(n) {
+    return Number.isFinite(n) && n >= 0 && n <= 10 ? this.ZAHL_WORT[n] : String(n);
+  },
+
+  /* Steht eine Rueckfrage an?
+     ------------------------------------------------------------------
+     Gibt die erste offene zurueck, oder null. Zwei Sperren halten sie
+     klein: `rueckversichert` merkt, welches Feld schon gefragt wurde
+     (nie zweimal dasselbe), und mehr als eine Rueckfrage im ganzen
+     Gespraech gibt es nicht - sonst wird aus dem Nachfragen ein Verhoer,
+     und das ist genau der Vorwurf, den der Nutzer am 02.10. erhoben hat
+     ("zwei Anlaeufe sind Nachfragen, fuenf sind ein Verhoer").
+
+     Methodisch zaehlt das doppelt: Jede zusaetzliche Nachricht des
+     Agenten ist im Vollbild-Arm eine zusaetzliche Unterbrechung der
+     Seite. Was die Studie messen will, ist die Beobachtbarkeit - nicht,
+     wie gespraechig der Agent ist. */
+  RUECKFRAGE_HOECHSTENS: 2,
+
+  verstaendnisRueckfrage(p, lauf) {
+    if (!p || !lauf) return null;
+    const offen = lauf.unsicher || [];
+    if (!offen.length) return null;
+    const schon = lauf.rueckversichert || {};
+    if (Object.keys(schon).length >= this.RUECKFRAGE_HOECHSTENS) return null;
+    for (const feld of offen) {
+      if (schon[feld]) continue;
+      const bau = this.RUECKFRAGE_FELDER[feld];
+      if (!bau) continue;
+      const r = bau(p, this);
+      if (!r || !r.satz) continue;
+      return { feld, satz: r.satz, chips: r.chips || ["Ja, genau"] };
+    }
+    return null;
+  },
 
   // Hat die Person einen Tag genannt? "am 5.", "5. Nov.", "5. November",
   // "vom 12. bis 26.", "2026-11-05" oder nur "5." als ganze Antwort

@@ -562,6 +562,54 @@ const liesReisende = async (text, felder, urteil = "ja") => {
   pruefe("Keine Frage steht ein drittes Mal", schlimmste <= 2 ? "hoechstens zweimal" : `${schlimmste}-mal: ${JSON.stringify(beispiel)}`, "hoechstens zweimal");
   pruefe("Kein Durchlauf bleibt stehen", haengt === 0 ? "keiner" : `${haengt}: ${JSON.stringify(beispiel)}`, "keiner");
 
+  /* Die Verstaendnis-Rueckfrage (12.11.2026).
+     ------------------------------------------------------------------
+     Gefragt wird, was der Nutzer verlangt hat: EINMAL nachfragen, wenn
+     das Modell unsicher ist - und nicht mehr. Die Sperren sind der Punkt
+     der Pruefung, nicht der Satz. */
+  const rf = (p, lauf) => WK.verstaendnisRueckfrage(p, lauf);
+  const zwei = { erwachsene: 2, kinder: 0 };
+  pruefe("Rueckfrage: ohne Meldung keine Frage",
+    rf(zwei, {}) ? "Frage" : "keine", "keine");
+  pruefe("Rueckfrage: gemeldetes Feld wird gefragt",
+    (rf(zwei, { unsicher: ["erwachsene"] }) || {}).feld || "keine", "erwachsene");
+  pruefe("Rueckfrage: nennt die Deutung im Klartext",
+    /zwei Erwachsene/.test((rf(zwei, { unsicher: ["erwachsene"] }) || {}).satz || "") ? "ja" : "nein", "ja");
+  pruefe("Rueckfrage: Korrektur steht als Karte",
+    ((rf(zwei, { unsicher: ["erwachsene"] }) || {}).chips || []).length >= 2 ? "ja" : "nein", "ja");
+  pruefe("Rueckfrage: erste Karte bestaetigt",
+    ((rf(zwei, { unsicher: ["erwachsene"] }) || {}).chips || [])[0] || "", "Ja, genau");
+  pruefe("Rueckfrage: dasselbe Feld nie zweimal",
+    rf(zwei, { unsicher: ["erwachsene"], rueckversichert: { erwachsene: true } }) ? "Frage" : "keine", "keine");
+  pruefe("Rueckfrage: Feld ohne Eintrag bleibt still",
+    rf({ sortierung: "preis" }, { unsicher: ["sortierung"] }) ? "Frage" : "keine", "keine");
+  pruefe("Rueckfrage: Feld ohne Wert bleibt still",
+    rf({}, { unsicher: ["naechte"] }) ? "Frage" : "keine", "keine");
+  pruefe("Rueckfrage: hoechstens zwei im Gespraech",
+    rf({ naechte: 9 }, { unsicher: ["naechte"], rueckversichert: { erwachsene: true, zimmer: true } })
+      ? "Frage" : "keine", "keine");
+  pruefe("Rueckfrage: Obergrenze steht bei zwei", WK.RUECKFRAGE_HOECHSTENS, 2);
+  /* Die vier Felder sind genau die, bei denen aus einem Satz eine Zahl
+     wird. Kommt eines dazu, das TIPPFEHLER schon abdeckt, waeren es zwei
+     Mechanismen fuer dieselbe Frage - siehe Kommentar an RUECKFRAGE_FELDER. */
+  pruefe("Rueckfrage: nur die vier Zahlenfelder",
+    Object.keys(WK.RUECKFRAGE_FELDER).sort().join(","), "erwachsene,kinderAlter,naechte,zimmer");
+  for (const f of Object.keys(WK.RUECKFRAGE_FELDER)) {
+    if (WK.TIPPFEHLER?.[f]) pruefe(`Rueckfrage: ${f} doppelt zu TIPPFEHLER`, "doppelt", "nicht doppelt");
+  }
+  /* Und die Gegenrichtung: Die Rueckfrage darf keinen Anlauf kosten.
+     Sonst waere das Ergebnis weniger Fragen bis zur Annahme - das
+     Gegenteil von "nicht zu schnell Sachen annehmen". */
+  {
+    const p = { flexibel: true, erwachsene: 2, kinder: 0 };
+    const lauf = { gespraech: [], gefragtWie: {}, ohneAntwort: {}, klaertNoch: {}, besprochen: {},
+      protokoll: [], gesuchtMit: null, gefiltertMit: null, zugSeit: 1, unsicher: ["erwachsene"] };
+    const vorher = WK.fahrplan(p, lauf).naechstes;
+    WK.verstaendnisRueckfrage(p, lauf);
+    const nachher = WK.fahrplan(p, lauf).naechstes;
+    pruefe("Rueckfrage kostet keinen Anlauf", nachher, vorher);
+  }
+
   console.log(`\n${gut} richtig, ${schlecht} falsch`);
   process.exit(schlecht ? 1 : 0);
 })();

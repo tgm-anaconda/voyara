@@ -1953,6 +1953,25 @@ const Kern = {
     this.lauf.gefragtVorher = this.lauf.gefragt || null;
     this.lauf.antwortGewertet = false;
     this.lauf.frageBeantwortet = null;
+    /* Die Verstaendnis-Rueckfrage aus dem letzten Zug abrechnen.
+       ----------------------------------------------------------------
+       Sie stand am Ende des letzten Zuges im Chat. Hat die Person
+       widersprochen, aendert `stand_merken` das Feld noch in DIESEM Zug
+       und notiert "verstaendnis_korrigiert" - dann ist hier nichts mehr
+       offen. Steht die Marke noch, war die Antwort eine Bestaetigung
+       (oder sie ging an der Frage vorbei; beides laesst den Wert stehen).
+
+       Die Zahl dahinter ist fuer die Arbeit nebensaechlich und fuer die
+       Auswertung nicht: Wie oft eine Deutung des Modells falsch war,
+       sagt etwas darueber, wie viel Verstehen man ihm zutrauen kann -
+       und das ist genau die Frage, an der der Nutzer am 11.11. gezweifelt
+       hat ("Wenn es immer weiterhin solche Fehler gibt, dann koennen wir
+       es lassen"). */
+    if (this.lauf.rueckfrageOffen) {
+      const r = this.lauf.rueckfrageOffen;
+      this.lauf.rueckfrageOffen = null;
+      this.lauf.rueckfrageAbrechnen = r;
+    }
     AgentPanel.arbeitetAn();
     // Die Arbeitsanzeige steht im Gespraech, dort wo gleich die Antwort
     // steht. Sie klammert genau einen Zug: hier an, in zugBeenden aus.
@@ -2552,6 +2571,20 @@ const Kern = {
               satz: `Hier komme ich nicht weiter: ${sg.fehler.replace(/\s+/g, " ").replace(/\?/g, ".").trim().slice(0, 120)}. `
                 + "Sollen wir ein anderes Haus nehmen, den Zeitraum ändern, oder machst du den Rest selbst?" };
           }
+          /* Welche Rueckfrage diesen Zug belegt (12.11.2026).
+             ------------------------------------------------------------
+             Datum, Datumswiderspruch, Spanne und Verstaendnis schreiben
+             alle in dieselbe Nachricht. Vorher reichte die Reihenfolge
+             als Absprache, weil nur die ersten drei existierten und jede
+             die naechste mit einer eigenen Bedingung ausschloss. Mit der
+             vierten wurde daraus eine Kette, in der man ein Glied
+             vergessen kann - `spanneFrage` zum Beispiel bleibt nach dem
+             ersten Mal fuer immer gesetzt und haette die
+             Verstaendnisfrage dauerhaft verschluckt.
+
+             Also eine Marke statt vier Bedingungen: Wer die Nachricht
+             nimmt, setzt sie; wer danach kommt, sieht nach. */
+          let zugBelegt = false;
           if (!freierZug && !tippGestellt && !artFrage && !this.lauf.werkzeugSackgasse) {
             const p2 = this.lauf.profil || {};
             /* Der Widerspruch geht vor: Erst klaeren, welcher Monat
@@ -2566,6 +2599,7 @@ const Kern = {
                 this.lauf.datumFrage = 9;
                 this.notieren("datum_widerspruch_aufgegeben", { tag: wid.tag, genannt: wid.genannt });
               } else {
+                zugBelegt = true;
                 this.lauf.datumWiderspruchMal = mal;
                 this.notieren("datum_widerspruch_gefragt", { tag: wid.tag, genannt: wid.genannt, mal });
                 fpJetzt = { ...fpJetzt, satz: wid.satz, chips: (wid.chips || []).join(" | "),
@@ -2575,6 +2609,7 @@ const Kern = {
             const datumFrage = this.lauf.datumWiderspruch ? null
               : Werkzeugkasten.datumRueckfrage(p2, this.lauf, letzteNachricht);
             if (datumFrage) {
+              zugBelegt = true;
               this.lauf.datumFrage = datumFrage.stufe;
               this.notieren("datum_rueckfrage", { stufe: datumFrage.stufe, monat: p2.monat || null });
               fpJetzt = { ...fpJetzt, satz: datumFrage.satz,
@@ -2612,10 +2647,35 @@ const Kern = {
               const sp = Werkzeugkasten.spanneRueckfrage(p2, this.lauf);
               if (sp) {
                 this.lauf.spanneFrage = 1;
+                zugBelegt = true;
                 this.notieren("spanne_rueckfrage", { grenze: sp.grenze, weiter: sp.weiter,
                   jetzt: sp.jetzt, dann: sp.dann });
                 fpJetzt = { ...fpJetzt, satz: sp.satz, chips: sp.chips.join(" | "), naechstes: null, kernFragt: true };
               }
+            }
+            /* Habe ich das richtig verstanden? (12.11.2026)
+               ----------------------------------------------------------
+               Ganz hinten in der Kette, und nur wenn keine andere
+               Rueckfrage ansteht: Zwei Rueckfragen in einer Nachricht
+               sind eine zu viel, und die Datums- und Spannenfrage haben
+               Vorrang, weil ohne sie nicht gesucht werden kann.
+
+               Die Frage ersetzt die Fahrplanfrage dieses Zugs nicht
+               dauerhaft - `naechstes: null` heisst nur, dass sie in
+               DIESER Nachricht nicht mitkommt. Der Zaehler des Themas
+               bleibt unberuehrt, die offene Frage steht im naechsten Zug
+               unveraendert wieder da. Sonst waere das Nachfragen ein
+               verbrauchter Anlauf, und das Gegenteil waere erreicht:
+               weniger Fragen bis zur Annahme, nicht mehr. */
+            const vr = zugBelegt ? null : Werkzeugkasten.verstaendnisRueckfrage(p2, this.lauf);
+            if (vr) {
+              zugBelegt = true;
+              (this.lauf.rueckversichert ||= {})[vr.feld] = true;
+              this.lauf.unsicher = (this.lauf.unsicher || []).filter((f) => f !== vr.feld);
+              this.lauf.rueckfrageOffen = { feld: vr.feld, wert: JSON.parse(JSON.stringify(p2[vr.feld] ?? null)) };
+              this.notieren("verstaendnis_rueckfrage", { feld: vr.feld, wert: this.lauf.rueckfrageOffen.wert });
+              fpJetzt = { ...fpJetzt, satz: vr.satz, chips: (vr.chips || []).join(" | "),
+                naechstes: null, fragtThema: null, kernFragt: true };
             }
           }
           /* Zwei Ebenen.
@@ -3097,6 +3157,14 @@ const Kern = {
   zugBeenden() {
     this.laeuft = false;
     if (this.lauf.phase === "arbeitet") this.lauf.phase = "gespraech";
+    /* Stand die Rueckfrage noch offen, als der Zug zu Ende ging, hat
+       niemand widersprochen - der gedeutete Wert gilt als bestaetigt.
+       Gegenstueck zu "verstaendnis_korrigiert" in `stand_merken`. */
+    if (this.lauf.rueckfrageAbrechnen) {
+      const r = this.lauf.rueckfrageAbrechnen;
+      this.lauf.rueckfrageAbrechnen = null;
+      this.notieren("verstaendnis_bestaetigt", { feld: r.feld, wert: r.wert });
+    }
     this.sperreAus();
     /* Und hier geht Arm B wieder zu - erst hier. Nicht, solange eine
        Werkzeugkette ueber einen Seitenwechsel laeuft: zugBeenden kommt
