@@ -2,7 +2,7 @@
  *
  *   node agent/durchgang-test.cjs         der jetzige Stand, erwartet 0 falsch
  *   node agent/durchgang-test.cjs --alt   Gegenprobe am Stand davor
- *                                         (_backup/2026-11-10-keindrittesmal/)
+ *                                         (_backup/2026-11-12-ausstattung/)
  *
  * Geprueft wird, was Logik ist:
  *
@@ -29,7 +29,7 @@
 const fs = require("fs"), vm = require("vm");
 const B = "/Users/tom-gabrielmielicki/Desktop/Bachelor Arbeit/Website/";
 const alt = process.argv.includes("--alt");
-const quelle = alt ? B + "_backup/2026-11-10-keindrittesmal/" : B;
+const quelle = alt ? B + "_backup/2026-11-12-ausstattung/" : B;
 
 const ctx = { console, window: {},
   document: { querySelectorAll: () => [], querySelector: () => null, getElementById: () => null,
@@ -608,6 +608,132 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     WK.verstaendnisRueckfrage(p, lauf);
     const nachher = WK.fahrplan(p, lauf).naechstes;
     pruefe("Rueckfrage kostet keinen Anlauf", nachher, vorher);
+  }
+
+  /* Harte Vorgabe gegen weichen Wunsch (12.11.2026).
+     ------------------------------------------------------------------
+     Die Trennung steckt in den Daten (ein Kriterium mit `filter`
+     filtert, eines ohne nicht). Geprueft wird, dass die Leiste und die
+     Lockerung sie auch benutzen. */
+  {
+    const hart = ctx.PO.KRITERIEN.filter((k) => k.filter).map((k) => k.id).sort();
+    const weich = ctx.PO.KRITERIEN.filter((k) => !k.filter).map((k) => k.id).sort();
+    pruefe("Kriterien: die weichen kommen aus Bewertungen", weich.join(","),
+      "essen,getraenke,lage,preis,ruhe,sauberkeit,service");
+    pruefe("Kriterien: die harten filtern den Katalog", hart.join(","),
+      "bewertung,familie,kinderclub,meerblick,pool,strandnah,wellness");
+    // Jedes weiche Kriterium hat eine Teilnote oder einen Aspekt, sonst
+    // koennte es die Reihenfolge gar nicht beeinflussen
+    const ohneGrundlage = ctx.PO.KRITERIEN.filter((k) => !k.filter && !k.note && !k.aspekt).map((k) => k.id);
+    pruefe("Weiche Kriterien haben eine Grundlage", ohneGrundlage.join(",") || "keins", "keins");
+
+    const leiste = (profil) => ctx.PO.eckdaten(profil);
+    const zeilen = leiste({ kriterien: [{ id: "ruhe" }, { id: "pool" }, { id: "sauberkeit" }] });
+    const feld = (wert) => (zeilen.find((z) => z.wert === wert) || {}).feld || "fehlt";
+    pruefe("Leiste: Ruhe steht als Wichtig", feld("Ruhe"), "Wichtig");
+    pruefe("Leiste: Sauberkeit steht als Wichtig", feld("Sauberkeit"), "Wichtig");
+    pruefe("Leiste: Pool steht als Muss", feld("Pool"), "Muss");
+    // Nichts darf doppelt erscheinen
+    const werte = zeilen.map((z) => z.wert);
+    pruefe("Leiste: keine Zeile doppelt", werte.length, new Set(werte).size);
+    // Strandnaehe und Note haben eigene Zeilen - das Kriterium nicht noch dazu
+    const mitStrand = leiste({ kriterien: [{ id: "strandnah" }], maxStrand: 1 });
+    pruefe("Leiste: Strandnaehe nicht zweimal",
+      mitStrand.filter((z) => z.feld === "Strand" || z.wert === "Strandnähe").length, 1);
+
+    /* Weiche Wuensche filtern nichts - am echten Pfad, nicht simuliert.
+       Das ist die Grundlage der ganzen Trennung: Waere sie falsch,
+       waeren "Wichtig" und "Muss" in der Leiste eine Luege. */
+    const pW = { typ: "hotel", artGenannt: true, monat: 8, erwachsene: 2, kinder: 0, naechte: 7 };
+    const nurWeich = { ...pW, kriterien: [{ id: "ruhe" }, { id: "sauberkeit" }, { id: "service" },
+      { id: "essen" }, { id: "lage" }, { id: "preis" }, { id: "getraenke" }] };
+    pruefe("Weiche Wuensche kuerzen die Liste nicht",
+      WK.katalogTreffer(nurWeich, WK.filterAusStand(nurWeich)).length,
+      WK.katalogTreffer(pW, WK.filterAusStand(pW)).length);
+    // Und jedes harte kuerzt sie
+    for (const k of ctx.PO.KRITERIEN.filter((x) => x.filter)) {
+      const pH = { ...pW, kriterien: [{ id: k.id }], ...(k.filter.maxStrand != null ? { maxStrand: k.filter.maxStrand } : {}),
+        ...(k.filter.mindestbewertung != null ? { mindestbewertung: k.filter.mindestbewertung } : {}) };
+      const n = WK.katalogTreffer(pH, WK.filterAusStand(pH)).length;
+      const alle = WK.katalogTreffer(pW, WK.filterAusStand(pW)).length;
+      pruefe(`Hartes Kriterium kuerzt: ${k.id}`, n < alle ? "kuerzt" : `${n} von ${alle}`, "kuerzt");
+    }
+    /* Die Aufraeumung in `engpass` ist nachgemessen wirkungslos - weiche
+       Kriterien liefern der Probe kein Merkmal. Festgehalten, damit
+       niemand sie fuer eine Fehlerbehebung haelt und damit auffaellt,
+       wenn sich daran je etwas aendert. */
+    {
+      const pE = { typ: "hotel", artGenannt: true, monat: 8, erwachsene: 2, kinder: 2, kinderAlter: [5, 8],
+        naechte: 7, kriterien: [{ id: "ruhe" }, { id: "sauberkeit" }, { id: "pool" }, { id: "kinderclub" }],
+        ausstattung: ["pool", "kidsClub"], mindestbewertung: 4.5, maxStrand: 1 };
+      const e = WK.engpass(pE);
+      pruefe("Engpass nennt die Ausstattung", (e || {}).label, "die Ausstattungswünsche");
+      pruefe("Engpass: Zahl unveraendert von der Aufraeumung", (e || {}).haeuser, 47);
+    }
+  }
+
+  /* Der Leer-Zustand und sein Selektor (12.11.2026).
+     ------------------------------------------------------------------
+     Der Pruefstand suchte ".results-empty" (mit s), die Seite baut
+     ".result-empty". Elf gemeldete Befunde waren Fehlalarme. Gegen genau
+     diesen Fehler: Der Selektor wird jetzt am Quelltext der Seiten
+     geprueft, nicht am Gedaechtnis. */
+  {
+    const ps = fs.readFileSync(B + "agent/pruefstand.js", "utf8");
+    const sel = (ps.match(/LEER_ZUSTAND:\s*"([^"]+)"/) || [])[1] || null;
+    pruefe("Leer-Zustand: Selektor steht an einer Stelle", sel, ".result-empty");
+    const klasse = String(sel || "").replace(/^\./, "");
+    for (const datei of ["results.js", "merkzettel.js"]) {
+      const q = fs.readFileSync(B + datei, "utf8");
+      pruefe(`Leer-Zustand: ${datei} baut ihn`,
+        q.includes(`class="${klasse}"`) ? "ja" : "nein", "ja");
+    }
+    const css = fs.readFileSync(B + "style.css", "utf8");
+    pruefe("Leer-Zustand ist gestaltet", css.includes(`.${klasse} {`) ? "ja" : "nein", "ja");
+    pruefe("Leer-Zustand: der falsche Selektor ist weg",
+      ps.includes(".results-empty") ? "noch da" : "weg", "weg");
+  }
+
+  /* Was der Agent bei null Treffern sagt. Vorher stand da die Zahl und
+     sonst nichts - bei festem Ziel ohne jede Aufschluesselung. */
+  {
+    const leer = (p) => WK.lageSatz(WK.katalogTreffer(p, WK.filterAusStand(p)), p, {}, null, {});
+    const pZwei = { typ: "hotel", artGenannt: true, monat: 8, erwachsene: 2, kinder: 2, kinderAlter: [5, 8],
+      naechte: 7, ausstattung: ["pool", "kidsClub", "seaView"], mindestSterne: 5, maxPreis: 80 };
+    pruefe("Leer: Treffer sind wirklich null",
+      WK.katalogTreffer(pZwei, WK.filterAusStand(pZwei)).length, 0);
+    const sZwei = leer(pZwei);
+    pruefe("Leer: nennt die Vorgaben, die es loesen",
+      /Preisgrenze/.test(sZwei) && /Ausstattungswünsche/.test(sZwei) ? "ja" : `nein: ${sZwei}`, "ja");
+    pruefe("Leer: nennt die Zahl danach", /wären es \d+ Hotels/.test(sZwei) ? "ja" : `nein: ${sZwei}`, "ja");
+    pruefe("Leer: entscheidet nicht selbst", /\?$/.test(sZwei.trim()) ? "fragt" : `entscheidet: ${sZwei}`, "fragt");
+    pruefe("Leer: sagt, dass einzeln nichts hilft",
+      /Einzeln bringt keine Vorgabe/.test(sZwei) ? "ja" : "nein", "ja");
+
+    // Feste Region, in der nichts hilft: Das Ziel wird genannt, aber nicht angefasst
+    const pRegion = { typ: "hotel", artGenannt: true, monat: 1, zielId: "lappland", erwachsene: 2, kinder: 3,
+      kinderAlter: [2, 5, 8], naechte: 14, ausstattung: ["pool", "kidsClub", "spa", "seaView"],
+      mindestbewertung: 4.8, mindestSterne: 5, maxPreis: 60, maxStrand: 0.2 };
+    const sRegion = leer(pRegion);
+    pruefe("Leer: feste Region wird genannt", /in Lappland/.test(sRegion) ? "ja" : `nein: ${sRegion}`, "ja");
+    pruefe("Leer: Region bleibt die Entscheidung der Person",
+      /Sollen wir es in einer anderen Gegend versuchen/.test(sRegion) ? "fragt" : `nein: ${sRegion}`, "fragt");
+
+    // Und die Praeposition, die zwei Stellen verschieden falsch hatten
+    /* In der Gegenprobe gab es die Funktion noch nicht - dann soll der
+       Durchlauf das melden und nicht abstuerzen, sonst bleiben die
+       Pruefungen danach ungelaufen. */
+    const ort = (id) => (typeof WK.ortSatz === "function" ? WK.ortSatz(id) : "ortSatz fehlt");
+    pruefe("Ort: auf Mallorca", ort("mallorca"), "auf Mallorca");
+    pruefe("Ort: in Lappland", ort("lappland"), "in Lappland");
+    pruefe("Ort: in Wien", ort("wien"), "in Wien");
+    pruefe("Ort: an der Ostsee", ort("ostsee"), "an der Ostsee");
+    pruefe("Ort: unbekanntes Ziel bleibt leer", ort("gibtsnicht"), null);
+    // Jedes Ziel des Katalogs bekommt einen Satz
+    const ohneOrt = (typeof ctx.KAT !== "undefined" ? [] : []);
+    const alleZiele = vm.runInContext("typeof ZIELE !== 'undefined' ? ZIELE.map(z => z.id) : []", ctx);
+    for (const id of alleZiele) if (!ort(id)) ohneOrt.push(id);
+    pruefe("Ort: kein Ziel ohne Satz", ohneOrt.join(",") || "keins", "keins");
   }
 
   console.log(`\n${gut} richtig, ${schlecht} falsch`);

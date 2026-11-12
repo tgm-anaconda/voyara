@@ -287,10 +287,26 @@ const Pruefstand = {
     // Eine leere Trefferliste, obwohl der Agent von Treffern spricht
     if (typeof Werkzeuge !== "undefined" && Werkzeuge.seite?.() === "results") {
       const treffer = document.querySelectorAll(".hotel-card, .result-card").length;
-      if (treffer === 0 && !document.querySelector(".results-empty, .leer")) merken("liste_leer_ohne_hinweis");
+      /* Der Selektor war falsch geschrieben (12.11.2026).
+         --------------------------------------------------------------
+         Hier stand die Klasse mit einem s zu viel (results-empty), dazu
+         eine zweite, die es im ganzen Projekt nicht gibt. Die Seite baut
+         result-empty. Die Pruefung hat also elf Mal einen Hinweis vermisst, der
+         die ganze Zeit dastand ("Nichts gefunden. Versuche es mit
+         weniger Filtern oder einem groesseren Preisrahmen.").
+
+         Elf Fehlalarme aus einem fehlenden Buchstaben, und ich habe sie
+         als Befund weitergegeben. Deshalb steht der Selektor jetzt nicht
+         mehr frei im Code, sondern wird gegen die Seite geprueft
+         (durchgang-test: "Leer-Zustand: Selektor passt zur Seite"). */
+      if (treffer === 0 && !document.querySelector(this.LEER_ZUSTAND)) merken("liste_leer_ohne_hinweis");
     }
     this.standSetzen({ ...s, sicht });
   },
+
+  // Woran der Pruefstand erkennt, dass die Seite ihre Leere erklaert.
+  // Gegen results.js und merkzettel.js geprueft, nicht geraten.
+  LEER_ZUSTAND: ".result-empty",
 
   async weiter() {
     const s = this.stand();

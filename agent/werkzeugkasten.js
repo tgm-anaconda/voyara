@@ -2583,6 +2583,27 @@ const Werkzeugkasten = {
     return null;
   },
 
+  /* "auf Lappland" und "in Mallorca" (12.11.2026).
+     ------------------------------------------------------------------
+     Zwei Stellen setzten die Praeposition fest ein, und sie
+     widersprachen sich: Die Lage sagte "auf Lappland", die
+     Vormerkung "in Mallorca". Beides falsch, und beides steht in jedem
+     Durchgang mehrfach im Chat.
+
+     Inseln nehmen "auf", Kuesten "an der", alles andere "in". Das
+     gehoert zum Ziel, also steht es bei den Zielen - nicht in dem Satz,
+     der es gerade braucht. Ein neues Ziel ohne Eintrag bekommt "in";
+     das ist bei 13 von 18 richtig und nie peinlich. */
+  ORT_WORT: { mallorca: "auf", kreta: "auf", sardinien: "auf", teneriffa: "auf", island: "auf",
+    ostsee: "an der", algarve: "an der" },
+
+  ortSatz(zielId, grossKlein = false) {
+    const name = typeof ZIEL_NACH_ID !== "undefined" ? ZIEL_NACH_ID[zielId]?.name : null;
+    if (!name) return null;
+    const w = this.ORT_WORT[zielId] || "in";
+    return `${grossKlein ? w.charAt(0).toUpperCase() + w.slice(1) : w} ${name}`;
+  },
+
   // Wie der Agent die Art nennt, wenn er darueber spricht
   artWort(p, mehrzahl = true) {
     const t = this.seitenTyp(p);
@@ -4274,7 +4295,7 @@ const Werkzeugkasten = {
          Genauso gebaut wie die Ansage des Rundgangs. */
       if (stufe === 1 && !kern.lauf.gesuchtMit && !kern.lauf.rechercheAngesagt) {
         kern.lauf.rechercheAngesagt = true;
-        const wohin = p.zielId && typeof ZIEL_NACH_ID !== "undefined" ? `in ${ZIEL_NACH_ID[p.zielId]?.name}`
+        const wohin = p.zielId && typeof ZIEL_NACH_ID !== "undefined" ? (Werkzeugkasten.ortSatz(p.zielId) || "")
           : p.richtung === "warm" ? "in den warmen Regionen" : p.richtung === "kalt" ? "in den kalten Regionen" : "";
         const wann = p.monat && typeof MONATSNAMEN !== "undefined" ? `im ${MONATSNAMEN[p.monat - 1]}` : "";
         const art = Werkzeugkasten.artWort(p, true);
@@ -6271,7 +6292,14 @@ const Werkzeugkasten = {
 
     wuensche: {
 
-      erklaerung: "Damit gewichte ich die Auswahl. Was du hier nennst, ziehe ich aus den Gästebewertungen heraus und vergleiche es zwischen den Häusern.",
+      /* Die Erklaerung stimmte nur fuer die Haelfte (12.11.2026).
+         "Was du hier nennst, ziehe ich aus den Gaestebewertungen
+         heraus" gilt fuer Ruhe, Sauberkeit, Service, Essen, Lage und
+         Preis. Pool, Kinderclub, Wellness und Meerblick stehen dagegen
+         in den Daten des Hauses und schliessen Haeuser aus, die sie
+         nicht haben. Zwei verschiedene Wirkungen unter einem Satz -
+         und die Person konnte nicht wissen, welche ihre Angabe hat. */
+      erklaerung: "Damit gewichte ich die Auswahl. Dinge wie Pool oder Kinderclub sind Ausstattung - die muss ein Haus haben, sonst fällt es raus. Dinge wie Ruhe oder Sauberkeit stehen in den Gästebewertungen; die kürzen die Liste nicht, sondern entscheiden die Reihenfolge.",
       /* Drei Runden, drei Saetze. Die zweite und dritte nennen, was schon
          steht - sonst klingt das Nachhaken, als haette er nicht zugehoert. */
       satz: (p, wk, lauf) => {
@@ -6787,7 +6815,7 @@ const Werkzeugkasten = {
     anzahl: "Sonst stelle ich dir drei zusammen.",
     preis: "Sonst lege ich dich beim Preis nicht fest.",
     verpflegung: "Sonst lasse ich die Verpflegung offen.",
-    wuensche: "Sonst suche ich ohne besondere Vorgabe weiter.",
+    wuensche: "Sonst suche ich ohne Ausstattungsvorgabe und ohne Schwerpunkt weiter.",
   },
 
 
@@ -7338,8 +7366,8 @@ const Werkzeugkasten = {
         selbst: "Beim Preis lege ich dich erst mal nicht fest." },
       verpflegung: { schreibt: ["verpflegung", "verpflegungEgal"], setzen: (x) => { x.verpflegungEgal = true; }, satz: "dass du die Verpflegung offen laesst",
         selbst: "Die Verpflegung lasse ich erst mal offen." },
-      wuensche: { schreibt: ["wuensche", "kriterien", "ausstattungEgal"], setzen: (x) => { x.ausstattungEgal = true; }, satz: "dass du keine besondere Ausstattung voraussetzt",
-        selbst: "Besondere Ausstattung setze ich erst mal nicht voraus." },
+      wuensche: { schreibt: ["wuensche", "kriterien", "ausstattungEgal"], setzen: (x) => { x.ausstattungEgal = true; }, satz: "dass du keine besondere Ausstattung voraussetzt und keinen Schwerpunkt gesetzt hast",
+        selbst: "Besondere Ausstattung setze ich erst mal nicht voraus, und einen Schwerpunkt aus den Bewertungen nehme ich auch nicht." },
       anreise: { schreibt: ["anreise"], setzen: (x, wk) => {
         const f = wk.flexWahl(x);
         if (f) x.anreise = `${f.monat}-01`;
@@ -8168,10 +8196,51 @@ const Werkzeugkasten = {
       haeuser: treffer.length };
   },
 
-  engpass(p) {
+  /* Die Liste ist leer - und jetzt? (12.11.2026)
+     ------------------------------------------------------------------
+     `engpass` sucht die EINE Vorgabe, deren Wegfall am meisten bringt,
+     und schweigt, wenn keine genug bringt. Bei null Treffern ist genau
+     das der haeufige Fall: Zusammen schliessen drei Vorgaben alles aus,
+     einzeln keine.
+
+     Gemessen an einem Stand, den eine Person so zusammenstellen kann
+     (Hotel im August, 2+2, Pool, Kinderclub, Meerblick, 5 Sterne,
+     hoechstens 80 € pro Nacht): 0 Treffer, und ohne Preis, ohne Sterne,
+     ohne Ausstattung jeweils weiter 0. `engpass` gab `null`, und der
+     Agent sagte "0 Hotels buchbar" mit einer Aufschluesselung der
+     Zahlen - aber ohne einen Weg nach vorn.
+
+     Also wird hier weitergesucht: erst einzeln, dann paarweise. Mehr
+     nicht. Drei Vorgaben gleichzeitig wegzunehmen ist keine Lockerung
+     mehr, sondern eine andere Reise, und die gehoert der Person, nicht
+     dem Agenten. Findet sich auch paarweise nichts, sagt er das - eine
+     ehrliche Fehlanzeige ist besser als ein Vorschlag, der nicht
+     traegt. */
+  leerAusweg(p) {
     const zaehle = (x) => this.katalogTreffer(x, this.filterAusStand(x)).length;
-    const jetzt = zaehle(p);
-    const ohne = [
+    const ohne = this.lockerungen(p);
+    if (!ohne.length) return null;
+    const probe = (gruppe) => {
+      const x = { ...p, kriterien: [...(p.kriterien || [])], ausstattung: [...(p.ausstattung || [])] };
+      for (const o of gruppe) o.weg(x);
+      return { labels: gruppe.map((o) => o.label), haeuser: zaehle(x) };
+    };
+    let bester = null;
+    const merken = (r) => { if (r.haeuser > 0 && (!bester || r.haeuser > bester.haeuser)) bester = r; };
+    for (const o of ohne) merken(probe([o]));
+    if (bester) return { ...bester, zusammen: false };
+    for (let i = 0; i < ohne.length; i++) {
+      for (let j = i + 1; j < ohne.length; j++) merken(probe([ohne[i], ohne[j]]));
+    }
+    return bester ? { ...bester, zusammen: true } : null;
+  },
+
+  /* Die Lockerungen standen bisher als Liste mitten in `engpass`. Beide
+     Rechnungen brauchen sie jetzt, also stehen sie fuer sich - sonst
+     laufen zwei Kopien auseinander, und die eine wuesste von einer
+     Vorgabe nichts, die die andere kennt. */
+  lockerungen(p) {
+    return [
       { label: "die Vorgabe, dass es reduziert sein soll", weg: (x) => { delete x.nurAngebote; }, wenn: () => p.nurAngebote },
       { label: "die Vorgabe, dass WLAN ohne Aufpreis dabei ist", weg: (x) => { delete x.wlanInklusive; }, wenn: () => p.wlanInklusive },
       { label: p.verpflegung && typeof BOARD_LABELS !== "undefined" ? `die Vorgabe ${BOARD_LABELS[p.verpflegung]}` : "die Verpflegung", weg: (x) => { delete x.verpflegung; }, wenn: () => p.verpflegung },
@@ -8179,12 +8248,41 @@ const Werkzeugkasten = {
       { label: "die Mindestzahl an Sternen", weg: (x) => { delete x.mindestSterne; }, wenn: () => p.mindestSterne },
       { label: "die Mindestbewertung", weg: (x) => { delete x.mindestbewertung; }, wenn: () => p.mindestbewertung },
       { label: "die Strandnähe", weg: (x) => { delete x.maxStrand; }, wenn: () => p.maxStrand != null },
-      { label: "die Ausstattungswünsche", weg: (x) => { x.ausstattung = []; x.kriterien = []; }, wenn: () => this.filterAusStand(p).ausstattung.length },
+      /* Nur die Vorgaben, die wirklich filtern (12.11.2026).
+         --------------------------------------------------------------
+         Hier stand `x.kriterien = []` und warf damit auch Ruhe,
+         Sauberkeit und Service weg, die gar nicht filtern.
+
+         Nachgemessen: Am Ergebnis aendert das nichts. Die Probe ist eine
+         Kopie, die nach dem Zaehlen weggeworfen wird, und weiche
+         Kriterien liefern `filterAusStand` kein Merkmal - mit oder ohne
+         sie kommen dieselben Zahlen heraus (geprueft, 47 gegen 47). Die
+         Beschriftung war auch vorher richtig, weil sie nur von
+         Ausstattung sprach.
+
+         Geaendert wird es trotzdem, aber als das, was es ist: eine
+         Aufraeumung, keine Fehlerbehebung. Wer hier spaeter einen Satz
+         aus der Probe baut - und genau das liegt nahe, wenn der Agent
+         erklaeren soll, was er lockern wuerde -, haette sonst weiche
+         Wuensche in einem Satz ueber Ausstattung. */
+      { label: "die Ausstattungswünsche", weg: (x) => {
+        x.ausstattung = [];
+        x.kriterien = (x.kriterien || []).filter((k) => {
+          const kr = typeof Politik !== "undefined" ? Politik.kriterium(k.id) : null;
+          return !kr?.filter;
+        });
+      }, wenn: () => this.filterAusStand(p).ausstattung.length },
       { label: p.richtung === "kalt" ? "die Beschränkung auf kalte Regionen" : p.richtung === "warm" ? "die Beschränkung auf warme Regionen" : "die Beschränkung auf diese Regionen", weg: (x) => { delete x.zieleErlaubt; delete x.richtung; }, wenn: () => !p.zielId && p.zieleErlaubt?.length },
       // Seit der feste Anreisetag mitfiltert, kann er der Engpass sein -
       // und dann ist er der erste, den man nennen sollte
       { label: "der feste Anreisetag", weg: (x) => { delete x.von; delete x.bis; }, wenn: () => p.flug && p.von },
     ].filter((o) => o.wenn());
+  },
+
+  engpass(p) {
+    const zaehle = (x) => this.katalogTreffer(x, this.filterAusStand(x)).length;
+    const jetzt = zaehle(p);
+    const ohne = this.lockerungen(p);
     let bester = null;
     for (const o of ohne) {
       const probe = { ...p, kriterien: [...(p.kriterien || [])], ausstattung: [...(p.ausstattung || [])] };
@@ -8620,7 +8718,7 @@ const Werkzeugkasten = {
     // "in den warmen Regionen in 8 Regionen" stand so auf der Seite - die
     // Himmelsrichtung gehoert vor das Wort Regionen, nicht davor und danach.
     const warmKalt = p.richtung === "warm" ? "warmen " : p.richtung === "kalt" ? "kalten " : "";
-    const wo = p.zielId ? `auf ${ZIEL_NACH_ID?.[p.zielId]?.name || p.zielId}` : (warmKalt ? `in den ${warmKalt}Regionen` : "");
+    const wo = p.zielId ? (this.ortSatz(p.zielId) || p.zielId) : (warmKalt ? `in den ${warmKalt}Regionen` : "");
     const regionen = umfang.jeRegion || [];
     const teile = [];
     /* Die Zahl im Chat und die Zahl auf der Seite muessen zusammenpassen.
@@ -8657,6 +8755,46 @@ const Werkzeugkasten = {
       && saisonPassung(zielRegion, p.monat) < 0.5) {
       const haupt = typeof saisonText === "function" ? saisonText(zielRegion) : "";
       return `${zielRegion.name} hat ${monatText.replace(/^Im /, "im ")} keine Saison${haupt ? ` - Hauptsaison ist ${haupt}` : ""}. Dort ist gerade nichts buchbar.`;
+    }
+
+    /* Leer, und kein Wort dazu, was man tun kann (12.11.2026).
+       ----------------------------------------------------------------
+       Bis hierher stand bei null Treffern nur die Zahl da, manchmal mit
+       der Aufschluesselung aus `warumWeniger` - und bei festem Ziel oft
+       ohne sie, also wirklich nur "0 Hotels buchbar". Fuer die Person
+       sieht das aus wie ein Defekt, nicht wie eine enge Vorgabe. Im
+       Vollbild-Arm ist es schlimmer: Sie hat dem Agenten bei der Arbeit
+       zugesehen, und am Ende ist die Seite weiss.
+
+       Also sagt er, was er lockern wuerde und was dann uebrig bliebe.
+       Zwei Vorgaben hoechstens (siehe `leerAusweg`); bleibt es auch dann
+       leer, sagt er genau das. Die Entscheidung trifft er nicht - er
+       fragt. */
+    if (!liste.length) {
+      const aus = this.leerAusweg(p);
+      if (aus) {
+        const was = typeof Politik !== "undefined" ? Politik.aufzaehlen(aus.labels) : aus.labels.join(" und ");
+        teile.push(`${monatText} sind ${wo ? `${wo} ` : ""}keine ${art} buchbar, die alles erfüllen.`);
+        teile.push(aus.zusammen
+          ? `Einzeln bringt keine Vorgabe etwas - zusammen schon: Ohne ${was} wären es ${this.artZahl(aus.haeuser, p)}.`
+          : `Ohne ${was} wären es ${this.artZahl(aus.haeuser, p)}.`);
+        teile.push("Soll ich das lockern, oder möchtest du etwas anderes ändern?");
+        return teile.join(" ");
+      }
+      /* Kein Ausweg innerhalb der Vorgaben. Steht ein Ziel fest, ist es
+         fast immer das Ziel - und dann muss das dastehen, sonst sucht
+         die Person den Fehler bei sich. Angefasst wird es nicht: Welche
+         Region gebucht wird, soll von der Person kommen, sonst misst die
+         Erhebung den Agenten statt den Menschen. */
+      if (p.zielId) {
+        const ortName = this.ortSatz(p.zielId) || "";
+        teile.push(`${monatText} finde ich ${ortName} keine ${art}, die zu deinen Vorgaben passen - auch nicht, wenn ich einzelne davon weglasse.`);
+        teile.push("Sollen wir es in einer anderen Gegend versuchen, oder gehen wir deine Vorgaben zusammen durch?");
+        return teile.join(" ");
+      }
+      teile.push(`${monatText} sind ${wo ? `${wo} ` : ""}keine ${art} buchbar, und auch das Weglassen einzelner Vorgaben hilft nicht.`);
+      teile.push("Lass uns deine Vorgaben zusammen durchgehen - womit möchtest du anfangen?");
+      return teile.join(" ");
     }
 
     const einzahl = this.artWort(p, false);

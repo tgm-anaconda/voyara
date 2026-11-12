@@ -1608,11 +1608,46 @@ const Politik = {
     else if (profil.preisEgal) raus.push({ feld: "Preis", wert: "offen" });
     if (profil.bewertungEgal && !profil.mindestbewertung && !profil.mindestSterne) raus.push({ feld: "Bewertung", wert: "egal" });
     if (profil.strandEgal && profil.maxStrand == null) raus.push({ feld: "Strand", wert: "egal" });
+    /* Harte Vorgabe oder weicher Wunsch - das muss man sehen (12.11.2026).
+       ----------------------------------------------------------------
+       Der Nutzer am 11.11.2026: "Ich wuerde das Ganze jetzt noch
+       vielleicht so machen, dass wir einmal bei der Ausstattung noch
+       differenzieren, weil aktuell haben wir bei Ausstattung auch so
+       Aspekte wie Ruhe und Sauberkeit, und die sind ja keine
+       Ausstattung."
+
+       In den Daten sind sie das auch nicht: Ein Kriterium mit `filter`
+       schliesst Haeuser aus (Pool, Kinderclub, Meerblick), eines ohne
+       wirkt nur auf die Reihenfolge und kommt aus den Teilnoten der
+       Bewertungen (Ruhe, Sauberkeit, Service, Essen, Lage, Preis,
+       Getraenke). Beide standen in der Leiste als "Wunsch", und damit
+       konnte niemand sehen, welche Angabe die Liste kuerzt und welche
+       sie nur sortiert.
+
+       Das ist nicht Kosmetik, sondern genau der Gegenstand der Studie:
+       Wer nicht erkennt, was der Agent mit einer Angabe macht, kann
+       seine Arbeit auch nicht beurteilen. Weiche Wuensche heissen jetzt
+       "Wichtig" und tragen den Grund mit (aus den Bewertungen), harte
+       stehen bei den anderen Pflichtangaben unter "Muss". */
     for (const k of profil.kriterien || []) {
-      const l = this.kriterium(k.id)?.label;
-      if (l) raus.push({ feld: "Wunsch", wert: l });
+      const kr = this.kriterium(k.id);
+      if (!kr?.label) continue;
+      if (kr.filter) continue;          // steht unten als "Muss"
+      raus.push({ feld: "Wichtig", wert: kr.label });
     }
+    /* Die harten Kriterien, bevor die Ausstattung kommt: Sie filtern
+       dasselbe, also gehoeren sie in dieselbe Zeile. Mit ihrem Label,
+       nicht mit dem Namen des Merkmals - "Kinderclub" sagt mehr als
+       "Kids Club" und ist das Wort, das die Person benutzt hat. */
     const wunschAusstattung = new Set((profil.kriterien || []).map((k) => this.kriterium(k.id)?.filter?.ausstattung).filter(Boolean));
+    for (const k of profil.kriterien || []) {
+      const kr = this.kriterium(k.id);
+      if (!kr?.filter || !kr.label) continue;
+      // Strandnaehe und Note stehen schon als eigene Zeile da
+      if (kr.filter.maxStrand != null && profil.maxStrand != null) continue;
+      if (kr.filter.mindestbewertung != null && profil.mindestbewertung) continue;
+      raus.push({ feld: "Muss", wert: kr.label });
+    }
     for (const a of profil.ausstattung || []) {
       if (a === "beachfront" && profil.maxStrand != null && profil.maxStrand <= 0.2) continue;
       if (wunschAusstattung.has(a)) continue;
