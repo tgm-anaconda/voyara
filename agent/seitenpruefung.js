@@ -941,6 +941,106 @@ const Seitenpruefung = {
     }
   },
 
+  /* Haelt die Sperre, was sie verspricht? (12.11.2026)
+     ------------------------------------------------------------------
+     Gemessen in Arm B, waehrend der Agent arbeitete: Seite auf 500, ein
+     Rad-Ereignis mitten im Vollbild, danach 500 + 100. Und mit vollem
+     Chat, am Ende der Liste: 800 auf 1800.
+
+     Zwei Ursachen, beide behoben (scrollSperre in kern.js, overscroll-
+     behavior in style.css). Geprueft wird hier aber nicht der Code,
+     sondern die Wirkung - ein Rad-Ereignis, wie es ein Mensch ausloest,
+     und danach die Zahl. Das ist die einzige Pruefung, die beide
+     Ursachen zugleich abdeckt, und sie bleibt richtig, wenn jemand den
+     Weg dahin aendert.
+
+     Warum es zaehlt: Die Person scrollt hinter einem Bild, das sie
+     verdeckt. Wenn der Chat danach auf 380 Pixel zurueckgeht, steht die
+     Seite woanders als dort, wo der Agent sie verlassen hat - und in der
+     Auswertung steht ein Blick auf etwas, das niemand angesehen hat. */
+  sperreHaeltScroll() {
+    if (typeof Kern === "undefined") return;
+    const warLaeuft = Kern.laeuft;
+    const warAusstehend = Kern.lauf?.ausstehend;
+    const warSperre = !!document.getElementById("agentSperre");
+    const warVollbild = document.body.classList.contains("agent-vollbild");
+    /* Zwei Dinge halten die Seite still, und es braucht beide.
+       ----------------------------------------------------------------
+       Gemessen in Arm B, waehrend der Agent arbeitete: Seite auf 500,
+       Rad mitten im Vollbild, danach 600. Und mit vollem Chat, am Ende
+       der Liste: 800 auf 1800.
+
+       Zwei Ursachen. Erstens liess `scrollSperre` jedes Rad durch, das
+       irgendwo in `.agent-rail` landete - im Vollbild also ueberall, und
+       wenn der Chat selbst nichts zu scrollen hatte, wanderte das Rad
+       weiter bis zum Dokument. Zweitens reicht der Browser ein Rad, das
+       einen Behaelter an seinem Ende trifft, von sich aus nach oben
+       weiter, solange `overscroll-behavior` das nicht verbietet.
+
+       Zwei Pruefungen also. Die erste darf NICHT verlangen, dass im
+       Vollbild alles abgefangen wird: Dort liegt der Chat ueber dem
+       ganzen Bild, und er soll scrollen koennen. Sie verlangt es genau
+       dort, wo nichts zu scrollen ist.
+
+       (Zwei Anlaeufe gebraucht: Erst habe ich `scrollY` nach einem
+       synthetischen Rad gemessen - das scrollt nie, die Pruefung bestand
+       immer. Dann habe ich `defaultPrevented` ueberall verlangt - das
+       schlug im Vollbild immer an. Beide Male hatte ich die Erwartung
+       aus dem Kopf geschrieben statt aus der Messung.) */
+    const abgefangen = (x, y) => {
+      const z = document.elementFromPoint(x, y) || document.body;
+      const e = new WheelEvent("wheel", { deltaY: 400, bubbles: true, cancelable: true });
+      z.dispatchEvent(e);
+      let el = z.closest(".agent-rail-inner, .agent-rail, #agentMessages, .vorschlag-fenster");
+      let scrollbar = false;
+      while (el && !scrollbar) {
+        scrollbar = el.scrollHeight > el.clientHeight + 1;
+        el = el.parentElement ? el.parentElement.closest(".agent-rail-inner, .agent-rail, #agentMessages, .vorschlag-fenster") : null;
+      }
+      return { tag: z.tagName + "." + String(z.className).split(" ")[0], abgefangen: e.defaultPrevented, scrollbar };
+    };
+    try {
+      document.body.classList.add("agent-lautlos");
+      if (Kern.lauf) Kern.lauf.ausstehend = null;
+      Kern.laeuft = true;
+      Kern.sperreAn();
+      const mitte = Math.round(window.innerHeight * 0.5);
+      const stellen = [0.15, 0.5, 0.85].map((f) => abgefangen(Math.round(window.innerWidth * f), mitte));
+      // Wo nichts zu scrollen ist, muss die Sperre zugreifen
+      const luecken = stellen.filter((s) => !s.scrollbar && !s.abgefangen);
+      if (luecken.length) {
+        this.befund("Sperre", `An ${luecken.length} von 3 Stellen laesst die Sperre das Rad durch, obwohl dort nichts zu scrollen ist - die Seite wandert dann hinter dem Chat`,
+          { stellen, arm: typeof STELLSCHRAUBEN !== "undefined" ? STELLSCHRAUBEN.zugang : null });
+      } else this.bestanden();
+      // Und wo etwas zu scrollen ist, darf sie es nicht
+      const zuScharf = stellen.filter((s) => s.scrollbar && s.abgefangen);
+      if (zuScharf.length) {
+        this.befund("Sperre", "Die Sperre faengt das Rad auch im scrollbaren Chat ab - dann kann die Person nicht nachlesen, was der Agent sagt", { stellen });
+      } else this.bestanden();
+
+      /* Die zweite Haelfte: Am Ende eines Behaelters darf das Rad nicht
+         zur Seite weiterwandern. Gemessen wird die Eigenschaft, die das
+         entscheidet - die Wirkung selbst laesst sich mit einem
+         synthetischen Ereignis nicht ausloesen. */
+      for (const wahl of [".agent-messages", ".agent-rail-inner", ".agent-rail"]) {
+        const el = document.querySelector(wahl);
+        if (!el) continue;
+        const ov = getComputedStyle(el).overscrollBehaviorY;
+        if (ov !== "contain" && ov !== "none") {
+          this.befund("Sperre", `${wahl} gibt das Rad an seinem Ende an die Seite weiter (overscroll-behavior: ${ov}) - die Seite springt dann hinter dem Chat`);
+        } else this.bestanden();
+      }
+    } finally {
+      Kern.laeuft = warLaeuft;
+      if (Kern.lauf) Kern.lauf.ausstehend = warAusstehend;
+      Kern.vollbildAus?.(true);
+      Kern.sperreAus?.(true);
+      if (!warSperre) document.getElementById("agentSperre")?.remove();
+      document.body.classList.toggle("agent-vollbild", warVollbild);
+      document.body.classList.remove("agent-lautlos");
+    }
+  },
+
   async laufen() {
     this.befunde = [];
     this.geprueft = 0;
@@ -954,6 +1054,7 @@ const Seitenpruefung = {
       this.armB();
       this.armA();
       this.vollbildHaeltDurch();
+      this.sperreHaeltScroll();
       this.armeAufDemTelefon();
     } catch (e) {
       this.befund("Ablauf", `Die Pruefung ist gestolpert: ${e.message}`, { stack: String(e.stack).slice(0, 200) });

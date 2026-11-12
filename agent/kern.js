@@ -4683,8 +4683,45 @@ const Kern = {
      soll unberuehrt bleiben, solange der Agent arbeitet. Abgefangen wird,
      was die Person tut - der Chat und offene Fenster bleiben scrollbar,
      und der Agent selbst scrollt weiter (scrollIntoView, scrollBy). */
+  /* Die Ausnahme der Sperre war zu weit (12.11.2026).
+     ------------------------------------------------------------------
+     Gemessen in Arm B, waehrend der Agent arbeitet: Die Seite stand auf
+     500, ein Rad-Ereignis mitten im Vollbild, danach stand sie auf 600.
+     Durch die Sperre hindurch.
+
+     Der Grund: Im Vollbild liegt der Chat ueber dem ganzen Fenster, also
+     liegt JEDER Punkt in `.agent-rail`, und die Ausnahme fuer den Chat
+     galt damit fuer das ganze Bild. Die Nachrichtenliste hatte zu dem
+     Zeitpunkt selbst nichts zu scrollen (808 von 808 Pixeln), und ein
+     Rad-Ereignis, das in seinem Behaelter nichts bewegt, wandert weiter
+     nach oben - bis zum Dokument.
+
+     Fuer die Person heisst das: Sie scrollt die Seite hinter einem Bild,
+     das sie verdeckt, und merkt es erst, wenn der Chat wieder auf 380
+     Pixel zurueckgeht und die Seite woanders steht, als der Agent sie
+     verlassen hat. In Arm A gibt es dasselbe Loch, nur ist die
+     Trefferflaeche 380 Pixel breit statt das ganze Fenster.
+
+     Die Ausnahme gilt jetzt nur noch, wo sie gebraucht wird: in einem
+     Behaelter, der wirklich scrollen kann, und in Eingabefeldern. Alles
+     andere ist gesperrt - und das war ja der Sinn. */
   scrollSperre(an) {
-    const frei = (e) => !!(e.target && e.target.closest && e.target.closest(".agent-rail-inner, .agent-rail, #agentMessages, .vorschlag-fenster, input, textarea"));
+    const KANN_IMMER = "input, textarea, select, [contenteditable]";
+    const BEHAELTER = ".agent-rail-inner, .agent-rail, #agentMessages, .vorschlag-fenster";
+    const frei = (e) => {
+      const z = e.target;
+      if (!z || !z.closest) return false;
+      if (z.closest(KANN_IMMER)) return true;
+      /* Nicht der naechste Behaelter entscheidet, sondern ob IRGENDEINER
+         auf dem Weg nach oben noch scrollen kann. Die Nachrichtenliste
+         liegt in der Spalte; ist sie voll, soll das Rad sie bewegen. */
+      let el = z.closest(BEHAELTER);
+      while (el) {
+        if (el.scrollHeight > el.clientHeight + 1) return true;
+        el = el.parentElement ? el.parentElement.closest(BEHAELTER) : null;
+      }
+      return false;
+    };
     if (an) {
       if (this._scrollStopp) return;
       const stopp = (e) => { if (!frei(e)) e.preventDefault(); };

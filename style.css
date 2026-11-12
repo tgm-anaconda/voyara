@@ -177,7 +177,19 @@ img, svg { max-width: 100%; }
    Festlegung des Nutzers: "Die Gestaltungselemente sollen gleich sein,
    die Buttonfarben, die Texte. Optisch muss das nicht ansatzweise gleich
    aussehen." */
-.agent-messages { flex: 1; overflow-y: auto; padding: 18px 16px; display: flex; flex-direction: column; gap: 20px; min-height: 0; }
+/* Am Ende der Liste hoert das Scrollen auf (12.11.2026).
+   ------------------------------------------------------------------
+   Gemessen in Arm B, waehrend der Agent arbeitet: Chat ganz unten, Rad
+   weiter nach unten - und die Seite hinter dem Vollbild sprang von 800
+   auf 1800. Das ist die zweite Haelfte des Lochs, das `scrollSperre`
+   offen liess: Die Sperre laesst das Rad im Chat zu Recht durch, und am
+   Ende des Behaelters reicht der Browser es ans Dokument weiter.
+
+   `overscroll-behavior: contain` ist genau dafuer da. Es gehoert auf
+   jeden Behaelter, der im Chat scrollen kann - sonst wandert das Rad
+   eine Ebene hoeher und das Problem ist nur verschoben. */
+.agent-messages { flex: 1; overflow-y: auto; overscroll-behavior: contain; padding: 18px 16px; display: flex; flex-direction: column; gap: 20px; min-height: 0; }
+.agent-rail, .agent-rail-inner { overscroll-behavior: contain; }
 /* Kein Scrollbalken am rechten Rand des Chats (05.11.2026).
    ------------------------------------------------------------------
    Gemeldet: "bei dem chatbot links kommt wenn man auf die rechte seite
