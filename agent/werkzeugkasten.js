@@ -6852,7 +6852,27 @@ const Werkzeugkasten = {
         : `${W.zahlWort(e)} Erwachsene${e === 1 ? "r" : ""}`;
       return {
         satz: `Kurz zur Sicherheit: Ich habe dich so verstanden, dass ihr ${wer} seid. Stimmt das?`,
-        chips: ["Ja, genau", "2 Erwachsene", "2 Erwachsene, 1 Kind", "Wir sind mehr"],
+        /* Jede Karte traegt eine Zahl - und das ist kein Stil, sondern
+           Notwendigkeit (12.11.2026).
+           ------------------------------------------------------------
+           Eine Karte ist kein Sonderweg in den Kern. `setSuggestions`
+           haengt an jeden Knopf `handleUserInput(chip.textContent)` -
+           ein Klick ist genau dasselbe, als haette die Person den Text
+           getippt. Er geht durch das Modell wie jeder andere Satz.
+
+           Damit haengt die Korrektur an derselben Kette wie vorher, und
+           in der Kette steht das Veto des Kerns: Eine neue Personenzahl
+           wird verworfen, wenn im Satz keine Zahl steht. "Wir sind mehr"
+           stand hier und hatte keine - die Karte haette also nichts
+           gesetzt, sondern nur eine weitere Nachricht ausgeloest.
+
+           Also konkrete Werte, aus dem gedeuteten gerechnet: einer mehr,
+           einer weniger, und die Variante mit Kind. Was die Person
+           anklickt, traegt die Zahl, die der Kern verlangt. */
+        chips: ["Ja, genau",
+          ...(e > 1 ? [`${e - 1} Erwachsene${e - 1 === 1 ? "r" : ""}`] : []),
+          `${e + 1} Erwachsene`,
+          k > 0 ? `${e} Erwachsene, ${k + 1} Kinder` : `${e} Erwachsene, 1 Kind`],
       };
     },
     kinderAlter: (p, W) => {
@@ -6861,7 +6881,12 @@ const Werkzeugkasten = {
       return {
         satz: `Kurz zur Sicherheit: Ich rechne mit ${a.length === 1 ? "einem Kind" : `${W.zahlWort(a.length)} Kindern`} `
           + `von ${a.join(" und ")} Jahren. Stimmt das?`,
-        chips: ["Ja, genau", "Anderes Alter"],
+        /* Beim Alter gibt es keine naheliegende Alternative zu rechnen -
+           acht Jahre sind geraten, sieben waeren es auch. Die zweite
+           Karte traegt deshalb keine Zahl, sondern loest die Frage aus,
+           und das ist hier richtig: Das genaue Alter muss ohnehin von
+           der Person kommen, bevor gebucht werden kann. */
+        chips: ["Ja, genau", "Nein, ich nenne dir das Alter"],
       };
     },
     naechte: (p) => {

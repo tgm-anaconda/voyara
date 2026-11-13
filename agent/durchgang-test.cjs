@@ -579,6 +579,36 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     ((rf(zwei, { unsicher: ["erwachsene"] }) || {}).chips || []).length >= 2 ? "ja" : "nein", "ja");
   pruefe("Rueckfrage: erste Karte bestaetigt",
     ((rf(zwei, { unsicher: ["erwachsene"] }) || {}).chips || [])[0] || "", "Ja, genau");
+  /* Jede Korrekturkarte muss eine Zahl tragen (12.11.2026).
+     ------------------------------------------------------------------
+     Eine Karte ist kein Sonderweg in den Kern: `setSuggestions` schickt
+     ihren Text durch `handleUserInput`, also durch das Modell, und dort
+     steht das Zahl-Veto. Eine Karte ohne Zahl setzt nichts.
+
+     Ausgenommen die erste (sie bestaetigt nur) und das Kinderalter (dort
+     gibt es keine Alternative zu rechnen, und das genaue Alter muss
+     ohnehin von der Person kommen). */
+  {
+    const ZAHL = /\d|\bein\b|\beine\b|zwei|drei|vier|fünf|sechs|sieben|acht|neun|zehn/i;
+    const ohneZahl = [];
+    const staende = { erwachsene: { erwachsene: 2, kinder: 0 }, naechte: { naechte: 9 },
+      zimmer: { zimmer: 1 }, kinderAlter: { kinderAlter: [8] } };
+    for (const [feld, p] of Object.entries(staende)) {
+      const r = rf(p, { unsicher: [feld] });
+      if (!r) { ohneZahl.push(`${feld}: keine Rueckfrage`); continue; }
+      for (const c of r.chips.slice(1)) {
+        if (feld === "kinderAlter") continue;
+        if (!ZAHL.test(c)) ohneZahl.push(`${feld}: "${c}"`);
+      }
+    }
+    pruefe("Jede Korrekturkarte traegt eine Zahl", ohneZahl.join(" | ") || "alle", "alle");
+    // Und keine Karte wiederholt den gedeuteten Wert
+    const r2 = rf({ erwachsene: 2, kinder: 0 }, { unsicher: ["erwachsene"] });
+    pruefe("Karten wiederholen den Wert nicht",
+      r2.chips.filter((c) => c === "2 Erwachsene").length, 0);
+    const r3 = rf({ erwachsene: 1, kinder: 0 }, { unsicher: ["erwachsene"] });
+    pruefe("Bei einer Person keine Karte mit null", r3.chips.some((c) => /^0 /.test(c)) ? "ja" : "nein", "nein");
+  }
   pruefe("Rueckfrage: dasselbe Feld nie zweimal",
     rf(zwei, { unsicher: ["erwachsene"], rueckversichert: { erwachsene: true } }) ? "Frage" : "keine", "keine");
   pruefe("Rueckfrage: Feld ohne Eintrag bleibt still",
