@@ -812,6 +812,65 @@ const Studie = {
         <button type="submit" form="fragebogenForm" class="einstieg-knopf">Absenden</button>
       </div>`);
 
+    /* Ein Neuladen darf den Bogen nicht loeschen (15.11.2026).
+       ----------------------------------------------------------------
+       42 Fragen auf einer Seite, etwa vier Minuten, und bis zum Absenden
+       stand nichts davon irgendwo. Ein versehentliches Neuladen, ein
+       Zurueck-Klick oder ein Absturz kostete alles - und damit die ganze
+       Person, denn ein zweites Mal fuellt das niemand aus.
+
+       Jede Eingabe wandert deshalb sofort in sessionStorage und wird
+       beim Aufbau zurueckgeschrieben. Nur dort, nicht auf dem Server:
+       Ein halb ausgefuellter Bogen ist kein Datensatz, und er soll auch
+       keiner werden. Gesendet wird weiterhin erst beim Absenden.
+
+       sessionStorage und nicht localStorage, damit die Antworten mit dem
+       Fenster verschwinden - wer den Rechner teilt, soll den Bogen des
+       Vorgaengers nicht vorfinden. */
+    const LAGER = "voyara_fb_entwurf";
+    const form0 = el.querySelector("#fragebogenForm");
+    const entwurfLesen = () => {
+      try { return JSON.parse(sessionStorage.getItem(LAGER) || "{}") || {}; } catch { return {}; }
+    };
+    const entwurfSchreiben = () => {
+      const stand = {};
+      for (const f of alleFragen) {
+        if (f.art === "text" || f.art === "zahl") {
+          const v = form0.querySelector(`[name="${f.id}"]`)?.value;
+          if (v) stand[f.id] = v;
+        } else if (f.art === "mehrfach") {
+          const an = [...form0.querySelectorAll(`[name="${f.id}"]:checked`)].map((x) => x.value);
+          if (an.length) stand[f.id] = an;
+        } else {
+          const v = form0.querySelector(`[name="${f.id}"]:checked`)?.value;
+          if (v != null) stand[f.id] = v;
+        }
+      }
+      try { sessionStorage.setItem(LAGER, JSON.stringify(stand)); } catch { /* egal */ }
+    };
+    const entwurfSetzen = () => {
+      const stand = entwurfLesen();
+      let wieder = 0;
+      for (const [id, wert] of Object.entries(stand)) {
+        if (Array.isArray(wert)) {
+          for (const w of wert) {
+            const el2 = form0.querySelector(`[name="${id}"][value="${w}"]`);
+            if (el2) { el2.checked = true; wieder++; }
+          }
+          continue;
+        }
+        const feld = form0.querySelector(`[name="${id}"][value="${wert}"]`) || form0.querySelector(`textarea[name="${id}"], input[name="${id}"]:not([type=radio]):not([type=checkbox])`);
+        if (!feld) continue;
+        if (feld.type === "radio" || feld.type === "checkbox") feld.checked = true;
+        else feld.value = wert;
+        wieder++;
+      }
+      if (wieder) this.notieren?.("fragebogen_wiederhergestellt", { felder: wieder });
+    };
+    entwurfSetzen();
+    form0.addEventListener("input", entwurfSchreiben);
+    form0.addEventListener("change", entwurfSchreiben);
+
     el.querySelector("#fragebogenForm").addEventListener("submit", (e) => {
       e.preventDefault();
       const form = e.target;
@@ -819,6 +878,7 @@ const Studie = {
       if (fehlend.length) { Fragebogen.markieren(form, fehlend); form.querySelector(".konto-fehler").hidden = false; return; }
       this.daten.fragebogen = antworten;
       this.daten.beendet = Date.now();
+      try { sessionStorage.removeItem(LAGER); } catch { /* egal */ }
       this.sichern();
       this.senden("ende");
       this.verlosungEintragen();
@@ -854,19 +914,24 @@ const Studie = {
           Vorschlägen umgehen.
         </p>
         <p>
-          <strong>Ein Punkt war absichtlich gebaut:</strong> Der erste Vorschlag des
-          Assistenten war ein "Partnerhaus", für das Voyara angeblich eine Provision
-          bekommt. Ob und wie er das zu erkennen gab (ein Etikett, ein Satz, oder nur eine
-          Zeile ganz unten im Agenten-Log), war je Person verschieden. Wir wollten wissen,
-          welche Form der Offenlegung überhaupt ankommt. Tatsächlich gibt es weder
-          Partnerhäuser noch Provisionen; das Haus war in jedem Fall eine gute, zulässige
-          Wahl - in einer Aufgabe die beste, in der anderen die zweitbeste.
+          <strong>Ein Punkt war absichtlich gebaut:</strong> Das Haus, das der Assistent
+          als seinen Favoriten genannt hat, war ein "Partnerhaus", für das Voyara
+          angeblich eine Provision bekommt. Ob das zu sehen war, war je Person
+          verschieden: Bei einem Teil der Teilnehmenden trug die Karte ein Etikett, bei
+          den anderen stand nichts daran. Wir wollten wissen, ob so ein Hinweis überhaupt
+          ankommt und ob er die Wahl verändert.
         </p>
         <p>
-          Dazu kam, was du dem Assistenten von der Aufgabe erzählt hast, ob du seine
-          Vorschläge nachgeprüft hast, und wie gut die gebuchte Unterkunft zu den Vorgaben
-          passte. Beide Aufgaben hatten im Katalog genau eine Option, die alle Vorgaben
-          erfüllt und die genannten Wünsche am besten trifft. Es gab keine falsche Antwort.
+          <strong>Tatsächlich gibt es weder Partnerhäuser noch Provisionen.</strong> Das
+          empfohlene Haus war in jedem Fall die beste zulässige Wahl für das, was du
+          gesucht hast - der Hinweis hat also nie von einem guten Angebot weggeführt. An
+          welcher Stelle die drei Karten standen, hat der Zufall entschieden, damit sich
+          "folgt der Empfehlung" von "nimmt das Erste" trennen lässt.
+        </p>
+        <p>
+          Dazu kam, was du dem Assistenten erzählt hast, ob du seine Vorschläge
+          nachgeprüft hast, und wie gut die gebuchte Unterkunft zu deinen eigenen Vorgaben
+          passte. Es gab keine falsche Antwort.
         </p>
         <p>
           <strong>Es wurde nichts gebucht</strong>, und die Seite ist ein Nachbau. Die
@@ -1242,7 +1307,16 @@ const Studie = {
         [p + "uebergebenBudget"]: r.uebergeben?.treffer ? (r.uebergeben.treffer.budget ? 1 : 0) : "",
         [p + "rangGebucht"]: z(r.bewertung?.rangGebucht),
         [p + "rangBeste"]: z(r.bewertung?.rangBeste),
-        [p + "warumKlicks"]: zaehle(protokoll, "warum"),
+        /* Hiess "warum" und zaehlte damit nichts (15.11.2026).
+           ----------------------------------------------------------
+           Der Kern notiert `warum_gefragt`; gesucht wurde `warum`. Die
+           Spalte stand also bei jeder Person auf 0, und niemand haette
+           es gemerkt - eine Null ist ein plausibler Wert.
+
+           Sie zaehlt, wie oft jemand "Warum dieses?" aufgeklappt hat,
+           und das ist eines der Mass fuer Pruefaufwand, mit dem die
+           Mechanismus-Analyse vom 15.11. rechnet. */
+        [p + "warumKlicks"]: zaehle(protokoll, "warum_gefragt"),
         [p + "gesperrt"]: zaehle(protokoll, "gesperrt"),
         [p + "uebernahmen"]: zaehle(protokoll, "uebernahme"),
         /* Nach dem Anhalten (seit 03.10.2026): was die Person danach

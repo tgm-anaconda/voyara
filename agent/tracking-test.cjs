@@ -50,5 +50,57 @@ const soll={a1_filterKombination:"Oktober, 2 Erwachsene, Halbpension, Strand bis
   a1_engstelleFelder:"strand",a1_engstelleFragen:1,a1_widerspruchFragen:1,a1_regionVorgemerkt:"mallorca"};
 let falsch=0;
 for(const k of Object.keys(soll)){ if(JSON.stringify(sp[k])!==JSON.stringify(soll[k])){falsch++;console.log(`  FALSCH ${k}: ist ${JSON.stringify(sp[k])}, soll ${JSON.stringify(soll[k])}`);} }
+
+/* Jeder gezaehlte Ereignisname muss auch geschrieben werden (15.11.2026).
+   ====================================================================
+   Gefunden beim Durchgang am 15.11.2026: `warumKlicks` zaehlte
+   `"warum"`, der Kern notiert aber `"warum_gefragt"`. Die Spalte stand
+   bei JEDER Person auf 0, und das faellt nicht auf - eine Null ist ein
+   plausibler Wert. Genau dieselbe Form wie der Tippfehler im
+   Leer-Zustands-Selektor drei Tage vorher: zwei Stellen, die
+   uebereinstimmen muessen, und nur eine wurde gepflegt.
+
+   Also nachgesehen statt gehofft: Jeder Name, den `auswertung` zaehlt,
+   muss irgendwo im Projekt als Ereignis geschrieben werden. Geprueft
+   wird gegen den Quelltext, weil die Schreibstellen ueber sechs Dateien
+   verteilt sind und in vier Formen vorkommen (notieren, melden,
+   Studie.notieren, direkter Push ins Protokoll). */
+{
+  /* ALLE Dateien, nicht eine gepflegte Liste.
+     ------------------------------------------------------------------
+     Erster Versuch hatte elf Dateien fest eingetippt, `fluege.js` fehlte,
+     und die Pruefung meldete zwei Ereignisse als tot, die es nicht sind.
+     Eine Wache gegen "zwei Stellen muessen uebereinstimmen", die selbst
+     eine zweite Stelle pflegt, ist keine. */
+  const sammeln = (ordner) => fs.readdirSync(ordner, { withFileTypes: true })
+    .filter((e) => e.isFile() && e.name.endsWith(".js") && !e.name.includes("-test"))
+    .map((e) => ordner + "/" + e.name);
+  const quellen = [...sammeln(B.replace(/\/$/, "")), ...sammeln(B + "agent")]
+    .filter((q) => !q.includes("_backup"));
+  let text = "";
+  for (const q of quellen) { try { text += fs.readFileSync(q, "utf8"); } catch { /* Datei fehlt */ } }
+  const st = fs.readFileSync(B + "agent/studie.js", "utf8");
+  const gezaehlt = new Set();
+  for (const m of st.matchAll(/zaehle\(\s*\w+\s*,\s*"([a-z0-9_]+)"/g)) gezaehlt.add(m[1]);
+  /* Gesucht wird die SCHREIBSTELLE, nicht das blosse Vorkommen.
+     ------------------------------------------------------------------
+     Erster Versuch fragte nur, ob der Name irgendwo als Zeichenkette
+     steht. Damit bestand die Pruefung auch mit dem wieder eingebauten
+     Fehler: "warum" steht als Stoppwort in politik.js und faq.js. Eine
+     Wache, die auf jedes Vorkommen anspringt, prueft nichts.
+
+     Ereignisse werden in vier Formen geschrieben, alle hier abgedeckt:
+     notieren("x"), melden("x"), Studie.notieren?.("x") und der direkte
+     Push mit ereignis: "x". */
+  const schreibt = (name) => {
+    const n = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return new RegExp(`(?:notieren|melden|notieren\\?\\.)\\(\\s*["'\`]${n}["'\`]`).test(text)
+      || new RegExp(`ereignis:\\s*["'\`]${n}["'\`]`).test(text);
+  };
+  const tot = [];
+  for (const name of gezaehlt) if (!schreibt(name)) tot.push(name);
+  if (tot.length) { falsch += tot.length; console.log("  FALSCH gezaehlte Ereignisse, die nie geschrieben werden: " + tot.join(", ")); }
+  else console.log(`  ${gezaehlt.size} gezaehlte Ereignisnamen, alle werden auch geschrieben`);
+}
 console.log(`${Object.keys(soll).length-falsch} richtig, ${falsch} falsch`);
 process.exit(falsch?1:0);
