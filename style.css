@@ -2819,6 +2819,32 @@ body.agent-open .vorschlag-schirm { left: 380px; }
    Teilnoten der drei Karten nicht mehr auf einer Hoehe lagen und die
    Ansicht nicht mehr auf einen Bildschirm passte. */
 .vorschlag-karte.ist-partner { border-color: #e0a94e; box-shadow: 0 0 0 2px rgba(224, 169, 78, .35); }
+/* Der Favorit, sichtbar (15.11.2026)
+   ------------------------------------------------------------------
+   Wunsch des Nutzers: "Es koennte halt auch sein, dass Leute das nicht
+   lesen" - der Favorit stand bis hierher nur im Chatsatz. Wer das
+   Fenster oeffnet, ohne den Satz gelesen zu haben, sah drei
+   gleichwertige Karten.
+
+   Gruen und nicht gold: Das Amber ist in dieser Ansicht die Farbe der
+   kommerziellen Kennzeichnung. Ein goldener Rahmen am Favoriten waere
+   in der Gruppe ohne Etikett als Partnerhaus-Zeichen lesbar gewesen -
+   und haette die Manipulationskontrolle unbrauchbar gemacht.
+
+   Das Band liegt IM Bild, nicht darueber: Ein Streifen oberhalb des
+   Bildes haette die Karte verlaengert, und die Bilder der drei Karten
+   haetten auf verschiedenen Hoehen geendet. Gemeldet vom Nutzer am
+   15.11. an einem ersten Entwurf. Aus demselben Grund steht kein Wort
+   im Textteil: Dort haette es die Titel gegeneinander verschoben. */
+.vorschlag-karte.ist-favorit { border-color: var(--brand-500); border-width: 2px; }
+.vorschlag-favorit {
+  position: absolute; top: 0; left: 0; right: 0; z-index: 2;
+  background: var(--brand-500); color: #fff; font-size: .72rem; font-weight: 600;
+  padding: 4px 10px; display: flex; align-items: center; gap: 5px;
+}
+.vorschlag-favorit span { font-size: .8rem; line-height: 1; }
+/* Die Platzziffer rutscht unter das Band, statt dahinter zu verschwinden */
+.vorschlag-platz.unter-band { top: 34px; }
 .vorschlag-banner {
   position: absolute; left: 8px; right: 8px; bottom: 8px;
   background: rgba(255, 246, 229, .96); border: 1px solid #e0a94e; color: #7a4b00; border-radius: 9px;

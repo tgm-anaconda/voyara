@@ -2,7 +2,7 @@
  *
  *   node agent/durchgang-test.cjs         der jetzige Stand, erwartet 0 falsch
  *   node agent/durchgang-test.cjs --alt   Gegenprobe am Stand davor
- *                                         (_backup/2026-11-15-empfehlung/)
+ *                                         (_backup/2026-11-15-favorit/)
  *
  * Geprueft wird, was Logik ist:
  *
@@ -29,7 +29,7 @@
 const fs = require("fs"), vm = require("vm");
 const B = "/Users/tom-gabrielmielicki/Desktop/Bachelor Arbeit/Website/";
 const alt = process.argv.includes("--alt");
-const quelle = alt ? B + "_backup/2026-11-15-empfehlung/" : B;
+const quelle = alt ? B + "_backup/2026-11-15-favorit/" : B;
 
 const ctx = { console, window: {},
   document: { querySelectorAll: () => [], querySelector: () => null, getElementById: () => null,
@@ -848,7 +848,33 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     pruefe("Favoritensatz nur einmal je Vorlage",
       /favoritGenanntFuer/.test(quelltext) && /favNeu/.test(quelltext) ? "einmal" : "bei jedem Oeffnen", "einmal");
 
-    // 5. Die feste 1 im Log ist weg
+    /* 5. Gelost wird nur ueber die erste Reihe (15.11.2026).
+       Drei Karten passen ins Bild, ab der vierten scrollt das Fenster.
+       Der Favorit darf nie unterhalb der Kante landen. */
+    {
+      const sechs = ["a","b","c","d","e","f"].map((id) => ({ id }));
+      const plaetze = {};
+      let hintenVerschoben = 0;
+      for (let i = 0; i < 2000; i++) {
+        kern.lauf = {};
+        const r = kern.anzeigeReihenfolge(sechs);
+        plaetze[r.indexOf("a")] = (plaetze[r.indexOf("a")] || 0) + 1;
+        // Die Haeuser ab Platz vier behalten ihre Reihenfolge nach Guete
+        if (r.slice(3).join("") !== "def") hintenVerschoben++;
+      }
+      const erste = (plaetze[0] || 0) + (plaetze[1] || 0) + (plaetze[2] || 0);
+      pruefe("Sechs Karten: Favorit immer in der ersten Reihe", erste, 2000);
+      pruefe("Sechs Karten: zweite Reihe bleibt nach Guete", hintenVerschoben, 0);
+      const ab = [0, 1, 2].map((i) => Math.abs((plaetze[i] || 0) - 2000 / 3) / (2000 / 3));
+      pruefe("Sechs Karten: erste Reihe gleichverteilt",
+        Math.max(...ab) < 0.1 ? "gleich" : `${Math.round(Math.max(...ab) * 100)} % daneben: ${JSON.stringify(plaetze)}`, "gleich");
+      // Bei drei Karten aendert sich nichts
+      kern.lauf = {};
+      const drei = kern.anzeigeReihenfolge([{ id: "a" }, { id: "b" }, { id: "c" }]);
+      pruefe("Drei Karten: weiterhin alle drei im Los", drei.length, 3);
+    }
+
+    // 6. Die feste 1 im Log ist weg
     pruefe("Keine feste Eins mehr im Vorschlagslog",
       /Vorschlag 1 \(mein Vorschlag\)/.test(quelltext) ? "noch da" : "weg", "weg");
   }
@@ -915,6 +941,57 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     pruefe("Mischen: keine Frage geht verloren", mische("T", drei).length, 3);
   } else {
     pruefe("Fragebogen geladen", "nein", "ja");
+  }
+
+  /* Die Markierung des Favoriten auf der Karte (15.11.2026) */
+  {
+    /* Aus der Sicherung lesen, wenn sie die Datei haelt - sonst prueft
+       die Gegenprobe den neuen Quelltext und besteht immer. Dieselbe
+       Regel wie beim Laden oben; am 15.11. erst vergessen und an einer
+       Gegenprobe aufgefallen, die nur fuenf statt zehn Fehler meldete. */
+    const quelle2 = (datei, flach) => {
+      const ausSicherung = quelle + flach;
+      return fs.readFileSync(alt && fs.existsSync(ausSicherung) ? ausSicherung : B + datei, "utf8");
+    };
+    const vq = quelle2("agent/vorschlaege.js", "vorschlaege.js");
+    const cq = quelle2("style.css", "style.css");
+    pruefe("Karte kennt den Favoriten", /istFavorit/.test(vq) ? "ja" : "nein", "ja");
+    pruefe("Band liegt im Bild, nicht darueber",
+      /\.vorschlag-favorit\s*\{[^}]*position:\s*absolute/.test(cq) ? "im Bild" : "darueber", "im Bild");
+    /* Gruen, nicht gold: Das Amber gehoert der Kennzeichnung. Ein
+       goldener Favoritenrahmen waere in der Gruppe ohne Etikett als
+       Partnerhaus-Zeichen lesbar und wuerde die Manipulationskontrolle
+       zerstoeren. */
+    const regel = (cq.match(/\.vorschlag-favorit\s*\{[^}]*\}/) || [""])[0]
+      + (cq.match(/\.vorschlag-karte\.ist-favorit\s*\{[^}]*\}/) || [""])[0];
+    pruefe("Favoritenfarbe ist nicht das Amber der Kennzeichnung",
+      /e0a94e|c98a2e|7a4b00/i.test(regel) ? "Amber" : "andere Farbe", "andere Farbe");
+    pruefe("Favoritenfarbe kommt aus der Markenfarbe",
+      /--brand-/.test(regel) ? "ja" : "nein", "ja");
+    // Die Platzziffer darf nicht hinter dem Band verschwinden
+    pruefe("Platzziffer weicht dem Band aus",
+      /\.vorschlag-platz\.unter-band/.test(cq) ? "ja" : "nein", "ja");
+  }
+
+  /* Das Partnerhaus ist immer das beste (15.11.2026) */
+  {
+    const sqA = quelle + "studie.js";
+    const sq = fs.readFileSync(alt && fs.existsSync(sqA) ? sqA : B + "agent/studie.js", "utf8");
+    pruefe("Beste/zweitbeste wird nicht mehr gelost",
+      /partnerBesteIn = reihenfolge\[Math\.random/.test(sq) ? "wird gelost" : "fest", "fest");
+    pruefe("Standard ist das beste Haus",
+      /else partnerBesteIn = "beide";/.test(sq) ? "beide" : "etwas anderes", "beide");
+  }
+
+  /* Die Manipulationskontrolle zielt auf das Mitverdienen, nicht auf
+     jede Markierung - sonst koennte seit dem gruenen Band jeder
+     wahrheitsgemaess "ja" ankreuzen. */
+  if (FB && FBLISTE) {
+    const mk = FBLISTE.flatMap((b) => b.fragen).find((f) => f.id === "m_etikett");
+    pruefe("Manipulationskontrolle nennt das Mitverdienen",
+      /mitverdient|provision|verdient/i.test(mk?.text || "") ? "ja" : `nein: ${mk?.text}`, "ja");
+    pruefe("Manipulationskontrolle fragt nicht nach jeder Markierung",
+      /gekennzeichnet/i.test(mk?.text || "") ? "zu weit" : "eng genug", "eng genug");
   }
 
   console.log(`\n${gut} richtig, ${schlecht} falsch`);

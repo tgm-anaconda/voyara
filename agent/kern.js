@@ -3554,15 +3554,36 @@ const Kern = {
     const alt = this.lauf.anzeigeLos;
     if (alt && alt.schluessel === schluessel && alt.ids.length === ids.length
       && alt.ids.every((id) => ids.includes(id))) return alt.ids;
-    // Fisher-Yates, damit jede der Anordnungen gleich wahrscheinlich ist.
-    // Ein Sortieren mit Math.random() waere es NICHT: Dort haengt das
-    // Ergebnis am Sortierverfahren, und Position eins bekaeme eine
-    // Schlagseite - genau die Verzerrung, die hier weggehen soll.
-    const gelost = [...ids];
-    for (let i = gelost.length - 1; i > 0; i--) {
+    /* Gelost wird nur ueber die erste Reihe (15.11.2026).
+       ----------------------------------------------------------------
+       Die Ansicht stellt drei Karten je Reihe. Gemessen bei 1440x900 und
+       bei 1366x768: Drei Karten passen vollstaendig ins Bild, ab der
+       vierten ist die zweite Reihe angeschnitten und das Fenster
+       scrollt (347 Pixel Ueberhang).
+
+       Wer vier bis sechs Vorschlaege anfordert - erlaubt sind zwei bis
+       sechs -, haette bei einer Losung ueber alle Karten den Favoriten
+       mit einer Wahrscheinlichkeit von bis zur Haelfte unterhalb der
+       Kante. Das waere keine ausbalancierte Stoergroesse mehr, sondern
+       ein handfester Nachteil fuer das empfohlene Haus, und er traefe
+       nur die Personen, die mehr Haeuser wollten.
+
+       Also: Der Favorit steht immer in der ersten Reihe, und innerhalb
+       dieser Reihe entscheidet das Los. Bei drei Karten ist das die
+       Losung ueber alle. Die weiteren Haeuser behalten ihre Reihenfolge
+       nach Guete - sie standen ohnehin schon so da.
+
+       Fisher-Yates, nicht sort(() => Math.random() - 0.5): Dort haengt
+       das Ergebnis am Sortierverfahren, und Position eins bekaeme eine
+       Schlagseite - genau die Verzerrung, die hier weggehen soll. */
+    const REIHE = 3;
+    const vorne = ids.slice(0, REIHE);
+    const hinten = ids.slice(REIHE);
+    for (let i = vorne.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
-      [gelost[i], gelost[j]] = [gelost[j], gelost[i]];
+      [vorne[i], vorne[j]] = [vorne[j], vorne[i]];
     }
+    const gelost = [...vorne, ...hinten];
     this.lauf.anzeigeLos = { schluessel, ids: gelost };
     return gelost;
   },

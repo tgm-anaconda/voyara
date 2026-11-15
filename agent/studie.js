@@ -161,11 +161,36 @@ const Studie = {
     // Nur noch fuer Tests und alte Links; im Normalfall "log" (still)
     const ALT = ["chip", "log", "agent", "etikett", "offen", "keine"];
     const offenlegung = ALT.includes(s.offenlegung) ? s.offenlegung : "log";
+    /* Beste gegen zweitbeste ist keine Unterscheidung (15.11.2026).
+       ----------------------------------------------------------------
+       Bis hierher wurde gelost, ob das Partnerhaus die beste oder die
+       zweitbeste zulaessige Option ist. Nachgemessen am eigenen Massstab
+       der Studie (`Aufgaben.zulaessige`):
+
+         Aufgabe "familie": Rang 1 bis 4 haben denselben Rangwert (144).
+                            Welches "das beste" ist, entscheidet der
+                            Preis als Stichentscheid.
+         Aufgabe "paar":    538 gegen 537, also 0,2 Prozent.
+
+       Die Stichprobe waere also halbiert worden fuer einen
+       Qualitaetsunterschied von zwei Promille. In der Live-Einstellung
+       lief der Faktor ohnehin leer: Bei der freien Aufgabe ist
+       `partnerBesteIn === "frei" === aufgabe.id`, der Zweig "beste" galt
+       damit immer.
+
+       Jetzt steht es ausdruecklich da, statt sich aus einem Vergleich zu
+       ergeben, den niemand mehr nachvollzieht. Die Stellschraube bleibt
+       fuer Testlaeufe erhalten.
+
+       Was das kostet, offen gesagt: Wenn das empfohlene Haus immer
+       objektiv das beste ist, kostet es nichts, der Empfehlung zu
+       folgen. Die Kennzeichnung misst dann die Reaktion auf einen
+       kommerziellen Hinweis, nicht das Abwaegen eines echten
+       Interessenkonflikts. Das ist die engere, aber saubere Frage. */
     let partnerBesteIn = null;
-    if (s.partner === "beste") partnerBesteIn = "beide";
-    else if (s.partner === "zweitbeste") partnerBesteIn = "keine";
+    if (s.partner === "zweitbeste") partnerBesteIn = "keine";
     else if (s.partner === "keine") partnerBesteIn = "ohne";
-    else partnerBesteIn = reihenfolge[Math.floor(Math.random() * reihenfolge.length)];
+    else partnerBesteIn = "beide";
     return { kennzeichnung, offenlegung, partnerBesteIn, einladung: s.einladung || null, ausgelost: Date.now() };
   },
 

@@ -266,8 +266,16 @@ const FRAGEBOGEN = [
 
          "Weiss nicht" steht ausdruecklich dabei. Ohne diese Stufe raten
          die Unsicheren, und Raten verteilt sich auf Ja und Nein - damit
-         waere die Falschalarmrate geschoent. */
-      { id: "m_etikett", text: "War eines der vorgeschlagenen Häuser besonders gekennzeichnet?", art: "wahl",
+         waere die Falschalarmrate geschoent.
+
+         Der Wortlaut zielt seit dem 15.11.2026 auf das Mitverdienen und
+         nicht mehr auf "besonders gekennzeichnet". Grund: Seit dem
+         gleichen Tag traegt der Favorit in JEDER Bedingung ein gruenes
+         Band. Auf die alte Frage haette jeder wahrheitsgemaess "ja"
+         antworten koennen, auch in der Kontrollgruppe - die
+         Falschalarmrate waere an der Decke gewesen und die Kontrolle
+         damit wertlos. */
+      { id: "m_etikett", text: "Wurde bei einem der Häuser darauf hingewiesen, dass Voyara daran mitverdient?", art: "wahl",
         optionen: ["Ja", "Nein", "Weiß nicht"] },
       /* Die Optik, als Robustheitspruefung.
          --------------------------------------------------------------

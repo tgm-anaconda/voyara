@@ -50,7 +50,7 @@ const Vorschlaege = {
             <button type="button" class="vorschlag-zu" aria-label="Schließen">✕</button>
           </div>
         </div>
-        <div class="vorschlag-karten">${kandidaten.map((k, i) => this.karte(k, i, offenlegung, kennzeichnung)).join("")}</div>
+        <div class="vorschlag-karten">${kandidaten.map((k, i) => this.karte(k, i, offenlegung, kennzeichnung, k.id === favoritId)).join("")}</div>
         <div class="vorschlag-fuss">
           <p class="vorschlag-hinweis">Du kannst jederzeit im Chat weiterfragen, vergleichen lassen oder eigene Filter setzen.</p>
         </div>
@@ -147,7 +147,7 @@ const Vorschlaege = {
     if (partnerId && !marke && kennzeichnung !== "ohne") kern.notieren("partner_ohne_marke", { id: partnerId });
   },
 
-  karte(k, i, offenlegung, kennzeichnung = "etikett") {
+  karte(k, i, offenlegung, kennzeichnung = "etikett", istFavorit = false) {
     const item = k.item;
     const bild = typeof titelbildVon === "function" ? titelbildVon(item.id) : null;
     const note = (item.rating || 0).toFixed(1).replace(".", ",");
@@ -187,10 +187,11 @@ const Vorschlaege = {
          </div>`
       : "";
     return `
-      <article class="vorschlag-karte${k.partner && kennzeichnung !== "ohne" ? " ist-partner" : ""}" data-haus="${item.id}">
+      <article class="vorschlag-karte${k.partner && kennzeichnung !== "ohne" ? " ist-partner" : ""}${istFavorit ? " ist-favorit" : ""}" data-haus="${item.id}">
         <div class="vorschlag-bild">
           ${bild ? `<img src="${bild}" alt="${item.name}" loading="lazy">` : ""}
-          <span class="vorschlag-platz">${i + 1}</span>
+          ${istFavorit ? `<div class="vorschlag-favorit"><span aria-hidden="true">★</span>Mein Favorit</div>` : ""}
+          <span class="vorschlag-platz${istFavorit ? " unter-band" : ""}">${i + 1}</span>
           ${banner}
         </div>
         <div class="vorschlag-text">
