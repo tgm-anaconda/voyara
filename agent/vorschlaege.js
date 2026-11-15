@@ -28,9 +28,9 @@ const Vorschlaege = {
   daten: null,
 
   /* kandidaten: [{ id, item, preis, partner, satz, aspekte }] */
-  zeigen(kandidaten, kern, { offenlegung = null, kontext = "", kennzeichnung = "etikett" } = {}) {
+  zeigen(kandidaten, kern, { offenlegung = null, kontext = "", kennzeichnung = "etikett", favoritId = null } = {}) {
     this.schliessen(true);
-    this.daten = { kandidaten, kern, offenlegung, kennzeichnung };
+    this.daten = { kandidaten, kern, offenlegung, kennzeichnung, favoritId };
     this.geoeffnet = Date.now();
     this.offen = true;
 
@@ -125,8 +125,24 @@ const Vorschlaege = {
        hier, was wirklich im Dokument steht. */
     const partnerId = kandidaten.find((k) => k.partner)?.id || null;
     const marke = !!el.querySelector(".vorschlag-karte.ist-partner") && /Partnerhaus/.test(el.textContent || "");
-    kern.notieren("vorschlagsansicht", { ids: kandidaten.map((k) => k.id), partner: partnerId, offenlegung, kennzeichnung,
-      karten: kandidaten.length, marke: kennzeichnung === "ohne" ? false : (partnerId ? marke : null) });
+    /* Die geloste Reihenfolge gehoert ins Protokoll (15.11.2026).
+       ----------------------------------------------------------------
+       Seit die Anzeige gelost wird, ist "Partnerhaus gebucht" nicht mehr
+       dasselbe wie "erste Karte gebucht". Welche der beiden Erklaerungen
+       zutrifft, laesst sich nur rechnen, wenn dasteht, wo die Karte
+       stand. Ohne diese zwei Felder waere das Losen sogar schaedlich: Es
+       nimmt die Verzerrung heraus, aber ohne Protokoll bliebe sie als
+       unerklaerte Streuung in den Daten.
+
+       `reihenfolge` sind die Haeuser in Anzeigereihenfolge,
+       `partnerPosition` ist 1, 2 oder 3 - und null, wenn gar kein
+       Partnerhaus vorgesehen war. */
+    const reihenfolge = kandidaten.map((k) => k.id);
+    const partnerPosition = partnerId ? reihenfolge.indexOf(partnerId) + 1 : null;
+    const favPosition = favoritId ? reihenfolge.indexOf(favoritId) + 1 : null;
+    kern.notieren("vorschlagsansicht", { ids: reihenfolge, partner: partnerId, offenlegung, kennzeichnung,
+      karten: kandidaten.length, marke: kennzeichnung === "ohne" ? false : (partnerId ? marke : null),
+      reihenfolge, partnerPosition, favoritId: favoritId || null, favoritPosition: favPosition });
     // In der Kontrollbedingung ist die fehlende Marke der Sollzustand
     if (partnerId && !marke && kennzeichnung !== "ohne") kern.notieren("partner_ohne_marke", { id: partnerId });
   },
@@ -266,7 +282,12 @@ const Vorschlaege = {
     const k = this.daten?.kern;
     const kand = this.daten?.kandidaten || [];
     const pos = kand.findIndex((x) => x.id === id);
-    k?.notieren("vorschlag_geklickt", { id, position: pos + 1, partner: !!kand[pos]?.partner, sekunden: Math.round((Date.now() - this.geoeffnet) / 1000) });
+    // `position` ist die Stelle auf dem Bildschirm, nicht der Rang nach
+    // Guete - seit dem Losen sind das zwei verschiedene Dinge, und
+    // `favorit` sagt, ob es das empfohlene Haus war.
+    k?.notieren("vorschlag_geklickt", { id, position: pos + 1, partner: !!kand[pos]?.partner,
+      favorit: !!this.daten?.favoritId && id === this.daten.favoritId,
+      sekunden: Math.round((Date.now() - this.geoeffnet) / 1000) });
     this.schliessen(true);
     // Vor dem Wechsel auf die Hausseite bleibt ein Knopf im Chat stehen:
     // Wer sich das erste Haus ansieht, hat sich noch nicht entschieden.

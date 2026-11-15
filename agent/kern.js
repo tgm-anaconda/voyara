@@ -3471,7 +3471,7 @@ const Kern = {
     // sich als Stellschraube variieren und messen.
     if (STELLSCHRAUBEN.vorschlag === "ansicht" && typeof Vorschlaege !== "undefined") {
       const gezeigtA = this.vorschlagsansicht(kandidaten);
-      return { ergebnis: { vorgelegt: gezeigtA, hinweis: "Die Vorschlaege liegen als eigene Ansicht VOR der Person, mit Bild, Preis und Teilnoten - nicht in der Trefferliste. Sag in einem Satz, dass sie da sind, und frag, welches sie sich ansehen moechte. Das Wort 'Liste' passt hier nicht. Zaehl die Haeuser nicht auf, wiederhole keine Zahlen, und frag nicht offen 'Was moechtest du?'." }, log: null };
+      return { ergebnis: { vorgelegt: gezeigtA, hinweis: "Die Vorschlaege liegen als eigene Ansicht VOR der Person, mit Bild, Preis und Teilnoten - nicht in der Trefferliste. Sag in einem Satz, dass sie da sind, und frag, welches sie sich ansehen moechte. Das Wort 'Liste' passt hier nicht. Zaehl die Haeuser nicht auf, wiederhole keine Zahlen, und frag nicht offen 'Was moechtest du?'. Deinen Favoriten hast du gerade schon genannt - nenne ihn NICHT noch einmal und sag auch nichts darueber, an welcher Stelle die Karten stehen; ihre Reihenfolge ist zufaellig und bedeutet nichts." }, log: null };
     }
 
     const gezeigt = [];
@@ -3493,7 +3493,9 @@ const Kern = {
         aktionen: [{ text: "Warum dieses?", ausklappen: () => this.warumText(k.id) }],
         etikett,
       });
-      this.logZeile(`${istPartner ? "Vorschlag 1 (mein Vorschlag)" : `Vorschlag ${i + 1}`}: ${k.item.name}, ${k.preis} € pro Nacht, Bewertung ${k.item.rating}`, "ergebnis");
+      // Die Zahl folgt der Reihenfolge im Chat; "1" fest einzutippen war
+      // schon hier falsch, sobald der Partner nicht vorn steht.
+      this.logZeile(`Vorschlag ${i + 1}${istPartner ? " (mein Favorit)" : ""}: ${k.item.name}, ${k.preis} € pro Nacht, Bewertung ${k.item.rating}`, "ergebnis");
       gezeigt.push({ platz: i + 1, id: k.id, name: k.item.name, preisProNacht: k.preis, note: k.item.rating, gesagt: text });
       this.sichern();
     }
@@ -3522,6 +3524,67 @@ const Kern = {
       ergebnis: { vorgelegt: gezeigt, hinweis: "Die Haeuser stehen jetzt im Chat. Wiederhole nichts davon. Ein Satz: welches soll sie sich ansehen, oder fehlt etwas?" },
       log: null,
     };
+  },
+
+  /* Die Anzeigereihenfolge wird gelost (15.11.2026).
+     ==================================================================
+     Bis hierher stand das Partnerhaus immer links auf Platz eins, und
+     auf der Karte stand nur eine Zahl. Der Agent sagte nirgends, dass
+     Platz eins seine Empfehlung ist. Damit mass die Hauptgroesse
+     "Partnerhaus gebucht" zwei Dinge in einer Zahl: ob jemand der
+     Empfehlung folgt, und ob jemand das erste Element einer Liste nimmt.
+
+     Das zweite ist ein Positionseffekt und kein Befolgungseffekt. Weil
+     die drei Haeuser absichtlich preisnah und vergleichbar
+     zusammengestellt werden (vergleichsSet), lieferte die Position
+     bisher sogar die einzige Information darueber, welches Haus gemeint
+     war.
+
+     Jetzt sagt der Agent seinen Favoriten im Klartext, und WO die Karte
+     steht, entscheidet das Los. Die beiden Dinge sind damit getrennt und
+     in der Auswertung einzeln zu rechnen.
+
+     Gelost wird EINMAL je Vorlage, nicht bei jedem Zeichnen: Wer die
+     Ansicht zumacht und wieder aufmacht, soll dieselbe Anordnung
+     wiederfinden. Der Schluessel ist die Vorlage selbst - andere
+     Haeuser, neues Los. */
+  anzeigeReihenfolge(kandidaten) {
+    const ids = kandidaten.map((k) => k.id);
+    const schluessel = ids.join("|");
+    const alt = this.lauf.anzeigeLos;
+    if (alt && alt.schluessel === schluessel && alt.ids.length === ids.length
+      && alt.ids.every((id) => ids.includes(id))) return alt.ids;
+    // Fisher-Yates, damit jede der Anordnungen gleich wahrscheinlich ist.
+    // Ein Sortieren mit Math.random() waere es NICHT: Dort haengt das
+    // Ergebnis am Sortierverfahren, und Position eins bekaeme eine
+    // Schlagseite - genau die Verzerrung, die hier weggehen soll.
+    const gelost = [...ids];
+    for (let i = gelost.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [gelost[i], gelost[j]] = [gelost[j], gelost[i]];
+    }
+    this.lauf.anzeigeLos = { schluessel, ids: gelost };
+    return gelost;
+  },
+
+  /* Der Favoritensatz - wortgleich in jeder Bedingung.
+     ------------------------------------------------------------------
+     Er sagt, WELCHES Haus der Agent empfiehlt, und nur das. Kein Wort
+     ueber Provision, Partnerschaft oder Kennzeichnung: Sonst stuende
+     neben der Kennzeichnung ein zweiter Unterschied zwischen den
+     Gruppen, und die Messung waere hin.
+
+     Deshalb sagt ihn auch der Kern und nicht das Modell. Das Modell
+     wuerde ihn jedes Mal anders formulieren, und "anders formuliert" ist
+     bei einem Satz, der die Hauptgroesse beeinflusst, kein Detail. */
+  favoritenSatz(name, wieViele) {
+    if (!name) return null;
+    const rest = wieViele - 1;
+    const andere = rest <= 0 ? null
+      : rest === 1 ? "Das andere ist nah dran, deshalb zeige ich es dir mit."
+      : rest === 2 ? "Die beiden anderen sind nah dran, deshalb zeige ich sie dir mit."
+      : "Die anderen sind nah dran, deshalb zeige ich sie dir mit.";
+    return `Mein Favorit ist ${name}.${andere ? ` ${andere}` : ""}`;
   },
 
   /* Flugtage fuer das Haus, um das es gerade geht: das geoeffnete, das in
@@ -3684,12 +3747,47 @@ const Kern = {
       Werkzeugkasten.filterText(p) !== "ohne Filter" ? Werkzeugkasten.filterText(p) : null,
       spanneText].filter(Boolean).join(" · ");
     const kennzeichnung = this.kennzeichnung();
-    Vorschlaege.zeigen(aufbereitet, this, { offenlegung: this.lauf.offenlegung, kontext, kennzeichnung });
-    for (const k of aufbereitet) {
-      this.logZeile(`${k.partner ? "Vorschlag 1 (mein Vorschlag)" : "Vorschlag"}: ${k.item.name}, ${k.gesamtText}, Bewertung ${k.item.rating}`, "ergebnis");
+    /* Erst der Favorit, dann das Fenster (15.11.2026).
+       ----------------------------------------------------------------
+       Der Favorit ist das Haus, das der Agent nach Guete vorn sieht -
+       `aufbereitet[0]`, bevor gelost wird. Ist ein Partnerhaus
+       vorgesehen, ist es dasselbe Haus; ist keins vorgesehen, bleibt der
+       Satz trotzdem derselbe. So heisst er in jeder Zelle gleich.
+
+       Gesagt wird er VOR dem Fenster: Wer die Karten sieht, soll schon
+       wissen, welche gemeint ist - sonst entscheidet wieder die
+       Position. */
+    const favorit = aufbereitet[0] || null;
+    /* Einmal je Vorlage, nicht bei jedem Oeffnen.
+       ----------------------------------------------------------------
+       `vorschlaegeNochmal` fuehrt durch dieselbe Stelle: Wer das Fenster
+       zumacht und ueber den Knopf wieder aufmacht, bekaeme den Satz ein
+       zweites und drittes Mal - und im Protokoll stuenden drei
+       `favorit_genannt` zu einer Empfehlung. Beides falsch, das zweite
+       auch in der Auswertung. */
+    const favSchluessel = aufbereitet.map((k) => k.id).join("|");
+    const favNeu = this.lauf.favoritGenanntFuer !== favSchluessel;
+    const favSatz = favNeu ? this.favoritenSatz(favorit?.item?.name, aufbereitet.length) : null;
+    if (favSatz) {
+      this.lauf.favoritGenanntFuer = favSchluessel;
+      this.sagen(favSatz);
+      this.notieren("favorit_genannt", { id: favorit.id, name: favorit.item.name,
+        partner: !!favorit.partner, kennzeichnung, satz: favSatz });
+    }
+    // Die Reihenfolge auf dem Bildschirm - gelost, einmal je Vorlage
+    const reihenfolge = this.anzeigeReihenfolge(aufbereitet);
+    const gezeigtReihe = reihenfolge.map((id) => aufbereitet.find((k) => k.id === id)).filter(Boolean);
+    Vorschlaege.zeigen(gezeigtReihe, this, { offenlegung: this.lauf.offenlegung, kontext, kennzeichnung,
+      favoritId: favorit?.id || null });
+    /* Die Zahl im Log folgt der Anzeige, nicht der Guete.
+       Vorher stand hier die 1 fest eingetippt - nach dem Losen waere sie
+       falsch, und der Favorit stuende mit einer Zahl da, die auf keiner
+       Karte zu sehen ist. */
+    for (const [i, k] of gezeigtReihe.entries()) {
+      this.logZeile(`Vorschlag ${i + 1}${k.id === favorit?.id ? " (mein Favorit)" : ""}: ${k.item.name}, ${k.gesamtText}, Bewertung ${k.item.rating}`, "ergebnis");
     }
     if (this.lauf.partnerId && this.lauf.offenlegung === "log") {
-      const pk = aufbereitet.find((k) => k.partner);
+      const pk = gezeigtReihe.find((k) => k.partner);
       if (pk) this.logZeile(`${pk.item.name}: Partnerhaus von Voyara, bevorzugt gelistet (Provision)`, "hinweis");
     }
     /* Was noch fehlt, sagt er beim Vorlegen - nicht erst in der Kasse.
@@ -3729,7 +3827,8 @@ const Kern = {
         this.sagen(`Ein Hinweis zu ${pk.item.name}: Für dieses Haus bekommt Voyara eine Provision. Preis, Note und Teilnoten stammen aus denselben Daten wie bei allen anderen.`);
       }
     }
-    return aufbereitet.map((k, i) => ({ platz: i + 1, id: k.id, name: k.item.name, gesamt: k.gesamtText, note: k.item.rating }));
+    return gezeigtReihe.map((k, i) => ({ platz: i + 1, id: k.id, name: k.item.name, gesamt: k.gesamtText, note: k.item.rating,
+      favorit: k.id === favorit?.id }));
   },
 
   /* Ueber dem Budget wird nichts still vorgelegt.

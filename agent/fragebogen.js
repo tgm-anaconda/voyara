@@ -79,6 +79,88 @@ const FRAGEBOGEN = [
   },
 
   /* ------------------------------------------------------------------
+     2b. Warum die Kennzeichnung wirkt - oder sich aufhebt (15.11.2026)
+     ------------------------------------------------------------------
+     Die Kennzeichnung kann ueber zwei gegenlaeufige Wege wirken. Der
+     eine senkt die Buchung: Die Person erkennt die Verkaufsabsicht und
+     wertet das Haus ab. Der andere hebt sie: Offenlegung wirkt ehrlich,
+     und das Empfohlene abzulehnen fuehlt sich an wie ein
+     Misstrauensvorwurf.
+
+     Heben sich beide auf, zeigt die Buchungsquote nichts, obwohl beides
+     passiert ist - ein Nullbefund, der keiner waere. Die drei Bloecke
+     machen die Wege einzeln sichtbar.
+
+     Alle Aussagen siebenstufig, Reihenfolge innerhalb jedes Blocks
+     gemischt (`mischen: true`), Position zwischen Buchung und
+     Demografie.
+
+     Keine dieser Aussagen nennt die Provision. Sonst liessen sie sich
+     in der Gruppe ohne Kennzeichnung nicht stellen, und fuer den
+     Vergleich muessen beide Gruppen dieselben Items bekommen.
+     ------------------------------------------------------------------ */
+  {
+    titel: "Die Auswahl des Assistenten",
+    wenn: () => Fragebogen.agentGenutzt(),
+    mischen: true,
+    fragen: [
+      { id: "p_absicht", text: "Der Assistent wollte mich zu einem bestimmten Haus bringen.", skala: SKALA_ZUSTIMMUNG },
+      { id: "p_eigeninteresse", text: "Bei der Auswahl ging es dem Assistenten auch um eigene Interessen.", skala: SKALA_ZUSTIMMUNG },
+      { id: "p_nachvollzug", text: "Mir war klar, warum der Assistent gerade diese Häuser vorgeschlagen hat.", skala: SKALA_ZUSTIMMUNG, umgekehrt: true },
+    ],
+  },
+
+  /* ------------------------------------------------------------------
+     2c. Wahrgenommene Ehrlichkeit
+     ------------------------------------------------------------------
+     Zwei Items statt drei, und das ist kein Versehen.
+
+     Der dritte Vorschlag lautete "Der Assistent geht ehrlich mit mir
+     um" - und genau dieser Satz steht seit dem 28.09.2026 im
+     TiA-Block als `v_ehrlich`, Wort fuer Wort. Dieselbe Aussage zweimal
+     im selben Bogen zu stellen, treibt die scheinbare Reliabilitaet der
+     Skala hoch, kostet Geduld und laesst offen, welche der beiden
+     Messungen in die Auswertung geht.
+
+     Also bleibt er dort stehen, wo er validiert hergeleitet ist. Der
+     Index der Ehrlichkeit bildet sich in der Auswertung aus DREI Items:
+     `v_ehrlich` plus die beiden hier. Steht so auch im Vault.
+     ------------------------------------------------------------------ */
+  {
+    titel: "Was der Assistent dir sagt",
+    wenn: () => Fragebogen.agentGenutzt(),
+    mischen: true,
+    fragen: [
+      { id: "p_nichts_verschwiegen", text: "Ich habe den Eindruck, dass mir der Assistent nichts verschweigt.", skala: SKALA_ZUSTIMMUNG },
+      { id: "p_angaben_verlass", text: "Auf die Angaben des Assistenten kann ich mich verlassen.", skala: SKALA_ZUSTIMMUNG },
+    ],
+  },
+
+  /* ------------------------------------------------------------------
+     2d. Unbehagen beim Ablehnen
+     ------------------------------------------------------------------
+     Der zweite Weg: Wer eine Empfehlung ausschlaegt, widerspricht
+     jemandem. Ist das unangenehm, steigt die Buchungsquote des
+     empfohlenen Hauses - aus Hoeflichkeit, nicht aus Ueberzeugung.
+
+     Dieser Block setzt voraus, dass die Person ueberhaupt eine
+     Empfehlung gehoert hat. Seit dem 15.11.2026 nennt der Agent seinen
+     Favoriten im Klartext, also trifft das auf jede Bedingung zu -
+     ausser, es kam nie zu einer Vorlage. Dann faellt der Block weg,
+     statt nach einem Gefuehl zu fragen, das es nicht geben konnte.
+     ------------------------------------------------------------------ */
+  {
+    titel: "Die Empfehlung",
+    wenn: () => Fragebogen.empfehlungGehoert(),
+    mischen: true,
+    fragen: [
+      { id: "p_unbehagen", text: "Ein anderes als das empfohlene Haus zu nehmen, hätte sich unangenehm angefühlt.", skala: SKALA_ZUSTIMMUNG },
+      { id: "p_misstrauen", text: "Ich hätte das Gefühl gehabt, dem Assistenten zu misstrauen, wenn ich mich anders entschieden hätte.", skala: SKALA_ZUSTIMMUNG },
+      { id: "p_leicht_uebergehen", text: "Es fiel mir leicht, die Empfehlung des Assistenten zu übergehen.", skala: SKALA_ZUSTIMMUNG, umgekehrt: true },
+    ],
+  },
+
+  /* ------------------------------------------------------------------
      3. Der Assistent
      ------------------------------------------------------------------
      Vier Facetten des TiA: Zuverlaessigkeit/Kompetenz,
@@ -175,6 +257,33 @@ const FRAGEBOGEN = [
           "Wie Menschen auf Hinweise zu bezahlten Platzierungen reagieren",
           "Wie schnell man eine Buchung abschließt",
           "Weiß ich nicht"] },
+      /* Die Manipulationskontrolle (15.11.2026).
+         --------------------------------------------------------------
+         Beiden Gruppen gestellt, und das ist der Punkt: Die Gruppe ohne
+         Kennzeichnung liefert die Falschalarmrate. Sagt dort ein Drittel
+         "ja, da war ein Etikett", ist ein Unterschied von zehn Punkten
+         in der anderen Gruppe nichts wert.
+
+         "Weiss nicht" steht ausdruecklich dabei. Ohne diese Stufe raten
+         die Unsicheren, und Raten verteilt sich auf Ja und Nein - damit
+         waere die Falschalarmrate geschoent. */
+      { id: "m_etikett", text: "War eines der vorgeschlagenen Häuser besonders gekennzeichnet?", art: "wahl",
+        optionen: ["Ja", "Nein", "Weiß nicht"] },
+      /* Die Optik, als Robustheitspruefung.
+         --------------------------------------------------------------
+         Die drei Haeuser sind preisnah und vergleichbar zusammengestellt,
+         aber ihre Bilder sind es nicht - die kommen aus dem Katalog. Ist
+         die Antwort ueber alle vier Zellen gleich verteilt, ist belegt,
+         dass die Bebilderung die Wahl nicht verschoben hat. Ist sie es
+         nicht, gehoert das in die Limitationen, und zwar mit Zahl.
+
+         Die Namen kommen aus der Vorlage, stehen also erst zur Laufzeit
+         fest. Welche drei es waren und in welcher Reihenfolge sie hier
+         standen, notiert `optionenMerken` - sonst ist die gespeicherte
+         Zahl (1, 2 oder 3) hinterher nicht zu deuten. */
+      { id: "m_optik", text: "Welches der drei Häuser sprach dich rein optisch am meisten an?", art: "wahl",
+        wenn: () => Fragebogen.vorlageNamen().length >= 2,
+        optionen: () => [...Fragebogen.vorlageNamen(), "Keines besonders"] },
     ],
   },
 
@@ -248,9 +357,75 @@ const Fragebogen = {
     return verlauf.some((n) => n.rolle === "user");
   },
 
+  /* Hat die Person ueberhaupt eine Empfehlung gehoert? (15.11.2026)
+     ------------------------------------------------------------------
+     Der Block zum Unbehagen fragt nach einem Gefuehl beim Ablehnen.
+     Wer nie eine Vorlage gesehen hat, kann nichts abgelehnt haben, und
+     die Antwort waere geraten. Gefragt wird deshalb das Protokoll, nicht
+     die Erinnerung. */
+  empfehlungGehoert() {
+    const prot = (typeof Studie !== "undefined" && Studie.kern?.lauf?.protokoll)
+      || (typeof Kern !== "undefined" && Kern.lauf?.protokoll) || null;
+    if (!prot) return true;
+    return prot.some((e) => e.ereignis === "favorit_genannt" || e.ereignis === "vorschlagsansicht");
+  },
+
+  /* Die Namen der vorgelegten Haeuser, in Anzeigereihenfolge.
+     Leer, wenn es keine Vorlage gab - dann faellt die Optikfrage weg. */
+  vorlageNamen() {
+    const lauf = (typeof Studie !== "undefined" && Studie.kern?.lauf)
+      || (typeof Kern !== "undefined" && Kern.lauf) || null;
+    const prot = lauf?.protokoll || [];
+    const letzte = [...prot].reverse().find((e) => e.ereignis === "vorschlagsansicht");
+    const ids = letzte?.reihenfolge || letzte?.ids || lauf?.letzteVorlage || [];
+    return ids.map((id) => (typeof getItemById === "function" ? getItemById(id)?.name : null) || null).filter(Boolean);
+  },
+
   /* Die Abschnitte, die fuer diese Person gelten. */
   bloecke() {
-    return FRAGEBOGEN.filter((b) => typeof b.wenn !== "function" || b.wenn());
+    return FRAGEBOGEN
+      .filter((b) => typeof b.wenn !== "function" || b.wenn())
+      .map((b) => (b.mischen ? { ...b, fragen: this.gemischt(b.titel, b.fragen) } : b))
+      .map((b) => ({ ...b, fragen: b.fragen.filter((f) => typeof f.wenn !== "function" || f.wenn()) }));
+  },
+
+  /* Reihenfolge innerhalb eines Blocks mischen - einmal je Person.
+     ------------------------------------------------------------------
+     Gemischt wird gegen Reihenfolgeeffekte: Steht "Der Assistent wollte
+     mich zu einem bestimmten Haus bringen" immer zuerst, faerbt sie auf
+     die beiden danach ab.
+
+     Einmal je Person, nicht bei jedem Zeichnen: Der Bogen wird beim
+     Blaettern und nach einem Neuladen neu gebaut, und eine Person, der
+     die Fragen zwischendurch die Plaetze tauschen, haelt das fuer einen
+     Fehler. Die Ziehung liegt deshalb in sessionStorage.
+
+     Fisher-Yates, nicht sort(() => Math.random() - 0.5): Letzteres ist
+     nicht gleichverteilt, und bei drei Items faellt das auf. */
+  gemischt(schluessel, fragen) {
+    const lager = `voyara_fb_mischung_${schluessel}`;
+    let reihe = null;
+    try { reihe = JSON.parse(sessionStorage.getItem(lager) || "null"); } catch { reihe = null; }
+    const ids = fragen.map((f) => f.id);
+    const gueltig = Array.isArray(reihe) && reihe.length === ids.length
+      && reihe.every((id) => ids.includes(id));
+    if (!gueltig) {
+      const neu = [...ids];
+      for (let i = neu.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [neu[i], neu[j]] = [neu[j], neu[i]];
+      }
+      reihe = neu;
+      try { sessionStorage.setItem(lager, JSON.stringify(reihe)); } catch { /* egal */ }
+    }
+    return reihe.map((id) => fragen.find((f) => f.id === id)).filter(Boolean);
+  },
+
+  /* Die Optionen einer Frage - fest eingetippt oder zur Laufzeit
+     gerechnet. Gebraucht fuer die Optikfrage, deren Antworten die Namen
+     der drei vorgelegten Haeuser sind. */
+  optionenVon(f) {
+    return typeof f.optionen === "function" ? (f.optionen() || []) : (f.optionen || []);
   },
 
   fragen() {
@@ -278,7 +453,7 @@ const Fragebogen = {
         return `<div class="fb-frage" data-id="${f.id}">
           <p class="fb-text">${f.text} <span class="fb-optional">mehrere möglich</span></p>
           <div class="fb-wahl">
-            ${f.optionen.map((o, i) => `<label><input type="checkbox" name="${f.id}" value="${i + 1}"><span>${o}</span></label>`).join("")}
+            ${Fragebogen.optionenVon(f).map((o, i) => `<label><input type="checkbox" name="${f.id}" value="${i + 1}"><span>${o}</span></label>`).join("")}
           </div>
         </div>`;
       }
@@ -286,7 +461,7 @@ const Fragebogen = {
         return `<div class="fb-frage" data-id="${f.id}">
           <p class="fb-text">${f.text}</p>
           <div class="fb-wahl">
-            ${f.optionen.map((o, i) => `<label><input type="radio" name="${f.id}" value="${i + 1}"><span>${o}</span></label>`).join("")}
+            ${Fragebogen.optionenVon(f).map((o, i) => `<label><input type="radio" name="${f.id}" value="${i + 1}"><span>${o}</span></label>`).join("")}
           </div>
         </div>`;
       }
@@ -327,6 +502,21 @@ const Fragebogen = {
         wert = v == null || v === "" ? null : +v;   // "0" = nicht genutzt, zaehlt als beantwortet
       }
       antworten[f.id] = wert;
+      /* Eine Zahl ohne ihre Beschriftung ist nichts wert (15.11.2026).
+         --------------------------------------------------------------
+         Gespeichert wird bei Wahlfragen der Index (1, 2, 3). Bei festen
+         Optionen steht im Code, was die 2 war. Bei der Optikfrage sind
+         es die Namen der drei vorgelegten Haeuser - je Person andere,
+         und in geloster Reihenfolge. Ohne die Beschriftung waere die 2
+         in der Tabelle nicht zu deuten.
+
+         Also wandert sie als eigene Spalte mit: der gewaehlte Name, und
+         die ganze Liste, wie sie dastand. */
+      if (typeof f.optionen === "function") {
+        const liste = this.optionenVon(f);
+        antworten[`${f.id}_gewaehlt`] = Number.isFinite(wert) && liste[wert - 1] ? liste[wert - 1] : null;
+        antworten[`${f.id}_optionen`] = liste.join(" | ");
+      }
       if (wert == null && !f.optional) fehlend.push(f.id);
     }
     return { antworten, fehlend };

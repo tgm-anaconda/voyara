@@ -2,7 +2,7 @@
  *
  *   node agent/durchgang-test.cjs         der jetzige Stand, erwartet 0 falsch
  *   node agent/durchgang-test.cjs --alt   Gegenprobe am Stand davor
- *                                         (_backup/2026-11-12-ausstattung/)
+ *                                         (_backup/2026-11-15-empfehlung/)
  *
  * Geprueft wird, was Logik ist:
  *
@@ -29,7 +29,7 @@
 const fs = require("fs"), vm = require("vm");
 const B = "/Users/tom-gabrielmielicki/Desktop/Bachelor Arbeit/Website/";
 const alt = process.argv.includes("--alt");
-const quelle = alt ? B + "_backup/2026-11-12-ausstattung/" : B;
+const quelle = alt ? B + "_backup/2026-11-15-empfehlung/" : B;
 
 const ctx = { console, window: {},
   document: { querySelectorAll: () => [], querySelector: () => null, getElementById: () => null,
@@ -225,6 +225,20 @@ pruefe("Zweite Frage: Annahme greift doch", typeof p5b.flugAb === "string" && !!
 /* Wie beim Laden oben: haelt die Sicherung diese Datei nicht, kommt sie
    aus dem Projekt. Sonst scheitert die Gegenprobe an einer fehlenden
    Datei statt an altem Code. */
+/* Fragebogen und Vorschlagsansicht dazu (15.11.2026). Beide haengen am
+   DOM, aber die Teile, die hier geprueft werden - Bloecke, Mischung,
+   Protokollfelder - kommen ohne aus. Fehlt eine Datei in der Sicherung,
+   gilt dieselbe Regel wie oben: dann die aus dem Projekt. */
+for (const f of ["agent/fragebogen.js"]) {
+  const flach = quelle + f.replace(/^agent\//, "");
+  const pfadF = (alt && fs.existsSync(flach)) ? flach : B + f;
+  try { vm.runInContext(fs.readFileSync(pfadF, "utf8"), ctx, { filename: f }); }
+  catch (e) { console.log("LADEFEHLER", f, e.message.slice(0, 160)); }
+}
+vm.runInContext("this.FB = typeof Fragebogen !== 'undefined' ? Fragebogen : null;"
+  + "this.FBLISTE = typeof FRAGEBOGEN !== 'undefined' ? FRAGEBOGEN : null;", ctx);
+const { FB, FBLISTE } = ctx;
+
 const kernAlt = quelle + "kern.js";
 const quelltext = fs.readFileSync(alt && fs.existsSync(kernAlt) ? kernAlt : B + "agent/kern.js", "utf8");
 const stelle = quelltext.slice(quelltext.indexOf("const zeigtVerstaendnis"),
@@ -764,6 +778,143 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     const alleZiele = vm.runInContext("typeof ZIELE !== 'undefined' ? ZIELE.map(z => z.id) : []", ctx);
     for (const id of alleZiele) if (!ort(id)) ohneOrt.push(id);
     pruefe("Ort: kein Ziel ohne Satz", ohneOrt.join(",") || "keins", "keins");
+  }
+
+  /* ==================================================================
+     Die Empfehlung und die geloste Reihenfolge (15.11.2026)
+     ==================================================================
+     Das Losen soll den Positionseffekt aus der Hauptgroesse nehmen.
+     Dafuer muss dreierlei stimmen: Es muss wirklich gleich verteilt
+     losen, es darf das Partnerhaus nicht austauschen, und der Satz des
+     Agenten muss in jeder Zelle derselbe sein. */
+  {
+    // Ein Kern-Ersatz mit genau dem, was anzeigeReihenfolge anfasst
+    /* In der Gegenprobe gab es beides noch nicht. Dann soll der Lauf das
+       melden statt abzustuerzen - sonst bleiben alle Pruefungen danach
+       ungelaufen, und die Gegenprobe sagt weniger, nicht mehr. */
+    const fehlt = (was) => () => `${was} fehlt`;
+    const kern = { lauf: {},
+      anzeigeReihenfolge: typeof KN.anzeigeReihenfolge === "function" ? KN.anzeigeReihenfolge : () => ["fehlt"],
+      favoritenSatz: typeof KN.favoritenSatz === "function" ? KN.favoritenSatz : fehlt("favoritenSatz") };
+    const kand = [{ id: "a" }, { id: "b" }, { id: "c" }];
+
+    // 1. Gleichverteilung ueber viele Ziehungen
+    const zaehl = { a: [0, 0, 0], b: [0, 0, 0], c: [0, 0, 0] };
+    const N = 6000;
+    for (let i = 0; i < N; i++) {
+      kern.lauf = {};
+      const r = kern.anzeigeReihenfolge(kand);
+      r.forEach((id, pos) => { if (zaehl[id]) zaehl[id][pos]++; });
+    }
+    const erwartet = N / 3;
+    const schlimmste = Math.max(...Object.values(zaehl).flat().map((n) => Math.abs(n - erwartet) / erwartet));
+    pruefe("Losen: jede Position etwa gleich haeufig",
+      schlimmste < 0.08 ? "gleichverteilt" : `${Math.round(schlimmste * 100)} % daneben: ${JSON.stringify(zaehl)}`,
+      "gleichverteilt");
+    // Und jede der sechs Anordnungen kommt vor - ein Verfahren, das nur
+    // rotiert, waere auch "gleichverteilt" je Position, aber falsch
+    const formen = new Set();
+    for (let i = 0; i < 400; i++) { kern.lauf = {}; formen.add(kern.anzeigeReihenfolge(kand).join("")); }
+    pruefe("Losen: alle sechs Anordnungen kommen vor", formen.size, 6);
+
+    // 2. Einmal je Vorlage, nicht bei jedem Zeichnen
+    kern.lauf = {};
+    const erst = kern.anzeigeReihenfolge(kand).join("");
+    let stabil = true;
+    for (let i = 0; i < 50; i++) if (kern.anzeigeReihenfolge(kand).join("") !== erst) stabil = false;
+    pruefe("Losen: dieselbe Vorlage behaelt ihre Anordnung", stabil ? "stabil" : "springt", "stabil");
+    // Andere Haeuser, neues Los
+    const andere = kern.anzeigeReihenfolge([{ id: "a" }, { id: "b" }, { id: "d" }]);
+    pruefe("Losen: andere Vorlage wird neu gelost",
+      (andere || []).includes("d") && !(andere || []).includes("c") ? "neu" : "alt", "neu");
+
+    // 3. Der Favoritensatz - zeichengleich, egal welche Bedingung
+    const satz = kern.favoritenSatz("Casa Lumara", 3);
+    pruefe("Favoritensatz nennt den Namen", /Casa Lumara/.test(satz) ? "ja" : satz, "ja");
+    pruefe("Favoritensatz: Wortlaut",
+      satz, "Mein Favorit ist Casa Lumara. Die beiden anderen sind nah dran, deshalb zeige ich sie dir mit.");
+    /* Er darf kein Wort ueber Provision, Partner oder Kennzeichnung
+       enthalten - sonst stuende neben der Kennzeichnung ein zweiter
+       Unterschied zwischen den Gruppen. */
+    pruefe("Favoritensatz schweigt zur Kennzeichnung",
+      /provision|partner|kennzeich|etikett|bezahlt|werbung/i.test(satz) ? "nennt sie" : "schweigt", "schweigt");
+    pruefe("Favoritensatz bei zwei Haeusern",
+      kern.favoritenSatz("X", 2), "Mein Favorit ist X. Das andere ist nah dran, deshalb zeige ich es dir mit.");
+    pruefe("Favoritensatz ohne Namen faellt weg", kern.favoritenSatz(null, 3), null);
+
+    /* 4. Der Satz faellt genau einmal je Vorlage. Geprueft am Quelltext,
+       weil die Stelle am DOM haengt: Die Marke muss gesetzt und gegen
+       dieselbe Vorlage geprueft werden. */
+    pruefe("Favoritensatz nur einmal je Vorlage",
+      /favoritGenanntFuer/.test(quelltext) && /favNeu/.test(quelltext) ? "einmal" : "bei jedem Oeffnen", "einmal");
+
+    // 5. Die feste 1 im Log ist weg
+    pruefe("Keine feste Eins mehr im Vorschlagslog",
+      /Vorschlag 1 \(mein Vorschlag\)/.test(quelltext) ? "noch da" : "weg", "weg");
+  }
+
+  /* ==================================================================
+     Die drei Mechanismus-Bloecke im Fragebogen (15.11.2026)
+     ================================================================== */
+  if (FB && FBLISTE) {
+    const alleFragen = FBLISTE.flatMap((b) => b.fragen);
+    const ids = alleFragen.map((f) => f.id);
+    for (const id of ["p_absicht", "p_eigeninteresse", "p_nachvollzug",
+      "p_nichts_verschwiegen", "p_angaben_verlass",
+      "p_unbehagen", "p_misstrauen", "p_leicht_uebergehen",
+      "m_etikett", "m_optik"]) {
+      pruefe(`Fragebogen hat ${id}`, ids.includes(id) ? "ja" : "fehlt", "ja");
+    }
+    pruefe("Keine Kennung doppelt", ids.length, new Set(ids).size);
+    /* Kein Item nennt die Provision - sonst liesse es sich in der Gruppe
+       ohne Kennzeichnung nicht stellen, und beide Gruppen brauchen
+       dieselben Items. */
+    const neue = alleFragen.filter((f) => /^p_(absicht|eigeninteresse|nachvollzug|nichts_verschwiegen|angaben_verlass|unbehagen|misstrauen|leicht_uebergehen)$/.test(f.id));
+    pruefe("Die neuen Bloecke zaehlen acht Items", neue.length, 8);
+    const verraeter = neue.filter((f) => /provision|partner|bezahlt|werbung|kennzeich/i.test(f.text));
+    pruefe("Kein neues Item nennt die Provision", verraeter.map((f) => f.id).join(",") || "keins", "keins");
+    // Alle siebenstufig und zustimmungsbasiert
+    const falscheSkala = neue.filter((f) => f.skala?.stufen !== 7);
+    pruefe("Alle neuen Items siebenstufig", falscheSkala.map((f) => f.id).join(",") || "alle", "alle");
+    // Je Block genau ein umgekehrt gepoltes Item dort, wo es hingehoert
+    pruefe("p_nachvollzug ist umgekehrt gepolt",
+      !!alleFragen.find((f) => f.id === "p_nachvollzug")?.umgekehrt, true);
+    pruefe("p_leicht_uebergehen ist umgekehrt gepolt",
+      !!alleFragen.find((f) => f.id === "p_leicht_uebergehen")?.umgekehrt, true);
+    /* Der Satz "Der Assistent geht ehrlich mit mir um" steht schon als
+       v_ehrlich im TiA-Block. Dieselbe Aussage zweimal im Bogen waere
+       ein Fehler, der sich in der Reliabilitaet versteckt. */
+    const texte = alleFragen.map((f) => f.text.toLowerCase().replace(/[^a-zäöüß ]/g, "").trim());
+    const doppelte = texte.filter((t, i) => texte.indexOf(t) !== i);
+    pruefe("Keine Aussage steht zweimal im Bogen", doppelte.join(" | ") || "keine", "keine");
+    // Die Manipulationskontrolle braucht "Weiss nicht"
+    const mk = alleFragen.find((f) => f.id === "m_etikett");
+    pruefe("Manipulationskontrolle mit Weiss nicht",
+      (mk?.optionen || []).join(","), "Ja,Nein,Weiß nicht");
+    // Die Optikfrage rechnet ihre Optionen erst zur Laufzeit
+    const ok = alleFragen.find((f) => f.id === "m_optik");
+    pruefe("Optikfrage holt ihre Namen zur Laufzeit", typeof ok?.optionen, "function");
+    pruefe("Optionen einer Funktion werden aufgeloest",
+      typeof FB.optionenVon === "function"
+        && Array.isArray(FB.optionenVon({ optionen: () => ["A", "B"] })) ? "ja" : "nein", "ja");
+
+    // Mischen: Fisher-Yates, alle Anordnungen, und stabil je Person
+    const drei = [{ id: "x" }, { id: "y" }, { id: "z" }];
+    const lager = {};
+    ctx.sessionStorage.getItem = (k) => (k in lager ? lager[k] : null);
+    ctx.sessionStorage.setItem = (k, v) => { lager[k] = v; };
+    const mische = (t, l) => (typeof FB.gemischt === "function" ? FB.gemischt(t, l) : l);
+    const formen2 = new Set();
+    for (let i = 0; i < 400; i++) { delete lager["voyara_fb_mischung_T"]; formen2.add(mische("T", drei).map((f) => f.id).join("")); }
+    pruefe("Mischen: alle sechs Anordnungen kommen vor", formen2.size, 6);
+    delete lager["voyara_fb_mischung_T"];
+    const einmal = mische("T", drei).map((f) => f.id).join("");
+    let gleich = true;
+    for (let i = 0; i < 20; i++) if (mische("T", drei).map((f) => f.id).join("") !== einmal) gleich = false;
+    pruefe("Mischen: bleibt fuer dieselbe Person stehen", gleich ? "stabil" : "springt", "stabil");
+    pruefe("Mischen: keine Frage geht verloren", mische("T", drei).length, 3);
+  } else {
+    pruefe("Fragebogen geladen", "nein", "ja");
   }
 
   console.log(`\n${gut} richtig, ${schlecht} falsch`);
