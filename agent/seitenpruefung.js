@@ -549,8 +549,28 @@ const Seitenpruefung = {
       if (ids.has(f.id)) this.befund(g, `Kennung doppelt: ${f.id}`);
       ids.add(f.id);
       if (!f.text) this.befund(g, `Frage ohne Text: ${f.id}`);
-      if ((f.art === "wahl" || f.art === "mehrfach") && !(f.optionen || []).length) {
-        this.befund(g, `Auswahlfrage ohne Optionen: ${f.id}`);
+      /* Optionen duerfen eine Funktion sein (seit 15.11.2026).
+         --------------------------------------------------------------
+         Die Pruefung las `f.optionen.length` - bei einer Funktion ist das
+         die Zahl ihrer Parameter, also 0. Damit meldete sie `m_optik` als
+         "Auswahlfrage ohne Optionen", obwohl der Bogen sie korrekt
+         darstellt: Er loest ueber Fragebogen.optionenVon auf.
+
+         Ein Befund an der Pruefung, nicht am Bogen - dieselbe Sorte wie
+         der Tippfehler im Pruefstand-Waehler am 15.11. Beide Male hat die
+         Pruefung etwas anderes gelesen als der Code schreibt.
+
+         Bei einer Funktion haengt die Laenge am Durchlauf (m_optik nennt
+         die Haeuser der Vorlage, die es hier nicht gibt). Geprueft wird
+         deshalb, dass sie ueberhaupt eine Liste liefert - ob sie leer
+         sein darf, entscheidet `wenn`. */
+      if (f.art === "wahl" || f.art === "mehrfach") {
+        const fest = typeof f.optionen !== "function";
+        let opt = null;
+        try { opt = fest ? f.optionen : f.optionen(); } catch (e) { opt = null; }
+        if (!Array.isArray(opt) || (fest && !opt.length)) {
+          this.befund(g, `Auswahlfrage ohne Optionen: ${f.id}`);
+        }
       }
       if (!f.art && !f.skala) this.befund(g, `Frage ohne Skala und ohne Art: ${f.id}`);
       if (f.text && /\b(und|sowie)\b.*\?/.test(f.text) && f.text.split("?").length > 2) {

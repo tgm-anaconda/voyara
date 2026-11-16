@@ -7134,9 +7134,25 @@ const Werkzeugkasten = {
         || (!!p.flugAbEgal && (p.flugAbAuswahl || []).length < 2),
       flugKlasse: !p.flug || !!p.flugKlasse || p.typ === "apartment",
       vorgehen: !!p.vorgehen,
-      // Nur gefragt, wenn er wirklich raussucht - wer selbst schaut,
-      // bekommt keine Vorlage und damit auch keine Anzahl
-      anzahl: !!p.anzahlVorschlaege || p.vorgehen !== "top3",
+      /* Die Anzahl wird nicht mehr gefragt (16.11.2026).
+         --------------------------------------------------------------
+         Sie stand bisher als Thema im Fahrplan, mit Chips "Drei | Vier |
+         Sechs". Seit die Vorgehensfrage weg ist und `vorgehen` fest auf
+         top3 steht, waere daraus eine Frage an JEDE Person geworden -
+         das Gegenteil des Ziels.
+
+         Dagegen spricht vor allem der Reiz selbst: Position und
+         Sichtbarkeit des Favoriten haengen an der Anzahl. Drei Karten
+         passen ohne Scrollen ins Bild, sechs nicht. Wer aktiv nach einer
+         Zahl fragt, schickt einen erheblichen Teil der Stichprobe mit dem
+         Favoriten unter die Kante und gibt jeder Person eine andere Form
+         desselben Reizes.
+
+         Ohne Angabe sind es drei (Vorlage: p.anzahlVorschlaege || 3). Wer
+         von sich aus mehr will, bekommt mehr und steht damit in der
+         Spalte `anzahlVorschlaege` - unaufgefordert und deshalb
+         aussagekraeftiger als eine Antwort auf unsere Frage. */
+      anzahl: true,
       beratung: true,
       /* Die Preisfrage braucht eine Zahl oder ein "offen".
          ----------------------------------------------------------------
@@ -7604,6 +7620,60 @@ const Werkzeugkasten = {
     const gesucht = lauf.gesuchtMit === schluessel;
     // Der vor der Lage geaeusserte Wunsch gilt, sobald die Lage steht.
     if (!p.vorgehen && lauf.vorgehenFrueh && gesucht) { p.vorgehen = lauf.vorgehenFrueh; fertig.vorgehen = true; }
+    /* Die Vorgehensfrage wird nicht mehr gestellt (16.11.2026).
+       ------------------------------------------------------------------
+       Sie lautete "selbst schauen oder soll ich raussuchen?" und fiel vor
+       der ersten Vorlage. Wer "selbst" waehlte, kam nie am Partnerhaus
+       und seiner Kennzeichnung vorbei - der Hauptfaktor der Erhebung fiel
+       fuer diese Person aus. Und zwar nicht zufaellig, sondern genau bei
+       den misstrauischen Personen. Die Stichprobe, die das Etikett sah,
+       waere damit auf Vertrauen vorgefiltert gewesen, moeglicherweise in
+       den beiden Armen unterschiedlich stark - dann hingen die beiden
+       Faktoren ueber diesen Ausstieg zusammen.
+
+       Der Weg bleibt vollstaendig erhalten: Wer von sich aus sagt, sie
+       schaue lieber selbst, landet weiterhin in phase "selbst" und wird
+       als `vorgehen = selbst` protokolliert. Nur gefragt wird nicht mehr.
+       Die Spalte wird dadurch sauberer, nicht leerer: Sie misst jetzt
+       ungefragte Ablehnung statt einer Antwort auf unsere eigene Frage.
+
+       Gesetzt wird erst NACH der Suche (`gesucht`), weil der Zweig
+       darunter mit `seiteVeraltet` die erste Suche ausloest. Wer hier zu
+       frueh setzt, nimmt dem Fahrplan die Suche weg. */
+    if (!p.vorgehen && gesucht) {
+      p.vorgehen = "top3";
+      fertig.vorgehen = true;
+      /* Die Anzahl wird angesagt, nicht gefragt (16.11.2026).
+         ----------------------------------------------------------------
+         Zwischen zwei schlechten Enden:
+
+         Sagt der Agent gar nichts, weiss niemand, dass mehr als drei
+         moeglich sind. Dann fragt fast niemand danach, die Spalte steht
+         bei allen auf leer und misst nichts.
+
+         Fragt er dagegen ("Wie viele? Drei | Vier | Sechs"), trifft jede
+         Person eine Wahl, die wir selbst herbeigefuehrt haben - und ein
+         erheblicher Teil bekommt sechs Karten, bei denen der Favorit
+         unter die Kante rutscht. Das beschaedigt den Reiz des
+         Hauptfaktors, und zwar genau dort, wo er wirkt.
+
+         Deshalb eine Ansage mit Hinweis, wie beim Zimmer ("Zwei getrennte
+         gehen auch, sag einfach Bescheid"): Die Moeglichkeit ist bekannt,
+         aber niemand muss antworten. Wer trotzdem mehr will, sagt es von
+         sich aus, und steht dann in `anzahlVorschlaege`.
+
+         Der Satz laeuft ueber annahmeOffen und traegt damit seinen Grund
+         mit: Nennt die Person vorher selbst eine Zahl, gilt er nicht mehr
+         und faellt weg (Werkzeugkasten.annahmeGilt). */
+      if (!p.anzahlVorschlaege && !lauf.anzahlAngesagt) {
+        lauf.anzahlAngesagt = true;
+        (lauf.annahmeOffen ||= []).push({
+          thema: "anzahl",
+          text: "Ich stelle dir erst mal drei Häuser zusammen. Mehr vergleichen geht auch, sag einfach Bescheid.",
+          felder: { anzahlVorschlaege: null },
+        });
+      }
+    }
     const weiter = p.weiter || (b.weiter ? "schauen" : null) || (alleEckdaten ? "schauen" : null);
     // Bereit fuer die erste Suche: Kern da und entweder "schauen" gesagt oder
     // die restlichen Eckdaten geklaert

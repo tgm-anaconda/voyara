@@ -57,7 +57,28 @@ const STELLSCHRAUBEN = {
   // der hoechsten. Damit laesst sich messen, wie viele die Voreinstellung
   // einfach stehen lassen - eine Frage mit Gewicht, wenn Anbieter spaeter
   // "darf kaufen" vorbelegen.
-  freigabeStart: "zufall",      // niedrig | hoch | zufall
+  /* Alle starten auf der untersten Stufe (16.11.2026).
+     ------------------------------------------------------------------
+     Bis hierher konnte die Person am Startbildschirm waehlen, was der
+     Agent darf - suchen, vorbereiten oder auch buchen -, und das BEVOR
+     sie ihn ein einziges Mal hatte arbeiten sehen. Damit lief der ganze
+     Rest der Sitzung fuer verschiedene Leute in verschiedenen Rahmen ab,
+     und zwar getrennt nach genau der Groesse, die gemessen werden soll.
+     Wer "auch buchen" waehlte, sah ausserdem die Kasse nie - fuer diese
+     Personen blieben alle Kassen-Spalten leer, die vorausgewaehlte
+     Versicherung eingeschlossen.
+
+     Jetzt beginnt jeder bei "Suchen und filtern". Geht es ans Buchen,
+     sagt der Agent von sich aus, dass die Person selbst druecken oder
+     ihm die Freigabe anheben kann (siehe Block BUCHEN in auftragsText).
+     Wer sie anhebt, tut das nach derselben Erfahrung wie alle anderen,
+     und der Wechsel steht mit Richtung und Zeitpunkt im Protokoll.
+
+     "zufall" bleibt als Rueckweg im Code - es war einmal ein eigenes
+     kleines Experiment ueber Voreinstellungen. In der Erhebung kommt es
+     nicht vor: Das waere ein dritter Faktor und wuerde die Stichprobe
+     noch einmal teilen. */
+  freigabeStart: "niedrig",     // niedrig | hoch | zufall
   freigabeRegler: true,         // false = Regler unsichtbar, Stufe fest
   // Unter 1 wird alles langsamer. 0.75 ist die Geschwindigkeit, bei der
   // man dem Zeiger auf der Seite noch folgen kann - und damit die
@@ -80,7 +101,7 @@ const STELLSCHRAUBEN = {
      dem Stand (Aufgaben.ausGespraech). Auf true gestellt kommt der
      Bildschirm zurueck, dann mit Stufen aus den echten Preisen. */
   eckpunkte: false,
-  startbildschirm: true,   // Wahl der Freigabestufe vor dem ersten Kontakt          // false = springt ohne Rueckfrage in die Suche
+  startbildschirm: false,  // Wahl der Freigabestufe vor dem ersten Kontakt (16.11.2026 aus, siehe freigabeStart)
 
   /* Aufbau der Erhebung (Stand 18.09.2026), siehe AGENT-KONZEPT Abschnitt 25.
      ------------------------------------------------------------------
@@ -157,7 +178,18 @@ const STELLSCHRAUBEN = {
   einladung: "keine",            // unten-rechts | cursor | mitte | liste | keine
   einladungAusloeser: "detail",  // detail | zeit
   einladungSekunden: 60,
-  freigabeFrage: "erstoeffnung", // erstoeffnung | start
+  /* Die Freigabefrage faellt ganz weg (16.11.2026).
+     ------------------------------------------------------------------
+     "erstoeffnung" zeigte beim ersten Oeffnen eine Karte im Chat: "Wie
+     weit darf ich fuer dich gehen?" mit den drei Stufen. Das war die
+     Frage, die in der Erhebung tatsaechlich gestellt wurde - der
+     Startbildschirm war nur der alte Weg dorthin. Beide sind jetzt aus,
+     aus demselben Grund (siehe freigabeStart).
+
+     "keine" heisst: Es wird nicht gefragt, die Stufe bleibt auf
+     FREIGABE[0] ("suchen"), und wer mehr will, hebt den Regler selbst
+     an - im Gespraech, wenn es ans Buchen geht. */
+  freigabeFrage: "keine",        // keine | erstoeffnung | start
   offenlegung: null,             // keine | chip | banner | agent | log | null = auslosen
   // Wie die drei Vorschlaege gezeigt werden: eigene Ansicht ueber der Seite
   // oder (alt) als drei Chatnachrichten
@@ -263,7 +295,7 @@ const STELLSCHRAUBEN = {
     zugang: ["schublade", "fenster", "fensterDauer", "seitenleiste"],
     einladung: ["unten-rechts", "unten-links", "cursor", "mitte", "liste", "keine"],
     einladungAusloeser: ["detail", "zeit"],
-    freigabeFrage: ["erstoeffnung", "start"],
+    freigabeFrage: ["keine", "erstoeffnung", "start"],
     offenlegung: ["keine", "chip", "banner", "agent", "etikett", "log", "offen"],
     vorschlag: ["ansicht", "chat"],
     partner: ["zweitbeste", "beste", "wechselnd", "keine"],

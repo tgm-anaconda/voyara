@@ -346,7 +346,21 @@ const Kernpruefung = {
          die Pruefung. Das ist der Unterschied zwischen "fehlt" und "ist
          mit Grund weggelassen". */
       if (f.vorgehen === "top3" && schritte.includes("vorschlaege")) {
-        const mussKommen = ["zeit", "reisende", "art", "ziel", "vorgehen", "dauer", "preis", "wuensche", "anzahl"];
+        /* "vorgehen" und "anzahl" stehen hier seit dem 16.11.2026 NICHT
+           mehr - und das ist der Punkt dieser Liste.
+           --------------------------------------------------------------
+           Beide Fragen sind aus dem Ablauf genommen. Die Vorgehensfrage,
+           weil wer "selbst" waehlte das Partnerhaus und seine
+           Kennzeichnung nie sah - der Hauptfaktor fiel fuer genau die
+           misstrauischen Personen aus. Die Anzahlfrage, weil mit ihr der
+           Reiz selbst variiert haette: Drei Karten passen ohne Scrollen
+           ins Bild, sechs nicht, und damit haengt die Sichtbarkeit des
+           Favoriten an der Antwort.
+
+           Dass beide hier fehlen, ist also eine Aussage und kein
+           Versehen. Kommt eines der beiden Themen wieder im Ablauf vor,
+           ist das eine Aenderung, die jemand bewusst treffen muss. */
+        const mussKommen = ["zeit", "reisende", "art", "ziel", "dauer", "preis", "wuensche"];
         // Verpflegung nur, wo es sie gibt - eine Ferienwohnung hat keine
         if (f.art !== "apartment") mussKommen.push("verpflegung", "flug");
         // Der Flughafen nur mit Flug, und Fluege gibt es nicht zur Wohnung
@@ -357,6 +371,12 @@ const Kernpruefung = {
            sagt das beim Vorlegen dazu. */
         if (f.flug !== "mitFlug" || f.art === "apartment") mussKommen.push("anreise");
 
+        /* Die Gegenrichtung, sonst waere das Streichen oben wertlos:
+           Eine Liste, die nur sagt was kommen muss, merkt nicht, wenn
+           etwas Gestrichenes zurueckkehrt. */
+        for (const t of ["vorgehen", "anzahl"]) {
+          if (schritte.includes(t)) melde("thema_zurueck", `${t} wird wieder gefragt (am 16.11.2026 gestrichen)`);
+        }
         for (const t of mussKommen) {
           if (!schritte.includes(t)) melde("thema_fehlt", `${t} wurde nie gefragt`);
         }

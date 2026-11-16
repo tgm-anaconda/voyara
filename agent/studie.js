@@ -1019,6 +1019,32 @@ const Studie = {
       });
     }, true);
 
+    /* Blick in die Filterspalte (16.11.2026, Idee des Nutzers).
+       ------------------------------------------------------------------
+       Der Agent stellt die Filter ein. Wer danach selbst in der
+       Filterspalte scrollt, sieht sich ausdruecklich an, was dort steht -
+       und das, ohne etwas zu aendern. `filter_fremd_geaendert` faengt nur
+       den Fall, dass wirklich etwas umgestellt wird; der Blick allein
+       fiel bisher durch.
+
+       Gezaehlt werden Blicke, nicht Scrollereignisse: Was innerhalb einer
+       Sekunde zusammenhaengt, ist ein Blick. Sonst stuende hier die
+       Maus-Aufloesung statt des Verhaltens.
+
+       In beiden Armen gleich teuer, weil die Seite waehrend der Arbeit
+       ohnehin gesperrt ist und das hier im Ruhezustand passiert. */
+    let filterBlickT = 0;
+    document.addEventListener("scroll", (e) => {
+      if (!this.laeuft()) return;
+      const ziel = e.target;
+      if (!ziel || !ziel.closest) return;
+      if (!ziel.closest("#filterPanel, .filter-panel")) return;
+      const jetzt = Date.now();
+      if (jetzt - filterBlickT < 1000) return;
+      filterBlickT = jetzt;
+      this.notieren("filter_angesehen", { seite: location.pathname.split("/").pop() || "" });
+    }, true);
+
     // Klicks auf Ergebnisse: Wer trotz Shortlist selbst in andere Haeuser
     // schaut, kontrolliert den Agenten. Wer nur die Shortlist oeffnet,
     // folgt ihm.
@@ -1570,6 +1596,116 @@ const Studie = {
         [p + "detailsAusserhalbNachVorlage"]: detailsNach.filter((e) => !e.inShortlist).length,
         [p + "nachrichtenNachVorlage"]: userNach,
         [p + "warumNachVorlage"]: protokoll.filter((e) => e.ereignis === "warum_gefragt" && vorlageT && e.t >= vorlageT).length,
+      });
+
+      /* Vertrauen am Verhalten, nicht am Bogen (16.11.2026).
+         ----------------------------------------------------------------
+         Am 16.11. sind zwei Fragen aus dem Ablauf geflogen, die beide
+         Vertrauen messen sollten und beide vor der Vorlage lagen: die
+         Vorgehensfrage und die Freigabefrage. Die erste kostete den
+         Hauptfaktor (wer selbst schaute, sah das Etikett nie), die
+         zweite legte den Rahmen der ganzen Sitzung fest, bevor die
+         Person den Agenten ueberhaupt hatte arbeiten sehen.
+
+         Was bleibt, muss aus dem Protokoll kommen. Die Spalten hier
+         rechnen nur zusammen, was ohnehin notiert wird - am Ablauf
+         aendert sich dadurch nichts.
+
+         Zwei Zeitfenster, und sie beantworten verschiedene Fragen:
+
+         VOR der Vorlage gibt es das Etikett noch nicht. Was hier
+         passiert, kann nur am Arm liegen - das ist der saubere
+         Armvergleich. Dafuer ist das Fenster kurz, und die meisten
+         Personen werden hier bei null stehen.
+
+         NACH der Vorlage ist das Etikett im Spiel. Diese Spalten sind
+         fuer die Mediation gedacht; als reiner Armvergleich taugen sie
+         nur innerhalb der Gruppe `ohne`, wo es kein Etikett gibt.
+
+         Nicht aufgenommen, obwohl naheliegend: Klicks gegen die Sperre
+         und das Auf- und Zuklappen des Chats. Beides kostet in Arm A
+         und Arm B verschieden viel - in Arm B sieht man waehrend der
+         Arbeit nicht, wohin man klicken wuerde. Solche Spalten messen
+         den Eingriff, nicht das Vertrauen. */
+      const vorT = (e) => vorlageT ? e.t < vorlageT : true;
+      const freigabeWechsel = protokoll.filter((e) => e.ereignis === "freigabe");
+      const hoch = freigabeWechsel.filter((e) => e.richtung === "hoch");
+      /* Prueftiefe der Vorlage.
+         ----------------------------------------------------------------
+         Wie viele der vorgelegten Haeuser hat die Person ueberhaupt
+         geoeffnet, bevor sie sich entschieden hat? Wer nur den Favoriten
+         aufmacht und dann bucht, folgt ebenso blind wie jemand, der gar
+         nichts aufmacht - nur eine Stufe hoeher.
+
+         Die Stufe allein reicht nicht, weil die Vorlage drei bis sechs
+         Haeuser gross sein kann: "alle drei geoeffnet" ist etwas anderes
+         als "alle sechs". Deshalb stehen Anzahl und Anteil daneben.
+
+           0  nichts geoeffnet
+           1  nur der Favorit
+           2  ein Teil der Vorlage
+           3  die ganze Vorlage
+           4  zusaetzlich Haeuser ausserhalb der Vorlage */
+      const ansicht = [...protokoll].reverse().find((e) => e.ereignis === "vorschlagsansicht");
+      const favoritId = ansicht?.favoritId || null;
+      const geoeffnetInVorlage = new Set(detailsNach.filter((e) => e.inShortlist).map((e) => e.id)
+        .filter((id) => vorlageIds.includes(id)));
+      const ausserhalb = detailsNach.filter((e) => !e.inShortlist).length;
+      let prueftiefe = "";
+      if (vorlage) {
+        if (ausserhalb) prueftiefe = 4;
+        else if (!geoeffnetInVorlage.size) prueftiefe = 0;
+        else if (geoeffnetInVorlage.size >= vorlageIds.length) prueftiefe = 3;
+        else if (geoeffnetInVorlage.size === 1 && favoritId && geoeffnetInVorlage.has(favoritId)) prueftiefe = 1;
+        else prueftiefe = 2;
+      }
+      Object.assign(spalten, {
+        // Freigabe: angehoben wird nur, wer dem Agenten mehr zutraut
+        [p + "freigabeWechsel"]: freigabeWechsel.length,
+        [p + "freigabeHoch"]: hoch.length,
+        [p + "freigabeRunter"]: freigabeWechsel.length - hoch.length,
+        [p + "freigabeHochVorVorlage"]: hoch.filter(vorT).length,
+        [p + "freigabeErstHochS"]: hoch.length && r.gestartet ? Math.round((hoch[0].t - r.gestartet) / 1000) : "",
+        // Eingriffe in die Arbeit des Agenten, getrennt an der Vorlage
+        [p + "uebernahmenVorVorlage"]: protokoll.filter((e) => e.ereignis === "uebernahme" && vorT(e)).length,
+        [p + "filterSelbstGeaendert"]: zaehle(protokoll, "filter_fremd_geaendert"),
+        [p + "filterSelbstVorVorlage"]: protokoll.filter((e) => e.ereignis === "filter_fremd_geaendert" && vorT(e)).length,
+        /* Aus `ereignisse`, nicht aus `protokoll`.
+           --------------------------------------------------------------
+           Der Blick in die Filterspalte wird von der Studie notiert
+           (Studie.notieren -> d.ereignisse), nicht vom Kern
+           (kern.notieren -> r.protokoll). Beim ersten Anlauf stand hier
+           `zaehle(protokoll, ...)` - die Spalte waere fuer jeden
+           Teilnehmer 0 geblieben, genau wie `warumKlicks` bis zum
+           15.11.2026. Dieselbe Falle, vier Wochen spaeter, in derselben
+           Datei: Es gibt zwei Protokolle, und welches das richtige ist,
+           haengt daran, wer das Ereignis schreibt. */
+        [p + "filterAngesehen"]: zaehle(ereignisse, "filter_angesehen"),
+        [p + "filterAngesehenVorVorlage"]: ereignisse.filter((e) => e.ereignis === "filter_angesehen" && vorT(e)).length,
+        // Haeuser, die vor der Vorlage aus eigenem Antrieb geoeffnet wurden
+        [p + "detailsVorVorlage"]: vorlageT ? details.filter((e) => e.t < vorlageT).length : details.length,
+        // Prueftiefe der Vorlage
+        [p + "prueftiefe"]: prueftiefe,
+        [p + "vorlageGroesse"]: vorlage ? vorlageIds.length : "",
+        [p + "vorlageGeoeffnet"]: vorlage ? geoeffnetInVorlage.size : "",
+        [p + "vorlageGeoeffnetAnteil"]: vorlage && vorlageIds.length
+          ? Math.round((geoeffnetInVorlage.size / vorlageIds.length) * 100) / 100 : "",
+        [p + "favoritGeoeffnet"]: vorlage && favoritId ? (geoeffnetInVorlage.has(favoritId) ? 1 : 0) : "",
+        /* Preisgabe - ausdruecklich explorativ.
+           --------------------------------------------------------------
+           Die Idee: Wem man nicht traut, dem erzaehlt man weniger. Das
+           ist aber stark mit Gruendlichkeit und Schreibfreude vermischt,
+           und manche Menschen sind schlicht wortkarg. Taugt als
+           Begleitbefund neben dem Bogen, nicht als Kennzahl. */
+        [p + "nachrichtenVorVorlage"]: vorlageT
+          ? (r.verlauf || []).filter((n) => n.rolle === "user" && n.zeit < vorlageT).length
+          : (r.verlauf || []).filter((n) => n.rolle === "user").length,
+        [p + "woerterProNachricht"]: (() => {
+          const u = (r.verlauf || []).filter((n) => n.rolle === "user");
+          if (!u.length) return "";
+          const w = u.reduce((n, x) => n + String(x.text || "").trim().split(/\s+/).filter(Boolean).length, 0);
+          return Math.round((w / u.length) * 10) / 10;
+        })(),
       });
       for (const [k, v] of Object.entries(r.zwischenfragen || {})) spalten[p + k] = z(v);
     });
