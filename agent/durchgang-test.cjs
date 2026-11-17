@@ -1500,6 +1500,22 @@ const liesReisende = async (text, felder, urteil = "ja") => {
       /Regionen im Angebot/.test(antwort("in welche regionen kann ich reisen")) ? "ja" : "nein", "ja");
   }
 
+  /* Das FAQ muss auf den Seiten liegen, auf denen der Agent arbeitet
+     ------------------------------------------------------------------
+     Gefunden im Testlauf am 17.11.2026, und zwar erst, nachdem das
+     Modell das Werkzeug endlich benutzte: Es bekam "Das FAQ steht hier
+     nicht bereit" zurueck. `data/faq.js` war nur in faq.html
+     eingebunden - also lief `faq_nachschlagen` auf JEDER Seite ins
+     Leere, auf der der Agent ueberhaupt laeuft. Die ganze
+     FAQ-Faehigkeit war tot, seit es sie gibt.
+
+     Dass zwei Reparaturen davor nichts brachten, lag daran. Erst die
+     Fehlermeldung des Modells hat es sichtbar gemacht. */
+  for (const seite of ["index.html", "results.html", "stay.html", "checkout.html"]) {
+    const q = fs.readFileSync(B + seite, "utf8");
+    pruefe(`${seite} laedt das FAQ`, /data\/faq\.js/.test(q) ? "ja" : "nein", "ja");
+  }
+
   console.log(`\n${gut} richtig, ${schlecht} falsch`);
   process.exit(schlecht ? 1 : 0);
 })();
