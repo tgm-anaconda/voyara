@@ -28,8 +28,21 @@
  */
 const fs = require("fs"), vm = require("vm");
 const B = "/Users/tom-gabrielmielicki/Desktop/Bachelor Arbeit/Website/";
-const alt = process.argv.includes("--alt");
-const quelle = alt ? B + "_backup/2026-11-15-favorit/" : B;
+/* Gegenprobe gegen einen frei waehlbaren Stand (17.11.2026).
+   ------------------------------------------------------------------
+   `--alt` nimmt wie bisher die Sicherung vom 15.11. Die enthaelt aber
+   nur die damals geaenderten Dateien - wer eine Pruefung schreibt, die
+   werkzeugkasten.js betrifft, probiert damit gegen die AKTUELLE Datei
+   und kann gar nicht fehlschlagen. Genau das ist am 15.11. passiert und
+   heute noch einmal.
+
+   Deshalb: `--alt=_backup/17-11-ausweg/` prueft gegen den genannten
+   Ordner. Wer eine neue Pruefung schreibt, nennt in ihrem Kommentar den
+   Ordner, gegen den sie belegt ist. */
+const altArg = process.argv.find((x) => x.startsWith("--alt"));
+const alt = !!altArg;
+const altOrdner = altArg && altArg.includes("=") ? altArg.split("=")[1] : "_backup/2026-11-15-favorit/";
+const quelle = alt ? B + altOrdner.replace(/\/?$/, "/") : B;
 
 const ctx = { console, window: {},
   document: { querySelectorAll: () => [], querySelector: () => null, getElementById: () => null,
@@ -1032,12 +1045,150 @@ const liesReisende = async (text, felder, urteil = "ja") => {
        rechnet, meint einen Tag und wird danach gefragt; wer in Monaten
        spricht, hat keinen Kalender vor sich. */
     pruefe("Einheit wird mitgegeben (Tage)",
-      WK.relativeAngabe?.("in 70 tagen", heute)?.einheit || "fehlt", "tage");
+      WK.relativeAngabe?.("in 70 tagen", heute)?.einheit || "Funktion fehlt", "tage");
     pruefe("Einheit wird mitgegeben (Monate)",
-      WK.relativeAngabe?.("in zwei monaten", heute)?.einheit || "fehlt", "monate");
+      WK.relativeAngabe?.("in zwei monaten", heute)?.einheit || "Funktion fehlt", "monate");
     // Unsinn bleibt Unsinn
     pruefe("Keine Zahl, kein Monat", WK.relativerMonat("irgendwann mal", heute), null);
     pruefe("Zu weit weg wird verworfen", WK.relativerMonat("in 900 tagen", heute), null);
+
+    /* Feiertage und Ferien (17.11.2026)
+       ----------------------------------------------------------------
+       Bens Frage: "Was ist, wenn jemand sagt, ich wuerde gerne an
+       Ostern verreisen?" Vorher rechnete der Kern das nicht - er liess
+       nur zu, dass das Modell den Monat setzt, ungeprueft. Ostern
+       wandert aber: 2027 der 28. Maerz, 2028 der 16. April.
+
+       Erst die Rechnung selbst gegen nachgeschlagene Daten, dann die
+       Zuordnung der Formulierungen. */
+    const datum = (x) => `${String(x.getDate()).padStart(2, "0")}.${String(x.getMonth() + 1).padStart(2, "0")}.${x.getFullYear()}`;
+    for (const [jahr, soll] of [[2026, "05.04.2026"], [2027, "28.03.2027"],
+      [2028, "16.04.2028"], [2029, "01.04.2029"], [2030, "21.04.2030"]]) {
+      pruefe(`Ostersonntag ${jahr}`, WK.ostersonntag ? datum(WK.ostersonntag(jahr)) : "Funktion fehlt", soll);
+    }
+    pruefe("1. Advent 2027", WK.ersterAdvent ? datum(WK.ersterAdvent(2027)) : "Funktion fehlt", "28.11.2027");
+    pruefe("1. Advent 2028", WK.ersterAdvent ? datum(WK.ersterAdvent(2028)) : "Funktion fehlt", "03.12.2028");
+
+    /* Stichtag 17.11.2026, also faellt alles Fruehjahrs-Bewegliche auf
+       Ostern 2027 (28.03.). Geprueft wird der Monat UND ob der Kern
+       sich festlegt oder nachfragt - bei Laendersache darf er nicht
+       raten. */
+    const anker = (t) => { if (!WK.zeitanker) return "Funktion fehlt"; const a = WK.zeitanker(t, heute); return a ? (a.sicher ? String(a.monat) : a.monate.join("/")) : "nichts"; };
+    const faelleAnker = [
+      ["ich würde gerne an ostern verreisen", "3"],
+      ["über ostern", "3"], ["karfreitag", "3"], ["karwoche", "3"],
+      ["über karneval", "2"], ["zu fasching", "2"], ["rosenmontag", "2"], ["altweiber", "2"],
+      ["an pfingsten", "5"], ["über himmelfahrt", "5"], ["vatertag", "5"], ["fronleichnam", "5"],
+      ["über weihnachten", "12"], ["heiligabend", "12"], ["über die feiertage", "12"],
+      ["silvester", "12"], ["zwischen den jahren", "12"], ["guten rutsch", "12"],
+      ["am 1. advent", "11"], ["in der adventszeit", "12"], ["nikolaus", "12"],
+      ["zum oktoberfest", "9"], ["auf die wiesn", "9"],
+      ["halloween", "10"], ["allerheiligen", "11"], ["valentinstag", "2"],
+      ["zum muttertag", "5"], ["am 1. mai", "5"], ["tag der deutschen einheit", "10"],
+      ["herbstferien", "10"], ["weihnachtsferien", "12"], ["in den faschingsferien", "2"],
+      ["pfingstferien", "5"],
+      // Laendersache: hier MUSS nachgefragt werden
+      ["in den osterferien", "3/4"], ["in den sommerferien", "7/8"],
+      ["die großen ferien", "7/8"], ["winterferien", "1/2"], ["skiferien", "1/2"],
+      // Nichts dergleichen
+      ["ans meer", "nichts"], ["mit dem hund", "nichts"],
+    ];
+    for (const [t, soll] of faelleAnker) pruefe(`Zeitanker: "${t}"`, anker(t), soll);
+
+    // Nahe Angaben ohne Zahl
+    pruefe("morgen", WK.relativerMonat("morgen", heute), 11);
+    pruefe("übermorgen", WK.relativerMonat("übermorgen", heute), 11);
+    pruefe("nächste woche", WK.relativerMonat("nächste woche", heute), 11);
+    pruefe("übernächste woche", WK.relativerMonat("übernächste woche", heute), 12);
+    pruefe("nahe Angabe zaehlt als Tage",
+      WK.relativeAngabe?.("nächste woche", heute)?.einheit || "Funktion fehlt", "tage");
+  }
+
+  /* Der Ausweg fuer das Modell, und der Waechter dahinter (17.11.2026)
+     ------------------------------------------------------------------
+     Gemessen an 100 Formulierungen: An mehreren Stellen prueft der Kern
+     den Wert des Modells gegen eine Wortliste und loescht ihn, wenn kein
+     Wort passt. Beim Kinderalter kam dadurch KEINE von sechs normalen
+     Antworten an, auch "zwei und vier" nicht.
+
+     Seit dem 09.11. gibt es dagegen das Richtige: Das Modell steht mit
+     `frage_beantwortet` dafuer ein, dass die Person genau diese Frage
+     beantwortet hat. Das galt nur fuer vier Themen; jetzt fuer alle, bei
+     denen es um Bedeutung geht. Der Kern ueberstimmt das Modell weiter
+     dort, wo er etwas weiss, das es nicht wissen kann - Datum, Rechnen,
+     Katalog.
+
+     Geprueft wird funktional, nicht als Textsuche: stand_merken wird
+     wirklich aufgerufen. */
+  if (WK && WK.werkzeuge && WK.werkzeuge.stand_merken) {
+    const kernStub = (satz, gefragtVorher) => ({
+      lauf: { gespraech: [{ role: "user", content: satz }], profil: {}, protokoll: [],
+        annahmeOffen: [], gefragtWie: {}, verlauf: [{ rolle: "user", text: satz }],
+        gefragtVorher, nachrichtArt: "antwort", runde: 1 },
+      notieren(e, d) { this.lauf.protokoll.push({ ereignis: e, ...d }); },
+      freigabe: () => "suchen", darf: () => false, logZeile() {}, sagen() {},
+      standAnzeigen() {}, sichern() {}, standKurz: () => "",
+    });
+    const kommtAn = async (satz, aufnahme, feld, gefragtVorher, ja) => {
+      const kern = kernStub(satz, gefragtVorher);
+      const a = { nachricht_art: "antwort",
+        frage_beantwortet: ja ? "ja" : "keine_frage_offen", ...aufnahme };
+      try { await WK.werkzeuge.stand_merken.call(WK, a, kern); } catch (e) { return "FEHLER " + e.message.slice(0, 40); }
+      const w = kern.lauf.profil[feld];
+      return (w != null && !(Array.isArray(w) && !w.length)) ? "kommt an" : "verworfen";
+    };
+    // Kinderalter: ohne Ausweg verworfen, mit Ausweg da
+    pruefe("Alter 'zwei und vier' kommt an",
+      await kommtAn("zwei und vier", { kinderAlter: [2, 4] }, "kinderAlter", "kinderAlter", true), "kommt an");
+    pruefe("Alter 'beide sind noch klein' kommt an",
+      await kommtAn("beide sind noch klein", { kinderAlter: [3, 5] }, "kinderAlter", "kinderAlter", true), "kommt an");
+    pruefe("Alter ohne Einstehen des Modells bleibt streng",
+      await kommtAn("hallo", { kinderAlter: [3, 5] }, "kinderAlter", null, false), "verworfen");
+    // Ausstattung: Wortluecken
+    pruefe("Wunsch 'mit sauna' kommt an",
+      await kommtAn("mit sauna", { ausstattung: ["spa"] }, "ausstattung", "wuensche", true), "kommt an");
+    pruefe("Wunsch 'strandnah bitte' kommt an",
+      await kommtAn("strandnah bitte", { ausstattung: ["beachfront"] }, "ausstattung", "wuensche", true), "kommt an");
+    pruefe("Wunsch ohne Einstehen bleibt streng",
+      await kommtAn("hallo", { ausstattung: ["pool"] }, "ausstattung", null, false), "verworfen");
+    // Reisende: der Fall vom 09.11., muss weiter gehen
+    pruefe("'ich und meine mutter' kommt an",
+      await kommtAn("ich und meine mutter", { erwachsene: 2, kinder: 0 }, "erwachsene", "reisende", true), "kommt an");
+    /* Der Monat ist strenger: "hauptsache warm" -> Oktober war der
+       teuerste gemessene Fehlgriff, deshalb zaehlt hier nur ein klares
+       Ja, und ein halbes reicht nicht. */
+    const monatMit = async (fb) => {
+      const kern = kernStub("hauptsache warm", "zeit");
+      await WK.werkzeuge.stand_merken.call(WK, { nachricht_art: "antwort", frage_beantwortet: fb, monat: 10 }, kern);
+      return kern.lauf.profil.monat == null ? "verworfen" : "kommt an";
+    };
+    pruefe("Monat bei klarem Ja", await monatMit("ja"), "kommt an");
+    pruefe("Monat bei halbem Ja bleibt streng", await monatMit("teilweise"), "verworfen");
+    pruefe("Monat ohne Antwort bleibt streng", await monatMit("keine_frage_offen"), "verworfen");
+  }
+
+  /* Der Waechter (Stufe 2): verworfener Wert wird zur Frage, aber erst
+     ab dem zweiten Anlauf - beim ersten waere es kuenstlich, und ein
+     verworfener Wert kann erfunden sein. */
+  if (WK && WK.verstaendnisRueckfrage) {
+    const frag = (verworfen, gefragtWie, profil = {}, schon = {}) =>
+      WK.verstaendnisRueckfrage({ kinder: 2, ...profil },
+        { verworfenWert: verworfen, gefragtWie, rueckversichert: schon, unsicher: [] });
+    pruefe("Waechter schweigt beim ersten Anlauf",
+      frag({ monat: 10 }, {}) ? "fragt" : "still", "still");
+    pruefe("Waechter fragt beim zweiten Anlauf",
+      frag({ monat: 10 }, { zeit: 1 })?.satz || "still", "Meinst du Oktober?");
+    pruefe("Waechter schweigt, wenn der Wert schon steht",
+      frag({ monat: 10 }, { zeit: 1 }, { monat: 7 }) ? "fragt" : "still", "still");
+    pruefe("Waechter schweigt ueber der Obergrenze",
+      frag({ monat: 10 }, { zeit: 1 }, {}, { a: 1, b: 1 }) ? "fragt" : "still", "still");
+    pruefe("Waechter kennt den Anreisetag",
+      frag({ anreise: "2027-01-04" }, { anreise: 1 })?.satz || "still", "Soll es der 4. Januar sein?");
+    // Der alte Weg darf dabei nicht kaputtgehen
+    pruefe("Gemeldete Unsicherheit hat weiter Vorrang",
+      WK.verstaendnisRueckfrage({ erwachsene: 2, kinder: 1 },
+        { unsicher: ["erwachsene"], verworfenWert: { monat: 10 },
+          gefragtWie: { zeit: 1 }, rueckversichert: {} })?.feld || "keine", "erwachsene");
   }
 
   console.log(`\n${gut} richtig, ${schlecht} falsch`);

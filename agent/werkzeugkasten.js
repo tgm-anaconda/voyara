@@ -1675,6 +1675,155 @@ const Werkzeugkasten = {
      ueber die Person.
 
      Der Wrapper bleibt, weil Aufrufer und Kernpruefung ihn kennen. */
+  /* ==================================================================
+     Feiertage, Ferien und andere Zeitanker (17.11.2026)
+     ------------------------------------------------------------------
+     Bens Frage aus dem Durchlauf: "Was ist, wenn jemand sagt, ich
+     wuerde gerne an Ostern verreisen?"
+
+     Gemessen war die Lage so: Der Kern rechnete es nicht aus. Das
+     Modell DURFTE den Monat setzen, weil "ostern" auf der Ankerliste
+     stand - aber niemand prueft, ob der Monat stimmt. Und Ostern
+     wandert: 2027 der 28. Maerz, 2028 der 16. April. Haette das Modell
+     "April" gesagt, waere es 2027 ungeprueft falsch gewesen.
+
+     Schlechter noch war es bei "in den Osterferien", "am 1. Advent"
+     und "ueber Karneval": Die standen auf keiner Liste, der Monat des
+     Modells wurde verworfen, und der Agent fragte noch einmal nach dem
+     Monat - genau der Fall, den Ben gemeldet hat.
+
+     Jetzt rechnet der Kern. Ostern ist exakt berechenbar, und daran
+     haengen Karneval, Himmelfahrt, Pfingsten und Fronleichnam mit
+     festem Abstand. Der Rest sind feste Daten.
+
+     Zwei Arten von Antwort, und der Unterschied ist wichtig:
+
+       sicher   genau ein Monat. Der wird gesetzt.
+       offen    mehrere moegliche Monate. Dann wird NICHT geraten,
+                sondern dem Fahrplan uebergeben, der danach fragt
+                (monateAnsetzen). Schulferien sind Laendersache - wer
+                "Winterferien" sagt, kann Januar oder Februar meinen,
+                und das darf der Kern nicht fuer ihn entscheiden. */
+  ostersonntag(jahr) {
+    // Meeus/Jones/Butcher, gregorianisch. Geprueft gegen 2026 bis 2030.
+    const a = jahr % 19, b = Math.floor(jahr / 100), c = jahr % 100;
+    const d = Math.floor(b / 4), e = b % 4;
+    const f = Math.floor((b + 8) / 25);
+    const g = Math.floor((b - f + 1) / 3);
+    const h = (19 * a + b - d - g + 15) % 30;
+    const i = Math.floor(c / 4), k = c % 4;
+    const l = (32 + 2 * e + 2 * i - h - k) % 7;
+    const m = Math.floor((a + 11 * h + 22 * l) / 451);
+    const monat = Math.floor((h + l - 7 * m + 114) / 31);
+    const tag = ((h + l - 7 * m + 114) % 31) + 1;
+    return new Date(jahr, monat - 1, tag);
+  },
+
+  /* Der naechste Termin dieser Art, von heute aus gesehen.
+     Wer im November "an Ostern" sagt, meint das kommende Ostern, nicht
+     das vergangene. Deshalb wird erst das laufende Jahr geprueft und
+     bei einem Datum in der Vergangenheit das naechste genommen. */
+  naechstes(heute, bauen) {
+    const j = heute.getFullYear();
+    const a = bauen(j);
+    if (a && a >= new Date(j, heute.getMonth(), heute.getDate())) return a;
+    return bauen(j + 1);
+  },
+
+  ZEITANKER: [
+    /* Reihenfolge entscheidet: Was weiter oben steht, gewinnt. Deshalb
+       stehen die Ferien VOR den Feiertagen, auf die sie sich beziehen -
+       "Osterferien" ist etwas anderes als "Ostern", und wer zuerst auf
+       "oster" prueft, wuerde die Ferien nie sehen. */
+
+    // --- Schulferien: Laendersache, deshalb meist offen ---
+    /* Osterferien liegen um Ostern herum, aber nicht symmetrisch und je
+       nach Land verschieden. Faellt Ostern in die erste Monatshaelfte,
+       reichen sie in den Vormonat; in der zweiten in den Folgemonat.
+       Darum zwei Monate und eine Rueckfrage statt eines geratenen. */
+    { name: "Osterferien", muster: /osterferien|ferien (?:ü|ue)ber ostern/,
+      monate: (h, wk) => {
+        const o = wk.naechstes(h, (j) => wk.ostersonntag(j));
+        const m = o.getMonth() + 1;
+        return o.getDate() <= 15 ? [m === 1 ? 12 : m - 1, m] : [m, m === 12 ? 1 : m + 1];
+      } },
+    { name: "Pfingstferien", muster: /pfingstferien/,
+      monate: (h, wk) => [wk.festtagMonat(h, 49)] },
+    { name: "Sommerferien", muster: /sommerferien|gro(ß|ss)en? ferien/, monate: () => [7, 8] },
+    { name: "Herbstferien", muster: /herbstferien/, monate: () => [10] },
+    { name: "Winterferien", muster: /winterferien|skiferien/, monate: () => [1, 2] },
+    { name: "Weihnachtsferien", muster: /weihnachtsferien/, monate: () => [12] },
+    { name: "Faschingsferien", muster: /faschingsferien|karnevalsferien/,
+      monate: (h, wk) => [wk.festtagMonat(h, -48)] },
+
+    // --- Bewegliche Feiertage, alle an Ostern haengend ---
+    { name: "Karneval", muster: /karneval|fasching|fas(t)?nacht|fasnet|rosenmontag|aschermittwoch|weiberfastnacht|altweiber|n(ä|ae)rrische/,
+      monate: (h, wk) => [wk.festtagMonat(h, -48)] },
+    { name: "Ostern", muster: /\bostern\b|karfreitag|ostersonntag|ostermontag|karwoche|gr(ü|ue)ndonnerstag/,
+      monate: (h, wk) => [wk.festtagMonat(h, 0)] },
+    { name: "Himmelfahrt", muster: /himmelfahrt|vatertag|herrentag/,
+      monate: (h, wk) => [wk.festtagMonat(h, 39)] },
+    { name: "Pfingsten", muster: /pfingsten|pfingstmontag|pfingstsonntag/,
+      monate: (h, wk) => [wk.festtagMonat(h, 49)] },
+    { name: "Fronleichnam", muster: /fronleichnam/,
+      monate: (h, wk) => [wk.festtagMonat(h, 60)] },
+
+    // --- Feste Termine ---
+    /* Silvester, Jahreswechsel, "zwischen den Jahren": Die ANREISE liegt
+       im Dezember, auch wenn die Reise ins neue Jahr reicht. Eine
+       Rueckfrage waere hier nur laestig - gesagt wird es trotzdem, also
+       kann die Person widersprechen. */
+    { name: "Silvester", muster: /silvester|jahreswechsel|guten rutsch|zwischen den jahren|neujahr|jahresende|jahresausklang/,
+      monate: () => [12] },
+    { name: "Valentinstag", muster: /valentinstag|valentins/, monate: () => [2] },
+    { name: "1. Mai", muster: /(1\.|erste[rn]?) mai|maifeiertag|tag der arbeit/, monate: () => [5] },
+    { name: "Muttertag", muster: /muttertag/, monate: () => [5] },
+    // Das Oktoberfest beginnt immer im September (Samstag nach dem 15.)
+    { name: "Oktoberfest", muster: /oktoberfest|wiesn/, monate: () => [9] },
+    { name: "Tag der Deutschen Einheit", muster: /tag der deutschen einheit/, monate: () => [10] },
+    { name: "Halloween", muster: /halloween/, monate: () => [10] },
+    { name: "Allerheiligen", muster: /allerheiligen|allerseelen/, monate: () => [11] },
+    { name: "1. Advent", muster: /(1\.|erste[rn]?|1)\s*advent/,
+      monate: (h, wk) => [wk.naechstes(h, (j) => wk.ersterAdvent(j)).getMonth() + 1] },
+    { name: "Adventszeit", muster: /advent/, monate: () => [12] },
+    { name: "Nikolaus", muster: /nikolaus/, monate: () => [12] },
+    { name: "Weihnachten", muster: /weihnacht|heiligabend|christkind|(ü|ue)ber die feiertage/,
+      monate: () => [12] },
+  ],
+
+  /* Der 1. Advent ist der vierte Sonntag vor dem 25. Dezember. Er faellt
+     je nach Jahr in den November oder den Dezember (2027: 28.11., 2028:
+     03.12.) - also genau der Fall, in dem eine Rueckfrage ueberfluessig
+     waere, weil der Kern rechnen kann. */
+  ersterAdvent(jahr) {
+    const heiligabend = new Date(jahr, 11, 24);
+    // Der Sonntag am oder vor dem 24.12. ist der 4. Advent
+    const vierter = new Date(jahr, 11, 24 - heiligabend.getDay());
+    return new Date(jahr, 11, vierter.getDate() - 21);
+  },
+
+  // Monat eines beweglichen Feiertags: Abstand in Tagen zu Ostern
+  festtagMonat(heute, abstand) {
+    const wk = this;
+    const d = this.naechstes(heute, (j) => {
+      const o = wk.ostersonntag(j);
+      return new Date(o.getFullYear(), o.getMonth(), o.getDate() + abstand);
+    });
+    return d.getMonth() + 1;
+  },
+
+  zeitanker(text, heute = new Date()) {
+    const t = String(text || "").toLowerCase();
+    if (!t) return null;
+    for (const a of this.ZEITANKER) {
+      if (!a.muster.test(t)) continue;
+      const monate = a.monate(heute, this).filter((m) => Number.isInteger(m) && m >= 1 && m <= 12);
+      if (!monate.length) continue;
+      return { name: a.name, monate, sicher: monate.length === 1, monat: monate[0] };
+    }
+    return null;
+  },
+
   relativerMonat(text, heute = new Date()) {
     return this.relativeAngabe(text, heute)?.monat || null;
   },
@@ -1690,6 +1839,26 @@ const Werkzeugkasten = {
     const etwa = "(?:etwa\\s+|ungef(?:ä|ae)hr\\s+|ca\\.?\\s+|gut\\s+|knapp\\s+)?";
     let monate = null;
     let treffer = null;
+    /* Nahe Angaben ohne Zahl (17.11.2026). "Naechste Woche" und
+       "uebermorgen" sind genauso eindeutig wie "in sieben Tagen", nur
+       sagt sie kaum jemand so. Alle als Tage gerechnet, damit die Frage
+       nach dem Anreisetag stehen bleibt - wer "naechstes Wochenende"
+       sagt, meint einen Tag. */
+    const TAGE_WORT = [
+      [/(?:ü|ue)bermorgen/, 2],
+      [/\bmorgen\b/, 1],
+      [/(?:ü|ue)bern(?:ä|ae)chste[nr]?\s+woche/, 14],
+      [/n(?:ä|ae)chste[nr]?\s+woche|kommende[nr]?\s+woche/, 7],
+      [/(?:ü|ue)bern(?:ä|ae)chste[ns]?\s+wochenende/, 14],
+      [/n(?:ä|ae)chste[ns]?\s+wochenende|kommende[ns]?\s+wochenende|am wochenende|dieses wochenende/, 7],
+      [/in\s+(?:einer|1)\s+woche/, 7],
+    ];
+    for (const [re, tage] of TAGE_WORT) {
+      if (re.test(t)) {
+        const x = new Date(heute.getFullYear(), heute.getMonth(), heute.getDate() + tage);
+        return { monat: x.getMonth() + 1, einheit: "tage", zahl: tage };
+      }
+    }
     if (/(?:ü|ue)bern(?:ä|ae)chsten\s+monat/.test(t)) monate = 2;
     else if (/n(?:ä|ae)chsten\s+monat|kommenden\s+monat/.test(t)) monate = 1;
     else if (/in\s+(?:einem\s+)?halben\s+jahr/.test(t)) monate = 6;
@@ -2846,6 +3015,12 @@ const Werkzeugkasten = {
          und er landet in den Studiendaten. */
       const beantwortet = (...themen) => ["ja", "teilweise"].includes(a.frage_beantwortet)
         && themen.includes(kern.lauf.gefragtVorher);
+      /* Dieselbe Regel, nur strenger: ein klares "ja", kein "teilweise".
+         Fuer den Monat, weil dort der teuerste gemessene Fehlgriff liegt
+         ("hauptsache warm" -> Oktober). Ein halbes Ja reicht dafuer
+         nicht. */
+      const klarBeantwortet = (...themen) => a.frage_beantwortet === "ja"
+        && themen.includes(kern.lauf.gefragtVorher);
       if (a.ziel !== undefined) {
         const roh = String(a.ziel).toLowerCase().trim();
         let id = null;
@@ -2986,8 +3161,30 @@ const Werkzeugkasten = {
       // Eine Jahreszeit ("im Winter") ist noch kein Monat - dann fragt der
       // Agent nach dem Monat; "egal" darf er selbst aufloesen
       const monatGenanntJetzt = gesagt(/januar|februar|märz|maerz|april|\bmai\b|juni|juli|august|september|oktober|november|dezember|\bjan\b|\bfeb\b|\bokt\b|\bnov\b|\bdez\b/i, 1);
-      if (a.monat && !p.monat && !gesagt(/januar|februar|märz|maerz|april|\bmai\b|juni|juli|august|september|oktober|november|dezember|\bjan\b|\bfeb\b|\bokt\b|\bnov\b|\bdez\b|ostern|pfingsten|weihnachten|silvester|nächsten monat|naechsten monat|\d{1,2}\.\s*\d{1,2}\.|\d{4}-\d{2}|egal|gleich|such du|du entscheid|dein vorschlag|nimm/i)) {
-        kern.notieren("monat_verworfen", { monat: a.monat }); delete a.monat;
+      /* Der Monat: Ausweg ueber das Modell, aber nur mit klarem Ja
+         (17.11.2026).
+         ----------------------------------------------------------------
+         Hier liegt der teuerste gemessene Fehlgriff des Modells: Auf
+         "hauptsache warm" setzte es Oktober, ohne dass jemand einen
+         Monat genannt hatte. Deshalb ist die Huerde hier hoeher als bei
+         den anderen Themen - `klarBeantwortet` verlangt "ja", nicht
+         "teilweise". "Hauptsache warm" ist keine Antwort auf "welcher
+         Monat", und ein Modell, das das mit "ja" quittiert, hat ein
+         anderes Problem als eine Wortliste.
+
+         Gesagt wird der Monat ohnehin (siehe relativAngesagt weiter
+         unten) - ein falscher bleibt also nicht unbemerkt.
+
+         Was der Kern WEITERHIN selbst rechnet, weil das Modell es nicht
+         zuverlaessig kann: relative Angaben und Feiertage. Dort kennt
+         der Kern den heutigen Tag, das Modell nicht. Das ist die Grenze
+         zwischen beiden - Bedeutung gehoert dem Modell, Rechnen dem
+         Kern. */
+      if (a.monat && !p.monat && !klarBeantwortet("zeit")
+        && !gesagt(/januar|februar|märz|maerz|april|\bmai\b|juni|juli|august|september|oktober|november|dezember|\bjan\b|\bfeb\b|\bokt\b|\bnov\b|\bdez\b|ostern|pfingsten|weihnachten|silvester|nächsten monat|naechsten monat|\d{1,2}\.\s*\d{1,2}\.|\d{4}-\d{2}|egal|gleich|such du|du entscheid|dein vorschlag|nimm/i)) {
+        kern.notieren("monat_verworfen", { monat: a.monat });
+        Werkzeugkasten.merkeVerworfen(kern, "monat", a.monat);
+        delete a.monat;
       }
       /* "In zwei Monaten" rechnet der Kern selbst aus - siehe
          relativerMonat. Das steht hinter der Pruefung oben, weil es
@@ -3024,6 +3221,36 @@ const Werkzeugkasten = {
             text: `Das wäre ${name} - damit rechne ich erst mal. Wenn du einen anderen Monat im Kopf hast, sag Bescheid.`,
             felder: { monat: rel.monat },
           });
+        }
+      }
+      /* Feiertage und Ferien (17.11.2026) - siehe ZEITANKER.
+         ----------------------------------------------------------------
+         Steht hinter der relativen Angabe: Wer "in 70 Tagen" sagt, hat
+         gerechnet; das schlaegt ein nebenbei gefallenes "ueber Ostern".
+
+         Ist der Monat eindeutig, wird er gesetzt und angesagt. Ist er es
+         nicht - Schulferien sind Laendersache, "Winterferien" kann
+         Januar oder Februar heissen -, wird NICHT geraten, sondern der
+         Fahrplan fragt danach (monateAnsetzen). Lieber eine Frage zu
+         viel als ein stillschweigend falscher Monat. */
+      const ank = !p.monat && !rel?.monat ? Werkzeugkasten.zeitanker(
+        kern.lauf.gespraech.filter((n) => n.role === "user").slice(-1)[0]?.content || "") : null;
+      if (ank && !p.monat) {
+        kern.notieren("zeitanker", { name: ank.name, monate: ank.monate, sicher: ank.sicher });
+        if (ank.sicher) {
+          a.monat = ank.monat;
+          if (!kern.lauf.relativAngesagt) {
+            kern.lauf.relativAngesagt = true;
+            const name = typeof MONATSNAMEN !== "undefined" ? MONATSNAMEN[ank.monat - 1] : String(ank.monat);
+            (kern.lauf.annahmeOffen ||= []).push({
+              thema: "zeit",
+              text: `${ank.name} fällt dann auf ${name} - damit rechne ich erst mal. Wenn du einen anderen Monat im Kopf hast, sag Bescheid.`,
+              felder: { monat: ank.monat },
+            });
+          }
+        } else {
+          delete a.monat;
+          Werkzeugkasten.monateAnsetzen(kern, p, ank.monate, "kern");
         }
       }
       const mehrere = Array.isArray(a.monate) ? [...new Set(a.monate.map(Number).filter((m) => Number.isInteger(m) && m >= 1 && m <= 12))] : [];
@@ -3203,7 +3430,9 @@ const Werkzeugkasten = {
       // des Modells, sondern die einzige Lesart von "im Oktober"
       p.flexibel = !(p.von && p.bis);
       if (a.naechte && !p.naechte && !beantwortet("dauer") && !gesagt(/\d|woche|tage|nächte|naechte|übernacht|uebernacht|wochenende|lang|kurz|eine|zwei|drei|vier|fünf|fuenf|sechs|sieben|acht|neun|zehn|zwölf|zwoelf|vierzehn/i)) {
-        kern.notieren("naechte_verworfen", { naechte: a.naechte }); delete a.naechte;
+        kern.notieren("naechte_verworfen", { naechte: a.naechte });
+        Werkzeugkasten.merkeVerworfen(kern, "naechte", a.naechte);
+        delete a.naechte;
       }
       setze("naechte", a.naechte);
       /* Wer die Zahl der Reisenden lesen darf (09.11.2026)
@@ -3236,7 +3465,9 @@ const Werkzeugkasten = {
       for (const f of ["personenGesamt", "erwachsene", "kinder"]) {
         if (a[f] != null && p[f === "personenGesamt" ? "personen" : f] == null
           && !gesagt(ZAHL, 1) && !beantwortet("reisende", "kinderAlter")) {
-          kern.notieren("reisende_verworfen", { feld: f, wert: a[f] }); delete a[f];
+          kern.notieren("reisende_verworfen", { feld: f, wert: a[f] });
+          Werkzeugkasten.merkeVerworfen(kern, f === "personenGesamt" ? "erwachsene" : f, a[f]);
+          delete a[f];
         }
       }
       /* Die unbestimmte Mehrzahl - der eine Fall, den die Liste oben
@@ -3276,9 +3507,23 @@ const Werkzeugkasten = {
       setze("erwachsene", a.erwachsene); setze("kinder", a.kinder);
       // Das Alter der Kinder weiss nur die Person. Aus "mein suesser Bengel"
       // machte das Modell sonst ein einjaehriges Kind.
+      /* Das Alter: Ausweg ueber das Modell (17.11.2026).
+         ----------------------------------------------------------------
+         Gemessen an sechs normalen Antworten auf "Wie alt sind die
+         Kinder?" kam KEINE einzige an - auch "zwei und vier" nicht, weil
+         die Zahlwoerter nicht in der Liste standen. Der Agent fragte
+         danach noch einmal.
+
+         Jetzt gilt hier dieselbe Regel wie bei den Reisenden seit dem
+         09.11.: Sagt das Modell, dass die Person genau diese Frage
+         beantwortet hat, zaehlt das. Die Wortliste bleibt als zweiter
+         Weg fuer alles, wofuer niemand eingestanden ist. */
       if (Array.isArray(a.kinderAlter) && !(p.kinderAlter || []).length
-        && !gesagt(/\d|\bjahr|jährig|jaehrig|baby|säugling|saeugling|kleinkind|schulkind|teenager|monate/i, 2)) {
-        kern.notieren("alter_verworfen", { alter: a.kinderAlter }); delete a.kinderAlter;
+        && !beantwortet("kinderAlter", "reisende")
+        && !gesagt(/\d|\bjahr|jährig|jaehrig|baby|säugling|saeugling|kleinkind|schulkind|teenager|monate|zwei|drei|vier|fünf|fuenf|sechs|sieben|acht|neun|zehn|elf|zwölf|zwoelf|klein|gross|groß|schule|kindergarten|kita|pubert/i, 2)) {
+        kern.notieren("alter_verworfen", { alter: a.kinderAlter });
+        Werkzeugkasten.merkeVerworfen(kern, "kinderAlter", a.kinderAlter);
+        delete a.kinderAlter;
       }
       if (Array.isArray(a.kinderAlter)) setze("kinderAlter", a.kinderAlter.filter((x) => Number.isInteger(x) && x >= 0 && x < 18).slice(0, 6));
       // Rechnen tut der Kern, nicht das Modell: "zu viert" und "2 Kinder"
@@ -3368,8 +3613,16 @@ const Werkzeugkasten = {
       setze("mindestbewertung", a.mindestbewertung); setze("mindestSterne", a.mindestSterne);
       // Der Anreisetag nur, wenn die Person einen Tag genannt hat - das
       // Modell setzte sonst schon beim "Zur Buchung" den 12. ein
-      if (a.anreise && !gesagt(Werkzeugkasten.TAG)) {
-        kern.notieren("anreise_verworfen", { anreise: a.anreise }); delete a.anreise;
+      /* Der Anreisetag: Ausweg ueber das Modell (17.11.2026), aber die
+         Strenge bleibt sinnvoll. Das Modell trug frueher ungefragt den
+         12. ein, nur weil es zur Buchung ging - deshalb reicht ein
+         beliebiger Satz nicht. Steht das Modell aber dafuer ein, dass
+         die Person gerade DIESE Frage beantwortet hat ("gleich am
+         Monatsanfang", "an einem Samstag"), gilt der Tag. */
+      if (a.anreise && !gesagt(Werkzeugkasten.TAG) && !beantwortet("anreise")) {
+        kern.notieren("anreise_verworfen", { anreise: a.anreise });
+        Werkzeugkasten.merkeVerworfen(kern, "anreise", a.anreise);
+        delete a.anreise;
       }
       /* Monat und Jahr kommen aus der Suche, nicht vom Modell - aus "16.
          Okt." wurde sonst gern der 16. des laufenden Monats.
@@ -3399,7 +3652,7 @@ const Werkzeugkasten = {
          abgeleitet, und die Ableitung wird gesagt, nicht stillschweigend
          gemacht. */
       for (const f of ["anreiseBis", "anreiseAb"]) {
-        if (a[f] && !gesagt(Werkzeugkasten.TAG)) { kern.notieren("frist_verworfen", { feld: f, wert: a[f] }); delete a[f]; }
+        if (a[f] && !gesagt(Werkzeugkasten.TAG) && !beantwortet("anreise")) { kern.notieren("frist_verworfen", { feld: f, wert: a[f] }); delete a[f]; }
       }
       setze("anreiseBis", a.anreiseBis); setze("anreiseAb", a.anreiseAb);
       Werkzeugkasten.fristAbleiten(kern, p);
@@ -3545,9 +3798,17 @@ const Werkzeugkasten = {
         };
         const ERLAUBT = Object.keys(WORT);
         const gewollt = a.ausstattung.filter((x) => ERLAUBT.includes(x));
-        const ohneBeleg = gewollt.filter((x) => !gesagt(WORT[x], 99));
+        /* Ausstattung: Ausweg ueber das Modell (17.11.2026).
+           --------------------------------------------------------------
+           Gemessen fielen vier von 23 Formulierungen durch, alle aus
+           reinen Wortluecken: "mit Sauna" (Sauna fehlte bei Wellness),
+           "strandnah", "fusslaeufig zum Strand", "abends im Haus essen".
+           Wortlisten werden nie vollstaendig - deshalb gilt auch hier:
+           Steht das Modell fuer die Antwort ein, zaehlt sie. */
+        const deckt = beantwortet("wuensche", "ausstattung");
+        const ohneBeleg = deckt ? [] : gewollt.filter((x) => !gesagt(WORT[x], 99));
         if (ohneBeleg.length) kern.notieren("ausstattung_verworfen", { felder: ohneBeleg });
-        p.ausstattung = gewollt.filter((x) => gesagt(WORT[x], 99));
+        p.ausstattung = deckt ? gewollt : gewollt.filter((x) => gesagt(WORT[x], 99));
         geaendert.push("ausstattung");
       }
       /* Reisende fuer die Buchungsstrecke - aber nur, wenn die Zahl aufgeht.
@@ -6862,7 +7123,16 @@ const Werkzeugkasten = {
      Eintrag bekommen keinen - bei manchen waere er albern ("sonst nehme
      ich an, dass du nirgendwohin willst"). */
   ANNAHME_SAETZE: {
-    zeit: "Wenn du dich nicht festlegen willst, suche ich dir den Monat mit der größten Auswahl.",
+    /* Der Satz zur Zeit ist raus (17.11.2026, Wunsch des Nutzers aus
+       einem echten Durchlauf). Er haengte beim zweiten Anlauf an der
+       Monatsfrage: "Wenn du dich nicht festlegen willst, suche ich dir
+       den Monat mit der groessten Auswahl."
+
+       Die Annahme selbst bleibt: Faellt nach zwei Anlaeufen keine
+       Antwort, waehlt der Kern weiterhin einen Monat und sagt dann,
+       welchen und warum (ANNAHME.zeit, Feld `satz`). Angesagt wird es
+       also im Moment, in dem es passiert - nur nicht mehr vorher als
+       Angebot. */
     reisende: "Sonst rechne ich erst mal mit zwei Erwachsenen.",
     kinderAlter: "Sonst rechne ich vorläufig mit acht Jahren - vor der Buchung brauche ich es genau.",
     art: "Wenn es dir gleich ist, zeige ich dir beides.",
@@ -6983,14 +7253,45 @@ const Werkzeugkasten = {
      Agenten ist im Vollbild-Arm eine zusaetzliche Unterbrechung der
      Seite. Was die Studie messen will, ist die Beobachtbarkeit - nicht,
      wie gespraechig der Agent ist. */
+  /* Zwei Felder mehr, fuer den Waechter aus Stufe 2 (17.11.2026).
+     Sie lesen denselben Stand wie die uebrigen - der Waechter legt den
+     verworfenen Wert vorher als Ueberlagerung hinein. */
+  RUECKFRAGE_ZUSATZ: {
+    monat: (p) => {
+      const m = p.monat;
+      if (!Number.isInteger(m) || m < 1 || m > 12) return null;
+      const name = typeof MONATSNAMEN !== "undefined" ? MONATSNAMEN[m - 1] : String(m);
+      return { satz: `Meinst du ${name}?`, chips: [`Ja, ${name}`, "Nein, ein anderer Monat"] };
+    },
+    anreise: (p) => {
+      const roh = String(p.anreise || "");
+      const t = roh.match(/(\d{4})-(\d{2})-(\d{2})/);
+      if (!t) return null;
+      const name = typeof MONATSNAMEN !== "undefined" ? MONATSNAMEN[+t[2] - 1] : t[2];
+      return { satz: `Soll es der ${+t[3]}. ${name} sein?`,
+        chips: ["Ja, genau", "Nein, ein anderer Tag"] };
+    },
+  },
+
+  /* Welches Thema zu welchem Feld gehoert - der Waechter fragt nur dann
+     nach, wenn der Fahrplan dieses Thema schon einmal gefragt hat. */
+  FELD_THEMA: { monat: "zeit", kinderAlter: "kinderAlter", naechte: "dauer",
+    erwachsene: "reisende", kinder: "reisende", anreise: "anreise" },
+
   RUECKFRAGE_HOECHSTENS: 2,
 
   verstaendnisRueckfrage(p, lauf) {
     if (!p || !lauf) return null;
-    const offen = lauf.unsicher || [];
-    if (!offen.length) return null;
     const schon = lauf.rueckversichert || {};
     if (Object.keys(schon).length >= this.RUECKFRAGE_HOECHSTENS) return null;
+    /* Die gemeldete Unsicherheit hat Vorrang, aber ihr Fehlen beendet
+       die Pruefung nicht mehr (17.11.2026).
+       ----------------------------------------------------------------
+       Hier stand ein `if (!offen.length) return null` ganz vorn. Damit
+       war der Waechter aus Stufe 2 tot: Er haengt hinter der Schleife,
+       und ohne gemeldete Unsicherheit - also im Normalfall - wurde sie
+       nie erreicht. Gemessen an neun Faellen feuerte keiner. */
+    const offen = lauf.unsicher || [];
     for (const feld of offen) {
       if (schon[feld]) continue;
       const bau = this.RUECKFRAGE_FELDER[feld];
@@ -6999,7 +7300,53 @@ const Werkzeugkasten = {
       if (!r || !r.satz) continue;
       return { feld, satz: r.satz, chips: r.chips || ["Ja, genau"] };
     }
+    return this.verworfenRueckfrage(p, lauf, schon);
+  },
+
+  /* Der Waechter (Stufe 2, 17.11.2026)
+     ------------------------------------------------------------------
+     Bens Fall vom 17.11.: Das Modell hatte die Angabe verstanden, der
+     Kern verwarf sie, und der Agent stellte dieselbe Frage noch einmal.
+     Fuer die Person sieht das aus, als hoere er nicht zu - und genau das
+     darf sie nicht merken, weil ihr Vertrauen hier die Messgroesse ist.
+
+     Stufe 1 hat die bekannten Faelle behoben, indem das Modell fuer eine
+     Antwort einstehen darf. Dieser Waechter faengt die unbekannten: Wenn
+     ein Wert verworfen wurde UND der Fahrplan dasselbe Thema schon
+     einmal gefragt hat, wird die Frage nicht wiederholt, sondern der
+     verworfene Wert als Frage vorgelegt: "Meinst du Maerz?"
+
+     Zwei Bremsen, beide mit Grund:
+
+     Erst ab dem zweiten Anlauf. Beim ersten Mal ist die Frage frisch,
+     da waere eine Rueckfrage kuenstlich. Und ein verworfener Wert kann
+     erfunden sein - das ist ja der Sinn des Verwerfens. Ihn gleich beim
+     ersten Mal vorzulegen hiesse, eine Erfindung zur Frage zu erheben.
+
+     Nur einmal je Feld, und es zaehlt gegen dieselbe Obergrenze wie die
+     uebrigen Rueckfragen (RUECKFRAGE_HOECHSTENS). Sonst wird aus dem
+     Waechter ein Verhoer. */
+  verworfenRueckfrage(p, lauf, schon = {}) {
+    const verworfen = lauf.verworfenWert || {};
+    for (const [feld, wert] of Object.entries(verworfen)) {
+      if (schon[feld] || wert == null) continue;
+      // Steht der Wert inzwischen im Stand, hat sich die Frage erledigt
+      if (p[feld] != null && !(Array.isArray(p[feld]) && !p[feld].length)) continue;
+      const thema = this.FELD_THEMA[feld];
+      if (!thema || (lauf.gefragtWie?.[thema] || 0) < 1) continue;
+      const bau = this.RUECKFRAGE_ZUSATZ[feld] || this.RUECKFRAGE_FELDER[feld];
+      if (!bau) continue;
+      const r = bau({ ...p, [feld]: wert }, this);
+      if (!r || !r.satz) continue;
+      return { feld, satz: r.satz, chips: r.chips || ["Ja, genau"], ausVerworfen: true };
+    }
     return null;
+  },
+
+  // Einen verworfenen Wert merken, damit der Waechter ihn vorlegen kann
+  merkeVerworfen(kern, feld, wert) {
+    if (wert == null) return;
+    (kern.lauf.verworfenWert ||= {})[feld] = wert;
   },
 
   // Hat die Person einen Tag genannt? "am 5.", "5. Nov.", "5. November",
