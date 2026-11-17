@@ -223,11 +223,38 @@ const p5 = flugProfil(); const l5 = flugLauf(); l5.nachrichtArt = "frage";
 try { WK.fahrplan(p5, l5); } catch { /* siehe oben */ }
 pruefe("Frage: Annahme wird zurueckgestellt", p5.flugAb == null, true);
 pruefe("Frage: der Aufschub steht fest", !!l5.frageAufschub?.flugAb, true);
-// Beim zweiten Mal greift sie doch - sonst liesse sich der Fahrplan aufhalten
+/* Hier stand bis zum 17.11.2026 das Gegenteil: "Beim zweiten Mal greift
+   sie doch - sonst liesse sich der Fahrplan aufhalten." Im Durchlauf vom
+   17.11. hat sich das als falsch erwiesen. Ben fragte dreimal sachlich
+   zum Alter der Kinder nach und bekam danach "Ich rechne vorlaeufig mit
+   je acht Jahren".
+
+   Aufhalten laesst sich der Fahrplan dadurch nicht: Der Agent antwortet
+   auf jede Frage, die Unterhaltung geht weiter. Die Annahme gibt es fuer
+   Schweigen und Ausweichen, nicht fuer Beteiligung. */
 const p5b = flugProfil(); p5b.flugAb = null;
-const l5b = flugLauf(); l5b.nachrichtArt = "frage"; l5b.frageAufschub = { flugAb: true };
+const l5b = flugLauf(); l5b.nachrichtArt = "frage"; l5b.frageAufschub = { flugAb: 1 };
 try { WK.fahrplan(p5b, l5b); } catch { /* siehe oben */ }
-pruefe("Zweite Frage: Annahme greift doch", typeof p5b.flugAb === "string" && !!p5b.flugAb, true);
+pruefe("Auch die zweite Frage haelt die Annahme zurueck", p5b.flugAb == null, true);
+// Und die dritte
+const p5c = flugProfil(); p5c.flugAb = null;
+const l5c = flugLauf(); l5c.nachrichtArt = "frage"; l5c.frageAufschub = { flugAb: 2 };
+try { WK.fahrplan(p5c, l5c); } catch { /* siehe oben */ }
+pruefe("Auch die dritte Frage haelt sie zurueck", p5c.flugAb == null, true);
+/* Der Kern erkennt die Frage auch, wenn das Modell sie falsch
+   einordnet - im Messlauf hat es zwei von drei nicht als "frage"
+   gemeldet. */
+const p5d = flugProfil(); p5d.flugAb = null;
+const l5d = flugLauf(); l5d.nachrichtArt = "sonstiges";
+l5d.gespraech = [{ role: "user", content: "und welcher flughafen waere denn guenstiger?" }];
+try { WK.fahrplan(p5d, l5d); } catch { /* siehe oben */ }
+pruefe("Fragezeichen genuegt, auch ohne Urteil des Modells", p5d.flugAb == null, true);
+// Echtes Ausweichen fuehrt weiter zur Annahme
+const p5e = flugProfil(); p5e.flugAb = null;
+const l5e = flugLauf(); l5e.nachrichtArt = "sonstiges";
+l5e.gespraech = [{ role: "user", content: "keine ahnung" }];
+try { WK.fahrplan(p5e, l5e); } catch { /* siehe oben */ }
+pruefe("Ausweichen fuehrt weiter zur Annahme", typeof p5e.flugAb === "string" && !!p5e.flugAb, true);
 
 /* ====================================================================
    6. Keine Entschuldigung, wenn etwas angekommen ist

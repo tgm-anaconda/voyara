@@ -8098,12 +8098,36 @@ const Werkzeugkasten = {
          richtige Auskunft ("Hamburg und Hannover") neben einer Annahme,
          die ihr widersprach.
 
-         Einmal zurueckstellen, nicht abschaffen: Beim naechsten Zug
-         greift die Annahme doch, sonst liesse sich der Fahrplan mit
-         Rueckfragen beliebig aufhalten. Dasselbe Muster wie bei
-         `nichtVerstanden` direkt darunter. */
-      if (lauf.nachrichtArt === "frage" && !(lauf.frageAufschub || {})[t]) {
-        (lauf.frageAufschub ||= {})[t] = true;
+         Hier stand bis zum 17.11.2026 "einmal zurueckstellen, nicht
+         abschaffen" - beim naechsten Zug griff die Annahme doch, damit
+         sich der Fahrplan nicht beliebig aufhalten laesst.
+
+         Im Durchlauf hat sich das als falsch erwiesen. Ben fragte zum
+         Alter der Kinder dreimal sachlich nach ("ab wann zaehlt jemand
+         als Kind?", "zahlen Kinder den vollen Preis?", "brauchen die ein
+         eigenes Bett?") - und bekam danach "Ich rechne vorlaeufig mit je
+         acht Jahren". Sein Urteil: "Konstruktive Fragen zaehlen nicht
+         als fehlgeschlagene Versuche."
+
+         Er hat recht, und die Begruendung ist einfach: Die Annahme gibt
+         es fuer Schweigen und Ausweichen. Wer fragt, ist beim Thema und
+         bekommt eine Antwort - die Unterhaltung geht weiter, sie steht
+         nicht still. Sie "beliebig aufzuhalten" waere nur dann ein
+         Problem, wenn der Agent dabei nichts taete; er antwortet aber
+         jedes Mal.
+
+         Dazu kommt, dass das Urteil nicht allein vom Modell abhaengen
+         darf: Ein Fragezeichen sieht der Kern selbst. Im Messlauf hat
+         das Modell zwei der drei Rueckfragen nicht als "frage"
+         eingeordnet.
+
+         Was weiter zur Annahme fuehrt: Schweigen, Themenwechsel, "weiss
+         nicht" - also alles, wofuer sie gebaut wurde. */
+      const letzteFrage = [...((lauf.gespraech || []).filter((n) => n.role === "user"))]
+        .slice(-1)[0]?.content || "";
+      if (lauf.nachrichtArt === "frage" || lauf.nachrichtArt === "unklar"
+        || /\?\s*$/.test(String(letzteFrage).trim())) {
+        (lauf.frageAufschub ||= {})[t] = (lauf.frageAufschub?.[t] || 0) + 1;
         continue;
       }
       /* Erst nachfragen, dann annehmen.
