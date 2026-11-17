@@ -130,8 +130,29 @@ const Werkzeugkasten = {
              Hier kann das Modell sagen, worueber die Person in DIESER
              Nachricht gesprochen hat - unabhaengig davon, was gefragt
              war. */
+          /* "richtung" gehoert dazu, obwohl der Kern es hier gar nicht
+             liest (17.11.2026).
+             ----------------------------------------------------------
+             Im Messlauf meldete das Modell auf "hauptsache warm"
+             `["richtung"]` - inhaltlich richtig, aber nicht auf meiner
+             Liste. Dass es ueberhaupt ging, zeigt: Die Aufzaehlung wird
+             nicht erzwungen, es koennen Werte kommen, die hier nie
+             standen. Unbekannte laufen ins Leere, das ist die sichere
+             Richtung.
+
+             Trotzdem gehoert der Eintrag hierher. Findet das Modell
+             keinen passenden Platz, koennte es beim naechsten Mal den
+             naechstbesten nehmen - und der naechstbeste zu "richtung"
+             waere `ziel`. Dann haette "hauptsache warm" die Zielsperre
+             aufgeschlossen, also genau der Fehlgriff, den sie
+             verhindern soll. Diesmal hat es einen neuen Wert erfunden
+             statt einen falschen zu waehlen; darauf ist kein Verlass.
+
+             Gelesen wird `richtung` von keiner Pruefung - es hat seine
+             eigene Sperre, und die funktioniert. Der Eintrag ist nur
+             ein Platz zum Ablegen. */
           selbst_genannt: { type: "array", items: { type: "string",
-            enum: ["zeit", "dauer", "reisende", "kinderAlter", "art", "ziel", "flug",
+            enum: ["zeit", "dauer", "reisende", "kinderAlter", "art", "ziel", "richtung", "flug",
               "flugAb", "flugKlasse", "anreise", "preis", "verpflegung", "wuensche", "anzahl", "zimmer"] },
             description: "Die Themen, zu denen die Person in DIESER Nachricht von sich aus etwas Konkretes gesagt hat - auch wenn du danach gar nicht gefragt hattest. Beispiel: Du fragst nach der Unterkunftsart, sie antwortet 'Hotel, und wir wollen nach Malle' - dann art UND ziel. Nur Themen mit einem konkreten Wert: 'irgendwo warm' ist kein ziel, 'hauptsache guenstig' ist kein preis. Im Zweifel weglassen." },
           frage_beantwortet: { type: "string", enum: ["ja", "teilweise", "nein_klaert_noch", "nein", "keine_frage_offen"],

@@ -1242,7 +1242,7 @@ const liesReisende = async (text, felder, urteil = "ja") => {
      Deshalb hier ausdruecklich der andere Pfad: `gefragtVorher` ist ein
      ANDERES Thema, und die Angabe kommt ueber `selbst_genannt`. */
   if (WK && WK.werkzeuge && WK.werkzeuge.stand_merken) {
-    const nebenbei = async (satz, aufnahme, feld, gefragtVorher) => {
+    const nebenbei = async (satz, aufnahme, feld, gefragtVorher, fb = "ja") => {
       const kern = { lauf: { gespraech: [{ role: "user", content: satz }], profil: {}, protokoll: [],
           annahmeOffen: [], gefragtWie: {}, verlauf: [{ rolle: "user", text: satz }],
           gefragtVorher, nachrichtArt: "antwort", runde: 1 },
@@ -1250,7 +1250,7 @@ const liesReisende = async (text, felder, urteil = "ja") => {
         freigabe: () => "suchen", darf: () => false, logZeile() {}, sagen() {},
         standAnzeigen() {}, sichern() {}, standKurz: () => "" };
       await WK.werkzeuge.stand_merken.call(WK, { nachricht_art: "antwort",
-        frage_beantwortet: "ja", ...aufnahme }, kern);
+        frage_beantwortet: fb, ...aufnahme }, kern);
       const w = kern.lauf.profil[feld];
       return (w != null && !(Array.isArray(w) && !w.length)) ? "kommt an" : "verworfen";
     };
@@ -1276,6 +1276,27 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     pruefe("Fremdes Thema bleibt gesperrt",
       await nebenbei("hotel bitte",
         { typ: "hotel", ziel: "mallorca", selbst_genannt: ["art"] }, "zielId", "art"), "verworfen");
+    /* "richtung" darf die Zielsperre NICHT aufschliessen. Im Messlauf
+       meldete das Modell auf "hauptsache warm" genau das - richtig, aber
+       es ist kein Ziel. Wuerde es hier zaehlen, waere der Fehlgriff
+       "hauptsache warm" -> Oktober/Mallorca wieder moeglich. */
+    pruefe("'richtung' schliesst das Ziel nicht auf",
+      await nebenbei("hauptsache warm",
+        { richtung: "warm", ziel: "mallorca", selbst_genannt: ["richtung"] }, "zielId", "zeit"), "verworfen");
+    /* Mit dem Wortlaut und der Meldung aus dem echten Messlauf: Auf
+       "hauptsache warm" meldete gpt-4.1-mini `frage_beantwortet:
+       "teilweise"` und `selbst_genannt: ["richtung"]`. Ein erster
+       Anlauf dieser Pruefung setzte stur "ja" und schlug deshalb fehl -
+       die Pruefung war falsch gebaut, nicht der Code. Mit "ja" waere
+       es auch richtig: Dann behauptet das Modell, die Monatsfrage sei
+       beantwortet, und dafuer steht es ein. */
+    pruefe("'richtung' schliesst den Monat nicht auf",
+      await nebenbei("hauptsache warm",
+        { richtung: "warm", monat: 10, selbst_genannt: ["richtung"] }, "monat", "zeit", "teilweise"), "verworfen");
+    // Unbekannte Werte laufen ins Leere, statt etwas aufzuschliessen
+    pruefe("Unbekanntes Thema schliesst nichts auf",
+      await nebenbei("irgendwas",
+        { ziel: "mallorca", selbst_genannt: ["quatsch", "erfunden"] }, "zielId", "art"), "verworfen");
   }
 
   /* Abwinken bei den Wuenschen, auch nebenbei - derselbe Testlauf:
