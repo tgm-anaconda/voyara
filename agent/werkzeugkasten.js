@@ -3617,9 +3617,39 @@ const Werkzeugkasten = {
          09.11.: Sagt das Modell, dass die Person genau diese Frage
          beantwortet hat, zaehlt das. Die Wortliste bleibt als zweiter
          Weg fuer alles, wofuer niemand eingestanden ist. */
+      /* Das Alter kommt von der Person, nicht aus einer Andeutung
+         (korrigiert am 17.11.2026 nach Bens Durchlauf).
+         ----------------------------------------------------------------
+         Gemeldet: Auf "ich meine frau und meine zwei kleinen" stand im
+         Kasten "2 Kinder (3, 5 J.)". Niemand hatte ein Alter genannt.
+
+         Zwei eigene Fehler von diesem Mittag steckten darin:
+
+         Erstens hatte ich `klein`, `gross`, `schule`, `kindergarten`,
+         `kita`, `pubert` und die Zahlwoerter in die Wortliste
+         aufgenommen. Damit schloss schon "die zwei kleinen" das
+         Altersfeld auf - und der Wert kam vom Modell, also geraten.
+         "Klein" ist kein Alter, "in der Schule" auch nicht. Dass daraus
+         drei und fuenf wird, ist genau die Erfindung, gegen die diese
+         Sperre gebaut wurde.
+
+         Zweitens stand im Ausweg `beantwortet("kinderAlter",
+         "reisende")` - damit schloss die Antwort auf die Frage nach den
+         REISENDEN das Altersfeld auf. Wer sagt, wer mitkommt, sagt
+         nichts ueber das Alter.
+
+         Was bleibt: ein echtes Altersmerkmal im Satz (Ziffer, "Jahr",
+         "jaehrig", Baby, Saeugling, Kleinkind, Schulkind, Teenager,
+         Monate) - oder das Modell steht dafuer ein, dass die Person
+         gerade die ALTERSFRAGE beantwortet hat. Dann zaehlt auch "zwei
+         und vier", und genau darum ging es bei der Reparatur.
+
+         Die Zahl der Kinder ist davon unberuehrt: "meine zwei kleinen"
+         ergibt weiterhin zwei Kinder, das ist Bedeutung und gehoert dem
+         Modell. Nur das Alter wird gefragt. */
       if (Array.isArray(a.kinderAlter) && !(p.kinderAlter || []).length
-        && !beantwortet("kinderAlter", "reisende")
-        && !gesagt(/\d|\bjahr|jährig|jaehrig|baby|säugling|saeugling|kleinkind|schulkind|teenager|monate|zwei|drei|vier|fünf|fuenf|sechs|sieben|acht|neun|zehn|elf|zwölf|zwoelf|klein|gross|groß|schule|kindergarten|kita|pubert/i, 2)) {
+        && !beantwortet("kinderAlter")
+        && !gesagt(/\d|\bjahr|jährig|jaehrig|baby|säugling|saeugling|kleinkind|schulkind|teenager|monate/i, 2)) {
         kern.notieren("alter_verworfen", { alter: a.kinderAlter });
         Werkzeugkasten.merkeVerworfen(kern, "kinderAlter", a.kinderAlter);
         delete a.kinderAlter;

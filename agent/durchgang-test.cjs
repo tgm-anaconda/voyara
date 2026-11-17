@@ -1140,8 +1140,25 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     // Kinderalter: ohne Ausweg verworfen, mit Ausweg da
     pruefe("Alter 'zwei und vier' kommt an",
       await kommtAn("zwei und vier", { kinderAlter: [2, 4] }, "kinderAlter", "kinderAlter", true), "kommt an");
-    pruefe("Alter 'beide sind noch klein' kommt an",
-      await kommtAn("beide sind noch klein", { kinderAlter: [3, 5] }, "kinderAlter", "kinderAlter", true), "kommt an");
+    /* Korrigiert am 17.11.2026 nach Bens Durchlauf. Hier stand zuerst
+       das Gegenteil: "beide sind noch klein" sollte ankommen. Das war
+       falsch, und der Fehler fiel in einem echten Lauf auf - auf "meine
+       zwei kleinen" stand im Kasten "2 Kinder (3, 5 J.)", obwohl
+       niemand ein Alter genannt hatte.
+
+       "Klein" ist kein Alter. Dass daraus drei und fuenf wird, ist
+       geraten, und genau dagegen gibt es diese Sperre. Die ANZAHL der
+       Kinder kommt weiterhin an - das ist Bedeutung. */
+    pruefe("Alter aus 'beide sind noch klein' wird NICHT gesetzt",
+      await kommtAn("beide sind noch klein", { kinderAlter: [3, 5] }, "kinderAlter", "reisende", true), "verworfen");
+    pruefe("Alter aus 'meine zwei kleinen' wird NICHT gesetzt",
+      await kommtAn("ich meine frau und meine zwei kleinen",
+        { erwachsene: 2, kinder: 2, kinderAlter: [3, 5] }, "kinderAlter", "reisende", true), "verworfen");
+    pruefe("Die Zahl der Kinder kommt trotzdem an",
+      await kommtAn("ich meine frau und meine zwei kleinen",
+        { erwachsene: 2, kinder: 2 }, "kinder", "reisende", true), "kommt an");
+    pruefe("Ein echtes Altersmerkmal kommt an",
+      await kommtAn("eins ist noch ein baby", { kinderAlter: [1] }, "kinderAlter", "reisende", true), "kommt an");
     pruefe("Alter ohne Einstehen des Modells bleibt streng",
       await kommtAn("hallo", { kinderAlter: [3, 5] }, "kinderAlter", null, false), "verworfen");
     // Ausstattung: Wortluecken
