@@ -994,6 +994,52 @@ const liesReisende = async (text, felder, urteil = "ja") => {
       /gekennzeichnet/i.test(mk?.text || "") ? "zu weit" : "eng genug", "eng genug");
   }
 
+  /* Relative Zeitangaben, alle drei Einheiten (17.11.2026)
+     ------------------------------------------------------------------
+     Aus einem echten Durchlauf: "Gerne in ungefaehr 70 Tagen" - der
+     Agent antwortete "70 Tage sind ja bald" und fragte danach noch
+     einmal nach dem Monat. Wochen und Monate konnte der Kern rechnen,
+     Tage nie. Fuer die Person sah das aus, als hoere er nicht zu.
+
+     Fester Stichtag, sonst prueft der Test den Kalender des Tages, an
+     dem er laeuft.
+
+     ACHTUNG, zur Gegenprobe: `--alt` belegt diese Pruefungen NICHT.
+     Die Sicherung `2026-11-15-favorit/` enthaelt kein
+     werkzeugkasten.js, also laedt der Test dort die aktuelle Datei -
+     mitsamt der Reparatur. Genau die Falle vom 15.11.2026.
+
+     Belegt ist es von Hand gegen `_backup/16-11-vertrauensmasse/
+     werkzeugkasten.js` (der Stand von heute frueh, vor der Reparatur):
+     Dort geben "in 70 tagen", "in 14 tagen" und "in 100 tagen" null,
+     waehrend Wochen und Monate schon stimmten. Wer diese Pruefungen
+     kuenftig ernsthaft gegenproben will, muss werkzeugkasten.js in die
+     Sicherung legen, gegen die er laeuft. */
+  if (WK) {
+    const heute = new Date(2026, 10, 17);           // 17.11.2026
+    const faelle = [
+      ["gerne in ungefähr 70 tagen", 1],            // 26.01.2027
+      ["in 14 tagen", 12],                          // 01.12.2026
+      ["in 100 tagen", 2],                          // 25.02.2027
+      ["in drei wochen", 12],
+      ["in zwei monaten", 1],
+      ["nächsten monat", 12],
+    ];
+    for (const [text, soll] of faelle) {
+      pruefe(`Relative Angabe: "${text}"`, WK.relativerMonat(text, heute), soll);
+    }
+    /* Die Einheit entscheidet ueber den Anreisetag: Wer in Tagen
+       rechnet, meint einen Tag und wird danach gefragt; wer in Monaten
+       spricht, hat keinen Kalender vor sich. */
+    pruefe("Einheit wird mitgegeben (Tage)",
+      WK.relativeAngabe?.("in 70 tagen", heute)?.einheit || "fehlt", "tage");
+    pruefe("Einheit wird mitgegeben (Monate)",
+      WK.relativeAngabe?.("in zwei monaten", heute)?.einheit || "fehlt", "monate");
+    // Unsinn bleibt Unsinn
+    pruefe("Keine Zahl, kein Monat", WK.relativerMonat("irgendwann mal", heute), null);
+    pruefe("Zu weit weg wird verworfen", WK.relativerMonat("in 900 tagen", heute), null);
+  }
+
   console.log(`\n${gut} richtig, ${schlecht} falsch`);
   process.exit(schlecht ? 1 : 0);
 })();

@@ -1665,7 +1665,21 @@ const Werkzeugkasten = {
   RELATIVZAHL: { einem: 1, einer: 1, eine: 1, ein: 1, zwei: 2, drei: 3, vier: 4, "fünf": 5, fuenf: 5,
     sechs: 6, sieben: 7, acht: 8, neun: 9, zehn: 10, elf: 11, "zwölf": 12, zwoelf: 12 },
 
+  /* `relativerMonat` gibt nur den Monat zurueck, `relativeAngabe` auch
+     die Einheit. Der Unterschied ist nicht kosmetisch:
+
+     Wer "in zwei Monaten" sagt, hat keinen Kalender vor sich - der
+     genaue Anreisetag faellt dann weg. Wer "in 70 Tagen" sagt, hat
+     gerechnet und meint einen Tag; dort muss die Frage nach dem
+     Anreisetag bleiben. Dieselbe Rechnung, zwei verschiedene Aussagen
+     ueber die Person.
+
+     Der Wrapper bleibt, weil Aufrufer und Kernpruefung ihn kennen. */
   relativerMonat(text, heute = new Date()) {
+    return this.relativeAngabe(text, heute)?.monat || null;
+  },
+
+  relativeAngabe(text, heute = new Date()) {
     const t = String(text || "").toLowerCase();
     if (!t) return null;
     const zahl = (w) => {
@@ -1684,11 +1698,30 @@ const Werkzeugkasten = {
       const w = zahl(treffer[1]);
       if (!w || w < 1 || w > 104) return null;
       const d = new Date(heute.getFullYear(), heute.getMonth(), heute.getDate() + w * 7);
-      return d.getMonth() + 1;
+      return { monat: d.getMonth() + 1, einheit: "wochen", zahl: w };
+    }
+    /* Tage fehlten (gemeldet am 17.11.2026 aus einem echten Durchlauf).
+       ----------------------------------------------------------------
+       "Gerne in ungefaehr 70 Tagen" - darauf antwortete der Agent "70
+       Tage sind ja bald" und fragte im selben Atemzug noch einmal, in
+       welchem Monat es losgehen soll. Das Modell hatte die Angabe
+       verstanden, nur konnte es sie nirgends ablegen: Die Aufnahme
+       verlangt einen Monatsnamen im Satz, und diese Rechnung gab es
+       hier nicht. Wochen und Monate waren da, Tage nie.
+
+       Fuer die Person sieht so etwas aus, als hoere der Agent nicht zu -
+       und genau das soll sie nicht merken, weil es ihr Vertrauen
+       veraendert, und Vertrauen ist hier die Messgroesse. */
+    else if ((treffer = t.match(new RegExp(`in\\s+${etwa}(\\d{1,3}|[a-zäöüß]+)\\s+tage?n?`)))) {
+      const d = zahl(treffer[1]);
+      if (!d || d < 1 || d > 730) return null;
+      const x = new Date(heute.getFullYear(), heute.getMonth(), heute.getDate() + d);
+      return { monat: x.getMonth() + 1, einheit: "tage", zahl: d };
     }
     if (!monate || monate < 1 || monate > 24) return null;
     // Immer vom Monatsersten, sonst macht der 31. Oktober plus ein Monat den 1. Dezember
-    return new Date(heute.getFullYear(), heute.getMonth() + monate, 1).getMonth() + 1;
+    return { monat: new Date(heute.getFullYear(), heute.getMonth() + monate, 1).getMonth() + 1,
+      einheit: "monate", zahl: monate };
   },
 
   /* Der Kern liest die Antwort auf seine eigene Frage.
@@ -2960,12 +2993,38 @@ const Werkzeugkasten = {
          relativerMonat. Das steht hinter der Pruefung oben, weil es
          keine Aufnahme aus dem Modell ist, sondern eine eigene: Die
          Angabe kommt von der Person, nur eben ohne Monatsnamen. */
-      const relativ = Werkzeugkasten.relativerMonat(
+      const rel = Werkzeugkasten.relativeAngabe(
         kern.lauf.gespraech.filter((n) => n.role === "user").slice(-1)[0]?.content || "");
-      if (relativ && !p.monat) {
-        a.monat = relativ;
-        kern.lauf.monatRelativ = true;
-        kern.notieren("monat_relativ", { monat: relativ });
+      if (rel?.monat && !p.monat) {
+        a.monat = rel.monat;
+        /* Der genaue Anreisetag faellt nur bei runden Angaben weg.
+           --------------------------------------------------------------
+           "In zwei Monaten" heisst, dass die Person keinen Kalender vor
+           sich hat. "In 70 Tagen" heisst das Gegenteil: Da hat jemand
+           gerechnet und meint einen Tag. Also bleibt dort die Frage nach
+           dem Anreisetag stehen. */
+        if (rel.einheit !== "tage") kern.lauf.monatRelativ = true;
+        kern.notieren("monat_relativ", { monat: rel.monat, einheit: rel.einheit, zahl: rel.zahl });
+        /* Und der Agent sagt, was er daraus gemacht hat (17.11.2026).
+           --------------------------------------------------------------
+           Bisher wurde der Monat still gesetzt; die Person erfuhr ihn
+           erst, wenn die Lage ihn nebenbei nannte. Wunsch des Nutzers vom
+           16.11.: nicht zu schnell etwas annehmen, sondern sagen, wie es
+           verstanden wurde, damit eine Korrektur moeglich ist, bevor
+           darauf aufgebaut wird.
+
+           Ueber annahmeOffen, damit der Satz seinen Grund mitfuehrt:
+           Nennt die Person im selben Zug doch einen Monat, gilt er nicht
+           mehr und faellt weg. */
+        if (!kern.lauf.relativAngesagt) {
+          kern.lauf.relativAngesagt = true;
+          const name = typeof MONATSNAMEN !== "undefined" ? MONATSNAMEN[rel.monat - 1] : String(rel.monat);
+          (kern.lauf.annahmeOffen ||= []).push({
+            thema: "zeit",
+            text: `Das wäre ${name} - damit rechne ich erst mal. Wenn du einen anderen Monat im Kopf hast, sag Bescheid.`,
+            felder: { monat: rel.monat },
+          });
+        }
       }
       const mehrere = Array.isArray(a.monate) ? [...new Set(a.monate.map(Number).filter((m) => Number.isInteger(m) && m >= 1 && m <= 12))] : [];
       if (mehrere.length >= 2) {
