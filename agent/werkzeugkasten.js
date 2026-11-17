@@ -116,7 +116,7 @@ const Werkzeugkasten = {
              obwohl die Person beide Male mitten im Klaeren war. */
           frage_beantwortet: { type: "string", enum: ["ja", "teilweise", "nein_klaert_noch", "nein", "keine_frage_offen"],
             description: "Was die letzte Nachricht der Person fuer die zuletzt von dir gestellte Frage bedeutet. ja = sie hat sie beantwortet. teilweise = ein Teil steht, ein Teil fehlt. nein_klaert_noch = sie hat NICHT geantwortet, ist aber beim Thema: sie fragt zurueck, korrigiert eine fruehere Angabe, ueberlegt laut oder braucht erst eine Auskunft von dir ('wann zaehlt man als Kind?', 'dann sind wir doch zwei Erwachsene'). nein = sie geht nicht darauf ein und auch nicht auf das Thema. keine_frage_offen = du hattest gar nichts gefragt. Immer angeben und ehrlich: Bei nein_klaert_noch fragt der Assistent weiter, bei nein nimmt er irgendwann das Naheliegende an." },
-          ziel: text("Region aus dem Katalog, als id: mallorca, kreta, algarve, sardinien, teneriffa, barcelona, wien, lissabon, tirol, suedtirol, lappland, ostsee, marrakesch, kapstadt, krabi, island, newyork, kyoto. NUR, wenn die Person die Region selbst genannt hat - sonst leer lassen. Eine Region, die du fuer passend haeltst, gehoert nicht hierher: Dafuer gibt es regionen_vergleichen, und die Person entscheidet."),
+          ziel: text("Region aus dem Katalog, als id: mallorca, kreta, algarve, sardinien, teneriffa, barcelona, wien, lissabon, tirol, suedtirol, lappland, ostsee, marrakesch, kapstadt, krabi, island, newyork, kyoto. NUR, wenn die Person die Region selbst genannt hat - sonst leer lassen. Eine Region, die du fuer passend haeltst, gehoert nicht hierher: Dafuer gibt es regionen_vergleichen, und die Person entscheidet. Ein anderer Name fuer dieselbe Region zaehlt als genannt ('Malle' = mallorca, 'die Balearen' = mallorca, weil keine andere Balearen-Region im Katalog ist, 'Kanaren' = teneriffa). Nennt sie dagegen ein Land oder eine Gegend, zu der MEHRERE Regionen des Katalogs gehoeren ('Spanien' = mallorca, teneriffa, barcelona), gehoert das in zieleAuswahl, nicht hierher - sonst waehlst du das Reiseziel fuer sie aus."),
           /* Mehrere genannte Regionen und ausgeschlossene Regionen
              (01.11.2026).
              ----------------------------------------------------------
@@ -3029,7 +3029,41 @@ const Werkzeugkasten = {
         if (!roh) { p.zielId = null; }
         // Auch hier gilt: Eine Region, die niemand genannt hat, wird nicht
         // gesetzt. Sonst entscheidet das Modell das Reiseziel.
-        else if (id && (Werkzeugkasten.regionGenannt(kern.lauf, id) || p.zielId === id)) {
+        /* Der Ausweg gilt auch hier - mit der strengen Regel (17.11.2026).
+           --------------------------------------------------------------
+           `regionGenannt` prueft Name, Kennung und Flughafencode. Damit
+           kam "nach Mallorca" an, "nach Malle", "auf die Balearen" und
+           "nach Griechenland" nicht: Das Feld fuer das Land ist bei allen
+           18 Regionen leer, und Spitznamen stehen nirgends. Eine Liste
+           dafuer zu pflegen, waere aussichtslos - welcher Name einer
+           Region gemeint ist, ist Bedeutung, und die gehoert dem Modell.
+
+           Aber hier geht es um mehr als Verstehen: Wer das Reiseziel
+           waehlt, ist die zentrale Entscheidung dieser Erhebung. Traefe
+           sie das Modell, waere das ein Eingriff in die Messung und
+           nicht bloss eine unschoene Antwort. Deshalb `klarBeantwortet`
+           statt `beantwortet`: Nur wenn das Modell sagt, die Person habe
+           die Zielfrage mit einem klaren Ja beantwortet, zaehlt der
+           Wert.
+
+           Und die Wahl wird gesagt. Hier stand zuerst, das geschehe
+           ohnehin ueber `aufnahmeSatz` - das war falsch, und zwar in
+           zwei Richtungen: `aufnahmeSatz` ueberspringt bewusst, was
+           Antwort auf die gerade gestellte Frage ist, und `FELDWORT`
+           hat fuer `zielId` ueberhaupt keinen Eintrag. Das Ziel wurde
+           also nie quittiert. Gemessen, nachdem der Kommentar schon
+           dastand.
+
+           Gesagt wird es deshalb nur dort, wo der Kern den Namen NICHT
+           selbst bestaetigen konnte - also genau dann, wenn das Modell
+           eingesprungen ist. Bei "nach Mallorca" waere ein Echo nur
+           laestig; bei "ans Mittelmeer" ist es die einzige Stelle, an
+           der die Person merkt, dass jemand fuer sie entschieden hat.
+
+           Fuer ein Land mit MEHREREN Regionen im Katalog gibt es
+           zieleAuswahl - dort entscheidet weiter die Person. */
+        else if (id && (Werkzeugkasten.regionGenannt(kern.lauf, id) || p.zielId === id
+          || klarBeantwortet("ziel"))) {
           /* Widerspricht die Region der genannten Richtung, wird sie
              NICHT gesetzt, sondern vorgemerkt - der Kern fragt dann im
              selben Zug nach (01.11.2026, Wunsch des Nutzers: "da halt
@@ -3038,7 +3072,21 @@ const Werkzeugkasten = {
           if (Werkzeugkasten.widersprichtRichtung(p, id, kern.lauf)) {
             p.zielVorgemerkt = id;
             kern.notieren("ziel_vorgemerkt", { ziel: id, richtung: p.richtung });
-          } else { setze("zielId", id); p.zielOffen = false; delete p.zielVorgemerkt; }
+          } else {
+            const ausModell = !Werkzeugkasten.regionGenannt(kern.lauf, id) && p.zielId !== id;
+            setze("zielId", id); p.zielOffen = false; delete p.zielVorgemerkt;
+            if (ausModell && !kern.lauf.zielAngesagt) {
+              kern.lauf.zielAngesagt = true;
+              kern.notieren("ziel_aus_modell", { ziel: id });
+              const wo = Werkzeugkasten.ortSatz ? Werkzeugkasten.ortSatz(id) : id;
+              (kern.lauf.annahmeOffen ||= []).push({
+                thema: "ziel",
+                text: `Ich schaue dann ${wo}. Wenn du eine andere Gegend meinst, sag Bescheid.`,
+                felder: { zielId: id },
+                eigenesTun: true,
+              });
+            }
+          }
         }
         else if (id) kern.notieren("ziel_verworfen", { ziel: id, wo: "stand_merken" });
       }
@@ -3054,7 +3102,7 @@ const Werkzeugkasten = {
           const k = String(x).toLowerCase().trim();
           const id = (typeof ZIEL_NACH_ID !== "undefined" && ZIEL_NACH_ID[k]) ? k
             : ((typeof ZIELE !== "undefined" ? ZIELE : []).find((z) => z.name.toLowerCase() === k) || {}).id || null;
-          if (id && Werkzeugkasten.regionGenannt(kern.lauf, id)) ids.push(id);
+          if (id && (Werkzeugkasten.regionGenannt(kern.lauf, id) || klarBeantwortet("ziel"))) ids.push(id);
           else if (id) weg.push(id);
         }
         if (weg.length) kern.notieren("ziel_verworfen", { ziele: weg, wo: feld });
@@ -10120,7 +10168,23 @@ const Werkzeugkasten = {
     // Alte Form: ein reiner Satz ohne Grund - der wird noch gesagt
     if (typeof eintrag === "string") return true;
     for (const [feld, wert] of Object.entries(eintrag.felder || {})) {
-      if (p?.vonPerson?.[feld]) return false;
+      /* Die vonPerson-Sperre gilt nicht fuer Saetze ueber das eigene Tun
+         (17.11.2026).
+         ----------------------------------------------------------------
+         Sie soll verhindern, dass der Agent eine Annahme ueber einen
+         Wert ausspricht, den die Person selbst genannt hat ("ich rechne
+         mal mit Oktober", nachdem sie Oktober gesagt hat).
+
+         Beim Ziel aus dem Modell ist es umgekehrt: Der Wert steht als
+         `vonPerson`, weil er aus ihrer Nachricht stammt - erschlossen
+         hat ihn aber das Modell ("ans Mittelmeer" -> Mallorca). Gerade
+         dann muss der Agent sagen, was er daraus gemacht hat. Ohne
+         diese Ausnahme wurde der Satz still verworfen; gemessen, nicht
+         vermutet.
+
+         Die Wertpruefung darunter bleibt: Hat sich die Region inzwischen
+         geaendert, ist der Satz hinfaellig. */
+      if (p?.vonPerson?.[feld] && !eintrag.eigenesTun) return false;
       if ((p?.[feld] ?? null) !== wert) return false;
     }
     return true;

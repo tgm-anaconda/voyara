@@ -1191,6 +1191,42 @@ const liesReisende = async (text, felder, urteil = "ja") => {
           gefragtWie: { zeit: 1 }, rueckversichert: {} })?.feld || "keine", "erwachsene");
   }
 
+  /* Das Ziel: Ausweg mit strenger Regel plus Ansage (17.11.2026)
+     ------------------------------------------------------------------
+     `regionGenannt` prueft Name, Kennung und Flughafencode. "Nach
+     Mallorca" kam damit an, "nach Malle", "auf die Balearen" und "nach
+     Griechenland" nicht - das Feld fuer das Land ist bei allen 18
+     Regionen leer.
+
+     Hier geht es aber um mehr als Verstehen: Wer das Reiseziel waehlt,
+     ist die zentrale Entscheidung dieser Erhebung. Deshalb nur mit
+     klarem Ja, und was der Kern nicht selbst erkennen konnte, sagt der
+     Agent an - sonst merkt niemand, dass jemand fuer ihn entschieden
+     hat. Gegenprobe: _backup/16-11-vertrauensmasse/ */
+  if (WK && WK.werkzeuge && WK.werkzeuge.stand_merken) {
+    const zielLauf = async (satz, ziel, fb) => {
+      const kern = { lauf: { gespraech: [{ role: "user", content: satz }], profil: {}, protokoll: [],
+          annahmeOffen: [], gefragtWie: {}, verlauf: [{ rolle: "user", text: satz }],
+          gefragtVorher: "ziel", nachrichtArt: "antwort", runde: 1 },
+        notieren(e, d) { this.lauf.protokoll.push({ ereignis: e, ...d }); },
+        freigabe: () => "suchen", darf: () => false, logZeile() {}, sagen() {},
+        standAnzeigen() {}, sichern() {}, standKurz: () => "" };
+      await WK.werkzeuge.stand_merken.call(WK,
+        { nachricht_art: "antwort", frage_beantwortet: fb, ziel }, kern);
+      const satzAn = (WK.annahmeSaetze ? WK.annahmeSaetze(kern.lauf, kern.lauf.profil) : [])
+        .find((x) => /schaue dann/.test(x));
+      return { ziel: kern.lauf.profil.zielId || null, angesagt: !!satzAn };
+    };
+    pruefe("'nach malle' kommt an", (await zielLauf("nach malle", "mallorca", "ja")).ziel, "mallorca");
+    pruefe("'auf die balearen' kommt an", (await zielLauf("auf die balearen", "mallorca", "ja")).ziel, "mallorca");
+    pruefe("'nach griechenland' kommt an", (await zielLauf("nach griechenland", "kreta", "ja")).ziel, "kreta");
+    pruefe("Ziel bei halbem Ja bleibt streng", (await zielLauf("ans mittelmeer", "mallorca", "teilweise")).ziel, null);
+    pruefe("Ziel ohne Antwort bleibt streng", (await zielLauf("ans mittelmeer", "mallorca", "keine_frage_offen")).ziel, null);
+    // Die Ansage: nur, wenn der Kern den Namen NICHT selbst erkennen konnte
+    pruefe("Erschlossenes Ziel wird angesagt", (await zielLauf("nach malle", "mallorca", "ja")).angesagt, true);
+    pruefe("Erkanntes Ziel wird nicht wiederholt", (await zielLauf("nach mallorca", "mallorca", "ja")).angesagt, false);
+  }
+
   console.log(`\n${gut} richtig, ${schlecht} falsch`);
   process.exit(schlecht ? 1 : 0);
 })();
