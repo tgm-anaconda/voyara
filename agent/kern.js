@@ -2329,8 +2329,38 @@ const Kern = {
                einer. Er gehoert nach vorn, weil er sich auf das bezieht,
                was die Person gerade gefragt hat - nicht auf das, was der
                Agent als Naechstes wissen will. */
-            const LUECKE = "Dazu muss ich erst nachsehen - das sage ich dir, sobald ich gesucht habe.";
-            text = text ? `${LUECKE} ${text}` : LUECKE;
+            /* Erst nachschlagen, dann vertroesten (17.11.2026).
+               ----------------------------------------------------------
+               Der Satz "Dazu muss ich erst nachsehen" ist ehrlich, aber
+               er ist die zweitbeste Antwort. Fuer Fragen ueber das
+               Angebot der Seite - wie viele Unterkuenfte es gibt, welche
+               Regionen - steht die Antwort im FAQ, und der Kern zaehlt
+               sie dort aus dem Katalog aus. Er weiss es also; es waere
+               albern, stattdessen zu vertroesten.
+
+               Zuerst habe ich das ueber die Beschreibung des Werkzeugs
+               versucht: "Nimm faq_nachschlagen auch fuer Fragen ueber
+               das Angebot der Seite." Im Messlauf half das nicht - das
+               Modell suchte weiterhin. Ein Auftrag an das Modell ist
+               fuer so etwas zu schwach, dieselbe Erfahrung wie bei den
+               Annahmesaetzen am 01.10.2026.
+
+               Also macht es der Kern selbst. Er hat die Frage der Person
+               vor sich und `faqSuchen` daneben. Findet er nichts, bleibt
+               der ehrliche Satz. */
+            let ersatz = "Dazu muss ich erst nachsehen - das sage ich dir, sobald ich gesucht habe.";
+            const frage = [...(this.lauf.gespraech || [])].reverse()
+              .find((n) => n.role === "user")?.content || "";
+            if (typeof faqSuchen === "function" && frage) {
+              let treffer = [];
+              try { treffer = faqSuchen(frage, 1); } catch { treffer = []; }
+              if (treffer.length && treffer[0].antwort) {
+                ersatz = String(treffer[0].antwort);
+                this.logZeile(`Im FAQ nachgeschlagen: ${String(frage).slice(0, 60)}`, "schritt");
+                this.notieren("faq_vom_kern", { id: treffer[0].id, frage: String(frage).slice(0, 80) });
+              }
+            }
+            text = text ? `${ersatz} ${text}` : ersatz;
             this.notieren("luecke_gefuellt", { art: "ohne_recherche" });
             nachricht.content = text;
           }
