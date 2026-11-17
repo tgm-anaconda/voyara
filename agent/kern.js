@@ -2315,11 +2315,23 @@ const Kern = {
                sie ist. Angehaengt wird es nur, wenn der Rest nicht schon
                selbst eine Frage stellt - sonst stuenden zwei Fragen in
                einer Nachricht. */
+            /* Voran, nicht hinten dran, und ohne Bedingung (17.11.2026).
+               ----------------------------------------------------------
+               Erster Anlauf: nur anhaengen, wenn im Rest kein
+               Fragezeichen steht. Im Messlauf griff das nie - der Rest
+               enthaelt fast immer die naechste Frage, also stand dort
+               ein Fragezeichen, und die Luecke blieb. Gemessen, nicht
+               ueberlegt: Die Antwort lautete weiter "Die Preise liegen
+               zwischen 34 und 524 Euro. Wann moechtest du reisen?",
+               und die eigentliche Frage blieb unbeantwortet.
+
+               Der Satz ist selbst keine Frage, also stoert er auch neben
+               einer. Er gehoert nach vorn, weil er sich auf das bezieht,
+               was die Person gerade gefragt hat - nicht auf das, was der
+               Agent als Naechstes wissen will. */
             const LUECKE = "Dazu muss ich erst nachsehen - das sage ich dir, sobald ich gesucht habe.";
-            if (!/\?/.test(text)) {
-              text = text ? `${text} ${LUECKE}` : LUECKE;
-              this.notieren("luecke_gefuellt", { art: "ohne_recherche" });
-            }
+            text = text ? `${LUECKE} ${text}` : LUECKE;
+            this.notieren("luecke_gefuellt", { art: "ohne_recherche" });
             nachricht.content = text;
           }
         }

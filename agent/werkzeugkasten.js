@@ -404,8 +404,11 @@ const Werkzeugkasten = {
       f("faq_nachschlagen",
         "Schlaegt eine Frage zum Ablauf im FAQ der Seite nach: Buchung, Bezahlung, Stornierung, Check-in, "
         + "Gepaeck, Kinder, Haustiere, Gebuehren, Merkzettel, Datenschutz, Flugklassen (was Premium Economy oder Business kostet), Verpflegung und so weiter. "
-        + "Nimm es fuer alles, was den SERVICE betrifft, nicht fuer Fragen zu Haeusern, Regionen oder Preisen "
-        + "einer bestimmten Unterkunft - dafuer gibt es suchen, haus_oeffnen und bewertungen_lesen. "
+        + "Nimm es auch fuer Fragen ueber DAS ANGEBOT DER SEITE INSGESAMT: wie viele Unterkuenfte oder "
+        + "Hotels es gibt, in welche Regionen man reisen kann, wie gross die Auswahl ist. Solche Zahlen "
+        + "stehen im FAQ und sind genau; aus dem Kopf darfst du sie nicht nennen, der Kern streicht sie dann. "
+        + "Nicht dafuer: Fragen zu einem bestimmten Haus, zu einer Region im gewaehlten Monat oder zu Preisen "
+        + "einer Unterkunft - dafuer gibt es suchen, haus_oeffnen und bewertungen_lesen. "
         + "Steht nichts im FAQ, sag, dass du dazu nichts hast, und erfinde keine Auskunft.",
         { frage: text("Die Frage der Person, moeglichst in ihren Worten") }, ["frage"]),
       /* Reisedaten aendern, auf jeder Seite (03.10.2026).
