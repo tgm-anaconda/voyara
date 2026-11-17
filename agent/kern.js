@@ -1410,7 +1410,29 @@ const Kern = {
     if ((p.zieleAus || []).length) teile.push(`NICHT ${p.zieleAus.map(regionsname).join(", ")} (von der Person abgelehnt, nicht aufheben)`);
     if (p.monat && typeof Politik !== "undefined") {
       const name = Object.keys(Politik.MONATE).find((m) => Politik.MONATE[m] === p.monat && m.length > 3);
-      if (name) teile.push(`Monat ${name}`);
+      /* Ein vorlaeufiger Monat wird auch als solcher uebergeben
+         (17.11.2026).
+         ----------------------------------------------------------------
+         Im Messlauf sagte die Person "weiss ich ehrlich gesagt noch nicht
+         so genau". Der Kern setzt dann den ersten Kandidatenmonat
+         vorlaeufig, damit ueberhaupt gesucht werden kann, und merkt einen
+         Monatsvergleich vor, der endgueltig entscheidet. Der Stand hier
+         sagte aber nur "Monat Dezember" - ohne Vorbehalt. Also sprach das
+         Modell ueber Dezember wie ueber einen gewaehlten Monat ("Preise
+         fuer warme Ziele im Dezember", "Mallorca hat im Dezember 16
+         Grad") und sagte im selben Atemzug, man koenne den Monat spaeter
+         festlegen. Fuer die Person ein Widerspruch, und sie erfaehrt
+         nicht, dass gerade mit Dezember gerechnet wird.
+
+         Der Vergleich holt sich selbst nach, sobald gesucht wird (siehe
+         werkzeugkasten, Zweig `monatsvergleich?.monate?.length`). Das
+         Fenster davor war die Luecke. */
+      const vorlaeufig = !!this.lauf.monatsvergleich?.monate?.length && !p.vonPerson?.monat;
+      if (name) {
+        teile.push(vorlaeufig
+          ? `Monat ${name} (NUR VORLAEUFIG, damit gesucht werden kann - der Monatsvergleich entscheidet noch. Nenn ihn nicht als gewaehlt; sag hoechstens, dass du vorlaeufig damit rechnest.)`
+          : `Monat ${name}`);
+      }
     }
     if (p.von && p.bis) teile.push(`${p.von} bis ${p.bis}`);
     else if (p.flexibel) teile.push(`Daten flexibel im Monat${p.anreise ? `, Anreise ${p.anreise}` : " (Anreisetag noch offen)"}`);

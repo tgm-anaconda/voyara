@@ -1310,6 +1310,30 @@ const liesReisende = async (text, felder, urteil = "ja") => {
       /gefragt === "wuensche" \|\| hatWunsch/.test(q) ? "ja" : "nein", "ja");
   }
 
+  /* Ein vorlaeufiger Monat wird als solcher uebergeben (17.11.2026)
+     ------------------------------------------------------------------
+     Aus dem Messlauf: Auf "weiss ich ehrlich gesagt noch nicht so genau"
+     setzt der Kern den ersten Kandidatenmonat vorlaeufig und merkt einen
+     Vergleich vor. Der Stand sagte aber nur "Monat Dezember", also
+     sprach das Modell darueber wie ueber einen gewaehlten Monat und
+     sagte zugleich, man koenne ihn spaeter festlegen.
+     Gegenprobe: _backup/17-11-ausweg/ */
+  if (KN && KN.standKurz) {
+    const stand = (lauf, profil) => {
+      const alt = KN.lauf;
+      KN.lauf = { profil, ...lauf };
+      try { return KN.standKurz(); } finally { KN.lauf = alt; }
+    };
+    const p = { monat: 12, naechte: 7, erwachsene: 2, kinder: 0 };
+    pruefe("Vorlaeufiger Monat ist als solcher markiert",
+      /VORLAEUFIG/.test(stand({ monatsvergleich: { monate: [12, 1, 2, 3] } }, p)) ? "ja" : "nein", "ja");
+    pruefe("Entschiedener Monat ohne Vorbehalt",
+      /VORLAEUFIG/.test(stand({ monatsvergleich: null }, p)) ? "ja" : "nein", "nein");
+    pruefe("Von der Person genannter Monat ohne Vorbehalt",
+      /VORLAEUFIG/.test(stand({ monatsvergleich: { monate: [12, 1] } },
+        { ...p, vonPerson: { monat: true } })) ? "ja" : "nein", "nein");
+  }
+
   console.log(`\n${gut} richtig, ${schlecht} falsch`);
   process.exit(schlecht ? 1 : 0);
 })();
