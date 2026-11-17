@@ -735,7 +735,13 @@ function renderAgentRail() {
     <button type="button" class="agent-mikro" id="agentMikro" aria-label="Sprechen statt tippen" hidden>${ICONS.mic}</button>
     <button type="submit" class="btn btn-primary" aria-label="Senden">${ICONS.send}</button>
   </form>
-  <p class="agent-foot">Suchen, filtern und vormerken. Du kannst jederzeit selbst weiterklicken.</p>
+  <!-- Die Fusszeile sagt, was der Agent gerade darf. Seit der Regler weg
+       ist (16.11.2026), ist sie die einzige Stelle, an der das steht -
+       und damit muss sie mitziehen, wenn sich die Stufe im Gespraech
+       aendert. Vorher stand hier ein fester Satz; nach einer Anhebung
+       behauptete die Seite dann, der Agent duerfe nur suchen, waehrend
+       er gerade buchen durfte. Gesetzt wird sie in freigabeZeigen. -->
+  <p class="agent-foot" id="agentFuss">Suchen, filtern und vormerken. Du kannst jederzeit selbst weiterklicken.</p>
   <!-- Ein Griff am unteren Rand, in beiden Zustaenden sichtbar. Er zeigt
        immer die Richtung, in die er sich bewegt: zugeklappt nach unten
        (oeffnen), offen nach oben (schliessen). Antippen oder wischen. -->
@@ -1271,6 +1277,11 @@ const AgentPanel = {
     if (!kasten || !liste || !knopf) return;
     if (typeof STELLSCHRAUBEN !== "undefined" && STELLSCHRAUBEN.freigabeRegler === false) {
       kasten.hidden = true;
+      // Die Fusszeile haengt nicht am Regler - sie sagt auch ohne ihn,
+      // was der Agent darf, und muss deshalb vor dem Aussteigen gesetzt
+      // werden. Sonst stuende dort beim Fortsetzen einer Sitzung mit
+      // angehobener Stufe noch der Satz der untersten.
+      this.freigabeZeigen(aktuell);
       return;
     }
     kasten.hidden = false;
@@ -1369,6 +1380,20 @@ const AgentPanel = {
     // Die oberste Stufe wird hervorgehoben: Wer dem Agenten das Buchen
     // erlaubt, soll das nicht uebersehen koennen.
     document.getElementById("agentFreigabe")?.classList.toggle("voll", stufe === "buchen");
+    /* Die Fusszeile zieht mit (16.11.2026).
+       ----------------------------------------------------------------
+       Ohne Regler ist sie die einzige sichtbare Aussage darueber, was
+       der Agent darf. Eine feste Zeile wuerde nach einer Anhebung im
+       Gespraech etwas Falsches behaupten. Anzeige, kein Bedienelement:
+       umstellen laesst sich die Stufe nur im Gespraech. */
+    const fuss = document.getElementById("agentFuss");
+    if (fuss) {
+      fuss.textContent = {
+        suchen: "Suchen, filtern und vormerken. Du kannst jederzeit selbst weiterklicken.",
+        vorbereiten: "Er darf die Buchung vorbereiten, bestätigen tust du. Du kannst jederzeit selbst weiterklicken.",
+        buchen: "Er darf die Buchung auch abschließen. Du kannst jederzeit selbst weiterklicken.",
+      }[stufe] || fuss.textContent;
+    }
   },
 
   // Auf dem Handy aufklappen, wenn der Chat etwas von der Person will.

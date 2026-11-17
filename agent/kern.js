@@ -79,7 +79,30 @@ const STELLSCHRAUBEN = {
      nicht vor: Das waere ein dritter Faktor und wuerde die Stichprobe
      noch einmal teilen. */
   freigabeStart: "niedrig",     // niedrig | hoch | zufall
-  freigabeRegler: true,         // false = Regler unsichtbar, Stufe fest
+  /* Der Regler ist weg (16.11.2026).
+     ------------------------------------------------------------------
+     Er stand als Klappmenue im Kopf der Chat-Spalte und bot ab der
+     ersten Sekunde drei Stufen an. Damit war er die passive Fassung
+     genau der Frage, die am selben Tag aus dem Ablauf geflogen ist: Wer
+     dort vorab einstellt, was der Agent darf, legt den Rahmen der
+     Sitzung fest, bevor er den Agenten je hat arbeiten sehen - und
+     selektiert sich damit selbst vor.
+
+     Schlimmer noch: Die Stufenliste klappte beim ersten Laden von selbst
+     auf, wenn es keinen Startbildschirm gab. Seit der Startbildschirm
+     aus ist, griff genau dieser Zweig. Die Abschaltung der Startfrage
+     hat den Regler also auffaelliger gemacht statt unauffaelliger.
+
+     Die Freigabe faellt jetzt nur noch im Gespraech: Das Modell hat das
+     Werkzeug `freigabe_aendern`, das auf jeder Stufe verfuegbar ist, und
+     der Wechsel wird mit `ausloeser: "gespraech"` protokolliert. Alle
+     bekommen die Frage damit am selben Punkt und nach derselben
+     Erfahrung.
+
+     Der Preis, offen gesagt: Von sich aus mehr Spielraum geben kann
+     jetzt niemand mehr. Die Spalte misst "hat ja gesagt, als der Agent
+     gefragt hat", nicht mehr "hat unaufgefordert mehr erlaubt". */
+  freigabeRegler: false,        // false = Regler unsichtbar, Stufe faellt im Gespraech
   // Unter 1 wird alles langsamer. 0.75 ist die Geschwindigkeit, bei der
   // man dem Zeiger auf der Seite noch folgen kann - und damit die
   // Voraussetzung dafuer, ueberhaupt messen zu koennen, ob jemand
@@ -1496,7 +1519,11 @@ const Kern = {
       const autonom = this.darf("buchen");
       bloecke.push(`BUCHEN: In die Buchungsstrecke gehst du nur, wenn die Person ausdruecklich buchen will ("buch das", "nehmen wir"). Vorher braucht es einen Anreisetag von ihr (bei flexibler Suche; mit Flug einen Flugtag) - such ihn nicht selbst aus. ${autonom ? "Du darfst abschliessen: buchung_vorbereiten und dann buchung_abschliessen; die Ansage uebernimmt die Seite." : "Du darfst vorbereiten, nicht abschliessen: leg vor, was gebucht wuerde (Haus, Zeitraum, Gesamtpreis, Name), und frag, ob du abschliessen sollst. Erst nach einem klaren Ja buchung_abschliessen."} Liegt ein Preis ueber dem gemerkten Budget, sagst du das.`);
     } else if (fp.phase === "vorschlaege" || this.lauf.gewaehlt) {
-      bloecke.push("BUCHEN: Du darfst nicht buchen. Will die Person buchen, sag ihr freundlich, dass sie den Knopf auf der Seite selbst druecken kann oder dir die Freigabe anheben darf.");
+      /* Der Satz zeigte auf den Regler im Kopf der Spalte ("dir die
+         Freigabe anheben"). Den gibt es seit dem 16.11.2026 nicht mehr -
+         jetzt laeuft es ueber das Gespraech, also muss der Agent auch
+         danach fragen statt auf ein Bedienelement zu zeigen. */
+      bloecke.push("BUCHEN: Du darfst nicht buchen. Will die Person buchen, sag ihr freundlich, dass sie den Knopf auf der Seite selbst druecken kann - oder frag sie, ob du es fuer sie uebernehmen sollst. Sagt sie klar ja, ruf freigabe_aendern mit stufe \"buchen\" und mach weiter. Draengen sollst du nicht: Beides gleichwertig anbieten, und ein Nein bleibt ein Nein.");
     }
     return bloecke;
   },
