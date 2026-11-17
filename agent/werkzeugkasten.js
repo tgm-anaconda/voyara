@@ -8178,36 +8178,6 @@ const Werkzeugkasten = {
     if (!p.vorgehen && gesucht) {
       p.vorgehen = "top3";
       fertig.vorgehen = true;
-      /* Die Anzahl wird angesagt, nicht gefragt (16.11.2026).
-         ----------------------------------------------------------------
-         Zwischen zwei schlechten Enden:
-
-         Sagt der Agent gar nichts, weiss niemand, dass mehr als drei
-         moeglich sind. Dann fragt fast niemand danach, die Spalte steht
-         bei allen auf leer und misst nichts.
-
-         Fragt er dagegen ("Wie viele? Drei | Vier | Sechs"), trifft jede
-         Person eine Wahl, die wir selbst herbeigefuehrt haben - und ein
-         erheblicher Teil bekommt sechs Karten, bei denen der Favorit
-         unter die Kante rutscht. Das beschaedigt den Reiz des
-         Hauptfaktors, und zwar genau dort, wo er wirkt.
-
-         Deshalb eine Ansage mit Hinweis, wie beim Zimmer ("Zwei getrennte
-         gehen auch, sag einfach Bescheid"): Die Moeglichkeit ist bekannt,
-         aber niemand muss antworten. Wer trotzdem mehr will, sagt es von
-         sich aus, und steht dann in `anzahlVorschlaege`.
-
-         Der Satz laeuft ueber annahmeOffen und traegt damit seinen Grund
-         mit: Nennt die Person vorher selbst eine Zahl, gilt er nicht mehr
-         und faellt weg (Werkzeugkasten.annahmeGilt). */
-      if (!p.anzahlVorschlaege && !lauf.anzahlAngesagt) {
-        lauf.anzahlAngesagt = true;
-        (lauf.annahmeOffen ||= []).push({
-          thema: "anzahl",
-          text: "Ich stelle dir erst mal drei Häuser zusammen. Mehr vergleichen geht auch, sag einfach Bescheid.",
-          felder: { anzahlVorschlaege: null },
-        });
-      }
     }
     const weiter = p.weiter || (b.weiter ? "schauen" : null) || (alleEckdaten ? "schauen" : null);
     // Bereit fuer die erste Suche: Kern da und entweder "schauen" gesagt oder
@@ -8326,7 +8296,38 @@ const Werkzeugkasten = {
         // Vorgehensfrage, nicht mehr dahinter
         const offen = BERATUNG.find((t) => !fertig[t]) || null;
         if (offen) { naechstes = offen; phase = "beratung"; }
-        else phase = "vorschlaege";
+        else {
+          phase = "vorschlaege";
+          /* Die Anzahl wird angesagt, nicht gefragt - aber erst HIER
+             (16.11.2026, Stelle korrigiert am 17.11.).
+             ------------------------------------------------------------
+             Zwischen zwei schlechten Enden: Sagt der Agent gar nichts,
+             weiss niemand, dass mehr als drei moeglich sind, und die
+             Spalte misst nichts. Fragt er dagegen ("Drei | Vier |
+             Sechs"), trifft jede Person eine Wahl, die wir selbst
+             herbeigefuehrt haben - und ein erheblicher Teil bekommt
+             sechs Karten, bei denen der Favorit unter die Kante rutscht.
+             Also eine Ansage mit Hinweis, wie beim Zimmer.
+
+             Der Satz hing zuerst daran, dass `vorgehen` auf top3 gesetzt
+             wird - und das passiert direkt nach der ersten Suche. Ben im
+             Durchlauf: "Das ist hier noch viel zu frueh. Jetzt sollten
+             erst mal noch alle Fakten geklaert werden." Er hatte recht:
+             Zwischen der ersten Suche und der Vorlage liegen noch Preis,
+             Verpflegung, Wuensche und der Anreisetag.
+
+             Jetzt faellt er, wenn die Beratung durch ist und es wirklich
+             an die Vorschlaege geht. Ueber annahmeOffen, damit er
+             verfaellt, falls die Person vorher selbst eine Zahl nennt. */
+          if (!p.anzahlVorschlaege && !lauf.anzahlAngesagt) {
+            lauf.anzahlAngesagt = true;
+            (lauf.annahmeOffen ||= []).push({
+              thema: "anzahl",
+              text: "Ich stelle dir erst mal drei Häuser zusammen. Mehr vergleichen geht auch, sag einfach Bescheid.",
+              felder: { anzahlVorschlaege: null },
+            });
+          }
+        }
       }
     }
     let frage = naechstes ? this.THEMEN[naechstes]?.frage : null;

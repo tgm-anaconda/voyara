@@ -1351,6 +1351,33 @@ const liesReisende = async (text, felder, urteil = "ja") => {
         { ...p, vonPerson: { monat: true } })) ? "ja" : "nein", "nein");
   }
 
+  /* Der Anzahl-Satz faellt erst vor den Vorschlaegen (17.11.2026)
+     ------------------------------------------------------------------
+     Er hing zuerst daran, dass `vorgehen` auf top3 gesetzt wird - also
+     direkt nach der ersten Suche. Ben im Durchlauf: "Das ist hier noch
+     viel zu frueh. Jetzt sollten erst mal noch alle Fakten geklaert
+     werden." Zwischen erster Suche und Vorlage liegen Preis,
+     Verpflegung, Wuensche und der Anreisetag.
+     Gegenprobe: _backup/17-11-ausweg/ */
+  if (WK && WK.fahrplan && WK.eckdatenSchluessel) {
+    const vollerStand = () => ({ zielId: "mallorca", typ: "hotel", monat: 7, naechte: 7,
+      erwachsene: 2, kinder: 0, kinderAlter: [], zimmer: 1, artGenannt: true, flug: false,
+      anreise: "2027-07-10", maxPreis: 2000, verpflegungEgal: true, ausstattungEgal: true, wuensche: [] });
+    const satzNach = (p, male = 1) => {
+      const lauf = { gefragtWie: {}, verlauf: [], chips: null, annahmeOffen: [],
+        gesuchtMit: WK.eckdatenSchluessel(p) };
+      for (let i = 0; i < male; i++) WK.fahrplan(p, lauf);
+      return (lauf.annahmeOffen || []).filter((e) => e.thema === "anzahl").length;
+    };
+    const offeneBeratung = vollerStand();
+    delete offeneBeratung.maxPreis; delete offeneBeratung.verpflegungEgal; delete offeneBeratung.ausstattungEgal;
+    pruefe("Kein Anzahl-Satz, solange die Beratung laeuft", satzNach(offeneBeratung), 0);
+    pruefe("Anzahl-Satz, wenn es an die Vorschlaege geht", satzNach(vollerStand()), 1);
+    pruefe("Anzahl-Satz faellt nur einmal", satzNach(vollerStand(), 3), 1);
+    pruefe("Kein Anzahl-Satz bei eigener Zahl",
+      satzNach({ ...vollerStand(), anzahlVorschlaege: 6 }), 0);
+  }
+
   console.log(`\n${gut} richtig, ${schlecht} falsch`);
   process.exit(schlecht ? 1 : 0);
 })();
