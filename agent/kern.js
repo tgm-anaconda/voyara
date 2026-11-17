@@ -1868,9 +1868,27 @@ const Kern = {
          Frage. Wer abwinkt ("nein", "das war's", "such los"), beendet das
          Thema sofort - sonst waere aus dem Nachhaken eine Schleife
          geworden. */
-      if (this.lauf.gefragt === "wuensche" && this.WUNSCH_GENUG.test(String(t))) {
+      /* Abgewunken wird auch nebenbei (17.11.2026).
+         ----------------------------------------------------------------
+         Bis hierher zaehlte das Abwinken nur, wenn gerade nach den
+         Wuenschen gefragt war. Im Testlauf sagte die Person
+         "verpflegung ist egal, sonst nichts weiter" - gefragt war die
+         Verpflegung, also blieb das Thema offen, und der Agent fragte
+         danach nach Wuenschen und nannte ausgerechnet den Pool als
+         Beispiel, den die Person vorher selbst genannt hatte.
+
+         Jetzt gilt das Abwinken auch, wenn schon ein Wunsch im Stand
+         steht. Dann ist "sonst nichts weiter" eindeutig: Es gibt etwas,
+         worauf sich das "sonst" bezieht. Ohne einen einzigen Wunsch
+         bleibt es wie bisher an der Frage haengen - sonst wuerde ein
+         beilaeufiges "passt" das Thema beenden, bevor es begonnen hat. */
+      const hatWunsch = ((this.lauf.profil?.ausstattung || []).length
+        || (this.lauf.profil?.kriterien || []).length
+        || (this.lauf.profil?.wuensche || []).length);
+      if ((this.lauf.gefragt === "wuensche" || hatWunsch) && this.WUNSCH_GENUG.test(String(t))) {
         this.lauf.wuenscheGenug = true;
-        this.notieren("wuensche_abgewunken", { satz: String(t).slice(0, 80) });
+        this.notieren("wuensche_abgewunken", { satz: String(t).slice(0, 80),
+          gefragt: this.lauf.gefragt, hatteWunsch: !!hatWunsch });
       }
       // Fuer den Abgleich weiter unten: Worauf hat sie gerade geantwortet?
       // Kommt davon nichts im Stand an, hat der Agent sie nicht verstanden.

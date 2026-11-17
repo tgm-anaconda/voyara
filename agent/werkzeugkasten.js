@@ -114,6 +114,26 @@ const Werkzeugkasten = {
              bis hierher nur, wie oft er gefragt hat, und schloss daraus
              auf Verweigerung - deshalb nahm er nach zwei Anlaeufen an,
              obwohl die Person beide Male mitten im Klaeren war. */
+          /* Nebenbei Gesagtes (17.11.2026)
+             ----------------------------------------------------------
+             `frage_beantwortet` haengt an der zuletzt GESTELLTEN Frage.
+             Menschen sagen aber Dinge nebenbei: Auf "Hotel oder
+             Ferienwohnung?" kam im Testlauf "hotel. wir wollen nach
+             malle" - das Ziel war genannt, aber es war nicht die
+             Antwort auf die Frage. Der Kern verwarf "mallorca" und
+             fragte danach noch einmal nach dem Ziel.
+
+             Dasselbe bei den Wuenschen: "verpflegung ist egal, sonst
+             nichts weiter" wurde nicht als Abwinken gelesen, weil
+             gerade nach der Verpflegung gefragt war.
+
+             Hier kann das Modell sagen, worueber die Person in DIESER
+             Nachricht gesprochen hat - unabhaengig davon, was gefragt
+             war. */
+          selbst_genannt: { type: "array", items: { type: "string",
+            enum: ["zeit", "dauer", "reisende", "kinderAlter", "art", "ziel", "flug",
+              "flugAb", "flugKlasse", "anreise", "preis", "verpflegung", "wuensche", "anzahl", "zimmer"] },
+            description: "Die Themen, zu denen die Person in DIESER Nachricht von sich aus etwas Konkretes gesagt hat - auch wenn du danach gar nicht gefragt hattest. Beispiel: Du fragst nach der Unterkunftsart, sie antwortet 'Hotel, und wir wollen nach Malle' - dann art UND ziel. Nur Themen mit einem konkreten Wert: 'irgendwo warm' ist kein ziel, 'hauptsache guenstig' ist kein preis. Im Zweifel weglassen." },
           frage_beantwortet: { type: "string", enum: ["ja", "teilweise", "nein_klaert_noch", "nein", "keine_frage_offen"],
             description: "Was die letzte Nachricht der Person fuer die zuletzt von dir gestellte Frage bedeutet. ja = sie hat sie beantwortet. teilweise = ein Teil steht, ein Teil fehlt. nein_klaert_noch = sie hat NICHT geantwortet, ist aber beim Thema: sie fragt zurueck, korrigiert eine fruehere Angabe, ueberlegt laut oder braucht erst eine Auskunft von dir ('wann zaehlt man als Kind?', 'dann sind wir doch zwei Erwachsene'). nein = sie geht nicht darauf ein und auch nicht auf das Thema. keine_frage_offen = du hattest gar nichts gefragt. Immer angeben und ehrlich: Bei nein_klaert_noch fragt der Assistent weiter, bei nein nimmt er irgendwann das Naheliegende an." },
           ziel: text("Region aus dem Katalog, als id: mallorca, kreta, algarve, sardinien, teneriffa, barcelona, wien, lissabon, tirol, suedtirol, lappland, ostsee, marrakesch, kapstadt, krabi, island, newyork, kyoto. NUR, wenn die Person die Region selbst genannt hat - sonst leer lassen. Eine Region, die du fuer passend haeltst, gehoert nicht hierher: Dafuer gibt es regionen_vergleichen, und die Person entscheidet. Ein anderer Name fuer dieselbe Region zaehlt als genannt ('Malle' = mallorca, 'die Balearen' = mallorca, weil keine andere Balearen-Region im Katalog ist, 'Kanaren' = teneriffa). Nennt sie dagegen ein Land oder eine Gegend, zu der MEHRERE Regionen des Katalogs gehoeren ('Spanien' = mallorca, teneriffa, barcelona), gehoert das in zieleAuswahl, nicht hierher - sonst waehlst du das Reiseziel fuer sie aus."),
@@ -3013,14 +3033,24 @@ const Werkzeugkasten = {
          Anreisetag, Alter der Kinder, eine unbestimmte Mehrzahl. Dort
          waere ein Wert immer geraten, egal wie gut das Modell versteht,
          und er landet in den Studiendaten. */
-      const beantwortet = (...themen) => ["ja", "teilweise"].includes(a.frage_beantwortet)
-        && themen.includes(kern.lauf.gefragtVorher);
+      /* Zwei Wege, fuer eine Angabe einzustehen (17.11.2026):
+         ueber die gestellte Frage, oder ueber `selbst_genannt` fuer
+         alles, was nebenbei faellt. Ohne den zweiten Weg half der
+         Ausweg nur dort, wo der Agent zufaellig gerade danach gefragt
+         hatte - im Testlauf fiel "wir wollen nach malle" genau deshalb
+         durch, und meine sieben Pruefungen dazu waren alle gruen, weil
+         sie immer die Zielfrage als gestellt gesetzt hatten. */
+      const genannt = Array.isArray(a.selbst_genannt) ? a.selbst_genannt : [];
+      const beantwortet = (...themen) => (["ja", "teilweise"].includes(a.frage_beantwortet)
+        && themen.includes(kern.lauf.gefragtVorher))
+        || themen.some((t) => genannt.includes(t));
       /* Dieselbe Regel, nur strenger: ein klares "ja", kein "teilweise".
          Fuer den Monat, weil dort der teuerste gemessene Fehlgriff liegt
          ("hauptsache warm" -> Oktober). Ein halbes Ja reicht dafuer
          nicht. */
-      const klarBeantwortet = (...themen) => a.frage_beantwortet === "ja"
-        && themen.includes(kern.lauf.gefragtVorher);
+      const klarBeantwortet = (...themen) => (a.frage_beantwortet === "ja"
+        && themen.includes(kern.lauf.gefragtVorher))
+        || themen.some((t) => genannt.includes(t));
       if (a.ziel !== undefined) {
         const roh = String(a.ziel).toLowerCase().trim();
         let id = null;

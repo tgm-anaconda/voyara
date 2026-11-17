@@ -1227,6 +1227,68 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     pruefe("Erkanntes Ziel wird nicht wiederholt", (await zielLauf("nach mallorca", "mallorca", "ja")).angesagt, false);
   }
 
+  /* Nebenbei Gesagtes (17.11.2026, aus dem Live-Testlauf)
+     ------------------------------------------------------------------
+     Der Lauf auf der echten Seite: Der Agent fragte "Hotel oder
+     Ferienwohnung?", die Person antwortete "hotel. wir wollen nach
+     malle". Das Ziel wurde verworfen und danach noch einmal gefragt.
+
+     Die Ursache lag in MEINER Reparatur von einer Stunde davor: Der
+     Ausweg haengt an `gefragtVorher`, und gefragt war die Art. Die
+     sieben Zielpruefungen, die ich dazu geschrieben hatte, waren alle
+     gruen - weil ich in jeder einzelnen die Zielfrage als gestellt
+     gesetzt hatte. Ein Pfad geprueft, der danebenliegende nicht.
+
+     Deshalb hier ausdruecklich der andere Pfad: `gefragtVorher` ist ein
+     ANDERES Thema, und die Angabe kommt ueber `selbst_genannt`. */
+  if (WK && WK.werkzeuge && WK.werkzeuge.stand_merken) {
+    const nebenbei = async (satz, aufnahme, feld, gefragtVorher) => {
+      const kern = { lauf: { gespraech: [{ role: "user", content: satz }], profil: {}, protokoll: [],
+          annahmeOffen: [], gefragtWie: {}, verlauf: [{ rolle: "user", text: satz }],
+          gefragtVorher, nachrichtArt: "antwort", runde: 1 },
+        notieren(e, d) { this.lauf.protokoll.push({ ereignis: e, ...d }); },
+        freigabe: () => "suchen", darf: () => false, logZeile() {}, sagen() {},
+        standAnzeigen() {}, sichern() {}, standKurz: () => "" };
+      await WK.werkzeuge.stand_merken.call(WK, { nachricht_art: "antwort",
+        frage_beantwortet: "ja", ...aufnahme }, kern);
+      const w = kern.lauf.profil[feld];
+      return (w != null && !(Array.isArray(w) && !w.length)) ? "kommt an" : "verworfen";
+    };
+    // Genau der Satz aus dem Testlauf, mit "art" als gestellter Frage
+    pruefe("'hotel. wir wollen nach malle' - Ziel kommt an",
+      await nebenbei("hotel. wir wollen nach malle",
+        { typ: "hotel", ziel: "mallorca", selbst_genannt: ["art", "ziel"] }, "zielId", "art"), "kommt an");
+    pruefe("Ohne selbst_genannt bleibt es verworfen",
+      await nebenbei("hotel. wir wollen nach malle",
+        { typ: "hotel", ziel: "mallorca" }, "zielId", "art"), "verworfen");
+    pruefe("Nebenbei genanntes Alter kommt an",
+      await nebenbei("ja zwei, die sind zwei und vier",
+        { kinder: 2, kinderAlter: [2, 4], selbst_genannt: ["reisende", "kinderAlter"] },
+        "kinderAlter", "reisende"), "kommt an");
+    pruefe("Nebenbei genannter Monat kommt an",
+      await nebenbei("zu zweit, im juli",
+        { erwachsene: 2, monat: 7, selbst_genannt: ["reisende", "zeit"] }, "monat", "reisende"), "kommt an");
+    pruefe("Nebenbei genannter Wunsch kommt an",
+      await nebenbei("nur unterkunft, hauptsache mit sauna",
+        { flug: false, ausstattung: ["spa"], selbst_genannt: ["flug", "wuensche"] },
+        "ausstattung", "flug"), "kommt an");
+    // Die Sperre bleibt: ein Thema, das NICHT in selbst_genannt steht
+    pruefe("Fremdes Thema bleibt gesperrt",
+      await nebenbei("hotel bitte",
+        { typ: "hotel", ziel: "mallorca", selbst_genannt: ["art"] }, "zielId", "art"), "verworfen");
+  }
+
+  /* Abwinken bei den Wuenschen, auch nebenbei - derselbe Testlauf:
+     "verpflegung ist egal, sonst nichts weiter" beendete das Thema
+     nicht, weil gerade nach der Verpflegung gefragt war. */
+  if (KN && KN.WUNSCH_GENUG) {
+    pruefe("Abwinken wird als solches erkannt",
+      KN.WUNSCH_GENUG.test("verpflegung ist egal, sonst nichts weiter"), true);
+    const q = fs.readFileSync(alt && fs.existsSync(quelle + "kern.js") ? quelle + "kern.js" : B + "agent/kern.js", "utf8");
+    pruefe("Abwinken gilt auch mit Wunsch im Stand",
+      /gefragt === "wuensche" \|\| hatWunsch/.test(q) ? "ja" : "nein", "ja");
+  }
+
   console.log(`\n${gut} richtig, ${schlecht} falsch`);
   process.exit(schlecht ? 1 : 0);
 })();
