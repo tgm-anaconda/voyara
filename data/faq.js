@@ -31,7 +31,42 @@ const FAQ_THEMEN = [
   { id: "daten", label: "Daten und Sicherheit" },
 ];
 
+/* Zahlen ueber den Katalog rechnet der Kern, nicht das Modell
+   ==================================================================
+   Gemeldet am 17.11.2026 aus einem Durchlauf: Auf "Wie viele Hotels
+   bietet ihr auf der Seite an?" antwortete das Modell aus dem Kopf, und
+   der Kern loeschte den Satz als unbelegte Behauptung. Uebrig blieb
+   eine Antwort, die an der Frage vorbeiging.
+
+   Gefragt war etwas, das der Kern genau weiss - er hat den Katalog vor
+   sich. Also zaehlt er. Als Funktion und nicht als feste Zahl, damit die
+   Antwort nicht veraltet, wenn der Katalog wieder waechst; am 09.11.
+   ist er zuletzt umgebaut worden, und eine eingetippte Zahl waere seit
+   dem falsch gewesen. */
+function katalogZahlen() {
+  const h = typeof HOTELS !== "undefined" ? HOTELS.length : 0;
+  const w = typeof APARTMENTS !== "undefined" ? APARTMENTS.length : 0;
+  const r = typeof ZIELE !== "undefined" ? ZIELE.length : 0;
+  return { hotels: h, wohnungen: w, gesamt: h + w, regionen: r };
+}
+
 const FAQ = [
+  /* ---------- Die Seite: wie viel es gibt ---------- */
+  { id: "f-katalog-menge", thema: "seite", frage: "Wie viele Unterkünfte gibt es auf Voyara?",
+    antwort: () => {
+      const z = katalogZahlen();
+      return `Insgesamt ${z.gesamt} Unterkünfte: ${z.hotels} Hotels und ${z.wohnungen} Ferienwohnungen, verteilt auf ${z.regionen} Regionen. Wie viele davon für deine Reise frei sind, hängt vom Monat und von eurer Gruppe ab - das sehe ich nach, sobald ich beides weiß.`;
+    },
+    stichworte: ["wie viele", "anzahl", "hotels", "unterkünfte", "unterkuenfte", "ferienwohnungen",
+      "wohnungen", "häuser", "haeuser", "angebot", "auswahl", "umfang", "gross", "groß"] },
+  { id: "f-katalog-regionen", thema: "seite", frage: "In welche Regionen kann ich reisen?",
+    antwort: () => {
+      const namen = typeof ZIELE !== "undefined" ? ZIELE.map((z) => z.name).join(", ") : "";
+      return `Wir haben ${katalogZahlen().regionen} Regionen im Angebot: ${namen}. Sag mir, wohin es ungefähr gehen soll, dann sehe ich nach, was dort frei ist.`;
+    },
+    stichworte: ["regionen", "länder", "laender", "ziele", "wohin", "destinationen", "gegenden",
+      "welche orte", "reiseziele", "hinreisen", "überall", "ueberall", "angebotenen"] },
+
   /* ---------- Buchung und Bezahlung ---------- */
   { id: "f-buchung-ablauf", thema: "buchung", frage: "Wie läuft eine Buchung ab?",
     antwort: "Unterkunft aussuchen, Zeitraum und Reisende prüfen, Zimmer und Verpflegung wählen, Daten eingeben und bestätigen. Danach bekommst du eine Bestätigung per E-Mail. Zwischen Auswahl und Bestätigung kannst du jederzeit zurück.",
@@ -234,15 +269,19 @@ function faqSuchen(frage, wieViele = 3) {
     for (const w of woerter) {
       if ((e.stichworte || []).some((s) => s.includes(w) || w.includes(s))) punkte += 3;
       else if (e.frage.toLowerCase().includes(w)) punkte += 2;
-      else if (e.antwort.toLowerCase().includes(w)) punkte += 1;
+      else if (typeof e.antwort === "string" && e.antwort.toLowerCase().includes(w)) punkte += 1;
     }
     if (punkte > 0) treffer.push({ ...e, punkte });
   }
   /* Eine einzelne schwache Uebereinstimmung ist kein Treffer: Das Wort
      "Zimmer" steht in jeder zweiten Antwort. Erst ab drei Punkten, also
      einem echten Stichworttreffer oder mehreren schwachen, gilt es. */
+  /* Eine Antwort darf eine Funktion sein (siehe katalogZahlen). Sie
+     wird hier aufgeloest, damit alle Aufrufer eine Zeichenkette
+     bekommen und niemand daran denken muss. */
   return treffer.filter((t) => t.punkte >= 3)
-    .sort((a, b) => b.punkte - a.punkte).slice(0, wieViele);
+    .sort((a, b) => b.punkte - a.punkte).slice(0, wieViele)
+    .map((t) => ({ ...t, antwort: typeof t.antwort === "function" ? t.antwort() : t.antwort }));
 }
 
 if (typeof module !== "undefined" && module.exports) module.exports = { FAQ, FAQ_THEMEN, faqSuchen };

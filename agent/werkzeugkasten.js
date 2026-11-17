@@ -4886,6 +4886,7 @@ const Werkzeugkasten = {
     async haus_details(a, kern) {
       const item = typeof getItemById === "function" ? getItemById(a.id) : null;
       if (!item) return { ergebnis: { fehler: `${a.id} kenne ich nicht.` } };
+      kern.logZeile(`Haus angesehen: ${item.name}`, "schritt");
       const p = kern.lauf.profil;
       await kern.denkpause(700, "liest nach…");
       // Die Hausseite ist offen - damit darf der Agent auch die Teilnoten
@@ -5011,9 +5012,20 @@ const Werkzeugkasten = {
        auf der Hausseite durch die Bewertungen selbst, auf der
        Trefferliste ueber die Karte des Hauses - und merkt sich, welche
        Haeuser der Agent wirklich gelesen hat. */
+    /* Was der Agent tut, steht auch im aufklappbaren Block (17.11.2026).
+       ------------------------------------------------------------------
+       Bens Durchlauf: Bei den langen Abschnitten - Bewertungen lesen,
+       Hausdetails holen, FAQ nachschlagen - erschien keine Schrittzeile.
+       Gerade dort waere sie am wichtigsten, denn das sind die Stellen,
+       an denen der Agent etwas erfaehrt, das die Person nicht sieht.
+
+       Fuer die Erhebung ist das nicht nebensaechlich: Der Block ist in
+       beiden Armen das, was von der Arbeit nachlesbar bleibt. Was dort
+       fehlt, fehlt in Arm B vollstaendig. */
     async bewertungen_lesen(a, kern, stufe) {
       const item = typeof getItemById === "function" ? getItemById(a.id) : null;
       if (!item) return { ergebnis: { fehler: `${a.id} kenne ich nicht.` } };
+      kern.logZeile(`Bewertungen gelesen: ${item.name}`, "schritt");
       const aspekt = String(a.aspekt || "").trim();
       const seite = Werkzeuge.seite();
       const aufDerHausseite = seite === "stay" && new URLSearchParams(location.search).get("id") === a.id;
@@ -5090,6 +5102,7 @@ const Werkzeugkasten = {
         return { ergebnis: { fehler: "Das FAQ steht hier nicht bereit" } };
       }
       const treffer = faqSuchen(frage);
+      kern.logZeile(`Im FAQ nachgeschlagen: ${frage.slice(0, 60)}`, "schritt");
       if (!treffer.length) {
         kern.notieren("faq_ohne_treffer", { frage: frage.slice(0, 120) });
         return {

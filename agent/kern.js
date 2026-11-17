@@ -1927,12 +1927,40 @@ const Kern = {
          den neuen Stand zeigt und das Thema nicht mehr als offen fuehrt. */
       /* Zuerst der eigene Chip, dann der freie Text. Ein Chip ist der
          Wortlaut des Kerns selbst - ihn wiederzuerkennen ist Buchfuehrung,
-         kein Deuten. Alles andere bleibt beim Modell. */
+         kein Deuten. Alles andere bleibt beim Modell.
+
+         Der Chip-Leser steht zusaetzlich WEITER UNTEN, ausserhalb dieses
+         Zweigs - siehe dort. Hier bleibt er, weil die Reihenfolge
+         stimmen muss: erst der Chip, dann der freie Text. */
       Werkzeugkasten.chipAntwortLesen(this, t);
       Werkzeugkasten.antwortSelbstLesen(this, this.lauf.gefragt, t);
       this.lauf.gefragt = null;
       // Die Wirkung gilt genau fuer den Zug nach der Frage. Steht die Frage
       // danach noch offen, meldet sie ihre Chips ohnehin neu an.
+      this.lauf.chipWirkung = null;
+      this.lauf.chipThema = null;
+    }
+    /* Ein Chip wirkt auch ohne offenes Fahrplan-Thema (17.11.2026).
+       ------------------------------------------------------------------
+       Gemeldet aus Bens Durchlauf: Der Agent fragte selbst "Soll ich die
+       Suche ausweiten, oder ist dir die Vorgabe wichtig?", bekam "Ja,
+       Suche ausweiten" - und sah sich danach einfach die zwei Haeuser an.
+       Die Ausweitung fand nie statt.
+
+       Die Ursache: Der Chip-Leser stand nur im Zweig `if (lauf.gefragt)`.
+       Die Engstellen-Frage kommt aber nicht aus dem Fahrplan - sie setzt
+       `chipWirkung` und `kernWartet`, aber kein `gefragt`. Also wurde die
+       Antwort auf die eigene Frage des Agenten nie gelesen.
+
+       Dieselbe Luecke haette jede andere Frage ausserhalb des Fahrplans:
+       Der Agent bietet etwas an, die Person sagt ja, und es passiert
+       nichts. Deshalb haengt der Leser jetzt an dem, wovon er wirklich
+       abhaengt - an `chipWirkung`, nicht an `gefragt`. Er vergleicht den
+       Wortlaut genau, kann also nichts aufgreifen, was nicht von ihm
+       stammt. */
+    if (this.lauf.chipWirkung) {
+      const gelesen = Werkzeugkasten.chipAntwortLesen(this, t);
+      if (gelesen) this.notieren("chip_ausserhalb_fahrplan", { felder: gelesen.felder || null });
       this.lauf.chipWirkung = null;
       this.lauf.chipThema = null;
     }
@@ -2269,6 +2297,29 @@ const Kern = {
             const weg = saetze.filter((x) => !rest.includes(x));
             this.notieren("behauptung_ohne_recherche", { satz: weg[0]?.slice(0, 160) });
             text = rest.join(" ").trim();
+            /* Eine geloeschte Behauptung hinterlaesst keine Luecke
+               (17.11.2026).
+               ----------------------------------------------------------
+               Gemeldet aus Bens Durchlauf: Auf "Wie viele Hotels bietet
+               ihr auf der Seite an?" loeschte der Kern die Antwort des
+               Modells - zu Recht, sie war nicht recherchiert - und es
+               kam nichts an ihre Stelle. Die Person bekam eine Antwort,
+               die an der Frage vorbeiging, und erfuhr nicht einmal, dass
+               die Frage offen blieb.
+
+               Bens Urteil: "Es darf nicht sein, dass dann einfach nichts
+               kommt an der Stelle des geloeschten Satzes."
+
+               Also sagt der Agent, dass er erst nachsehen muss. Das ist
+               ehrlich, es nennt keine Zahl, und die Person weiss, woran
+               sie ist. Angehaengt wird es nur, wenn der Rest nicht schon
+               selbst eine Frage stellt - sonst stuenden zwei Fragen in
+               einer Nachricht. */
+            const LUECKE = "Dazu muss ich erst nachsehen - das sage ich dir, sobald ich gesucht habe.";
+            if (!/\?/.test(text)) {
+              text = text ? `${text} ${LUECKE}` : LUECKE;
+              this.notieren("luecke_gefuellt", { art: "ohne_recherche" });
+            }
             nachricht.content = text;
           }
         }

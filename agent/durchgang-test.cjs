@@ -1454,6 +1454,52 @@ const liesReisende = async (text, felder, urteil = "ja") => {
       ["sauberkeit", "essen", "lage", "ruhe", "service", "preis"], 2).trim(), "Nein, das war's");
   }
 
+  /* Vier weitere Funde aus Bens Durchlauf (17.11.2026 abends)
+     Gegenprobe fuer alle: _backup/17-11-abend/ */
+
+  // Der Chip wirkt auch ausserhalb des Fahrplans
+  if (WK && WK.chipAntwortLesen) {
+    const kern = { lauf: { profil: { zielId: "lappland", monat: 3 }, protokoll: [], gespraech: [],
+        chipWirkung: { "Ja, Suche ausweiten": { zielId: null, zieleAuswahl: [], zielOffen: true },
+          "Nein, ist mir wichtig": {} },
+        chipThema: null, gefragt: null, zuletztGemerkt: [], selbstGelesen: [] },
+      notieren() {}, standAnzeigen() {}, sichern() {}, logZeile() {} };
+    const r = WK.chipAntwortLesen(kern, "Ja, Suche ausweiten");
+    pruefe("Engstellen-Chip wird gelesen", r ? "ja" : "nein", "ja");
+    pruefe("Engstellen-Chip oeffnet das Ziel", kern.lauf.profil.zielOffen, true);
+    // Und die Stelle, an der er gerufen wird - ohne sie passierte gar nichts
+    const kq = fs.readFileSync(alt && fs.existsSync(quelle + "kern.js") ? quelle + "kern.js" : B + "agent/kern.js", "utf8");
+    pruefe("Der Leser haengt an chipWirkung, nicht an gefragt",
+      /if \(this\.lauf\.chipWirkung\) \{\s*\n\s*const gelesen/.test(kq) ? "ja" : "nein", "ja");
+    pruefe("Eine geloeschte Behauptung hinterlaesst keine Luecke",
+      /luecke_gefuellt/.test(kq) ? "ja" : "nein", "ja");
+  }
+
+  // Schrittzeilen fuer die Arbeit, die man sonst nicht sieht
+  {
+    const wq = fs.readFileSync(alt && fs.existsSync(quelle + "werkzeugkasten.js") ? quelle + "werkzeugkasten.js" : B + "agent/werkzeugkasten.js", "utf8");
+    pruefe("Bewertungen lesen erzeugt eine Schrittzeile",
+      /Bewertungen gelesen: \$\{item\.name\}/.test(wq) ? "ja" : "nein", "ja");
+    pruefe("Haus ansehen erzeugt eine Schrittzeile",
+      /Haus angesehen: \$\{item\.name\}/.test(wq) ? "ja" : "nein", "ja");
+    pruefe("FAQ nachschlagen erzeugt eine Schrittzeile",
+      /Im FAQ nachgeschlagen/.test(wq) ? "ja" : "nein", "ja");
+  }
+
+  /* Katalogzahlen beantwortet der Kern, nicht das Modell. Als Funktion
+     hinterlegt, damit sie nicht veralten - am 09.11. ist der Katalog
+     zuletzt gewachsen, eine eingetippte Zahl waere seitdem falsch. */
+  if (typeof faqSuchen === "function") {
+    const antwort = (q) => { const t = faqSuchen(q); return t.length ? String(t[0].antwort) : ""; };
+    pruefe("Frage nach der Zahl der Hotels wird beantwortet",
+      /\d{2,}\s*Hotels/.test(antwort("Wie viele hotels bietet ihr auf der Seite an?")) ? "ja" : "nein", "ja");
+    pruefe("Die Zahl stimmt mit dem Katalog ueberein",
+      new RegExp(`${(typeof HOTELS !== "undefined" ? HOTELS.length : -1)} Hotels`)
+        .test(antwort("wie viele unterkünfte habt ihr")) ? "ja" : "nein", "ja");
+    pruefe("Frage nach den Regionen wird beantwortet",
+      /Regionen im Angebot/.test(antwort("in welche regionen kann ich reisen")) ? "ja" : "nein", "ja");
+  }
+
   console.log(`\n${gut} richtig, ${schlecht} falsch`);
   process.exit(schlecht ? 1 : 0);
 })();
