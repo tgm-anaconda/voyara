@@ -323,9 +323,17 @@ pruefe("Ein geschlossenes Thema setzt den Zaehler zurueck",
    "beantwortet", aber es kam nichts an. Frueher: Zaehler zurueck auf
    null, die Frage wiederholte sich endlos. */
 pruefe("'Beantwortet' ohne Wert zaehlt trotzdem", runde("ja", { dauer: 1 }).ohne, 2);
-// Dreimal klaeren ohne Antwort: ab der dritten Runde zaehlt es doch
-pruefe("Dreimal klaeren ohne Antwort zaehlt doch",
-  runde("nein_klaert_noch", {}, { dauer: 2 }).ohne, 1);
+/* Hier stand bis zum 17.11.2026: "Dreimal klaeren ohne Antwort zaehlt
+   doch" - die Nachsicht fuer Rueckfragen war auf zwei Runden begrenzt.
+   Das war falsch gedacht, und es ist Ben im Durchlauf aufgefallen: Auf
+   "In welcher Klasse moechtet ihr fliegen?" kamen zwei Sachfragen, und
+   danach nahm der Agent Economy an.
+
+   Die Annahme gibt es fuer Schweigen und Ausweichen, nicht fuer
+   Beteiligung. Wer dreimal sachlich nachfragt, ist engagierter als
+   jemand, der einmal antwortet. Die Grenze ist weg. */
+pruefe("Auch die dritte Rueckfrage zaehlt nicht",
+  runde("nein_klaert_noch", {}, { dauer: 2 }).ohne || 0, 0);
 
 /* Die Annahme haengt am neuen Zaehler, nicht mehr an der Zahl der
    Fragen. Derselbe Stand wie im gemeldeten Fall: zweimal nach der Art
@@ -1376,6 +1384,74 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     pruefe("Anzahl-Satz faellt nur einmal", satzNach(vollerStand(), 3), 1);
     pruefe("Kein Anzahl-Satz bei eigener Zahl",
       satzNach({ ...vollerStand(), anzahlVorschlaege: 6 }), 0);
+  }
+
+  /* Drei Funde aus Bens Durchlauf vom 17.11.2026 abends
+     ------------------------------------------------------------------
+     Gegenprobe fuer alle drei: _backup/17-11-abend/ */
+
+  // 1. "Dazunehmen" heisst dazunehmen, nicht ersetzen
+  if (WK && WK.widerspruchRueckfrage) {
+    const p = { monat: 3, richtung: "warm", zielVorgemerkt: "lappland",
+      zieleErlaubt: ["krabi", "kapstadt", "marrakesch", "teneriffa", "algarve", "lissabon"] };
+    const r = WK.widerspruchRueckfrage(p, { widerspruchGefragt: {} });
+    const dazu = r && r.wirkung[Object.keys(r.wirkung)[0]];
+    pruefe("Lappland wird DAZUgenommen, nicht ersetzt",
+      (dazu?.zieleAuswahl || []).join(","),
+      "krabi,kapstadt,marrakesch,teneriffa,algarve,lissabon,lappland");
+    /* Mit `??` geprueft lieferte das hier beim ersten Anlauf den
+       Ersatztext, weil `null ?? x` eben x ist - die Pruefung schlug an,
+       obwohl der Code stimmte. Also auf das Vorhandensein des Feldes
+       pruefen, nicht auf seinen Wert. */
+    pruefe("Das einzelne Ziel wird dabei geleert",
+      dazu && "zielId" in dazu ? String(dazu.zielId) : "Feld fehlt", "null");
+    pruefe("Die Richtung wird aufgehoben",
+      dazu && "richtung" in dazu ? String(dazu.richtung) : "Feld fehlt", "null");
+    // Ohne erlaubte Liste gibt es nichts, wozu man dazunehmen koennte
+    const r2 = WK.widerspruchRueckfrage({ monat: 3, richtung: "warm", zielVorgemerkt: "lappland", zieleErlaubt: [] },
+      { widerspruchGefragt: {} });
+    const d2 = r2 && r2.wirkung[Object.keys(r2.wirkung)[0]];
+    pruefe("Ohne Liste bleibt es beim einzelnen Ziel", d2?.zielId, "lappland");
+  }
+
+  /* 2. Rueckfragen zaehlen nicht als Fehlversuche.
+     Auf "In welcher Klasse moechtet ihr fliegen?" kamen zwei Sachfragen -
+     danach nahm der Agent Economy an. Die Annahme gibt es fuer Schweigen,
+     nicht fuer Beteiligung. */
+  if (WK && WK.fahrplan) {
+    const stand = () => ({ zielId: "mallorca", typ: "hotel", monat: 7, naechte: 7, erwachsene: 2,
+      kinder: 0, kinderAlter: [], zimmer: 1, artGenannt: true, flug: true, flugAb: "CGN" });
+    const zaehlen = (faelle) => {
+      const lauf = { gefragtWie: {}, verlauf: [], chips: null, annahmeOffen: [],
+        gefragtVorher: "flugKlasse", zugSeit: 0 };
+      for (const [satz, art, urteil] of faelle) {
+        lauf.gespraech = [{ role: "user", content: satz }];
+        lauf.nachrichtArt = art; lauf.frageBeantwortet = urteil;
+        lauf.zugSeit += 1;
+        WK.fahrplan(stand(), lauf);
+      }
+      return (lauf.ohneAntwort || {}).flugKlasse || 0;
+    };
+    // Das Modell urteilt hier bewusst falsch ("nein") - der Kern sieht das Fragezeichen selbst
+    pruefe("Drei Sachfragen zaehlen nicht", zaehlen([
+      ["was ist der unterschied?", "frage", "nein"],
+      ["wie teuer sind die jeweils?", "frage", "nein"],
+      ["und wie lange dauert der flug?", "frage", "nein"]]), 0);
+    pruefe("Echte Nicht-Antworten zaehlen weiter", zaehlen([
+      ["hm", "sonstiges", "nein"],
+      ["keine ahnung", "sonstiges", "nein"]]), 2);
+  }
+
+  // 3. Schnipsel kennen den Stand
+  if (WK && WK.THEMEN && WK.THEMEN.wuensche) {
+    const chips = (ids, runde) => WK.THEMEN.wuensche.chips(
+      { kriterien: ids.map((id) => ({ id })) }, WK, { gefragtWie: { wuensche: runde } }) || "";
+    pruefe("Genanntes Kriterium wird nicht erneut vorgeschlagen",
+      /Sauberkeit/.test(chips(["sauberkeit"], 1)) ? "doch" : "nein", "nein");
+    pruefe("Es bleiben Vorschlaege uebrig",
+      chips(["essen"], 1).split("|").length >= 3 ? "ja" : "nein", "ja");
+    pruefe("Alles genannt: nur noch Abwinken", chips(
+      ["sauberkeit", "essen", "lage", "ruhe", "service", "preis"], 2).trim(), "Nein, das war's");
   }
 
   console.log(`\n${gut} richtig, ${schlecht} falsch`);

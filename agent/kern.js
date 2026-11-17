@@ -3109,8 +3109,36 @@ const Kern = {
             const h = this.flugtageHilfe();
             if (h) { text = `${text} ${h.satz}`; nachricht.content = text; if (!this.lauf.anreiseChips?.length) this.lauf.anreiseChips = h.chips; }
           }
-          // Moegliche Anreisetage (Flugtage) als Chips - konkreter als jede Umschreibung
-          if (this.lauf.anreiseChips?.length) { antwort.chips = this.lauf.anreiseChips; this.lauf.anreiseChips = null; }
+          /* Moegliche Anreisetage (Flugtage) als Chips - aber nur unter
+             einer Frage nach dem Anreisetag (17.11.2026).
+             ------------------------------------------------------------
+             Gemeldet aus Bens Durchlauf: Unter einer Antwort ueber
+             Gaestebewertungen standen die Schnipsel "1. Maerz, 2. Maerz,
+             3. Maerz, 4. Maerz". Sein Urteil: "Da denkt man wirklich,
+             das ist kein Agent, sondern ein dummer Algorithmus."
+
+             Gefuellt werden sie oben, wenn der Agent nach dem Anreisetag
+             fragt. Verbraucht wurden sie bisher beim naechsten Textzug -
+             egal, worum der ging. Geht der Zug dazwischen in die
+             Werkzeuge (dort werden die Chips geleert, der Zwischen-
+             speicher aber nicht), ueberleben sie und tauchen spaeter
+             unter einer voellig anderen Antwort auf.
+
+             Schlimmer: Dieser Weg setzt `antwort.chips` und umgeht damit
+             die Wache darunter, die Schnipsel streicht, welche nicht zur
+             gestellten Frage passen.
+
+             Jetzt gilt dieselbe Regel wie fuer Annahmesaetze: Der
+             getragene Zustand fuehrt seinen Grund mit und wird beim
+             Benutzen geprueft. Passt die Nachricht nicht mehr zur Frage
+             nach dem Anreisetag, werden sie verworfen statt gezeigt. */
+          if (this.lauf.anreiseChips?.length) {
+            const passtNoch = /anreise|anreisetag|welchen tag|welcher tag|ankommen|losfliegen|abflug|datum|\btag\b/i.test(text)
+              && /\?/.test(text);
+            if (passtNoch) antwort.chips = this.lauf.anreiseChips;
+            else this.notieren("chips_verworfen", { grund: "anreise", text: String(text).slice(0, 80) });
+            this.lauf.anreiseChips = null;
+          }
           this.lauf.chips = (antwort.chips || []).length ? antwort.chips : this.ersatzChips(fp);
           /* Knoepfe nur zur gestellten Frage (04.10.2026). Gemeldet: "Wer
              reist denn alles mit?" - darunter Juni, Juli, August. Die

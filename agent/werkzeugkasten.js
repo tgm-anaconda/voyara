@@ -6767,9 +6767,28 @@ const Werkzeugkasten = {
       /* Kein `nochmal`: Die drei Fassungen stehen oben in `satz`, und
          `themenSatz` wuerde `nochmal` ab dem zweiten Mal vorziehen. */
       frage: "Worauf sie bei der Unterkunft achtet - offen gefragt, hoechstens drei Beispiele. Haengt im Satz ein Nachhaken ('Faellt dir noch etwas ein'), dann stell GENAU diese Frage und spring nicht zum naechsten Thema.",
-      chips: (p, wk, lauf) => ((lauf?.gefragtWie?.wuensche || 0) >= 1
-        ? "Nein, das war's | Ruhe | Lage | Sauberkeit"
-        : "Sauberkeit | Essen | Lage | Ruhe") },
+      /* Keine Schnipsel fuer das, was schon dasteht (17.11.2026).
+         ----------------------------------------------------------------
+         Gemeldet aus Bens Durchlauf: Er hatte "Sauberkeit" genannt, und
+         im naechsten Zug bot der Agent "Sauberkeit" wieder als Schnipsel
+         an. Die Liste war eine feste Zeichenkette, unabhaengig vom
+         Stand - und der Satz darueber zaehlte gleichzeitig auf, was
+         schon gemerkt ist. Beides in einer Nachricht.
+
+         Jetzt werden die schon genannten Kriterien herausgenommen und
+         aus einem Vorrat aufgefuellt, damit immer drei Vorschlaege
+         dastehen. Bleibt nichts uebrig, steht nur noch das Abwinken da -
+         dann gibt es wirklich nichts mehr anzubieten. */
+      chips: (p, wk, lauf) => {
+        const schon = new Set((p.kriterien || []).map((k) => k.id));
+        const VORRAT = ["sauberkeit", "essen", "lage", "ruhe", "service", "preis"];
+        const LABEL = { sauberkeit: "Sauberkeit", essen: "Essen", lage: "Lage",
+          ruhe: "Ruhe", service: "Service", preis: "Preis" };
+        const frei = VORRAT.filter((x) => !schon.has(x)).slice(0, 3).map((x) => LABEL[x]);
+        const erste = (lauf?.gefragtWie?.wuensche || 0) < 1;
+        if (erste) return frei.length ? frei.join(" | ") : null;
+        return ["Nein, das war's", ...frei].join(" | ");
+      } },
   },
 
   /* Wie der Kern ein neu aufgenommenes Feld ausspricht.
@@ -7041,12 +7060,35 @@ const Werkzeugkasten = {
       ziel: id,
       satz,
       chips: [dazu, bleiben],
-      /* Der Chip setzt, was die Frage anbietet. "Trotzdem" hebt die
-         Richtung auf, weil sie sonst im naechsten Zug dieselbe Region
-         wieder heraussortieren wuerde. */
+      /* "Dazunehmen" heisst dazunehmen, nicht ersetzen (17.11.2026).
+         ----------------------------------------------------------------
+         Hier stand `zielId: id`. Der Satz bot an, die Region ZUSAETZLICH
+         aufzunehmen, die Wirkung machte sie zur einzigen. Im Durchlauf
+         sagte Ben "ich wuerde gerne mit 19 Grad bleiben aber ich wuerde
+         doch gerne Lappland noch mit dazu nehmen", klickte "Lappland
+         trotzdem" - und danach stand im Kasten nur noch "Ziel Lappland".
+         Die warmen Regionen waren weg, und der ganze Rest des Gespraechs
+         lief auf dieser falschen Grundlage.
+
+         Der Gedanke dahinter war richtig und steht unten weiter: Die
+         Richtung muss weg, sonst sortiert sie die Region im naechsten
+         Zug wieder heraus. Nur die Folgerung war falsch. Statt die
+         Richtung durch EIN Ziel zu ersetzen, wird sie durch die LISTE
+         ersetzt, fuer die sie stand - plus die neue Region.
+
+         Gibt es keine solche Liste (keine Richtung gesetzt), bleibt es
+         beim einzelnen Ziel; dann gibt es nichts, wozu man etwas
+         dazunehmen koennte. */
       wirkung: {
-        [dazu]: { zielId: id, zielOffen: false, richtung: null, zieleErlaubt: null,
-          zielVorgemerkt: null, zieleVorgemerkt: andere.length ? andere : null },
+        [dazu]: (() => {
+          const erlaubt = (p.zieleErlaubt || []).filter((x) => x !== id);
+          return erlaubt.length
+            ? { zieleAuswahl: [...erlaubt, id], zielId: null, zielOffen: false,
+              richtung: null, zieleErlaubt: null,
+              zielVorgemerkt: null, zieleVorgemerkt: andere.length ? andere : null }
+            : { zielId: id, zielOffen: false, richtung: null, zieleErlaubt: null,
+              zielVorgemerkt: null, zieleVorgemerkt: andere.length ? andere : null };
+        })(),
         [bleiben]: { zielVorgemerkt: null, zieleVorgemerkt: andere.length ? andere : null },
       },
     };
@@ -7778,8 +7820,38 @@ const Werkzeugkasten = {
       const t = lauf.gefragtVorher;
       const ohne = (lauf.ohneAntwort ||= {});
       const klaert = (lauf.klaertNoch ||= {});
+      /* Wer nachfragt, weicht nicht aus (17.11.2026).
+         ----------------------------------------------------------------
+         Bens Durchlauf: Auf "In welcher Klasse moechtet ihr fliegen?" kam
+         "was ist der unterschied?" und danach "wie teuer sind die
+         jeweils?". Zwei sachliche Rueckfragen - und der Agent nahm
+         danach Economy an.
+
+         Zwei Gruende dafuer, beide hier behoben:
+
+         Erstens war die Nachsicht auf zwei Runden begrenzt. Das war
+         falsch gedacht. Die Annahme gibt es fuer Schweigen und
+         Ausweichen, nicht fuer jemanden, der sich beteiligt. Wer dreimal
+         sachlich nachfragt, ist engagierter als jemand, der einmal
+         antwortet - den darf man nicht dafuer bestrafen, dass er es
+         genau wissen will. Die Grenze ist weg; gezaehlt wird nur noch,
+         was wirklich keine Antwort ist.
+
+         Zweitens hing alles daran, dass das Modell "nein_klaert_noch"
+         meldet. Tut es das nicht, zaehlte die Rueckfrage als Fehlschlag.
+         Ein Fragezeichen sieht der Kern aber selbst, und `nachricht_art`
+         hat dafuer einen eigenen Wert. Beides zaehlt jetzt mit - das
+         Modell muss nicht alles allein richtig einordnen.
+
+         Was weiter zaehlt: Schweigen, Themenwechsel, "weiss nicht", also
+         alles, wofuer die Annahme gebaut wurde. */
+      const letzteNutzer = (lauf.gespraech || []).filter((n) => n.role === "user").slice(-1)[0]?.content || "";
+      const fragtZurueck = lauf.frageBeantwortet === "nein_klaert_noch"
+        || lauf.nachrichtArt === "frage"
+        || lauf.nachrichtArt === "unklar"
+        || /\?\s*$/.test(String(letzteNutzer).trim());
       if (fertig[t]) { ohne[t] = 0; klaert[t] = 0; }
-      else if (lauf.frageBeantwortet === "nein_klaert_noch" && (klaert[t] || 0) < 2) {
+      else if (fragtZurueck) {
         klaert[t] = (klaert[t] || 0) + 1;
       } else {
         ohne[t] = (ohne[t] || 0) + 1;
