@@ -1635,6 +1635,11 @@ const liesReisende = async (text, felder, urteil = "ja") => {
       gespraechPush() {}, sichern() {}, logZeile() {}, standKurz: () => "",
       auswahlVorlegen: () => ({ ergebnis: { vorgelegt: true } }),
       freigabe: () => "suchen", darf: () => false, standAnzeigen() {},
+      /* Die echte Kern-Methode, nicht nachgebaut: Seit dem 18.11.2026
+         steht der Haltepunkt in kern.js und wird vom Fahrplan vor dem
+         Rundgang und von auswahl_vorlegen gerufen. Ein Nachbau im Stub
+         haette den Stub geprueft statt den Code. */
+      anzahlVorRundgang: KN.anzahlVorRundgang,
     });
     const ruf = async (lauf) => {
       const kern = kernStub(lauf);
@@ -1653,6 +1658,30 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     pruefe("Wer selbst eine Zahl genannt hat, wird nicht gefragt",
       (await ruf({ profil: { ...kernStub().lauf.profil, anzahlVorschlaege: 6 } })).r?.ergebnis?.nichtVorgelegt
         ? "gefragt" : "direkt", "direkt");
+  }
+
+  /* Der Haltepunkt sitzt VOR dem Rundgang (18.11.2026, abends)
+     ------------------------------------------------------------------
+     Gemessen in einem Lauf gegen das echte Modell: Der Agent lief den
+     Rundgang - Haus oeffnen, Bewertungen lesen, zurueck, rund 45
+     Sekunden - und erst danach kam die Frage, ob drei Haeuser passen.
+     Der erste Bau haing in `auswahl_vorlegen`, und das ist hinter dem
+     Rundgang. Genau Bens Einwand: gefragt wird, wenn die Arbeit schon
+     getan ist.
+     Gegenprobe: _backup/18-11-haltepunkt/ */
+  {
+    const kq = fs.readFileSync(alt && fs.existsSync(quelle + "kern.js") ? quelle + "kern.js" : B + "agent/kern.js", "utf8");
+    const wq = fs.readFileSync(alt && fs.existsSync(quelle + "werkzeugkasten.js") ? quelle + "werkzeugkasten.js" : B + "agent/werkzeugkasten.js", "utf8");
+    pruefe("Der Haltepunkt ist eine eigene Kern-Methode",
+      /anzahlVorRundgang\(p\) \{/.test(kq) ? "ja" : "nein", "ja");
+    const iHalt = wq.indexOf("kern.anzahlVorRundgang(p)");
+    const iRundgang = wq.indexOf("kern.lauf.rundgang = {");
+    pruefe("Der Fahrplan ruft ihn ueberhaupt", iHalt >= 0 ? "ja" : "nein", "ja");
+    pruefe("Er steht vor dem Rundgang",
+      iHalt >= 0 && iRundgang >= 0 && iHalt < iRundgang ? "davor" : "danach", "davor");
+    pruefe("Die Engstelle kommt zuerst, dann die Anzahl",
+      (() => { const e = wq.indexOf("kern.engstelleVorRundgang(auswahl, p)");
+        return e >= 0 && iHalt > e ? "ja" : "nein"; })(), "ja");
   }
 
   // Kinder oder Erwachsene

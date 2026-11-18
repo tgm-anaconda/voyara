@@ -4211,6 +4211,51 @@ const Kern = {
         + "Ruf KEIN Werkzeug und schreib nichts dazu - die Frage steht schon im Chat." } };
   },
 
+  /* Wie viele Haeuser? Fragen, BEVOR der Rundgang laeuft.
+     ------------------------------------------------------------------
+     Bens Einwand nach dem Durchlauf vom 18.11.2026: "Es macht gar keinen
+     Sinn, dass er dann einfach anfaengt, diese drei Haeuser rauszusuchen,
+     obwohl so lange nicht mehr gefiltert wurde und man gar keinen
+     Ueberblick mehr hat. Er muss sagen: Ich wuerde dir jetzt drei Haeuser
+     raussuchen, passt das oder soll ich mehr raussuchen?"
+
+     Der erste Bau haing in `auswahl_vorlegen`. Das war zu spaet: Der
+     Rundgang (Haus oeffnen, Bewertungen lesen, zurueck) laeuft davor und
+     dauert rund 45 Sekunden. Gefragt wurde also erst, nachdem die Arbeit
+     schon getan war - genau der Einwand. Deshalb steht der Haltepunkt
+     jetzt hier, neben `engstelleVorRundgang`, vor beidem.
+
+     Reihenfolge: erst die Engstelle (zu wenig in der Liste - dann ist die
+     Anzahlfrage sinnlos), dann die Anzahl.
+
+     Keine Zahlen als Auswahl ("Drei | Vier | Sechs"): Das haette jede
+     Person zu einer Wahl gezwungen, die wir herbeifuehren, und bei sechs
+     Karten rutscht der Favorit unter die Bildkante - der Reiz haette sich
+     je nach Antwort unterschieden. Wer mehr will, sagt es nach dem
+     zweiten Knopf selbst. */
+  anzahlVorRundgang(p) {
+    if (!this.lauf) return null;
+    if (this.lauf.anzahlBestaetigt || this.lauf.profil?.anzahlVorschlaege) return null;
+    this.lauf.anzahlBestaetigt = true;
+    const art = Werkzeugkasten.artZahl(3, this.lauf.profil || p || {});
+    const ja = "Ja, such sie raus";
+    const mehr = "Lieber mehr vergleichen";
+    const satz = `Ich habe jetzt alles beisammen. Für die Entscheidung stelle ich dir ${art} zusammen - `
+      + `passt das, oder möchtest du mehr vergleichen?`;
+    this.sagen(satz);
+    this.gespraechPush({ role: "assistant", content: satz });
+    this.lauf.chipWirkung = { [ja]: {}, [mehr]: {} };
+    this.lauf.chipThema = null;
+    this.lauf.chips = [ja, mehr];
+    AgentPanel.setSuggestions(this.lauf.chips);
+    this.lauf.kernWartet = true;
+    this.notieren("anzahl_bestaetigung", {});
+    this.sichern();
+    return { ergebnis: { nichtVorgelegt: true, grund: "wartet auf Bestaetigung",
+      hinweis: "Der Chat hat gefragt, ob drei Haeuser passen. Ruf KEIN Werkzeug und schreib nichts dazu - "
+        + "die Frage steht schon im Chat." } };
+  },
+
   budgetVorVorlage(kandidaten, p) {
     const budget = p.budgetGesamt;
     if (!budget || !p.naechte || !kandidaten.length) return null;

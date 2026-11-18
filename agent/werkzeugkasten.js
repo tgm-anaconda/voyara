@@ -4739,6 +4739,10 @@ const Werkzeugkasten = {
            Kern.engstelleVorRundgang. */
         const halt = kern.engstelleVorRundgang(auswahl, p);
         if (halt) return { ...basis, ...(halt.ergebnis || {}) };
+        /* Wie viele Haeuser? Erst fragen, dann den Rundgang starten.
+           Begruendung steht bei Kern.anzahlVorRundgang. */
+        const anzahlHalt = kern.anzahlVorRundgang(p);
+        if (anzahlHalt) return { ...basis, ...(anzahlHalt.ergebnis || {}) };
         const rundgangSchluessel = engere.join(",");
         if (kern.darf("suchen") && aufDerListe && STELLSCHRAUBEN.rundgang !== false && kern.lauf.rundgangFuer !== rundgangSchluessel) {
           kern.lauf.rundgangFuer = rundgangSchluessel;
@@ -4990,43 +4994,15 @@ const Werkzeugkasten = {
         kern.notieren("vorlage_zu_frueh", { offen: offen.pflicht });
         return { ergebnis: { fehler: "noch nicht", nochZuBesprechen: offen.pflicht, hinweis: "Erst die Beratung zu Ende fuehren (Preis fest oder offen, Wuensche, Top 3 oder selbst schauen), dann vorlegen." } };
       }
-      /* Ein Haltepunkt, bevor zusammengestellt wird (18.11.2026).
+      /* Zweiter Haltepunkt fuer die Anzahl (18.11.2026).
          ----------------------------------------------------------------
-         Bens Einwand nach dem Durchlauf: "Es macht gar keinen Sinn, dass
-         er dann einfach anfaengt, diese drei Haeuser rauszusuchen,
-         obwohl so lange nicht mehr gefiltert wurde und man gar keinen
-         Ueberblick mehr hat. Er muss sagen: Ich wuerde dir jetzt drei
-         Haeuser raussuchen, passt das oder soll ich mehr raussuchen?"
-
-         Gebaut wie `engstelleVorRundgang`: Der Kern stellt die Frage
-         selbst, legt die Chips dazu und sagt dem Modell, es solle nichts
-         tun. Erst nach der Antwort laeuft `auswahl_vorlegen` durch.
-
-         Keine Zahlen als Auswahl ("Drei | Vier | Sechs"): Das haette
-         jede Person zu einer Wahl gezwungen, die wir herbeifuehren, und
-         bei sechs Karten rutscht der Favorit unter die Bildkante - der
-         Reiz haette sich je nach Antwort unterschieden. Wer mehr will,
-         sagt es nach dem zweiten Knopf selbst. */
-      if (!kern.lauf.anzahlBestaetigt && !kern.lauf.profil?.anzahlVorschlaege) {
-        kern.lauf.anzahlBestaetigt = true;
-        const art = Werkzeugkasten.artZahl(3, kern.lauf.profil || {});
-        const ja = "Ja, such sie raus";
-        const mehr = "Lieber mehr vergleichen";
-        const satz = `Ich habe jetzt alles beisammen. Für die Entscheidung stelle ich dir ${art} zusammen - `
-          + `passt das, oder möchtest du mehr vergleichen?`;
-        kern.sagen(satz);
-        kern.gespraechPush({ role: "assistant", content: satz });
-        kern.lauf.chipWirkung = { [ja]: {}, [mehr]: {} };
-        kern.lauf.chipThema = null;
-        kern.lauf.chips = [ja, mehr];
-        AgentPanel.setSuggestions(kern.lauf.chips);
-        kern.lauf.kernWartet = true;
-        kern.notieren("anzahl_bestaetigung", {});
-        kern.sichern();
-        return { ergebnis: { nichtVorgelegt: true, grund: "wartet auf Bestaetigung",
-          hinweis: "Der Chat hat gefragt, ob drei Haeuser passen. Ruf KEIN Werkzeug und schreib nichts dazu - "
-            + "die Frage steht schon im Chat." } };
-      }
+         Normalerweise hat `Kern.anzahlVorRundgang` schon vor dem Rundgang
+         gefragt und gibt hier null zurueck. Der Aufruf bleibt trotzdem
+         stehen: Das Modell kann `auswahl_vorlegen` auch ohne den Fahrplan
+         rufen, und dann waere sonst nie gefragt worden. `anzahlBestaetigt`
+         sorgt dafuer, dass die Frage genau einmal kommt. */
+      const anzahlHalt = kern.anzahlVorRundgang(kern.lauf.profil || {});
+      if (anzahlHalt) return anzahlHalt;
       const wieViele = Math.max(2, Math.min(6, kern.lauf.profil?.anzahlVorschlaege || 3));
       const ids = (a.ids || []).filter((id) => typeof getItemById === "function" && getItemById(id)).slice(0, wieViele);
       if (!ids.length) return { ergebnis: { fehler: "Keine gueltigen Haus-ids." } };
