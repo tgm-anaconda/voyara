@@ -2745,12 +2745,22 @@ const Kern = {
              einen Zustand, der auch einen Zug spaeter noch gilt. */
           let kernFrage = null;
           if (!freierZug && !tippGestellt) {
-            const wf = Werkzeugkasten.widerspruchRueckfrage(this.lauf.profil || {}, this.lauf);
+            /* Vor allem anderen: Sind das ueberhaupt Kinder?
+               (18.11.2026) Solange diese Frage offen ist, sind alle
+               anderen hinfaellig - die Gruppengroesse steckt in jeder
+               Suche. Deshalb ganz vorn in der Kette. */
+            const kf = Werkzeugkasten.kinderErwachsenRueckfrage(this.lauf.profil || {}, this.lauf);
+            if (kf) {
+              this.lauf.alterGefragt = true;
+              this.notieren("kinder_erwachsen_rueckfrage", { alter: this.lauf.alterZuHoch });
+              kernFrage = { ...kf, thema: "reisende" };
+            }
+            const wf = kernFrage ? null : Werkzeugkasten.widerspruchRueckfrage(this.lauf.profil || {}, this.lauf);
             if (wf) {
               (this.lauf.widerspruchGefragt ||= {})[wf.ziel] = true;
               this.notieren("widerspruch_rueckfrage", { ziel: wf.ziel, richtung: this.lauf.profil?.richtung });
               kernFrage = { ...wf, thema: "ziel" };
-            } else {
+            } else if (!kernFrage) {
               const ef = Werkzeugkasten.engstelleRueckfrage(this.lauf.profil || {}, this.lauf);
               if (ef) {
                 (this.lauf.engstelleGefragt ||= {})[ef.grund] = true;

@@ -3356,7 +3356,30 @@ const Werkzeugkasten = {
         }
       }
       const mehrere = Array.isArray(a.monate) ? [...new Set(a.monate.map(Number).filter((m) => Number.isInteger(m) && m >= 1 && m <= 12))] : [];
-      if (mehrere.length >= 2) {
+      /* Eine Jahreszeit ist keine Nennung mehrerer Monate (18.11.2026).
+         ----------------------------------------------------------------
+         Gemeldet aus Bens Durchlauf: Auf "ich wuerde gerne im Sommer
+         verreisen" antwortete der Agent "Ich habe alle drei Monate
+         verglichen - bei Auswahl und Preis unterscheiden sie sich kaum.
+         Ich nehme Juni, den naechstgelegenen." Ben: "Hier war das vorher
+         so, dass er gefragt hat: Sommer heisst fuer mich Juni, Juli oder
+         August - welchen davon? Das macht sehr viel mehr Sinn."
+
+         Der Weg dahin: Das Modell meldete `monate: [6,7,8]`, und
+         `monateAnsetzen` setzt einen Vergleich mit `entscheiden: true`
+         an - der Kern waehlt dann selbst. Gedacht ist das Feld fuer
+         "Juli oder August", also eine echte Nennung.
+
+         Wer eine Jahreszeit nennt, hat gerade etwas gesagt und bekommt
+         die Frage nach dem Monat - dieselbe Regel, die weiter unten
+         schon fuer `monatUeberlassen` gilt (jahreszeitJetztGenannt).
+         Erst die ANTWORT darauf kann eine Abgabe sein. */
+      const jzJetzt = gesagt(/sommer|winter|herbst|frühling|fruehling|frühjahr|fruehjahr/i, 1);
+      if (mehrere.length >= 2 && jzJetzt && !monatGenanntJetzt) {
+        kern.notieren("monate_aus_jahreszeit_verworfen", { monate: mehrere });
+        delete a.monate;
+        delete a.monat;
+      } else if (mehrere.length >= 2) {
         delete a.monat;
         Werkzeugkasten.monateAnsetzen(kern, p, mehrere, "modell");
       } else if (a.monat && monatGenanntJetzt) {
@@ -3655,6 +3678,28 @@ const Werkzeugkasten = {
         && !gesagt(/\d|\bjahr|jährig|jaehrig|baby|säugling|saeugling|kleinkind|schulkind|teenager|monate/i, 2)) {
         kern.notieren("alter_verworfen", { alter: a.kinderAlter });
         Werkzeugkasten.merkeVerworfen(kern, "kinderAlter", a.kinderAlter);
+        delete a.kinderAlter;
+      }
+      /* Ein Alter ueber 18 heisst: Es sind keine Kinder (18.11.2026).
+         ----------------------------------------------------------------
+         Gemeldet aus Bens Durchlauf: Auf "ich und meine zwei jungs" las
+         das Modell zwei Kinder. Auf die Altersfrage kam "28 und 34" -
+         und der Agent fragte unbeirrt weiter: "Und wie alt sind die
+         beiden? Sonst rechne ich vorlaeufig mit acht Jahren."
+
+         Hier stand ein stiller Filter: Alles ueber 18 wurde aus der
+         Liste geworfen, und uebrig blieb nichts. Damit galt das Alter
+         als unbeantwortet, und die Frage kam wieder. Die Zahl, die die
+         Person gerade genannt hatte, war die Information - sie wurde
+         weggeworfen statt gelesen.
+
+         Bens Erwartung: "Da haette er nochmal fragen muessen, meinst du
+         mit zwei Jungs Kinder oder sind das Erwachsene?" Genau das
+         passiert jetzt. Der Widerspruch wird vermerkt, die Rueckfrage
+         stellt der Fahrplan (kinderErwachsenRueckfrage). */
+      if (Array.isArray(a.kinderAlter) && a.kinderAlter.some((x) => Number.isInteger(x) && x >= 18)) {
+        kern.lauf.alterZuHoch = a.kinderAlter.filter((x) => Number.isInteger(x) && x >= 18);
+        kern.notieren("alter_zu_hoch", { alter: a.kinderAlter, kinder: p.kinder ?? null });
         delete a.kinderAlter;
       }
       if (Array.isArray(a.kinderAlter)) setze("kinderAlter", a.kinderAlter.filter((x) => Number.isInteger(x) && x >= 0 && x < 18).slice(0, 6));
@@ -4944,6 +4989,43 @@ const Werkzeugkasten = {
       if (offen.pflicht.length) {
         kern.notieren("vorlage_zu_frueh", { offen: offen.pflicht });
         return { ergebnis: { fehler: "noch nicht", nochZuBesprechen: offen.pflicht, hinweis: "Erst die Beratung zu Ende fuehren (Preis fest oder offen, Wuensche, Top 3 oder selbst schauen), dann vorlegen." } };
+      }
+      /* Ein Haltepunkt, bevor zusammengestellt wird (18.11.2026).
+         ----------------------------------------------------------------
+         Bens Einwand nach dem Durchlauf: "Es macht gar keinen Sinn, dass
+         er dann einfach anfaengt, diese drei Haeuser rauszusuchen,
+         obwohl so lange nicht mehr gefiltert wurde und man gar keinen
+         Ueberblick mehr hat. Er muss sagen: Ich wuerde dir jetzt drei
+         Haeuser raussuchen, passt das oder soll ich mehr raussuchen?"
+
+         Gebaut wie `engstelleVorRundgang`: Der Kern stellt die Frage
+         selbst, legt die Chips dazu und sagt dem Modell, es solle nichts
+         tun. Erst nach der Antwort laeuft `auswahl_vorlegen` durch.
+
+         Keine Zahlen als Auswahl ("Drei | Vier | Sechs"): Das haette
+         jede Person zu einer Wahl gezwungen, die wir herbeifuehren, und
+         bei sechs Karten rutscht der Favorit unter die Bildkante - der
+         Reiz haette sich je nach Antwort unterschieden. Wer mehr will,
+         sagt es nach dem zweiten Knopf selbst. */
+      if (!kern.lauf.anzahlBestaetigt && !kern.lauf.profil?.anzahlVorschlaege) {
+        kern.lauf.anzahlBestaetigt = true;
+        const art = Werkzeugkasten.artZahl(3, kern.lauf.profil || {});
+        const ja = "Ja, such sie raus";
+        const mehr = "Lieber mehr vergleichen";
+        const satz = `Ich habe jetzt alles beisammen. Für die Entscheidung stelle ich dir ${art} zusammen - `
+          + `passt das, oder möchtest du mehr vergleichen?`;
+        kern.sagen(satz);
+        kern.gespraechPush({ role: "assistant", content: satz });
+        kern.lauf.chipWirkung = { [ja]: {}, [mehr]: {} };
+        kern.lauf.chipThema = null;
+        kern.lauf.chips = [ja, mehr];
+        AgentPanel.setSuggestions(kern.lauf.chips);
+        kern.lauf.kernWartet = true;
+        kern.notieren("anzahl_bestaetigung", {});
+        kern.sichern();
+        return { ergebnis: { nichtVorgelegt: true, grund: "wartet auf Bestaetigung",
+          hinweis: "Der Chat hat gefragt, ob drei Haeuser passen. Ruf KEIN Werkzeug und schreib nichts dazu - "
+            + "die Frage steht schon im Chat." } };
       }
       const wieViele = Math.max(2, Math.min(6, kern.lauf.profil?.anzahlVorschlaege || 3));
       const ids = (a.ids || []).filter((id) => typeof getItemById === "function" && getItemById(id)).slice(0, wieViele);
@@ -7050,6 +7132,36 @@ const Werkzeugkasten = {
     return !erlaubt.includes(id);
   },
 
+  /* Kinder oder Erwachsene? (18.11.2026)
+     ------------------------------------------------------------------
+     Nennt die Person auf die Altersfrage eine Zahl ab 18, war die
+     Lesart "Kinder" falsch - "meine zwei Jungs" sind dann erwachsene
+     Soehne oder Freunde. Statt weiter nach dem Alter zu fragen, wird
+     die Lesart selbst in Frage gestellt.
+
+     Die Antwort traegt ihre Wirkung mit: Bei "Erwachsene" wandern die
+     Kinder zu den Erwachsenen, und das Alter ist vom Tisch. */
+  kinderErwachsenRueckfrage(p, lauf) {
+    if (!p || !lauf) return null;
+    const hoch = lauf.alterZuHoch;
+    if (!hoch || !hoch.length || lauf.alterGefragt) return null;
+    const n = p.kinder || hoch.length;
+    const wort = n === 1 ? "eine Person" : `${n} Personen`;
+    const erw = (p.erwachsene || 0) + n;
+    const kind = `Nein, es sind Kinder`;
+    const nein = `Ja, ${n === 1 ? "erwachsen" : "alle erwachsen"}`;
+    return {
+      grund: "alter_zu_hoch",
+      satz: `${hoch.join(" und ")} - dann sind das wohl keine Kinder. Reist ihr zu ${erw} als Erwachsene, `
+        + `oder ${n === 1 ? "ist" : "sind"} ${wort} doch unter 18?`,
+      chips: [nein, kind],
+      wirkung: {
+        [nein]: { erwachsene: erw, kinder: 0, kinderAlter: [] },
+        [kind]: {},
+      },
+    };
+  },
+
   /* Die Rueckfrage dazu - gebaut wie artRueckfrage, eine Frage je Zug.
      Sie nennt die Temperatur, damit die Person entscheiden kann, statt
      nur zu hoeren, dass etwas nicht passt. */
@@ -8407,7 +8519,34 @@ const Werkzeugkasten = {
         // ECKDATEN sind an dieser Stelle durch - sie stehen jetzt vor der
         // Vorgehensfrage, nicht mehr dahinter
         const offen = BERATUNG.find((t) => !fertig[t]) || null;
-        if (offen) { naechstes = offen; phase = "beratung"; }
+        /* Zwischendurch nachsehen, nicht nur am Anfang (18.11.2026).
+           --------------------------------------------------------------
+           Bens Einwand: "Bevor er Sachen wie Essen klaeren will, muss er
+           unbedingt noch eine Recherche machen, damit man grundlegend
+           weiss, wie viele Hotels jetzt noch zur Verfuegung stehen. Und
+           da muss er die Filter richtig setzen, dass man kurz die
+           Moeglichkeit hat, sich die auch selbst anzugucken."
+
+           Er hat doppelt recht. Fachlich: Zwischen der ersten Suche und
+           der Vorlage fallen Preis, Verpflegung und Flug - danach ist
+           die Lage eine andere, und niemand erfaehrt es. Und fuer die
+           Erhebung: Jede Suche ist sichtbare Arbeit des Agenten, also
+           genau das, was der Faktor misst. Je oefter sie stattfindet,
+           desto oefter wird der Unterschied zwischen den Armen
+           ueberhaupt erfahrbar.
+
+           Dass es diese Zwischensuche einmal gab, ist mein eigener
+           Fehler vom 16.11.: Sie hing im Zweig der Vorgehensfrage
+           (`if (seiteVeraltet) phase = "suche"`), und mit dieser Frage
+           ist sie verschwunden. Hier steht sie wieder, unabhaengig
+           davon.
+
+           Gesucht wird nur, wenn die Seite wirklich veraltet ist - also
+           wenn sich die Filter seit der letzten Suche geaendert haben.
+           Sonst waere jede Antwort ein Seitenaufbau. */
+        const filterVeraltet = lauf.gefiltertMit && lauf.gefiltertMit !== this.filterSchluessel(p);
+        if (offen && filterVeraltet) { phase = "suche"; }
+        else if (offen) { naechstes = offen; phase = "beratung"; }
         else {
           phase = "vorschlaege";
           /* Die Anzahl wird angesagt, nicht gefragt - aber erst HIER
@@ -8431,14 +8570,39 @@ const Werkzeugkasten = {
              Jetzt faellt er, wenn die Beratung durch ist und es wirklich
              an die Vorschlaege geht. Ueber annahmeOffen, damit er
              verfaellt, falls die Person vorher selbst eine Zahl nennt. */
-          if (!p.anzahlVorschlaege && !lauf.anzahlAngesagt) {
-            lauf.anzahlAngesagt = true;
-            (lauf.annahmeOffen ||= []).push({
-              thema: "anzahl",
-              text: "Ich stelle dir erst mal drei Häuser zusammen. Mehr vergleichen geht auch, sag einfach Bescheid.",
-              felder: { anzahlVorschlaege: null },
-            });
-          }
+          /* Ein Haltepunkt vor der Vorlage (18.11.2026).
+             ------------------------------------------------------------
+             Hier stand eine blosse Ansage. Bens Einwand nach dem
+             Durchlauf: "Es macht gar keinen Sinn, dass er dann einfach
+             anfaengt, diese drei Haeuser rauszusuchen, obwohl so lange
+             nicht mehr gefiltert wurde und man gar keinen Ueberblick
+             mehr hat."
+
+             Aus der Ansage wird deshalb eine kurze Bestaetigung. Nicht
+             mit Zahlen als Auswahl: "Drei | Vier | Sechs" haette jede
+             Person zu einer Wahl gezwungen, die wir herbeifuehren, und
+             bei sechs Karten rutscht der Favorit unter die Bildkante -
+             der Reiz der Erhebung haette sich je nach Antwort
+             unterschieden (Begruendung vom 16.11., gilt weiter).
+
+             Also zwei Knoepfe: weiter, oder mehr vergleichen. Wer mehr
+             will, sagt es dann selbst, und die Zahl steht
+             unaufgefordert in `anzahlVorschlaege`. Zusammen mit der
+             Zwischensuche darueber ist damit beides erfuellt: Ueberblick
+             vor der Vorlage, und ein Punkt, an dem die Person zustimmt. */
+          /* Der Haltepunkt steht NICHT hier (18.11.2026).
+             ------------------------------------------------------------
+             Erster Anlauf: Der Fahrplan sollte in "beratung" ohne Thema
+             parken, bis die Person bestaetigt. Das war ein Fehler - die
+             Kernpruefung meldete prompt eine Sackgasse: ein Zustand, den
+             der Fahrplan allein nicht mehr verlassen kann, wenn die
+             Rueckfrage aus irgendeinem Grund nicht faellt.
+
+             Der Haltepunkt sitzt jetzt dort, wo die Vorlage wirklich
+             entsteht - in `auswahl_vorlegen`, nach dem Vorbild von
+             `engstelleVorRundgang`. Dort blockiert er nichts: Der
+             Fahrplan laeuft weiter, nur das Zusammenstellen wartet auf
+             ein Ja. */
         }
       }
     }

@@ -1406,11 +1406,20 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     };
     const offeneBeratung = vollerStand();
     delete offeneBeratung.maxPreis; delete offeneBeratung.verpflegungEgal; delete offeneBeratung.ausstattungEgal;
-    pruefe("Kein Anzahl-Satz, solange die Beratung laeuft", satzNach(offeneBeratung), 0);
-    pruefe("Anzahl-Satz, wenn es an die Vorschlaege geht", satzNach(vollerStand()), 1);
-    pruefe("Anzahl-Satz faellt nur einmal", satzNach(vollerStand(), 3), 1);
-    pruefe("Kein Anzahl-Satz bei eigener Zahl",
-      satzNach({ ...vollerStand(), anzahlVorschlaege: 6 }), 0);
+    /* Hier standen bis zum 18.11.2026 vier Pruefungen zum Anzahl-SATZ,
+       der ueber annahmeOffen fiel. Aus der Ansage ist eine Bestaetigung
+       geworden, und sie sitzt nicht mehr im Fahrplan, sondern in
+       `auswahl_vorlegen` - dort, wo die Vorlage wirklich entsteht.
+
+       Der Grund fuer den Umzug: Ein erster Anlauf liess den Fahrplan in
+       "beratung" ohne Thema parken, bis die Person bestaetigt. Die
+       Kernpruefung meldete prompt eine Sackgasse - einen Zustand, den
+       der Fahrplan allein nicht mehr verlassen kann. Ein Haltepunkt
+       gehoert nicht in den Fahrplan, sondern vor die Handlung, die er
+       aufhalten soll.
+
+       Geprueft wird jetzt an der neuen Stelle, weiter unten. */
+    pruefe("Kein Anzahl-Satz mehr im Fahrplan", satzNach(vollerStand()), 0);
   }
 
   /* Drei Funde aus Bens Durchlauf vom 17.11.2026 abends
@@ -1611,6 +1620,59 @@ const liesReisende = async (text, felder, urteil = "ja") => {
       /if \(this\.lauf\.schritteVon == null\) this\.lauf\.schritteVon = /.test(kq) ? "ja" : "nein", "ja");
     pruefe("Nach dem Ablegen wird sie wieder frei",
       /this\.lauf\.schritteVon = null;/.test(kq) ? "ja" : "nein", "ja");
+  }
+
+  /* Der Haltepunkt vor der Vorlage, und die uebrigen Funde vom 18.11.
+     Gegenprobe: _backup/18-11-abend/ */
+  if (WK && WK.werkzeuge && WK.werkzeuge.auswahl_vorlegen) {
+    const kernStub = (lauf = {}) => ({
+      lauf: { profil: { zielId: "mallorca", typ: "hotel", monat: 7, naechte: 7, erwachsene: 2,
+          kinder: 0, kinderAlter: [], zimmer: 1, artGenannt: true, flug: false, anreise: "2027-07-10",
+          maxPreis: 2000, verpflegungEgal: true, ausstattungEgal: true, wuensche: [], vorgehen: "top3" },
+        protokoll: [], gespraech: [], verlauf: [], chips: null, gefragtWie: {}, annahmeOffen: [], ...lauf },
+      notieren(e, d) { this.lauf.protokoll.push({ ereignis: e, ...d }); },
+      sagen(t) { (this.lauf.gesagt ||= []).push(t); },
+      gespraechPush() {}, sichern() {}, logZeile() {}, standKurz: () => "",
+      auswahlVorlegen: () => ({ ergebnis: { vorgelegt: true } }),
+      freigabe: () => "suchen", darf: () => false, standAnzeigen() {},
+    });
+    const ruf = async (lauf) => {
+      const kern = kernStub(lauf);
+      const r = await WK.werkzeuge.auswahl_vorlegen.call(WK, { ids: ["h1", "h2", "h3"] }, kern);
+      return { kern, r };
+    };
+    const erst = await ruf({});
+    pruefe("Erst wird gefragt, nicht vorgelegt",
+      erst.r?.ergebnis?.nichtVorgelegt ? "gefragt" : "vorgelegt", "gefragt");
+    pruefe("Die Frage nennt keine Zahlenauswahl",
+      /Drei|Vier|Sechs/.test((erst.kern.lauf.chips || []).join(" ")) ? "doch" : "nein", "nein");
+    pruefe("Zwei Knoepfe: weiter oder mehr",
+      (erst.kern.lauf.chips || []).length, 2);
+    pruefe("Die Frage faellt nur einmal",
+      (await ruf({ anzahlBestaetigt: true })).r?.ergebnis?.nichtVorgelegt ? "nochmal" : "einmal", "einmal");
+    pruefe("Wer selbst eine Zahl genannt hat, wird nicht gefragt",
+      (await ruf({ profil: { ...kernStub().lauf.profil, anzahlVorschlaege: 6 } })).r?.ergebnis?.nichtVorgelegt
+        ? "gefragt" : "direkt", "direkt");
+  }
+
+  // Kinder oder Erwachsene
+  if (WK && WK.kinderErwachsenRueckfrage) {
+    const f = WK.kinderErwachsenRueckfrage({ erwachsene: 1, kinder: 2 }, { alterZuHoch: [28, 34] });
+    pruefe("Alter ab 18 loest die Rueckfrage aus", f ? "ja" : "nein", "ja");
+    pruefe("Die Antwort macht Erwachsene daraus", f?.wirkung?.[f.chips[0]]?.erwachsene, 3);
+    pruefe("Nur einmal gefragt",
+      WK.kinderErwachsenRueckfrage({ erwachsene: 1, kinder: 2 }, { alterZuHoch: [28, 34], alterGefragt: true }) ? "nochmal" : "einmal", "einmal");
+    pruefe("Ohne Widerspruch keine Rueckfrage",
+      WK.kinderErwachsenRueckfrage({ erwachsene: 2, kinder: 2 }, {}) ? "fragt" : "still", "still");
+  }
+
+  // Eine Jahreszeit ist keine Nennung mehrerer Monate
+  {
+    const wq = fs.readFileSync(alt && fs.existsSync(quelle + "werkzeugkasten.js") ? quelle + "werkzeugkasten.js" : B + "agent/werkzeugkasten.js", "utf8");
+    pruefe("Jahreszeit setzt keine Monatsliste",
+      /monate_aus_jahreszeit_verworfen/.test(wq) ? "ja" : "nein", "ja");
+    pruefe("Zwischensuche waehrend der Beratung",
+      /if \(offen && filterVeraltet\) \{ phase = "suche"; \}/.test(wq) ? "ja" : "nein", "ja");
   }
 
   console.log(`\n${gut} richtig, ${schlecht} falsch`);
