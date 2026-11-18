@@ -1,8 +1,15 @@
 /* Pruefung der sechs Befunde aus dem Testlauf vom 03.11.2026.
  *
- *   node agent/befunde-test.cjs          der jetzige Stand, erwartet 0 falsch
- *   node agent/befunde-test.cjs --alt    Gegenprobe am Stand davor
- *                                        (_backup/2026-11-03-vor-sechs-befunden/)
+ *   node agent/befunde-test.cjs              der jetzige Stand, erwartet 0 falsch
+ *   node agent/befunde-test.cjs --alt        Gegenprobe am Stand von 03.11.2026
+ *   node agent/befunde-test.cjs --alt=<ord>  Gegenprobe gegen eine andere Sicherung
+ *
+ * Der feste Ordner war eine Falle (18.11.2026): Eine korrigierte
+ * Pruefung liess sich nur gegen den Stand von 03.11. gegenproben, und
+ * der bestand sie zufaellig - die Gegenprobe war gruen, ohne irgendetwas
+ * zu messen. Wie in durchgang-test.cjs nimmt --alt= jetzt den Ordner.
+ * Die Sicherung muss die Datei enthalten, um die es geht, sonst misst
+ * die Gegenprobe den neuen Code gegen sich selbst.
  *
  * Geprueft werden die drei Punkte, die Logik sind: der selbst gelesene
  * Regionsausschluss, das Nachhaken bei den Wuenschen und der Abbruch im
@@ -12,8 +19,12 @@
  */
 const fs = require("fs"), vm = require("vm");
 const B = "/Users/tom-gabrielmielicki/Desktop/Bachelor Arbeit/Website/";
-const alt = process.argv.includes("--alt");
-const quelle = alt ? B + "_backup/2026-11-03-vor-sechs-befunden/" : B;
+const altArg = process.argv.find((x) => x === "--alt" || x.startsWith("--alt="));
+const alt = !!altArg;
+const ordner = altArg && altArg.includes("=")
+  ? altArg.slice(altArg.indexOf("=") + 1).replace(/\/$/, "") + "/"
+  : "_backup/2026-11-03-vor-sechs-befunden/";
+const quelle = alt ? B + ordner : B;
 
 const ctx = { console, window: {},
   document: { querySelectorAll: () => [], querySelector: () => null, getElementById: () => null,
@@ -33,7 +44,13 @@ ctx.globalThis = ctx; ctx.self = ctx;
 vm.createContext(ctx);
 for (const f of ["data/ziele.js", "data/hotels.js", "data/inventory.js", "data/auswahl.js",
   "data/faq.js", "agent/fluege.js", "agent/politik.js", "agent/werkzeugkasten.js", "agent/kern.js"]) {
-  const pfad = (f.startsWith("agent/") ? quelle : B) + f;
+  /* Die neueren Sicherungen legen die Dateien flach ab (werkzeugkasten.js
+     statt agent/werkzeugkasten.js). Was dort nicht liegt, kommt aus dem
+     Projekt - sonst misst die Gegenprobe fehlende Dateien statt altem
+     Code. */
+  const flach = quelle + f.replace(/^(agent|data)\//, "");
+  const tief = (f.startsWith("agent/") ? quelle : B) + f;
+  const pfad = (alt && fs.existsSync(flach)) ? flach : (fs.existsSync(tief) ? tief : B + f);
   try { vm.runInContext(fs.readFileSync(pfad, "utf8"), ctx, { filename: f }); }
   catch (e) { console.log("LADEFEHLER", f, e.message.slice(0, 160)); process.exit(2); }
 }
@@ -180,8 +197,24 @@ const gespr = [{ role: "user", content: "nicht nach Lissabon oder Marrakesch" }]
   pruefe("'Pool wäre schön' ist kein Abwinken", winkt("Pool wäre schön"), false);
 
   // Der Fragesatz selbst: ab der zweiten Runde wird nachgehakt
-  const satz = (lauf) => { try { return WK.themenSatz("wuensche", basis, lauf); } catch (e) { return "Fehler: " + e.message; } };
-  pruefe("Runde 1 fragt offen", /achtest du|achtet ihr/i.test(satz({ gefragtWie: {}, gespraech: [] })), true);
+  const satz = (lauf, p = basis) => { try { return WK.themenSatz("wuensche", p, lauf); } catch (e) { return "Fehler: " + e.message; } };
+  /* Diese Pruefung stand hier falsch (korrigiert am 18.11.2026).
+     ------------------------------------------------------------------
+     Sie fragte mit `basis` - und in `basis` steht schon ein Kriterium
+     (essen). Behauptet wurde also: Obwohl die Person "Essen" genannt
+     hat, fragt der Agent offen "Worauf achtest du besonders?". Genau
+     das ist der Fehler, der im Lauf vom 18.11.2026 auffiel, und die
+     Pruefung hat ihn gedeckt - sie war gruen, weil sie das falsche
+     Verhalten als richtig eingetragen hatte.
+
+     Gemeint war: Wer noch nichts genannt hat, bekommt die offene
+     Frage. Also wird jetzt ohne Kriterien geprueft, und der Fall mit
+     Kriterien steht daneben. */
+  const ohneWunsch = { ...basis, kriterien: [] };
+  pruefe("Runde 1 fragt offen, wenn nichts dasteht",
+    /achtest du|achtet ihr/i.test(satz({ gefragtWie: {}, gespraech: [] }, ohneWunsch)), true);
+  pruefe("Runde 1 fragt NICHT offen, wenn schon ein Wunsch dasteht",
+    /achtest du|achtet ihr/i.test(satz({ gefragtWie: {}, gespraech: [] })), false);
   pruefe("Runde 2 hakt nach", /noch etwas ein/i.test(satz({ gefragtWie: { wuensche: 1 }, gespraech: [] })), true);
   pruefe("Runde 2 nennt den schon genannten Wunsch", /neben/i.test(satz({ gefragtWie: { wuensche: 1 }, gespraech: [] })), true);
   pruefe("Runde 3 bietet die Suche an", /weitermachen/i.test(satz({ gefragtWie: { wuensche: 2 }, gespraech: [] })), true);

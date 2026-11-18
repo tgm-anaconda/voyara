@@ -1727,6 +1727,62 @@ const liesReisende = async (text, felder, urteil = "ja") => {
         return e >= 0 && iHalt > e ? "ja" : "nein"; })(), "ja");
   }
 
+  /* Was dasteht, zaehlt wie eine Runde (18.11.2026, 23:00)
+     ------------------------------------------------------------------
+     Gemessen: Die Person sagte im ersten Satz "Ruhige Lage und gutes
+     Essen sind mir wichtig", der Agent nahm beides auf - und fragte
+     danach "Worauf achtest du bei der Unterkunft besonders? Zum
+     Beispiel Ruhe, gutes Essen oder die Lage." Die Chips boten kein
+     Abwinken an. Begruendung bei Werkzeugkasten.wunschRunde.
+     Gegenprobe: _backup/18-11-nacht/ */
+  if (WK && WK.THEMEN && WK.THEMEN.wuensche) {
+    const th = WK.THEMEN.wuensche;
+    const krit = [{ id: "ruhe" }, { id: "essen" }];
+    const satz = (p, lauf) => String(typeof th.satz === "function" ? th.satz(p, WK, lauf) : th.satz);
+    const chips = (p, lauf) => String((typeof th.chips === "function" ? th.chips(p, WK, lauf) : th.chips) || "");
+    pruefe("Ohne Wunsch kommt die offene Frage",
+      /Worauf achtest du/.test(satz({ kriterien: [] }, { gefragtWie: {} })) ? "offen" : "anders", "offen");
+    pruefe("Mit genanntem Wunsch nicht mehr die offene Frage",
+      /Worauf acht/.test(satz({ kriterien: krit }, { gefragtWie: {} })) ? "doch" : "nein", "nein");
+    pruefe("Stattdessen wird nachgehakt mit dem, was steht",
+      /Fällt dir/.test(satz({ kriterien: krit }, { gefragtWie: {} })) ? "nachgehakt" : "nein", "nachgehakt");
+    pruefe("Auch Ausstattung allein zaehlt",
+      /Worauf acht/.test(satz({ kriterien: [], ausstattung: ["pool"] }, { gefragtWie: {} })) ? "doch" : "nein", "nein");
+    pruefe("Das Abwinken liegt gleich als Chip daneben",
+      /Nein, das war/.test(chips({ kriterien: krit }, { gefragtWie: {} })) ? "da" : "fehlt", "da");
+    pruefe("Ohne Wunsch kein Abwinken-Chip",
+      /Nein, das war/.test(chips({ kriterien: [] }, { gefragtWie: {} })) ? "da" : "fehlt", "fehlt");
+    pruefe("Die Chips bieten nichts an, was schon steht",
+      /Ruhe|Essen/.test(chips({ kriterien: krit }, { gefragtWie: {} })) ? "doch" : "nein", "nein");
+  }
+
+  /* Der Kern liest die Flugangabe selbst (18.11.2026, 23:00)
+     ------------------------------------------------------------------
+     Gemessen: "... bis 2000 Euro, ohne Flug." Das Modell schrieb
+     dreizehn Felder, `flug` war nicht dabei, und der Kern fragte danach.
+     Begruendung an der Stelle in stand_merken.
+     Gegenprobe: _backup/18-11-nacht/ */
+  if (WK && WK.werkzeuge && WK.werkzeuge.stand_merken) {
+    const lies = async (text, vorgabe = {}) => {
+      const kern = { lauf: { profil: { ...vorgabe }, protokoll: [], gespraech: [{ role: "user", content: text }],
+          verlauf: [], gefragtWie: {}, annahmeOffen: [], chips: null },
+        notieren(e, d) { this.lauf.protokoll.push({ ereignis: e, ...d }); },
+        sagen() {}, gespraechPush() {}, sichern() {}, logZeile() {}, standKurz: () => "",
+        freigabe: () => "suchen", darf: () => false, standAnzeigen() {} };
+      await WK.werkzeuge.stand_merken.call(WK, { frage_beantwortet: "keine_frage_offen" }, kern);
+      return kern.lauf.profil.flug;
+    };
+    pruefe("ohne Flug kommt an", await lies("7 Nächte Mallorca, ohne Flug."), false);
+    pruefe("nur die Unterkunft kommt an", await lies("Nur die Unterkunft bitte."), false);
+    pruefe("mit Flug kommt an", await lies("Mit Flug von Hamburg."), true);
+    pruefe("Eine Frage nach dem Flugpreis ist keine Entscheidung",
+      await lies("Wie teuer wäre der Flug?") ?? "offen", "offen");
+    pruefe("Beides im Satz bleibt offen",
+      await lies("Mit Flug oder ohne Flug, keine Ahnung") ?? "offen", "offen");
+    pruefe("Ein gesetzter Wert wird nicht ueberschrieben",
+      await lies("Ohne Flug.", { flug: true }), true);
+  }
+
   // Kinder oder Erwachsene
   if (WK && WK.kinderErwachsenRueckfrage) {
     const f = WK.kinderErwachsenRueckfrage({ erwachsene: 1, kinder: 2 }, { alterZuHoch: [28, 34] });

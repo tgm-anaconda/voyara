@@ -4048,6 +4048,41 @@ const Werkzeugkasten = {
         p.flug = false;
       }
       if (a.flug !== undefined) setze("flug", !!a.flug);
+      /* Was die Person selbst zum Flug gesagt hat, faellt nicht durch.
+         ----------------------------------------------------------------
+         Gemessen im Lauf vom 18.11.2026, 23:00: Im ersten Satz stand
+         "... bis 2000 Euro, ohne Flug." Das Modell schrieb dreizehn
+         Felder in den Stand - `flug` war nicht dabei. Der Kern sah das
+         Thema richtig als offen an und fragte "Soll ein Flug dazu
+         gebucht werden?". Fuer die Person sah es aus, als waere ihre
+         Angabe nicht angekommen.
+
+         Weder `selbst_genannt` noch `frage_beantwortet` helfen hier:
+         Beide schuetzen einen Wert, den das Modell geschickt hat, vor
+         dem Kern. Hier hat das Modell gar keinen geschickt.
+
+         Also liest der Kern es selbst - dieselbe Stelle und dieselbe
+         Art wie bei `preis_gedeutet` und `zeitraum_aus_anreise`: aus der
+         letzten Nachricht der Person, nur bei einer eindeutigen
+         Wendung, nur wenn das Modell nichts gesetzt hat, und mit einem
+         Ereignis in den Daten.
+
+         Eng gehalten: "ohne Flug", "kein Flug", "nur die Unterkunft",
+         "nur das Hotel" und "mit Flug", "Flug dazu". Kein blankes
+         "Flug" - "wie teuer waere der Flug" ist keine Entscheidung.
+         Bedeutung bleibt beim Modell; hier geht es um einen Satz, bei
+         dem nichts zu deuten ist. */
+      if (a.flug === undefined && p.flug == null && p.typ !== "apartment") {
+        const letzte = (kern.lauf.gespraech || []).filter((n) => n.role === "user").slice(-1)
+          .map((n) => String(n.content || "")).join(" ");
+        const ohne = /\bohne\s+(den\s+)?flug|\bkein(en)?\s+flug|nur\s+(die\s+)?(unterkunft|uebernachtung|übernachtung)|nur\s+(das\s+)?hotel|nur\s+(die\s+)?(ferienwohnung|wohnung)|flug\s+brauch(e|en)?\s+(ich|wir)\s+(nicht|keinen)|selbst\s+anreisen|mit\s+dem\s+auto/i.test(letzte);
+        const mit = /\bmit\s+flug|flug\s+(dazu|mit\s+dazu|dabei)|flug\s+(soll|bitte)\s+dazu|inklusive\s+flug|\bflug\s+inklusive/i.test(letzte);
+        if (ohne !== mit) {
+          p.flug = mit;
+          (p.vonPerson ||= {}).flug = true;
+          kern.notieren("flug_vom_kern", { wert: mit, satz: letzte.slice(0, 80) });
+        }
+      }
       /* "Hamburg oder Koeln, je nachdem was billiger ist."
          ----------------------------------------------------------------
          Bis zum 27.09.2026 stand hier ein Muster, das Staedtenamen zaehlte.
@@ -6581,6 +6616,38 @@ const Werkzeugkasten = {
     wuensche: ["wuensche", "ausstattung", "ausstattungEgal"],
   },
 
+  /* Wie weit das Nachhaken bei den Wuenschen ist (18.11.2026).
+     ------------------------------------------------------------------
+     Gemessen im Lauf vom 18.11.2026, 23:00: Die Person sagte im ersten
+     Satz "Ruhige Lage und gutes Essen sind mir wichtig", der Agent nahm
+     beides auf (`wuensche` und `ausstattung` standen im ersten `stand`)
+     - und fragte danach trotzdem "Worauf achtest du bei der Unterkunft
+     besonders? Zum Beispiel Ruhe, gutes Essen oder die Lage." Also
+     genau das, was sie eben gesagt hatte, als Beispiel zurueck. Die
+     Chips boten "Sauberkeit | Lage | Service" an, kein Abwinken: Sie
+     konnte das Thema nicht beenden, ohne zu tippen. Nach der Beschwerde
+     kam noch ein zweites "Faellt dir noch etwas ein?".
+
+     Ursache: Der Zaehler `gefragtWie.wuensche` zaehlt UNSERE Fragen. Die
+     Regel von 03.11.2026 ging davon aus, dass Kriterien als Antwort auf
+     die offene Frage ankommen - und stand bei null, wenn die Person sie
+     von sich aus nennt. Der Satz fuer Runde 0 ist aber die offene Frage.
+
+     Was dasteht, zaehlt deshalb wie eine Runde: Die offene Frage ist
+     beantwortet, bevor sie gestellt wurde. Damit kommt gleich das
+     Nachhaken mit dem, was schon steht, und das Abwinken liegt als Chip
+     daneben.
+
+     Die Zahl der Runden in `fertig.wuensche` bleibt wie sie ist. Ben
+     wollte am 03.11.2026 ausdruecklich, dass mindestens zweimal
+     nachgefragt wird; das Abwinken ist der Ausweg, und den gibt es jetzt
+     ab der ersten Frage. */
+  wunschRunde(p, lauf) {
+    const gefragt = lauf?.gefragtWie?.wuensche || 0;
+    const steht = ((p?.kriterien || []).length || (p?.ausstattung || []).length) ? 1 : 0;
+    return Math.max(gefragt, steht);
+  },
+
   // Themen, die nichts aufnehmen - sie werden gar nicht mehr gefragt
   THEMA_OHNE_FELD: ["weiter", "beratung"],
 
@@ -6826,7 +6893,7 @@ const Werkzeugkasten = {
       /* Drei Runden, drei Saetze. Die zweite und dritte nennen, was schon
          steht - sonst klingt das Nachhaken, als haette er nicht zugehoert. */
       satz: (p, wk, lauf) => {
-        const runde = lauf?.gefragtWie?.wuensche || 0;
+        const runde = Werkzeugkasten.wunschRunde(p, lauf);
         const schon = (p.kriterien || [])
           .map((k) => (typeof Politik !== "undefined" ? Politik.kriterium(k.id)?.label : null))
           .filter(Boolean);
@@ -6859,7 +6926,7 @@ const Werkzeugkasten = {
         const LABEL = { sauberkeit: "Sauberkeit", essen: "Essen", lage: "Lage",
           ruhe: "Ruhe", service: "Service", preis: "Preis" };
         const frei = VORRAT.filter((x) => !schon.has(x)).slice(0, 3).map((x) => LABEL[x]);
-        const erste = (lauf?.gefragtWie?.wuensche || 0) < 1;
+        const erste = Werkzeugkasten.wunschRunde(p, lauf) < 1;
         if (erste) return frei.length ? frei.join(" | ") : null;
         return ["Nein, das war's", ...frei].join(" | ");
       } },
