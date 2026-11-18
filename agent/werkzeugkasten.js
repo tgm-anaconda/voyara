@@ -4741,7 +4741,7 @@ const Werkzeugkasten = {
         if (halt) return { ...basis, ...(halt.ergebnis || {}) };
         /* Wie viele Haeuser? Erst fragen, dann den Rundgang starten.
            Begruendung steht bei Kern.anzahlVorRundgang. */
-        const anzahlHalt = kern.anzahlVorRundgang(p);
+        const anzahlHalt = kern.anzahlVorRundgang(p, engere.length);
         if (anzahlHalt) return { ...basis, ...(anzahlHalt.ergebnis || {}) };
         const rundgangSchluessel = engere.join(",");
         if (kern.darf("suchen") && aufDerListe && STELLSCHRAUBEN.rundgang !== false && kern.lauf.rundgangFuer !== rundgangSchluessel) {
@@ -5001,7 +5001,7 @@ const Werkzeugkasten = {
          stehen: Das Modell kann `auswahl_vorlegen` auch ohne den Fahrplan
          rufen, und dann waere sonst nie gefragt worden. `anzahlBestaetigt`
          sorgt dafuer, dass die Frage genau einmal kommt. */
-      const anzahlHalt = kern.anzahlVorRundgang(kern.lauf.profil || {});
+      const anzahlHalt = kern.anzahlVorRundgang(kern.lauf.profil || {}, (a.ids || []).length || 3);
       if (anzahlHalt) return anzahlHalt;
       const wieViele = Math.max(2, Math.min(6, kern.lauf.profil?.anzahlVorschlaege || 3));
       const ids = (a.ids || []).filter((id) => typeof getItemById === "function" && getItemById(id)).slice(0, wieViele);

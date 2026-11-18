@@ -1665,6 +1665,27 @@ const liesReisende = async (text, felder, urteil = "ja") => {
        `vorgehenFuer` stand noch, also erzwang `zwang` keine Suche mehr -
        der Halt hatte den Zug verbraucht, der zum Rundgang gefuehrt
        haette. Begruendung bei Kern.anzahlVorRundgang. */
+    /* Die Zahl in der Frage ist die wirkliche (18.11.2026, 22:40)
+       ----------------------------------------------------------------
+       Gemessen: Die Frage sagte "3 Hotels", vorgelegt wurden 2 - das
+       Vergleichsset war eingeschnuert. Die Frage versprach etwas, was
+       der Kern gleich danach brach. */
+    {
+      /* In der Gegenprobe gibt es die Methode nicht - dann soll die
+         Pruefung durchfallen, nicht abbrechen. */
+      const sag = (n) => { const k = kernStub();
+        if (typeof k.anzahlVorRundgang !== "function") return "keine Methode";
+        k.anzahlVorRundgang(k.lauf.profil, n); return (k.lauf.gesagt || []).join(" "); };
+      const satz = sag(2);
+      pruefe("Die Frage nennt die wirkliche Zahl",
+        /\b2\b/.test(satz) && !/\b3\b/.test(satz) ? "zwei" : satz.slice(0, 90), "zwei");
+      pruefe("Und bei sechs auch",
+        /\b6\b/.test(sag(6)) ? "sechs" : "nein", "sechs");
+      pruefe("Der Fahrplan gibt die Setgroesse mit",
+        /anzahlVorRundgang\(p, engere\.length\)/.test(
+          fs.readFileSync(alt && fs.existsSync(quelle + "werkzeugkasten.js") ? quelle + "werkzeugkasten.js" : B + "agent/werkzeugkasten.js", "utf8")
+        ) ? "ja" : "nein", "ja");
+    }
     pruefe("Der Halt loescht den Suchstempel",
       (await ruf({ vorgehenFuer: "irgendwas" })).kern.lauf.vorgehenFuer ?? "geloescht", "geloescht");
     {
@@ -1695,8 +1716,8 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     const kq = fs.readFileSync(alt && fs.existsSync(quelle + "kern.js") ? quelle + "kern.js" : B + "agent/kern.js", "utf8");
     const wq = fs.readFileSync(alt && fs.existsSync(quelle + "werkzeugkasten.js") ? quelle + "werkzeugkasten.js" : B + "agent/werkzeugkasten.js", "utf8");
     pruefe("Der Haltepunkt ist eine eigene Kern-Methode",
-      /anzahlVorRundgang\(p\) \{/.test(kq) ? "ja" : "nein", "ja");
-    const iHalt = wq.indexOf("kern.anzahlVorRundgang(p)");
+      /anzahlVorRundgang\(p, wieViele/.test(kq) ? "ja" : "nein", "ja");
+    const iHalt = wq.indexOf("kern.anzahlVorRundgang(p, engere.length)");
     const iRundgang = wq.indexOf("kern.lauf.rundgang = {");
     pruefe("Der Fahrplan ruft ihn ueberhaupt", iHalt >= 0 ? "ja" : "nein", "ja");
     pruefe("Er steht vor dem Rundgang",

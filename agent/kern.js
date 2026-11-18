@@ -4233,7 +4233,7 @@ const Kern = {
      Karten rutscht der Favorit unter die Bildkante - der Reiz haette sich
      je nach Antwort unterschieden. Wer mehr will, sagt es nach dem
      zweiten Knopf selbst. */
-  anzahlVorRundgang(p) {
+  anzahlVorRundgang(p, wieViele = 3) {
     if (!this.lauf) return null;
     if (this.lauf.anzahlBestaetigt || this.lauf.profil?.anzahlVorschlaege) return null;
     this.lauf.anzahlBestaetigt = true;
@@ -4258,7 +4258,16 @@ const Kern = {
        Ihre Chips aendern das Profil, damit den Schluessel, und der Zwang
        greift von selbst. */
     this.lauf.vorgehenFuer = null;
-    const art = Werkzeugkasten.artZahl(3, this.lauf.profil || p || {});
+    /* Die Zahl kommt vom Aufrufer, nicht als feste 3.
+       ----------------------------------------------------------------
+       Gemessen im Lauf vom 18.11.2026, 22:40: Die Frage sagte "3 Hotels",
+       und der Agent legte danach 2 vor - das Vergleichsset war auf zwei
+       Haeuser eingeschnuert, weil nur die preislich beieinander lagen.
+       Die Frage hat also etwas versprochen, was der Kern gleich danach
+       gebrochen hat. Der Fahrplan kennt an der Stelle die wirkliche
+       Zahl (`engere.length`) und gibt sie mit. */
+    const n = Math.max(1, Number(wieViele) || 3);
+    const art = Werkzeugkasten.artZahl(n, this.lauf.profil || p || {});
     const ja = "Ja, such sie raus";
     const mehr = "Lieber mehr vergleichen";
     const satz = `Ich habe jetzt alles beisammen. Für die Entscheidung stelle ich dir ${art} zusammen - `
@@ -4270,10 +4279,10 @@ const Kern = {
     this.lauf.chips = [ja, mehr];
     AgentPanel.setSuggestions(this.lauf.chips);
     this.lauf.kernWartet = true;
-    this.notieren("anzahl_bestaetigung", {});
+    this.notieren("anzahl_bestaetigung", { anzahl: n });
     this.sichern();
     return { ergebnis: { nichtVorgelegt: true, grund: "wartet auf Bestaetigung",
-      hinweis: "Der Chat hat gefragt, ob drei Haeuser passen. Ruf KEIN Werkzeug und schreib nichts dazu - "
+      hinweis: `Der Chat hat gefragt, ob ${n} Haeuser passen. Ruf KEIN Werkzeug und schreib nichts dazu - `
         + "die Frage steht schon im Chat." } };
   },
 
