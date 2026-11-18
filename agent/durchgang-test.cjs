@@ -1564,6 +1564,33 @@ const liesReisende = async (text, felder, urteil = "ja") => {
       /schritteGeoeffnet/.test(sq) ? "ja" : "nein", "ja");
   }
 
+  /* Bilder laden erst, wenn sie gebraucht werden (18.11.2026)
+     ------------------------------------------------------------------
+     Gemessen auf der Trefferliste: 360 Karten, 12.135 DOM-Knoten, 360
+     Bildanfragen bei EINEM Seitenaufruf, Seitenhoehe 94.229 Pixel. Das
+     Zeichnen dauert 290 ms und ist nicht das Problem; die 360
+     gleichzeitigen Bilder sind es. Nach der Aenderung: 24 beim Laden,
+     der Rest beim Scrollen.
+
+     Keine Blaetterung, obwohl vorgeschlagen: Welche Karten sichtbar
+     sind und wo der Favorit steht, ist der Reiz dieser Erhebung.
+
+     Drei Ebenen, weil sich die oberste im Pruefbrowser nicht pruefen
+     laesst - dort meldet der IntersectionObserver nichts, auch im
+     Gegentest nicht. Geprueft wird hier, dass alle drei da sind.
+     Gegenprobe: _backup/17-11-abend/components-vor-lazy.js */
+  {
+    const cq = fs.readFileSync(alt && fs.existsSync(quelle + "components.js") ? quelle + "components.js" : B + "components.js", "utf8");
+    pruefe("Die ersten Karten laden ohne Bedingung",
+      /const SOFORT = \d+;\s*\n\s*alle\.slice\(0, SOFORT\)\.forEach\(setzen\);/.test(cq) ? "ja" : "nein", "ja");
+    pruefe("Der Rest haengt am Beobachter",
+      /new IntersectionObserver/.test(cq) ? "ja" : "nein", "ja");
+    pruefe("Es gibt einen Rettungsanker am Scrollen",
+      /addEventListener\("scroll", beiScroll/.test(cq) ? "ja" : "nein", "ja");
+    pruefe("Ohne Beobachter wird alles gesetzt",
+      /typeof IntersectionObserver !== "function"\) \{ rest\.forEach\(setzen\)/.test(cq) ? "ja" : "nein", "ja");
+  }
+
   console.log(`\n${gut} richtig, ${schlecht} falsch`);
   process.exit(schlecht ? 1 : 0);
 })();

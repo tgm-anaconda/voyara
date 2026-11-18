@@ -1709,14 +1709,97 @@ function starString(count) {
   return "★".repeat(count) + "☆".repeat(Math.max(0, 5 - count));
 }
 
-// Setzt Hintergrundbilder per JS-Property statt im style-Attribut — so koennen
-// Anfuehrungszeichen oder Sonderzeichen im Pfad nichts kaputtmachen.
-// Frueher waren das SVG-Platzhalter, jetzt echte Fotos aus img/.
+/* Bilder erst, wenn sie gebraucht werden (18.11.2026)
+   ==================================================================
+   Setzt Hintergrundbilder per JS-Property statt im style-Attribut - so
+   koennen Anfuehrungszeichen oder Sonderzeichen im Pfad nichts
+   kaputtmachen. Frueher waren das SVG-Platzhalter, jetzt echte Fotos.
+
+   Gemeldet am 17.11.2026: "Die Seiten brauchen unendlich lange zum
+   Laden. Ich hatte auf Hotels geklickt, dann schnell auf Ferienwohnung,
+   irgendwie laggt die komplette Seite."
+
+   Gemessen auf der Trefferliste: 360 Karten, 12.135 DOM-Knoten und
+   **360 Bildanfragen bei einem einzigen Seitenaufruf**. Das Zeichnen
+   selbst dauert rund 290 Millisekunden und ist nicht das Problem; die
+   360 gleichzeitigen Bilder sind es. Ein Reiterwechsel stoesst sofort
+   weitere 250 an, bevor die ersten fertig sind.
+
+   Vorgeschlagen war eine Blaetterung ("Mehr anzeigen"). Die waere hier
+   gefaehrlich: Welche Karten sichtbar sind und an welcher Stelle der
+   Favorit steht, ist der REIZ dieser Erhebung - eine Blaetterung wuerde
+   ihn veraendern, und zwar je nach Scrollverhalten unterschiedlich.
+
+   Deshalb bleiben alle Karten im Dokument, und nur die Bilder warten.
+   Der Agent scrollt, zaehlt und klickt unveraendert; die Messung bleibt
+   dieselbe. Geladen wird, was im Sichtfenster ist oder knapp darunter
+   (600 Pixel Vorlauf), damit beim Scrollen nichts nachhinkt.
+
+   Ohne IntersectionObserver - alte Browser, abgeschaltetes JavaScript
+   in Teilen - werden wie bisher alle sofort gesetzt. Lieber langsam als
+   ohne Bilder. */
 function applyScenes(root = document) {
-  root.querySelectorAll("[data-bild]").forEach((el) => {
+  const alle = [...root.querySelectorAll("[data-bild]")].filter((el) => el.dataset.bild);
+  if (!alle.length) return;
+  const setzen = (el) => {
     const pfad = el.dataset.bild;
-    if (pfad) el.style.backgroundImage = `url("${pfad}")`;
-  });
+    if (!pfad) return;
+    el.style.backgroundImage = `url("${pfad}")`;
+    delete el.dataset.bild;
+  };
+  /* Die ersten immer sofort, ohne Bedingung.
+     ----------------------------------------------------------------
+     Zwei Gruende. Erstens deckt das den sichtbaren Bereich ab, auch
+     bevor irgendein Beobachter das erste Mal meldet - niemand sieht
+     eine Sekunde lang graue Kaesten. Zweitens ist es der Rettungsanker:
+     Wenn das Nachladen irgendwo gar nicht funktioniert, ist die Seite
+     immer noch brauchbar statt bilderlos.
+
+     Dieser zweite Grund ist nicht theoretisch. Im Pruefbrowser vom
+     18.11.2026 meldete der IntersectionObserver NICHTS - auch in einem
+     unabhaengigen Gegentest nicht, obwohl die Seite sich als sichtbar
+     meldete (die Vorschau laeuft versteckt). Auf ein Verhalten, das
+     sich nicht pruefen laesst, darf die Bildanzeige nicht allein
+     bauen. */
+  const SOFORT = 24;
+  alle.slice(0, SOFORT).forEach(setzen);
+  const rest = alle.slice(SOFORT);
+  if (!rest.length) return;
+  if (typeof IntersectionObserver !== "function") { rest.forEach(setzen); return; }
+  /* Ein Beobachter je Aufruf, nicht einer global: `renderResults` baut
+     die Liste jedes Mal neu, und die alten Knoten sind dann weg. Der
+     Beobachter wird mit dem letzten Bild selbst ueberfluessig. */
+  let offen = rest.length;
+  const fertig = () => { try { beobachter.disconnect(); } catch { /* egal */ }
+    window.removeEventListener("scroll", beiScroll); };
+  const beobachter = new IntersectionObserver((eintraege, b) => {
+    for (const e of eintraege) {
+      if (!e.isIntersecting) continue;
+      setzen(e.target);
+      b.unobserve(e.target);
+      if (--offen <= 0) fertig();
+    }
+  }, { rootMargin: "600px 0px" });
+  rest.forEach((el) => beobachter.observe(el));
+  /* Der zweite Boden: Scrollt die Person und der Beobachter schweigt,
+     wird trotzdem geladen, was in die Naehe kommt. Gedrosselt ueber
+     requestAnimationFrame, damit das Scrollen nicht ruckelt. */
+  let laeuft = false;
+  const beiScroll = () => {
+    if (laeuft) return;
+    laeuft = true;
+    requestAnimationFrame(() => {
+      laeuft = false;
+      const grenze = window.innerHeight + 600;
+      for (const el of rest) {
+        if (!el.dataset.bild) continue;
+        const r = el.getBoundingClientRect();
+        if (r.top < grenze && r.bottom > -600) { setzen(el); offen -= 1; }
+      }
+      if (offen <= 0) fertig();
+    });
+  };
+  window.addEventListener("scroll", beiScroll, { passive: true });
 }
 
 function wishButton(id) {
