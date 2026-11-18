@@ -1192,7 +1192,7 @@ const AgentPanel = {
     kopf.innerHTML = `<span class="schritte-haken" aria-hidden="true">${typeof ICONS !== "undefined" && ICONS.check ? ICONS.check : "✓"}</span>`
       + `<span class="schritte-titel">${zeilen.length} ${zeilen.length === 1 ? "Schritt" : "Schritte"} gearbeitet</span>`
       + (dauerText ? `<span class="schritte-dauer">${dauerText}</span>` : "")
-      + `<span class="schritte-pfeil" aria-hidden="true">▾</span>`;
+      + `<span class="schritte-pfeil" aria-hidden="true"></span>`;
 
     const liste = document.createElement("ol");
     liste.className = "schritte-liste";
@@ -1219,8 +1219,35 @@ const AgentPanel = {
       el.classList.toggle("offen", offen);
       if (offen) {
         auf = Date.now();
-        // Wer die Schritte aufklappt, prueft nach - in Arm B die einzige
-        // Moeglichkeit dazu und damit eine der Messgroessen.
+        /* Aufgeklapptes muss man auch sehen (18.11.2026).
+           --------------------------------------------------------------
+           Gemeldet: "Die Dropdowns sind komplett verbuggt, die oeffnen
+           sich halt gar nicht. Ich kann gar nicht nachvollziehen, was
+           fuer Schritte er gemacht hat."
+
+           Geoeffnet haben sie sich sehr wohl - gemessen: Liste sichtbar,
+           76 Pixel hoch. Nur erscheint der Inhalt UNTERHALB des
+           sichtbaren Bereichs, wenn der Block am unteren Rand des Chats
+           steht. Man sieht einen angeschnittenen Rest und denkt, nichts
+           passiert.
+
+           Also nachziehen - aber nur so weit noetig, damit die Liste
+           ganz im Bild ist. Kein Sprung ans Ende: Wer oben im Verlauf
+           etwas aufklappt, will dort bleiben. */
+        requestAnimationFrame(() => {
+          const kasten = document.getElementById("agentMessages");
+          if (!kasten) return;
+          /* Ueber die Bildschirmkoordinaten, nicht ueber offsetTop: Der
+             Block haengt nicht zwangslaeufig direkt am Kasten, und
+             offsetTop bezieht sich auf das naechste positionierte
+             Elternteil. Mit offsetTop blieb der Kasten im Messlauf
+             einfach stehen (nachgescrollt: 0 Pixel). */
+          const r = el.getBoundingClientRect();
+          const kr = kasten.getBoundingClientRect();
+          const zuViel = r.bottom - kr.bottom;
+          if (zuViel > 0) kasten.scrollTop += zuViel + 12;
+        });
+        // Wer die Schritte aufklappt, prueft nach - eine der Messgroessen.
         if (typeof Studie !== "undefined") Studie.notieren?.("schritte_geoeffnet", { zeilen: zeilen.length });
       } else if (auf) {
         if (typeof Studie !== "undefined") Studie.notieren?.("schritte_geschlossen", { dauerMs: Date.now() - auf });

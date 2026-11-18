@@ -2658,7 +2658,31 @@ const Kern = {
              nur ohne Entschuldigung. Wer einen Monat im Kopf hat und ihn
              ausspricht, soll gefragt werden, ob er stimmt - gleich beim
              ersten Mal. */
-          if (!freierZug && !tippGestellt && offen && fpJetzt.satz
+          /* Wer fragt, hat nicht danebengeantwortet (18.11.2026).
+             ------------------------------------------------------------
+             Gemeldet aus Bens Durchlauf, zwei Faelle in einem Lauf:
+
+             Auf "Bietet ihr auch Fluege an Weihnachten an?" antwortete
+             das Modell richtig - und der Kern haengte "Entschuldige, das
+             habe ich nicht sicher verstanden" daran. Und auf "was ist
+             der unterschied?" zur Verpflegung ersetzte der Kern die
+             Erklaerung des Modells ganz durch seine eigene Frage; die
+             Person bekam die Optionen noch einmal vorgelesen statt einer
+             Antwort. Beim zweiten Versuch ("was bedeutet all inclusiv
+             denn?") dasselbe.
+
+             Beide Stellen verlangen `nachrichtArt === "antwort"`, und
+             das Modell hatte beide Fragen als Antwort eingestuft. Darauf
+             darf sich der Kern nicht verlassen - ein Fragezeichen sieht
+             er selbst. Dieselbe Lehre wie bei der Annahme am 17.11.
+
+             Die Folge war schlimmer als eine ueberfluessige
+             Entschuldigung: Mit `kernFragt` ERSETZT der Kern den Text
+             des Modells. Eine richtige Antwort ging damit verloren. */
+          const fragtZurueck = this.lauf.nachrichtArt === "frage"
+            || this.lauf.nachrichtArt === "unklar"
+            || /\?\s*$/.test(String(letzteNachricht || "").trim());
+          if (!freierZug && !tippGestellt && offen && fpJetzt.satz && !fragtZurueck
             && this.lauf.nachrichtArt === "antwort") {
             const unsicher = Werkzeugkasten.unsicherRueckfrage(offen, this.lauf, letzteNachricht, text);
             if (unsicher) {
@@ -2675,7 +2699,7 @@ const Kern = {
             }
           }
           if (!freierZug && !tippGestellt && offen && offen === this.lauf.zuletztGefragt && standGleich
-            && wuerdeWiederholen && !zeigtVerstaendnis
+            && wuerdeWiederholen && !zeigtVerstaendnis && !fragtZurueck
             && this.lauf.nachrichtArt === "antwort" && fpJetzt.satz) {
             const n = (this.lauf.nichtVerstanden ||= {});
             n[offen] = (n[offen] || 0) + 1;

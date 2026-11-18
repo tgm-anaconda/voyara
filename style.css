@@ -333,6 +333,22 @@ img, svg { max-width: 100%; }
    Zugeklappt eine Zeile, aufgeklappt die Liste mit Uhrzeit und Handlung.
    Gestaltung wie die uebrigen Elemente des Chats, damit sich die Arme nur
    im Aufbau unterscheiden und nicht in den Mitteln. */
+/* Nachrichten werden nicht gestaucht (18.11.2026).
+   ------------------------------------------------------------------
+   `.agent-messages` ist eine Flex-Spalte, und Flex-Elemente schrumpfen
+   darin standardmaessig, wenn der Inhalt laenger wird als der Kasten.
+   Beim Schritte-Block fiel das auf: Aufgeklappt endete sein Kasten bei
+   312 Pixeln, die Liste darin reichte bis 462 - `overflow: hidden`
+   schnitt sie ab. Gemeldet als "die Dropdowns sind komplett verbuggt,
+   die oeffnen sich gar nicht"; geoeffnet hatten sie sich, man sah nur
+   einen angeschnittenen Rest.
+
+   Betrifft jede Nachricht, nicht nur den Block - lange Texte wurden
+   genauso gestaucht, nur ohne sichtbaren Schnitt, weil sie keinen
+   eigenen Rahmen haben. In einer scrollenden Spalte ist das nie
+   gewollt: Die Hoehe soll vom Inhalt kommen, gescrollt wird im
+   Kasten. */
+.agent-messages .msg { flex-shrink: 0; }
 .agent-messages .msg.schritte {
   align-self: stretch; max-width: 100%; padding: 0;
   border: 1px solid rgba(255,255,255,.1); border-radius: 14px;
@@ -349,8 +365,18 @@ img, svg { max-width: 100%; }
 .schritte-haken { display: grid; place-items: center; color: var(--brand-400, #5fc3a4); flex-shrink: 0; }
 .schritte-haken svg { width: 14px; height: 14px; }
 .schritte-dauer { color: rgba(255,255,255,.34); font-variant-numeric: tabular-nums; }
-.schritte-pfeil { margin-left: auto; font-size: .7rem; color: rgba(255,255,255,.4); }
-.msg.schritte.offen .schritte-pfeil { transform: rotate(180deg); }
+/* Der Pfeil war ein gedrehtes Textzeichen und sah entsprechend schief
+   aus (gemeldet am 18.11.2026: "der Pfeil ist komisch"). Jetzt ein
+   gezeichneter Haken aus zwei Raendern - der dreht sauber und sitzt
+   mittig. */
+.schritte-pfeil {
+  margin-left: auto; width: 8px; height: 8px; flex-shrink: 0;
+  border-right: 1.5px solid rgba(255,255,255,.45);
+  border-bottom: 1.5px solid rgba(255,255,255,.45);
+  transform: rotate(45deg); transform-origin: center;
+  transition: transform .18s ease; font-size: 0; margin-top: -3px;
+}
+.msg.schritte.offen .schritte-pfeil { transform: rotate(225deg); margin-top: 2px; }
 .schritte-liste[hidden] { display: none !important; }
 .schritte-liste {
   margin: 0; padding: 13px 16px 14px; list-style: none;
