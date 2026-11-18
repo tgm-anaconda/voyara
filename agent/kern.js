@@ -4237,6 +4237,27 @@ const Kern = {
     if (!this.lauf) return null;
     if (this.lauf.anzahlBestaetigt || this.lauf.profil?.anzahlVorschlaege) return null;
     this.lauf.anzahlBestaetigt = true;
+    /* Den Suchstempel loeschen, sonst steht der Halt in einer Sackgasse.
+       ----------------------------------------------------------------
+       Gemessen im Lauf vom 18.11.2026, 22:15: Die Frage kam richtig, vor
+       dem Rundgang. Nach "Ja, such sie raus" rief das Modell nur
+       `stand_merken` und zaehlte dann drei Hotels mit erfundenen Preisen
+       auf (190/210/180, vom Waechter als `zahl_ungedeckt` gemeldet) -
+       kein Rundgang, keine Karten.
+
+       Ursache: `vorgehenFuer` wird gesetzt, bevor der Halt greift. Der
+       Stempel sagt "fuer diesen Stand ist schon gesucht worden", und
+       `Werkzeugkasten.zwang` erzwingt deshalb im naechsten Zug keine
+       Suche mehr. Der Halt hatte den einen Zug verbraucht, der zum
+       Rundgang gefuehrt haette.
+
+       Dieselbe Familie wie die Chips, die Zaehler und `schritteVon`:
+       mitgefuehrter Zustand, der spaeter benutzt wird, ohne zu pruefen,
+       ob er noch gilt. Hier gilt er nicht - gesucht wurde fuer diesen
+       Stand noch nicht zu Ende. `engstelleVorRundgang` braucht das nicht:
+       Ihre Chips aendern das Profil, damit den Schluessel, und der Zwang
+       greift von selbst. */
+    this.lauf.vorgehenFuer = null;
     const art = Werkzeugkasten.artZahl(3, this.lauf.profil || p || {});
     const ja = "Ja, such sie raus";
     const mehr = "Lieber mehr vergleichen";

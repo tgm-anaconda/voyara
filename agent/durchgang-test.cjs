@@ -1658,6 +1658,28 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     pruefe("Wer selbst eine Zahl genannt hat, wird nicht gefragt",
       (await ruf({ profil: { ...kernStub().lauf.profil, anzahlVorschlaege: 6 } })).r?.ergebnis?.nichtVorgelegt
         ? "gefragt" : "direkt", "direkt");
+    /* Der Halt loescht den Suchstempel (18.11.2026, 22:15)
+       ----------------------------------------------------------------
+       Gemessen: Nach "Ja, such sie raus" rief das Modell nur
+       `stand_merken` und zaehlte drei Hotels mit erfundenen Preisen auf.
+       `vorgehenFuer` stand noch, also erzwang `zwang` keine Suche mehr -
+       der Halt hatte den Zug verbraucht, der zum Rundgang gefuehrt
+       haette. Begruendung bei Kern.anzahlVorRundgang. */
+    pruefe("Der Halt loescht den Suchstempel",
+      (await ruf({ vorgehenFuer: "irgendwas" })).kern.lauf.vorgehenFuer ?? "geloescht", "geloescht");
+    {
+      /* Und dann erzwingt der Zwang wieder eine Suche - sonst waere das
+         Loeschen eine Behauptung. */
+      const lauf = { profil: { zielId: "mallorca", typ: "hotel", monat: 7, naechte: 7, erwachsene: 2,
+          kinder: 0, kinderAlter: [], zimmer: 1, artGenannt: true, flug: false, anreise: "2027-07-10",
+          maxPreis: 2000, verpflegungEgal: true, ausstattungEgal: true, wuensche: [], vorgehen: "top3" },
+        gesuchtMit: "x", gespraech: [], gefragtWie: {} };
+      const fp = WK.fahrplan(lauf.profil, lauf);
+      lauf.vorgehenFuer = fp.schluessel + lauf.profil.vorgehen;
+      pruefe("Mit Stempel wird nichts erzwungen", WK.zwang(lauf.profil, lauf) || "nichts", "nichts");
+      lauf.vorgehenFuer = null;
+      pruefe("Ohne Stempel wird gesucht", WK.zwang(lauf.profil, lauf), "suchen");
+    }
   }
 
   /* Der Haltepunkt sitzt VOR dem Rundgang (18.11.2026, abends)
