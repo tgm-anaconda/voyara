@@ -2086,9 +2086,27 @@ const Kern = {
     if (this.laeuft) return;
     this.laeuft = true;
     /* Ab welcher Zeile im Log die Schritte DIESES Zuges stehen. Der
-       Schritte-Block in Arm B zeigt genau diese Spanne. Der Wert lebt im
-       Lauf und ueberlebt damit einen Seitenwechsel mitten im Zug. */
-    this.lauf.schritteVon = (this.lauf.log || []).length;
+       Schritte-Block zeigt genau diese Spanne.
+       ----------------------------------------------------------------
+       Nur setzen, wenn noch nichts steht (18.11.2026). Hier stand die
+       Zuweisung ohne Bedingung, und darueber der Satz, der Wert
+       "ueberlebt damit einen Seitenwechsel mitten im Zug". Er ueberlebt
+       ihn auch - der Lauf wird vollstaendig gesichert, Log und Marke
+       inbegriffen. Nur wird er danach ueberschrieben: Nach einem
+       Seitenwechsel setzt `fortsetzen` den Zug mit einem erneuten Aufruf
+       von `zug()` fort, und diese Zeile begann dann von vorn.
+
+       Die Folge: Alle Schritte VOR dem Seitenwechsel fielen aus dem
+       Block. Und weil der Agent den Wechsel meist am Anfang macht
+       (Suchmaske ausfuellen, Trefferliste oeffnen), blieb oft gar nichts
+       uebrig - gemessen am 18.11. an einem Lauf, in dem der Agent
+       sichtbar suchte und filterte und am Ende kein Block dastand.
+
+       Gerade die arbeitsreichen Zuege verloren damit ihr Protokoll, also
+       die, um die es bei der Beobachtbarkeit geht. `schritteAblegen`
+       setzt die Marke nach dem Ablegen auf null zurueck, der naechste
+       echte Zug bekommt also wieder eine frische. */
+    if (this.lauf.schritteVon == null) this.lauf.schritteVon = (this.lauf.log || []).length;
     this.lauf.zugSeit = Date.now();
     /* Welche Frage diese Nachricht beantworten sollte.
        ----------------------------------------------------------------

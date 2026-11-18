@@ -1591,6 +1591,28 @@ const liesReisende = async (text, felder, urteil = "ja") => {
       /typeof IntersectionObserver !== "function"\) \{ rest\.forEach\(setzen\)/.test(cq) ? "ja" : "nein", "ja");
   }
 
+  /* Der Schritte-Block ueberlebt einen Seitenwechsel (18.11.2026)
+     ------------------------------------------------------------------
+     Gemessen: Ein Lauf, in dem der Agent sichtbar die Suchmaske
+     ausfuellte, filterte und scrollte - und am Ende stand kein Block da.
+     Das Log ueberlebte den Seitenwechsel vollstaendig (5 Zeilen im
+     Speicher), die Marke `schritteVon` auch. Ueberschrieben wurde sie:
+     Nach einem Wechsel setzt `fortsetzen` den Zug mit einem erneuten
+     Aufruf von `zug()` fort, und dort stand die Zuweisung ohne
+     Bedingung.
+
+     Damit fielen alle Schritte vor dem Wechsel aus dem Block - und weil
+     der Agent frueh wechselt, blieb meist nichts uebrig. Betroffen
+     waren ausgerechnet die arbeitsreichen Zuege.
+     Gegenprobe: _backup/17-11-abend/ */
+  {
+    const kq = fs.readFileSync(alt && fs.existsSync(quelle + "kern.js") ? quelle + "kern.js" : B + "agent/kern.js", "utf8");
+    pruefe("Die Schrittmarke wird beim Fortsetzen nicht zurueckgesetzt",
+      /if \(this\.lauf\.schritteVon == null\) this\.lauf\.schritteVon = /.test(kq) ? "ja" : "nein", "ja");
+    pruefe("Nach dem Ablegen wird sie wieder frei",
+      /this\.lauf\.schritteVon = null;/.test(kq) ? "ja" : "nein", "ja");
+  }
+
   console.log(`\n${gut} richtig, ${schlecht} falsch`);
   process.exit(schlecht ? 1 : 0);
 })();
