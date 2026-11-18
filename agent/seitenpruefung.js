@@ -773,16 +773,38 @@ const Seitenpruefung = {
     } else this.bestanden();
   },
 
-  /* Arm A darf den Schritte-Block nicht haben (25.10.2026).
-     Das Gegenstueck zu armB(): Dort wird geprueft, dass der Block richtig
-     gebaut ist, hier, dass er in Arm A gar nicht erst auftaucht. Beides
-     zusammen sichert die Festlegung "jeder Arm einen Kanal". */
+  /* Arm A hat den Schritte-Block jetzt auch (18.11.2026).
+     ------------------------------------------------------------------
+     Hier stand bis zum 18.11. das Gegenteil: "Arm A darf den
+     Schritte-Block nicht haben", gebaut am 25.10. unter der Festlegung
+     "jeder Arm einen Kanal".
+
+     Diese Festlegung ist gefallen, und zwar aus einem Messgrund. Hatte
+     nur Arm B das Protokoll, unterschieden sich die Arme in ZWEI
+     Dingen: im Live-Zusehen und in der Existenz eines nachlesbaren
+     Protokolls. Ein Unterschied im Ergebnis waere nicht zuzuordnen
+     gewesen.
+
+     Jetzt variiert nur das Zusehen. Ob jemand das Protokoll oeffnet,
+     ist in beiden Armen messbar (`schritte_geoeffnet`,
+     `schritte_geschlossen`) - und damit laesst sich die eigentliche
+     Frage beantworten: Reicht Nachlesen, oder braucht es das Zusehen?
+
+     Geprueft wird deshalb die Gegenrichtung: Arbeitet der Agent in Arm
+     A, muss der Block da sein. Dass er richtig gebaut ist, prueft
+     weiterhin armB(). */
   armA() {
     if (document.body.classList.contains("agent-fenster")) return;
     if (!document.body.classList.contains("agent-schublade")) return;
+    /* Nur pruefbar, wenn ueberhaupt Schritte angefallen sind - sonst
+       waere das Fehlen des Blocks richtig und die Pruefung meldete
+       einen Fehler, den es nicht gibt. */
+    const hatteArbeit = (typeof Kern !== "undefined"
+      && (Kern.lauf?.verlauf || []).some((n) => n.rolle === "schritte"));
+    if (!hatteArbeit) return;
     const bloecke = document.querySelectorAll(".msg.schritte");
-    if (bloecke.length) {
-      this.befund("Arm A", `In Arm A stehen ${bloecke.length} Schritte-Block/Bloecke - dort soll es sie nicht geben, sonst hat Arm A beide Kanaele`);
+    if (!bloecke.length) {
+      this.befund("Arm A", "In Arm A steht kein Schritte-Block, obwohl der Agent gearbeitet hat - seit dem 18.11.2026 soll es ihn in beiden Armen geben");
     } else this.bestanden();
   },
 

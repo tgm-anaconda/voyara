@@ -404,9 +404,10 @@ const STELLSCHRAUBEN = {
        verschiedene Dinge (Hybridfassung).
        ----------------------------------------------------------------
        `agent-fenster` sagt, in welchem ARM die Person ist. Daran haengen
-       die Dinge, die den ganzen Durchgang ueber gelten: der
-       Schritte-Block als Kanal von Arm B (AgentPanel.ARM_B), der
-       unsichtbare Zeiger (Zeiger.armB) und die Selbstpruefungen.
+       die Dinge, die den ganzen Durchgang ueber gelten: der unsichtbare
+       Zeiger (Zeiger.armB) und die Selbstpruefungen. Der Schritte-Block
+       hing bis zum 18.11.2026 ebenfalls daran; seitdem steht er in
+       beiden Armen, damit sich nur noch das Zusehen unterscheidet.
 
        `agent-vollbild` sagt, ob der Chat GERADE das Bild deckt. Daran
        haengt die gesamte Optik. Im Hybrid wird sie nur waehrend der
@@ -957,8 +958,27 @@ const Kern = {
         && !this.SCHRITT_VERBOTEN.test(z.text));
   },
 
+  /* Der Schritte-Block steht in BEIDEN Armen (18.11.2026).
+     ------------------------------------------------------------------
+     Bis hierher gab es ihn nur in Arm B: Wer nicht zusehen kann, sollte
+     wenigstens nachlesen koennen. Das war als Ausgleich gedacht, hat
+     aber die Messung verdorben - zwischen den Armen unterschieden sich
+     dann zwei Dinge gleichzeitig, das Live-Zusehen UND die Existenz
+     eines Protokolls. Ein Unterschied im Ergebnis waere nicht mehr
+     zuzuordnen gewesen.
+
+     Entscheidung des Nutzers am 18.11.2026: "In Arm A kann das ja auch
+     nochmal explizit stehen, was er macht. Dann kann man halt wirklich
+     gucken, ob das Live-Zusehen sinnvoll ist oder ob es den Leuten
+     reicht, es nachzulesen."
+
+     Damit variiert nur noch das Zusehen. Ob jemand das Protokoll
+     ueberhaupt oeffnet, ist messbar statt vermutet
+     (`schritte_geoeffnet`, `schritte_geschlossen` mit Lesedauer) - und
+     diese Spalten sind jetzt in beiden Armen gefuellt, also
+     vergleichbar. */
   schritteAblegen() {
-    if (typeof AgentPanel === "undefined" || !AgentPanel.ARM_B?.()) return;
+    if (typeof AgentPanel === "undefined") return;
     const von = this.lauf.schritteVon;
     if (von == null) return;
     this.lauf.schritteVon = null;
@@ -1009,8 +1029,7 @@ const Kern = {
     if (kasten) kasten.innerHTML = "";
     for (const n of this.lauf.verlauf) {
       // Der Schritte-Block ist keine Nachricht, sondern ein eigener
-      // Eintrag. In Arm A kommt er gar nicht vor; liegt dort doch einer
-      // (umgestellte Bedingung im Test), wird er uebersprungen.
+      // Eintrag. Seit dem 18.11.2026 kommt er in beiden Armen vor.
       if (n.rolle === "schritte") { AgentPanel.schritteZeigen?.(n, { still: true }); continue; }
       const aktionen = this.aktionenBinden(n.aktionen || []);
       AgentPanel.say(n.text, n.rolle, { still: true, links: n.links, aktionen, etikett: n.etikett || null });

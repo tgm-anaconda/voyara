@@ -1543,6 +1543,27 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     pruefe(`${seite} laedt das FAQ`, /data\/faq\.js/.test(q) ? "ja" : "nein", "ja");
   }
 
+  /* Der Schritte-Block steht in beiden Armen (18.11.2026)
+     ------------------------------------------------------------------
+     Bis dahin nur in Arm B, als Ausgleich dafuer, dass man dort nicht
+     zusehen kann. Das verdarb die Messung: Zwischen den Armen
+     unterschieden sich zwei Dinge gleichzeitig. Entscheidung des
+     Nutzers: in beide Arme, dann variiert nur das Zusehen, und ob
+     jemand das Protokoll oeffnet, ist messbar.
+     Gegenprobe: _backup/17-11-abend/ */
+  {
+    const kq = fs.readFileSync(alt && fs.existsSync(quelle + "kern.js") ? quelle + "kern.js" : B + "agent/kern.js", "utf8");
+    const cq = fs.readFileSync(alt && fs.existsSync(quelle + "components.js") ? quelle + "components.js" : B + "components.js", "utf8");
+    pruefe("Schritte werden unabhaengig vom Arm abgelegt",
+      /schritteAblegen\(\) \{\s*\n\s*if \(typeof AgentPanel === "undefined"\) return;/.test(kq) ? "ja" : "nein", "ja");
+    pruefe("Schritte werden unabhaengig vom Arm gezeigt",
+      /schritteZeigen\(eintrag, \{ still = false \} = \{\}\) \{\s*\n\s*const box/.test(cq) ? "ja" : "nein", "ja");
+    // Die Messung dazu muss in der Auswertung ankommen
+    const sq = fs.readFileSync(alt && fs.existsSync(quelle + "studie.js") ? quelle + "studie.js" : B + "agent/studie.js", "utf8");
+    pruefe("Das Oeffnen des Protokolls steht in den Spalten",
+      /schritteGeoeffnet/.test(sq) ? "ja" : "nein", "ja");
+  }
+
   console.log(`\n${gut} richtig, ${schlecht} falsch`);
   process.exit(schlecht ? 1 : 0);
 })();

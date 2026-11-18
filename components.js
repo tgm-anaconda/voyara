@@ -1169,8 +1169,11 @@ const AgentPanel = {
      Offenlegung. Die Kernpruefung `schritteOhneHinweis` wacht darueber. */
   ARM_B() { return document.body.classList.contains("agent-fenster"); },
 
+  /* Seit dem 18.11.2026 in beiden Armen - siehe Kern.schritteAblegen.
+     ARM_B() bleibt, weil andere Stellen es brauchen; hier faellt die
+     Sperre weg, damit sich zwischen den Armen nur noch das Zusehen
+     unterscheidet und nicht zusaetzlich die Existenz des Protokolls. */
   schritteZeigen(eintrag, { still = false } = {}) {
-    if (!this.ARM_B()) return null;
     const box = document.getElementById("agentMessages");
     const zeilen = (eintrag?.schritte || []).filter((z) => z && z.text);
     if (!box || !zeilen.length) return null;
