@@ -7079,7 +7079,10 @@ const Werkzeugkasten = {
         const schon = (p.kriterien || [])
           .map((k) => (typeof Politik !== "undefined" ? Politik.kriterium(k.id)?.label : null))
           .filter(Boolean);
-        const liste = typeof Politik !== "undefined" ? Politik.aufzaehlen(schon.map((x) => x.toLowerCase())) : schon.join(", ");
+        /* Keine Kleinschreibung: Im Lauf vom 19.11.2026 stand "neben
+           ruhe und essen" im Chat. Es sind Substantive, und der
+           Kleinbuchstabe liest sich wie ein Tippfehler des Agenten. */
+        const liste = typeof Politik !== "undefined" ? Politik.aufzaehlen(schon) : schon.join(", ");
         const dazu = schon.length ? ` neben ${liste}` : "";
         if (runde >= 2) return `Fällt dir noch etwas ein${dazu}, oder soll ich mit der Suche weitermachen?`;
         if (runde === 1) return `Fällt dir${dazu} noch etwas ein?`;
@@ -9871,7 +9874,17 @@ const Werkzeugkasten = {
         let gebaut = 0;
         for (const st of stufen) {
           const n = zaehle(st.werte);
-          if (n == null || n <= e.jetzt) continue;
+          /* Hier muss schon die volle Schwelle gelten, nicht nur "mehr
+             als jetzt" (19.11.2026, im Live-Lauf gefunden).
+             ------------------------------------------------------------
+             Sonst passiert Folgendes: Eine Stufe mit winzigem Gewinn
+             wird gebaut, `gebaut` ist wahr, der Rueckfall auf "Vorgabe
+             ganz weg" faellt aus - und das Sieb weiter unten wirft die
+             schwache Stufe dann doch weg. Uebrig bleibt: nichts. Im Lauf
+             vom 19.11.2026 verschwand so die Mindestnote aus der
+             Auswahl, obwohl genau sie von 11 auf 3 Haeuser geschnitten
+             hatte. Angeboten wurde nur noch die Region. */
+          if (n == null || n - e.jetzt < this.ENGSTELLE_MINDESTGEWINN) continue;
           gebaut++;
           kandidaten.push({ feld: `${r.feld}:${st.id}`, ohne: n, was: st.was,
             kurz: st.kurz, werte: st.werte });
@@ -9883,6 +9896,17 @@ const Werkzeugkasten = {
            19.11.2026; dieselbe Falle wie bei der Ausstattung eine
            Ebene darueber. */
         if (gebaut) continue;
+        /* Keine Stufe hat gereicht: dann die Vollform, mit ihrer
+           wirklichen Zahl. */
+        const voll = this.ENGSTELLE_OFFEN[r.feld];
+        if (voll) {
+          const n = zaehle(voll.werte);
+          if (n != null && n > e.jetzt) {
+            kandidaten.push({ feld: `${r.feld}:offen`, ohne: n, was: voll.was,
+              kurz: voll.kurz, werte: voll.werte });
+            continue;
+          }
+        }
       }
       kandidaten.push({ feld: r.feld, ohne: zaehle(w) ?? r.ohne, was: text, kurz: this.ENGSTELLE_KURZ[r.feld] || null, werte: w });
     }
@@ -9979,9 +10003,12 @@ const Werkzeugkasten = {
     /* Bei einer Stufe steht der Zielwert auf dem Knopf ("Auf 190 €"),
        sonst das Wegnehmen ("Region lockern"). "Preisgrenze lockern"
        haette bei zwei Stufen zweimal dasselbe dagestanden. */
-    const chipFuer = (k) => (k.feld.startsWith("monat:") ? `Im ${k.kurz}`
-      : k.feld.includes(":") && !k.feld.startsWith("ausstattung:") ? `Auf ${k.kurz}`
-        : k.kurz ? `${k.kurz} lockern` : "Diese Vorgabe lockern");
+    /* "Auf ohne Grenze" stand am 19.11.2026 auf einem Knopf - die
+       Vollform traegt ihre Beschriftung schon fertig. */
+    const chipFuer = (k) => (k.feld.endsWith(":offen") ? k.kurz
+      : k.feld.startsWith("monat:") ? `Im ${k.kurz}`
+        : k.feld.includes(":") && !k.feld.startsWith("ausstattung:") ? `Auf ${k.kurz}`
+          : k.kurz ? `${k.kurz} lockern` : "Diese Vorgabe lockern");
     const wirkung = {};
     const chips = [];
     for (const k of auswahl) {
@@ -10010,7 +10037,10 @@ const Werkzeugkasten = {
       /* Die Kandidaten einzeln: Der Kern legt sie als offene Frage ab,
          damit auch frei getippte Antworten sie aufrufen koennen - nicht
          nur der wortgleiche Chip. */
-      kandidaten: auswahl.map((k) => ({ feld: k.feld, kurz: k.kurz || k.was, werte: k.werte })),
+      /* `ohne` reist mit: Es ist die Zahl, die im Satz steht, und ohne
+         sie liesse sich spaeter nicht pruefen, ob der Knopf haelt, was
+         der Satz verspricht. Sie landet auch im Protokoll. */
+      kandidaten: auswahl.map((k) => ({ feld: k.feld, kurz: k.kurz || k.was, ohne: k.ohne, werte: k.werte })),
       werte: auswahl[0].werte,
       wirkung,
     };
@@ -10095,6 +10125,27 @@ const Werkzeugkasten = {
     angebote: () => "auch nicht reduzierte Häuser zeigen",
     wlan: () => "WLAN nicht voraussetzen",
     ausstattung: () => "die Ausstattungswünsche lockern",
+  },
+
+  /* Ganz offen - aber nur, wenn die Stufen nichts bringen (19.11.2026).
+     ------------------------------------------------------------------
+     Im Live-Lauf vom 19.11.2026 fiel auf: Die Rangliste meldete "ohne
+     die Preisgrenze 11 Hotels", angeboten wurde aber nichts davon.
+     Grund: `ENGSTELLE_LOCKERN.preis` war seit jeher 1,25 x Grenze -
+     ein "ganz weg" gab es fuer den Preis gar nicht. Die gestuften
+     Vorschlaege brachten bei dieser Lage zu wenig, der Rueckfall also
+     auch, und die ganze Moeglichkeit verschwand.
+
+     Deshalb hier die Vollform. Sie kommt NUR zum Zug, wenn keine Stufe
+     die Schwelle schafft - sonst stuende "ganz offen" mit der groessten
+     Zahl ganz oben, und genau das wollte Ben nicht: "Eine Person, die
+     170 Euro angibt, ist nicht bereit, offen 400 Euro zu zahlen." */
+  ENGSTELLE_OFFEN: {
+    preis: { werte: { maxPreis: null }, kurz: "Ohne Preisgrenze", was: "die Preisgrenze ganz offen lassen" },
+    gesamt: { werte: { budgetGesamt: null }, kurz: "Ohne Budget", was: "das Budget ganz offen lassen" },
+    strand: { werte: { maxStrand: null, strandEgal: true }, kurz: "Strand egal", was: "den Strandabstand ganz offen lassen" },
+    bewertung: { werte: { mindestbewertung: null, bewertungEgal: true }, kurz: "Ohne Mindestnote", was: "die Mindestnote ganz weglassen" },
+    sterne: { werte: { mindestSterne: null }, kurz: "Ohne Sternevorgabe", was: "die Sternevorgabe ganz weglassen" },
   },
 
   /* Kurznamen fuer die Knoepfe. Der Satz nennt die Vorgabe ausfuehrlich

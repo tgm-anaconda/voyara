@@ -2127,6 +2127,71 @@ const liesReisende = async (text, felder, urteil = "ja") => {
       monate(strandR).length ? "doch" : "nein", "nein");
   }
 
+  /* Was die Rangliste verspricht, muss lieferbar sein (19.11.2026)
+     ------------------------------------------------------------------
+     Im Live-Lauf vom 19.11.2026 stand der Agent bei drei Hotels
+     (Mallorca, Juli, Halbpension, 200 € pro Nacht, Pool, Note ab 4,5).
+     Die Rangliste meldete "ohne die Preisgrenze 11 Hotels" - angeboten
+     wurde nur "Die Region offen lassen: 7 Hotels".
+
+     Zwei Ursachen, beide hier festgehalten:
+     1. `ENGSTELLE_LOCKERN.preis` war seit jeher 1,25 x Grenze. Ein
+        "ganz offen" gab es fuer den Preis nie, die Rangliste rechnete
+        aber damit.
+     2. Eine Stufe mit winzigem Gewinn wurde gebaut, verhinderte damit
+        den Rueckfall - und wurde danach vom Sieb doch verworfen.
+     Gegenprobe: _backup/19-11-stufen/ */
+  if (WK && WK.engstelleRueckfrage) {
+    const eng = { zielId: "mallorca", typ: "hotel", artGenannt: true, monat: 7, naechte: 7,
+      erwachsene: 2, kinder: 0, kinderAlter: [], zimmer: 1, flug: false, verpflegung: "halb",
+      maxPreis: 200, mindestbewertung: 4.5, ausstattung: ["pool"],
+      von: "2027-07-08", bis: "2027-07-15" };
+    const AW2 = vm.runInContext("typeof Auswahl !== 'undefined' ? Auswahl : null", ctx);
+    const tr = AW2 ? AW2.treffer(WK.katalog(eng), WK.vorgaben(eng, WK.filterAusStand(eng))) : [];
+    const lf = { protokoll: [] };
+    WK.engstelle(tr, eng, lf);
+    const r = WK.engstelleRueckfrage(eng, lf);
+    pruefe("Die Preisgrenze steht zur Wahl, wenn sie der Engpass ist",
+      (r?.kandidaten || []).some((k) => k.feld.startsWith("preis")) ? "ja" : (r?.kandidaten || []).map((k) => k.feld).join(",") || "keine", "ja");
+    pruefe("Und zwar als ganz offen, weil die Stufen zu wenig bringen",
+      (r?.kandidaten || []).some((k) => k.feld === "preis:offen") ? "ja" : "nein", "ja");
+    pruefe("Der Knopf heisst nicht \"Auf ohne Grenze\"",
+      (r?.chips || []).some((c) => /^Auf ohne/.test(c)) ? "falsch" : "richtig", "richtig");
+    /* Jede genannte Zahl muss auch erreichbar sein: Der Wert, den der
+       Knopf setzt, muss wirklich so viele Haeuser ergeben. */
+    pruefe("Jede genannte Zahl ist mit dem Knopf erreichbar",
+      (r?.kandidaten || []).every((k) => {
+        const probe = { ...eng, ...k.werte };
+        for (const [f, w] of Object.entries(k.werte)) if (w == null) delete probe[f];
+        /* Mit `katalogTreffer` gezaehlt, genau wie der Kern selbst -
+           `Auswahl.treffer` nimmt einen anderen Weg und kommt auf
+           andere Zahlen. Eine Pruefung, die anders rechnet als der Code,
+           misst den Unterschied der Rechenwege, nicht den Fehler. */
+        const n = WK.katalogTreffer(probe, WK.filterAusStand(probe)).length;
+        return n === k.ohne;
+      }) ? "ja" : "nein", "ja");
+    /* Und die Vollform draengelt sich nicht vor, wo die Stufen reichen:
+       Mallorca, Juli, 170 € - da bringen 190 € und 210 € genug. */
+    const mild = { zielId: "mallorca", typ: "hotel", artGenannt: true, monat: 7, naechte: 7,
+      erwachsene: 2, kinder: 0, kinderAlter: [], zimmer: 1, flug: false, maxPreis: 170, verpflegung: "halb" };
+    const tr2 = AW2 ? AW2.treffer(WK.katalog(mild), WK.vorgaben(mild, WK.filterAusStand(mild))) : [];
+    const lf2 = { protokoll: [] };
+    WK.engstelle(tr2, mild, lf2);
+    const r2 = WK.engstelleRueckfrage(mild, lf2);
+    pruefe("Wo die Stufen reichen, kommt kein ganz offen",
+      (r2?.kandidaten || []).some((k) => k.feld.endsWith(":offen")) ? "doch" : "nein", "nein");
+    pruefe("Dort stehen die Stufen",
+      (r2?.kandidaten || []).filter((k) => /^preis:\d/.test(k.feld)).length >= 2 ? "ja" : "nein", "ja");
+  }
+
+  /* Die Gewichtungsfrage schreibt Substantive gross (19.11.2026) */
+  if (WK && WK.themenSatz) {
+    const sg = WK.themenSatz("gewichtung",
+      { kriterien: [{ id: "ruhe" }, { id: "essen" }], typ: "hotel" }, { gefragtWie: { gewichtung: 1 } });
+    pruefe("Nicht \"neben ruhe und essen\"", /neben ruhe|neben essen/.test(String(sg)) ? "klein" : "gross", "gross");
+    pruefe("Sondern mit Namen", /neben Ruhe und Essen/.test(String(sg)) ? "ja" : String(sg).slice(0, 60), "ja");
+  }
+
   // Kinder oder Erwachsene
   if (WK && WK.kinderErwachsenRueckfrage) {
     const f = WK.kinderErwachsenRueckfrage({ erwachsene: 1, kinder: 2 }, { alterZuHoch: [28, 34] });
