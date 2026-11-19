@@ -1985,6 +1985,55 @@ const liesReisende = async (text, felder, urteil = "ja") => {
       ablauf[ablauf.indexOf("VORSCHLAEGE") - 1], "gewichtung");
   }
 
+  /* Einschneidende Vorgaben sagen, was sie kosten (19.11.2026)
+     ------------------------------------------------------------------
+     Ben am 19.11.2026: "Strandnaehe und so Aspekte sind ja auch schon
+     wichtig, dass man die nennen kann. Gute Bewertung, oder ich moechte
+     primaer Haeuser im Angebot haben. Aber das sollte halt immer klar
+     gemacht werden, wenn das halt so einschneidende Sachen sind, was das
+     dann bedeutet fuer die spaetere Auswahl."
+
+     `aenderungsSatz` sprang nur an, wenn ein Wert sich AENDERTE - eine
+     Vorgabe, die zum ersten Mal gesetzt wird, lief stumm durch. Und
+     genau die schneidet am meisten weg.
+     Gegenprobe: _backup/19-11-folgen/ */
+  if (WK) {
+    const bas = { zielId: "mallorca", typ: "hotel", artGenannt: true, monat: 7, naechte: 7,
+      erwachsene: 2, kinder: 0, kinderAlter: [], zimmer: 1, flug: false };
+    /* Nicht `if (WK.folgenSatz)`: In der Gegenprobe gibt es die Funktion
+       nicht, und der ganze Block waere uebersprungen worden - eine
+       gruene Gegenprobe, die nichts misst. Derselbe Fehler wie am
+       17. und 18.11.2026. Also wird hier ein leerer Satz geliefert,
+       und die Pruefungen fallen durch, wie sie sollen. */
+    const sag = (feld, wert) => (typeof WK.folgenSatz === "function"
+      ? WK.folgenSatz({ ...bas, [feld]: wert }, bas, [feld]) : "") || "";
+    pruefe("Die Mindestnote sagt, was sie kostet",
+      /Mit einer Note ab 4,5 bleiben \d+ Hotels statt \d+/.test(sag("mindestbewertung", 4.5)) ? "ja" : sag("mindestbewertung", 4.5).slice(0, 70), "ja");
+    pruefe("Die Strandnaehe auch",
+      /Mit höchstens 1 km zum Strand bleiben \d+/.test(sag("maxStrand", 1)) ? "ja" : "nein", "ja");
+    pruefe("Nur Angebote auch",
+      /Mit nur reduzierten Häusern bleiben \d+/.test(sag("nurAngebote", true)) ? "ja" : "nein", "ja");
+    pruefe("Die Sterne auch",
+      /Mit mindestens 5 Sternen bleiben \d+/.test(sag("mindestSterne", 5)) ? "ja" : "nein", "ja");
+    pruefe("Und sagt dazu, dass Haeuser rausfallen",
+      /die anderen fallen damit raus/.test(sag("mindestbewertung", 4.5)) ? "ja" : "nein", "ja");
+    /* Kein Satz, wo nichts passiert - sonst waere jede Angabe von einer
+       Zahl begleitet, und die Ansage waere Laerm statt Auskunft. */
+    pruefe("Eine Vorgabe ohne Wirkung bleibt stumm", sag("mindestbewertung", 3.0) || "stumm", "stumm");
+    pruefe("Ein abgelehntes nurAngebote bleibt stumm", sag("nurAngebote", false) || "stumm", "stumm");
+    /* Und nichts doppelt: Wer einen Wert KORRIGIERT, bekommt den
+       aenderungsSatz, nicht beides. */
+    const korrigiert = WK.aenderungsSatz({ ...bas, mindestbewertung: 4.5 },
+      { ...bas, mindestbewertung: 4.0 }, ["mindestbewertung"]) || "";
+    pruefe("Eine Korrektur bekommt den alten Satz, nicht den neuen",
+      /Mit einer Note/.test(korrigiert) ? "doppelt" : "einer", "einer");
+    /* Die Grammatik: "Mit eine Note ab 4,5" stand am 19.11.2026 im
+       ersten Bau, ebenso "Nur reduzierte Haeuser IST eine Bedingung". */
+    for (const [f, w] of [["mindestbewertung", 4.5], ["maxStrand", 1], ["nurAngebote", true], ["mindestSterne", 5]]) {
+      pruefe(`Kein "Mit eine/ein" bei ${f}`, /Mit eine\b|Mit ein\b|Mit nur reduzierte\b|Mit mindestens \d+ Sterne\b/.test(sag(f, w)) ? "falsch" : "richtig", "richtig");
+    }
+  }
+
   // Kinder oder Erwachsene
   if (WK && WK.kinderErwachsenRueckfrage) {
     const f = WK.kinderErwachsenRueckfrage({ erwachsene: 1, kinder: 2 }, { alterZuHoch: [28, 34] });

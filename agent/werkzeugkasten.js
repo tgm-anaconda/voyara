@@ -992,6 +992,33 @@ const Werkzeugkasten = {
      (`katalogTreffer`), also stimmt die Zahl mit der Liste ueberein.
      Aendert sich nichts, wird auch nichts gesagt - ein "jetzt 34 statt
      34" waere schlimmer als Schweigen. */
+  /* Vorgaben, die Haeuser ausschliessen - und bei denen deshalb gesagt
+     werden muss, was sie kosten (19.11.2026).
+     ------------------------------------------------------------------
+     Ben am 19.11.2026: "Strandnaehe und so Aspekte sind ja auch schon
+     wichtig, dass man die nennen kann. Gute Bewertung, oder ich moechte
+     primaer Haeuser im Angebot haben. Aber das sollte halt immer klar
+     gemacht werden, wenn das halt so einschneidende Sachen sind, was das
+     dann bedeutet fuer die spaetere Auswahl."
+
+     Nennen kann die Person sie alle - es gibt fuer jede ein eigenes Feld
+     in `stand_merken`. Was fehlte, war die Folge: `aenderungsSatz` sprang
+     nur an, wenn ein Wert sich AENDERTE (`vorher[f] != null`). Eine
+     Vorgabe, die zum ersten Mal gesetzt wird, lief stumm durch - und
+     genau die schneidet am meisten weg.
+
+     `nurAngebote` steht mit dabei, weil es die schaerfste von allen ist:
+     fuenfzehn Haeuser im ganzen Katalog sind reduziert. */
+  /* Die Worte stehen im Dativ: Der Satz lautet "Mit X bleiben ...", und
+     "Mit eine Note ab 4,5" war schlicht falsch (19.11.2026 gemessen). */
+  EINSCHNEIDEND: {
+    mindestbewertung: (w) => `einer Note ab ${String(w).replace(".", ",")}`,
+    mindestSterne: (w) => `mindestens ${w} Sternen`,
+    maxStrand: (w) => `höchstens ${w < 1 ? `${Math.round(w * 1000)} m` : `${w} km`} zum Strand`,
+    nurAngebote: () => "nur reduzierten Häusern",
+    verpflegung: (w) => (typeof BOARD_LABELS !== "undefined" ? BOARD_LABELS[w] : w),
+  },
+
   AENDERUNG_FELDER: {
     budgetGesamt: (w) => `Budget ${w} € gesamt`,
     maxPreis: (w) => `höchstens ${w} € pro Nacht`,
@@ -1007,12 +1034,48 @@ const Werkzeugkasten = {
     zimmer: (w) => `${w} Zimmer`,
   },
 
+  /* Was eine neu gesetzte, einschneidende Vorgabe kostet.
+     ------------------------------------------------------------------
+     Gerechnet, nicht geschaetzt: einmal der Stand davor, einmal der
+     jetzige, beide gegen denselben Katalog. Gesagt wird es nur, wenn
+     wirklich etwas wegfaellt - eine Vorgabe, die nichts kostet, braucht
+     keine Ansage, und eine Zahl zu jedem Wort waere Laerm.
+
+     Die Schwelle: mindestens drei Haeuser weg, oder weniger als die
+     Haelfte bleibt uebrig. Darunter ist es eine Vorgabe wie jede andere.
+
+     Die Rueckfrage, wenn es danach zu wenige sind, kommt nicht von hier,
+     sondern von `engstelleRueckfrage` - die kennt die Lockerungen. Hier
+     steht nur die Auskunft. */
+  folgenSatz(p, vorher, geaendert) {
+    const feld = (geaendert || []).find((f) => this.EINSCHNEIDEND[f]
+      && p[f] != null && p[f] !== false && (vorher?.[f] == null || vorher[f] === false));
+    if (!feld) return null;
+    let vorZahl = null, jetztZahl = null;
+    try {
+      vorZahl = this.katalogTreffer(vorher, this.filterAusStand(vorher)).length;
+      jetztZahl = this.katalogTreffer(p, this.filterAusStand(p)).length;
+    } catch { return null; }
+    if (!vorZahl || jetztZahl >= vorZahl) return null;
+    const weg = vorZahl - jetztZahl;
+    if (weg < 3 && jetztZahl * 2 >= vorZahl) return null;
+    const art = this.artWort(p, true);
+    const was = this.EINSCHNEIDEND[feld](p[feld]);
+    /* "Mit X bleiben ..." statt "X ist eine Bedingung: ...": Die zweite
+       Form brach bei der Mehrzahl ("Nur reduzierte Haeuser IST eine
+       Bedingung", "Mindestens 5 Sterne IST"). Gemessen am 19.11.2026. */
+    return `Mit ${was} bleiben ${jetztZahl} ${art} statt ${vorZahl} - die anderen fallen damit raus.`;
+  },
+
   aenderungsSatz(p, vorher, geaendert) {
     if (!p || !vorher || !(geaendert || []).length) return null;
     // Nur Felder, die der Kern erklaeren kann, und nur echte Korrekturen
     const feld = geaendert.find((f) => this.AENDERUNG_FELDER[f]
       && vorher[f] != null && vorher[f] !== "" && vorher[f] !== p[f]);
-    if (!feld) return null;
+    /* Eine Vorgabe, die zum ersten Mal dasteht, hat keinen Vorgaenger -
+       und lief deshalb stumm durch. Fuer die einschneidenden sagt der
+       Kern jetzt, was sie kosten. Begruendung bei EINSCHNEIDEND. */
+    if (!feld) return this.folgenSatz(p, vorher, geaendert);
     /* Die Richtung hat ihren eigenen, besseren Satz - der nennt die
        Regionen beim Namen. Zwei Saetze ueber dieselbe Aenderung waeren
        einer zu viel. */
