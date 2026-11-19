@@ -67,7 +67,6 @@ const state = {
   minBedrooms: 0,
   directOnly: false,
   freeCancel: false,
-  onlyDeals: false,
   wlanFrei: false,
   sort: "empfehlung",
   withFlight: false,
@@ -164,7 +163,7 @@ function filterMerken() {
     sessionStorage.setItem(FILTER_SPEICHER, JSON.stringify({
       amenities: [...state.amenities], boards: [...state.boards], stars: [...state.stars],
       categories: [...state.categories], minRating: state.minRating, maxBeach: state.maxBeach,
-      minBedrooms: state.minBedrooms, onlyDeals: state.onlyDeals, wlanFrei: state.wlanFrei,
+      minBedrooms: state.minBedrooms, wlanFrei: state.wlanFrei,
       gesamtMax: state.gesamtMax, priceMax: state.priceMax, sort: state.sort,
       ziele: [...state.ziele],
     }));
@@ -184,7 +183,6 @@ function filterHolen() {
     state.minRating = g.minRating || 0;
     state.maxBeach = g.maxBeach ?? null;
     state.minBedrooms = g.minBedrooms || 0;
-    state.onlyDeals = !!g.onlyDeals;
     state.wlanFrei = !!g.wlanFrei;
     state.gesamtMax = g.gesamtMax ?? null;
     if (g.sort) state.sort = g.sort;
@@ -203,7 +201,6 @@ function readUrl() {
   state.q = p.get("q") || p.get("region") || "";
   if (p.get("category")) state.categories.add(p.get("category"));
   if (p.get("sort")) state.sort = p.get("sort");
-  if (p.get("deals")) state.onlyDeals = true;
   // Flug dazu: aus der Adresse, sonst aus dem gemerkten Zustand
   state.withFlight = typeof Flug !== "undefined" ? Flug.get().mit : p.get("flight") === "1";
   state.ziel = p.get("ziel") || "";
@@ -285,7 +282,6 @@ function seitenVorgaben() {
     budgetGesamt: state.gesamtMax,
     maxStrand: state.maxBeach,
     mindestbewertung: state.minRating || null,
-    nurAngebote: state.onlyDeals,
     wlanInklusive: state.wlanFrei,
     mindestSchlafzimmer: state.minBedrooms || null,
     flug: state.withFlight,
@@ -475,21 +471,6 @@ function renderFilters() {
       [{ v: 4.5, l: "Hervorragend ab 4,5" }, { v: 4.0, l: "Sehr gut ab 4,0" }, { v: 3.5, l: "Gut ab 3,5" }, { v: 0, l: "Alle Bewertungen" }]
         .map((o) => radioRow("fRating", "js-rating", o.v, o.l, zaehleFuer("bewertung", (h) => h.rating >= o.v), state.minRating === o.v)).join(""));
 
-    /* "Ich haette gern ein Hotel, das im Angebot ist."
-       ----------------------------------------------------------------
-       Am 27.09.2026 gemeldet: Der Agent verstand den Satz nicht. Er
-       konnte ihn auch nicht verstehen - den Angebotsfilter gab es nur
-       ueber die Adresse (?deals=1), nicht als Schalter in der Spalte.
-       Damit fehlte ihm das Werkzeug, nicht das Verstaendnis. Jetzt steht
-       er hier, sichtbar, und der Agent kann ihn klicken wie jeden
-       anderen. */
-    // Reduzierte Haeuser gibt es nur bei Hotels - ohne welche im Vorrat
-    // waere der Schalter ein Filter, der immer alles wegnimmt
-    if (countIn((h) => h.oldPrice)) {
-      html += group("Preisnachlass",
-        `<label class="check-row"><input type="checkbox" class="js-deals" ${state.onlyDeals ? "checked" : ""}/><span>Nur reduzierte Häuser</span>${zahlFeld(zaehleFuer("angebote", (h) => h.oldPrice))}</label>`);
-    }
-
     /* WLAN inklusive.
        ----------------------------------------------------------------
        Alle Haeuser haben WLAN, ein Viertel verlangt eine Tagesgebuehr
@@ -604,14 +585,13 @@ function renderFilters() {
 
   panel.querySelector(".js-direct")?.addEventListener("change", (e) => { state.directOnly = e.target.checked; renderResults(); });
   panel.querySelector(".js-cancel")?.addEventListener("change", (e) => { state.freeCancel = e.target.checked; renderResults(); });
-  panel.querySelector(".js-deals")?.addEventListener("change", (e) => { state.onlyDeals = e.target.checked; filterMerken(); renderResults(); });
   panel.querySelector(".js-wlan")?.addEventListener("change", (e) => { state.wlanFrei = e.target.checked; filterMerken(); renderResults(); });
 
   panel.querySelector("#fReset").addEventListener("click", () => {
     state.stars.clear(); state.categories.clear(); state.amenities.clear(); state.boards.clear();
     state.carCategories.clear(); state.transmissions.clear(); state.airlines.clear();
     state.minRating = 0; state.maxBeach = null; state.minBedrooms = 0;
-    state.directOnly = false; state.freeCancel = false; state.onlyDeals = false; state.wlanFrei = false;
+    state.directOnly = false; state.freeCancel = false; state.wlanFrei = false;
     state.ziel = ""; state.ziele.clear();
     state.priceMax = priceBounds().max;
     state.gesamtMax = null;
@@ -637,8 +617,7 @@ function stayResultCard(item) {
 
   return `
 <div class="result-card">
-  <a class="result-media" href="${hausLink(item.id)}" data-bild="${titelbildVon(item.id)}" aria-label="${item.name}">
-    ${item.oldPrice ? '<span class="hotel-flag">Angebot</span>' : ""}
+  <a class="result-media" href="${hausLink(item.id)}" data-bild="${kartenbildVon(item.id)}" aria-label="${item.name}">
     ${wishButton(item.id)}
   </a>
   <div class="result-body">
@@ -660,8 +639,7 @@ function stayResultCard(item) {
         <span class="rating-score">${item.rating.toFixed(1)}</span>
       </div>
       <div class="result-price">
-        ${preisImMonat(item, reisemonat()) < item.pricePerNight ? `<div class="price-old">${formatPrice(preis + item.pricePerNight - preisImMonat(item, reisemonat()))}</div>`
-          : item.oldPrice ? `<div class="price-old">${formatPrice(preis + item.oldPrice - item.pricePerNight)}</div>` : ""}
+        ${preisImMonat(item, reisemonat()) < item.pricePerNight ? `<div class="price-old">${formatPrice(preis + item.pricePerNight - preisImMonat(item, reisemonat()))}</div>` : ""}
         <div class="price-main">${formatPrice(preis)}</div>
         <div class="price-note">pro Nacht${Reisedaten.flex() ? ` im ${Reisedaten.MONATSNAMEN[Reisedaten.flex().monat - 1]}` : ""} ${preisFuerText(item)}</div>
         ${paketZeile(item, preis)}
@@ -685,7 +663,7 @@ function carPartnerEtikett(car) {
 function carResultCard(car) {
   return `
 <div class="result-card compact">
-  <div class="result-media" data-bild="${titelbildVon(car.id)}" aria-label="${car.model}"></div>
+  <div class="result-media" data-bild="${kartenbildVon(car.id)}" aria-label="${car.model}"></div>
   <div class="result-body">
     <div class="result-main">
       <div class="hotel-name" style="font-size:1.08rem">${car.model}${typeof bildIstStellvertreter === "function" && bildIstStellvertreter(car.id) ? ` <span class="hint" style="font-weight:400">oder ähnlich</span>` : ""}</div>
@@ -805,8 +783,6 @@ function zahlenAktualisieren() {
   panel.querySelectorAll(".js-beach").forEach((el) => setze(el, el.value === ""
     ? zaehleFuer("strand", () => true)
     : zaehleFuer("strand", (h) => h.distanceToBeach !== null && h.distanceToBeach <= +el.value)));
-  const deals = panel.querySelector(".js-deals");
-  if (deals) setze(deals, zaehleFuer("angebote", (h) => h.oldPrice));
   const wlan = panel.querySelector(".js-wlan");
   if (wlan && typeof wlanGebuehr === "function") setze(wlan, zaehleFuer("wlan", (h) => wlanGebuehr(h) === 0));
 }
@@ -858,7 +834,7 @@ function switchType(type) {
   state.stars.clear(); state.categories.clear(); state.amenities.clear(); state.boards.clear();
   state.carCategories.clear(); state.transmissions.clear(); state.airlines.clear();
   state.minRating = 0; state.maxBeach = null; state.minBedrooms = 0;
-  state.directOnly = false; state.freeCancel = false; state.onlyDeals = false;
+  state.directOnly = false; state.freeCancel = false;
   state.priceMax = priceBounds().max;
   state.gesamtMax = null;
   state.sort = "empfehlung";

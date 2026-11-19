@@ -538,7 +538,6 @@ function renderWidget() {
   document.getElementById("bookingWidget").innerHTML = `
     <div class="bw-price">
       <strong>${formatPrice(perNight)}</strong>
-      ${item.oldPrice ? `<s>${formatPrice(item.oldPrice)}</s>` : ""}
       <span style="font-size:.82rem;color:var(--ink-500)">/ Nacht</span>
     </div>
     <div class="bw-note">${subtitle}</div>

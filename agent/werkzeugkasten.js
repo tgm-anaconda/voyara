@@ -267,12 +267,21 @@ const Werkzeugkasten = {
              Deshalb ist die Frage nicht "mit WLAN", sondern "ohne
              Aufpreis" - siehe data/ziele.js, wlanGebuehr. */
           wlanInklusive: { type: "boolean", description: "true, wenn die Person WLAN ohne Aufpreis will ('WLAN muss inklusive sein', 'ich will nicht fuer WLAN zahlen'). Jedes Haus hat WLAN, manche verlangen eine Tagesgebuehr." },
-          nurAngebote: { type: "boolean", description: "true, wenn die Person nur Haeuser sehen will, die gerade reduziert sind ('nur was im Angebot ist', 'nur reduziert', 'gibt es Schnaeppchen', 'nur Sonderangebote'). Die Seite hat dafuer einen Schalter in der Filterspalte."},
           preisEgal: { type: "boolean", description: "true, wenn die Person sagt, dass der Preis keine Rolle spielt oder sie keinen Rahmen nennen will" },
           bewertungEgal: { type: "boolean", description: "true, wenn die Person sagt, dass Bewertung oder Sterne ihr egal sind" },
           strandEgal: { type: "boolean", description: "true, wenn die Person sagt, dass die Naehe zum Strand egal ist" },
           verpflegungEgal: { type: "boolean", description: "true, wenn Verpflegung egal ist" },
           ausstattungEgal: { type: "boolean", description: "true, wenn die Person auf die Frage nach ihren Wuenschen sagt, dass sie nichts Besonderes braucht" },
+          /* Wuensche, die es auf der Seite nicht gibt (19.11.2026).
+             `wuensche` und `ausstattung` sind Aufzaehlungen - "Hollywood-
+             Schaukel" passt in keine, also liess das Modell sie still
+             fallen. Im Lauf vom 19.11.2026 antwortete der Agent darauf
+             "Pool merke ich mir. Faellt dir neben Pool noch etwas ein?" -
+             als haette die Person nichts gesagt. Die Pruefung dafuer
+             (`wunschOhneFeld`) gab es seit dem 02.10.2026, sie bekam nur
+             nie etwas zu sehen. */
+          wunsch_unbekannt: { type: "array", items: { type: "string" },
+            description: "Wuensche oder Ausstattung, die die Person nennt und die in wuensche UND ausstattung nicht vorkommen (z.B. 'Hollywood-Schaukel', 'Weinberg in der Naehe', 'Billardtisch'). Woertlich, so kurz wie moeglich. Sonst leer lassen." },
           wuensche: { type: "array", items: { type: "string", enum: ["pool", "strand", "strandnah", "meerblick", "kinderclub", "familie", "wellness", "ruhe", "essen", "sauberkeit", "lage", "service", "preis", "bewertung", "getraenke"] }, description: "Was der Person wichtig ist (alle bisher genannten, nicht nur die neuen). getraenke = Alkohol, Drinks, Bar, gute Getraenke; ruhe = auch Entspannung, Erholung." },
           /* "wifi" stand hier bis zum 29.09.2026 und war nicht einstellbar:
              Alle 184 Hotels und alle 160 Ferienwohnungen haben WLAN, also
@@ -1007,15 +1016,14 @@ const Werkzeugkasten = {
      Vorgabe, die zum ersten Mal gesetzt wird, lief stumm durch - und
      genau die schneidet am meisten weg.
 
-     `nurAngebote` steht mit dabei, weil es die schaerfste von allen ist:
-     fuenfzehn Haeuser im ganzen Katalog sind reduziert. */
+     (Bis zum 19.11.2026 stand hier auch `nurAngebote`; reduzierte Haeuser
+     gibt es seitdem nicht mehr.) */
   /* Die Worte stehen im Dativ: Der Satz lautet "Mit X bleiben ...", und
      "Mit eine Note ab 4,5" war schlicht falsch (19.11.2026 gemessen). */
   EINSCHNEIDEND: {
     mindestbewertung: (w) => `einer Note ab ${String(w).replace(".", ",")}`,
     mindestSterne: (w) => `mindestens ${w} Sternen`,
     maxStrand: (w) => `höchstens ${w < 1 ? `${Math.round(w * 1000)} m` : `${w} km`} zum Strand`,
-    nurAngebote: () => "nur reduzierten Häusern",
     verpflegung: (w) => (typeof BOARD_LABELS !== "undefined" ? BOARD_LABELS[w] : w),
   },
 
@@ -1261,10 +1269,19 @@ const Werkzeugkasten = {
        die Frage zur selben Sache (03.10.2026, "sehr doppelt"). */
     const satz = this.richtungSatz(p, !!this.spanneRueckfrage(p, kern.lauf));
     if (!satz) return;
-    // Verglichen wird der Satz selbst: Verschiebt jemand die Grenze von 22
-    // auf 20 und es aendert sich nichts, waere die Wiederholung nur Laerm.
-    if (kern.lauf.richtungGesagt === satz) return;
+    /* Verglichen wird, WORUEBER der Satz spricht, nicht sein Wortlaut
+       (19.11.2026).
+       Im Lauf vom 19.11.2026 stand der ganze Block "Kalt heisst fuer mich
+       bis 16 Grad ... Lappland, Island, Ostsee, Tirol, Wien" zweimal da.
+       Beim ersten Mal endete er mit der Frage nach der Grenze, beim
+       zweiten Mal nicht mehr (die Frage war ja gestellt) - also war der
+       Wortlaut ein anderer, und der Vergleich liess ihn durch. Dieselbe
+       Richtung, dieselbe Grenze, dieselben Regionen: das ist derselbe
+       Satz, auch wenn das Ende anders lautet. */
+    const worueber = JSON.stringify([p.richtung, p.mindestGrad ?? null, (p.zieleErlaubt || []).slice().sort()]);
+    if (kern.lauf.richtungGesagt === satz || kern.lauf.richtungWorueber === worueber) return;
     kern.lauf.richtungGesagt = satz;
+    kern.lauf.richtungWorueber = worueber;
     kern.lauf.richtungRegionen = (p.zieleErlaubt || []).slice();
     this.ableiten(kern, "richtung", satz);
   },
@@ -3192,6 +3209,16 @@ const Werkzeugkasten = {
         }
       }
       delete a.ausweiten;
+      /* Wuensche ohne Merkmal auf der Seite: nicht verschlucken, sondern
+         sagen, dass danach nicht gefiltert werden kann (19.11.2026). */
+      if (Array.isArray(a.wunsch_unbekannt) && a.wunsch_unbekannt.length) {
+        const liste = [...new Set(a.wunsch_unbekannt.map((w) => String(w).trim()).filter(Boolean))].slice(0, 3);
+        if (liste.length) {
+          kern.lauf.wunschOhneFeld = liste;
+          kern.notieren("wunsch_ohne_feld", { wuensche: liste, quelle: "wunsch_unbekannt" });
+        }
+      }
+      delete a.wunsch_unbekannt;
       const genannt = Array.isArray(a.selbst_genannt) ? a.selbst_genannt : [];
       const beantwortet = (...themen) => (["ja", "teilweise"].includes(a.frage_beantwortet)
         && themen.includes(kern.lauf.gefragtVorher))
@@ -3203,6 +3230,32 @@ const Werkzeugkasten = {
       const klarBeantwortet = (...themen) => (a.frage_beantwortet === "ja"
         && themen.includes(kern.lauf.gefragtVorher))
         || themen.some((t) => genannt.includes(t));
+      /* Die Antwort auf die Temperaturfrage zuerst lesen (19.11.2026).
+         Vor dem Ziel, weil beide in EINER Nachricht kommen koennen ("bis
+         20 gehen und Kapstadt mit aufnehmen"): Wer Kapstadt dazunimmt,
+         nimmt es zu den Regionen bis 20 Grad dazu, nicht zu denen bis 16.
+         Begruendung der Regel steht weiter unten beim Setzen der Grenze. */
+      const spanne = kern.lauf.spanneOffen || null;
+      if (spanne) {
+        kern.lauf.spanneOffen = null;
+        const letzteS = (kern.lauf.gespraech || []).filter((n) => n.role === "user").slice(-1)
+          .map((n) => String(n.content || "")).join(" ");
+        const nennt = (n) => new RegExp(`(^|[^0-9])${n}([^0-9]|$)`).test(letzteS);
+        if (a.mindestGrad == null) {
+          if (nennt(spanne.weiter) && !nennt(spanne.grenze)) a.mindestGrad = spanne.weiter;
+          else if (/bleib/i.test(letzteS) && !nennt(spanne.weiter)) a.mindestGrad = spanne.grenze;
+          if (a.mindestGrad != null) kern.notieren("spanne_vom_kern", { grad: a.mindestGrad, satz: letzteS.slice(0, 80) });
+        }
+        /* Die neue Grenze gleich in die Liste, damit ein Dazunehmen
+           im selben Satz auf der richtigen Liste aufsetzt. Das eigentliche
+           Setzen (mit Ansage) passiert unten wie bisher. */
+        if (a.mindestGrad != null && p.richtung && typeof Politik !== "undefined"
+          && [spanne.weiter, spanne.grenze].includes(Math.round(Number(a.mindestGrad)))) {
+          const thS = (Politik.THEMEN || []).find((t) => t.id === p.richtung);
+          if (thS) p.zieleErlaubt = Werkzeugkasten.regionenFuerRichtung(thS, { ...p, mindestGrad: Math.round(Number(a.mindestGrad)) });
+          kern.lauf.spanneNeu = Math.round(Number(a.mindestGrad));
+        }
+      }
       if (a.ziel !== undefined) {
         const roh = String(a.ziel).toLowerCase().trim();
         let id = null;
@@ -3251,7 +3304,17 @@ const Werkzeugkasten = {
              selben Zug nach (01.11.2026, Wunsch des Nutzers: "da halt
              immer, wenn ein Widerspruch besteht, dann fragen, also dass
              da nichts automatisch gemacht wird"). */
-          if (Werkzeugkasten.widersprichtRichtung(p, id, kern.lauf)) {
+          /* "Noch Kapstadt mit aufnehmen" ist keine offene Frage
+             (19.11.2026). Wer ausdruecklich DAZUNEHMEN sagt, hat die
+             Entscheidung schon getroffen, die die Rueckfrage sonst stellt -
+             "Soll ich Kapstadt trotzdem dazunehmen?" waere die Wiederholung
+             seiner eigenen Worte. Dann gilt sofort, was der Knopf "Kapstadt
+             trotzdem" getan haette, und der Agent sagt die Temperatur dazu,
+             damit die Person weiss, worauf sie sich einlaesst. */
+          if (Werkzeugkasten.widersprichtRichtung(p, id, kern.lauf)
+            && Werkzeugkasten.zielDazunehmen(kern, p, [id], geaendert)) {
+            // erledigt - siehe zielDazunehmen
+          } else if (Werkzeugkasten.widersprichtRichtung(p, id, kern.lauf)) {
             p.zielVorgemerkt = id;
             kern.notieren("ziel_vorgemerkt", { ziel: id, richtung: p.richtung });
           } else {
@@ -3295,6 +3358,10 @@ const Werkzeugkasten = {
         let nehmen = ids;
         if (feld === "zieleAuswahl" && ids.length) {
           const quer = ids.filter((id) => Werkzeugkasten.widersprichtRichtung(p, id, kern.lauf));
+          if (quer.length && Werkzeugkasten.zielDazunehmen(kern, p, quer, geaendert)) {
+            // Ausdruecklich dazugenommen: steht schon in p.zieleAuswahl
+            continue;
+          }
           if (quer.length) {
             nehmen = ids.filter((id) => !quer.includes(id));
             p.zieleVorgemerkt = quer;
@@ -3371,7 +3438,26 @@ const Werkzeugkasten = {
          welche Regionen er als warm zaehlt und wie warm es dort ist, soll
          die Person die Grenze verschieben koennen. Damit ist "warm" keine
          feste Liste mehr, sondern eine Schwelle im gewaehlten Monat. */
-      if (a.mindestGrad != null && gesagt(/grad|°/i, 1)) {
+      /* Die Antwort auf die eigene Frage zaehlt, auch ohne "Grad"
+         (19.11.2026).
+         ----------------------------------------------------------------
+         Im Lauf vom 19.11.2026 fragte der Agent "Bei 16 Grad bleiben oder
+         auf 20 gehen?", und Ben antwortete "Gerne bis 20 gehen und noch
+         kappstadt mit aufnehmen". Die Sperre darunter verlangte das Wort
+         "Grad" oder "°" in der Nachricht - es fehlte, also wurde die 20
+         verworfen, und die kalten Regionen blieben, wie sie waren. Der
+         Agent behauptete trotzdem, er habe Suedtirol, New York und
+         Mallorca aufgenommen.
+
+         Die Sperre bleibt fuer alles Uebrige (sonst setzt das Modell aus
+         "zu zweit, 20 Naechte" eine Temperatur). Aber wenn die Frage nach
+         der Grenze gerade offen steht und die Person genau eine der beiden
+         angebotenen Zahlen nennt, ist nichts zu deuten. Dann liest der Kern
+         die Zahl selbst - auch wenn das Modell sie gar nicht geschickt hat. */
+      // `spanne` wird weiter oben gelesen, vor dem Ziel - siehe dort.
+      const spanneZahl = spanne && a.mindestGrad != null
+        && [spanne.weiter, spanne.grenze].includes(Math.round(Number(a.mindestGrad)));
+      if (a.mindestGrad != null && (gesagt(/grad|°/i, 1) || spanneZahl)) {
         const g = Math.round(Number(a.mindestGrad));
         if (Number.isFinite(g) && g >= -20 && g <= 45) {
           setze("mindestGrad", g);
@@ -4032,7 +4118,6 @@ const Werkzeugkasten = {
         }
       }
       // Nur reduzierte Haeuser - ein Wunsch wie jeder andere, kein "egal"
-      if (a.nurAngebote !== undefined) { if (p.nurAngebote !== !!a.nurAngebote) geaendert.push("nurAngebote"); p.nurAngebote = !!a.nurAngebote; }
       if (a.wlanInklusive !== undefined) { if (p.wlanInklusive !== !!a.wlanInklusive) geaendert.push("wlanInklusive"); p.wlanInklusive = !!a.wlanInklusive; }
       if (Array.isArray(a.wuensche)) {
         const ALIAS = { strand: "strandnah", meer: "strandnah", beach: "strandnah", kids: "kinderclub", kinder: "familie", spa: "wellness", bewertungen: "bewertung", essen: "essen",
@@ -4439,6 +4524,26 @@ const Werkzeugkasten = {
          212", bevor ueberhaupt gesucht war, und kurz danach "179 buchbar".
          Vorher gibt es keine Zahl, an der sich eine Aenderung messen liesse,
          die die Person schon kennt. */
+      /* Ein Wunsch, der schon Bedingung ist, steht nicht zweimal da
+         (19.11.2026).
+         ----------------------------------------------------------------
+         Im Lauf vom 19.11.2026 stand oben im Band "Wichtig Pool" UND
+         "Muss Pool". Ben hatte auf die Ausstattungsfrage "Pool" gesagt,
+         und das Modell trug es in beide Felder ein. Damit zaehlte der
+         Pool auch als weicher Wunsch, und die Gewichtungsfrage hielt
+         sich fuer schon begonnen.
+
+         Was Bedingung ist, ist mehr als ein Wunsch - also bleibt die
+         Bedingung, und das Kriterium mit demselben Merkmal faellt weg. */
+      if ((p.ausstattung || []).length && (p.kriterien || []).length && typeof Politik !== "undefined") {
+        const muss = new Set(p.ausstattung);
+        const vorher = p.kriterien.length;
+        p.kriterien = p.kriterien.filter((k) => !muss.has(Politik.kriterium(k.id)?.merkmal));
+        if (p.kriterien.length < vorher) {
+          if (Array.isArray(p.wuensche)) p.wuensche = p.kriterien.map((k) => k.id);
+          kern.notieren("wunsch_ist_bedingung", { entfernt: vorher - p.kriterien.length });
+        }
+      }
       const aend = kern.lauf.lageFuer ? Werkzeugkasten.aenderungsSatz(p, vorStand, geaendert) : null;
       if (aend) {
         kern.lauf.aenderungSatz = aend;
@@ -6783,7 +6888,15 @@ const Werkzeugkasten = {
      ab der ersten Frage. */
   wunschRunde(p, lauf) {
     const gefragt = lauf?.gefragtWie?.gewichtung || 0;
-    const steht = ((p?.kriterien || []).length || (p?.ausstattung || []).length) ? 1 : 0;
+    /* Nur die weichen Wuensche zaehlen, nicht die Ausstattung (19.11.2026).
+       Im Lauf vom 19.11.2026 antwortete Ben auf die Ausstattungsfrage
+       "Pool" - und die Gewichtungsfrage sprang danach direkt zu "Faellt
+       dir noch etwas ein?". Die offene Frage nach den Bewertungen
+       (Sauberkeit, Ruhe, Essen) kam nie. Grund: Diese Zeile stammt aus
+       der Zeit, als beides ein Thema war, und zaehlte die Ausstattung
+       mit. Seit Gewichten und Ausschliessen getrennt sind, hat die
+       Ausstattung hier nichts mehr zu suchen. */
+    const steht = (p?.kriterien || []).length ? 1 : 0;
     return Math.max(gefragt, steht);
   },
 
@@ -7391,6 +7504,54 @@ const Werkzeugkasten = {
   /* Die Rueckfrage dazu - gebaut wie artRueckfrage, eine Frage je Zug.
      Sie nennt die Temperatur, damit die Person entscheiden kann, statt
      nur zu hoeren, dass etwas nicht passt. */
+  /* Eine Region ausdruecklich DAZUNEHMEN (19.11.2026).
+     ------------------------------------------------------------------
+     Ben im Lauf vom 19.11.2026: "Gerne bis 20 gehen und noch kappstadt
+     mit aufnehmen." Wer dazunehmen sagt, hat die Entscheidung schon
+     getroffen, die `widerspruchRueckfrage` sonst stellt - "Soll ich
+     Kapstadt trotzdem dazunehmen?" waere seine eigene Aussage als Frage
+     zurueck. Dann gilt sofort, was der Knopf "Kapstadt trotzdem" getan
+     haette: die Liste, fuer die die Richtung stand, plus die neue Region.
+
+     Gesagt wird es trotzdem, mit der Temperatur dazu - und mit den
+     Regionen, die durch eine neue Gradgrenze im selben Satz dazukommen.
+     Sonst stuende "Ich habe Suedtirol, New York, Mallorca aufgenommen"
+     nur in der Behauptung des Modells, wie im Lauf.
+
+     Gibt true zurueck, wenn dazugenommen wurde. */
+  zielDazunehmen(kern, p, ids, geaendert) {
+    const letzte = (kern.lauf.gespraech || []).filter((n) => n.role === "user").slice(-1)
+      .map((n) => String(n.content || "")).join(" ");
+    if (!/dazu|hinzu|mit\s*(auf)?nehmen|mitnehmen|mit\s*rein|erg(ä|ae)nz|zus(ä|ae)tzlich/i.test(letzte)) return false;
+    if (!(p.zieleErlaubt || []).length || !(ids || []).length) return false;
+    const label = (Politik.THEMEN || []).find((t) => t.id === p.richtung)?.label || p.richtung;
+    const vorher = (kern.lauf.richtungRegionen || []).slice();
+    const erlaubt = (p.zieleErlaubt || []).filter((x) => !ids.includes(x));
+    p.zieleAuswahl = [...new Set([...erlaubt, ...ids])];
+    p.zielId = null; p.zielOffen = false;
+    delete p.richtung; delete p.zieleErlaubt; delete p.zielVorgemerkt; delete p.zieleVorgemerkt;
+    (geaendert || []).push("zieleAuswahl");
+    for (const id of ids) (kern.lauf.widerspruchGefragt ||= {})[id] = true;
+    kern.notieren("ziel_dazugenommen", { ziele: ids, anzahl: p.zieleAuswahl.length });
+    const monatW = typeof MONATSNAMEN !== "undefined" && p.monat ? MONATSNAMEN[p.monat - 1] : null;
+    const teile = [];
+    const durchGrenze = this.regionenMitHaeusern(p, erlaubt).filter((x) => !vorher.includes(x));
+    if (vorher.length && durchGrenze.length) {
+      const l = this.regionenListe(durchGrenze);
+      const g = p.mindestGrad ?? kern.lauf.spanneNeu ?? null;
+      if (l) teile.push(`${g != null ? `Bis ${g} Grad ` : "Damit "}${l.mehrzahl ? "kommen" : "kommt"} ${l.text} dazu`);
+    }
+    for (const id of ids) {
+      const zz = typeof ZIEL_NACH_ID !== "undefined" ? ZIEL_NACH_ID[id] : null;
+      const temp = zz && typeof grad === "function" && p.monat ? grad(zz, p.monat) : null;
+      teile.push(`${zz?.name || id} nehme ich wie gewünscht mit${temp != null && monatW ? ` - dort sind es im ${monatW} etwa ${temp} Grad, also nicht mehr ${label}` : ""}`);
+    }
+    (kern.lauf.annahmeOffen ||= []).push({ thema: "ziel", eigenesTun: true,
+      text: `${teile.join(". ")}.`, felder: { zieleAuswahl: p.zieleAuswahl.slice() } });
+    kern.lauf.richtungRegionen = p.zieleAuswahl.slice();
+    return true;
+  },
+
   widerspruchRueckfrage(p, lauf) {
     if (!p || !lauf) return null;
     const vorgemerkt = [p.zielVorgemerkt, ...(p.zieleVorgemerkt || [])].filter(Boolean);
@@ -7460,10 +7621,35 @@ const Werkzeugkasten = {
        "Suedtirol" enthaelt "tirol". Ohne Wortgrenze haette der Satz "am
        liebsten Suedtirol" auch die Region Tirol freigegeben - und das
        Modell haette sie setzen duerfen. */
-    return woerter.some((w) => {
+    if (woerter.some((w) => {
       const sicher = w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       return new RegExp(`(^|[^a-zäöüß])${sicher}([^a-zäöüß]|$)`, "i").test(gesagt);
-    });
+    })) return true;
+    /* Ein Tippfehler macht eine Region nicht ungenannt (19.11.2026).
+       ----------------------------------------------------------------
+       Im Lauf vom 19.11.2026 schrieb Ben "kappstadt". Die Sperre oben
+       sucht das ganze Wort - "kapstadt" kam nicht vor, also verwarf der
+       Kern die Region, die das Modell richtig verstanden hatte.
+
+       Erlaubt ist ein einziger Buchstabe Unterschied (dazu, weg, anders),
+       und nur bei Namen ab sechs Buchstaben: Bei "Wien", "Kreta" oder
+       "Krabi" waere ein Buchstabe schon fast ein anderes Wort, bei
+       "Kapstadt", "Mallorca" oder "Lappland" nicht. */
+    const nahe = (a, b) => {
+      if (Math.abs(a.length - b.length) > 1) return false;
+      let i = 0, j = 0, fehler = 0;
+      while (i < a.length && j < b.length) {
+        if (a[i] === b[j]) { i++; j++; continue; }
+        if (++fehler > 1) return false;
+        if (a.length > b.length) i++;
+        else if (b.length > a.length) j++;
+        else { i++; j++; }
+      }
+      return fehler + (a.length - i) + (b.length - j) <= 1;
+    };
+    const gesagteWoerter = gesagt.split(/[^a-zäöüß]+/).filter((x) => x.length >= 6);
+    return woerter.filter((w) => w.length >= 6 && !w.includes(" "))
+      .some((w) => gesagteWoerter.some((g) => nahe(g, w)));
   },
 
   // Welche Jahreszeit die Person im Gespraech genannt hat
@@ -7918,7 +8104,7 @@ const Werkzeugkasten = {
     // Die Himmelsrichtung gehoert dazu, seit sich mehrere Regionen
     // gleichzeitig anhaken lassen - sie steht dann in der Spalte
     return JSON.stringify([p.maxPreis || null, p.maxStrand ?? null, p.mindestbewertung || null, p.mindestSterne || null,
-      (p.kriterien || []).map((k) => k.id), p.ausstattung || [], p.verpflegung || null, p.nurAngebote || false,
+      (p.kriterien || []).map((k) => k.id), p.ausstattung || [], p.verpflegung || null,
       p.wlanInklusive || false,
       p.zielId || null, (p.zieleErlaubt || []).slice().sort()]);
   },
@@ -8137,10 +8323,14 @@ const Werkzeugkasten = {
       /* Der Anreisetag. Mit festen Daten aus der Suche ist er da, sonst
          muss die Person ihn nennen - ohne ihn laesst die Seite nicht
          buchen, und der Knopf auf der Hausseite bleibt gesperrt.
-         Mit Flug wird er hier nicht gefragt: Welche Tage gehen, haengt an
-         der Verbindung und damit am Haus, das noch nicht feststeht. Dort
-         fragt die Buchungsstrecke danach, mit den echten Flugtagen. */
-      anreise: !!p.anreise || !!(p.von && p.bis) || !!p.flug,
+         Mit Flug wurde er hier bis zum 19.11.2026 nicht gefragt - mit der
+         Begruendung, welche Tage gehen, haenge an der Verbindung. Das gilt
+         nicht mehr: Geflogen wird taeglich (so sagt es der Agent selbst).
+         Ben am 19.11.2026: "Er hat sich nicht an seinen Fahrplan gehalten
+         und hat nicht gefragt, ob die ein genaues Datum vor Augen haben
+         oder ob die flexibel sind." Im Lauf stand stattdessen erst ganz am
+         Ende "Den genauen Anreisetag legen wir beim Buchen fest". */
+      anreise: !!p.anreise || !!(p.von && p.bis),
     };
     /* Eine Frage wird hoechstens zweimal gestellt.
        ------------------------------------------------------------------
@@ -9166,6 +9356,34 @@ const Werkzeugkasten = {
     if (lauf.abschlussFaellig) return "buchung_abschliessen";
     // Der Rundgang laeuft: erst ansehen, dann vorlegen
     if (lauf.rundgang?.ids?.length) return "haeuser_ansehen";
+    /* Eine Frage zum Angebot wird sichtbar im FAQ nachgeschlagen
+       (19.11.2026).
+       ----------------------------------------------------------------
+       Ben am 19.11.2026: "Das mit dem im FAQ-Nachschlagen klappt immer
+       noch nicht richtig. Und dann hat er ploetzlich die Antwort. Im
+       besten Fall sucht er aktiv selbst im FAQ. Dann muss das aber in der
+       freien Version auch funktionieren, und in der verdeckten muss sich
+       die Seite kurz zumachen, waehrend er sucht."
+
+       `faq_nachschlagen` faehrt das FAQ sichtbar an - aber nur, wenn das
+       Modell es aufruft. Tat es das nicht, antwortete es frei, oder der
+       Kern fuellte die Luecke still aus den FAQ-Daten (`faq_vom_kern`).
+       In beiden Faellen stand die Antwort da, ohne dass jemand gesucht
+       hatte.
+
+       Jetzt wird das Werkzeug erzwungen, sobald zwei Dinge zusammenkommen:
+       Das Modell sagt, die Nachricht sei eine Frage (Bedeutung - sein
+       Teil), und das FAQ hat dazu einen Eintrag (Wissen - der Teil des
+       Kerns). Je Nachricht der Person hoechstens einmal. */
+    if (lauf.nachrichtArt === "frage" && typeof faqSuchen === "function") {
+      const nutzer = (lauf.gespraech || []).filter((n) => n.role === "user");
+      const schluessel = nutzer.length;
+      if (schluessel && lauf.faqErzwungenFuer !== schluessel) {
+        let treffer = [];
+        try { treffer = faqSuchen(String(nutzer[nutzer.length - 1].content || ""), 1); } catch { treffer = []; }
+        if (treffer.length) { lauf.faqErzwungenFuer = schluessel; return "faq_nachschlagen"; }
+      }
+    }
     /* Der Monatsvergleich geht allem voran.
        ----------------------------------------------------------------
        Er entscheidet, mit welchem Monat der Rest ueberhaupt rechnet -
@@ -9441,7 +9659,6 @@ const Werkzeugkasten = {
      Vorgabe nichts, die die andere kennt. */
   lockerungen(p) {
     return [
-      { label: "die Vorgabe, dass es reduziert sein soll", weg: (x) => { delete x.nurAngebote; }, wenn: () => p.nurAngebote },
       { label: "die Vorgabe, dass WLAN ohne Aufpreis dabei ist", weg: (x) => { delete x.wlanInklusive; }, wenn: () => p.wlanInklusive },
       { label: p.verpflegung && typeof BOARD_LABELS !== "undefined" ? `die Vorgabe ${BOARD_LABELS[p.verpflegung]}` : "die Verpflegung", weg: (x) => { delete x.verpflegung; }, wenn: () => p.verpflegung },
       { label: "die Preisgrenze", weg: (x) => { delete x.maxPreis; delete x.budgetGesamt; }, wenn: () => p.maxPreis || p.budgetGesamt },
@@ -9731,7 +9948,6 @@ const Werkzeugkasten = {
       if (!e) return { ausstattungEgal: true, kriterien: [] };
       return { ausstattung: (p.ausstattung || []).filter((x) => x !== e.merkmal) };
     },
-    angebote: () => ({ nurAngebote: null }),
     wlan: () => ({ wlanInklusive: null }),
   },
 
@@ -10122,7 +10338,6 @@ const Werkzeugkasten = {
     strand: () => "den Strandabstand offen lassen",
     bewertung: () => "die Mindestnote weglassen",
     sterne: () => "die Sternevorgabe weglassen",
-    angebote: () => "auch nicht reduzierte Häuser zeigen",
     wlan: () => "WLAN nicht voraussetzen",
     ausstattung: () => "die Ausstattungswünsche lockern",
   },
@@ -10153,7 +10368,7 @@ const Werkzeugkasten = {
   ENGSTELLE_KURZ: {
     gesamt: "Budget", preis: "Preisgrenze", ziel: "Region", verpflegung: "Verpflegung",
     gruppe: "Gruppengröße", strand: "Strandnähe", bewertung: "Mindestnote",
-    sterne: "Sterne", ausstattung: "Ausstattung", angebote: "Nur Angebote", wlan: "WLAN",
+    sterne: "Sterne", ausstattung: "Ausstattung", wlan: "WLAN",
   },
 
   ENGSTELLE: {
@@ -10190,7 +10405,6 @@ const Werkzeugkasten = {
       const name = (typeof AMENITY_LABELS !== "undefined" && AMENITY_LABELS[e.merkmal]) || e.merkmal;
       return `die Vorgabe „${name}“`;
     },
-    angebote: () => "die Vorgabe, dass es reduziert sein soll",
     wlan: () => "die Vorgabe, dass WLAN ohne Aufpreis dabei ist",
     art: (p) => (Werkzeugkasten.seitenTyp(p) === "apartment" ? "die Beschränkung auf Ferienwohnungen" : "die Beschränkung auf Hotels"),
   },
@@ -10409,7 +10623,7 @@ const Werkzeugkasten = {
        Folge einer eigenen Entscheidung, und das gehoert dazu. */
     const etwasVorgegeben = !!(p.richtung || p.zielId || p.verpflegung || p.maxPreis
       || p.budgetGesamt || p.maxStrand != null || p.mindestbewertung || p.mindestSterne
-      || (p.kriterien || []).length || p.nurAngebote || p.wlanInklusive);
+      || (p.kriterien || []).length || p.wlanInklusive);
     if (kette.katalog > liste.length && !p.zielId && etwasVorgegeben) {
       const gruende = [];
       if (kette.woanders) {
@@ -10636,7 +10850,6 @@ const Werkzeugkasten = {
       verpflegung: p.verpflegung ? [p.verpflegung] : undefined,
       mindestbewertung: p.mindestbewertung || undefined,
       sterne: p.mindestSterne ? [5, 4, 3].filter((s) => s >= p.mindestSterne) : undefined,
-      nurAngebote: p.nurAngebote || undefined,
       wlanInklusive: p.wlanInklusive || undefined,
     };
   },
@@ -10733,7 +10946,6 @@ const Werkzeugkasten = {
        Grenze zu lockern und es zu sagen, als eine leere Liste zu zeigen.
        Sie steht am Ende, weil sie ein ausgesprochener Wunsch ist und
        nicht vor den abgeleiteten Punkten weichen soll. */
-    { id: "angebote", tun: (p) => { if (!p.nurAngebote) return null; delete p.nurAngebote; return "die Vorgabe, dass es reduziert sein soll"; } },
     { id: "wlan", tun: (p) => { if (!p.wlanInklusive) return null; delete p.wlanInklusive; return "die Vorgabe, dass WLAN ohne Aufpreis dabei ist"; } },
   ],
 
@@ -11104,7 +11316,6 @@ const Werkzeugkasten = {
     if (p.maxStrand != null) t.push(`Strand bis ${p.maxStrand < 1 ? `${Math.round(p.maxStrand * 1000)} m` : `${p.maxStrand} km`}`);
     if (p.mindestbewertung) t.push(`Note ab ${String(p.mindestbewertung).replace(".", ",")}`);
     if (p.mindestSterne) t.push(`ab ${p.mindestSterne} Sterne`);
-    if (p.nurAngebote) t.push("nur Angebote");
     if (p.wlanInklusive) t.push("WLAN ohne Aufpreis");
     const f = this.filterAusStand(p);
     if (f.ausstattung.length) t.push(f.ausstattung.map((x) => (typeof AMENITY_LABELS !== "undefined" && AMENITY_LABELS[x]) || x).join(", "));
@@ -11135,7 +11346,6 @@ const Werkzeugkasten = {
       maxStrand: p.maxStrand ?? null,
       mindestbewertung: p.mindestbewertung || null,
       mindestSterne: p.mindestSterne || null,
-      nurAngebote: !!p.nurAngebote,
       wlanInklusive: !!p.wlanInklusive,
       flug: !!p.flug,
       flugKlasse: p.flugKlasse || null,

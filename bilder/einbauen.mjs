@@ -182,6 +182,17 @@ function titelbildVon(id) {
   return "";
 }
 
+// Kleine Fassung des Titelbilds fuer Karten (600 Pixel breit, rund 20 KB
+// statt 280 KB). Angelegt von bilder/kartenbilder.mjs - neue Titelbilder
+// brauchen dort einen Lauf, sonst fehlt die Kartenfassung.
+// Ohne regulaeren Ausdruck: diese Datei entsteht aus einem Template-Literal.
+function kartenbildVon(id) {
+  const t = titelbildVon(id);
+  if (!t) return "";
+  const punkt = t.lastIndexOf(".");
+  return punkt > 0 ? t.slice(0, punkt) + "-karte.jpg" : t;
+}
+
 // Wird das Titelbild eines Mietwagens nur geliehen? Dann muss das an der
 // Karte stehen - ein Foto, das ein anderes Modell zeigt, ohne Hinweis waere
 // eine falsche Angabe.

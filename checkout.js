@@ -285,7 +285,7 @@ function renderStep1() {
         <div id="reisendeListe">${reisende.map(zeile).join("")}</div>
 
         <h3 class="formular-titel">Kontakt für die Buchung</h3>
-        <div class="field"><label for="gMail">E-Mail</label><input class="input" id="gMail" type="email" value="${guest.mail}" required placeholder="alex@beispiel.de" /></div>
+        <div class="field"><label for="gMail">E-Mail <span class="hint">(freiwillig)</span></label><input class="input" id="gMail" type="email" value="${guest.mail}" placeholder="alex@beispiel.de" /></div>
 
         <h3 class="formular-titel">Ankunft</h3>
         <div class="field"><label for="cAnkunft">Voraussichtliche Ankunft am Haus</label>
@@ -466,7 +466,7 @@ function renderStep3() {
 function renderSummary() {
   const p = priceLines();
   const media = isStay()
-    ? `<div class="summary-media" data-bild="${titelbildVon(entry.id)}"></div>`
+    ? `<div class="summary-media" data-bild="${kartenbildVon(entry.id)}"></div>`
     : `<div class="car-visual small" style="margin-bottom:12px">${entry.type === "car" ? ICONS.car : ICONS.plane}</div>`;
 
   document.getElementById("checkoutSummary").innerHTML = `

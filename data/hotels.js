@@ -101,7 +101,6 @@ const HOTELS = [
     category: "strand",
     stars: 4,
     pricePerNight: 142,
-    oldPrice: 168,
     rating: 4.6,
     reviewCount: 1284,
     image: { type: "beach", palette: "azur" },
@@ -231,7 +230,6 @@ const HOTELS = [
     category: "luxus",
     stars: 5,
     pricePerNight: 231,
-    oldPrice: 289,
     rating: 4.7,
     reviewCount: 956,
     image: { type: "city", palette: "dusk" },
@@ -362,7 +360,6 @@ const HOTELS = [
     category: "familie",
     stars: 4,
     pricePerNight: 205,
-    oldPrice: 245,
     rating: 4.4,
     reviewCount: 1102,
     image: { type: "pool", palette: "azur" },
@@ -581,7 +578,6 @@ const HOTELS = [
     category: "strand",
     stars: 4,
     pricePerNight: 149,
-    oldPrice: 179,
     rating: 4.4,
     reviewCount: 1893,
     shortDescription:
@@ -806,7 +802,6 @@ const HOTELS = [
     category: "strand",
     stars: 4,
     pricePerNight: 161,
-    oldPrice: 189,
     rating: 4.6,
     reviewCount: 733,
     shortDescription:
@@ -956,7 +951,6 @@ const HOTELS = [
     category: "familie",
     stars: 4,
     pricePerNight: 187,
-    oldPrice: 219,
     rating: 4.2,
     reviewCount: 2140,
     shortDescription:
@@ -1282,7 +1276,6 @@ const HOTELS = [
     category: "familie",
     stars: 4,
     pricePerNight: 176,
-    oldPrice: 209,
     rating: 4.3,
     reviewCount: 1642,
     shortDescription:
@@ -1629,7 +1622,6 @@ const HOTELS = [
     category: "familie",
     stars: 4,
     pricePerNight: 184,
-    oldPrice: 219,
     rating: 4.2,
     reviewCount: 2341,
     shortDescription:
@@ -2099,7 +2091,6 @@ const HOTELS = [
     category: "familie",
     stars: 4,
     pricePerNight: 186,
-    oldPrice: 214,
     rating: 4.4,
     reviewCount: 1918,
     shortDescription:
@@ -2602,7 +2593,6 @@ const HOTELS = [
     category: "familie",
     stars: 4,
     pricePerNight: 172,
-    oldPrice: 198,
     rating: 4.2,
     reviewCount: 2087,
     shortDescription:
@@ -2947,7 +2937,6 @@ const HOTELS = [
     category: "familie",
     stars: 4,
     pricePerNight: 118,
-    oldPrice: 139,
     rating: 4.3,
     reviewCount: 1642,
     shortDescription:
@@ -5325,7 +5314,6 @@ const HOTELS = [
     category: "strand",
     stars: 4,
     pricePerNight: 158,
-    oldPrice: 184,
     rating: 4.6,
     reviewCount: 1132,
     shortDescription:
@@ -5515,7 +5503,6 @@ const HOTELS = [
     category: "strand",
     stars: 4,
     pricePerNight: 152,
-    oldPrice: 178,
     rating: 4.4,
     reviewCount: 1380,
     shortDescription:
@@ -5705,7 +5692,6 @@ const HOTELS = [
     category: "strand",
     stars: 4,
     pricePerNight: 188,
-    oldPrice: 214,
     rating: 4.6,
     reviewCount: 964,
     shortDescription:
@@ -5895,7 +5881,6 @@ const HOTELS = [
     category: "strand",
     stars: 4,
     pricePerNight: 146,
-    oldPrice: 169,
     rating: 4.5,
     reviewCount: 1287,
     shortDescription:

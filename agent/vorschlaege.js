@@ -149,7 +149,7 @@ const Vorschlaege = {
 
   karte(k, i, offenlegung, kennzeichnung = "etikett", istFavorit = false) {
     const item = k.item;
-    const bild = typeof titelbildVon === "function" ? titelbildVon(item.id) : null;
+    const bild = typeof kartenbildVon === "function" ? kartenbildVon(item.id) : null;
     const note = (item.rating || 0).toFixed(1).replace(".", ",");
     /* Die Kennzeichnung liegt im Bild, am unteren Rand.
        ----------------------------------------------------------------

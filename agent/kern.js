@@ -2018,6 +2018,31 @@ const Kern = {
        abhaengt - an `chipWirkung`, nicht an `gefragt`. Er vergleicht den
        Wortlaut genau, kann also nichts aufgreifen, was nicht von ihm
        stammt. */
+    /* Die Antwort auf die Anzahlfrage (19.11.2026, siehe
+       anzahlVorRundgang). Vor dem Chip-Leser, weil der die Wirkung
+       danach loescht. Gelesen wird der Wortlaut der Person: "mehr",
+       "lieber mehr", "noch ein paar" fuehrt zur Nachfrage, eine Zahl von
+       zwei bis sechs gilt sofort. Ein "ja" oder "passt" laesst es bei
+       der genannten Anzahl. */
+    if (this.lauf.anzahlFrageOffen || this.lauf.anzahlZahlOffen) {
+      const roh = String(t || "").toLowerCase();
+      const WORT = { zwei: 2, drei: 3, vier: 4, "fünf": 5, fuenf: 5, sechs: 6 };
+      const ziffer = roh.match(/(^|[^0-9])([2-6])([^0-9]|$)/);
+      const wort = Object.keys(WORT).find((w) => new RegExp(`\\b${w}\\b`).test(roh));
+      const zahl = ziffer ? Number(ziffer[2]) : wort ? WORT[wort] : null;
+      if (zahl && this.lauf.profil) {
+        this.lauf.profil.anzahlVorschlaege = zahl;
+        (this.lauf.profil.vonPerson ||= {}).anzahlVorschlaege = true;
+        this.lauf.vorgehenFuer = null;
+        this.notieren("anzahl_gewaehlt", { anzahl: zahl });
+      } else if (this.lauf.anzahlFrageOffen && /mehr|weitere|noch ein paar|gr(ö|oe)(ß|ss)er|zus(ä|ae)tzlich/.test(roh)) {
+        this.lauf.anzahlMehrOffen = true;
+        this.lauf.vorgehenFuer = null;
+        this.notieren("anzahl_mehr", {});
+      }
+      this.lauf.anzahlFrageOffen = false;
+      this.lauf.anzahlZahlOffen = false;
+    }
     if (this.lauf.chipWirkung) {
       const gelesen = Werkzeugkasten.chipAntwortLesen(this, t);
       if (gelesen) {
@@ -2960,6 +2985,9 @@ const Kern = {
               const sp = Werkzeugkasten.spanneRueckfrage(p2, this.lauf);
               if (sp) {
                 this.lauf.spanneFrage = 1;
+                // Fuer die Antwort: welche zwei Zahlen zur Wahl standen
+                // (siehe stand_merken, "Die Antwort auf die eigene Frage").
+                this.lauf.spanneOffen = { grenze: sp.grenze, weiter: sp.weiter };
                 zugBelegt = true;
                 this.notieren("spanne_rueckfrage", { grenze: sp.grenze, weiter: sp.weiter,
                   jetzt: sp.jetzt, dann: sp.dann });
@@ -4287,6 +4315,39 @@ const Kern = {
      zweiten Knopf selbst. */
   anzahlVorRundgang(p, wieViele = 3) {
     if (!this.lauf) return null;
+    /* "Lieber mehr vergleichen" - dann: wie viele? (19.11.2026)
+       ----------------------------------------------------------------
+       Ben im Lauf vom 19.11.2026: "Er hat einfach nur gefragt, bist du
+       damit zufrieden oder moechtest du mehr Haeuser? Dann habe ich gesagt,
+       ich moechte mehr Haeuser, und jetzt hat er mir doch nur 3
+       ausgegeben. Er muss eine Anzahl erfragen und er muss es dann auch
+       machen."
+
+       Der Knopf hatte keine Wirkung (`{}`), also lief der Rundgang mit
+       drei Haeusern weiter. Jetzt folgt eine zweite Frage mit Zahlen -
+       erst hier, nicht schon bei der ersten: Wer nicht mehr will, soll
+       nicht zu einer Zahl gedraengt werden, weil sich mit sechs Karten
+       der Reiz aendert (der Favorit rutscht unter die Bildkante). Wer
+       ausdruecklich mehr will, bekommt die Wahl. */
+    if (this.lauf.anzahlMehrOffen) {
+      this.lauf.anzahlMehrOffen = false;
+      this.lauf.vorgehenFuer = null;   // siehe unten: sonst erzwingt niemand die naechste Suche
+      const optionen = [4, 5, 6];
+      const chips = optionen.map((n) => `${n} vergleichen`);
+      const satz = "Gern. Wie viele möchtest du vergleichen - 4, 5 oder 6?";
+      this.sagen(satz);
+      this.gespraechPush({ role: "assistant", content: satz });
+      this.lauf.chipWirkung = Object.fromEntries(optionen.map((n, i) => [chips[i], { anzahlVorschlaege: n }]));
+      this.lauf.chipThema = null;
+      this.lauf.chips = chips;
+      this.lauf.anzahlZahlOffen = true;
+      AgentPanel.setSuggestions(this.lauf.chips);
+      this.lauf.kernWartet = true;
+      this.notieren("anzahl_nachgefragt", {});
+      this.sichern();
+      return { ergebnis: { nichtVorgelegt: true, grund: "wartet auf die Anzahl",
+        hinweis: "Der Chat hat gefragt, wie viele Haeuser verglichen werden sollen. Ruf KEIN Werkzeug und schreib nichts dazu." } };
+    }
     if (this.lauf.anzahlBestaetigt || this.lauf.profil?.anzahlVorschlaege) return null;
     this.lauf.anzahlBestaetigt = true;
     /* Den Suchstempel loeschen, sonst steht der Halt in einer Sackgasse.
@@ -4329,6 +4390,7 @@ const Kern = {
     this.lauf.chipWirkung = { [ja]: {}, [mehr]: {} };
     this.lauf.chipThema = null;
     this.lauf.chips = [ja, mehr];
+    this.lauf.anzahlFrageOffen = true;   // gelesen am Anfang des naechsten Zugs (zug)
     AgentPanel.setSuggestions(this.lauf.chips);
     this.lauf.kernWartet = true;
     this.notieren("anzahl_bestaetigung", { anzahl: n });

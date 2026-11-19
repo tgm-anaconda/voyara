@@ -155,6 +155,13 @@ const FAQ = [
   { id: "f-flugtage", thema: "flug", frage: "Kann ich an jedem Tag anreisen?",
     antwort: "Kannst du: Alle Verbindungen fliegen täglich, von jedem unserer Flughäfen zu jedem Ziel. Den Anreisetag wählst du frei.",
     stichworte: ["flugtag", "anreisetag", "nicht jeder tag", "wochentag", "warum kein datum", "täglich"] },
+  /* Seit dem 19.11.2026. Im Lauf an diesem Tag fragte Ben "fliegt ihr
+     auch ueber Feiertage?" - im FAQ stand nichts dazu, und das Modell
+     antwortete frei. Die Antwort war zufaellig richtig. */
+  { id: "f-feiertage", thema: "flug",
+    frage: "Fliegt ihr auch an Feiertagen, zum Beispiel über Ostern oder Weihnachten?",
+    antwort: "Ja. Geflogen wird täglich, auch an Feiertagen wie Ostern, Pfingsten oder Weihnachten. Der Flugpreis hängt nicht vom Wochentag ab.",
+    stichworte: ["feiertag", "feiertage", "ostern", "pfingsten", "weihnachten", "silvester", "ferien", "täglich", "taeglich"] },
   { id: "f-klasse", thema: "flug", frage: "Was kostet Premium Economy oder Business?",
     antwort: "Die Klasse betrifft nur den Flug, nicht die Unterkunft. Premium Economy kostet das 1,5-fache des Economy-Preises, Business das 2,6-fache, jeweils pro Person für Hin- und Rückflug. Die Klasse stellst du auf der Unterkunftsseite unter „Flug dazu“ ein.",
     stichworte: ["klasse", "business", "premium economy", "economy", "sitzklasse"] },
@@ -198,7 +205,7 @@ const FAQ = [
     antwort: "Weil Unterkünfte in der Hauptsaison mehr kosten als in der Nebensaison. Auf jeder Karte steht, ob dein Zeitraum in der Haupt- oder Nebensaison liegt.",
     stichworte: ["saison", "hauptsaison", "nebensaison", "preis unterschiedlich", "teurer"] },
   { id: "f-bestpreis", thema: "preise", frage: "Bekomme ich den besten Preis?",
-    antwort: "Wir zeigen den Preis, den das Haus uns für deinen Zeitraum gibt. Ein reduzierter Preis ist mit „Angebot“ gekennzeichnet, und links lässt sich nach reduzierten Häusern filtern.",
+    antwort: "Wir zeigen den Preis, den das Haus uns für deinen Zeitraum gibt. Sonderangebote oder reduzierte Häuser gibt es bei uns nicht - jedes Haus kostet, was dort steht.",
     stichworte: ["bestpreis", "günstiger", "angebot", "rabatt", "reduziert", "billiger"] },
   { id: "f-versicherung", thema: "preise", frage: "Brauche ich eine Reiserücktrittsversicherung?",
     antwort: "Nötig ist sie nicht. Sie lohnt sich, wenn du weit im Voraus buchst oder die Stornofrist knapp ist. In der Kasse steht sie als Extra für 49 Euro; dort kannst du sie an- oder abwählen.",

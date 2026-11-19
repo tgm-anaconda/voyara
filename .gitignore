@@ -16,3 +16,4 @@ _pruefung/
 .env*
 .env.local
 .env*.local
+_altvergleich/

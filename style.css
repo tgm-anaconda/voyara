@@ -928,7 +928,25 @@ body.agent-collapsed .agent-head .icon-btn { margin-left: 0; transform: rotate(4
 .gallery > div { background-size: cover; background-position: center; background-color: var(--brand-100); }
 .gallery > div:first-child { grid-row: span 2; }
 
-.detail-layout { display: grid; grid-template-columns: 1fr 320px; gap: 26px; align-items: start; padding: 26px 0 40px; }
+.detail-layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 26px; align-items: start; padding: 26px 0 40px; }
+/* Die Seite passt in den Platz neben dem Chat (19.11.2026).
+   ------------------------------------------------------------------
+   Gemeldet aus Bens Lauf: Auf der Hausseite war die Buchungsspalte
+   rechts abgeschnitten, buchen ging nicht mehr richtig. Gemessen bei
+   1520 Pixel Fensterbreite und offener Chat-Spalte (380 Pixel): Der
+   Inhalt war 1180 Pixel breit, Platz waren 1140.
+
+   Ursache: `.app-main` ist ein Flex-Container, und ein Flex-Element
+   wird nie schmaler als sein Inhalt (`min-width: auto`). Fuer schmale
+   Bildschirme gab es diese Regel schon (`@media max-width`, weiter
+   unten); auf dem Desktop nicht, weil dort ohne Chat-Spalte immer genug
+   Platz war. Mit Spalte nicht mehr.
+
+   Das war am 15.11.2026 schon genauso (nachgemessen am alten Stand) -
+   sichtbar wird es erst, wenn das Fenster schmaler als etwa 1560 Pixel
+   ist und die Spalte offen steht. */
+.app-main > *, .app-main .wrap { min-width: 0; }
+.app-main .wrap { max-width: min(var(--wrap), 100%); }
 .detail-main { display: flex; flex-direction: column; gap: 22px; }
 .panel { background: #fff; border: 1px solid var(--line); border-radius: var(--r-lg); padding: 22px; }
 .panel h2 { font-size: 1.12rem; color: var(--brand-900); margin-bottom: 14px; }
@@ -3149,3 +3167,8 @@ body.vorschlag-offen { overflow: hidden; }
 .flug-preis { text-align: left; white-space: nowrap; }
 .flug-preis strong { display: block; font-size: 1.1rem; }
 .flug-preis small { font-size: .73rem; color: var(--ink-500); }
+
+/* "Ueberspringen" neben "Weiter" auf dem Kontobildschirm (19.11.2026):
+   sichtbar, aber zurueckhaltender als der Hauptknopf. */
+.einstieg-knopf.einstieg-knopf-leise { background: transparent; color: inherit; border: 1px solid currentColor; opacity: .75; margin-right: 10px; }
+.einstieg-knopf.einstieg-knopf-leise:hover { opacity: 1; }

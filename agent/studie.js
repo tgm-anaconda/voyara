@@ -400,15 +400,16 @@ const Studie = {
       <p class="einstieg-vorspann">
         Wie auf jeder Buchungsseite bist du hier angemeldet. Die Seite trägt diese
         Angaben beim Buchen für dich ein, so wie es dein Profil bei einem echten
-        Anbieter tun würde.
+        Anbieter tun würde. <strong>Alle Angaben sind freiwillig</strong> - du kannst
+        diesen Schritt auch überspringen.
       </p>
 
       <form class="konto-form" id="kontoForm" novalidate>
         <div class="konto-zeile">
-          <label>Vorname<input type="text" name="vorname" autocomplete="given-name" required></label>
-          <label>Nachname<input type="text" name="nachname" autocomplete="family-name" required></label>
+          <label>Vorname<input type="text" name="vorname" autocomplete="given-name"></label>
+          <label>Nachname<input type="text" name="nachname" autocomplete="family-name"></label>
         </div>
-        <label>E-Mail<input type="email" name="mail" autocomplete="email" required placeholder="name@beispiel.de"></label>
+        <label>E-Mail<input type="email" name="mail" autocomplete="email" placeholder="name@beispiel.de"></label>
         <p class="konto-fehler" hidden></p>
       </form>
 
@@ -421,39 +422,69 @@ const Studie = {
           abschließen, verlosen wir ${STUDIE.gutscheine} Amazon-Gutscheine im Wert von je
           ${STUDIE.gutscheinWert} Euro. Gewinner werden per Mail benachrichtigt, danach wird
           die Liste gelöscht. Sie ist nicht mit deinen Antworten verknüpft, und du bekommst
-          keine weitere Post.
+          keine weitere Post. Ohne E-Mail nimmst du an der Verlosung nicht teil.
         </span>
       </div>
 
       <div class="einstieg-fuss">
+        <button type="button" class="einstieg-knopf einstieg-knopf-leise" data-ueberspringen>Überspringen</button>
         <button type="submit" form="kontoForm" class="einstieg-knopf">Weiter</button>
       </div>`);
 
     const form = el.querySelector("#kontoForm");
     const fehler = el.querySelector(".konto-fehler");
-    form.addEventListener("submit", (e) => {
-      e.preventDefault();
-      const f = new FormData(form);
-      const konto = {
-        vorname: String(f.get("vorname") || "").trim(),
-        nachname: String(f.get("nachname") || "").trim(),
-        mail: String(f.get("mail") || "").trim(),
-      };
-      const mailOk = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(konto.mail);
-      if (!konto.vorname || !konto.nachname || !mailOk) {
-        fehler.textContent = !mailOk && konto.vorname && konto.nachname
-          ? "Die E-Mail-Adresse sieht nicht vollständig aus."
-          : "Bitte fülle alle drei Felder aus.";
-        fehler.hidden = false;
-        return;
-      }
+    /* Das Konto ist freiwillig (19.11.2026).
+       ----------------------------------------------------------------
+       Ben am 19.11.2026: "Das ist schlecht, dass man ein Konto erstellen
+       muss. Dann werden die meisten Leute schon abspringen. Es kann
+       freiwillig gemacht werden, aber man muss es ueberspringen koennen.
+       Man muss da nichts angeben muessen."
+
+       Bis hierher liessen sich die Felder nur mit allen drei Angaben
+       verlassen. Jetzt geht beides: Ueberspringen, oder ausfuellen, was
+       man mag. Was fehlt, wird ergaenzt - der Name mit "Gast Voyara",
+       damit die Buchung spaeter trotzdem einen Namen hat und niemand
+       dort tippen muss. Eine E-Mail gibt es dann nicht, und damit auch
+       keine Teilnahme an der Verlosung (das steht im Kasten darueber).
+       Nur eine angefangene, aber unvollstaendige Adresse wird bemaengelt:
+       Die ist eher ein Tippfehler als ein Verzicht.
+
+       In den Daten steht, ob uebersprungen wurde (`kontoUebersprungen`) -
+       ein Abbruch genau an dieser Stelle waere sonst nicht von einer
+       freiwilligen Leerstelle zu unterscheiden. */
+    const weiterMit = (konto, uebersprungen) => {
       this.daten.konto = konto;
       if (typeof Account !== "undefined") Account.setzen(konto);
-      this.notieren("konto", { mailDomain: konto.mail.split("@")[1] || null });
+      this.notieren("konto", { mailDomain: konto.mail ? konto.mail.split("@")[1] || null : null,
+        uebersprungen: !!uebersprungen, platzhalter: !!konto.platzhalter });
       el.remove();
       document.body.classList.remove("startschirm-offen");
       this.phaseSetzen("aufgabe");
       this.aufgabeZeigen();
+    };
+    const PLATZHALTER = { vorname: "Gast", nachname: "Voyara", mail: "", platzhalter: true };
+    el.querySelector("[data-ueberspringen]").addEventListener("click", () => weiterMit({ ...PLATZHALTER }, true));
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const f = new FormData(form);
+      const roh = {
+        vorname: String(f.get("vorname") || "").trim(),
+        nachname: String(f.get("nachname") || "").trim(),
+        mail: String(f.get("mail") || "").trim(),
+      };
+      if (roh.mail && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(roh.mail)) {
+        fehler.textContent = "Die E-Mail-Adresse sieht nicht vollständig aus. Du kannst sie auch leer lassen.";
+        fehler.hidden = false;
+        return;
+      }
+      const leer = !roh.vorname && !roh.nachname && !roh.mail;
+      const konto = {
+        vorname: roh.vorname || (roh.nachname ? "" : PLATZHALTER.vorname),
+        nachname: roh.nachname || (roh.vorname ? "" : PLATZHALTER.nachname),
+        mail: roh.mail,
+        ...(roh.vorname || roh.nachname ? {} : { platzhalter: true }),
+      };
+      weiterMit(konto, leer);
     });
     setTimeout(() => form.querySelector("input")?.focus({ preventScroll: true }), 80);
   },
@@ -1236,6 +1267,11 @@ const Studie = {
       /* Gelost oder im Code festgestellt. Siehe Studie.auslosen:
          Abschnitt 1 der Erhebung laeuft mit fester Stufe. */
       gruppeKennzeichnungQuelle: z(d.gruppe?.kennzeichnungQuelle),
+      /* Konto uebersprungen oder ohne Namen weiter (seit 19.11.2026
+         freiwillig). Sonst waere ein leeres Konto nicht von einem
+         Abbruch an dieser Stelle zu unterscheiden. */
+      kontoUebersprungen: z(!!(d.ereignisse || []).find((e) => e.ereignis === "konto")?.uebersprungen),
+      kontoMitName: z(!!d.konto && !d.konto.platzhalter),
       zelle: (() => {
         const arm = d.umgebung?.zugang || "";
         const k = d.gruppe?.kennzeichnung || "";

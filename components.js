@@ -1757,76 +1757,38 @@ function starString(count) {
    Favorit steht, ist der REIZ dieser Erhebung - eine Blaetterung wuerde
    ihn veraendern, und zwar je nach Scrollverhalten unterschiedlich.
 
-   Deshalb bleiben alle Karten im Dokument, und nur die Bilder warten.
-   Der Agent scrollt, zaehlt und klickt unveraendert; die Messung bleibt
-   dieselbe. Geladen wird, was im Sichtfenster ist oder knapp darunter
-   (600 Pixel Vorlauf), damit beim Scrollen nichts nachhinkt.
-
-   Ohne IntersectionObserver - alte Browser, abgeschaltetes JavaScript
-   in Teilen - werden wie bisher alle sofort gesetzt. Lieber langsam als
-   ohne Bilder. */
+   Deshalb bleiben alle Karten im Dokument. Das Nachladen, das hier
+   bis zum 19.11.2026 beschrieben stand, ist wieder raus - siehe direkt
+   darunter, warum, und was stattdessen die Last senkt. */
 function applyScenes(root = document) {
-  const alle = [...root.querySelectorAll("[data-bild]")].filter((el) => el.dataset.bild);
-  if (!alle.length) return;
-  const setzen = (el) => {
+  /* Alle Bilder sofort - wie vor dem 18.11.2026.
+     ------------------------------------------------------------------
+     Am 18.11.2026 wurden die Kartenbilder auf Nachladen umgestellt: die
+     ersten 24 sofort, der Rest erst, wenn er beim Scrollen in die Naehe
+     kommt (IntersectionObserver, dazu ein Scroll-Handler, der bei jedem
+     Bild alle Karten neu vermass). Anlass waren 360 Bildanfragen und
+     rund 100 MB je Trefferliste.
+
+     Ben am 19.11.2026: "Leider sieht es jetzt super verbuggt aus, wenn
+     er runterscrollt. Die Seite hat noch gar nicht richtig geladen und
+     er scrollt schon so ganz verrueckt runter. Das hat auch schon mal
+     geklappt." Genau das war es: Der Agent scrollt in kleinen, schnellen
+     Schritten durch die Liste - und genau dann wurden Bilder geladen,
+     dekodiert und das Layout neu vermessen.
+
+     Die eigentliche Ursache war die Bildgroesse: Jede Karte zeigte das
+     volle Foto (1200 x 801, rund 280 KB). Seit dem 19.11.2026 zeigen
+     Karten eine eigene kleine Fassung (`kartenbildVon`, rund 20 KB,
+     angelegt von bilder/kartenbilder.mjs). Damit kostet eine Liste mit
+     200 Karten etwa 4 MB, und es kann wieder alles sofort geladen werden.
+     Kein Beobachter, kein Scroll-Handler - nichts, was waehrend des
+     Scrollens rechnet. */
+  root.querySelectorAll("[data-bild]").forEach((el) => {
     const pfad = el.dataset.bild;
     if (!pfad) return;
     el.style.backgroundImage = `url("${pfad}")`;
     delete el.dataset.bild;
-  };
-  /* Die ersten immer sofort, ohne Bedingung.
-     ----------------------------------------------------------------
-     Zwei Gruende. Erstens deckt das den sichtbaren Bereich ab, auch
-     bevor irgendein Beobachter das erste Mal meldet - niemand sieht
-     eine Sekunde lang graue Kaesten. Zweitens ist es der Rettungsanker:
-     Wenn das Nachladen irgendwo gar nicht funktioniert, ist die Seite
-     immer noch brauchbar statt bilderlos.
-
-     Dieser zweite Grund ist nicht theoretisch. Im Pruefbrowser vom
-     18.11.2026 meldete der IntersectionObserver NICHTS - auch in einem
-     unabhaengigen Gegentest nicht, obwohl die Seite sich als sichtbar
-     meldete (die Vorschau laeuft versteckt). Auf ein Verhalten, das
-     sich nicht pruefen laesst, darf die Bildanzeige nicht allein
-     bauen. */
-  const SOFORT = 24;
-  alle.slice(0, SOFORT).forEach(setzen);
-  const rest = alle.slice(SOFORT);
-  if (!rest.length) return;
-  if (typeof IntersectionObserver !== "function") { rest.forEach(setzen); return; }
-  /* Ein Beobachter je Aufruf, nicht einer global: `renderResults` baut
-     die Liste jedes Mal neu, und die alten Knoten sind dann weg. Der
-     Beobachter wird mit dem letzten Bild selbst ueberfluessig. */
-  let offen = rest.length;
-  const fertig = () => { try { beobachter.disconnect(); } catch { /* egal */ }
-    window.removeEventListener("scroll", beiScroll); };
-  const beobachter = new IntersectionObserver((eintraege, b) => {
-    for (const e of eintraege) {
-      if (!e.isIntersecting) continue;
-      setzen(e.target);
-      b.unobserve(e.target);
-      if (--offen <= 0) fertig();
-    }
-  }, { rootMargin: "600px 0px" });
-  rest.forEach((el) => beobachter.observe(el));
-  /* Der zweite Boden: Scrollt die Person und der Beobachter schweigt,
-     wird trotzdem geladen, was in die Naehe kommt. Gedrosselt ueber
-     requestAnimationFrame, damit das Scrollen nicht ruckelt. */
-  let laeuft = false;
-  const beiScroll = () => {
-    if (laeuft) return;
-    laeuft = true;
-    requestAnimationFrame(() => {
-      laeuft = false;
-      const grenze = window.innerHeight + 600;
-      for (const el of rest) {
-        if (!el.dataset.bild) continue;
-        const r = el.getBoundingClientRect();
-        if (r.top < grenze && r.bottom > -600) { setzen(el); offen -= 1; }
-      }
-      if (offen <= 0) fertig();
-    });
-  };
-  window.addEventListener("scroll", beiScroll, { passive: true });
+  });
 }
 
 function wishButton(id) {
@@ -1858,8 +1820,7 @@ function stayCard(item) {
 
   return `
 <a class="hotel-card" href="stay.html?id=${item.id}" data-item-id="${item.id}">
-  <div class="hotel-media" data-bild="${titelbildVon(item.id)}">
-    ${item.oldPrice ? '<span class="hotel-flag">Angebot</span>' : ""}
+  <div class="hotel-media" data-bild="${kartenbildVon(item.id)}">
     ${wishButton(item.id)}
   </div>
   <div class="hotel-body">
@@ -1873,7 +1834,6 @@ function stayCard(item) {
         <span class="rating-text"><strong>${ratingLabel(item.rating)}</strong><span>${item.reviewCount} Bew.</span></span>
       </div>
       <div class="price-block">
-        ${item.oldPrice ? `<div class="price-old">${formatPrice(item.oldPrice)}</div>` : ""}
         <div class="price-main">${formatPrice(item.pricePerNight)}</div>
         <div class="price-note">pro Nacht</div>
       </div>

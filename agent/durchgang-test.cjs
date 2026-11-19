@@ -60,7 +60,7 @@ const ctx = { console, window: {},
   innerWidth: 1440, innerHeight: 900, scrollTo() {}, getComputedStyle: () => ({ getPropertyValue: () => "" }) };
 ctx.globalThis = ctx; ctx.self = ctx;
 vm.createContext(ctx);
-for (const f of ["data/ziele.js", "data/hotels.js", "data/inventory.js", "data/auswahl.js",
+for (const f of ["data/ziele.js", "data/hotels.js", "data/inventory.js", "data/auswahl.js", "data/bildpfade.js",
   "data/faq.js", "agent/fluege.js", "agent/politik.js", "agent/werkzeugkasten.js", "agent/kern.js"]) {
   /* Die Sicherung haelt nur die geaenderten Dateien, flach abgelegt.
      Alles andere kommt aus dem Projekt - sonst misst die Gegenprobe
@@ -1604,33 +1604,41 @@ const liesReisende = async (text, felder, urteil = "ja") => {
       /schritteGeoeffnet/.test(sq) ? "ja" : "nein", "ja");
   }
 
-  /* Bilder laden erst, wenn sie gebraucht werden (18.11.2026)
+  /* Kleine Kartenbilder statt Nachladen (19.11.2026)
      ------------------------------------------------------------------
-     Gemessen auf der Trefferliste: 360 Karten, 12.135 DOM-Knoten, 360
-     Bildanfragen bei EINEM Seitenaufruf, Seitenhoehe 94.229 Pixel. Das
-     Zeichnen dauert 290 ms und ist nicht das Problem; die 360
-     gleichzeitigen Bilder sind es. Nach der Aenderung: 24 beim Laden,
-     der Rest beim Scrollen.
+     Hier standen bis zum 19.11.2026 vier Pruefungen, die das Nachladen
+     beim Scrollen festschrieben (24 sofort, Rest per Beobachter, dazu ein
+     Scroll-Handler). Genau das liess das Durchscrollen des Agenten
+     ruckeln - Ben: "Die Seite hat noch gar nicht richtig geladen und er
+     scrollt schon so ganz verrueckt runter." Die Pruefungen waren gruen,
+     waehrend der Fehler im Live-Lauf zu sehen war.
 
-     Keine Blaetterung, obwohl vorgeschlagen: Welche Karten sichtbar
-     sind und wo der Favorit steht, ist der Reiz dieser Erhebung.
-
-     Drei Ebenen, weil sich die oberste im Pruefbrowser nicht pruefen
-     laesst - dort meldet der IntersectionObserver nichts, auch im
-     Gegentest nicht. Geprueft wird hier, dass alle drei da sind.
-     Gegenprobe: _backup/17-11-abend/components-vor-lazy.js */
+     Die Ursache lag eine Ebene tiefer: Karten zeigten das volle Foto,
+     1200 x 801 Pixel, rund 280 KB. Jetzt zeigen sie `kartenbildVon`,
+     600 Pixel breit, rund 20 KB - und alles laedt wieder sofort. */
   {
     const cq = fs.readFileSync(alt && fs.existsSync(quelle + "components.js") ? quelle + "components.js" : B + "components.js", "utf8");
-    pruefe("Die ersten Karten laden ohne Bedingung",
-      /const SOFORT = \d+;\s*\n\s*alle\.slice\(0, SOFORT\)\.forEach\(setzen\);/.test(cq) ? "ja" : "nein", "ja");
-    pruefe("Der Rest haengt am Beobachter",
-      /new IntersectionObserver/.test(cq) ? "ja" : "nein", "ja");
-    pruefe("Es gibt einen Rettungsanker am Scrollen",
-      /addEventListener\("scroll", beiScroll/.test(cq) ? "ja" : "nein", "ja");
-    pruefe("Ohne Beobachter wird alles gesetzt",
-      /typeof IntersectionObserver !== "function"\) \{ rest\.forEach\(setzen\)/.test(cq) ? "ja" : "nein", "ja");
+    const rumpf = (cq.split("function applyScenes")[1] || "").split("\nfunction ")[0];
+    pruefe("Beim Scrollen wird kein Bild mehr nachgeladen",
+      /IntersectionObserver\(|addEventListener\("scroll"/.test(rumpf) ? "doch" : "nein", "nein");
+    pruefe("Alle Kartenbilder werden sofort gesetzt",
+      /querySelectorAll\("\[data-bild\]"\)\.forEach/.test(rumpf) ? "ja" : "nein", "ja");
+    /* Jede Karte zeigt die kleine Fassung, und die gibt es auch - sonst
+       stuende eine graue Flaeche da. */
+    const KB = vm.runInContext("typeof kartenbildVon === 'function' ? kartenbildVon : null", ctx);
+    const ids = vm.runInContext("Object.keys(BILDER)", ctx);
+    const fehlend = KB ? ids.map((id) => KB(id)).filter((pf) => pf && !fs.existsSync(B + pf)) : ["keine Funktion"];
+    pruefe("Zu jedem Titelbild gibt es die Kartenfassung",
+      fehlend.length ? `${fehlend.length} fehlen, z.B. ${fehlend[0]}` : "alle da", "alle da");
+    const groesste = KB ? Math.max(...ids.map((id) => KB(id)).filter((pf) => pf && fs.existsSync(B + pf)).map((pf) => fs.statSync(B + pf).size)) : 0;
+    pruefe("Keine Kartenfassung ist groesser als 80 KB",
+      groesste && groesste <= 80 * 1024 ? "ja" : `${Math.round(groesste / 1024)} KB`, "ja");
+    for (const datei of ["results.js", "components.js", "merkzettel.js", "checkout.js", "agent/vorschlaege.js"]) {
+      const q = fs.readFileSync(B + datei, "utf8");
+      pruefe(`${datei}: Karten zeigen die kleine Fassung`,
+        /titelbildVon\(/.test(q) ? "volles Foto" : "klein", "klein");
+    }
   }
-
   /* Der Schritte-Block ueberlebt einen Seitenwechsel (18.11.2026)
      ------------------------------------------------------------------
      Gemessen: Ein Lauf, in dem der Agent sichtbar die Suchmaske
@@ -2064,8 +2072,11 @@ const liesReisende = async (text, felder, urteil = "ja") => {
       /Mit einer Note ab 4,5 bleiben \d+ Hotels statt \d+/.test(sag("mindestbewertung", 4.5)) ? "ja" : sag("mindestbewertung", 4.5).slice(0, 70), "ja");
     pruefe("Die Strandnaehe auch",
       /Mit höchstens 1 km zum Strand bleiben \d+/.test(sag("maxStrand", 1)) ? "ja" : "nein", "ja");
-    pruefe("Nur Angebote auch",
-      /Mit nur reduzierten Häusern bleiben \d+/.test(sag("nurAngebote", true)) ? "ja" : "nein", "ja");
+    /* "Nur Angebote" gibt es seit dem 19.11.2026 nicht mehr - Ben: "Einfach
+       die Filterung nach Angebot raus und auch, dass manche Haeuser im
+       Angebot sind. Es ist einfach kein Haus im Angebot." */
+    pruefe("Nur Angebote gibt es nicht mehr",
+      sag("nurAngebote", true) ? "doch" : "weg", "weg");
     pruefe("Die Sterne auch",
       /Mit mindestens 5 Sternen bleiben \d+/.test(sag("mindestSterne", 5)) ? "ja" : "nein", "ja");
     pruefe("Und sagt dazu, dass Haeuser rausfallen",
@@ -2073,7 +2084,7 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     /* Kein Satz, wo nichts passiert - sonst waere jede Angabe von einer
        Zahl begleitet, und die Ansage waere Laerm statt Auskunft. */
     pruefe("Eine Vorgabe ohne Wirkung bleibt stumm", sag("mindestbewertung", 3.0) || "stumm", "stumm");
-    pruefe("Ein abgelehntes nurAngebote bleibt stumm", sag("nurAngebote", false) || "stumm", "stumm");
+
     /* Und nichts doppelt: Wer einen Wert KORRIGIERT, bekommt den
        aenderungsSatz, nicht beides. */
     const korrigiert = WK.aenderungsSatz({ ...bas, mindestbewertung: 4.5 },
@@ -2082,7 +2093,7 @@ const liesReisende = async (text, felder, urteil = "ja") => {
       /Mit einer Note/.test(korrigiert) ? "doppelt" : "einer", "einer");
     /* Die Grammatik: "Mit eine Note ab 4,5" stand am 19.11.2026 im
        ersten Bau, ebenso "Nur reduzierte Haeuser IST eine Bedingung". */
-    for (const [f, w] of [["mindestbewertung", 4.5], ["maxStrand", 1], ["nurAngebote", true], ["mindestSterne", 5]]) {
+    for (const [f, w] of [["mindestbewertung", 4.5], ["maxStrand", 1], ["mindestSterne", 5]]) {
       pruefe(`Kein "Mit eine/ein" bei ${f}`, /Mit eine\b|Mit ein\b|Mit nur reduzierte\b|Mit mindestens \d+ Sterne\b/.test(sag(f, w)) ? "falsch" : "richtig", "richtig");
     }
   }
@@ -2190,6 +2201,101 @@ const liesReisende = async (text, felder, urteil = "ja") => {
       { kriterien: [{ id: "ruhe" }, { id: "essen" }], typ: "hotel" }, { gefragtWie: { gewichtung: 1 } });
     pruefe("Nicht \"neben ruhe und essen\"", /neben ruhe|neben essen/.test(String(sg)) ? "klein" : "gross", "gross");
     pruefe("Sondern mit Namen", /neben Ruhe und Essen/.test(String(sg)) ? "ja" : String(sg).slice(0, 60), "ja");
+  }
+
+  /* Funde aus Bens Lauf vom 19.11.2026, nachmittags.
+     Gegenprobe: _backup/19-11-ben-lauf/ */
+  if (WK && WK.werkzeuge && WK.werkzeuge.stand_merken) {
+    const merke = async (args, profil, zusatzLauf = {}, saetze = []) => {
+      const kern = { lauf: { profil, protokoll: [], gespraech: saetze.map((t, i) => ({ role: i % 2 ? "assistant" : "user", content: t })),
+          verlauf: [], gefragtWie: {}, annahmeOffen: [], chips: null, ...zusatzLauf },
+        notieren(e, d) { this.lauf.protokoll.push({ ereignis: e, ...d }); },
+        sagen() {}, gespraechPush() {}, sichern() {}, logZeile() {}, standKurz: () => "",
+        freigabe: () => "suchen", darf: () => false, standAnzeigen() {} };
+      await WK.werkzeuge.stand_merken.call(WK, { frage_beantwortet: "ja", ...args }, kern);
+      return kern;
+    };
+    const kalt = () => {
+      const p = { monat: 4, naechte: 6, erwachsene: 3, kinder: 0, kinderAlter: [], artGenannt: true, artEgal: true, richtung: "kalt" };
+      const th = (ctx.PO.THEMEN || []).find((t) => t.id === "kalt");
+      p.zieleErlaubt = WK.regionenFuerRichtung(th, p);
+      return p;
+    };
+    const gespr = ["Eher kalt", "Bis 20 Grad kämen Südtirol, New York, Mallorca und 3 weitere dazu. Bei 16 Grad bleiben oder auf 20 gehen?",
+      "Gerne bis 20 gehen und noch kappstadt mit aufnehmen"];
+    const lauf0 = (p) => ({ spanneOffen: { grenze: 16, weiter: 20 }, richtungRegionen: p.zieleErlaubt.slice() });
+
+    // Kapstadt und 20 Grad in einem Satz
+    {
+      const p = kalt(); const k = await merke({ ziel: "kapstadt", mindestGrad: 20 }, p, lauf0(p), gespr);
+      const l = p.zieleAuswahl || p.zieleErlaubt || [];
+      pruefe("Kapstadt kommt trotz Tippfehler dazu", l.includes("kapstadt") ? "ja" : "nein", "ja");
+      pruefe("Und die Regionen bis 20 Grad auch", l.includes("suedtirol") && l.includes("mallorca") ? "ja" : "nein", "ja");
+      pruefe("Die kalten bleiben drin", l.includes("lappland") && l.includes("island") ? "ja" : "nein", "ja");
+      pruefe("Der Agent sagt es an, mit Temperatur",
+        /Kapstadt nehme ich wie gewünscht mit - dort sind es im April etwa \d+ Grad/.test((k.lauf.annahmeOffen || []).map((x) => x.text).join(" ")) ? "ja" : "nein", "ja");
+    }
+    {
+      const p = kalt(); await merke({ zieleAuswahl: ["kapstadt"] }, p, lauf0(p), gespr);
+      pruefe("Auch wenn das Modell Kapstadt als Liste schickt",
+        (p.zieleAuswahl || []).includes("kapstadt") && (p.zieleAuswahl || []).includes("suedtirol") ? "ja" : "nein", "ja");
+    }
+    {
+      const p = kalt(); await merke({}, p, lauf0(p), gespr);
+      pruefe("Bis 20 ohne das Wort Grad kommt an, auch ohne Modell",
+        p.mindestGrad === 20 && (p.zieleErlaubt || []).includes("suedtirol") ? "ja" : `${p.mindestGrad}`, "ja");
+    }
+    {
+      const p = kalt(); await merke({ mindestGrad: 20 }, p, {}, ["wir sind 20 Leute"]);
+      pruefe("Ohne offene Frage und ohne Grad bleibt die Sperre", p.mindestGrad ?? "nicht gesetzt", "nicht gesetzt");
+    }
+    pruefe("Ein Buchstabe Unterschied zaehlt als genannt",
+      WK.regionGenannt({ gespraech: [{ role: "user", content: "noch kappstadt" }] }, "kapstadt") ? "ja" : "nein", "ja");
+    pruefe("Bei kurzen Namen nicht",
+      WK.regionGenannt({ gespraech: [{ role: "user", content: "nach krebi" }] }, "krabi") ? "doch" : "nein", "nein");
+    pruefe("Und kein Teilwort",
+      WK.regionGenannt({ gespraech: [{ role: "user", content: "nach Südtirol" }] }, "tirol") ? "doch" : "nein", "nein");
+
+    // Pool als Bedingung steht nicht zusaetzlich als Wunsch da
+    {
+      const p = { typ: "hotel", artGenannt: true, monat: 7, erwachsene: 2, kinder: 0, naechte: 7, zielId: "mallorca" };
+      await merke({ ausstattung: ["pool"], wuensche: ["pool"] }, p, { gefragtVorher: "ausstattung" }, ["Pool"]);
+      pruefe("Pool steht nur noch als Muss", (p.kriterien || []).some((k) => k.id === "pool") ? "doppelt" : "einmal", "einmal");
+      pruefe("Die Gewichtung beginnt danach offen",
+        /Bei der Analyse der Bewertungen/.test(String(WK.themenSatz("gewichtung", p, { gefragtWie: {} }))) ? "offen" : "nachgehakt", "offen");
+    }
+    // Ein Wunsch ohne Merkmal wird nicht verschluckt
+    {
+      const p = { typ: "hotel", artGenannt: true, monat: 7, erwachsene: 2, kinder: 0, naechte: 7 };
+      const k = await merke({ wunsch_unbekannt: ["Hollywood-Schaukel"] }, p, {}, ["hollywood schaukel"]);
+      pruefe("Hollywood-Schaukel wird als nicht filterbar gemeldet",
+        k.lauf.protokoll.some((e) => e.ereignis === "wunsch_ohne_feld" && (e.wuensche || []).includes("Hollywood-Schaukel")) ? "ja" : "nein", "ja");
+    }
+  }
+  {
+    // Anreisetag auch mit Flug
+    const fp = WK.fahrplan({ typ: "hotel", artGenannt: true, monat: 4, naechte: 6, erwachsene: 3, kinder: 0, flug: true }, { gefragtWie: {} });
+    pruefe("Mit Flug wird der Anreisetag gefragt", fp.fertig.anreise ? "uebersprungen" : "gefragt", "gefragt");
+    // FAQ: eine Frage mit Treffer erzwingt das sichtbare Nachschlagen
+    const fq = { gespraech: [{ role: "user", content: "Wie viele Hotels bietet ihr an?" }], nachrichtArt: "frage", gefragtWie: {} };
+    pruefe("Eine Frage zum Angebot fuehrt ins FAQ", WK.zwang({ typ: "hotel" }, fq), "faq_nachschlagen");
+    pruefe("Nur einmal je Nachricht", WK.zwang({ typ: "hotel" }, fq) === "faq_nachschlagen" ? "nochmal" : "einmal", "einmal");
+    const fa = { gespraech: [{ role: "user", content: "Halbpension" }], nachrichtArt: "antwort", gefragtWie: {} };
+    pruefe("Eine Antwort fuehrt nicht ins FAQ", WK.zwang({ typ: "hotel" }, fa) === "faq_nachschlagen" ? "doch" : "nein", "nein");
+    pruefe("Zu Feiertagen steht etwas im FAQ",
+      typeof ctx.faqSuchen === "function" || vm.runInContext("typeof faqSuchen", ctx) === "function"
+        ? (vm.runInContext("faqSuchen('fliegt ihr auch über Feiertage?', 1)", ctx)[0]?.id || "nichts") : "keine Suche", "f-feiertage");
+  }
+  {
+    const lies = (d) => fs.readFileSync(alt && fs.existsSync(quelle + d.split("/").pop()) ? quelle + d.split("/").pop() : B + d, "utf8");
+    const kq = lies("agent/kern.js"), sq = lies("agent/studie.js"), wq = lies("agent/werkzeugkasten.js");
+    pruefe("Nach 'mehr vergleichen' wird die Anzahl erfragt", /Wie viele möchtest du vergleichen - 4, 5 oder 6\?/.test(kq) ? "ja" : "nein", "ja");
+    pruefe("Und die gewaehlte Zahl gesetzt", /profil\.anzahlVorschlaege = zahl;/.test(kq) ? "ja" : "nein", "ja");
+    pruefe("Das Konto laesst sich ueberspringen", /data-ueberspringen/.test(sq) ? "ja" : "nein", "ja");
+    pruefe("Kein Kontofeld ist Pflicht", /name="(vorname|nachname|mail)"[^>]*required/.test(sq) ? "Pflicht" : "frei", "frei");
+    pruefe("Kein Angebotsfeld mehr im Modell", /nurAngebote: \{ type/.test(wq) ? "noch da" : "weg", "weg");
+    pruefe("Keine alten Preise in den Daten", /oldPrice:/.test(fs.readFileSync(B + "data/hotels.js", "utf8")) ? "noch da" : "weg", "weg");
+    pruefe("Die Hausseite passt neben den Chat", /\.app-main > \*, \.app-main \.wrap \{ min-width: 0; \}/.test(fs.readFileSync(B + "style.css", "utf8")) ? "ja" : "nein", "ja");
   }
 
   // Kinder oder Erwachsene

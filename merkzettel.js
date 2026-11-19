@@ -42,7 +42,7 @@ function miniCard(entry) {
 
   return `
   <div class="wish-row">
-    <a class="wish-media" href="stay.html?id=${entry.id}" data-bild="${titelbildVon(entry.id)}" aria-label="${entry.name}"></a>
+    <a class="wish-media" href="stay.html?id=${entry.id}" data-bild="${kartenbildVon(entry.id)}" aria-label="${entry.name}"></a>
     <div class="wish-main">
       <strong>${entry.name}</strong>
       <span>${ICONS.pin}${entry.location} · ${entry.type === "apartment" ? "Ferienwohnung" : starString(entry.stars)}</span>

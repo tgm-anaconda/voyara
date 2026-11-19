@@ -369,11 +369,11 @@ const Kernpruefung = {
         if (f.art !== "apartment") mussKommen.push("verpflegung", "flug");
         // Der Flughafen nur mit Flug, und Fluege gibt es nicht zur Wohnung
         if (f.flug === "mitFlug" && f.art !== "apartment") mussKommen.push("flugAb", "flugKlasse");
-        /* Der Anreisetag: ohne Flug hier, mit Flug erst in der
-           Buchungsstrecke - dort haengt er an den Flugtagen der
-           Verbindung, und die stehen erst mit dem Haus fest. Der Agent
-           sagt das beim Vorlegen dazu. */
-        if (f.flug !== "mitFlug" || f.art === "apartment") mussKommen.push("anreise");
+        /* Der Anreisetag kommt immer, auch mit Flug (seit 19.11.2026).
+           Bis dahin stand er mit Flug erst in der Buchungsstrecke, mit der
+           Begruendung, er haenge an den Flugtagen. Geflogen wird aber
+           taeglich, und Ben vermisste die Frage im Lauf vom 19.11.2026. */
+        mussKommen.push("anreise");
 
         /* Die Gegenrichtung, sonst waere das Streichen oben wertlos:
            Eine Liste, die nur sagt was kommen muss, merkt nicht, wenn

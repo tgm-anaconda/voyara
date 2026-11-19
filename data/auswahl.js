@@ -42,7 +42,7 @@ const Auswahl = {
      Ort und Zeit, dann die Gruppe, dann Geld, dann Wünsche. */
   FELDER: ["art", "suchtext", "monat", "ziel", "saison", "gruppe", "dauer", "flug", "flugtag",
     "preis", "gesamt", "strand", "bewertung", "sterne", "kategorie", "ausstattung",
-    "verpflegung", "angebote", "wlan", "schlafzimmer"],
+    "verpflegung", "wlan", "schlafzimmer"],
 
   // Passt die Reisegruppe hinein? Bis zum 02.10.2026 stand diese Rechnung
   // zweimal da - als `Werkzeugkasten.passtGruppe` und als `Belegung.passt`.
@@ -165,8 +165,6 @@ const Auswahl = {
       && (h.bedrooms || 0) < v.mindestSchlafzimmer) return "schlafzimmer";
 
     if (!aus("ausstattung") && (v.ausstattung || []).some((a) => !(h.amenities || []).includes(a))) return "ausstattung";
-    // Reduziert heißt: es steht ein alter Preis daran
-    if (!aus("angebote") && v.nurAngebote && !h.oldPrice) return "angebote";
     if (!aus("wlan") && v.wlanInklusive && typeof wlanGebuehr === "function"
       && wlanGebuehr(h) > 0) return "wlan";
     return null;

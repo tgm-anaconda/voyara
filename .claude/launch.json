@@ -4,7 +4,9 @@
     {
       "name": "voyara",
       "runtimeExecutable": "node",
-      "runtimeArgs": [".claude/voyara-server.mjs"],
+      "runtimeArgs": [
+        ".claude/voyara-server.mjs"
+      ],
       "port": 8777
     }
   ]

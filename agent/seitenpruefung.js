@@ -103,7 +103,6 @@ const Seitenpruefung = {
       maxStrand: strand ? Number(strand) : undefined,
       mindestbewertung: note && Number(note) > 0 ? Number(note) : undefined,
       mindestSterne: sterne.length ? Math.min(...sterne) : undefined,
-      nurAngebote: !!document.querySelector(".js-deals")?.checked || undefined,
     };
   },
 
@@ -259,7 +258,7 @@ const Seitenpruefung = {
     const sicherung = {
       type: state.type, q: state.q, ziele: [...state.ziele], amenities: [...state.amenities],
       boards: [...state.boards], stars: [...state.stars], categories: [...state.categories],
-      minRating: state.minRating, maxBeach: state.maxBeach, onlyDeals: state.onlyDeals,
+      minRating: state.minRating, maxBeach: state.maxBeach,
       wlanFrei: state.wlanFrei, minBedrooms: state.minBedrooms, priceMax: state.priceMax,
       gesamtMax: state.gesamtMax, withFlight: state.withFlight,
     };
@@ -275,7 +274,6 @@ const Seitenpruefung = {
       state.categories = new Set();
       state.minRating = f.mindestbewertung || 0;
       state.maxBeach = f.maxStrand !== undefined ? f.maxStrand : null;
-      state.onlyDeals = !!f.nurAngebote;
       state.wlanFrei = !!f.wlanInklusive;
       state.minBedrooms = 0;
       state.priceMax = f.maxPreis || 99999;

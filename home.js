@@ -185,10 +185,10 @@ function renderHotelSections() {
   const apts = [...APARTMENTS].sort((a, b) => b.rating - a.rating).slice(0, 12);
   document.getElementById("topApartments").innerHTML = apts.map(stayCard).join("");
 
-  const deals = HOTELS.filter((h) => h.oldPrice);
-  document.getElementById("dealHotels").innerHTML = deals.map(stayCard).join("");
-
-  ["topHotels", "topApartments", "dealHotels"].forEach((id) => {
+  /* Kein Abschnitt "Aktuelle Angebote" mehr (19.11.2026). Ben: "Ich
+     glaube, ich wuerde das mit dem Angebot sogar rausnehmen. Das stoert
+     einfach nur. Es ist einfach kein Haus im Angebot." */
+  ["topHotels", "topApartments"].forEach((id) => {
     const el = document.getElementById(id);
     applyScenes(el);
     bindWishButtons(el);

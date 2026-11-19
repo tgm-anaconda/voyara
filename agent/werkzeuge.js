@@ -370,7 +370,7 @@ const Werkzeuge = {
         if (zurueck && await this.klickeFilterZeile(zurueck, `${name}: alle`)) abgewaehlt.push(name);
       }
     }
-    for (const [sel, an, name] of [[".js-deals", wunsch.nurAngebote, "nur Angebote"], [".js-wlan", wunsch.wlanInklusive, "WLAN ohne Aufpreis"]]) {
+    for (const [sel, an, name] of [[".js-wlan", wunsch.wlanInklusive, "WLAN ohne Aufpreis"]]) {
       const el = this.finde(sel, panel);
       if (el && el.checked && !an && await this.klickeFilterZeile(el, name)) abgewaehlt.push(name);
     }
@@ -435,15 +435,8 @@ const Werkzeuge = {
       }
     }
 
-    // Nur reduzierte Haeuser. Der Schalter steht seit dem 27.09.2026 in
-    // der Spalte; vorher gab es den Angebotsfilter nur ueber die Adresse,
-    // und der Agent konnte den Wunsch deshalb nicht erfuellen.
-    if (wunsch.nurAngebote) {
-      const el = this.finde(".js-deals", panel);
-      if (el && !el.checked && await this.klickeFilterZeile(el, "nur Angebote")) gesetzt.push("nur reduzierte Häuser");
-    }
-
-    // WLAN ohne Aufpreis: derselbe Weg wie der Angebotsschalter
+    // WLAN ohne Aufpreis. (Den Schalter "nur reduzierte Haeuser" gibt es
+    // seit dem 19.11.2026 nicht mehr - es gibt keine reduzierten Haeuser.)
     if (wunsch.wlanInklusive) {
       const el = this.finde(".js-wlan", panel);
       if (!el) nichtGesetzt.push("WLAN ohne Aufpreis");
@@ -620,6 +613,12 @@ const Werkzeuge = {
      das Element und die laufende Nummer. Rueckgabe sagt, ob sich
      wirklich etwas bewegt hat. */
   async scrollDurch({ elemente, halte = [], beiHalt = null, zaehlwort = "", tempoMs = 24 }) {
+    /* Erst losscrollen, wenn die Seite steht (19.11.2026).
+       Ben: "Die Seite hat noch gar nicht richtig geladen und er scrollt
+       schon so ganz verrueckt runter." Gewartet wird auf das Ende des
+       Ladens, hoechstens drei Sekunden - laedt etwas gar nicht, soll der
+       Agent nicht stehen bleiben. */
+    for (let i = 0; i < 30 && document.readyState !== "complete" && !Zeiger.abbruch; i++) await Zeiger.warte(100);
     // Gezaehlt wird nur, was auf der Seite zu sehen ist - ausgeblendete
     // Karten (Filter, Saison) liefen sonst im Zaehler mit
     elemente = elemente.filter((el) => el.offsetParent !== null || el.getClientRects().length);
