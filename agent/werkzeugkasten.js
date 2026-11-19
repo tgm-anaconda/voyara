@@ -9802,7 +9802,27 @@ const Werkzeugkasten = {
        die Chipzeile bricht um. Was nicht dabei ist, kann die Person
        immer noch selbst sagen - die Zahlen stehen im Satz. */
     const name = (m) => (typeof AMENITY_LABELS !== "undefined" && AMENITY_LABELS[m]) || m;
-    const kandidaten = [];
+    /* Die Zahl muss zu dem gehoeren, was wirklich passiert (19.11.2026).
+       ----------------------------------------------------------------
+       Ben am 19.11.2026: "Wenn da jetzt steht, die Grenze von 170 Euro
+       pro Nacht, ohne sie 5 Hotels - was bedeutet das? Dass es dann
+       komplett offen ist, der Preis? Es macht ja nur Sinn, wenn man das
+       um 10 Prozent erhoeht. Eine Person, die 170 Euro angibt, ist auch
+       nicht bereit, offen 400 Euro zu zahlen."
+
+       Nachgerechnet, Mallorca im Juli mit 170 Euro Grenze: Der Satz
+       nannte 25 (Grenze ganz weg), angewandt wurden aber 1,25 x 170 =
+       213 Euro, und das sind 21. Versprochen 25, geliefert 21.
+
+       Die Zahl wird deshalb nicht mehr aus der Rangliste uebernommen -
+       die rechnet ohne die Vorgabe - sondern aus den Werten, die der
+       Knopf wirklich setzt. */
+    const zaehle = (werte) => {
+      const probe = { ...p, ...werte };
+      for (const [f, w] of Object.entries(werte)) if (w === null || w === undefined) delete probe[f];
+      try { return this.katalogTreffer(probe, this.filterAusStand(probe)).length; } catch { return null; }
+    };
+    let kandidaten = [];
     for (const r of (e.rang && e.rang.length ? e.rang : [{ feld: e.feld, ohne: e.ohne }])) {
       if (r.feld === "ausstattung") {
         /* Jeder Wunsch einzeln - aber nur die, die wirklich etwas
@@ -9824,9 +9844,9 @@ const Werkzeugkasten = {
              Sonst steht die Ausstattung als eine Wahl da, wie vorher. */
           if (einzelne.length) {
             for (const x of einzelne) {
-              kandidaten.push({ feld: `ausstattung:${x.merkmal}`, ohne: x.ohne,
-                was: `„${name(x.merkmal)}“`, kurz: name(x.merkmal),
-                werte: { ausstattung: (p.ausstattung || []).filter((y) => y !== x.merkmal) } });
+              const w = { ausstattung: (p.ausstattung || []).filter((y) => y !== x.merkmal) };
+              kandidaten.push({ feld: `ausstattung:${x.merkmal}`, ohne: zaehle(w) ?? x.ohne,
+                was: `auf „${name(x.merkmal)}“ verzichten`, kurz: name(x.merkmal), werte: w });
             }
             continue;
           }
@@ -9837,27 +9857,131 @@ const Werkzeugkasten = {
       let w = null;
       try { w = l(p); } catch { w = null; }
       if (!w) continue;
+      // Der Handlungstext; der alte ENGSTELLE-Eintrag bleibt die Probe
+      // darauf, ob die Vorgabe ueberhaupt gesetzt ist.
       let text = null;
-      try { text = this.ENGSTELLE[r.feld].call(this, p); } catch { text = null; }
+      try { text = this.ENGSTELLE[r.feld].call(this, p) ? (this.ENGSTELLE_TUN[r.feld] || (() => null))() : null; } catch { text = null; }
       if (!text) continue;
-      kandidaten.push({ feld: r.feld, ohne: r.ohne, was: text, kurz: this.ENGSTELLE_KURZ[r.feld] || null, werte: w });
+      /* Gestufte Vorschlaege statt "Vorgabe weg" (19.11.2026).
+         Fuer alles, was eine Zahl ist, gibt es zwei Stufen - eine
+         vorsichtige und eine groessere. Was keine Zahl ist (Region,
+         Verpflegung, ein Ausstattungswunsch), kennt nur "weg". */
+      const stufen = this.ENGSTELLE_STUFEN[r.feld] ? this.ENGSTELLE_STUFEN[r.feld](p) : null;
+      if (stufen?.length) {
+        let gebaut = 0;
+        for (const st of stufen) {
+          const n = zaehle(st.werte);
+          if (n == null || n <= e.jetzt) continue;
+          gebaut++;
+          kandidaten.push({ feld: `${r.feld}:${st.id}`, ohne: n, was: st.was,
+            kurz: st.kurz, werte: st.werte });
+        }
+        /* Bringt keine Stufe etwas, faellt die Moeglichkeit NICHT weg -
+           dann wird eben das Ganze angeboten. Ohne diesen Rueckfall
+           verschwand die Vorgabe lautlos aus der Auswahl, und bei nur
+           einer Engstelle gab es gar keine Rueckfrage mehr. Gemessen am
+           19.11.2026; dieselbe Falle wie bei der Ausstattung eine
+           Ebene darueber. */
+        if (gebaut) continue;
+      }
+      kandidaten.push({ feld: r.feld, ohne: zaehle(w) ?? r.ohne, was: text, kurz: this.ENGSTELLE_KURZ[r.feld] || null, werte: w });
+    }
+    /* Nicht nur wegnehmen, auch ausweiten (19.11.2026).
+       ----------------------------------------------------------------
+       Ben am 19.11.2026: "Es waere vielleicht auch sinnvoll, wenn
+       angeboten wird, was zu wesentlich mehr Haeusern fuehren wuerde,
+       zum Beispiel eine Ausweitung der Zeit auf August bietet so und so
+       viele Haeuser mehr."
+
+       Der Monat steht in keiner der Vorgabenlisten - er ist keine
+       Einschraenkung, sondern die Reise selbst. Trotzdem ist er oft der
+       groesste Hebel, und der Katalog rechnet ihn genauso durch.
+
+       Nur ohne festen Anreisetag: Wer den 10. Juli gesagt hat, meint den
+       Juli. Und nur der Nachbarmonat, nicht das ganze Jahr - eine Reise
+       im Februar ist kein Vorschlag fuer jemanden, der im Juli will. */
+    /* Dass die Person den Monat selbst genannt hat, spricht NICHT
+       dagegen - im Gegenteil, sonst gaebe es nichts vorzuschlagen. Der
+       Monat wird hier ja nicht geaendert, sondern angeboten; wer nicht
+       will, klickt etwas anderes. Ein fester Anreisetag ist etwas
+       anderes: Wer den 10. Juli gesagt hat, meint diesen Tag. */
+    /* Ein Vorschlag muss etwas bringen (19.11.2026).
+       ----------------------------------------------------------------
+       Gemessen: Im Satz stand "Die Grenze auf 210 € anheben (25 % mehr):
+       ein Hotel." und danach "Die Preisgrenze offen lassen: ein Hotel."
+       Beides sind keine Vorschlaege. Die Rangliste in `engstelle` hatte
+       fuer den Preis 25 gemeldet - aber das ist die Zahl OHNE die
+       Preisgrenze UND ohne alles andere, waehrend hier die uebrigen
+       Vorgaben stehen bleiben. Die echten Zahlen stehen erst hier fest.
+
+       Also wird hier noch einmal gesiebt: Was weniger als drei Haeuser
+       bringt, faellt weg. Bleibt dann nichts, zaehlt jeder Gewinn -
+       lieber ein schwacher Vorschlag als eine Sackgasse. */
+    const genug = kandidaten.filter((k) => k.ohne - e.jetzt >= this.ENGSTELLE_MINDESTGEWINN);
+    if (genug.length) kandidaten = genug;
+    else kandidaten = kandidaten.filter((k) => k.ohne > e.jetzt);
+
+    const monatsKandidaten = [];
+    if (p.monat && !p.anreise && !p.von && !p.bis) {
+      const mName = (m) => (typeof MONATSNAMEN !== "undefined" ? MONATSNAMEN[m - 1] : `Monat ${m}`);
+      for (const d of [1, -1]) {
+        const m = ((p.monat - 1 + d + 12) % 12) + 1;
+        const n = zaehle({ monat: m });
+        if (n == null || n - e.jetzt < this.ENGSTELLE_MINDESTGEWINN) continue;
+        monatsKandidaten.push({ feld: `monat:${m}`, ohne: n, kurz: mName(m),
+          was: `auf ${mName(m)} ausweichen`, werte: { monat: m } });
+      }
+      monatsKandidaten.sort((a, b) => b.ohne - a.ohne);
     }
     kandidaten.sort((a, b) => b.ohne - a.ohne);
+    /* Der Monat steht hinten an, auch wenn er mehr braechte (19.11.2026).
+       ----------------------------------------------------------------
+       Ben am 19.11.2026: "Insgesamt wuerde ich schon eher versuchen,
+       nicht ueber den Monat das zu machen, sondern ueber andere
+       Stellschrauben. Ausser der Monat ist halt wirklich entscheidend."
+
+       Er hat recht: Eine Preisgrenze ist eine Vorgabe, der Reisemonat
+       ist die Reise. Wer im Juli will, will im Juli - dass es im August
+       mehr Haeuser gibt, ist selten eine Antwort auf seine Frage.
+
+       Deshalb kein Platz im Wettbewerb nach Trefferzahl, sondern nur
+       der Rest: Erst die drei besten anderen Stellschrauben, und nur
+       wenn davon weniger als drei zusammenkommen, faellt der Monat auf.
+       Genau dann ist er wirklich entscheidend - im Testfall Lappland im
+       Mai (0 Haeuser, im ganzen Sommer keine) steht er direkt da, weil
+       es ausser der Region nichts anderes gibt. */
     const auswahl = kandidaten.slice(0, 3);
+    /* Nur, wenn sonst fast nichts da ist: hoechstens EINE andere
+       Stellschraube. Mit zweien ist der Monat Beiwerk - im Testfall
+       Mallorca/Strand bringen 1 km und 5 km schon 14 und 20 Haeuser,
+       und "oder fahr im August" waere dazwischen nur Laerm. */
+    if (auswahl.length < 2) {
+      for (const k of monatsKandidaten) { if (auswahl.length >= 3) break; auswahl.push(k); }
+    }
     if (!auswahl.length) return null;
 
-    const liste = auswahl.map((k) => `${k.was} (ohne sie ${haeuser(k.ohne)})`);
-    const aufzaehlung = liste.length === 1 ? liste[0]
-      : `${liste.slice(0, -1).join(", ")} und ${liste[liste.length - 1]}`;
+    /* Je Moeglichkeit ein eigener Satz: "Die Region offen lassen: 51
+       Hotels." Eine Aufzaehlung in einem Satz wurde mit drei gestuften
+       Vorschlaegen unlesbar, und die Zahlen standen zu weit von dem
+       weg, wozu sie gehoeren. */
+    const liste = auswahl.map((k) => {
+      const w = k.was;
+      return `${w.charAt(0).toUpperCase()}${w.slice(1)}: ${haeuser(k.ohne)}.`;
+    });
     const satz = `Mit deinen Vorgaben ${e.jetzt === 1 ? "bleibt" : "bleiben"} nur ${haeuser(e.jetzt)} übrig, und bei so wenigen `
-      + `lässt sich schlecht vergleichen. Am meisten ${auswahl.length === 1 ? "nimmt" : "nehmen"} ${aufzaehlung} weg. `
-      + `Welche Vorgabe soll ich lockern?`;
+      + `lässt sich schlecht vergleichen. Das würde am meisten bringen: ${liste.join(" ")} `
+      + `Was soll ich ändern?`;
 
     /* Die Beschriftung der Knoepfe: kurz, sonst bricht die Zeile um.
        `kurz` steht in ENGSTELLE_KURZ, fuer Ausstattungswuensche ist es
        der Name des Merkmals. */
     const nein = "Keine, so ist es richtig";
-    const chipFuer = (k) => (k.kurz ? `${k.kurz} lockern` : "Diese Vorgabe lockern");
+    /* Bei einer Stufe steht der Zielwert auf dem Knopf ("Auf 190 €"),
+       sonst das Wegnehmen ("Region lockern"). "Preisgrenze lockern"
+       haette bei zwei Stufen zweimal dasselbe dagestanden. */
+    const chipFuer = (k) => (k.feld.startsWith("monat:") ? `Im ${k.kurz}`
+      : k.feld.includes(":") && !k.feld.startsWith("ausstattung:") ? `Auf ${k.kurz}`
+        : k.kurz ? `${k.kurz} lockern` : "Diese Vorgabe lockern");
     const wirkung = {};
     const chips = [];
     for (const k of auswahl) {
@@ -9890,6 +10014,87 @@ const Werkzeugkasten = {
       werte: auswahl[0].werte,
       wirkung,
     };
+  },
+
+  /* Zwei Stufen statt "Vorgabe weg" (19.11.2026).
+     ------------------------------------------------------------------
+     Ben am 19.11.2026: "Ich wuerde vorschlagen, den Preis zu erhoehen.
+     Hier wuerde ich 10 oder 25 Prozent empfehlen, weil man dann entweder
+     19 bzw. 25 Hotels mehr zur Auswahl hat."
+
+     Eine Grenze ganz zu streichen ist fuer die Person keine Antwort: Wer
+     170 Euro sagt, will nicht offen zahlen, sondern wissen, was ein
+     bisschen mehr bringt. Deshalb zwei Stufen - eine vorsichtige und
+     eine groessere - jede mit der Zahl, die sie wirklich bringt. Welche
+     davon im Satz landet, entscheidet die Zahl, nicht die Reihenfolge
+     hier: Eine Stufe, die nichts bringt, faellt vorher raus.
+
+     Die Rundung auf Zehner beim Preis ist Absicht - "187 Euro" liest
+     sich wie eine Rechnung, "190 Euro" wie ein Vorschlag. */
+  ENGSTELLE_STUFEN: {
+    preis: (p) => {
+      const a = p.maxPreis;
+      if (!a) return null;
+      const auf = (f) => Math.round((a * f) / 10) * 10;
+      return [
+        { id: "10", werte: { maxPreis: auf(1.1) }, kurz: `${auf(1.1)} €`, was: `die Grenze auf ${auf(1.1)} € anheben (10 % mehr)` },
+        { id: "25", werte: { maxPreis: auf(1.25) }, kurz: `${auf(1.25)} €`, was: `die Grenze auf ${auf(1.25)} € anheben (25 % mehr)` },
+      ];
+    },
+    gesamt: (p) => {
+      const a = p.budgetGesamt;
+      if (!a) return null;
+      const auf = (f) => Math.round((a * f) / 50) * 50;
+      return [
+        { id: "10", werte: { budgetGesamt: auf(1.1) }, kurz: `${auf(1.1)} €`, was: `das Budget auf ${auf(1.1)} € anheben (10 % mehr)` },
+        { id: "25", werte: { budgetGesamt: auf(1.25) }, kurz: `${auf(1.25)} €`, was: `das Budget auf ${auf(1.25)} € anheben (25 % mehr)` },
+      ];
+    },
+    strand: (p) => {
+      const a = p.maxStrand;
+      if (!a) return null;
+      const wort = (w) => (w < 1 ? `${Math.round(w * 1000)} m` : `${w} km`);
+      const stufen = [0.2, 1, 5].filter((x) => x > a);
+      return stufen.map((x) => ({ id: String(x), werte: { maxStrand: x },
+        kurz: wort(x), was: `den Strandabstand auf ${wort(x)} erweitern` }));
+    },
+    bewertung: (p) => {
+      const a = p.mindestbewertung;
+      if (!a) return null;
+      const zahl = (w) => String(w.toFixed(1)).replace(".", ",");
+      return [a - 0.3, a - 0.6].filter((x) => x >= 3).map((x) => ({ id: zahl(x),
+        werte: { mindestbewertung: Math.round(x * 10) / 10 },
+        kurz: `Note ${zahl(x)}`, was: `die Mindestnote auf ${zahl(x)} senken` }));
+    },
+    sterne: (p) => {
+      const a = p.mindestSterne;
+      if (!a || a <= 1) return null;
+      return [a - 1, a - 2].filter((x) => x >= 1).map((x) => ({ id: String(x),
+        werte: { mindestSterne: x }, kurz: `${x} Sterne`, was: `die Sternevorgabe auf ${x} senken` }));
+    },
+  },
+
+  /* Was der Agent TUN wuerde, nicht was im Weg steht (19.11.2026).
+     ------------------------------------------------------------------
+     Der Satz lautete "Am meisten nimmt die Grenze von 170 € weg: ohne
+     sie 25". Mit gestuften Vorschlaegen passt das nicht mehr - "die
+     Grenze auf 210 € (25 % mehr), ohne sie 12" ist Unsinn. Gemessen am
+     19.11.2026 im ersten Bau.
+
+     Jede Moeglichkeit steht jetzt als Handlung da, mit ihrer Zahl
+     dahinter: "Die Region offen lassen: 51 Hotels." */
+  ENGSTELLE_TUN: {
+    gesamt: () => "das Budget offen lassen",
+    preis: () => "die Preisgrenze offen lassen",
+    ziel: () => "die Region offen lassen",
+    verpflegung: () => "die Verpflegung offen lassen",
+    gruppe: () => "die Gruppe aufteilen",
+    strand: () => "den Strandabstand offen lassen",
+    bewertung: () => "die Mindestnote weglassen",
+    sterne: () => "die Sternevorgabe weglassen",
+    angebote: () => "auch nicht reduzierte Häuser zeigen",
+    wlan: () => "WLAN nicht voraussetzen",
+    ausstattung: () => "die Ausstattungswünsche lockern",
   },
 
   /* Kurznamen fuer die Knoepfe. Der Satz nennt die Vorgabe ausfuehrlich

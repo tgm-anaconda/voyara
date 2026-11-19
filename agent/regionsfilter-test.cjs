@@ -102,9 +102,23 @@ pruefe("Schwelle fuer den Hinweis", WK.ENGSTELLE_GRENZE, 15);
 pruefe("Schwelle fuer die Frage", WK.ENGSTELLE_FRAGE_GRENZE, 10);
 const ef=(p,lauf)=>{const r=typeof WK.engstelleRueckfrage==="function"?WK.engstelleRueckfrage(p,lauf):"keine Funktion";
   return r&&r.satz?{grund:r.grund,chips:r.chips.length,istFrage:r.satz.trim().endsWith("?"),lockert:Object.keys(r.wirkung[r.chips[0]])}:r;};
+/* Der Strandabstand wird seit dem 19.11.2026 gestuft angeboten (0,2 /
+   1 / 5 km) statt ganz gestrichen. Ben am 19.11.2026: "Es macht ja nur
+   Sinn, wenn man das um 10 Prozent erhoeht" - dasselbe gilt fuer die
+   Entfernung. Der erste Knopf setzt deshalb eine neue Grenze, statt
+   `strandEgal` zu schreiben. */
 pruefe("bei drei Treffern wird gefragt",
-  ef({maxStrand:0.2},{letzteEngstelle:{feld:"strand",ohne:18,jetzt:3}}),
-  {grund:"strand",chips:2,istFrage:true,lockert:["maxStrand","strandEgal"]});
+  ef({maxStrand:0.2},{letzteEngstelle:{feld:"strand",ohne:18,jetzt:3}})?.grund, "strand");
+/* Diese Pruefung laeuft ohne `data/auswahl.js` - hier gibt es keinen
+   Katalog, also kann der Kern die Stufen nicht durchrechnen. Dann faellt
+   er auf "Vorgabe ganz weg" zurueck, und genau das wird hier geprueft:
+   Ohne Zahlen verschwindet die Moeglichkeit NICHT, sie wird nur
+   gröber. Die gestuften Vorschlaege selbst stehen in
+   durchgang-test.cjs, wo der Katalog geladen ist. */
+pruefe("ohne Katalog bleibt der Rueckfall auf ganz weg",
+  (() => { const r = WK.engstelleRueckfrage({maxStrand:0.2},{letzteEngstelle:{feld:"strand",ohne:18,jetzt:3}});
+    const k = (r?.kandidaten || [])[0];
+    return k ? Object.keys(k.werte).sort().join(",") : "keine"; })(), "maxStrand,strandEgal");
 pruefe("bei zwoelf Treffern nicht", ef({maxStrand:0.2},{letzteEngstelle:{feld:"strand",ohne:18,jetzt:12}}), null);
 pruefe("je Feld nur einmal",
   ef({maxStrand:0.2},{letzteEngstelle:{feld:"strand",ohne:18,jetzt:3},engstelleGefragt:{strand:true}}), null);

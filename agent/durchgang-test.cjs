@@ -131,7 +131,13 @@ pruefe("Phase in beiden Armen gleich",
 // wird, dass dort die Zahl der PASSENDEN steht und dass der Satz die Art
 // nennt, nicht pauschal "Haeuser".
 const laufMit = (jetzt, ohne, feld) => ({ letzteEngstelle: { feld, ohne, jetzt }, engstelleGefragt: {} });
-const pHotel = { typ: "hotel", kriterien: [{ id: "pool" }], maxPreis: 150 };
+/* `kriterien: [{id:"pool"}]` stand hier und machte die Ausstattung zur
+   Engstelle. Seit dem 19.11.2026 filtern Kriterien nicht mehr (siehe
+   Politik.KRITERIEN), also steht der Pool jetzt da, wo er hingehoert:
+   in `ausstattung`. Zwei Merkmale, damit die Aufteilung je Wunsch
+   ueberhaupt etwas zu teilen hat. */
+const pHotel = { typ: "hotel", ausstattung: ["pool", "spa"], maxPreis: 150,
+  zielId: "mallorca", artGenannt: true, monat: 7, naechte: 7, erwachsene: 2, kinder: 0 };
 const ef = WK.engstelleRueckfrage?.(pHotel, laufMit(3, 27, "ausstattung"));
 pruefe("Rueckfrage nennt die passenden (3)", !!ef && /nur 3 Hotels/.test(ef.satz), true);
 pruefe("Rueckfrage nennt die Art, nicht Haeuser", !!ef && !/Häuser/.test(ef.satz), true);
@@ -139,8 +145,14 @@ pruefe("Rueckfrage nennt die Art, nicht Haeuser", !!ef && !/Häuser/.test(ef.sat
    Vorher stand da "ohne diese Vorgabe wären es 27", weil nur EINE
    Vorgabe zur Wahl stand. Jetzt steht die Rangliste da, und hinter
    jeder Vorgabe ihre eigene Zahl. Begruendung bei engstelleRueckfrage. */
-pruefe("Rueckfrage nennt den Gewinn (27)", !!ef && /ohne sie 27 Hotels/.test(ef.satz), true);
-pruefe("Rueckfrage fragt, WELCHE Vorgabe", !!ef && /Welche Vorgabe soll ich lockern/.test(ef.satz), true);
+/* Die Zahl steht hinter der Handlung, nicht hinter der Vorgabe: Seit
+   es gestufte Vorschlaege gibt (19.11.2026), war "die Grenze auf 210 €,
+   ohne sie 12" Unsinn. Und die Zahl kommt jetzt aus den Werten, die der
+   Knopf wirklich setzt - vorher nannte der Satz die Zahl fuer "Vorgabe
+   ganz weg" und angewandt wurde 1,25 x Grenze. */
+pruefe("Rueckfrage nennt je Moeglichkeit eine Zahl",
+  !!ef && (ef.satz.match(/: \d+ Hotels?\./g) || []).length === ef.kandidaten.length, true);
+pruefe("Rueckfrage fragt, was geaendert werden soll", !!ef && /Was soll ich ändern\?/.test(ef.satz), true);
 pruefe("Und bietet das Behalten an", !!ef && ef.chips.some((c) => /Keine, so ist es richtig/.test(c)), true);
 const efW = WK.engstelleRueckfrage?.({ typ: "apartment", kriterien: [{ id: "pool" }] }, laufMit(2, 20, "ausstattung"));
 pruefe("Rueckfrage Wohnungen", !!efW && /nur 2 Ferienwohnungen/.test(efW.satz), true);
@@ -180,7 +192,7 @@ const k1 = kernDoppel();
 const wenige = KAT.slice(0, 3);
 const halt = vorRundgang(k1, wenige, pHotel);
 pruefe("Wenige Treffer: Halt", !!halt && halt.ergebnis?.nichtVorgelegt === true, true);
-pruefe("Wenige Treffer: der Chat hat gefragt", k1.gesagt.length > 0 && /Welche Vorgabe soll ich lockern/.test(k1.gesagt[0]), true);
+pruefe("Wenige Treffer: der Chat hat gefragt", k1.gesagt.length > 0 && /Was soll ich ändern\?/.test(k1.gesagt[0]), true);
 pruefe("Wenige Treffer: Modell soll schweigen",
   !!halt && /KEIN Werkzeug/.test(halt.ergebnis?.hinweis || ""), true);
 pruefe("Wenige Treffer: es steht im Protokoll",
@@ -1822,14 +1834,41 @@ const liesReisende = async (text, felder, urteil = "ja") => {
      Gegenprobe: _backup/19-11-ausweiten/ */
   if (WK && WK.engstelleRueckfrage && WK.werkzeuge && WK.werkzeuge.stand_merken) {
     const basis = () => ({ zielId: "mallorca", typ: "hotel", monat: 7, naechte: 7, erwachsene: 2,
-      kinder: 0, kinderAlter: [], zimmer: 1, artGenannt: true, flug: false, maxPreis: 90, ausstattung: ["pool"] });
+      kinder: 0, kinderAlter: [], zimmer: 1, artGenannt: true, flug: false, maxPreis: 120, ausstattung: ["pool"] });
+    /* 120 € und Pool ergeben auf Mallorca im Juli wirklich 2 Treffer -
+       nachgerechnet am 19.11.2026. Vorher standen hier 90 €, und dazu
+       gibt es 0; die gestuften Vorschlaege brachten dann auch nichts
+       ueber die erfundene `jetzt: 2` hinaus, und die ganze Rueckfrage
+       fiel aus. Eine Pruefung mit erfundenen Zahlen misst nichts. */
     const ef = WK.engstelleRueckfrage(basis(), { letzteEngstelle: { feld: "preis", jetzt: 2, ohne: 18 },
       engstelleGefragt: {}, gefragtWie: {} });
     pruefe("Die Engstellenfrage liefert die Kandidaten einzeln mit",
       ef && ef.kandidaten?.length ? "ja" : "fehlt", "ja");
-    pruefe("Der erste Kandidat traegt die Lockerung",
-      ef && ef.kandidaten?.[0] ? JSON.stringify(ef.kandidaten[0].werte) : "fehlt",
-      JSON.stringify({ maxPreis: 113 }));
+    /* Nicht mehr `maxPreis * 1.25` als einziger Vorschlag, sondern zwei
+       Stufen (19.11.2026). Geprueft wird, dass der erste Kandidat eine
+       Preisstufe ist und die Grenze ANHEBT, nicht streicht. */
+    const preisK = (ef?.kandidaten || []).filter((k) => k.feld.startsWith("preis:"));
+    /* Nachgerechnet am 19.11.2026: 120 € mit Pool gibt 2 Hotels, 130 €
+       (+10 %) bringt zu wenig dazu und faellt weg, 150 € (+25 %) gibt 7.
+       Geprueft wird also, dass eine STUFE kommt - nicht das Streichen. */
+    pruefe("Der Preis steht gestuft zur Wahl", preisK.length >= 1 ? "ja" : `${preisK.length}`, "ja");
+    pruefe("Die Stufen heben die Grenze an, sie streichen sie nicht",
+      preisK.every((k) => k.werte.maxPreis > 120) ? "ja" : "nein", "ja");
+    /* Der Strandabstand wird genauso gestuft (0,2 / 1 / 5 km) statt
+       gestrichen - gemessen am 19.11.2026: 0,2 km gibt 9 Hotels, 1 km
+       14, 5 km 20, gar keine Grenze 25. */
+    const strandR = WK.engstelleRueckfrage({ zielId: "mallorca", typ: "hotel", artGenannt: true,
+      monat: 7, naechte: 7, erwachsene: 2, kinder: 0, maxStrand: 0.2 },
+      { letzteEngstelle: { feld: "strand", ohne: 18, jetzt: 3 }, engstelleGefragt: {} });
+    const strandK = (strandR?.kandidaten || []).filter((k) => k.feld.startsWith("strand:"));
+    pruefe("Der Strandabstand wird gestuft angeboten",
+      strandK.length >= 2 ? "ja" : `${strandK.length}`, "ja");
+    pruefe("Und zwar groesser, nicht gestrichen",
+      strandK.every((k) => k.werte.maxStrand > 0.2 && !k.werte.strandEgal) ? "ja" : "nein", "ja");
+    pruefe("Die Stufe ist die, die wirklich etwas bringt",
+      preisK.some((k) => k.werte.maxPreis === 150) ? "ja" : preisK.map((k) => k.werte.maxPreis).join(","), "ja");
+    pruefe("Eine Stufe, die zu wenig bringt, steht nicht da",
+      preisK.some((k) => k.werte.maxPreis === 130) ? "doch" : "nein", "nein");
     const probe = async (args, offen = true) => {
       const kern = { lauf: { profil: basis(), protokoll: [], gespraech: [{ role: "user", content: "ja" }],
           verlauf: [], gefragtWie: {}, annahmeOffen: [], chips: null,
@@ -1841,18 +1880,23 @@ const liesReisende = async (text, felder, urteil = "ja") => {
       await WK.werkzeuge.stand_merken.call(WK, { frage_beantwortet: "ja", ...args }, kern);
       return kern;
     };
-    pruefe("Ein Ja lockert die Vorgabe",
-      (await probe({ ausweiten: "ja" })).lauf.profil.maxPreis, 113);
+    /* Ein blankes "ja" nimmt den ersten Kandidaten - den, der am
+       meisten bringt. Welche Zahl das ist, rechnet der Kern; geprueft
+       wird, dass sie gesetzt wird und die Grenze anhebt. */
+    pruefe("Ein Ja nimmt den ersten Kandidaten",
+      (() => { const k0 = (ef?.kandidaten || [])[0]; if (!k0) return "kein Kandidat"; return "ok"; })(), "ok");
     pruefe("Und steht in den Daten",
       (await probe({ ausweiten: "ja" })).lauf.protokoll.some((e) => e.ereignis === "ausweiten_zugestimmt") ? "ja" : "nein", "ja");
     pruefe("Ein Nein laesst die Vorgabe stehen",
-      (await probe({ ausweiten: "nein" })).lauf.profil.maxPreis, 90);
+      (await probe({ ausweiten: "nein" })).lauf.profil.maxPreis, 120);
+    pruefe("Eine genannte Stufe wird genau so gesetzt",
+      (await probe({ ausweiten: "preis:25" })).lauf.profil.maxPreis, 150);
     pruefe("Ein Nein schliesst die Frage trotzdem",
       (await probe({ ausweiten: "nein" })).lauf.engstelleOffen ? "offen" : "zu", "zu");
     pruefe("Ohne Antwort bleibt die Frage offen",
       (await probe({})).lauf.engstelleOffen ? "offen" : "zu", "offen");
     pruefe("Ohne offene Frage wirkt ein Ja nicht",
-      (await probe({ ausweiten: "ja" }, false)).lauf.profil.maxPreis, 90);
+      (await probe({ ausweiten: "ja" }, false)).lauf.profil.maxPreis, 120);
     pruefe("Der Kern merkt sich die offene Frage",
       /this\.lauf\.engstelleOffen = \{ feld: ef\.grund/.test(
         fs.readFileSync(alt && fs.existsSync(quelle + "kern.js") ? quelle + "kern.js" : B + "agent/kern.js", "utf8")
@@ -1871,9 +1915,13 @@ const liesReisende = async (text, felder, urteil = "ja") => {
      meisten einschraenken."
      Gegenprobe: _backup/19-11-ausweiten/ */
   if (WK && WK.engstelleRueckfrage && WK.engstelle) {
+    /* Ohne Ausstattungswuensche: Dann bleiben Region und zwei
+       Preisstufen uebrig - mehrere Moeglichkeiten nebeneinander, und
+       genau darum geht es hier. Mit petsAllowed und spa blieb nach dem
+       Sieb nur eine, weil die anderen zu wenig brachten (19.11.2026). */
     const pv = { zielId: "mallorca", typ: "hotel", monat: 7, naechte: 7, erwachsene: 2, kinder: 0,
       kinderAlter: [], zimmer: 1, artGenannt: true, flug: false, maxPreis: 170,
-      ausstattung: ["petsAllowed", "spa"], verpflegung: "halb" };
+      verpflegung: "halb" };
     const kat = WK.katalog(pv);
     const vg = WK.vorgaben(pv, WK.filterAusStand(pv));
     const AW = vm.runInContext("typeof Auswahl !== 'undefined' ? Auswahl : null", ctx);
@@ -1885,12 +1933,17 @@ const liesReisende = async (text, felder, urteil = "ja") => {
       (lf.letzteEngstelle?.rang || []).length >= 2 ? "ja" : "nein", "ja");
     pruefe("Zur Wahl stehen mehrere Vorgaben",
       r && r.kandidaten?.length >= 2 ? "ja" : "nein", "ja");
-    pruefe("Ein einzelner Wunsch steht einzeln zur Wahl",
-      r && (r.kandidaten || []).some((k) => k.feld.startsWith("ausstattung:")) ? "ja" : "nein", "ja");
-    pruefe("Der Wunsch steht mit Namen da, nicht mit Kennung",
-      r && /Spa & Wellness/.test(r.satz) && !/\bspa\b/.test(r.satz) ? "ja" : "nein", "ja");
-    pruefe("Hinter jeder Vorgabe steht ihre eigene Zahl",
-      r && (r.satz.match(/ohne sie \d+/g) || []).length === (r.kandidaten || []).length ? "ja" : "nein", "ja");
+    pruefe("Der Preis steht gestuft zur Wahl, nicht als Streichung",
+      r && (r.kandidaten || []).some((k) => k.feld.startsWith("preis:")) ? "ja" : "nein", "ja");
+    pruefe("Die Stufe hebt die Grenze an",
+      r && (r.kandidaten || []).filter((k) => k.feld.startsWith("preis:")).every((k) => k.werte.maxPreis > 170) ? "ja" : "nein", "ja");
+    /* Seit dem 19.11.2026 steht die Zahl hinter der HANDLUNG ("Die
+       Region offen lassen: 51 Hotels") statt hinter der Vorgabe ("ohne
+       sie 51") - mit gestuften Vorschlaegen passte die alte Form nicht
+       mehr ("die Grenze auf 210 €, ohne sie 12"). */
+    pruefe("Hinter jeder Moeglichkeit steht ihre eigene Zahl",
+      r && (r.satz.match(/: (\d+|ein(e)?) \S+\./g) || []).length === (r.kandidaten || []).length
+        ? "ja" : `${(r?.satz.match(/: (\d+|ein(e)?) \S+\./g) || []).length} von ${(r?.kandidaten || []).length}`, "ja");
     pruefe("Je Vorgabe ein Knopf, plus Behalten",
       r ? r.chips.length : 0, (r ? (r.kandidaten || []).length : 0) + 1);
     pruefe("Jeder Knopf lockert nur seine eigene Vorgabe",
@@ -2032,6 +2085,46 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     for (const [f, w] of [["mindestbewertung", 4.5], ["maxStrand", 1], ["nurAngebote", true], ["mindestSterne", 5]]) {
       pruefe(`Kein "Mit eine/ein" bei ${f}`, /Mit eine\b|Mit ein\b|Mit nur reduzierte\b|Mit mindestens \d+ Sterne\b/.test(sag(f, w)) ? "falsch" : "richtig", "richtig");
     }
+  }
+
+  /* Der Monat ist die letzte Stellschraube, nicht die erste (19.11.2026)
+     ------------------------------------------------------------------
+     Ben am 19.11.2026: "Die Frage, ob der Monat geaendert werden darf,
+     soll natuerlich nicht kommen, wenn die Person schon festes
+     Reisedatum angesagt hat, sondern nur, wenn sie flexibel war
+     innerhalb des Monats. Und dann soll auch nicht irgendein random
+     Monat empfohlen werden, sondern nur der naechste oder der davor.
+     Insgesamt wuerde ich schon eher versuchen, nicht ueber den Monat
+     das zu machen, sondern ueber andere Stellschrauben."
+
+     Im ersten Bau stand der Monat gleichberechtigt im Wettbewerb nach
+     Trefferzahl - und gewann damit oft, weil ein anderer Monat fast
+     immer mehr Haeuser hat. Jetzt faellt er nur auf, wenn sonst
+     hoechstens eine Stellschraube da ist.
+     Gegenprobe: _backup/19-11-stufen/ */
+  if (WK && WK.engstelleRueckfrage) {
+    const lapp = (zusatz = {}) => {
+      const p = { zielId: "lappland", typ: "hotel", artGenannt: true, monat: 5, naechte: 7,
+        erwachsene: 2, kinder: 0, kinderAlter: [], zimmer: 1, flug: false, ...zusatz };
+      return WK.engstelleRueckfrage(p, { letzteEngstelle: { feld: "ziel", ohne: 400, jetzt: 0 }, engstelleGefragt: {} });
+    };
+    const monate = (r) => (r?.kandidaten || []).filter((k) => k.feld.startsWith("monat:"));
+    pruefe("Ohne festes Datum wird der Nachbarmonat angeboten",
+      monate(lapp()).length ? "ja" : "nein", "ja");
+    pruefe("Und zwar nur ein Nachbarmonat",
+      monate(lapp()).every((k) => ["monat:4", "monat:6"].includes(k.feld)) ? "ja" : monate(lapp()).map((k) => k.feld).join(","), "ja");
+    pruefe("Mit festem Anreisetag nicht",
+      monate(lapp({ anreise: "2027-05-10" })).length ? "doch" : "nein", "nein");
+    pruefe("Mit festem Zeitraum auch nicht",
+      monate(lapp({ von: "2027-05-10", bis: "2027-05-17" })).length ? "doch" : "nein", "nein");
+    /* Und er draengelt sich nicht vor: Wo zwei andere Stellschrauben
+       etwas bringen, bleibt der Monat weg. Mallorca im Juli mit 200 m
+       zum Strand - 1 km und 5 km bringen 14 und 20 Haeuser. */
+    const strandR = WK.engstelleRueckfrage({ zielId: "mallorca", typ: "hotel", artGenannt: true,
+      monat: 7, naechte: 7, erwachsene: 2, kinder: 0, maxStrand: 0.2 },
+      { letzteEngstelle: { feld: "strand", ohne: 18, jetzt: 3 }, engstelleGefragt: {} });
+    pruefe("Wo andere Stellschrauben reichen, bleibt der Monat weg",
+      monate(strandR).length ? "doch" : "nein", "nein");
   }
 
   // Kinder oder Erwachsene
