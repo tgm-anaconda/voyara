@@ -156,19 +156,24 @@ const gespr = [{ role: "user", content: "nicht nach Lissabon oder Marrakesch" }]
   /* ==================================================================
      2. Nachhaken bei den Wuenschen
      ================================================================== */
+  /* Heisst seit dem 19.11.2026 `gewichtung`: Die Wuensche wurden in zwei
+     Themen geteilt - was das Haus haben MUSS (ausstattung, gefragt nach
+     einer Suche) und worauf in den Bewertungen geachtet wird
+     (gewichtung, als letztes Thema). Das Nachhaken, um das es hier geht,
+     gehoert zur Gewichtung. */
   const fertigWuensche = (profil, lauf) => {
-    try { return !!WK.fahrplan(profil, lauf).fertig.wuensche; }
+    try { return !!WK.fahrplan(profil, lauf).fertig.gewichtung; }
     catch (e) { return "Fehler: " + e.message; }
   };
   const basis = { typ: "hotel", monat: 10, naechte: 7, erwachsene: 2, kinder: 0, kriterien: [{ id: "essen" }] };
   pruefe("nach der ersten Antwort noch offen",
-    fertigWuensche(basis, { gefragtWie: { wuensche: 1 }, gespraech: [], besprochen: { wuensche: true } }), false);
+    fertigWuensche(basis, { gefragtWie: { gewichtung: 1 }, gespraech: [], besprochen: { gewichtung: true } }), false);
   pruefe("nach der zweiten Antwort noch offen",
-    fertigWuensche(basis, { gefragtWie: { wuensche: 2 }, gespraech: [], besprochen: { wuensche: true } }), false);
+    fertigWuensche(basis, { gefragtWie: { gewichtung: 2 }, gespraech: [], besprochen: { gewichtung: true } }), false);
   pruefe("nach der dritten Antwort besprochen",
-    fertigWuensche(basis, { gefragtWie: { wuensche: 3 }, gespraech: [], besprochen: { wuensche: true } }), true);
+    fertigWuensche(basis, { gefragtWie: { gewichtung: 3 }, gespraech: [], besprochen: { gewichtung: true } }), true);
   pruefe("Abwinken beendet das Thema sofort",
-    fertigWuensche(basis, { wuenscheGenug: true, gefragtWie: { wuensche: 1 }, gespraech: [], besprochen: { wuensche: true } }), true);
+    fertigWuensche(basis, { wuenscheGenug: true, gefragtWie: { gewichtung: 1 }, gespraech: [], besprochen: { gewichtung: true } }), true);
   // Wer dreimal gefragt wurde und nie etwas genannt hat, bekommt wie
   // bisher die Annahme ("keine besondere Ausstattung") - sonst dreht sich
   // das Gespraech im Kreis. Nur ueber einen GENANNTEN Wunsch geht sie nicht.
@@ -177,14 +182,14 @@ const gespr = [{ role: "user", content: "nicht nach Lissabon oder Marrakesch" }]
      Antwort kam. Gemeint ist hier derselbe Fall wie vorher - dreimal
      gefragt, dreimal nichts genannt. */
   pruefe("ohne jeden Wunsch greift die Annahme",
-    fertigWuensche({ ...basis, kriterien: [] }, { gefragtWie: { wuensche: 3 }, ohneAntwort: { wuensche: 3 }, gespraech: [], besprochen: {}, nichtVerstanden: {} }), true);
+    fertigWuensche({ ...basis, kriterien: [] }, { gefragtWie: { gewichtung: 3 }, ohneAntwort: { wuensche: 3 }, gespraech: [], besprochen: {}, nichtVerstanden: {} }), true);
   pruefe("'keine besondere Ausstattung' schliesst weiter ab",
-    fertigWuensche({ ...basis, kriterien: [], ausstattungEgal: true }, { gefragtWie: {}, gespraech: [], besprochen: {} }), true);
+    fertigWuensche({ ...basis, kriterien: [], gewichtungEgal: true }, { gefragtWie: {}, gespraech: [], besprochen: {} }), true);
 
   // Die Annahme nach zwei Fragen darf den genannten Wunsch nicht kippen
   (() => {
     let p2;
-    try { p2 = WK.fahrplan({ ...basis }, { gefragtWie: { wuensche: 2 }, gespraech: [], besprochen: { wuensche: true }, nichtVerstanden: {} }); }
+    try { p2 = WK.fahrplan({ ...basis }, { gefragtWie: { gewichtung: 2 }, gespraech: [], besprochen: { gewichtung: true }, nichtVerstanden: {} }); }
     catch (e) { pruefe("Annahme kippt den Wunsch nicht", "Fehler: " + e.message, true); return; }
     pruefe("Annahme kippt den Wunsch nicht", !(p2.annahmen || []).some((x) => /ausstattung/i.test(JSON.stringify(x))), true);
   })();
@@ -197,7 +202,7 @@ const gespr = [{ role: "user", content: "nicht nach Lissabon oder Marrakesch" }]
   pruefe("'Pool wäre schön' ist kein Abwinken", winkt("Pool wäre schön"), false);
 
   // Der Fragesatz selbst: ab der zweiten Runde wird nachgehakt
-  const satz = (lauf, p = basis) => { try { return WK.themenSatz("wuensche", p, lauf); } catch (e) { return "Fehler: " + e.message; } };
+  const satz = (lauf, p = basis) => { try { return WK.themenSatz("gewichtung", p, lauf); } catch (e) { return "Fehler: " + e.message; } };
   /* Diese Pruefung stand hier falsch (korrigiert am 18.11.2026).
      ------------------------------------------------------------------
      Sie fragte mit `basis` - und in `basis` steht schon ein Kriterium
@@ -211,13 +216,19 @@ const gespr = [{ role: "user", content: "nicht nach Lissabon oder Marrakesch" }]
      Frage. Also wird jetzt ohne Kriterien geprueft, und der Fall mit
      Kriterien steht daneben. */
   const ohneWunsch = { ...basis, kriterien: [] };
+  /* Der Satz der ersten Runde heisst seit dem 19.11.2026 anders: Er
+     sagt jetzt dazu, dass die Angabe NICHTS ausschliesst, sondern die
+     Reihenfolge entscheidet - vorher war das weder gesagt noch wahr. */
+  const offeneFrage = /Gibt es da welche|achtest du|achtet ihr/i;
   pruefe("Runde 1 fragt offen, wenn nichts dasteht",
-    /achtest du|achtet ihr/i.test(satz({ gefragtWie: {}, gespraech: [] }, ohneWunsch)), true);
+    offeneFrage.test(satz({ gefragtWie: {}, gespraech: [] }, ohneWunsch)), true);
+  pruefe("Runde 1 sagt, dass es nichts ausschliesst",
+    /schließt keine Häuser aus/.test(satz({ gefragtWie: {}, gespraech: [] }, ohneWunsch)), true);
   pruefe("Runde 1 fragt NICHT offen, wenn schon ein Wunsch dasteht",
-    /achtest du|achtet ihr/i.test(satz({ gefragtWie: {}, gespraech: [] })), false);
-  pruefe("Runde 2 hakt nach", /noch etwas ein/i.test(satz({ gefragtWie: { wuensche: 1 }, gespraech: [] })), true);
-  pruefe("Runde 2 nennt den schon genannten Wunsch", /neben/i.test(satz({ gefragtWie: { wuensche: 1 }, gespraech: [] })), true);
-  pruefe("Runde 3 bietet die Suche an", /weitermachen/i.test(satz({ gefragtWie: { wuensche: 2 }, gespraech: [] })), true);
+    offeneFrage.test(satz({ gefragtWie: {}, gespraech: [] })), false);
+  pruefe("Runde 2 hakt nach", /noch etwas ein/i.test(satz({ gefragtWie: { gewichtung: 1 }, gespraech: [] })), true);
+  pruefe("Runde 2 nennt den schon genannten Wunsch", /neben/i.test(satz({ gefragtWie: { gewichtung: 1 }, gespraech: [] })), true);
+  pruefe("Runde 3 bietet die Suche an", /weitermachen/i.test(satz({ gefragtWie: { gewichtung: 2 }, gespraech: [] })), true);
 
   /* ==================================================================
      3. Abbruch im Rundgang legt nichts vor

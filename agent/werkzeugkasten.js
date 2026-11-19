@@ -2349,7 +2349,11 @@ const Werkzeugkasten = {
     anzahl: /wie viele|anzahl|h(ä|ae)user|vorschl(ä|ae)ge|unterk(ü|ue)nfte/i,
     preis: /preis|budget|kosten|euro|grenze|ausgeben/i,
     verpflegung: /verpflegung|inclusive|inklusive|halbpension|vollpension|frühstück|fruehstueck|mahlzeit|all ?in/i,
-    wuensche: /wichtig|achte|wert|wünsch|wuensch|vorstell|lieber/i,
+    /* Zwei Themen seit dem 19.11.2026, also zwei Erkennungsworte.
+       `ausstattung` fragt nach einer Bedingung ("muss haben"),
+       `gewichtung` nach dem Schwerpunkt fuer die Bewertungen. */
+    ausstattung: /muss|bedingung|ausstattung|pool|kinderclub|wellness|meerblick|voraussetz|haben/i,
+    gewichtung: /wichtig|achte|wert|wünsch|wuensch|vorstell|lieber|bewertung|aspekt|schwerpunkt/i,
     beratung: /eckdaten|klären|klaeren|auswahl|zeigen/i,
   },
 
@@ -3996,10 +4000,11 @@ const Werkzeugkasten = {
         p.kriterien = ids.map((id) => ({ id, gewicht: 1 }));
         geaendert.push("wuensche");
         Werkzeugkasten.getraenkeHinweis(kern, p);
-        for (const id of ids) {
-          const k = Politik.kriterium(id);
-          if (k?.filter?.maxStrand && p.maxStrand == null) p.maxStrand = k.filter.maxStrand;
-        }
+        /* Hier setzte das Kriterium `strandnah` die Grenze maxStrand auf
+           einen Kilometer. Ein "Strand waere schoen" in der offenen Frage
+           war damit ein harter Ausschluss. Weg seit dem 19.11.2026 -
+           Begruendung bei Politik.KRITERIEN. Wer den Strand zur Bedingung
+           macht, sagt es, und dann setzt das Modell `maxStrand`. */
       }
       if (Array.isArray(a.ausstattung)) {
         /* Jedes Merkmal braucht ein Wort der Person.
@@ -4043,7 +4048,7 @@ const Werkzeugkasten = {
            "strandnah", "fusslaeufig zum Strand", "abends im Haus essen".
            Wortlisten werden nie vollstaendig - deshalb gilt auch hier:
            Steht das Modell fuer die Antwort ein, zaehlt sie. */
-        const deckt = beantwortet("wuensche", "ausstattung");
+        const deckt = beantwortet("wuensche", "ausstattung");   // die Themen im Schema, nicht die des Fahrplans
         const ohneBeleg = deckt ? [] : gewollt.filter((x) => !gesagt(WORT[x], 99));
         if (ohneBeleg.length) kern.notieren("ausstattung_verworfen", { felder: ohneBeleg });
         p.ausstattung = deckt ? gewollt : gewollt.filter((x) => gesagt(WORT[x], 99));
@@ -6674,7 +6679,17 @@ const Werkzeugkasten = {
     anzahl: ["anzahlVorschlaege"],
     preis: ["maxPreis", "budgetGesamt", "preisEgal"],
     verpflegung: ["verpflegung", "verpflegungEgal"],
-    wuensche: ["wuensche", "ausstattung", "ausstattungEgal"],
+    /* Zwei Themen statt einem (19.11.2026).
+       ----------------------------------------------------------------
+       `wuensche` trug beides: den Schwerpunkt fuer die Bewertungen und
+       die Ausstattung, die ein Haus haben MUSS. Beides in einer Frage
+       hiess, dass eine offen gestellte Frage die Liste zuschnitt.
+       Begruendung bei Politik.KRITERIEN und beim Fahrplan. */
+    /* Nur Felder, die `stand_merken` kennt - der Vertrag prueft das.
+       `kriterien` und `gewichtungEgal` fuehrt der Kern selbst; sie
+       stehen deshalb in den ANNAHMEN, aber nicht hier. */
+    ausstattung: ["ausstattung", "ausstattungEgal"],
+    gewichtung: ["wuensche"],
   },
 
   /* Wie weit das Nachhaken bei den Wuenschen ist (18.11.2026).
@@ -6704,7 +6719,7 @@ const Werkzeugkasten = {
      nachgefragt wird; das Abwinken ist der Ausweg, und den gibt es jetzt
      ab der ersten Frage. */
   wunschRunde(p, lauf) {
-    const gefragt = lauf?.gefragtWie?.wuensche || 0;
+    const gefragt = lauf?.gefragtWie?.gewichtung || 0;
     const steht = ((p?.kriterien || []).length || (p?.ausstattung || []).length) ? 1 : 0;
     return Math.max(gefragt, steht);
   },
@@ -6941,18 +6956,61 @@ const Werkzeugkasten = {
       nochmal: "Und bei der Verpflegung: All Inclusive, Halbpension, Frühstück oder egal?",
       frage: "Welche Verpflegung. 'Egal' heisst verpflegungEgal true.", chips: "All Inclusive | Halbpension | Nur Frühstück | Egal" },
 
-    wuensche: {
+    /* Die harte Frage: was MUSS das Haus haben (19.11.2026)
+       ----------------------------------------------------------------
+       Ben am 19.11.2026: "Das mit Hollywood-Schaukel und so, davor soll
+       auf jeden Fall immer schon mal der Agent neu arbeiten und sagen:
+       Okay, es sind jetzt noch 30 Hotels zur Verfuegung, hast du jetzt
+       noch irgendwelche expliziten Wuensche, wie zum Beispiel einen
+       Pool?"
 
-      /* Die Erklaerung stimmte nur fuer die Haelfte (12.11.2026).
-         "Was du hier nennst, ziehe ich aus den Gaestebewertungen
-         heraus" gilt fuer Ruhe, Sauberkeit, Service, Essen, Lage und
-         Preis. Pool, Kinderclub, Wellness und Meerblick stehen dagegen
-         in den Daten des Hauses und schliessen Haeuser aus, die sie
-         nicht haben. Zwei verschiedene Wirkungen unter einem Satz -
-         und die Person konnte nicht wissen, welche ihre Angabe hat. */
-      erklaerung: "Damit gewichte ich die Auswahl. Dinge wie Pool oder Kinderclub sind Ausstattung - die muss ein Haus haben, sonst fällt es raus. Dinge wie Ruhe oder Sauberkeit stehen in den Gästebewertungen; die kürzen die Liste nicht, sondern entscheiden die Reihenfolge.",
-      /* Drei Runden, drei Saetze. Die zweite und dritte nennen, was schon
-         steht - sonst klingt das Nachhaken, als haette er nicht zugehoert. */
+       Deshalb steht die Trefferzahl im Satz. Sie kommt aus
+       `lauf.letzteTreffer`, also aus der Suche, die der Fahrplan
+       unmittelbar davor erzwungen hat - nicht aus einer Schaetzung. Ohne
+       Zahl waere es wieder eine offene Frage ohne sichtbare Folge; mit
+       ihr sieht die Person, worauf sie sich einlaesst. */
+    ausstattung: {
+      erklaerung: "Das ist eine Bedingung: Häuser ohne das fallen raus. Was dir nur wichtig ist, ohne Bedingung zu sein, kommt gleich noch dran.",
+      satz: (p, wk, lauf) => {
+        const n = (lauf?.letzteTreffer || []).length;
+        const art = n ? wk.artZahl(n, p) : null;
+        const vorn = art ? `Es sind jetzt noch ${art}. ` : "";
+        const schon = (p.ausstattung || []).length
+          ? ` Notiert habe ich schon ${wk.aufzaehlenAusstattung(p)}.`
+          : "";
+        const beispiel = p.kinder > 0 ? "zum Beispiel ein Kinderclub" : "zum Beispiel ein Pool";
+        return `${vorn}Gibt es etwas, das die Unterkunft haben MUSS - ${beispiel}?${schon} Häuser ohne das fallen raus.`;
+      },
+      frage: "Ob es eine harte Bedingung an die Ausstattung gibt (ausstattung), oder keine (ausstattungEgal true). Das ist KEIN Schwerpunkt fuer die Bewertungen - danach fragst du spaeter.",
+      chips: (p) => {
+        const schon = new Set(p.ausstattung || []);
+        const VORRAT = p.kinder > 0
+          ? ["kidsClub", "pool", "familyFriendly"]
+          : ["pool", "spa", "seaView"];
+        const frei = VORRAT.filter((x) => !schon.has(x))
+          .map((x) => (typeof AMENITY_LABELS !== "undefined" && AMENITY_LABELS[x]) || x).slice(0, 2);
+        return ["Nein, nichts davon", ...frei].join(" | ");
+      } },
+
+    /* Die weiche Frage: worauf in den Bewertungen achten (19.11.2026)
+       ----------------------------------------------------------------
+       Ben am 19.11.2026: "Zusaetzlich kann ich auch noch bei der Analyse
+       der Bewertung auf besondere Aspekte achten, wie zum Beispiel
+       Sauberkeit, Ruhe oder Essen. Gibt es da welche, auf die ich achten
+       soll? Dass das irgendwie so im letzten Schritt kommt, also dass
+       quasi dieses Filtern da rausfaellt."
+
+       Sie steht deshalb als letztes Thema, direkt vor dem Haltepunkt zur
+       Anzahl. Und der Satz sagt ausdruecklich, dass sie nichts
+       ausschliesst - das war vorher nicht klar, und bei einem Teil der
+       Kriterien stimmte es auch nicht.
+
+       Drei Runden wie seit dem 03.11.2026, aber `wunschRunde` zaehlt
+       mit, was die Person von sich aus genannt hat: Wer "Ruhe und gutes
+       Essen" schon im ersten Satz sagt, bekommt nicht noch die offene
+       Frage nach demselben. */
+    gewichtung: {
+      erklaerung: "Das schließt keine Häuser aus. Es entscheidet, worauf ich in den Gästebewertungen achte und damit die Reihenfolge.",
       satz: (p, wk, lauf) => {
         const runde = Werkzeugkasten.wunschRunde(p, lauf);
         const schon = (p.kriterien || [])
@@ -6962,25 +7020,14 @@ const Werkzeugkasten = {
         const dazu = schon.length ? ` neben ${liste}` : "";
         if (runde >= 2) return `Fällt dir noch etwas ein${dazu}, oder soll ich mit der Suche weitermachen?`;
         if (runde === 1) return `Fällt dir${dazu} noch etwas ein?`;
-        return p.kinder > 0
-          ? "Worauf achtet ihr bei der Unterkunft besonders? Zum Beispiel Pool, Kinderclub oder die Nähe zum Strand."
-          : "Worauf achtest du bei der Unterkunft besonders? Zum Beispiel Ruhe, gutes Essen oder die Lage.";
+        return "Zuletzt noch: Bei der Analyse der Bewertungen kann ich auf bestimmte Aspekte besonders achten - Sauberkeit, Ruhe oder das Essen zum Beispiel. Das schließt keine Häuser aus, es entscheidet die Reihenfolge. Gibt es da welche?";
       },
-      /* Kein `nochmal`: Die drei Fassungen stehen oben in `satz`, und
-         `themenSatz` wuerde `nochmal` ab dem zweiten Mal vorziehen. */
-      frage: "Worauf sie bei der Unterkunft achtet - offen gefragt, hoechstens drei Beispiele. Haengt im Satz ein Nachhaken ('Faellt dir noch etwas ein'), dann stell GENAU diese Frage und spring nicht zum naechsten Thema.",
-      /* Keine Schnipsel fuer das, was schon dasteht (17.11.2026).
-         ----------------------------------------------------------------
-         Gemeldet aus Bens Durchlauf: Er hatte "Sauberkeit" genannt, und
-         im naechsten Zug bot der Agent "Sauberkeit" wieder als Schnipsel
-         an. Die Liste war eine feste Zeichenkette, unabhaengig vom
+      frage: "Worauf sie bei den Bewertungen achten soll (wuensche) - offen gefragt, hoechstens drei Beispiele. Sag dazu, dass es nichts ausschliesst. Haengt im Satz ein Nachhaken ('Faellt dir noch etwas ein'), dann stell GENAU diese Frage und spring nicht zum naechsten Thema.",
+      /* Keine Schnipsel fuer das, was schon dasteht (17.11.2026): Ben
+         hatte "Sauberkeit" genannt, und im naechsten Zug bot der Agent
+         "Sauberkeit" wieder an. Die Liste war fest, unabhaengig vom
          Stand - und der Satz darueber zaehlte gleichzeitig auf, was
-         schon gemerkt ist. Beides in einer Nachricht.
-
-         Jetzt werden die schon genannten Kriterien herausgenommen und
-         aus einem Vorrat aufgefuellt, damit immer drei Vorschlaege
-         dastehen. Bleibt nichts uebrig, steht nur noch das Abwinken da -
-         dann gibt es wirklich nichts mehr anzubieten. */
+         schon gemerkt ist. */
       chips: (p, wk, lauf) => {
         const schon = new Set((p.kriterien || []).map((k) => k.id));
         const VORRAT = ["sauberkeit", "essen", "lage", "ruhe", "service", "preis"];
@@ -6993,6 +7040,15 @@ const Werkzeugkasten = {
       } },
   },
 
+  // Die Ausstattung im Stand als Satzstueck ("einen Pool und einen Kinderclub")
+  aufzaehlenAusstattung(p) {
+    const namen = (p.ausstattung || [])
+      .map((a) => (typeof AMENITY_LABELS !== "undefined" && AMENITY_LABELS[a]) || a).filter(Boolean);
+    if (!namen.length) return "";
+    return typeof Politik !== "undefined" ? Politik.aufzaehlen(namen) : namen.join(", ");
+  },
+
+
   /* Wie der Kern ein neu aufgenommenes Feld ausspricht.
      ------------------------------------------------------------------
      Gebraucht fuer den Fall, den der Nutzer am 24.09.2026 gemeldet hat:
@@ -7002,16 +7058,16 @@ const Werkzeugkasten = {
      davor. thema: zu welchem Thema das Feld gehoert; eine Antwort auf die
      gestellte Frage braucht keine eigene Bestaetigung. */
   FELDWORT: {
-    wuensche: { thema: "wuensche", wort: (p) => (p.kriterien || []).map((k) => (typeof Politik !== "undefined" ? Politik.kriterium(k.id)?.label : null)).filter(Boolean).slice(-2).join(" und ") },
+    wuensche: { thema: "gewichtung", wort: (p) => (p.kriterien || []).map((k) => (typeof Politik !== "undefined" ? Politik.kriterium(k.id)?.label : null)).filter(Boolean).slice(-2).join(" und ") },
     budgetGesamt: { thema: "preis", wort: (p) => `höchstens ${p.budgetGesamt} € insgesamt` },
     maxPreis: { thema: "preis", wort: (p) => (p.preisProPerson
       ? `${p.preisProPerson} € pro Person, also höchstens ${p.maxPreis} € pro Nacht für euch alle`
       : `höchstens ${p.maxPreis} € pro Nacht${((p.erwachsene || 0) + (p.kinder || 0)) > 1 ? " für euch alle" : ""}`) },
     verpflegung: { thema: "verpflegung", wort: (p) => (typeof BOARD_LABELS !== "undefined" ? BOARD_LABELS[p.verpflegung] : p.verpflegung) },
     // "Haustiere erlaubt merke ich mir" - die Ausstattung, die die Person verlangt hat
-    ausstattung: { thema: "wuensche", wort: (p) => (p.ausstattung || []).map((a) => (typeof AMENITY_LABELS !== "undefined" ? AMENITY_LABELS[a] : a)).filter(Boolean).slice(-2).join(" und ") },
-    maxStrand: { thema: "wuensche", wort: (p) => `höchstens ${p.maxStrand < 1 ? `${Math.round(p.maxStrand * 1000)} Meter` : `${p.maxStrand} km`} zum Strand` },
-    mindestbewertung: { thema: "wuensche", wort: (p) => `mindestens ${String(p.mindestbewertung).replace(".", ",")} als Note` },
+    ausstattung: { thema: "ausstattung", wort: (p) => (p.ausstattung || []).map((a) => (typeof AMENITY_LABELS !== "undefined" ? AMENITY_LABELS[a] : a)).filter(Boolean).slice(-2).join(" und ") },
+    maxStrand: { thema: "ausstattung", wort: (p) => `höchstens ${p.maxStrand < 1 ? `${Math.round(p.maxStrand * 1000)} Meter` : `${p.maxStrand} km`} zum Strand` },
+    mindestbewertung: { thema: "ausstattung", wort: (p) => `mindestens ${String(p.mindestbewertung).replace(".", ",")} als Note` },
     naechte: { thema: "dauer", wort: (p) => `${p.naechte} Nächte` },
     // Dieselbe Falle wie in lageSatz: "Mai" hat drei Buchstaben
     monat: { thema: "zeit", wort: (p) => (typeof MONATSNAMEN !== "undefined" && p.monat ? MONATSNAMEN[p.monat - 1] : null) },
@@ -7998,8 +8054,20 @@ const Werkzeugkasten = {
          zusammenstellen?". Der Kern zaehlt die Runden (`wuenscheRunden`),
          ab der dritten gilt das Thema als besprochen - oder sofort, wenn
          die Person abwinkt (dann steht dort 99). */
-      wuensche: !!(p.ausstattungEgal || lauf?.wuenscheGenug
-        || ((p.kriterien || []).length && (lauf?.gefragtWie?.wuensche || 0) >= 3)),
+      /* Die Ausstattung: einmal gefragt, dann steht sie (19.11.2026).
+         --------------------------------------------------------------
+         Jede Person bekommt die Frage genau einmal, nach einer Suche und
+         mit der Trefferzahl davor - gleiche Bedingungen fuer alle, weil
+         die Zahl der Haeuser den Reiz mitbestimmt. Wer schon vorher
+         etwas als Bedingung genannt hat, wird trotzdem gefragt
+         ("sonst noch etwas?"), und wer nichts will, winkt ab. */
+      ausstattung: !!(p.ausstattungEgal || (lauf?.gefragtWie?.ausstattung || 0) >= 1),
+      /* Die Gewichtung: wie die Wuensche vorher, mit dem Nachhaken.
+         `wunschRunde` zaehlt mit, was die Person von sich aus genannt
+         hat - sonst fragt der Agent offen nach etwas, das schon
+         dasteht (gemessen am 18.11.2026). */
+      gewichtung: !!(p.gewichtungEgal || lauf?.wuenscheGenug
+        || ((p.kriterien || []).length && this.wunschRunde(p, lauf) >= 3)),
       /* Der Anreisetag. Mit festen Daten aus der Suche ist er da, sonst
          muss die Person ihn nennen - ohne ihn laesst die Seite nicht
          buchen, und der Knopf auf der Hausseite bleibt gesperrt.
@@ -8246,8 +8314,10 @@ const Werkzeugkasten = {
         selbst: "Beim Preis lege ich dich erst mal nicht fest." },
       verpflegung: { schreibt: ["verpflegung", "verpflegungEgal"], setzen: (x) => { x.verpflegungEgal = true; }, satz: "dass du die Verpflegung offen laesst",
         selbst: "Die Verpflegung lasse ich erst mal offen." },
-      wuensche: { schreibt: ["wuensche", "kriterien", "ausstattungEgal"], setzen: (x) => { x.ausstattungEgal = true; }, satz: "dass du keine besondere Ausstattung voraussetzt und keinen Schwerpunkt gesetzt hast",
-        selbst: "Besondere Ausstattung setze ich erst mal nicht voraus, und einen Schwerpunkt aus den Bewertungen nehme ich auch nicht." },
+      ausstattung: { schreibt: ["ausstattung", "ausstattungEgal"], setzen: (x) => { x.ausstattungEgal = true; }, satz: "dass du keine besondere Ausstattung voraussetzt",
+        selbst: "Besondere Ausstattung setze ich erst mal nicht voraus." },
+      gewichtung: { schreibt: ["wuensche", "kriterien", "gewichtungEgal"], setzen: (x) => { x.gewichtungEgal = true; }, satz: "dass du keinen Schwerpunkt fuer die Bewertungen gesetzt hast",
+        selbst: "Einen Schwerpunkt aus den Bewertungen nehme ich erst mal nicht." },
       anreise: { schreibt: ["anreise"], setzen: (x, wk) => {
         const f = wk.flexWahl(x);
         if (f) x.anreise = `${f.monat}-01`;
@@ -8302,7 +8372,7 @@ const Werkzeugkasten = {
          bis zu dreimal gestellt; ohne diese Zeile haette die Annahme nach
          der zweiten Frage `ausstattungEgal` gesetzt und damit genau das
          ueberschrieben, wonach gerade gefragt wurde. */
-      if (t === "wuensche" && (p.kriterien || []).length) continue;
+      if (t === "gewichtung" && (p.kriterien || []).length) continue;
       // Keine Annahme fasst an, was die Person selbst gesagt hat
       if ((a.schreibt || []).some((f) => p.vonPerson?.[f])) continue;
       /* Wer zurueckfragt, hat nicht abgelehnt (05.11.2026).
@@ -8474,9 +8544,36 @@ const Werkzeugkasten = {
        kosten, haengt am Haus, und das steht erst nach der Auswahl fest.
        Dort fragt der Agent danach und kennzeichnet, welches Zimmer die
        Grenze sprengen wuerde. */
-    const BESPRECHEN = (p.typ === "apartment" ? ["preis", "wuensche"] : ["verpflegung", "preis", "wuensche"]).concat("anzahl");
+    /* Erst ausschliessen, dann gewichten - und die Gewichtung zuletzt
+       (19.11.2026).
+       ------------------------------------------------------------------
+       Ben am 19.11.2026: "Das mit diesem Essen und so, das muss gefragt
+       werden vor der letzten Wahl, wo die drei Haeuser vorgeschlagen
+       werden. Und diese harten Filter, davor muss unbedingt immer einmal
+       noch eine Recherche passieren, bevor er das fragt."
+
+       Daraus die Reihenfolge:
+
+         Verpflegung, Preis    wie bisher, sie bewegen den Preis
+         Ausstattung           was ein Haus haben MUSS. Davor steht eine
+                               Suche (der Zweig `filterVeraltet` unten
+                               erzwingt sie), und die Frage nennt die
+                               Trefferzahl - so sieht die Person, worauf
+                               sie sich einlaesst.
+         Anreise               wie bisher
+         Gewichtung            der Schwerpunkt fuer die Bewertungen,
+                               ganz zuletzt vor dem Anzahl-Haltepunkt.
+                               Er schliesst nichts aus, also darf er auch
+                               nicht zwischen den Vorgaben stehen - dort
+                               haette er wie eine Vorgabe gewirkt.
+
+       `anzahl` steht weiter in der Liste, wird aber nie gefragt
+       (fertig.anzahl ist immer true); der Haltepunkt davor ist
+       Kern.anzahlVorRundgang. */
+    const BESPRECHEN = (p.typ === "apartment" ? ["preis", "ausstattung"] : ["verpflegung", "preis", "ausstattung"]).concat("anzahl");
     // Wer selbst schaut, wird nicht ausgefragt; wer raussuchen laesst, schon
-    const BERATUNG = (p.vorgehen === "selbst" ? [] : BESPRECHEN).concat("anreise");
+    const BERATUNG = (p.vorgehen === "selbst" ? [] : BESPRECHEN).concat("anreise")
+      .concat(p.vorgehen === "selbst" ? [] : ["gewichtung"]);
     const kernFertig = KERN.every((t) => fertig[t]);
     const suchbereit = fertig.zeit && fertig.reisende && fertig.kinderAlter && fertig.art;
     const schluessel = this.eckdatenSchluessel(p);
@@ -8649,7 +8746,30 @@ const Werkzeugkasten = {
            wenn sich die Filter seit der letzten Suche geaendert haben.
            Sonst waere jede Antwort ein Seitenaufbau. */
         const filterVeraltet = lauf.gefiltertMit && lauf.gefiltertMit !== this.filterSchluessel(p);
-        if (offen && filterVeraltet) { phase = "suche"; }
+        /* Vor der Ausstattungsfrage muss gesucht worden sein (19.11.2026).
+           --------------------------------------------------------------
+           Ben am 19.11.2026: "Diese harten Filter, davor muss unbedingt
+           immer einmal noch eine Recherche passieren, bevor er das fragt."
+           Und: "Mir ist wichtig, dass man den Agenten moeglichst viel
+           arbeiten sieht."
+
+           Der Grund ist nicht nur Sichtbarkeit: Die Frage nennt die
+           Trefferzahl ("Es sind jetzt noch 31 Hotels"), und die kommt aus
+           `lauf.letzteTreffer`. Ohne frische Suche stuende dort eine Zahl
+           von vorher - oder gar keine, und dann waere es wieder eine
+           offene Frage ohne sichtbare Folge.
+
+           `filterVeraltet` deckt den Fall ab, dass sich seit der letzten
+           Suche etwas geaendert hat. Hier kommt der Fall dazu, dass noch
+           gar nicht gefiltert wurde.
+
+           Gefragt wird nach `gefiltertMit`, nicht nach `letzteTreffer`:
+           Die Zahl ist das Ziel, aber eine Bedingung, die nur die Zahl
+           prueft, haelt den Fahrplan an, wenn ein Pfad sie einmal nicht
+           setzt - im stummen Durchlauf lief er genau deshalb in die 40
+           Zuege. Steht keine Zahl bereit, laesst der Satz sie weg. */
+        const ohneSuche = offen === "ausstattung" && !lauf.gefiltertMit;
+        if (offen && (filterVeraltet || ohneSuche)) { phase = "suche"; }
         else if (offen) { naechstes = offen; phase = "beratung"; }
         else {
           phase = "vorschlaege";
@@ -9135,7 +9255,10 @@ const Werkzeugkasten = {
     if (!fp.fertig.flug || !fp.fertig.flugAb) pflicht.push("Flug");
     if (!fp.fertig.preis) pflicht.push("Preis (fest oder offen)");
     if (!fp.fertig.verpflegung) pflicht.push("Verpflegung");
-    if (!fp.fertig.wuensche) pflicht.push("Wuensche");
+    // Zwei Themen seit dem 19.11.2026: was das Haus haben MUSS, und
+    // worauf in den Bewertungen geachtet wird.
+    if (!fp.fertig.ausstattung) pflicht.push("Ausstattung (Bedingung oder keine)");
+    if (!fp.fertig.gewichtung) pflicht.push("Schwerpunkt fuer die Bewertungen");
     return { pflicht, soll: [] };
   },
 
@@ -9276,13 +9399,13 @@ const Werkzeugkasten = {
          aus der Probe baut - und genau das liegt nahe, wenn der Agent
          erklaeren soll, was er lockern wuerde -, haette sonst weiche
          Wuensche in einem Satz ueber Ausstattung. */
-      { label: "die Ausstattungswünsche", weg: (x) => {
-        x.ausstattung = [];
-        x.kriterien = (x.kriterien || []).filter((k) => {
-          const kr = typeof Politik !== "undefined" ? Politik.kriterium(k.id) : null;
-          return !kr?.filter;
-        });
-      }, wenn: () => this.filterAusStand(p).ausstattung.length },
+      /* Hier wurden zusaetzlich die Kriterien durchgesiebt, weil manche
+         von ihnen mitfilterten. Seit dem 19.11.2026 tun sie das nicht
+         mehr (siehe Politik.KRITERIEN), also waere das Sieb ein Durchlauf
+         ohne Wirkung - und haette beim Lesen den Eindruck gemacht, hier
+         wuerden weiche Wuensche weggeworfen. */
+      { label: "die Ausstattungswünsche", weg: (x) => { x.ausstattung = []; },
+        wenn: () => this.filterAusStand(p).ausstattung.length },
       { label: p.richtung === "kalt" ? "die Beschränkung auf kalte Regionen" : p.richtung === "warm" ? "die Beschränkung auf warme Regionen" : "die Beschränkung auf diese Regionen", weg: (x) => { delete x.zieleErlaubt; delete x.richtung; }, wenn: () => !p.zielId && p.zieleErlaubt?.length },
       // Seit der feste Anreisetag mitfiltert, kann er der Engpass sein -
       // und dann ist er der erste, den man nennen sollte
@@ -10234,13 +10357,11 @@ const Werkzeugkasten = {
     };
   },
 
+  /* Nur noch die Ausstattung aus dem Stand (19.11.2026).
+     Hier wurden Kriterien wie "Pool" oder "Wellness" zu harten Filtern
+     dazugelegt - siehe Politik.KRITERIEN. */
   filterAusStand(p) {
-    const ausstattung = new Set(p.ausstattung || []);
-    for (const { id } of p.kriterien || []) {
-      const k = typeof Politik !== "undefined" ? Politik.kriterium(id) : null;
-      if (k?.filter?.ausstattung) ausstattung.add(k.filter.ausstattung);
-    }
-    return { ausstattung: [...ausstattung] };
+    return { ausstattung: [...(p.ausstattung || [])] };
   },
 
   /* Nichts gefunden: der Kern lockert selbst.
@@ -10272,14 +10393,18 @@ const Werkzeugkasten = {
       delete p.verpflegung; p.verpflegungEgal = true;
       return `die Vorgabe ${alt}`;
     } },
+    /* Gelockert wird die Ausstattung im Stand, nicht ein Kriterium
+       (19.11.2026). Kriterien filtern nicht mehr, also gab es hier auch
+       nichts mehr zu lockern - die Zeile haette still nie wieder
+       gegriffen. Siehe Politik.KRITERIEN. */
     { id: "ausstattung", tun: (p) => {
-      const mit = (p.kriterien || []).filter((k) => typeof Politik !== "undefined" && Politik.kriterium(k.id)?.filter?.ausstattung);
+      const mit = p.ausstattung || [];
       if (mit.length < 2) return null;
       // Das zuletzt genannte zaehlt am wenigsten - das wichtigste nennt
       // die Person zuerst oder sagt es ausdruecklich
       const weg = mit[mit.length - 1];
-      p.kriterien = (p.kriterien || []).filter((k) => k.id !== weg.id);
-      return `den Punkt ${Politik.kriterium(weg.id)?.label || weg.id}`;
+      p.ausstattung = mit.filter((x) => x !== weg);
+      return `die Vorgabe ${(typeof AMENITY_LABELS !== "undefined" && AMENITY_LABELS[weg]) || weg}`;
     } },
     /* Die Angebotsgrenze faellt als letzte.
        ----------------------------------------------------------------

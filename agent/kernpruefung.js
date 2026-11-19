@@ -253,7 +253,11 @@ const Kernpruefung = {
     flugKlasse: (p) => { p.flugKlasse = "economy"; },
     preis: (p) => { p.preisEgal = true; },
     verpflegung: (p) => { p.verpflegungEgal = true; },
-    wuensche: (p) => { p.kriterien = [{ id: "ruhe", gewicht: 1 }]; },
+    /* Zwei Themen seit dem 19.11.2026: was das Haus haben MUSS
+       (ausstattung) und worauf in den Bewertungen geachtet wird
+       (gewichtung). Vorher war beides `wuensche`. */
+    ausstattung: (p) => { p.ausstattungEgal = true; },
+    gewichtung: (p) => { p.kriterien = [{ id: "ruhe", gewicht: 1 }]; p.gewichtungEgal = true; },
     anreise: (p) => { const f = Werkzeugkasten.flexWahl(p); p.anreise = f ? `${f.monat}-12` : "2027-07-12"; },
     anzahl: (p) => { p.anzahlVorschlaege = 3; },
   },
@@ -326,7 +330,7 @@ const Kernpruefung = {
          andere Thema bleibt es bei einmal - sonst waere aus einer
          gewollten Ausnahme eine gelockerte Regel geworden. */
       const themen = schritte.filter((x) => !["suche", "vorschlaege", "selbst"].includes(x));
-      const erlaubt = { wuensche: 3 };
+      const erlaubt = { gewichtung: 3 };
       const zuOft = [...new Set(themen)].filter((t) => themen.filter((x) => x === t).length > (erlaubt[t] || 1));
       if (zuOft.length) melde("thema_doppelt", `${zuOft.map((t) => `${t} wird ${themen.filter((x) => x === t).length}× gefragt`).join(", ")}`);
       // Die Vorgehensfrage setzt eine Suche voraus
@@ -360,7 +364,7 @@ const Kernpruefung = {
            Dass beide hier fehlen, ist also eine Aussage und kein
            Versehen. Kommt eines der beiden Themen wieder im Ablauf vor,
            ist das eine Aenderung, die jemand bewusst treffen muss. */
-        const mussKommen = ["zeit", "reisende", "art", "ziel", "dauer", "preis", "wuensche"];
+        const mussKommen = ["zeit", "reisende", "art", "ziel", "dauer", "preis", "ausstattung", "gewichtung"];
         // Verpflegung nur, wo es sie gibt - eine Ferienwohnung hat keine
         if (f.art !== "apartment") mussKommen.push("verpflegung", "flug");
         // Der Flughafen nur mit Flug, und Fluege gibt es nicht zur Wohnung
@@ -654,7 +658,7 @@ const Kernpruefung = {
   annahmen() {
     const fehler = [];
     const themen = ["zeit", "weiter", "beratung", "vorgehen", "ziel", "art", "dauer",
-      "flug", "flugAb", "flugKlasse", "preis", "verpflegung", "wuensche", "anreise"];
+      "flug", "flugAb", "flugKlasse", "preis", "verpflegung", "ausstattung", "gewichtung", "anreise"];
     for (const p of this.staende().slice(0, 300)) {
       for (const t of themen) {
         const probe = JSON.parse(JSON.stringify(p));
@@ -1252,7 +1256,7 @@ const Kernpruefung = {
     const gk = typeof Politik !== "undefined" ? Politik.kriterium("getraenke") : null;
     const trifft = (t) => (gk?.woerter || []).some((w) => t.toLowerCase().includes(w));
     if (!gk || !trifft("alkohol und entspannung ist wichtig") || trifft("ab nach barcelona") || trifft("in der nähe von einem weinfeld")) {
-      fehler.push({ art: "wunsch_getraenke", thema: "wuensche", text: "Kriterium Getraenke trifft falsch" });
+      fehler.push({ art: "wunsch_getraenke", thema: "gewichtung", text: "Kriterium Getraenke trifft falsch" });
     }
     // Jahreszeit mit Tippfehler
     const jz = Werkzeugkasten.jahreszeitGenannt({ gespraech: [{ role: "user", content: "gerne im somme" }] });
@@ -1951,10 +1955,10 @@ const Kernpruefung = {
     const basis = { erwachsene: 2, kinder: 0, monat: 7, typ: "hotel", artGenannt: true, zielOffen: true,
       naechte: 7, flug: false, vorgehen: "top3", anzahlVorschlaege: 3, preisEgal: true };
     const faelle = [
-      { name: "Verpflegung nur besprochen", p: { ...basis, ausstattungEgal: true }, lauf: { besprochen: { verpflegung: true } }, erwartet: "Verpflegung" },
-      { name: "Wuensche nur besprochen", p: { ...basis, verpflegungEgal: true }, lauf: { besprochen: { wuensche: true } }, erwartet: "Wuensche" },
-      { name: "Preis nur besprochen", p: { ...basis, verpflegungEgal: true, ausstattungEgal: true, preisEgal: false }, lauf: { besprochen: { preis: true } }, erwartet: "Preis" },
-      { name: "alles beantwortet", p: { ...basis, verpflegungEgal: true, ausstattungEgal: true }, lauf: {}, erwartet: null },
+      { name: "Verpflegung nur besprochen", p: { ...basis, ausstattungEgal: true, gewichtungEgal: true }, lauf: { besprochen: { verpflegung: true } }, erwartet: "Verpflegung" },
+      { name: "Gewichtung nur besprochen", p: { ...basis, verpflegungEgal: true, ausstattungEgal: true }, lauf: { besprochen: { gewichtung: true } }, erwartet: "Schwerpunkt fuer die Bewertungen" },
+      { name: "Preis nur besprochen", p: { ...basis, verpflegungEgal: true, ausstattungEgal: true, gewichtungEgal: true, preisEgal: false }, lauf: { besprochen: { preis: true } }, erwartet: "Preis" },
+      { name: "alles beantwortet", p: { ...basis, verpflegungEgal: true, ausstattungEgal: true, gewichtungEgal: true }, lauf: {}, erwartet: null },
     ];
     for (const f of faelle) {
       const probe = JSON.parse(JSON.stringify(f.p));

@@ -244,19 +244,52 @@ const Politik = {
     { id: "getraenke", label: "Getränke & Bar", aspekt: "getraenke",
       // Ohne "bar" und "wein": sie stecken in "Barcelona" und "Weinfeld"
       woerter: ["alkohol", "getränk", "getraenk", "cocktail", "drinks"] },
-    { id: "pool", label: "Pool", aspekt: "pool", filter: { ausstattung: "pool" },
+    /* Kriterien gewichten, sie filtern nicht (19.11.2026).
+       ----------------------------------------------------------------
+       Ben am 19.11.2026: "Das mit diesem, auf was achtest du, Essen -
+       das soll zum Beispiel gar nicht einschraenken. Das soll einfach
+       nur den Fokus nehmen, was er quasi in den Bewertungen raussucht."
+
+       Sieben Kriterien trugen bis hierher ein `filter`: pool, wellness,
+       familie, kinderclub, meerblick, strandnah und bewertung. Ein
+       beilaeufiges "Strand waere schoen" in der offenen Frage setzte
+       damit `maxStrand <= 1 km`, "gut bewertet" eine Mindestnote von
+       4,5 - harte Ausschluesse aus einer Frage, bei der niemand mit
+       einem Ausschluss rechnet. Genau daran schrumpfte die Liste auf
+       eine Handvoll Haeuser.
+
+       Die Eigenschaft ist deshalb weg, nicht umgangen: An vier Stellen
+       wurde sie gelesen (Politik.filterAusKriterien, der maxStrand-Zweig
+       in stand_merken, Werkzeugkasten.filterAusStand und die Lockerung
+       darunter). Eine davon zu aendern und drei stehen zu lassen haette
+       genau die toten Pfade hinterlassen, vor denen Ben gewarnt hat.
+
+       Eingeschraenkt wird jetzt nur noch ueber `ausstattung`,
+       `maxStrand` und `mindestbewertung` - Felder, die das Modell nur
+       setzt, wenn die Person etwas als BEDINGUNG nennt ("muss einen Pool
+       haben"). Danach fragt der Fahrplan eigens, nach einer Suche und
+       mit der Trefferzahl davor.
+
+       Geblieben ist `merkmal`: Fuenf Kriterien entsprechen einer
+       Ausstattung des Hauses (pool, spa, familyFriendly, kidsClub,
+       seaView). Das wird an vier Stellen gebraucht - zum Punkten, wenn
+       es zum Kriterium keine Teilnote gibt, und fuer die Formulierungen
+       ("Pool vorhanden", "Ohne Meerblick"). Gewichten und Formulieren,
+       nicht Ausschliessen. Der eigene Name sagt das; `filter` hiess es
+       vorher und las sich wie eine Bedingung. */
+    { id: "pool", label: "Pool", aspekt: "pool", merkmal: "pool",
       woerter: ["pool", "schwimmbad", "schwimmen", "planschen"] },
-    { id: "wellness", label: "Wellness", filter: { ausstattung: "spa" },
+    { id: "wellness", label: "Wellness", merkmal: "spa",
       woerter: ["wellness", "spa", "sauna", "therme", "massage", "hot pot", "dampfbad"] },
-    { id: "familie", label: "Familienfreundlichkeit", filter: { ausstattung: "familyFriendly" },
+    { id: "familie", label: "Familienfreundlichkeit", merkmal: "familyFriendly",
       woerter: ["famili", "kinderfreundlich", "mit kindern", "mit kind", "spielplatz", "zum spielen", "was zum spielen", "beschäftigung für die kinder", "beschaeftigung fuer die kinder", "kinder brauchen", "für die kinder", "fuer die kinder", "die kleinen"] },
-    { id: "kinderclub", label: "Kinderclub", filter: { ausstattung: "kidsClub" },
+    { id: "kinderclub", label: "Kinderclub", merkmal: "kidsClub",
       woerter: ["kinderclub", "kids club", "kidsclub", "kinderbetreuung", "miniclub", "kinderanimation", "kinderprogramm"] },
-    { id: "meerblick", label: "Meerblick", filter: { ausstattung: "seaView" },
+    { id: "meerblick", label: "Meerblick", merkmal: "seaView",
       woerter: ["meerblick", "meeresblick", "blick aufs meer", "blick auf das meer", "blick aufs wasser", "sea view", "seaview"] },
-    { id: "strandnah", label: "Strandnähe", filter: { maxStrand: 1 },
+    { id: "strandnah", label: "Strandnähe", naehe: "strand",
       woerter: ["strand", "am meer", "meernah", "ans wasser", "direkt am wasser", "küste", "kueste"] },
-    { id: "bewertung", label: "gute Bewertungen", filter: { mindestbewertung: 4.5 },
+    { id: "bewertung", label: "gute Bewertungen", gesamtnote: true,
       woerter: ["gut bewertet", "beste bewertung", "hohe bewertung", "top bewertet", "gute bewertung", "gute bewertungen", "guten bewertungen", "gut bewertete"] },
   ],
 
@@ -393,17 +426,12 @@ const Politik = {
   },
 
   // Kriterien in Filter uebersetzen, soweit die Seite sie kennt
-  filterAusKriterien(kriterien) {
-    const filter = { ausstattung: [] };
-    for (const { id } of kriterien) {
-      const k = this.kriterium(id);
-      if (!k?.filter) continue;
-      if (k.filter.ausstattung) filter.ausstattung.push(k.filter.ausstattung);
-      if (k.filter.maxStrand) filter.maxStrand = k.filter.maxStrand;
-      if (k.filter.mindestbewertung) filter.mindestbewertung = k.filter.mindestbewertung;
-    }
-    if (!filter.ausstattung.length) delete filter.ausstattung;
-    return filter;
+  /* Harte Filter kommen aus dem Stand, nicht aus den Kriterien
+     (19.11.2026, siehe den Kommentar bei KRITERIEN).
+     Hiess bis dahin `filterAusKriterien` und las `kriterium(id).filter`. */
+  filterAusProfil(profil) {
+    const ausstattung = [...(profil?.ausstattung || [])];
+    return ausstattung.length ? { ausstattung } : {};
   },
 
   /* ==================================================================
@@ -476,8 +504,25 @@ const Politik = {
         // Kein Aspekt oder zu duenne Datenlage: Teilnote, sonst Ausstattung
         if (k.note && item.ratingBreakdown?.[k.note] != null) {
           punkte += (item.ratingBreakdown[k.note] - 4.3) * 2 * gewicht;
-        } else if (k.filter?.ausstattung && (item.amenities || []).includes(k.filter.ausstattung)) {
+        } else if (k.merkmal && (item.amenities || []).includes(k.merkmal)) {
           punkte += 1.2 * gewicht;
+        } else if (k.naehe === "strand" && item.distanceToBeach != null) {
+          /* Strandnaehe und Note als weiche Wuensche (19.11.2026).
+             --------------------------------------------------------
+             Beide trugen frueher ein `filter` und schnitten die Liste
+             hart zu (1 km, Note 4,5). Seit das weg ist (siehe
+             Politik.KRITERIEN), haetten sie gar nichts mehr getan: kein
+             Aspekt, keine Teilnote, kein Merkmal - der Wunsch waere
+             stillschweigend verfallen. Also wiegen sie jetzt, statt zu
+             streichen.
+
+             Die Skalen sind so gewaehlt, dass sie neben den anderen
+             Kriterien stehen koennen: Ein Haus direkt am Strand bekommt
+             rund zwei Punkte, eines fuenf Kilometer entfernt nichts.
+             Bei der Note gibt eine 4,8 etwa 1,6 Punkte, eine 4,0 keine. */
+          punkte += Math.max(0, 2 - item.distanceToBeach * 0.8) * gewicht;
+        } else if (k.gesamtnote && item.rating != null) {
+          punkte += Math.max(0, (item.rating - 4) * 2) * gewicht;
         }
       }
 
@@ -662,8 +707,8 @@ const Politik = {
     }
 
     // Ausstattungswuensche (Pool, Meerblick, Kinderclub, Wellness): hat es das Haus?
-    const ausstattungsWuensche = (profil.kriterien || []).map((x) => this.kriterium(x.id)).filter((kr) => kr?.filter?.ausstattung)
-      .map((kr) => ({ key: kr.filter.ausstattung, label: kr.label }));
+    const ausstattungsWuensche = (profil.kriterien || []).map((x) => this.kriterium(x.id)).filter((kr) => kr?.merkmal)
+      .map((kr) => ({ key: kr.merkmal, label: kr.label }));
     for (const key of profil.ausstattung || []) {
       // Strandlage steht schon oben als Entfernung
       if (key === "beachfront" && item.distanceToBeach != null) continue;
@@ -699,9 +744,9 @@ const Politik = {
          allein zeigt den kleinen Vorsprung. */
       teile.push(`${genannt.kriterium}: ${this.teilnoteText(genannt.anteil)}.`);
     }
-    const ausstattung = (profil.kriterien || []).map((x) => this.kriterium(x.id)).filter((kr) => kr?.filter?.ausstattung);
-    const hat = ausstattung.filter((kr) => (item.amenities || []).includes(kr.filter.ausstattung)).map((kr) => kr.label);
-    const fehlt = ausstattung.filter((kr) => !(item.amenities || []).includes(kr.filter.ausstattung)).map((kr) => kr.label);
+    const ausstattung = (profil.kriterien || []).map((x) => this.kriterium(x.id)).filter((kr) => kr?.merkmal);
+    const hat = ausstattung.filter((kr) => (item.amenities || []).includes(kr.merkmal)).map((kr) => kr.label);
+    const fehlt = ausstattung.filter((kr) => !(item.amenities || []).includes(kr.merkmal)).map((kr) => kr.label);
     if (hat.length) teile.push(`${this.aufzaehlen(hat)} vorhanden.`);
     if (fehlt.length) teile.push(`Ohne ${this.aufzaehlen(fehlt)}.`);
     if (profil.maxStrand != null && item.distanceToBeach != null) {
@@ -758,7 +803,7 @@ const Politik = {
       wellness: "Wellness bietet", strandnah: "nah am Strand liegt", ruhe: "ruhig liegt",
     };
     const erfuellt = kriterien
-      .filter((kr) => kr.filter?.ausstattung && ausstattung.has(kr.filter.ausstattung))
+      .filter((kr) => kr.merkmal && ausstattung.has(kr.merkmal))
       .map((kr) => WENDUNG[kr.id] || `${kr.label} bietet`);
     gruende.push(...erfuellt);
     if (profil.maxStrand != null && item.distanceToBeach != null && item.distanceToBeach <= profil.maxStrand) {
@@ -878,7 +923,7 @@ const Politik = {
     const bestand = profil.typ === "apartment"
       ? (typeof APARTMENTS !== "undefined" ? APARTMENTS : [])
       : (typeof HOTELS !== "undefined" ? HOTELS : []);
-    const filter = this.filterAusKriterien(profil.kriterien || []);
+    const filter = this.filterAusProfil(profil);
     const ausstattung = filter.ausstattung || [];
     const treffer = bestand.filter((h) => {
       if (!this.zielPasst(profil, h.ziel)) return false;
@@ -1629,28 +1674,23 @@ const Politik = {
        seine Arbeit auch nicht beurteilen. Weiche Wuensche heissen jetzt
        "Wichtig" und tragen den Grund mit (aus den Bewertungen), harte
        stehen bei den anderen Pflichtangaben unter "Muss". */
+    /* Jedes Kriterium ist jetzt ein weicher Wunsch (19.11.2026).
+       Hier stand `if (kr.filter) continue` - die harten standen unten
+       als "Muss". Seit Kriterien nicht mehr filtern, gibt es diese
+       zweite Sorte nicht mehr, und die Zeile haette still nie wieder
+       gegriffen. Siehe Politik.KRITERIEN. */
     for (const k of profil.kriterien || []) {
       const kr = this.kriterium(k.id);
       if (!kr?.label) continue;
-      if (kr.filter) continue;          // steht unten als "Muss"
       raus.push({ feld: "Wichtig", wert: kr.label });
     }
-    /* Die harten Kriterien, bevor die Ausstattung kommt: Sie filtern
-       dasselbe, also gehoeren sie in dieselbe Zeile. Mit ihrem Label,
-       nicht mit dem Namen des Merkmals - "Kinderclub" sagt mehr als
-       "Kids Club" und ist das Wort, das die Person benutzt hat. */
-    const wunschAusstattung = new Set((profil.kriterien || []).map((k) => this.kriterium(k.id)?.filter?.ausstattung).filter(Boolean));
-    for (const k of profil.kriterien || []) {
-      const kr = this.kriterium(k.id);
-      if (!kr?.filter || !kr.label) continue;
-      // Strandnaehe und Note stehen schon als eigene Zeile da
-      if (kr.filter.maxStrand != null && profil.maxStrand != null) continue;
-      if (kr.filter.mindestbewertung != null && profil.mindestbewertung) continue;
-      raus.push({ feld: "Muss", wert: kr.label });
-    }
+    /* Hier stand ein zweiter Durchgang ueber die Kriterien, der daraus
+       ebenfalls "Muss"-Zeilen baute - und ein Set, das Doppelungen
+       zwischen beiden Listen abfing. Seit Kriterien nicht mehr filtern
+       (19.11.2026), gibt es nur noch eine Quelle fuer "Muss": die
+       Ausstattung im Stand. Damit faellt auch die Doppelung weg. */
     for (const a of profil.ausstattung || []) {
       if (a === "beachfront" && profil.maxStrand != null && profil.maxStrand <= 0.2) continue;
-      if (wunschAusstattung.has(a)) continue;
       raus.push({ feld: "Muss", wert: (typeof AMENITY_LABELS !== "undefined" && AMENITY_LABELS[a]) || a });
     }
     if (profil.flug != null) raus.push({ feld: "Flug", wert: profil.flug ? `ja${profil.flugAb ? `, ab ${profil.flugAb}` : ""}` : "nein" });
@@ -1857,7 +1897,7 @@ const Politik = {
       },
     });
 
-    const filter = this.filterAusKriterien(profil.kriterien || []);
+    const filter = this.filterAusProfil(profil);
     if (profil.zielId) filter.zielId = profil.zielId;
     if (profil.maxPreis) filter.maxPreis = profil.maxPreis;
     // Die Suchmaske kennt 0,2 / 1 / 5 km - die kleinste Stufe, die den

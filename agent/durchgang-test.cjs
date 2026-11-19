@@ -708,36 +708,49 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     pruefe("Rueckfrage kostet keinen Anlauf", nachher, vorher);
   }
 
-  /* Harte Vorgabe gegen weichen Wunsch (12.11.2026).
+  /* Kein Kriterium filtert mehr (19.11.2026).
      ------------------------------------------------------------------
-     Die Trennung steckt in den Daten (ein Kriterium mit `filter`
-     filtert, eines ohne nicht). Geprueft wird, dass die Leiste und die
-     Lockerung sie auch benutzen. */
+     Hier stand die Trennung "hart gegen weich": Ein Kriterium mit
+     `filter` schnitt die Liste zu, eines ohne wog nur. Die Pruefungen
+     schrieben das als richtig fest - und damit auch, dass ein
+     beilaeufiges "Strand waere schoen" in der offenen Frage
+     `maxStrand <= 1 km` setzt.
+
+     Ben am 19.11.2026: "Das mit diesem, auf was achtest du, Essen - das
+     soll zum Beispiel gar nicht einschraenken." Seitdem wiegen alle
+     Kriterien nur noch; eingeschraenkt wird ueber `ausstattung`,
+     `maxStrand` und `mindestbewertung`, die das Modell nur bei einer
+     ausgesprochenen Bedingung setzt. Begruendung bei Politik.KRITERIEN. */
   {
-    const hart = ctx.PO.KRITERIEN.filter((k) => k.filter).map((k) => k.id).sort();
-    const weich = ctx.PO.KRITERIEN.filter((k) => !k.filter).map((k) => k.id).sort();
-    pruefe("Kriterien: die weichen kommen aus Bewertungen", weich.join(","),
-      "essen,getraenke,lage,preis,ruhe,sauberkeit,service");
-    pruefe("Kriterien: die harten filtern den Katalog", hart.join(","),
-      "bewertung,familie,kinderclub,meerblick,pool,strandnah,wellness");
-    // Jedes weiche Kriterium hat eine Teilnote oder einen Aspekt, sonst
-    // koennte es die Reihenfolge gar nicht beeinflussen
-    const ohneGrundlage = ctx.PO.KRITERIEN.filter((k) => !k.filter && !k.note && !k.aspekt).map((k) => k.id);
-    pruefe("Weiche Kriterien haben eine Grundlage", ohneGrundlage.join(",") || "keins", "keins");
+    pruefe("Kein Kriterium filtert mehr",
+      ctx.PO.KRITERIEN.filter((k) => k.filter).map((k) => k.id).join(",") || "keins", "keins");
+    /* Jedes Kriterium braucht etwas, womit es wiegen kann - sonst
+       verfaellt der Wunsch stillschweigend. Teilnote, Aspekt, ein
+       Ausstattungsmerkmal, die Strandnaehe oder die Gesamtnote. */
+    const ohneGrundlage = ctx.PO.KRITERIEN
+      .filter((k) => !k.note && !k.aspekt && !k.merkmal && !k.naehe && !k.gesamtnote)
+      .map((k) => k.id);
+    pruefe("Jedes Kriterium hat eine Grundlage", ohneGrundlage.join(",") || "keins", "keins");
 
     const leiste = (profil) => ctx.PO.eckdaten(profil);
     const zeilen = leiste({ kriterien: [{ id: "ruhe" }, { id: "pool" }, { id: "sauberkeit" }] });
     const feld = (wert) => (zeilen.find((z) => z.wert === wert) || {}).feld || "fehlt";
     pruefe("Leiste: Ruhe steht als Wichtig", feld("Ruhe"), "Wichtig");
     pruefe("Leiste: Sauberkeit steht als Wichtig", feld("Sauberkeit"), "Wichtig");
-    pruefe("Leiste: Pool steht als Muss", feld("Pool"), "Muss");
+    // Pool als Wunsch ist "Wichtig". Erst als Bedingung wird daraus ein Muss.
+    pruefe("Leiste: Pool als Wunsch ist Wichtig", feld("Pool"), "Wichtig");
+    const mussPool = leiste({ ausstattung: ["pool"] });
+    pruefe("Leiste: Pool als Bedingung ist Muss",
+      (mussPool.find((z) => z.wert === "Pool") || {}).feld || "fehlt", "Muss");
     // Nichts darf doppelt erscheinen
     const werte = zeilen.map((z) => z.wert);
     pruefe("Leiste: keine Zeile doppelt", werte.length, new Set(werte).size);
-    // Strandnaehe und Note haben eigene Zeilen - das Kriterium nicht noch dazu
+    // Strandnaehe als Wunsch und die Entfernung als Vorgabe sind zwei Dinge,
+    // aber jedes steht hoechstens einmal da
     const mitStrand = leiste({ kriterien: [{ id: "strandnah" }], maxStrand: 1 });
-    pruefe("Leiste: Strandnaehe nicht zweimal",
-      mitStrand.filter((z) => z.feld === "Strand" || z.wert === "Strandnähe").length, 1);
+    const strandWerte = mitStrand.map((z) => z.wert);
+    pruefe("Leiste: nichts doppelt, auch beim Strand",
+      strandWerte.length, new Set(strandWerte).size);
 
     /* Weiche Wuensche filtern nichts - am echten Pfad, nicht simuliert.
        Das ist die Grundlage der ganzen Trennung: Waere sie falsch,
@@ -1365,7 +1378,7 @@ const liesReisende = async (text, felder, urteil = "ja") => {
       KN.WUNSCH_GENUG.test("verpflegung ist egal, sonst nichts weiter"), true);
     const q = fs.readFileSync(alt && fs.existsSync(quelle + "kern.js") ? quelle + "kern.js" : B + "agent/kern.js", "utf8");
     pruefe("Abwinken gilt auch mit Wunsch im Stand",
-      /gefragt === "wuensche" \|\| hatWunsch/.test(q) ? "ja" : "nein", "ja");
+      /gefragt === "gewichtung" \|\| hatWunsch/.test(q) ? "ja" : "nein", "ja");
   }
 
   /* Ein vorlaeufiger Monat wird als solcher uebergeben (17.11.2026)
@@ -1634,7 +1647,12 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     const kernStub = (lauf = {}) => ({
       lauf: { profil: { zielId: "mallorca", typ: "hotel", monat: 7, naechte: 7, erwachsene: 2,
           kinder: 0, kinderAlter: [], zimmer: 1, artGenannt: true, flug: false, anreise: "2027-07-10",
-          maxPreis: 2000, verpflegungEgal: true, ausstattungEgal: true, wuensche: [], vorgehen: "top3" },
+          /* `gewichtungEgal` seit dem 19.11.2026: Der Schwerpunkt fuer die
+             Bewertungen ist ein eigenes Thema und steht als letztes vor
+             dem Haltepunkt. Ohne das Feld haelt der Fahrplan ihn fuer
+             offen und legt gar nichts vor. */
+          maxPreis: 2000, verpflegungEgal: true, ausstattungEgal: true, gewichtungEgal: true,
+          wuensche: [], vorgehen: "top3" },
         protokoll: [], gespraech: [], verlauf: [], chips: null, gefragtWie: {}, annahmeOffen: [], ...lauf },
       notieren(e, d) { this.lauf.protokoll.push({ ereignis: e, ...d }); },
       sagen(t) { (this.lauf.gesagt ||= []).push(t); },
@@ -1699,7 +1717,12 @@ const liesReisende = async (text, felder, urteil = "ja") => {
          Loeschen eine Behauptung. */
       const lauf = { profil: { zielId: "mallorca", typ: "hotel", monat: 7, naechte: 7, erwachsene: 2,
           kinder: 0, kinderAlter: [], zimmer: 1, artGenannt: true, flug: false, anreise: "2027-07-10",
-          maxPreis: 2000, verpflegungEgal: true, ausstattungEgal: true, wuensche: [], vorgehen: "top3" },
+          /* `gewichtungEgal` seit dem 19.11.2026: Der Schwerpunkt fuer die
+             Bewertungen ist ein eigenes Thema und steht als letztes vor
+             dem Haltepunkt. Ohne das Feld haelt der Fahrplan ihn fuer
+             offen und legt gar nichts vor. */
+          maxPreis: 2000, verpflegungEgal: true, ausstattungEgal: true, gewichtungEgal: true,
+          wuensche: [], vorgehen: "top3" },
         gesuchtMit: "x", gespraech: [], gefragtWie: {} };
       const fp = WK.fahrplan(lauf.profil, lauf);
       lauf.vorgehenFuer = fp.schluessel + lauf.profil.vorgehen;
@@ -1901,6 +1924,67 @@ const liesReisende = async (text, felder, urteil = "ja") => {
       /kennzeichnungQuelle = fest \? "fest" : "gelost"/.test(sq) ? "ja" : "nein", "ja");
   }
 
+  /* Die ganze Reihenfolge, einmal durchgespielt (19.11.2026)
+     ------------------------------------------------------------------
+     Ben am 19.11.2026: "Da muessen wir uns auf jeden Fall sauber darauf
+     verlassen koennen, dass da jetzt die aktuelle Reihenfolge gut ist."
+     Also wird sie hier nicht in Einzelteilen geprueft, sondern am
+     Stueck: Eine Person nennt die Eckdaten und antwortet auf jede Frage.
+     Herauskommen muss:
+
+       SUCHE, verpflegung, SUCHE, preis, SUCHE, ausstattung, anreise,
+       gewichtung, VORSCHLAEGE
+
+     Drei sichtbare Suchen waehrend der Beratung, die harte Frage erst
+     nach einer davon und mit der Trefferzahl im Satz, die Gewichtung
+     als letztes. Gegenprobe: _backup/19-11-trennung/ */
+  if (WK && WK.fahrplan && WK.themenSatz) {
+    const AW = vm.runInContext("typeof Auswahl !== 'undefined' ? Auswahl : null", ctx);
+    const pr = { zielId: "mallorca", typ: "hotel", artGenannt: true, monat: 7, naechte: 7,
+      erwachsene: 2, kinder: 0, kinderAlter: [], zimmer: 1, flug: false };
+    const lr = { gespraech: [], gefragtWie: {}, besprochen: {}, protokoll: [],
+      gesuchtMit: null, gefiltertMit: null, letzteTreffer: [], zugSeit: 1 };
+    const ANTWORT = { verpflegung: (x) => { x.verpflegung = "halb"; },
+      preis: (x) => { x.maxPreis = 200; }, ausstattung: (x) => { x.ausstattungEgal = true; },
+      anreise: (x) => { x.anreise = "2027-07-10"; },
+      gewichtung: (x) => { x.kriterien = [{ id: "essen", gewicht: 1 }]; x.gewichtungEgal = true; } };
+    const ablauf = [];
+    let ausstattungsSatz = "";
+    for (let i = 0; i < 30; i++) {
+      lr.zugSeit = i + 1;
+      const fp = WK.fahrplan(pr, lr);
+      if (WK.zwang(pr, lr) === "suchen" || fp.phase === "suche") {
+        lr.gesuchtMit = fp.schluessel; lr.gefiltertMit = WK.filterSchluessel(pr);
+        if (pr.vorgehen) lr.vorgehenFuer = fp.schluessel + pr.vorgehen;
+        const t = AW ? AW.treffer(WK.katalog(pr), WK.vorgaben(pr, WK.filterAusStand(pr))) : [];
+        lr.letzteTreffer = t.map((x) => x.id);
+        ablauf.push("SUCHE"); continue;
+      }
+      if (fp.phase === "vorschlaege") { ablauf.push("VORSCHLAEGE"); break; }
+      if (!fp.naechstes) { ablauf.push("SACKGASSE:" + fp.phase); break; }
+      if (fp.naechstes === "ausstattung") {
+        try { ausstattungsSatz = String(WK.themenSatz("ausstattung", pr, lr) || ""); } catch { ausstattungsSatz = ""; }
+      }
+      ablauf.push(fp.naechstes);
+      lr.gefragtWie[fp.naechstes] = (lr.gefragtWie[fp.naechstes] || 0) + 1;
+      lr.gefragtVorher = fp.naechstes; lr.frageBeantwortet = "ja";
+      if (ANTWORT[fp.naechstes]) ANTWORT[fp.naechstes](pr);
+      else { ablauf.push("UNERWARTET:" + fp.naechstes); break; }
+    }
+    pruefe("Die Reihenfolge der Beratung", ablauf.join(" "),
+      "SUCHE verpflegung SUCHE preis SUCHE ausstattung anreise gewichtung VORSCHLAEGE");
+    pruefe("Drei sichtbare Suchen in der Beratung",
+      ablauf.filter((x) => x === "SUCHE").length, 3);
+    pruefe("Die harte Frage nennt die Trefferzahl",
+      /Es sind jetzt noch \d+ Hotels/.test(ausstattungsSatz) ? "ja" : ausstattungsSatz.slice(0, 60), "ja");
+    pruefe("Die harte Frage sagt, dass Haeuser rausfallen",
+      /fallen raus/.test(ausstattungsSatz) ? "ja" : "nein", "ja");
+    pruefe("Die Gewichtung steht hinter der Ausstattung",
+      ablauf.indexOf("gewichtung") > ablauf.indexOf("ausstattung") ? "ja" : "nein", "ja");
+    pruefe("Und unmittelbar vor den Vorschlaegen",
+      ablauf[ablauf.indexOf("VORSCHLAEGE") - 1], "gewichtung");
+  }
+
   // Kinder oder Erwachsene
   if (WK && WK.kinderErwachsenRueckfrage) {
     const f = WK.kinderErwachsenRueckfrage({ erwachsene: 1, kinder: 2 }, { alterZuHoch: [28, 34] });
@@ -1917,8 +2001,13 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     const wq = fs.readFileSync(alt && fs.existsSync(quelle + "werkzeugkasten.js") ? quelle + "werkzeugkasten.js" : B + "agent/werkzeugkasten.js", "utf8");
     pruefe("Jahreszeit setzt keine Monatsliste",
       /monate_aus_jahreszeit_verworfen/.test(wq) ? "ja" : "nein", "ja");
+    /* Seit dem 19.11.2026 steht neben `filterVeraltet` auch `ohneSuche`
+       in der Bedingung: Vor der Ausstattungsfrage muss ueberhaupt
+       einmal gefiltert worden sein, sonst hat sie keine Zahl zu nennen. */
     pruefe("Zwischensuche waehrend der Beratung",
-      /if \(offen && filterVeraltet\) \{ phase = "suche"; \}/.test(wq) ? "ja" : "nein", "ja");
+      /if \(offen && \(filterVeraltet \|\| ohneSuche\)\) \{ phase = "suche"; \}/.test(wq) ? "ja" : "nein", "ja");
+    pruefe("Vor der Ausstattungsfrage wird gesucht",
+      /const ohneSuche = offen === "ausstattung" && !lauf\.gefiltertMit;/.test(wq) ? "ja" : "nein", "ja");
   }
 
   console.log(`\n${gut} richtig, ${schlecht} falsch`);

@@ -1967,7 +1967,7 @@ const Kern = {
       const hatWunsch = ((this.lauf.profil?.ausstattung || []).length
         || (this.lauf.profil?.kriterien || []).length
         || (this.lauf.profil?.wuensche || []).length);
-      if ((this.lauf.gefragt === "wuensche" || hatWunsch) && this.WUNSCH_GENUG.test(String(t))) {
+      if ((this.lauf.gefragt === "gewichtung" || hatWunsch) && this.WUNSCH_GENUG.test(String(t))) {
         this.lauf.wuenscheGenug = true;
         this.notieren("wuensche_abgewunken", { satz: String(t).slice(0, 80),
           gefragt: this.lauf.gefragt, hatteWunsch: !!hatWunsch });
