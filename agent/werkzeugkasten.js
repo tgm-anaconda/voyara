@@ -173,8 +173,8 @@ const Werkzeugkasten = {
              Preisgrenze von 90 Euro sind es 113, nicht irgendeine Zahl).
              Also die uebliche Teilung: Das Modell sagt, ob die Person
              zugestimmt hat, der Kern setzt die Werte. */
-          ausweiten: { type: "string", enum: ["ja", "nein"],
-            description: "NUR ausfuellen, wenn der Chat gerade gefragt hat, ob er die Suche ausweiten soll (\"Soll ich die Suche ausweiten, oder ist dir die Vorgabe wichtig?\"). ja = die Person ist einverstanden, egal mit welchen Worten (\"ja\", \"ja bitte\", \"ok mach das\", \"weite aus\"). nein = sie will die Vorgabe behalten. Steht die Frage nicht, lass das Feld weg." },
+          ausweiten: { type: "string",
+            description: "NUR ausfuellen, wenn im Auftrag unter \"Offene Frage des Chats\" steht, welche Vorgabe gelockert werden soll. Trag die Kennung der Vorgabe ein, die die Person aussucht - genau so, wie sie dort steht (zum Beispiel preis oder ausstattung:pets). Sagt sie nur \"ja\" oder \"mach das\", ohne eine auszusuchen, trag ja ein: dann nimmt der Kern die, die am meisten wegnimmt. Will sie keine lockern, trag nein ein. Steht die Frage nicht im Auftrag, lass das Feld weg." },
           frage_beantwortet: { type: "string", enum: ["ja", "teilweise", "nein_klaert_noch", "nein", "keine_frage_offen"],
             description: "Was die letzte Nachricht der Person fuer die zuletzt von dir gestellte Frage bedeutet. ja = sie hat sie beantwortet. teilweise = ein Teil steht, ein Teil fehlt. nein_klaert_noch = sie hat NICHT geantwortet, ist aber beim Thema: sie fragt zurueck, korrigiert eine fruehere Angabe, ueberlegt laut oder braucht erst eine Auskunft von dir ('wann zaehlt man als Kind?', 'dann sind wir doch zwei Erwachsene'). nein = sie geht nicht darauf ein und auch nicht auf das Thema. keine_frage_offen = du hattest gar nichts gefragt. Immer angeben und ehrlich: Bei nein_klaert_noch fragt der Assistent weiter, bei nein nimmt er irgendwann das Naheliegende an." },
           ziel: text("Region aus dem Katalog, als id: mallorca, kreta, algarve, sardinien, teneriffa, barcelona, wien, lissabon, tirol, suedtirol, lappland, ostsee, marrakesch, kapstadt, krabi, island, newyork, kyoto. NUR, wenn die Person die Region selbst genannt hat - sonst leer lassen. Eine Region, die du fuer passend haeltst, gehoert nicht hierher: Dafuer gibt es regionen_vergleichen, und die Person entscheidet. Ein anderer Name fuer dieselbe Region zaehlt als genannt ('Malle' = mallorca, 'die Balearen' = mallorca, weil keine andere Balearen-Region im Katalog ist, 'Kanaren' = teneriffa). Nennt sie dagegen ein Land oder eine Gegend, zu der MEHRERE Regionen des Katalogs gehoeren ('Spanien' = mallorca, teneriffa, barcelona), gehoert das in zieleAuswahl, nicht hierher - sonst waehlst du das Reiseziel fuer sie aus."),
@@ -3098,17 +3098,30 @@ const Werkzeugkasten = {
 
          Steht keine Frage offen, passiert hier nichts, auch wenn das
          Modell das Feld faelschlich fuellt. */
-      if (kern.lauf.engstelleOffen) {
+      if (kern.lauf.engstelleOffen && a.ausweiten) {
         const offen = kern.lauf.engstelleOffen;
-        if (a.ausweiten === "ja" && offen.werte) {
-          for (const [f, w] of Object.entries(offen.werte)) {
+        const wahl = String(a.ausweiten).trim().toLowerCase();
+        const kand = offen.kandidaten || [];
+        /* Eine Kennung sucht genau ihren Kandidaten; ein blankes "ja"
+           nimmt den ersten - das ist der, der am meisten wegnimmt. Alles
+           andere ist kein Treffer, und dann passiert nichts: lieber
+           nochmal fragen als die falsche Vorgabe wegwerfen. */
+        const treffer = wahl === "nein" ? null
+          : wahl === "ja" ? kand[0]
+            : kand.find((k) => k.feld.toLowerCase() === wahl)
+              || kand.find((k) => String(k.kurz || "").toLowerCase() === wahl);
+        if (wahl === "nein") {
+          kern.lauf.engstelleOffen = null;
+          kern.notieren("ausweiten_abgelehnt", { feld: offen.feld });
+        } else if (treffer) {
+          for (const [f, w] of Object.entries(treffer.werte || {})) {
             if (w === undefined || w === null) delete p[f]; else p[f] = w;
           }
           kern.lauf.engstelleOffen = null;
-          kern.notieren("ausweiten_zugestimmt", { feld: offen.feld, werte: offen.werte });
-        } else if (a.ausweiten === "nein") {
-          kern.lauf.engstelleOffen = null;
-          kern.notieren("ausweiten_abgelehnt", { feld: offen.feld });
+          kern.notieren("ausweiten_zugestimmt", { feld: treffer.feld, werte: treffer.werte,
+            gewaehlt: wahl === "ja" ? "pauschal" : "genannt" });
+        } else {
+          kern.notieren("ausweiten_unklar", { gesagt: wahl.slice(0, 40) });
         }
       }
       delete a.ausweiten;
@@ -9579,25 +9592,96 @@ const Werkzeugkasten = {
     if (!werte) return null;
     const wohnung = this.seitenTyp(p) === "apartment";
     const haeuser = (n) => this.artZahl(n, p);
-    /* Bei mehreren Wuenschen steht dabei, was jeder einzelne kostet.
-       Gemeldet am 09.11.2026: "Er muss darauf hinweisen, welche
-       Begrenzungen in der Kombination das Problem sind. Das muss er viel
-       genauer erklaeren." */
-    let aufschluesselung = "";
-    if (e.feld === "ausstattung") {
-      const ae = this.ausstattungEngste(p);
-      if (ae && ae.einzeln.length > 1) {
-        const name = (m) => (typeof AMENITY_LABELS !== "undefined" && AMENITY_LABELS[m]) || m;
-        aufschluesselung = " Einzeln gerechnet: "
-          + ae.einzeln.map((x) => `ohne „${name(x.merkmal)}“ ${x.ohne}`).join(", ") + ".";
+
+    /* Nicht "ausweiten ja/nein", sondern "welche Vorgabe?" (19.11.2026)
+       ----------------------------------------------------------------
+       Ben am 19.11.2026: "Suche ausweiten soll nicht automatisch einfach
+       nur den Preis ausweiten, sondern es soll fragen: Welche von den
+       Lockerungen soll ich fuer dich aendern? Und dann die nennen, die am
+       meisten einschraenken. Sinnvoll waeren zum Beispiel Lockerungen im
+       Preis, bei der Hundefreundlichkeit, bei der Hollywood-Schaukel."
+
+       Er hat recht, und die Zahlen lagen schon da: `engstelle` rechnet
+       fuer JEDES Feld durch, wie viele Haeuser ohne diese Vorgabe
+       uebrig blieben. Behalten wurde davon bisher eine Zeile, und daraus
+       wurde ein Ja/Nein - wer Preis UND Hundeplatz UND Halbpension
+       gesetzt hatte, bekam die Wahl zwischen "Preis lockern" und
+       "nichts". Jetzt steht die Rangliste zur Wahl.
+
+       Einzelne Ausstattungswuensche zaehlen einzeln: "Hundefreundlich"
+       und "Pool" sind zwei Entscheidungen, nicht eine. Die Zahlen dafuer
+       rechnet `ausstattungEngste` ohnehin schon Merkmal fuer Merkmal.
+
+       Hoechstens drei zur Wahl, sonst ist die Nachricht eine Tabelle und
+       die Chipzeile bricht um. Was nicht dabei ist, kann die Person
+       immer noch selbst sagen - die Zahlen stehen im Satz. */
+    const name = (m) => (typeof AMENITY_LABELS !== "undefined" && AMENITY_LABELS[m]) || m;
+    const kandidaten = [];
+    for (const r of (e.rang && e.rang.length ? e.rang : [{ feld: e.feld, ohne: e.ohne }])) {
+      if (r.feld === "ausstattung") {
+        /* Jeder Wunsch einzeln - aber nur die, die wirklich etwas
+           kosten. Ein Merkmal, das keinen einzigen Treffer mehr bringt,
+           waere eine Scheinwahl. */
+        const ae = this.ausstattungEngste(p);
+        if (ae && ae.einzeln.length > 1) {
+          const einzelne = ae.einzeln.filter((x) => x.gewinn >= this.ENGSTELLE_MINDESTGEWINN);
+          /* Nur aufteilen, wenn die einzelnen Merkmale fuer sich etwas
+             bringen (19.11.2026 gemessen).
+             ------------------------------------------------------------
+             Bei zwei Wuenschen, die nur ZUSAMMEN die Liste leeren, bringt
+             jeder einzeln fast nichts - im Testfall 1 und 0 Treffer, die
+             Gruppe dagegen 11. Die Aufteilung lieferte dann keinen
+             einzigen Kandidaten, und die ganze Rueckfrage fiel aus: Statt
+             einer schlechteren Frage gab es gar keine mehr.
+
+             Also nur aufteilen, wenn dabei wirklich etwas herauskommt.
+             Sonst steht die Ausstattung als eine Wahl da, wie vorher. */
+          if (einzelne.length) {
+            for (const x of einzelne) {
+              kandidaten.push({ feld: `ausstattung:${x.merkmal}`, ohne: x.ohne,
+                was: `„${name(x.merkmal)}“`, kurz: name(x.merkmal),
+                werte: { ausstattung: (p.ausstattung || []).filter((y) => y !== x.merkmal) } });
+            }
+            continue;
+          }
+        }
       }
+      const l = this.ENGSTELLE_LOCKERN[r.feld];
+      if (!l) continue;
+      let w = null;
+      try { w = l(p); } catch { w = null; }
+      if (!w) continue;
+      let text = null;
+      try { text = this.ENGSTELLE[r.feld].call(this, p); } catch { text = null; }
+      if (!text) continue;
+      kandidaten.push({ feld: r.feld, ohne: r.ohne, was: text, kurz: this.ENGSTELLE_KURZ[r.feld] || null, werte: w });
     }
+    kandidaten.sort((a, b) => b.ohne - a.ohne);
+    const auswahl = kandidaten.slice(0, 3);
+    if (!auswahl.length) return null;
+
+    const liste = auswahl.map((k) => `${k.was} (ohne sie ${haeuser(k.ohne)})`);
+    const aufzaehlung = liste.length === 1 ? liste[0]
+      : `${liste.slice(0, -1).join(", ")} und ${liste[liste.length - 1]}`;
     const satz = `Mit deinen Vorgaben ${e.jetzt === 1 ? "bleibt" : "bleiben"} nur ${haeuser(e.jetzt)} übrig, und bei so wenigen `
-      + `lässt sich schlecht vergleichen. Am meisten nimmt ${was} weg: ohne diese Vorgabe wären es `
-      + `${e.ohne}.${aufschluesselung} Soll ich die Suche ausweiten, oder ist dir die Vorgabe wichtig?`;
-    const ja = "Ja, Suche ausweiten";
-    const nein = "Nein, ist mir wichtig";
-    /* Dritter Weg bei den Ferienwohnungen: Statt die Vorgabe zu lockern,
+      + `lässt sich schlecht vergleichen. Am meisten ${auswahl.length === 1 ? "nimmt" : "nehmen"} ${aufzaehlung} weg. `
+      + `Welche Vorgabe soll ich lockern?`;
+
+    /* Die Beschriftung der Knoepfe: kurz, sonst bricht die Zeile um.
+       `kurz` steht in ENGSTELLE_KURZ, fuer Ausstattungswuensche ist es
+       der Name des Merkmals. */
+    const nein = "Keine, so ist es richtig";
+    const chipFuer = (k) => (k.kurz ? `${k.kurz} lockern` : "Diese Vorgabe lockern");
+    const wirkung = {};
+    const chips = [];
+    for (const k of auswahl) {
+      let c = chipFuer(k);
+      // Zwei gleiche Beschriftungen waeren nicht auseinanderzuhalten
+      while (wirkung[c]) c += " ";
+      chips.push(c);
+      wirkung[c] = k.werte;
+    }
+    /* Dritter Weg bei den Ferienwohnungen: Statt eine Vorgabe zu lockern,
        kann der Agent auch Hotels dazunehmen. Das ist die eigentliche
        Ausweitung - die Vorgabe bleibt, die Menge waechst. Er bietet es
        nur an, wenn die Person die Art nicht selbst zur Bedingung gemacht
@@ -9605,21 +9689,29 @@ const Werkzeugkasten = {
        untergeschoben. */
     const auchHotels = "Auch Hotels zeigen";
     const darfAusweiten = wohnung && !p.vonPerson?.typ && e.feld !== "art";
-    const chips = darfAusweiten ? [ja, auchHotels, nein] : [ja, nein];
+    if (darfAusweiten) { chips.push(auchHotels); wirkung[auchHotels] = { typ: "beides" }; }
+    chips.push(nein);
+    wirkung[nein] = {};
+
     return {
       grund: e.feld,
       satz,
       chips,
-      /* Dieselben Werte noch einmal einzeln: Der Kern legt sie als
-         offene Frage ab, damit auch ein getipptes "ja" sie aufruft -
-         nicht nur der wortgleiche Chip. */
-      werte,
-      wirkung: {
-        [ja]: werte,
-        [nein]: {},
-        ...(darfAusweiten ? { [auchHotels]: { typ: "beides" } } : {}),
-      },
+      /* Die Kandidaten einzeln: Der Kern legt sie als offene Frage ab,
+         damit auch frei getippte Antworten sie aufrufen koennen - nicht
+         nur der wortgleiche Chip. */
+      kandidaten: auswahl.map((k) => ({ feld: k.feld, kurz: k.kurz || k.was, werte: k.werte })),
+      werte: auswahl[0].werte,
+      wirkung,
     };
+  },
+
+  /* Kurznamen fuer die Knoepfe. Der Satz nennt die Vorgabe ausfuehrlich
+     ("die Grenze von 90 € pro Nacht"); auf dem Knopf waere das zu lang. */
+  ENGSTELLE_KURZ: {
+    gesamt: "Budget", preis: "Preisgrenze", ziel: "Region", verpflegung: "Verpflegung",
+    gruppe: "Gruppengröße", strand: "Strandnähe", bewertung: "Mindestnote",
+    sterne: "Sterne", ausstattung: "Ausstattung", angebote: "Nur Angebote", wlan: "WLAN",
   },
 
   ENGSTELLE: {
@@ -9666,13 +9758,27 @@ const Werkzeugkasten = {
     if (typeof Auswahl === "undefined") return null;
     const vg = this.vorgaben(p, this.filterAusStand(p));
     const katalog = this.katalog(p);
-    let beste = null;
+    /* Nicht nur die engste Vorgabe, sondern die Rangliste (19.11.2026).
+       ----------------------------------------------------------------
+       Ben am 19.11.2026: "Suche ausweiten soll nicht automatisch einfach
+       nur den Preis ausweiten, sondern es soll fragen: Welche von den
+       Lockerungen soll ich fuer dich aendern? Und dann die nennen, die am
+       meisten einschraenken."
+
+       Gerechnet wurde das schon immer - fuer JEDES Feld einmal. Nur
+       behalten wurde davon eine einzige Zeile, und die Rueckfrage machte
+       daraus ein Ja/Nein zu genau dieser Vorgabe. Wer eine
+       Preisgrenze UND einen Hundeplatz UND Halbpension gesetzt hat, bekam
+       also die Wahl zwischen "Preis lockern" und "nichts". */
+    const rang = [];
     for (const feld of Object.keys(this.ENGSTELLE)) {
       let n = 0;
       try { n = Auswahl.treffer(katalog, vg, feld).length; } catch { continue; }
       if (n - liste.length < this.ENGSTELLE_MINDESTGEWINN) continue;
-      if (!beste || n > beste.n) beste = { feld, n };
+      rang.push({ feld, n });
     }
+    rang.sort((a, b) => b.n - a.n);
+    let beste = rang[0] || null;
     if (!beste) return null;
     /* Nennt die Beschriftung ein einzelnes Ausstattungsmerkmal, muss die
        Zahl daneben auch dieses Merkmal meinen (09.11.2026). `beste.n`
@@ -9697,7 +9803,8 @@ const Werkzeugkasten = {
       /* Festhalten, was zuletzt eng war. Der Kern baut daraus die
          Rueckfrage, wenn es sehr wenige sind - er sieht die Trefferliste
          selbst nicht (01.11.2026). */
-      lauf.letzteEngstelle = { feld: beste.feld, ohne: beste.n, jetzt: liste.length };
+      lauf.letzteEngstelle = { feld: beste.feld, ohne: beste.n, jetzt: liste.length,
+        rang: rang.slice(0, 4).map((x) => ({ feld: x.feld, ohne: x.n })) };
       /* Ins Protokoll, damit die Auswertung spaeter sieht, ob jemand in
          eine enge Ecke geraten ist. Direkt in `lauf.protokoll`, weil
          diese Funktion den Kern nicht kennt - dieselbe Liste, die auch

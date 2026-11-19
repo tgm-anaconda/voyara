@@ -135,7 +135,13 @@ const pHotel = { typ: "hotel", kriterien: [{ id: "pool" }], maxPreis: 150 };
 const ef = WK.engstelleRueckfrage?.(pHotel, laufMit(3, 27, "ausstattung"));
 pruefe("Rueckfrage nennt die passenden (3)", !!ef && /nur 3 Hotels/.test(ef.satz), true);
 pruefe("Rueckfrage nennt die Art, nicht Haeuser", !!ef && !/Häuser/.test(ef.satz), true);
-pruefe("Rueckfrage nennt den Gewinn (27)", !!ef && /wären es 27/.test(ef.satz), true);
+/* Der Satz nennt jetzt je Vorgabe die Zahl ohne sie (19.11.2026).
+   Vorher stand da "ohne diese Vorgabe wären es 27", weil nur EINE
+   Vorgabe zur Wahl stand. Jetzt steht die Rangliste da, und hinter
+   jeder Vorgabe ihre eigene Zahl. Begruendung bei engstelleRueckfrage. */
+pruefe("Rueckfrage nennt den Gewinn (27)", !!ef && /ohne sie 27 Hotels/.test(ef.satz), true);
+pruefe("Rueckfrage fragt, WELCHE Vorgabe", !!ef && /Welche Vorgabe soll ich lockern/.test(ef.satz), true);
+pruefe("Und bietet das Behalten an", !!ef && ef.chips.some((c) => /Keine, so ist es richtig/.test(c)), true);
 const efW = WK.engstelleRueckfrage?.({ typ: "apartment", kriterien: [{ id: "pool" }] }, laufMit(2, 20, "ausstattung"));
 pruefe("Rueckfrage Wohnungen", !!efW && /nur 2 Ferienwohnungen/.test(efW.satz), true);
 // Oberhalb der Grenze wird nicht gefragt
@@ -174,7 +180,7 @@ const k1 = kernDoppel();
 const wenige = KAT.slice(0, 3);
 const halt = vorRundgang(k1, wenige, pHotel);
 pruefe("Wenige Treffer: Halt", !!halt && halt.ergebnis?.nichtVorgelegt === true, true);
-pruefe("Wenige Treffer: der Chat hat gefragt", k1.gesagt.length > 0 && /ausweiten/.test(k1.gesagt[0]), true);
+pruefe("Wenige Treffer: der Chat hat gefragt", k1.gesagt.length > 0 && /Welche Vorgabe soll ich lockern/.test(k1.gesagt[0]), true);
 pruefe("Wenige Treffer: Modell soll schweigen",
   !!halt && /KEIN Werkzeug/.test(halt.ergebnis?.hinweis || ""), true);
 pruefe("Wenige Treffer: es steht im Protokoll",
@@ -1796,12 +1802,16 @@ const liesReisende = async (text, felder, urteil = "ja") => {
       kinder: 0, kinderAlter: [], zimmer: 1, artGenannt: true, flug: false, maxPreis: 90, ausstattung: ["pool"] });
     const ef = WK.engstelleRueckfrage(basis(), { letzteEngstelle: { feld: "preis", jetzt: 2, ohne: 18 },
       engstelleGefragt: {}, gefragtWie: {} });
-    pruefe("Die Engstellenfrage liefert die Werte einzeln mit",
-      ef && ef.werte ? JSON.stringify(ef.werte) : "fehlt", JSON.stringify({ maxPreis: 113 }));
+    pruefe("Die Engstellenfrage liefert die Kandidaten einzeln mit",
+      ef && ef.kandidaten?.length ? "ja" : "fehlt", "ja");
+    pruefe("Der erste Kandidat traegt die Lockerung",
+      ef && ef.kandidaten?.[0] ? JSON.stringify(ef.kandidaten[0].werte) : "fehlt",
+      JSON.stringify({ maxPreis: 113 }));
     const probe = async (args, offen = true) => {
       const kern = { lauf: { profil: basis(), protokoll: [], gespraech: [{ role: "user", content: "ja" }],
           verlauf: [], gefragtWie: {}, annahmeOffen: [], chips: null,
-          engstelleOffen: offen ? { feld: "preis", werte: ef && ef.werte } : null },
+          engstelleOffen: offen ? { feld: "preis", werte: ef && ef.werte,
+            kandidaten: (ef && ef.kandidaten) || [] } : null },
         notieren(e, d) { this.lauf.protokoll.push({ ereignis: e, ...d }); },
         sagen() {}, gespraechPush() {}, sichern() {}, logZeile() {}, standKurz: () => "",
         freigabe: () => "suchen", darf: () => false, standAnzeigen() {} };
@@ -1825,9 +1835,70 @@ const liesReisende = async (text, felder, urteil = "ja") => {
         fs.readFileSync(alt && fs.existsSync(quelle + "kern.js") ? quelle + "kern.js" : B + "agent/kern.js", "utf8")
       ) ? "ja" : "nein", "ja");
     pruefe("Und sagt dem Modell, dass sie offen ist",
-      /Offene Frage des Chats: Soll die Suche ausgeweitet werden/.test(
+      /Offene Frage des Chats: Welche Vorgabe soll gelockert werden/.test(
         fs.readFileSync(alt && fs.existsSync(quelle + "kern.js") ? quelle + "kern.js" : B + "agent/kern.js", "utf8")
       ) ? "ja" : "nein", "ja");
+  }
+
+  /* Die Rueckfrage stellt die Vorgaben zur Wahl (19.11.2026)
+     ------------------------------------------------------------------
+     Ben am 19.11.2026: "Suche ausweiten soll nicht automatisch einfach
+     nur den Preis ausweiten, sondern es soll fragen: Welche von den
+     Lockerungen soll ich fuer dich aendern? Und dann die nennen, die am
+     meisten einschraenken."
+     Gegenprobe: _backup/19-11-ausweiten/ */
+  if (WK && WK.engstelleRueckfrage && WK.engstelle) {
+    const pv = { zielId: "mallorca", typ: "hotel", monat: 7, naechte: 7, erwachsene: 2, kinder: 0,
+      kinderAlter: [], zimmer: 1, artGenannt: true, flug: false, maxPreis: 170,
+      ausstattung: ["petsAllowed", "spa"], verpflegung: "halb" };
+    const kat = WK.katalog(pv);
+    const vg = WK.vorgaben(pv, WK.filterAusStand(pv));
+    const AW = vm.runInContext("typeof Auswahl !== 'undefined' ? Auswahl : null", ctx);
+    const trf = AW ? AW.treffer(kat, vg) : [];
+    const lf = { protokoll: [] };
+    WK.engstelle(trf, pv, lf);
+    const r = WK.engstelleRueckfrage(pv, lf);
+    pruefe("Die Engstelle merkt sich die Rangliste",
+      (lf.letzteEngstelle?.rang || []).length >= 2 ? "ja" : "nein", "ja");
+    pruefe("Zur Wahl stehen mehrere Vorgaben",
+      r && r.kandidaten?.length >= 2 ? "ja" : "nein", "ja");
+    pruefe("Ein einzelner Wunsch steht einzeln zur Wahl",
+      r && (r.kandidaten || []).some((k) => k.feld.startsWith("ausstattung:")) ? "ja" : "nein", "ja");
+    pruefe("Der Wunsch steht mit Namen da, nicht mit Kennung",
+      r && /Spa & Wellness/.test(r.satz) && !/\bspa\b/.test(r.satz) ? "ja" : "nein", "ja");
+    pruefe("Hinter jeder Vorgabe steht ihre eigene Zahl",
+      r && (r.satz.match(/ohne sie \d+/g) || []).length === (r.kandidaten || []).length ? "ja" : "nein", "ja");
+    pruefe("Je Vorgabe ein Knopf, plus Behalten",
+      r ? r.chips.length : 0, (r ? (r.kandidaten || []).length : 0) + 1);
+    pruefe("Jeder Knopf lockert nur seine eigene Vorgabe",
+      r && r.kandidaten?.length && r.kandidaten.every((k) => Object.keys(k.werte || {}).length >= 1) ? "ja" : "nein", "ja");
+    pruefe("Hoechstens drei zur Wahl",
+      r && r.kandidaten?.length && r.kandidaten.length <= 3 ? "ja" : "nein", "ja");
+    /* Zwei Wuensche, die nur ZUSAMMEN die Liste leeren: Einzeln bringt
+       keiner genug, die Gruppe schon. Dann darf die Frage nicht
+       ausfallen - gemessen am 19.11.2026, als sie es tat. */
+    const pEng = { ...pv, maxPreis: 200, ausstattung: ["pets", "spa"] };
+    const trf2 = AW ? AW.treffer(WK.katalog(pEng), WK.vorgaben(pEng, WK.filterAusStand(pEng))) : [];
+    const lf2 = { protokoll: [] };
+    WK.engstelle(trf2, pEng, lf2);
+    pruefe("Bringen die Wuensche einzeln nichts, faellt die Frage nicht aus",
+      WK.engstelleRueckfrage(pEng, lf2) ? "gefragt" : "stumm", "gefragt");
+  }
+
+  /* Abschnitt 1 der Erhebung: die Kennzeichnung ist fest (19.11.2026)
+     ------------------------------------------------------------------
+     Ben am 19.11.2026: Die Stufe ohne Label soll erst im spaeteren Teil
+     der Umfrage freigeschaltet werden. Begruendung bei
+     STELLSCHRAUBEN.kennzeichnung. */
+  {
+    const kq = fs.readFileSync(alt && fs.existsSync(quelle + "kern.js") ? quelle + "kern.js" : B + "agent/kern.js", "utf8");
+    const sq = fs.readFileSync(alt && fs.existsSync(quelle + "studie.js") ? quelle + "studie.js" : B + "agent/studie.js", "utf8");
+    pruefe("Die Kennzeichnung wird nicht gelost",
+      /kennzeichnung: "etikett",/.test(kq) ? "fest" : "gelost", "fest");
+    pruefe("Die Tabelle haelt fest, ob gelost wurde",
+      /gruppeKennzeichnungQuelle/.test(sq) ? "ja" : "nein", "ja");
+    pruefe("Und die Auslosung setzt den Wert",
+      /kennzeichnungQuelle = fest \? "fest" : "gelost"/.test(sq) ? "ja" : "nein", "ja");
   }
 
   // Kinder oder Erwachsene

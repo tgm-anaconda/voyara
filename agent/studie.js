@@ -156,8 +156,18 @@ const Studie = {
     const s = typeof STELLSCHRAUBEN !== "undefined" ? STELLSCHRAUBEN : {};
     const alleStufen = ["ohne", "etikett", "text"];
     const zuLosen = this.KENNZEICHNUNG_STUFEN;
-    const kennzeichnung = alleStufen.includes(s.kennzeichnung)
+    /* Gelost oder fest - und das muss in den Daten stehen (19.11.2026).
+       ----------------------------------------------------------------
+       Die Erhebung laeuft in zwei Abschnitten: zuerst mit fest
+       eingestellter Stufe "etikett", spaeter mit Auslosung (siehe
+       STELLSCHRAUBEN.kennzeichnung). Ohne diese Spalte waere beim
+       Auswerten nicht mehr zu erkennen, welche Zeilen aus welchem
+       Abschnitt stammen - und Zeilen mit fester Stufe duerfen im
+       Vergleich der Kennzeichnung nicht als Kontrollgruppe mitlaufen. */
+    const fest = alleStufen.includes(s.kennzeichnung);
+    const kennzeichnung = fest
       ? s.kennzeichnung : zuLosen[Math.floor(Math.random() * zuLosen.length)];
+    const kennzeichnungQuelle = fest ? "fest" : "gelost";
     // Nur noch fuer Tests und alte Links; im Normalfall "log" (still)
     const ALT = ["chip", "log", "agent", "etikett", "offen", "keine"];
     const offenlegung = ALT.includes(s.offenlegung) ? s.offenlegung : "log";
@@ -191,7 +201,8 @@ const Studie = {
     if (s.partner === "zweitbeste") partnerBesteIn = "keine";
     else if (s.partner === "keine") partnerBesteIn = "ohne";
     else partnerBesteIn = "beide";
-    return { kennzeichnung, offenlegung, partnerBesteIn, einladung: s.einladung || null, ausgelost: Date.now() };
+    return { kennzeichnung, kennzeichnungQuelle, offenlegung, partnerBesteIn,
+      einladung: s.einladung || null, ausgelost: Date.now() };
   },
 
   gruppe() {
@@ -1222,6 +1233,9 @@ const Studie = {
          Nachrechnen ablesbar ist und auffaellt, wenn eine Zelle leer
          bleibt. */
       gruppeKennzeichnung: z(d.gruppe?.kennzeichnung),
+      /* Gelost oder im Code festgestellt. Siehe Studie.auslosen:
+         Abschnitt 1 der Erhebung laeuft mit fester Stufe. */
+      gruppeKennzeichnungQuelle: z(d.gruppe?.kennzeichnungQuelle),
       zelle: (() => {
         const arm = d.umgebung?.zugang || "";
         const k = d.gruppe?.kennzeichnung || "";

@@ -245,8 +245,37 @@ const STELLSCHRAUBEN = {
      und das traegt keinen Interaktionstest.
 
      Wer den Prototyp ohne Auslosung ansehen will, traegt hier eine feste
-     Stufe ein. Ueber die Adresse geht das bewusst weiterhin nicht. */
-  kennzeichnung: "zufall",       // zufall | ohne | etikett | text
+     Stufe ein. Ueber die Adresse geht das bewusst weiterhin nicht.
+
+     ERHEBUNG IN ZWEI ABSCHNITTEN (19.11.2026)
+     ------------------------------------------------------------------
+     Ben am 19.11.2026: "Wichtig ist, dass man diese Thematik mit dem,
+     dass das Label nicht angezeigt wird, am Anfang mit einem Schalter
+     ausstellt, weil das soll erst im spaeteren Teil der Umfrage
+     freigeschaltet werden."
+
+     Abschnitt 1 (jetzt):  kennzeichnung: "etikett"
+       Nur der Faktor Zugang wird gelost. Jede Person sieht die
+       Partnerkennzeichnung. Die Stufe "ohne" kommt nicht vor.
+
+     Abschnitt 2 (spaeter): kennzeichnung: "zufall"
+       Beide Stufen werden gelost, die Matrix wird 2x2.
+
+     Umgestellt wird genau hier, eine Zeile. `gruppeKennzeichnungQuelle`
+     in der Tabelle sagt fuer jede Zeile, ob die Stufe gelost oder fest
+     war - sonst waere beim Auswerten nicht mehr zu unterscheiden, welche
+     Zeilen aus Abschnitt 1 stammen. Das ist kein Beiwerk: Zeilen mit
+     fester Stufe duerfen im Vergleich der Kennzeichnung nicht als
+     Kontrollgruppe mitlaufen.
+
+     Dass die Abschnitte nacheinander laufen, hat einen Preis, der in der
+     Methodik stehen sollte: Der Faktor Kennzeichnung ist dann mit der
+     Zeit vermengt (wer wann teilgenommen hat, ueber welchen Kanal
+     eingeladen wurde, wie ausgeruht die Stichprobe war). Beim Faktor
+     Zugang ist das nicht so, der wird durchgehend gelost. Ein Unterschied
+     zwischen "etikett" und "ohne" kann deshalb auch am Zeitpunkt liegen.
+     Sauberer waere es, beide Stufen von Anfang an zu losen. */
+  kennzeichnung: "etikett",      // zufall | ohne | etikett | text
   // Sieht der Agent sich die engere Auswahl vorher sichtbar an (Haus
   // oeffnen, Bewertungen lesen, Zimmer und Verpflegung setzen)? Kostet
   // acht bis zehn Sekunden je Haus und ist der Kern der Fragestellung:
@@ -1495,9 +1524,13 @@ const Kern = {
        Sonst muesste das Modell sie aus dem Verlauf heraussuchen, um zu
        wissen, dass `ausweiten` jetzt gefragt ist. */
     if (this.lauf.engstelleOffen) {
-      zeilen.push("Offene Frage des Chats: Soll die Suche ausgeweitet werden? "
-        + "Sagt die Person zu - mit welchen Worten auch immer -, ruf stand_merken mit ausweiten=\"ja\". "
-        + "Lehnt sie ab, mit ausweiten=\"nein\". Setz die gelockerte Vorgabe NICHT selbst, das macht der Kern.");
+      const k = this.lauf.engstelleOffen.kandidaten || [];
+      zeilen.push("Offene Frage des Chats: Welche Vorgabe soll gelockert werden? Zur Wahl stehen "
+        + (k.length ? k.map((x) => `${x.feld} (${x.kurz})`).join(", ") : "die genannte Vorgabe")
+        + ". Sucht die Person eine aus, ruf stand_merken mit ausweiten=<Kennung>. "
+        + "Sagt sie nur ja oder mach das, ohne eine auszusuchen, nimm ausweiten=\"ja\". "
+        + "Will sie keine lockern, ausweiten=\"nein\". "
+        + "Setz die gelockerte Vorgabe NICHT selbst - das macht der Kern, er kennt die Zahlen.");
     }
     if (this.lauf.letzteVorlage?.length) zeilen.push(`Zuletzt vorgelegt: ${this.lauf.letzteVorlage.map((id, i) => `${i + 1}. ${getItemById?.(id)?.name || id} (${id})`).join(", ")}.`);
     else if (this.lauf.letzteTreffer?.length) zeilen.push(`Letztes Suchergebnis (ids): ${this.lauf.letzteTreffer.join(", ")}.`);
@@ -2780,7 +2813,7 @@ const Kern = {
                 /* Die Frage bleibt offen, bis sie beantwortet ist - nicht
                    nur fuer den wortgleichen Chip. Begruendung beim
                    Schemafeld `ausweiten`. */
-                this.lauf.engstelleOffen = { feld: ef.grund, werte: ef.werte || null };
+                this.lauf.engstelleOffen = { feld: ef.grund, werte: ef.werte || null, kandidaten: ef.kandidaten || [] };
                 this.notieren("engstelle_rueckfrage", { feld: ef.grund, treffer: this.lauf.letzteEngstelle?.jetzt });
                 kernFrage = { ...ef, thema: null };
               }
@@ -4215,7 +4248,7 @@ const Kern = {
     if (!ef) return null;
     (this.lauf.engstelleGefragt ||= {})[ef.grund] = true;
     // Siehe oben: Auch ein getipptes "ja" soll die Ausweitung ausloesen.
-    this.lauf.engstelleOffen = { feld: ef.grund, werte: ef.werte || null };
+    this.lauf.engstelleOffen = { feld: ef.grund, werte: ef.werte || null, kandidaten: ef.kandidaten || [] };
     this.sagen(ef.satz);
     this.gespraechPush({ role: "assistant", content: ef.satz });
     this.lauf.chipWirkung = ef.wirkung || null;
