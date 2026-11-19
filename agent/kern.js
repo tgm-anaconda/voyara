@@ -1491,6 +1491,14 @@ const Kern = {
       `Konto der Person fuer die Buchung: ${konto}.`,
       `Stand (was feststeht): ${this.standKurz()}.`,
     ];
+    /* Die offene Ausweitungsfrage steht im Auftrag, nicht nur im Chat.
+       Sonst muesste das Modell sie aus dem Verlauf heraussuchen, um zu
+       wissen, dass `ausweiten` jetzt gefragt ist. */
+    if (this.lauf.engstelleOffen) {
+      zeilen.push("Offene Frage des Chats: Soll die Suche ausgeweitet werden? "
+        + "Sagt die Person zu - mit welchen Worten auch immer -, ruf stand_merken mit ausweiten=\"ja\". "
+        + "Lehnt sie ab, mit ausweiten=\"nein\". Setz die gelockerte Vorgabe NICHT selbst, das macht der Kern.");
+    }
     if (this.lauf.letzteVorlage?.length) zeilen.push(`Zuletzt vorgelegt: ${this.lauf.letzteVorlage.map((id, i) => `${i + 1}. ${getItemById?.(id)?.name || id} (${id})`).join(", ")}.`);
     else if (this.lauf.letzteTreffer?.length) zeilen.push(`Letztes Suchergebnis (ids): ${this.lauf.letzteTreffer.join(", ")}.`);
     if (this.lauf.gewaehlt) zeilen.push(`Geoeffnetes Haus: ${getItemById?.(this.lauf.gewaehlt)?.name || this.lauf.gewaehlt} (${this.lauf.gewaehlt}).`);
@@ -1979,7 +1987,12 @@ const Kern = {
        stammt. */
     if (this.lauf.chipWirkung) {
       const gelesen = Werkzeugkasten.chipAntwortLesen(this, t);
-      if (gelesen) this.notieren("chip_ausserhalb_fahrplan", { felder: gelesen.felder || null });
+      if (gelesen) {
+        this.notieren("chip_ausserhalb_fahrplan", { felder: gelesen.felder || null });
+        /* Der Chip hat die Werte schon gesetzt - dann darf das Modell
+           sie nicht ein zweites Mal ueber `ausweiten` anstossen. */
+        this.lauf.engstelleOffen = null;
+      }
       this.lauf.chipWirkung = null;
       this.lauf.chipThema = null;
     }
@@ -2764,6 +2777,10 @@ const Kern = {
               const ef = Werkzeugkasten.engstelleRueckfrage(this.lauf.profil || {}, this.lauf);
               if (ef) {
                 (this.lauf.engstelleGefragt ||= {})[ef.grund] = true;
+                /* Die Frage bleibt offen, bis sie beantwortet ist - nicht
+                   nur fuer den wortgleichen Chip. Begruendung beim
+                   Schemafeld `ausweiten`. */
+                this.lauf.engstelleOffen = { feld: ef.grund, werte: ef.werte || null };
                 this.notieren("engstelle_rueckfrage", { feld: ef.grund, treffer: this.lauf.letzteEngstelle?.jetzt });
                 kernFrage = { ...ef, thema: null };
               }
@@ -4197,6 +4214,8 @@ const Kern = {
     const ef = Werkzeugkasten.engstelleRueckfrage(p, this.lauf);
     if (!ef) return null;
     (this.lauf.engstelleGefragt ||= {})[ef.grund] = true;
+    // Siehe oben: Auch ein getipptes "ja" soll die Ausweitung ausloesen.
+    this.lauf.engstelleOffen = { feld: ef.grund, werte: ef.werte || null };
     this.sagen(ef.satz);
     this.gespraechPush({ role: "assistant", content: ef.satz });
     this.lauf.chipWirkung = ef.wirkung || null;

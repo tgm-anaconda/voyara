@@ -1783,6 +1783,53 @@ const liesReisende = async (text, felder, urteil = "ja") => {
       await lies("Ohne Flug.", { flug: true }), true);
   }
 
+  /* Das Ja zur Ausweitung in eigenen Worten (19.11.2026)
+     ------------------------------------------------------------------
+     Gemessen: Der Chat fragt "Soll ich die Suche ausweiten?", und
+     `chipAntwortLesen` vergleicht den Wortlaut genau. "Ja, Suche
+     ausweiten" wirkte, "ja", "ja bitte" und "ok mach das" fielen durch -
+     die Preisgrenze blieb bei 90 statt auf 113 zu gehen. Der Chip war am
+     17.11.2026 repariert worden, der freie Text nicht.
+     Gegenprobe: _backup/19-11-ausweiten/ */
+  if (WK && WK.engstelleRueckfrage && WK.werkzeuge && WK.werkzeuge.stand_merken) {
+    const basis = () => ({ zielId: "mallorca", typ: "hotel", monat: 7, naechte: 7, erwachsene: 2,
+      kinder: 0, kinderAlter: [], zimmer: 1, artGenannt: true, flug: false, maxPreis: 90, ausstattung: ["pool"] });
+    const ef = WK.engstelleRueckfrage(basis(), { letzteEngstelle: { feld: "preis", jetzt: 2, ohne: 18 },
+      engstelleGefragt: {}, gefragtWie: {} });
+    pruefe("Die Engstellenfrage liefert die Werte einzeln mit",
+      ef && ef.werte ? JSON.stringify(ef.werte) : "fehlt", JSON.stringify({ maxPreis: 113 }));
+    const probe = async (args, offen = true) => {
+      const kern = { lauf: { profil: basis(), protokoll: [], gespraech: [{ role: "user", content: "ja" }],
+          verlauf: [], gefragtWie: {}, annahmeOffen: [], chips: null,
+          engstelleOffen: offen ? { feld: "preis", werte: ef && ef.werte } : null },
+        notieren(e, d) { this.lauf.protokoll.push({ ereignis: e, ...d }); },
+        sagen() {}, gespraechPush() {}, sichern() {}, logZeile() {}, standKurz: () => "",
+        freigabe: () => "suchen", darf: () => false, standAnzeigen() {} };
+      await WK.werkzeuge.stand_merken.call(WK, { frage_beantwortet: "ja", ...args }, kern);
+      return kern;
+    };
+    pruefe("Ein Ja lockert die Vorgabe",
+      (await probe({ ausweiten: "ja" })).lauf.profil.maxPreis, 113);
+    pruefe("Und steht in den Daten",
+      (await probe({ ausweiten: "ja" })).lauf.protokoll.some((e) => e.ereignis === "ausweiten_zugestimmt") ? "ja" : "nein", "ja");
+    pruefe("Ein Nein laesst die Vorgabe stehen",
+      (await probe({ ausweiten: "nein" })).lauf.profil.maxPreis, 90);
+    pruefe("Ein Nein schliesst die Frage trotzdem",
+      (await probe({ ausweiten: "nein" })).lauf.engstelleOffen ? "offen" : "zu", "zu");
+    pruefe("Ohne Antwort bleibt die Frage offen",
+      (await probe({})).lauf.engstelleOffen ? "offen" : "zu", "offen");
+    pruefe("Ohne offene Frage wirkt ein Ja nicht",
+      (await probe({ ausweiten: "ja" }, false)).lauf.profil.maxPreis, 90);
+    pruefe("Der Kern merkt sich die offene Frage",
+      /this\.lauf\.engstelleOffen = \{ feld: ef\.grund/.test(
+        fs.readFileSync(alt && fs.existsSync(quelle + "kern.js") ? quelle + "kern.js" : B + "agent/kern.js", "utf8")
+      ) ? "ja" : "nein", "ja");
+    pruefe("Und sagt dem Modell, dass sie offen ist",
+      /Offene Frage des Chats: Soll die Suche ausgeweitet werden/.test(
+        fs.readFileSync(alt && fs.existsSync(quelle + "kern.js") ? quelle + "kern.js" : B + "agent/kern.js", "utf8")
+      ) ? "ja" : "nein", "ja");
+  }
+
   // Kinder oder Erwachsene
   if (WK && WK.kinderErwachsenRueckfrage) {
     const f = WK.kinderErwachsenRueckfrage({ erwachsene: 1, kinder: 2 }, { alterZuHoch: [28, 34] });

@@ -155,6 +155,26 @@ const Werkzeugkasten = {
             enum: ["zeit", "dauer", "reisende", "kinderAlter", "art", "ziel", "richtung", "flug",
               "flugAb", "flugKlasse", "anreise", "preis", "verpflegung", "wuensche", "anzahl", "zimmer"] },
             description: "Die Themen, zu denen die Person in DIESER Nachricht von sich aus etwas Konkretes gesagt hat - auch wenn du danach gar nicht gefragt hattest. Beispiel: Du fragst nach der Unterkunftsart, sie antwortet 'Hotel, und wir wollen nach Malle' - dann art UND ziel. Nur Themen mit einem konkreten Wert: 'irgendwo warm' ist kein ziel, 'hauptsache guenstig' ist kein preis. Im Zweifel weglassen." },
+          /* Das Ja zur Ausweitung in eigenen Worten (19.11.2026).
+             ----------------------------------------------------------
+             Gemessen am 19.11.2026: Der Chat fragt "Soll ich die Suche
+             ausweiten, oder ist dir die Vorgabe wichtig?" und legt zwei
+             Chips dazu. Wer den Chip klickt, bei dem lockert der Kern die
+             Vorgabe. Wer "ja", "ja bitte" oder "ok mach das" TIPPT, bei
+             dem passiert nichts: `chipAntwortLesen` vergleicht den
+             Wortlaut genau, und alles andere faellt durch.
+
+             Ben am 19.11.2026: "Das ganze Suche ausweiten, der ganze
+             Pfad, das hat ja alles nicht geklappt." Der Chip war nur die
+             Haelfte davon.
+
+             Das Modell kann die Werte nicht selbst setzen - um wie viel
+             gelockert wird, rechnet der Kern aus dem Katalog (bei einer
+             Preisgrenze von 90 Euro sind es 113, nicht irgendeine Zahl).
+             Also die uebliche Teilung: Das Modell sagt, ob die Person
+             zugestimmt hat, der Kern setzt die Werte. */
+          ausweiten: { type: "string", enum: ["ja", "nein"],
+            description: "NUR ausfuellen, wenn der Chat gerade gefragt hat, ob er die Suche ausweiten soll (\"Soll ich die Suche ausweiten, oder ist dir die Vorgabe wichtig?\"). ja = die Person ist einverstanden, egal mit welchen Worten (\"ja\", \"ja bitte\", \"ok mach das\", \"weite aus\"). nein = sie will die Vorgabe behalten. Steht die Frage nicht, lass das Feld weg." },
           frage_beantwortet: { type: "string", enum: ["ja", "teilweise", "nein_klaert_noch", "nein", "keine_frage_offen"],
             description: "Was die letzte Nachricht der Person fuer die zuletzt von dir gestellte Frage bedeutet. ja = sie hat sie beantwortet. teilweise = ein Teil steht, ein Teil fehlt. nein_klaert_noch = sie hat NICHT geantwortet, ist aber beim Thema: sie fragt zurueck, korrigiert eine fruehere Angabe, ueberlegt laut oder braucht erst eine Auskunft von dir ('wann zaehlt man als Kind?', 'dann sind wir doch zwei Erwachsene'). nein = sie geht nicht darauf ein und auch nicht auf das Thema. keine_frage_offen = du hattest gar nichts gefragt. Immer angeben und ehrlich: Bei nein_klaert_noch fragt der Assistent weiter, bei nein nimmt er irgendwann das Naheliegende an." },
           ziel: text("Region aus dem Katalog, als id: mallorca, kreta, algarve, sardinien, teneriffa, barcelona, wien, lissabon, tirol, suedtirol, lappland, ostsee, marrakesch, kapstadt, krabi, island, newyork, kyoto. NUR, wenn die Person die Region selbst genannt hat - sonst leer lassen. Eine Region, die du fuer passend haeltst, gehoert nicht hierher: Dafuer gibt es regionen_vergleichen, und die Person entscheidet. Ein anderer Name fuer dieselbe Region zaehlt als genannt ('Malle' = mallorca, 'die Balearen' = mallorca, weil keine andere Balearen-Region im Katalog ist, 'Kanaren' = teneriffa). Nennt sie dagegen ein Land oder eine Gegend, zu der MEHRERE Regionen des Katalogs gehoeren ('Spanien' = mallorca, teneriffa, barcelona), gehoert das in zieleAuswahl, nicht hierher - sonst waehlst du das Reiseziel fuer sie aus."),
@@ -3064,6 +3084,34 @@ const Werkzeugkasten = {
          hatte - im Testlauf fiel "wir wollen nach malle" genau deshalb
          durch, und meine sieben Pruefungen dazu waren alle gruen, weil
          sie immer die Zielfrage als gestellt gesetzt hatten. */
+      /* Das Ja zur Ausweitung, in eigenen Worten (19.11.2026).
+         ----------------------------------------------------------------
+         Gemessen: Der Chat fragt "Soll ich die Suche ausweiten?", legt
+         zwei Chips dazu - und `chipAntwortLesen` vergleicht den Wortlaut
+         genau. "Ja, Suche ausweiten" wirkte, "ja", "ja bitte" und "ok
+         mach das" fielen durch, und die Vorgabe blieb stehen. Der Chip
+         war am 17.11.2026 repariert worden, der freie Text nicht.
+
+         Die Teilung ist die uebliche: Das Modell sagt, ob die Person
+         zugestimmt hat (`a.ausweiten`), der Kern setzt die Werte - die
+         kennt nur er, denn er hat sie aus dem Katalog gerechnet.
+
+         Steht keine Frage offen, passiert hier nichts, auch wenn das
+         Modell das Feld faelschlich fuellt. */
+      if (kern.lauf.engstelleOffen) {
+        const offen = kern.lauf.engstelleOffen;
+        if (a.ausweiten === "ja" && offen.werte) {
+          for (const [f, w] of Object.entries(offen.werte)) {
+            if (w === undefined || w === null) delete p[f]; else p[f] = w;
+          }
+          kern.lauf.engstelleOffen = null;
+          kern.notieren("ausweiten_zugestimmt", { feld: offen.feld, werte: offen.werte });
+        } else if (a.ausweiten === "nein") {
+          kern.lauf.engstelleOffen = null;
+          kern.notieren("ausweiten_abgelehnt", { feld: offen.feld });
+        }
+      }
+      delete a.ausweiten;
       const genannt = Array.isArray(a.selbst_genannt) ? a.selbst_genannt : [];
       const beantwortet = (...themen) => (["ja", "teilweise"].includes(a.frage_beantwortet)
         && themen.includes(kern.lauf.gefragtVorher))
@@ -9562,6 +9610,10 @@ const Werkzeugkasten = {
       grund: e.feld,
       satz,
       chips,
+      /* Dieselben Werte noch einmal einzeln: Der Kern legt sie als
+         offene Frage ab, damit auch ein getipptes "ja" sie aufruft -
+         nicht nur der wortgleiche Chip. */
+      werte,
       wirkung: {
         [ja]: werte,
         [nein]: {},
