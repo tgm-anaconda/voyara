@@ -1775,6 +1775,9 @@ const Kern = {
        Antwort im Mietwagen-Fenster blieb der Agent stumm, weil das Zeichen
        aus dem Werkzeug davor noch stand). */
     if (!this.laeuft) this.lauf.kernWartet = false;
+    // Eine Uhr aus einem abgebrochenen Zug (Tab geschlossen) gilt nicht
+    // fuer diese Nachricht (21.11.2026, siehe zugSeit in zug)
+    if (!this.laeuft && !this.lauf.ausstehend) this.lauf.zugSeit = null;
     // Was die Person seit dem Laden auf der Seite gewaehlt hat (Zimmer,
     // Flug, Daten) - nicht erst beim naechsten Seitenaufbau
     /* Ein Uebernahmesatz gilt fuer die naechste Antwort, nicht laenger.
@@ -2233,7 +2236,15 @@ const Kern = {
        setzt die Marke nach dem Ablegen auf null zurueck, der naechste
        echte Zug bekommt also wieder eine frische. */
     if (this.lauf.schritteVon == null) this.lauf.schritteVon = (this.lauf.log || []).length;
-    this.lauf.zugSeit = Date.now();
+    /* Die Dauer gilt fuer den ganzen Zug, auch ueber Seitenwechsel
+       (21.11.2026). Ben: "Jetzt steht hier auch nur 7 Sekunden, aber es
+       waren nicht nur 7 Sekunden." Nach einem Seitenwechsel ruft
+       fortsetzenNachLaden `zug()` erneut auf, und hier wurde die Uhr neu
+       gestellt - gemessen bei einer FAQ-Frage: Zug 11,1 s, angezeigt
+       "2 Sekunden". Dieselbe Zahl geht als dauerMs ins Protokoll. Gesetzt
+       wird sie jetzt nur, wenn noch keine laeuft (wie `schritteVon`);
+       geleert, wenn der Zug endet und keine Kette mehr aussteht. */
+    if (this.lauf.zugSeit == null) this.lauf.zugSeit = Date.now();
     /* Welche Frage diese Nachricht beantworten sollte.
        ----------------------------------------------------------------
        `lauf.gefragt` wird am ENDE eines Zuges auf das Thema gesetzt, das
@@ -3644,6 +3655,7 @@ const Kern = {
     // Erst die Schritte ablegen, dann den Ring entfernen: Der Block setzt
     // sich an genau dessen Stelle, also vor die Antwort dieses Zuges.
     this.schritteAblegen();
+    if (!this.lauf.ausstehend) this.lauf.zugSeit = null;
     AgentPanel.arbeitAus?.();
     AgentPanel.status(this.lauf.phase === "angehalten" ? "angehalten · du hast übernommen" : "online");
     AgentPanel.oeffnen?.();
@@ -5651,6 +5663,7 @@ const Kern = {
        damit der einzige ohne Nachweis. Dabei will man gerade dann wissen,
        was bis dahin passiert ist. */
     this.schritteAblegen();
+    if (!this.lauf.ausstehend) this.lauf.zugSeit = null;
     AgentPanel.arbeitAus?.();
     AgentPanel.status("angehalten · du hast übernommen");
     this.sichern();

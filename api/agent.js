@@ -14,6 +14,16 @@
 
 const MODELL = "gpt-4.1-mini";
 const ZEITGRENZE_MS = 20000;
+/* Erster Versuch kuerzer (21.11.2026).
+   Gemessen in sieben Laeufen mit echtem Modell: normale Aufrufe 0,6 bis
+   2,6 s. Einmal kam die erste Anfrage an OpenAI gar nicht zurueck - der
+   Server wartete die vollen 20 s ab und versuchte es dann neu (fertig nach
+   1,5 s): 22,4 s fuer einen Aufruf, und genau diese Pausen hat Ben gesehen
+   ("da war uebel die lange Verzoegerung drin, in der einfach nichts
+   passiert ist"). Auch die laengste erlaubte Antwort (600 Tokens) ist in
+   rund 7 s fertig; nach 9 s ist der erste Versuch also ein Haenger. Der
+   zweite behaelt die volle Zeit. */
+const ZEITGRENZE_ERSTER_MS = 9000;
 const MAX_ZEICHEN_EINGABE = 60000;    // ganzes Gespraech plus Werkzeugergebnisse
 const MAX_TOKEN_ANTWORT = 600;
 const MAX_NACHRICHTEN = 60;
@@ -74,9 +84,9 @@ function fehler(res, status, text) {
   res.status(status).json({ ok: false, fehler: text });
 }
 
-async function openai(koerper) {
+async function openai(koerper, zeitgrenzeMs = ZEITGRENZE_MS) {
   const abbruch = new AbortController();
-  const uhr = setTimeout(() => abbruch.abort(), ZEITGRENZE_MS);
+  const uhr = setTimeout(() => abbruch.abort(), zeitgrenzeMs);
   try {
     const antwort = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -189,13 +199,14 @@ export default async function handler(req, res) {
      welchem Status. Keine Inhalte, keine Kontodaten. */
   const start = Date.now();
   const erster = Date.now();
-  let e = await openai(koerper);
+  let e = await openai(koerper, ZEITGRENZE_ERSTER_MS);
   const ersterMs = Date.now() - erster;
   let versuche = 1, ersterStatus = e.ok ? 200 : e.status, gewartetMs = 0;
   if (!e.ok && VORUEBERGEHEND.includes(e.status)) {
-    gewartetMs = e.wartenMs || 900;
-    await new Promise((r) => setTimeout(r, gewartetMs));
-    e = await openai(koerper);
+    // Nach einer Zeitueberschreitung (504) sofort neu - gewartet wurde schon
+    gewartetMs = e.status === 504 ? 0 : (e.wartenMs || 900);
+    if (gewartetMs) await new Promise((r) => setTimeout(r, gewartetMs));
+    e = await openai(koerper, ZEITGRENZE_MS);
     versuche = 2;
   }
   const dauerMs = Date.now() - start;

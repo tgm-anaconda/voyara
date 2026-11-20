@@ -72,9 +72,10 @@ const Modell = {
       /* Zeitschutz im Browser (20.11.2026). Gemeldet: "Er hat ewig geladen,
          dann ist nichts mehr passiert." Ohne Grenze wartet ein haengender
          Aufruf unbegrenzt (Verbindung verloren, Tab im Hintergrund
-         eingefroren). Der Server bricht selbst nach 20 s ab und versucht es
-         einmal neu, also hoechstens gut 40 s; danach gilt der Aufruf hier
-         als gescheitert, ohne weiteren Versuch, und der Kern meldet sich. */
+         eingefroren). Der Server bricht den ersten Versuch nach 9 s ab und
+         versucht es einmal neu (20 s), also hoechstens rund 30 s; danach
+         gilt der Aufruf hier als gescheitert, ohne weiteren Versuch, und
+         der Kern meldet sich. */
       const abbruch = typeof AbortController !== "undefined" ? new AbortController() : null;
       const uhr = abbruch ? setTimeout(() => abbruch.abort(), this.ZEITGRENZE_MS) : null;
       try {

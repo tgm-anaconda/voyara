@@ -2637,6 +2637,23 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     pruefe("'inklusive Flug' gilt als Frage nach der ganzen Reise", /const gesamtGefragt = \/[^\n]*inklusive flug/.test(kq2) ? "ja" : "nein", "ja");
   }
 
+  /* Wartezeiten (21.11.2026): Ein haengender erster Modellaufruf kostete
+     22 s, weil der Server die vollen 20 s abwartete; und die Dauer eines
+     Zugs wurde nach jedem Seitenwechsel neu gestartet ("2 Sekunden" fuer
+     einen Zug von 11 s). Gegenprobe: _backup/21-11-dauer/ */
+  {
+    const apiPfad = alt && fs.existsSync(quelle + "agent-api.js") ? quelle + "agent-api.js" : B + "api/agent.js";
+    const api = fs.readFileSync(apiPfad, "utf8");
+    const m = api.match(/const ZEITGRENZE_ERSTER_MS = (\d+);/);
+    pruefe("Erster Modellversuch bricht nach hoechstens 10 s ab", m && +m[1] <= 10000 && /openai\(koerper, ZEITGRENZE_ERSTER_MS\)/.test(api) ? "ja" : "nein", "ja");
+    pruefe("Nach einer Zeitueberschreitung sofort neu", /e\.status === 504 \? 0/.test(api) ? "ja" : "nein", "ja");
+    const kq3 = fs.readFileSync(alt && fs.existsSync(quelle + "kern.js") ? quelle + "kern.js" : B + "agent/kern.js", "utf8");
+    pruefe("Zugdauer ueberlebt den Seitenwechsel", /if \(this\.lauf\.zugSeit == null\) this\.lauf\.zugSeit = Date\.now\(\);/.test(kq3)
+      && /if \(!this\.lauf\.ausstehend\) this\.lauf\.zugSeit = null;/.test(kq3) ? "ja" : "nein", "ja");
+    const cq2 = fs.readFileSync(alt && fs.existsSync(quelle + "components.js") ? quelle + "components.js" : B + "components.js", "utf8");
+    pruefe("Arbeitsuhr zaehlt ab Beginn des Zugs", /this\._arbeitSeit = \(typeof Kern !== "undefined" && Kern\.lauf\?\.zugSeit\) \|\| Date\.now\(\)/.test(cq2) ? "ja" : "nein", "ja");
+  }
+
   // Kinder oder Erwachsene
   if (WK && WK.kinderErwachsenRueckfrage) {
     const f = WK.kinderErwachsenRueckfrage({ erwachsene: 1, kinder: 2 }, { alterZuHoch: [28, 34] });

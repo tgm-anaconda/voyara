@@ -1155,7 +1155,10 @@ const AgentPanel = {
       el.innerHTML = '<span class="arbeit-ring" aria-hidden="true"></span>'
         + '<span class="arbeit-text"></span>'
         + '<span class="arbeit-uhr" aria-hidden="true"></span>';
-      this._arbeitSeit = Date.now();
+      /* Die Uhr zaehlt ab Beginn des Zugs, nicht ab Aufbau der Anzeige -
+         nach einem Seitenwechsel begann sie sonst wieder bei null
+         (21.11.2026). */
+      this._arbeitSeit = (typeof Kern !== "undefined" && Kern.lauf?.zugSeit) || Date.now();
       const uhr = () => {
         const feld = el.querySelector(".arbeit-uhr");
         if (!feld) return;
