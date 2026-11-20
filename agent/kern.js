@@ -2078,6 +2078,7 @@ const Kern = {
           sondern eine Antwort mit eigenem Wert; die liest wie jede Antwort
           das Modell. */
     this.vorschlagJaLesen(t);
+    this.rueckfrageJaLesen(t);
     if (this.lauf.anzahlFrageOffen || this.lauf.anzahlZahlOffen) {
       const roh = String(t || "").toLowerCase();
       const WORT = { zwei: 2, drei: 3, vier: 4, "fünf": 5, fuenf: 5, sechs: 6 };
@@ -2904,9 +2905,22 @@ const Kern = {
               this.notieren("widerspruch_rueckfrage", { ziel: wf.ziel, richtung: this.lauf.profil?.richtung });
               kernFrage = { ...wf, thema: "ziel" };
             } else if (!kernFrage) {
-              const ef = Werkzeugkasten.engstelleRueckfrage(this.lauf.profil || {}, this.lauf);
+              /* Zuerst die Preiswarnung (21.11.2026, siehe
+                 Werkzeugkasten.preisWarnung): Ist der Preis der Grund,
+                 sagt sie, was die Haeuser kosten, und empfiehlt eine
+                 Grenze. Danach gilt der Preis als besprochen - die
+                 Engstelle fragt ihn nicht ein zweites Mal ab. */
+              const pw = typeof Werkzeugkasten.preisWarnung === "function" ? Werkzeugkasten.preisWarnung(this.lauf.profil || {}, this.lauf) : null;
+              if (pw) {
+                (this.lauf.preisGewarnt ||= {})[pw.grenze] = true;
+                (this.lauf.engstelleGefragt ||= {}).preis = true;
+                this.notieren("preis_warnung", { grenze: pw.grenze, empfohlen: pw.empfohlen, ...pw.zahlen });
+                kernFrage = { ...pw, thema: null };
+              }
+              const ef = kernFrage ? null : Werkzeugkasten.engstelleRueckfrage(this.lauf.profil || {}, this.lauf);
               if (ef) {
                 (this.lauf.engstelleGefragt ||= {})[ef.grund] = true;
+                if (this.lauf.letzteEngstelle?.jetzt === 0) this.lauf.engstelleGefragt.leer = true;
                 /* Die Frage bleibt offen, bis sie beantwortet ist - nicht
                    nur fuer den wortgleichen Chip. Begruendung beim
                    Schemafeld `ausweiten`. */
@@ -4416,6 +4430,35 @@ const Kern = {
     return false;
   },
 
+  /* Ein Ja auf "Ihr seid zwei Erwachsene. Stimmt das?" (21.11.2026).
+     ------------------------------------------------------------------
+     Ben: "Wenn er schon aktiv nachfragt, seid ihr zwei Erwachsene, und man
+     sagt ja, dann muss es jetzt gesetzt sein und er muss nicht nochmal
+     fragen." Gefragt wurde danach zweimal: "Wie viele seid ihr denn
+     insgesamt?" und "Ist ein Kind dabei?". Ursache: Das Thema Reisende
+     gilt erst als erledigt, wenn auch die Kinder feststehen. Aus "ich und
+     meine Cousine" wurden 2 Erwachsene, Kinder unbekannt - und das Ja zu
+     "zwei Erwachsene" setzte die Kinder nicht auf null, obwohl der Satz
+     genau das gesagt hatte.
+
+     Jetzt gilt bei einem reinen Ja, was im Satz stand: die Erwachsenen
+     und die Kinder (ohne genannte Kinder: keine). Nur fuer diese eine
+     Rueckfrage und nur bei einem reinen Ja - "Ja, aber mit Kind" geht
+     wie jede Antwort ans Modell. */
+  rueckfrageJaLesen(t) {
+    const r = this.lauf.rueckfrageOffen;
+    if (!r || r.feld !== "erwachsene") return false;
+    const rein = /^\s*(ja|jap|jo|jep|ok|okay|passt|genau|klar|stimmt|richtig|korrekt)([\s.!,]+(genau|stimmt|richtig|passt|so ist es|danke|gern|gerne))?[\s.!]*$/i;
+    if (!rein.test(String(t || ""))) return false;
+    const p = this.lauf.profil || {};
+    const erwachsene = Number.isFinite(p.erwachsene) ? p.erwachsene : r.wert;
+    if (!Number.isFinite(erwachsene)) return false;
+    const kinder = Number.isFinite(p.kinder) ? p.kinder : 0;
+    Werkzeugkasten.werteUebernehmen(this, "reisende", { erwachsene, kinder }, t, "rueckfrage_bestaetigt");
+    this.notieren("rueckfrage_bestaetigt", { feld: "erwachsene", erwachsene, kinder });
+    return true;
+  },
+
   /* Wie viele Haeuser? Fragen, BEVOR der Rundgang laeuft.
      ------------------------------------------------------------------
      Bens Einwand nach dem Durchlauf vom 18.11.2026: "Es macht gar keinen
@@ -4926,7 +4969,13 @@ const Kern = {
     if (/n(ä|ae)cht|tage?\b|woche|person(en)?\b(?!.*€)|jahre?\b|kind|erwachsen|\d{1,2}\.\s*\d{1,2}\./i.test(satz)
       && !/€|euro/i.test(satz) && !Werkzeugkasten.PRO_PERSON_WORT.test(satz)) return false;
     const letzteBot = [...(this.lauf.verlauf || [])].reverse().find((x) => x.rolle === "bot")?.text || "";
-    const gesamtGefragt = /ganze reise|insgesamt|gesamt|mit flug/i.test(letzteBot) && this.lauf.gefragt === "preis";
+    /* "inklusive Flug" gehoert dazu (21.11.2026). Gemeldet: Gefragt war
+       "Wie viel moechtest du maximal ausgeben, inklusive Flug und
+       Fruehstueck?", Antwort "70 euro" - und der Kern fragte nur noch, ob
+       das pro Nacht fuer alle oder pro Person gilt. Die Lesart "pro Nacht"
+       stand stillschweigend da; diese Stelle haette sagen sollen, dass 70 €
+       fuer die ganze Reise nicht reichen, und nachfragen. */
+    const gesamtGefragt = /ganze reise|insgesamt|gesamt|mit flug|inklusive flug|inkl\.? flug|flug (und [a-zäöüß]+ )?(sind |ist )?(schon )?mit drin/i.test(letzteBot) && this.lauf.gefragt === "preis";
     const gesamtGesagt = Werkzeugkasten.GESAMT_WORT.test(satz) && !Werkzeugkasten.FUER_ALLE_WORT.test(satz);
     const nachtGesagt = Werkzeugkasten.PRO_NACHT_WORT.test(satz);
     const personGesagt = Werkzeugkasten.PRO_PERSON_WORT.test(satz);

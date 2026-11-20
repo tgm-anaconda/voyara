@@ -2554,6 +2554,89 @@ const liesReisende = async (text, felder, urteil = "ja") => {
       /async reiterWechseln\(typ\)/.test(wz) && /Werkzeuge\.reiterWechseln\(Werkzeugkasten\.seitenTyp\(p\)\)/.test(wk) ? "ja" : "nein", "ja");
   }
 
+  /* "Seid ihr zwei Erwachsene?" - "Ja, genau" - und trotzdem zweimal
+     nachgefragt (21.11.2026). Gegenprobe: _backup/21-11-morgen/ */
+  if (KN && typeof KN.rueckfrageJaLesen === "function") {
+    const rj = (t, extra = {}) => {
+      const k = Object.create(KN);
+      k.lauf = { profil: { erwachsene: 2 }, protokoll: [], gespraech: [{ role: "assistant", content: "Kurz zur Sicherheit: Ich habe dich so verstanden, dass ihr zwei Erwachsene seid. Stimmt das?" }],
+        rueckfrageOffen: { feld: "erwachsene", wert: 2 }, ...extra };
+      k.notieren = function (e, d) { this.lauf.protokoll.push({ ereignis: e, ...d }); };
+      k.sichern = () => {}; k.standAnzeigen = () => {};
+      k.rueckfrageJaLesen(t);
+      return k.lauf.profil;
+    };
+    pruefe("'Ja, genau' setzt 2 Erwachsene und 0 Kinder", JSON.stringify([rj("Ja, genau").erwachsene, rj("Ja, genau").kinder]), "[2,0]");
+    pruefe("'ja' genauso", rj("ja").kinder, 0);
+    pruefe("'Stimmt.' genauso", rj("Stimmt.").kinder, 0);
+    pruefe("'Ja, aber mit Kind' setzt nichts (geht ans Modell)", rj("Ja, aber mit Kind").kinder ?? "offen", "offen");
+    pruefe("'3 Erwachsene' setzt nichts (geht ans Modell)", rj("3 Erwachsene").kinder ?? "offen", "offen");
+    pruefe("Andere Rueckfrage offen: nichts", rj("ja", { rueckfrageOffen: { feld: "naechte", wert: 7 } }).kinder ?? "offen", "offen");
+    pruefe("Genannte Kinder bleiben", rj("ja", { profil: { erwachsene: 2, kinder: 1 } }).kinder, 1);
+    const fertig = rj("Ja, genau");
+    pruefe("Danach gilt das Thema Reisende als erledigt", fertig.erwachsene != null && fertig.kinder != null ? "erledigt" : "offen", "erledigt");
+    pruefe("Nur Kinder offen: Frage nach Kindern", WK.themenSatz("reisende", { erwachsene: 2 }, { gefragtWie: {} }), "Reist auch ein Kind mit?");
+    pruefe("Nichts bekannt: wie bisher", WK.themenSatz("reisende", {}, { gefragtWie: {} }), "Wer reist mit?");
+    pruefe("Karten passend zur Kinderfrage", WK.THEMEN.reisende.chips({ erwachsene: 2 }), "Keine Kinder | 1 Kind | 2 Kinder");
+  } else {
+    pruefe("'Ja, genau' setzt 2 Erwachsene und 0 Kinder", "Funktion fehlt", "[2,0]");
+  }
+
+  /* Preiswarnung und null Treffer (21.11.2026), Bens Lage: April, acht
+     warme Regionen, 9 Naechte, zu zweit, Fruehstueck, Flug ab Duesseldorf.
+     Gegenprobe: _backup/21-11-morgen/ */
+  if (WK && typeof WK.preisWarnung === "function") {
+    const warm = ["krabi", "marrakesch", "teneriffa", "kapstadt", "kreta", "algarve", "lissabon", "kyoto"];
+    const ben = { monat: 4, naechte: 9, erwachsene: 2, kinder: 0, typ: "hotel", flug: true, flugAb: "Düsseldorf", flugKlasse: "economy",
+      verpflegung: "fruehstueck", zieleErlaubt: warm, vonPerson: { maxPreis: true } };
+    const w70 = WK.preisWarnung({ ...ben, maxPreis: 70 }, { protokoll: [] });
+    pruefe("70 €: Warnung mit Durchschnitt und Empfehlung", w70 && /Hälfte der Hotels bis \d+ € pro Nacht/.test(w70.satz) && /Ich würde eher bis \d+ € suchen/.test(w70.satz) ? "ja" : "nein", "ja");
+    pruefe("70 €: drei Wege (Empfehlung, vorsichtig, bleiben)", w70 ? w70.chips.length : 0, 3);
+    pruefe("70 €: 'Bleiben' setzt nichts", w70 ? JSON.stringify(w70.wirkung[w70.chips[2]]) : "", "{}");
+    pruefe("120 €: keine Warnung", WK.preisWarnung({ ...ben, maxPreis: 120 }, { protokoll: [] }) ? "warnt" : "still", "still");
+    pruefe("Schon gewarnt: still", WK.preisWarnung({ ...ben, maxPreis: 70 }, { protokoll: [], preisGewarnt: { 70: true } }) ? "warnt" : "still", "still");
+    pruefe("Preis nicht von der Person: still", WK.preisWarnung({ ...ben, maxPreis: 70, vonPerson: {} }, { protokoll: [] }) ? "warnt" : "still", "still");
+    // Null Treffer: kein "nur 0", und einmal mehr fragen, auch wenn die Vorgabe schon gefragt war
+    const leer = { ...ben, maxPreis: 70, ausstattung: ["pool"] };
+    const l0 = { protokoll: [] };
+    WK.engstelle(WK.katalogTreffer(leer, WK.filterAusStand(leer)), leer, l0);
+    const f0 = WK.engstelleRueckfrage(leer, l0);
+    pruefe("0 Treffer: Rueckfrage kommt", f0 ? "ja" : "nein", "ja");
+    pruefe("0 Treffer: kein 'nur 0'", f0 && !/nur 0\b/.test(f0.satz) ? "ja" : "nein", "ja");
+    const l1 = { ...l0, engstelleGefragt: { [l0.letzteEngstelle?.feld]: true } };
+    pruefe("0 Treffer, Vorgabe schon gefragt: einmal mehr", WK.engstelleRueckfrage(leer, l1) ? "fragt" : "still", "fragt");
+    const l2 = { ...l1, engstelleGefragt: { ...l1.engstelleGefragt, leer: true } };
+    pruefe("Danach nicht noch einmal (keine Schleife)", WK.engstelleRueckfrage(leer, l2) ? "fragt" : "still", "still");
+    const kq = fs.readFileSync(alt && fs.existsSync(quelle + "kern.js") ? quelle + "kern.js" : B + "agent/kern.js", "utf8");
+    pruefe("Kern: Preiswarnung vor der Engstelle", /const pw = [^\n]*preisWarnung[\s\S]{0,900}const ef = kernFrage \? null : Werkzeugkasten\.engstelleRueckfrage/.test(kq) ? "ja" : "nein", "ja");
+    const wq3 = fs.readFileSync(alt && fs.existsSync(quelle + "werkzeugkasten.js") ? quelle + "werkzeugkasten.js" : B + "agent/werkzeugkasten.js", "utf8");
+    pruefe("Beratungssuche mit wenigen Treffern rechnet die Engstelle neu", /kern\.notieren\("engstelle_in_beratung"/.test(wq3) ? "ja" : "nein", "ja");
+  } else {
+    pruefe("70 €: Warnung mit Durchschnitt und Empfehlung", "Funktion fehlt", "ja");
+  }
+
+  /* Feiertage, Lappland, "wie viele Hotels", 70 € fuer die ganze Reise
+     (21.11.2026). Gegenprobe: _backup/21-11-morgen/ */
+  {
+    const ft = vm.runInContext("typeof feiertageText === 'function' ? feiertageText(new Date(2026, 10, 21)) : ''", ctx);
+    pruefe("Ostern 2027 berechnet (28. März)", /2027 ist Ostersonntag am 28\. März/.test(ft) ? "ja" : "nein", "ja");
+    pruefe("Pfingsten 2027 (16. Mai) und Himmelfahrt (6. Mai)", /Pfingstsonntag am 16\. Mai/.test(ft) && /Himmelfahrt ist am 6\. Mai/.test(ft) ? "ja" : "nein", "ja");
+    const fs1 = vm.runInContext("faqSuchen('wobei weißt du wann nächstes jahr ostern ist? also an welchem tag?').map(t => t.id)", ctx);
+    pruefe("Bens Osterfrage findet die Feiertagsdaten zuerst", fs1[0], "f-feiertage-daten");
+
+    const warm = ["krabi", "marrakesch", "teneriffa", "kapstadt", "kreta", "algarve", "lissabon", "kyoto"];
+    const lap = WK.richtungKorrektur({ richtung: "warm", monat: 4, mindestGrad: 20, zieleErlaubt: warm.slice(), zieleAuswahl: [...warm, "lappland"] }, [...warm, "lappland"]);
+    pruefe("Lappland dazugenommen: kein 'faellt weg'", lap && /fällt Lappland weg/.test(lap) ? lap : "kein falscher Satz", "kein falscher Satz");
+    const dazu = WK.richtungKorrektur({ richtung: "warm", monat: 4, zieleErlaubt: [...warm, "mallorca"] }, warm.slice());
+    pruefe("Ohne ausdrueckliche Auswahl: Aenderung wird weiter gemeldet", dazu && /Mallorca dazu/.test(dazu) ? "ja" : String(dazu), "ja");
+
+    const wq4 = fs.readFileSync(alt && fs.existsSync(quelle + "werkzeugkasten.js") ? quelle + "werkzeugkasten.js" : B + "agent/werkzeugkasten.js", "utf8");
+    pruefe("'Wie viele Hotels bietet ihr an?' ist keine Erwaehnung der Art", /const frageNachAngebot = /.test(wq4) ? "ja" : "nein", "ja");
+
+    const kq2 = fs.readFileSync(alt && fs.existsSync(quelle + "kern.js") ? quelle + "kern.js" : B + "agent/kern.js", "utf8");
+    pruefe("'inklusive Flug' gilt als Frage nach der ganzen Reise", /const gesamtGefragt = \/[^\n]*inklusive flug/.test(kq2) ? "ja" : "nein", "ja");
+  }
+
   // Kinder oder Erwachsene
   if (WK && WK.kinderErwachsenRueckfrage) {
     const f = WK.kinderErwachsenRueckfrage({ erwachsene: 1, kinder: 2 }, { alterZuHoch: [28, 34] });

@@ -1265,7 +1265,14 @@ const Werkzeugkasten = {
     if (typeof ZIEL_NACH_ID === "undefined") return null;
     /* Beide Seiten durch denselben Filter, sonst zaehlt der Satz einen
        Zugewinn, den es nicht gibt ("kommt Lappland dazu"). */
-    const jetzt = this.regionenMitHaeusern(p);
+    /* Verglichen wird die WIRKSAME Liste (21.11.2026). Gemeldet: "bei 20
+       Grad bleiben, aber noch Lappland dazu nehmen" - und der Agent sagte
+       "Damit faellt Lappland weg - jetzt 8 Regionen statt 9". Lappland
+       stand in der ausdruecklichen Auswahl (zieleAuswahl), und die gilt
+       vor der Temperaturliste (siehe filterWerte); gesucht wurde in neun
+       Regionen mit Lappland. Der Satz verglich aber die Temperaturliste. */
+    const wirksam = p.zieleAuswahl?.length ? p.zieleAuswahl : p.zieleErlaubt;
+    const jetzt = this.regionenMitHaeusern(p, wirksam);
     const vorherMit = this.regionenMitHaeusern(p, vorher);
     const dazu = jetzt.filter((id) => !vorherMit.includes(id)).map((id) => ZIEL_NACH_ID[id]?.name).filter(Boolean);
     const weg = vorherMit.filter((id) => !jetzt.includes(id)).map((id) => ZIEL_NACH_ID[id]?.name).filter(Boolean);
@@ -1293,7 +1300,7 @@ const Werkzeugkasten = {
     if (vorher) {
       const k = this.richtungKorrektur(p, vorher);
       if (k) {
-        kern.lauf.richtungRegionen = (p.zieleErlaubt || []).slice();
+        kern.lauf.richtungRegionen = ((p.zieleAuswahl?.length ? p.zieleAuswahl : p.zieleErlaubt) || []).slice();
         kern.lauf.richtungGesagt = k;
         kern.notieren("richtung_korrigiert", { vorher: vorher.length, jetzt: (p.zieleErlaubt || []).length, grad: p.mindestGrad ?? null });
         this.ableiten(kern, "richtung", k);
@@ -4461,7 +4468,14 @@ const Werkzeugkasten = {
              Jetzt zuerst auf "beides" pruefen, dann auf "nur", und in
              jedem Fall festhalten, dass entschieden wurde. */
           const beides = /\b(auch|beide[sn]?|sowohl|egal|alles)\b/i.test(letzteNachricht);
-          const nennt = /\bhotels?\b/i.test(letzteNachricht) ? "hotel"
+          /* Eine Frage nach dem Angebot ist keine Erwaehnung (21.11.2026).
+             Gemeldet: "Erstmal wuerde ich gerne wissen, wie viele Hotels
+             ihr anbietet?" - und spaeter "Du hattest Hotel erwaehnt, soll
+             ich nur nach Hotels suchen?". Gefragt war nach der Groesse des
+             Katalogs, nicht nach der eigenen Reise. Nur diese Fragen sind
+             ausgenommen; "ein Hotel am Strand waere schoen" zaehlt weiter. */
+          const frageNachAngebot = !antwortAufArt && /\b(wie\s*viele|wieviele|anzahl|anbiet\w*|bietet|im angebot)\b/i.test(letzteNachricht);
+          const nennt = frageNachAngebot ? null : /\bhotels?\b/i.test(letzteNachricht) ? "hotel"
             : (/ferienwohnung|ferienhaus|fewo|apartment|appartement/i.test(letzteNachricht) ? "apartment" : null);
           if (nennt && beides) {
             if (antwortAufArt) { p.artEgal = true; p.artGenannt = true; delete p.typ; delete p.artErwaehnt; }
@@ -4869,6 +4883,40 @@ const Werkzeugkasten = {
               // sich, als haette der Agent eine eigene Meinung dazu.
               hinweis: `${flughafenSatz}Die Lage steht schon im Chat: nicht wiederholen, keine Zahlen noch einmal, und die Zahlen auch nicht bewerten oder einordnen. ${p.zielId ? "Das Ziel steht fest - kein Satz ueber Regionen." : "Hoechstens ein Satz aus deinem Wissen zu Klima oder Charakter der Regionen."} Dann das naechste Thema.`,
               ...Werkzeugkasten.fahrplanFuerModell(Werkzeugkasten.fahrplan(p, kern.lauf), p, kern.lauf) };
+          }
+          /* Sehr wenige oder keine Treffer: erst das klaeren (21.11.2026).
+             ------------------------------------------------------------
+             Ben: "Wenn irgendwo in dem Filtern 0 Haeuser zur Verfuegung
+             stehen, dann darf er gar nicht mehr nach irgendwelchen
+             anderen Sachen nachfragen. Er hat jetzt hier noch gefragt, ob
+             er auf Sauberkeit oder Essen achten soll." Die Rueckfrage
+             "welche Vorgabe soll ich lockern?" gab es, sie hing aber an
+             `letzteEngstelle`, und das rechnete nur der Lagebericht - der
+             kommt einmal je Eckdatenstand und bei null Treffern gar nicht.
+             Nach einem neuen Filter (Preis, Pool) blieb der Stand alt.
+             Jetzt wird er nach jeder Beratungssuche mit wenigen Treffern
+             neu gerechnet. Steht damit eine Rueckfrage an, stellt sie der
+             Kern in diesem Zug (Kette "kernFrage"), und das Modell sagt
+             nur die Zahl, ohne ein anderes Thema aufzumachen. */
+          if (fp.suchbereit) {
+            let engFrage = null;
+            if (liste.length < Werkzeugkasten.ENGSTELLE_FRAGE_GRENZE) {
+              try { Werkzeugkasten.engstelle(liste, p, kern.lauf); } catch { /* ohne Engstelle weiter wie bisher */ }
+              try { engFrage = Werkzeugkasten.engstelleRueckfrage(p, kern.lauf); } catch { engFrage = null; }
+            }
+            // Dasselbe, wenn gleich die Preiswarnung kommt (siehe preisWarnung)
+            let preisFrage = null;
+            try { preisFrage = Werkzeugkasten.preisWarnung(p, kern.lauf); } catch { preisFrage = null; }
+            if (engFrage || preisFrage) {
+              kern.notieren("engstelle_in_beratung", { treffer: liste.length, feld: preisFrage ? "preis_warnung" : (kern.lauf.letzteEngstelle?.feld || null) });
+              return { ...basis, haeuser: "noch nicht - erst die Beratung",
+                hinweis: flughafenSatz + (preisFrage
+                  ? "Sag hoechstens in einem Halbsatz, dass du den Preis notiert hast - keine Zahlen, keine Frage, kein anderes Thema. "
+                    + "Was die Haeuser kosten und welche Grenze sich lohnt, sagt der Kern direkt im Anschluss."
+                  : `Mit den Vorgaben bleiben ${liste.length === 0 ? "keine" : `nur ${liste.length}`} ${Werkzeugkasten.artWort(p, true)}. `
+                    + "Sag das in einem Satz, ohne Zahlen zu anderen Dingen. Stell KEINE Frage und sprich kein anderes Thema an - "
+                    + "die Rueckfrage dazu stellt der Kern direkt im Anschluss.") };
+            }
           }
           return { ...basis, haeuser: "noch nicht - erst die Beratung",
             hinweis: flughafenSatz + (fp.phase === "suche" || !fp.gesucht
@@ -7070,9 +7118,13 @@ const Werkzeugkasten = {
          fehlende Interpunktion haette eine Endlosschleife tragen koennen. */
       // Eine Frage, nicht zwei (03.10.2026): Kinder und Alter fragt der
       // Fahrplan danach ohnehin einzeln
-      satz: ["Wer reist mit?",
-        "Wie viele seid ihr denn insgesamt?"],
-      frage: "Mit wem sie reist - in einem Fragesatz. Nicht zwei Fragesaetze daraus machen.", chips: "1 | 2 | 3 | 4 | mehr" },
+      /* Stehen die Erwachsenen schon fest und fehlen nur die Kinder,
+         fragt er nach den Kindern (21.11.2026). Vorher kam "Wie viele seid
+         ihr denn insgesamt?", obwohl die Zahl genannt und bestaetigt war. */
+      satz: [(p) => (Number.isFinite(p?.erwachsene) && p?.kinder == null ? "Reist auch ein Kind mit?" : "Wer reist mit?"),
+        (p) => (Number.isFinite(p?.erwachsene) && p?.kinder == null ? "Ist ein Kind mit dabei, oder seid ihr nur Erwachsene?" : "Wie viele seid ihr denn insgesamt?")],
+      frage: "Mit wem sie reist - in einem Fragesatz. Nicht zwei Fragesaetze daraus machen.",
+      chips: (p) => (Number.isFinite(p?.erwachsene) && p?.kinder == null ? "Keine Kinder | 1 Kind | 2 Kinder" : "1 | 2 | 3 | 4 | mehr") },
 
     kinderAlter: {
 
@@ -10197,11 +10249,81 @@ const Werkzeugkasten = {
 
   /* Die Rueckfrage bei sehr wenigen Treffern. Gebaut wie artRueckfrage:
      ein Satz, zwei Chips, eine Frage je Zug, und je Feld nur einmal. */
+  /* Ein sehr niedriger Preis: sagen, was die Haeuser kosten (21.11.2026).
+     ------------------------------------------------------------------
+     Ben: "Wenn der Preis abgefragt wird und man einen sehr niedrigen Preis
+     nennt, dass er dann sagt, hey, im Schnitt sind die Haeuser so und so
+     teuer bei deinen gesetzten Filtern. Ich wuerde eher empfehlen, so und
+     so teuer die Haeuser zu suchen, weil du sonst deine Wahl sehr stark
+     einschraenkst."
+
+     Gerechnet wird ueber den Katalog mit allen uebrigen Vorgaben (Zeit,
+     Regionen, Reisende, Verpflegung, Flug) - genau die Zahl, die die Seite
+     zeigen wird. Gewarnt wird nur, wenn die Grenze wirklich beschneidet:
+     weniger als 30 Haeuser UND weniger als ein Fuenftel derer ohne Grenze.
+     Empfohlen wird die Grenze, unter der ein Viertel der Haeuser liegt
+     (auf 10 € aufgerundet). Seiteneffektfrei - was gefragt wurde, merkt
+     sich der Kern. */
+  PREIS_WARNUNG_HOECHSTENS: 30,
+  PREIS_WARNUNG_ANTEIL: 0.2,
+  preisWarnung(p, lauf) {
+    if (!p || !lauf || !Number.isFinite(p.maxPreis) || p.budgetGesamt) return null;
+    if (!p.vonPerson?.maxPreis) return null;
+    if ((lauf.preisGewarnt || {})[p.maxPreis]) return null;
+    if (typeof nachtpreisGruppe !== "function") return null;
+    const ohne = { ...p };
+    delete ohne.maxPreis;
+    let mit = null, ohneListe = null, vg = null;
+    try {
+      mit = this.katalogTreffer(p, this.filterAusStand(p));
+      ohneListe = this.katalogTreffer(ohne, this.filterAusStand(ohne));
+      vg = this.vorgaben(ohne, this.filterAusStand(ohne));
+    } catch { return null; }
+    if (!ohneListe || ohneListe.length < 8) return null;
+    if (mit.length >= this.PREIS_WARNUNG_HOECHSTENS || mit.length >= ohneListe.length * this.PREIS_WARNUNG_ANTEIL) return null;
+    const preise = ohneListe.map((h) => nachtpreisGruppe(h, ohne.monat || null, vg)).filter(Number.isFinite).sort((a, b) => a - b);
+    if (preise.length < 8) return null;
+    const anteil = (q) => preise[Math.min(preise.length - 1, Math.floor(q * (preise.length - 1)))];
+    const haelfte = Math.round(anteil(0.5));
+    const empfohlen = Math.ceil(anteil(0.25) / 10) * 10;
+    if (!(empfohlen > p.maxPreis)) return null;
+    const mitEmpfohlen = this.katalogTreffer({ ...p, maxPreis: empfohlen }, this.filterAusStand({ ...p, maxPreis: empfohlen })).length;
+    if (mitEmpfohlen <= mit.length) return null;
+    const zahl = (n) => this.artZahl(n, p);
+    /* Dazu eine vorsichtige Stufe (25 % mehr), wenn sie etwas bringt - Ben
+       am 19.11.2026: "Eine Person, die 170 Euro angibt, ist auch nicht
+       bereit, offen 400 Euro zu zahlen." Die Empfehlung kann deutlich
+       hoeher liegen; die Wahl dazwischen soll da sein. */
+    const vorsichtig = Math.ceil((p.maxPreis * 1.25) / 10) * 10;
+    let mitVorsichtig = 0;
+    if (vorsichtig < empfohlen) {
+      try { mitVorsichtig = this.katalogTreffer({ ...p, maxPreis: vorsichtig }, this.filterAusStand({ ...p, maxPreis: vorsichtig })).length; } catch { mitVorsichtig = 0; }
+    }
+    const zwischen = vorsichtig < empfohlen && mitVorsichtig - mit.length >= this.ENGSTELLE_MINDESTGEWINN;
+    const satz = `Kurz zum Preis: Bei deinen übrigen Vorgaben kostet die Hälfte der ${this.artWort(p, true)} bis ${haelfte} € pro Nacht. `
+      + `Mit ${p.maxPreis} € ${mit.length === 1 ? "bleibt" : "bleiben"} ${mit.length ? zahl(mit.length) : "keine"}`
+      + (zwischen ? `, bis ${vorsichtig} € wären es ${mitVorsichtig}, bis ${empfohlen} € ${mitEmpfohlen}. ` : `, bis ${empfohlen} € wären es ${zahl(mitEmpfohlen)}. `)
+      + `Ich würde eher bis ${empfohlen} € suchen, sonst schränkst du die Auswahl sehr stark ein. Wie möchtest du es?`;
+    const ja = `Bis ${empfohlen} €`;
+    const mitte = zwischen ? `Bis ${vorsichtig} €` : null;
+    const nein = `Bei ${p.maxPreis} € bleiben`;
+    const wirkung = { [ja]: { maxPreis: empfohlen }, [nein]: {} };
+    if (mitte) wirkung[mitte] = { maxPreis: vorsichtig };
+    return { grund: "preis", grenze: p.maxPreis, empfohlen, satz, chips: mitte ? [ja, mitte, nein] : [ja, nein], wirkung,
+      zahlen: { mit: mit.length, ohne: ohneListe.length, haelfte, mitEmpfohlen, ...(zwischen ? { vorsichtig, mitVorsichtig } : {}) } };
+  },
+
   engstelleRueckfrage(p, lauf) {
     if (!p || !lauf) return null;
     const e = lauf.letzteEngstelle;
     if (!e || e.jetzt >= this.ENGSTELLE_FRAGE_GRENZE) return null;
-    if ((lauf.engstelleGefragt || {})[e.feld]) return null;
+    /* Bei einer leeren Liste einmal mehr (21.11.2026): War die Vorgabe
+       schon gefragt (etwa der Preis bei der Preiswarnung) und faellt die
+       Liste danach durch etwas anderes auf null, kaeme sonst keine Frage
+       mehr - und das Gespraech liefe ueber eine leere Liste weiter. Einmal,
+       damit aus der Frage keine Schleife wird. */
+    const schonGefragt = (lauf.engstelleGefragt || {})[e.feld];
+    if (schonGefragt && !(e.jetzt === 0 && !(lauf.engstelleGefragt || {}).leer)) return null;
     const lockern = this.ENGSTELLE_LOCKERN[e.feld];
     if (!lockern) return null;
     let was = null;
@@ -10423,8 +10545,12 @@ const Werkzeugkasten = {
       const w = k.was;
       return `${w.charAt(0).toUpperCase()}${w.slice(1)}: ${haeuser(k.ohne)}.`;
     });
-    const satz = `Mit deinen Vorgaben ${e.jetzt === 1 ? "bleibt" : "bleiben"} nur ${haeuser(e.jetzt)} übrig, und bei so wenigen `
-      + `lässt sich schlecht vergleichen. Das würde am meisten bringen: ${liste.join(" ")} `
+    // Bei null nicht "nur 0 Hotels" (21.11.2026, seit die Frage auch
+    // mitten in der Beratung kommt, steht sie bei leerer Liste)
+    const satz = (e.jetzt === 0
+      ? `Mit deinen Vorgaben bleibt gerade ${wohnung ? "keine Unterkunft" : "nichts"} übrig. `
+      : `Mit deinen Vorgaben ${e.jetzt === 1 ? "bleibt" : "bleiben"} nur ${haeuser(e.jetzt)} übrig, und bei so wenigen lässt sich schlecht vergleichen. `)
+      + `Das würde am meisten bringen: ${liste.join(" ")} `
       + `Was soll ich ändern?`;
 
     /* Die Beschriftung der Knoepfe: kurz, sonst bricht die Zeile um.

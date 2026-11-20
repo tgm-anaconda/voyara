@@ -162,6 +162,10 @@ const FAQ = [
     frage: "Fliegt ihr auch an Feiertagen, zum Beispiel über Ostern oder Weihnachten?",
     antwort: "Ja. Geflogen wird täglich, auch an Feiertagen wie Ostern, Pfingsten oder Weihnachten. Der Flugpreis hängt nicht vom Wochentag ab.",
     stichworte: ["feiertag", "feiertage", "ostern", "pfingsten", "weihnachten", "silvester", "ferien", "täglich", "taeglich"] },
+  { id: "f-feiertage-daten", thema: "flug", frage: "Wann sind Ostern und Pfingsten im nächsten Jahr?",
+    antwort: () => feiertageText(),
+    stichworte: ["ostern", "ostersonntag", "ostermontag", "karfreitag", "pfingsten", "pfingstsonntag", "pfingstmontag",
+      "himmelfahrt", "feiertag", "feiertage", "datum", "wann ist", "welchem tag", "an welchem", "nächstes jahr", "naechstes jahr"] },
   { id: "f-klasse", thema: "flug", frage: "Was kostet Premium Economy oder Business?",
     antwort: "Die Klasse betrifft nur den Flug, nicht die Unterkunft. Premium Economy kostet das 1,5-fache des Economy-Preises, Business das 2,6-fache, jeweils pro Person für Hin- und Rückflug. Die Klasse stellst du auf der Unterkunftsseite unter „Flug dazu“ ein.",
     stichworte: ["klasse", "business", "premium economy", "economy", "sitzklasse"] },
@@ -258,6 +262,33 @@ const FAQ = [
    Zurueck kommen hoechstens drei Eintraege. Mehr waere keine Antwort,
    sondern eine Liste, und das Modell wuerde daraus einen Vortrag
    machen. */
+/* Die Feiertage des naechsten Osterfests (21.11.2026).
+   ------------------------------------------------------------------
+   Ben fragte den Agenten, wann naechstes Jahr Ostern ist, und bekam
+   "Ostern faellt meist auf ein Wochenende im Fruehling". Das Datum folgt
+   einer festen Rechenregel (Gausssche Osterformel, hier in der Fassung
+   fuer den gregorianischen Kalender); geprueft gegen 2000, 2019 und
+   2024 bis 2028. Pfingsten und Himmelfahrt haengen daran. Gerechnet wird
+   fuer das naechste Ostern, das noch nicht vorbei ist. */
+function osterSonntag(jahr) {
+  const a = jahr % 19, b = Math.floor(jahr / 100), c = jahr % 100, d = Math.floor(b / 4), e = b % 4;
+  const f = Math.floor((b + 8) / 25), g = Math.floor((b - f + 1) / 3), h = (19 * a + b - d - g + 15) % 30;
+  const i = Math.floor(c / 4), k = c % 4, l = (32 + 2 * e + 2 * i - h - k) % 7, m = Math.floor((a + 11 * h + 22 * l) / 451);
+  const monat = Math.floor((h + l - 7 * m + 114) / 31), tag = ((h + l - 7 * m + 114) % 31) + 1;
+  return new Date(jahr, monat - 1, tag);
+}
+function feiertageText(heute = new Date()) {
+  const MON = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
+  let jahr = heute.getFullYear();
+  const plus = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+  if (plus(osterSonntag(jahr), 1) < new Date(heute.getFullYear(), heute.getMonth(), heute.getDate())) jahr += 1;
+  const o = osterSonntag(jahr);
+  const t = (d) => `${d.getDate()}. ${MON[d.getMonth()]}`;
+  return `${jahr} ist Ostersonntag am ${t(o)} (Karfreitag ${t(plus(o, -2))}, Ostermontag ${t(plus(o, 1))}). `
+    + `Christi Himmelfahrt ist am ${t(plus(o, 39))}, Pfingstsonntag am ${t(plus(o, 49))} und Pfingstmontag am ${t(plus(o, 50))}. `
+    + "Weihnachten ist wie jedes Jahr am 25. und 26. Dezember. Geflogen wird an allen diesen Tagen.";
+}
+
 function faqSuchen(frage, wieViele = 3) {
   const text = String(frage || "").toLowerCase().trim();
   if (text.length < 3) return [];
