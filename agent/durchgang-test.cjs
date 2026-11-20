@@ -2378,6 +2378,31 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     pruefe("Der Agent nimmt den Pfeil", /this\.finde\("#zurueckZurListe"\)/.test(wz) ? "ja" : "nein", "ja");
   }
 
+  /* Allgemeinwissen: in beiden Armen nur Chat, kein Arbeitsmodus
+     (20.11.2026). Ben: "Er darf dann bei beiden Ansichten nicht in den
+     Agentenmodus gehen - nicht das Arbeitsfenster oeffnen und nicht aktiv
+     etwas auf der Seite machen." Gegenprobe: _backup/20-11-ben/ */
+  {
+    const p = { typ: "hotel", artGenannt: true, monat: 7, naechte: 7, erwachsene: 2, kinder: 0, kinderAlter: [], zielOffen: true, flug: false };
+    const fall = (art, text) => WK.zwang(p, { gespraech: [{ role: "user", content: text }], nachrichtArt: art, gefragtWie: {}, gesuchtMit: null });
+    pruefe("Ohne Frage waere eine Suche faellig", fall("antwort", "Juli, zu zweit, eine Woche"), "suchen");
+    pruefe("Eine Frage aus Allgemeinwissen erzwingt keine Suche",
+      fall("frage", "Ist Lüneburg eigentlich eine schöne Stadt?") ?? "nichts", "nichts");
+    /* Grenzfall: Enthaelt die Frage ein FAQ-Thema ("Flughafen"), wird im
+       FAQ nachgeschlagen - echte Daten der Seite, in beiden Armen gleich
+       (Arm B verdeckt, Arm A sieht zu). */
+    pruefe("Mit FAQ-Thema wird nachgeschlagen, in beiden Armen gleich",
+      fall("frage", "Welcher Flughafen liegt am nächsten an Lüneburg?"), "faq_nachschlagen");
+    pruefe("Eine Frage mit FAQ-Eintrag fuehrt weiter ins FAQ",
+      fall("frage", "Fliegt ihr auch an Feiertagen?"), "faq_nachschlagen");
+    const aq = fs.readFileSync(B + "api/agent.js", "utf8");
+    pruefe("Der Agent sagt, dass es allgemeines Wissen ist", /Aus allgemeinem Wissen, nicht von der Seite/.test(aq) ? "ja" : "nein", "ja");
+    pruefe("Und ruft dafuer kein Werkzeug ausser stand_merken", /rufst du ausser stand_merken KEIN Werkzeug/.test(aq) ? "ja" : "nein", "ja");
+    const sieb = vm.runInContext("Kern.UEBER_DIE_SEITE", ctx);
+    pruefe("Der Satz wird vor der ersten Suche nicht gestrichen",
+      sieb.test("Aus allgemeinem Wissen, nicht von der Seite: Von Lüneburg ist Hamburg der nächste Flughafen.") ? "gestrichen" : "bleibt", "bleibt");
+  }
+
   // Kinder oder Erwachsene
   if (WK && WK.kinderErwachsenRueckfrage) {
     const f = WK.kinderErwachsenRueckfrage({ erwachsene: 1, kinder: 2 }, { alterZuHoch: [28, 34] });

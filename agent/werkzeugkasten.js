@@ -9516,7 +9516,25 @@ const Werkzeugkasten = {
         let treffer = [];
         try { treffer = faqSuchen(String(nutzer[nutzer.length - 1].content || ""), 1); } catch { treffer = []; }
         if (treffer.length) { lauf.faqErzwungenFuer = schluessel; return "faq_nachschlagen"; }
+        /* Eine Frage ohne FAQ-Eintrag: kein Arbeitsmodus (20.11.2026).
+           ------------------------------------------------------------
+           Ben am 20.11.2026: Fragen aus Allgemeinwissen ("ich wohne in
+           Lueneburg, welcher Flughafen ist am naechsten?") beantwortet der
+           Agent im Chat und sagt, dass es allgemeines Wissen ist. "Uns ist
+           wichtig, dass sich das nicht unterscheidet, je nachdem, welche
+           Ansicht man hat. Er darf dann bei beiden Ansichten nicht in den
+           Agentenmodus gehen - nicht das Arbeitsfenster oeffnen und nicht
+           aktiv etwas auf der Seite machen."
+
+           Erzwungen wird in diesem Zug deshalb nichts: keine Suche, die
+           gerade faellig waere, kein Fahrplanschritt auf der Seite. Was
+           ansteht, kommt im naechsten Zug. Ruft das Modell selbst ein
+           Werkzeug, weil die Frage doch das Angebot betrifft ("habt ihr
+           was auf Kreta?"), bleibt ihm das unbenommen - das ist dann
+           keine Frage aus Allgemeinwissen. */
+        if (lauf.faqErzwungenFuer !== schluessel) { lauf.keinZwangFuer = schluessel; return null; }
       }
+      if (lauf.keinZwangFuer && lauf.keinZwangFuer === (lauf.gespraech || []).filter((n) => n.role === "user").length) return null;
     }
     /* Der Monatsvergleich geht allem voran.
        ----------------------------------------------------------------
