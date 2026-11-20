@@ -7823,6 +7823,22 @@ const Werkzeugkasten = {
      (21.11.2026, siehe zielDazunehmen). Nur, wenn es Dazugenommenes gibt -
      eine Auswahl, die die Person selbst zusammengestellt hat, bleibt sonst
      unberuehrt. */
+  /* Der Satz, wenn ein Thema nach zwei Anlaeufen festgehalten wird
+     (21.11.2026, siehe fahrplan). Nur aus dem, was schon im Stand steht;
+     null, wenn sich nichts Bestimmtes nennen laesst - dann wird nichts
+     festgehalten. */
+  festhaltenSatz(t, p) {
+    if (t === "ziel") {
+      if (p.zielId) { const o = this.ortSatz(p.zielId); return o ? `Ich suche dann ${o}, wie oben angegeben.` : null; }
+      const ids = this.zielListe(p);
+      if (!ids.length) return null;
+      const l = this.regionenListe(ids, { hoechstens: 10 });
+      return l ? `Ich suche in den Regionen, die oben stehen: ${l.text}. Sag Bescheid, wenn du etwas ändern möchtest.` : null;
+    }
+    if (t === "art") return p.typ ? `Ich zeige dir dann ${this.artWort(p, true)}, wie oben angegeben.` : null;
+    return "Ich arbeite mit dem weiter, was oben unter „Verstanden“ steht. Sag Bescheid, wenn du etwas ändern möchtest.";
+  },
+
   auswahlNachRichtung(p) {
     if (!p?.zieleDazu?.length || !p.zieleAuswahl?.length || !p.zieleErlaubt?.length) return false;
     p.zieleAuswahl = [...new Set([...p.zieleErlaubt, ...p.zieleDazu])];
@@ -8632,6 +8648,8 @@ const Werkzeugkasten = {
          Ende "Den genauen Anreisetag legen wir beim Buchen fest". */
       anreise: !!p.anreise || !!(p.von && p.bis),
     };
+    // Festgehaltene Themen bleiben geschlossen (siehe unten, 21.11.2026)
+    for (const t of Object.keys(lauf?.festgehalten || {})) if (t in fertig) fertig[t] = true;
     /* Eine Frage wird hoechstens zweimal gestellt.
        ------------------------------------------------------------------
        Im Pruefstand vom 25.09.2026 stand dieselbe Frage bis zu achtmal
@@ -8930,7 +8948,34 @@ const Werkzeugkasten = {
          ueberschrieben, wonach gerade gefragt wurde. */
       if (t === "gewichtung" && (p.kriterien || []).length) continue;
       // Keine Annahme fasst an, was die Person selbst gesagt hat
-      if ((a.schreibt || []).some((f) => p.vonPerson?.[f])) continue;
+      /* ... aber daraus darf keine Endlosschleife werden (21.11.2026).
+         ----------------------------------------------------------------
+         Ben: "Er stellt die ganze Zeit die Fragen tausendmal ... selbst
+         wenn man sagt, nimm einfach die, die da jetzt sind, begreift er
+         das nicht." Die Zielfrage kam fuenfmal. Der Stand hielt das Ziel
+         faelschlich fuer offen, und diese Ausnahme liess die Annahme nicht
+         eingreifen, weil die Person zum Thema schon etwas gesagt hatte
+         ("eher kalt") - es gab keinen Ausweg mehr.
+         Jetzt, nach zwei Anlaeufen, ohne etwas anzunehmen:
+         - Themen mit Vorschlag (VORSCHLAG_THEMEN) gehen weiter zum
+           Vorschlag mit "Ja / Etwas anderes" - er traegt die Angaben der
+           Person und setzt nichts ohne Bestaetigung.
+         - Alle anderen werden nicht mehr gefragt. Der Agent sagt, womit er
+           weiterarbeitet, und das ist nur, was schon oben im Stand steht.
+           Steht dort nichts, was sich nennen laesst, bleibt es wie bisher. */
+      if ((a.schreibt || []).some((f) => p.vonPerson?.[f]) && !this.VORSCHLAG_THEMEN.includes(t)) {
+        // Wer gerade etwas fragt, wird nicht festgehalten - er bekommt eine
+        // Antwort, und das Thema bleibt offen (siehe "Wer zurueckfragt" unten)
+        const zuletztGesagt = [...((lauf.gespraech || []).filter((n) => n.role === "user"))].slice(-1)[0]?.content || "";
+        if (lauf.nachrichtArt === "frage" || lauf.nachrichtArt === "unklar" || /\?\s*$/.test(String(zuletztGesagt).trim())) continue;
+        const satz = this.festhaltenSatz(t, p);
+        if (!satz) continue;
+        (lauf.festgehalten ||= {})[t] = true;
+        fertig[t] = true;
+        (lauf.annahmeOffen ||= []).push({ thema: t, eigenesTun: true, felder: {}, text: satz });
+        (lauf.protokoll ||= []).push({ t: Date.now(), ereignis: "thema_festgehalten", thema: t });
+        continue;
+      }
       /* Wer zurueckfragt, hat nicht abgelehnt (05.11.2026).
          ----------------------------------------------------------------
          "ich wohne in Lueneburg welcher bietet sich dann an?" ist keine

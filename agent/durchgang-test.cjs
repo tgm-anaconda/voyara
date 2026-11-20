@@ -2791,6 +2791,36 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     }
   }
 
+  /* Keine Endlosschleife, wenn die Person zum Thema schon etwas gesagt hat
+     (21.11.2026). Gegenprobe: _backup/21-11-festhalten/ */
+  {
+    const th = (id) => vm.runInContext("Politik", ctx).THEMEN.find((t) => t.id === id);
+    const kalt = WK.regionenFuerRichtung(th("kalt"), { monat: 3 });
+    const basis = { monat: 3, naechte: 9, erwachsene: 2, kinder: 0, typ: "hotel", artGenannt: true, flug: false,
+      vonPerson: { monat: true, naechte: true, erwachsene: true, kinder: true, typ: true, flug: true } };
+    const lauf = (extra = {}) => ({ gespraech: [{ role: "user", content: "das passt so" }], protokoll: [], annahmeOffen: [], nachrichtArt: "antwort", ...extra });
+    // Kaputter Stand: Richtung von der Person, aber das Ziel gilt als offen; Regionen stehen noch da
+    const kaputt = { ...basis, zieleErlaubt: kalt, vonPerson: { ...basis.vonPerson, richtung: true } };
+    const l1 = lauf({ gefragtWie: { ziel: 2 } });
+    const f1 = WK.fahrplan(JSON.parse(JSON.stringify(kaputt)), l1);
+    pruefe("Nach zwei Anlaeufen: Zielfrage kommt nicht ein drittes Mal", f1.naechstes === "ziel" ? "fragt wieder" : "weiter", "weiter");
+    pruefe("... und er sagt, womit er weiterarbeitet (Regionen von oben)", /Regionen, die oben stehen: Lappland/.test((l1.annahmeOffen || []).map((x) => x.text).join(" ")) ? "ja" : "nein", "ja");
+    pruefe("... ohne einen neuen Wert zu setzen", JSON.stringify(WK.zielListe(kaputt)), JSON.stringify(kalt));
+    pruefe("Beim naechsten Aufruf bleibt das Ziel geschlossen", WK.fahrplan(JSON.parse(JSON.stringify(kaputt)), l1).naechstes === "ziel" ? "fragt wieder" : "weiter", "weiter");
+    // Fragt die Person gerade etwas, wird nicht festgehalten
+    const l2 = lauf({ gefragtWie: { ziel: 2 }, nachrichtArt: "frage", gespraech: [{ role: "user", content: "wie warm ist es auf island" }] });
+    pruefe("Wer gerade fragt, wird nicht festgehalten", WK.fahrplan(JSON.parse(JSON.stringify(kaputt)), l2).naechstes, "ziel");
+    // Nach dem ersten Anlauf noch nichts
+    pruefe("Nach einem Anlauf wird noch nichts festgehalten", WK.fahrplan(JSON.parse(JSON.stringify(kaputt)), lauf({ gefragtWie: { ziel: 1 } })).naechstes, "ziel");
+    // Reisende unvollstaendig: Vorschlag statt Schleife, nichts gesetzt
+    const halb = { ...basis, erwachsene: undefined, kinder: undefined, personen: 5, vonPerson: { ...basis.vonPerson, erwachsene: false, kinder: false, personen: true } };
+    delete halb.erwachsene; delete halb.kinder;
+    const l3 = lauf({ gefragtWie: { reisende: 2 } });
+    const f3 = WK.fahrplan(halb, l3);
+    pruefe("Reisende unvollstaendig: Vorschlag mit den Angaben der Person", f3.vorschlag ? f3.vorschlag.text : "kein Vorschlag", "5 Erwachsenen");
+    pruefe("... und es ist nichts gesetzt", halb.kinder ?? "offen", "offen");
+  }
+
   // Kinder oder Erwachsene
   if (WK && WK.kinderErwachsenRueckfrage) {
     const f = WK.kinderErwachsenRueckfrage({ erwachsene: 1, kinder: 2 }, { alterZuHoch: [28, 34] });
