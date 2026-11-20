@@ -2644,8 +2644,8 @@ const liesReisende = async (text, felder, urteil = "ja") => {
   {
     const apiPfad = alt && fs.existsSync(quelle + "agent-api.js") ? quelle + "agent-api.js" : B + "api/agent.js";
     const api = fs.readFileSync(apiPfad, "utf8");
-    const m = api.match(/const ZEITGRENZE_ERSTER_MS = (\d+);/);
-    pruefe("Erster Modellversuch bricht nach hoechstens 10 s ab", m && +m[1] <= 10000 && /openai\(koerper, ZEITGRENZE_ERSTER_MS\)/.test(api) ? "ja" : "nein", "ja");
+    const m = api.match(/const NACHZUEGLER_MS = (\d+);/);
+    pruefe("Haengender Modellaufruf: Nachzuegler nach hoechstens 5 s", m && +m[1] <= 5000 && /mitNachzuegler\(koerper, VORUEBERGEHEND\)/.test(api) ? "ja" : "nein", "ja");
     pruefe("Nach einer Zeitueberschreitung sofort neu", /e\.status === 504 \? 0/.test(api) ? "ja" : "nein", "ja");
     const kq3 = fs.readFileSync(alt && fs.existsSync(quelle + "kern.js") ? quelle + "kern.js" : B + "agent/kern.js", "utf8");
     pruefe("Zugdauer ueberlebt den Seitenwechsel", /if \(this\.lauf\.zugSeit == null\) this\.lauf\.zugSeit = Date\.now\(\);/.test(kq3)

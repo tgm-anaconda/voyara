@@ -14,16 +14,21 @@
 
 const MODELL = "gpt-4.1-mini";
 const ZEITGRENZE_MS = 20000;
-/* Erster Versuch kuerzer (21.11.2026).
-   Gemessen in sieben Laeufen mit echtem Modell: normale Aufrufe 0,6 bis
-   2,6 s. Einmal kam die erste Anfrage an OpenAI gar nicht zurueck - der
-   Server wartete die vollen 20 s ab und versuchte es dann neu (fertig nach
-   1,5 s): 22,4 s fuer einen Aufruf, und genau diese Pausen hat Ben gesehen
-   ("da war uebel die lange Verzoegerung drin, in der einfach nichts
-   passiert ist"). Auch die laengste erlaubte Antwort (600 Tokens) ist in
-   rund 7 s fertig; nach 9 s ist der erste Versuch also ein Haenger. Der
-   zweite behaelt die volle Zeit. */
-const ZEITGRENZE_ERSTER_MS = 9000;
+/* Der Nachzuegler (21.11.2026).
+   ------------------------------------------------------------------
+   Ben: "Da war uebel die lange Verzoegerung drin, in der einfach nichts
+   passiert ist." Die Vercel-Logs der Stunde davor: 6 von rund 40
+   Aufrufen kamen von OpenAI gar nicht zurueck und liefen exakt in die
+   Zeitgrenze von 20 s; der zweite Versuch war danach jeweils in rund 1 s
+   fertig. Normale Aufrufe: 0,6 bis 2,6 s. Ein Muster (Pause davor, Seite,
+   Werkzeug) gab es nicht - einmal hing eine Anfrage 0,3 s nach einer
+   erfolgreichen.
+   Also nicht laenger warten, sondern absichern: Ist nach 4 s keine
+   Antwort da, geht dieselbe Anfrage ein zweites Mal hinaus. Es gilt die
+   erste, die fertig wird; die andere wird abgebrochen. Eine langsame,
+   aber gueltige Antwort wird so nie abgeschnitten, und ein Haenger kostet
+   rund 5 statt 22 s. Der Preis: bei solchen Aufrufen zwei Anfragen. */
+const NACHZUEGLER_MS = 4000;
 const MAX_ZEICHEN_EINGABE = 60000;    // ganzes Gespraech plus Werkzeugergebnisse
 const MAX_TOKEN_ANTWORT = 600;
 const MAX_NACHRICHTEN = 60;
@@ -84,9 +89,11 @@ function fehler(res, status, text) {
   res.status(status).json({ ok: false, fehler: text });
 }
 
-async function openai(koerper, zeitgrenzeMs = ZEITGRENZE_MS) {
+async function openai(koerper, zeitgrenzeMs = ZEITGRENZE_MS, aussen = null) {
   const abbruch = new AbortController();
   const uhr = setTimeout(() => abbruch.abort(), zeitgrenzeMs);
+  // Der Nachzuegler bricht die langsamere der beiden Anfragen ab
+  if (aussen) aussen.addEventListener("abort", () => abbruch.abort(), { once: true });
   try {
     const antwort = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -116,6 +123,50 @@ async function openai(koerper, zeitgrenzeMs = ZEITGRENZE_MS) {
   } finally {
     clearTimeout(uhr);
   }
+}
+
+/* Erste Anfrage, nach NACHZUEGLER_MS eine zweite; es gilt die erste
+   erfolgreiche. Scheitert die erste vorher mit einem voruebergehenden
+   Fehler (429, 500 ...), geht die zweite nach der Wartezeit wie bisher
+   hinaus; bei einem dauerhaften Fehler (400, Guthaben) gibt es keine.
+   Rueckgabe: das Ergebnis und die Messwerte fuers Log. */
+function mitNachzuegler(koerper, voruebergehend) {
+  return new Promise((fertig) => {
+    const start = Date.now();
+    const abbrechen = [new AbortController(), new AbortController()];
+    let erledigt = false, zweiterLaeuft = false, ersterOffen = true, zweiterOffen = false;
+    let ersterMs = null, ersterStatus = null, gewartetMs = 0, nachzuegler = false, letzter = null;
+    const ende = (e, gewinner) => {
+      if (erledigt) return;
+      erledigt = true;
+      clearTimeout(uhr);
+      abbrechen.forEach((a, i) => { if (i + 1 !== gewinner) a.abort(); });
+      fertig({ e, gewinner, ersterMs, ersterStatus, gewartetMs, nachzuegler, versuche: zweiterLaeuft ? 2 : 1 });
+    };
+    const zweiter = () => {
+      if (zweiterLaeuft || erledigt) return;
+      zweiterLaeuft = true; zweiterOffen = true;
+      openai(koerper, ZEITGRENZE_MS, abbrechen[1].signal).then((e) => {
+        zweiterOffen = false;
+        if (e.ok) return ende(e, 2);
+        letzter = e;
+        if (!ersterOffen) ende(e, 2);          // beide gescheitert
+      });
+    };
+    const uhr = setTimeout(() => { if (ersterOffen) { nachzuegler = true; zweiter(); } }, NACHZUEGLER_MS);
+    openai(koerper, ZEITGRENZE_MS, abbrechen[0].signal).then((e) => {
+      ersterOffen = false;
+      ersterMs = Date.now() - start;
+      ersterStatus = e.ok ? 200 : e.status;
+      if (e.ok) return ende(e, 1);
+      letzter = e;
+      if (zweiterLaeuft) { if (!zweiterOffen) ende(letzter, 1); return; }   // auf den Nachzuegler warten
+      if (!voruebergehend.includes(e.status)) return ende(e, 1);
+      clearTimeout(uhr);
+      gewartetMs = e.status === 504 ? 0 : (e.wartenMs || 900);
+      setTimeout(zweiter, gewartetMs);
+    });
+  });
 }
 
 // Nur die Felder durchlassen, die das Modell kennt. Alles andere, was
@@ -198,19 +249,11 @@ export default async function handler(req, res) {
      im Vercel-Log: wie lange OpenAI brauchte, ob wiederholt wurde und mit
      welchem Status. Keine Inhalte, keine Kontodaten. */
   const start = Date.now();
-  const erster = Date.now();
-  let e = await openai(koerper, ZEITGRENZE_ERSTER_MS);
-  const ersterMs = Date.now() - erster;
-  let versuche = 1, ersterStatus = e.ok ? 200 : e.status, gewartetMs = 0;
-  if (!e.ok && VORUEBERGEHEND.includes(e.status)) {
-    // Nach einer Zeitueberschreitung (504) sofort neu - gewartet wurde schon
-    gewartetMs = e.status === 504 ? 0 : (e.wartenMs || 900);
-    if (gewartetMs) await new Promise((r) => setTimeout(r, gewartetMs));
-    e = await openai(koerper, ZEITGRENZE_MS);
-    versuche = 2;
-  }
+  const r = await mitNachzuegler(koerper, VORUEBERGEHEND);
+  const e = r.e;
+  const { ersterMs, versuche, ersterStatus, gewartetMs, nachzuegler, gewinner } = r;
   const dauerMs = Date.now() - start;
-  console.log(JSON.stringify({ agentAufruf: true, dauerMs, ersterMs, versuche, ersterStatus,
+  console.log(JSON.stringify({ agentAufruf: true, dauerMs, ersterMs, versuche, ersterStatus, nachzuegler, gewinner,
     status: e.ok ? 200 : e.status, code: e.ok ? null : (e.code || null), gewartetMs,
     eingabe: e.daten?.usage?.prompt_tokens ?? null, gecacht: e.daten?.usage?.prompt_tokens_details?.cached_tokens ?? null,
     pflicht: typeof werkzeugPflicht === "string" ? werkzeugPflicht : !!werkzeugPflicht }));
