@@ -5466,6 +5466,9 @@ const Werkzeugkasten = {
         kern.sperreAus();
       }
       kern.notieren("faq_treffer", { frage: frage.slice(0, 120), ids: treffer.map((t) => t.id) });
+      // Fuer die Sperre "Behauptung ohne Recherche" im Kern: Dieser Zug
+      // hat im FAQ nachgesehen (20.11.2026, siehe dort).
+      kern.lauf.faqBelegtFuer = (kern.lauf.gespraech || []).filter((n) => n.role === "user").length;
 
       /* Zurueck, wo die Person war. Ohne das stuende sie nach einer
          Zwischenfrage im FAQ statt in ihrer Trefferliste. */

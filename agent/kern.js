@@ -2398,7 +2398,15 @@ const Kern = {
            behauptet. Fragen bleiben stehen, und Allgemeinwissen ueber Klima
            und Charakter der Ziele ist nicht betroffen - das ist kein Wissen
            ueber diese Seite. */
-        if (text && !this.lauf.gesuchtMit) {
+        /* Was gerade im FAQ nachgeschlagen wurde, ist nachgesehen
+           (20.11.2026). Im Live-Lauf fuhr der Agent sichtbar ins FAQ und
+           zurueck - und danach strich diese Sperre seine Antwort trotzdem,
+           weil noch keine Suche gelaufen war, und der Kern fuellte die
+           Luecke still mit demselben FAQ-Text. Doppelte Arbeit, und genau
+           das stille Einspringen, das Ben nicht wollte. */
+        const nutzerJetzt = (this.lauf.gespraech || []).filter((n) => n.role === "user").length;
+        const faqBelegt = this.lauf.faqBelegtFuer === nutzerJetzt;
+        if (text && !this.lauf.gesuchtMit && !faqBelegt) {
           const saetze = Werkzeugkasten.saetze(text);
           const rest = saetze.filter((x) => /\?\s*$/.test(x) || !Kern.UEBER_DIE_SEITE.test(x));
           if (rest.length !== saetze.length) {
