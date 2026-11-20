@@ -243,7 +243,14 @@ const Zeiger = {
   async insBlickfeld(el) {
     if (this.imBlick(el)) return;
     el.scrollIntoView({ behavior: "smooth", block: "center" });
-    await this.warteAufScrollende();
+    /* Warten, bis das ELEMENT steht, nicht nur das Fenster (21.11.2026).
+       Gemessen in der Trefferliste bei 1500 x 1130: Der Zielpunkt fuer
+       "Fruehstueck" wurde bei 799 Pixeln berechnet, geklickt wurde, als
+       die Zeile bei 550 stand. Die Filterspalte hat einen eigenen
+       Scrollbereich und rollte noch weich nach, waehrend das Fenster
+       laengst stand - `warteAufScrollende` sah nur das Fenster, und der
+       Zeiger fuhr auf ein Ziel, das sich noch bewegte. */
+    await this.warteBisRuhig(el);
     /* Zweiter Anlauf, wenn das Element in einem eigenen Scrollbereich
        sitzt: `scrollIntoView` bewegt dann nur diesen Bereich, und das
        Fenster bleibt stehen - der Zeiger faehrt trotzdem ans Ziel, nur
@@ -254,8 +261,44 @@ const Zeiger = {
     const versatz = (k.top + k.height / 2) - h / 2;
     if (Math.abs(versatz) > 30) {
       window.scrollBy({ top: versatz, behavior: "smooth" });
-      await this.warteAufScrollende();
+      await this.warteBisRuhig(el);
     }
+  },
+
+  /* Hat sich das Ziel waehrend der Fahrt bewegt (nachrollender Bereich,
+     neu gezeichnete Liste), wird einmal nachgezielt - sonst klickt der
+     Zeiger sichtbar neben die Stelle, die tatsaechlich reagiert. */
+  async nachzielen(el, ziel) {
+    const k = el.getBoundingClientRect();
+    if (ziel.x >= k.left && ziel.x <= k.right && ziel.y >= k.top && ziel.y <= k.bottom) return ziel;
+    await this.warteBisRuhig(el);
+    const neu = this.zielpunkt(el);
+    await this.bewegeZu(neu.x, neu.y, { ueberschwingen: false });
+    return neu;
+  },
+
+  // Bis ein Element fuenf Bilder lang an derselben Stelle steht - egal,
+  // welcher Scrollbereich es bewegt. Notausstieg nach 1,5 Sekunden; im
+  // Hintergrundtab gibt es keine Bilder, dort geht es sofort weiter.
+  warteBisRuhig(el) {
+    if (document.hidden || !el) return Promise.resolve();
+    return new Promise((fertig) => {
+      let letzte = el.getBoundingClientRect().top;
+      let ruhe = 0;
+      const notaus = setTimeout(fertig, 1500);
+      const pruefen = () => {
+        if (this.abbruch) { clearTimeout(notaus); return fertig(); }
+        const jetzt = el.getBoundingClientRect().top;
+        if (Math.abs(jetzt - letzte) < 1) {
+          if (++ruhe > 4) { clearTimeout(notaus); return fertig(); }
+        } else {
+          ruhe = 0;
+        }
+        letzte = jetzt;
+        requestAnimationFrame(pruefen);
+      };
+      requestAnimationFrame(pruefen);
+    });
   },
 
   warteAufScrollende() {
@@ -300,8 +343,10 @@ const Zeiger = {
     await this.insBlickfeld(el);
     if (this.abbruch) return false;
 
-    const ziel = this.zielpunkt(el);
+    let ziel = this.zielpunkt(el);
     await this.bewegeZu(ziel.x, ziel.y);
+    if (this.abbruch) return false;
+    ziel = await this.nachzielen(el, ziel);
     if (this.abbruch) return false;
 
     // Menschen klicken nicht in dem Moment, in dem der Zeiger ankommt

@@ -102,8 +102,10 @@ const Werkzeuge = {
     if (!input) return false;
     const zeile = input.closest("label") || input;
     await Zeiger.insBlickfeld(zeile);
-    const ziel = Zeiger.zielpunkt(zeile);
+    let ziel = Zeiger.zielpunkt(zeile);
     await Zeiger.bewegeZu(ziel.x, ziel.y);
+    if (Zeiger.abbruch) return false;
+    ziel = await Zeiger.nachzielen(zeile, ziel);
     if (Zeiger.abbruch) return false;
 
     zeile.classList.add("agent-hover");
@@ -508,6 +510,25 @@ const Werkzeuge = {
     }
 
     await Zeiger.warte(300);
+    /* Zurueck zur Trefferzahl, ruhig (21.11.2026).
+       ----------------------------------------------------------------
+       Gemeldet: "Die Auswahl vom Pool war voellig verbuggt. Er war
+       irgendwie im Impressum." Nachgestellt im Fenster von 1000 x 650:
+       Dort steht die Filterspalte nicht fest, sie ist ueber 2600 Pixel
+       lang, und fuer "Pool" rollt das Fenster weit hinunter. Faellt die
+       Liste dann auf null, wird die Seite kurz - die Sicht bleibt unten
+       an der Spalte und an der Fusszeile haengen, Trefferzahl und
+       "Nichts gefunden" liegen ausser Sicht. Danach sprang das
+       Durchgehen ohne Uebergang nach oben.
+       Nur wenn wirklich geklickt wurde und die Zahl nicht zu sehen ist. */
+    if (gesetzt.length || abgewaehlt.length) {
+      const zahl = this.finde("#resultsCount");
+      if (zahl && !Zeiger.imBlick(zahl) && !Zeiger.abbruch) {
+        const kopf = this.finde("#resultsTitle") || zahl;
+        window.scrollTo({ top: Math.max(0, window.scrollY + kopf.getBoundingClientRect().top - 140), behavior: "smooth" });
+        await Zeiger.warteAufScrollende();
+      }
+    }
     const treffer = document.querySelectorAll(".result-card").length;
     const rest = nichtGesetzt.length ? ` · nicht einstellbar auf dieser Liste: ${nichtGesetzt.join(", ")}` : "";
     return {
@@ -699,8 +720,13 @@ const Werkzeuge = {
        steht. Gesetzt wird die Stelle ohne Animation (`setzePosition`):
        `bewegeZu` wuerde bei jedem Schritt eine eigene Fahrt starten und
        die Schleife ausbremsen. */
-    const zeigerMitfuehren = () => {
-      if (Zeiger.armB?.() || !Zeiger.el) return;
+    /* Feste Hoehe, die Karten laufen darunter durch (21.11.2026).
+       Klebte der Zeiger an der Oberkante der Karte in der Mitte, wanderte
+       er mit ihr nach oben und sprang beim Wechsel zur naechsten Karte
+       wieder zurueck - ein Saegezahn, sobald die Seite fliessend laeuft.
+       So steht er wie eine ruhende Hand ueber der Liste. */
+    const ruhePunkt = () => {
+      if (Zeiger.armB?.() || !Zeiger.el) return null;
       const mitte = window.innerHeight * 0.42;
       let beste = null, abstand = Infinity;
       for (const el of elemente) {
@@ -709,19 +735,45 @@ const Werkzeuge = {
         const d = Math.abs(k.top + k.height / 2 - mitte);
         if (d < abstand) { abstand = d; beste = k; }
       }
-      if (!beste) return;
-      Zeiger.zeigen();
-      Zeiger.setzePosition(Math.round(beste.left + Math.min(beste.width * 0.3, 120)),
-        Math.round(Math.max(8, Math.min(window.innerHeight - 40, beste.top + 26))));
+      if (!beste) return null;
+      return { x: Math.round(beste.left + Math.min(beste.width * 0.3, 120)), y: Math.round(mitte) };
     };
-    const schritt = Math.max(140, Math.round(window.innerHeight * 0.35));
-    /* Der Durchlauf soll ueberall gleich lang wirken, egal ob 100 oder
-       253 Karten darunterliegen - sonst zieht sich eine lange Liste
-       ueber sechs Sekunden hin und wirkt zaeh statt schnell. Angepeilt
-       sind rund zweieinhalb Sekunden reines Scrollen; die Halte kommen
-       dazu. Der Faktor `Zeiger.tempo` steckt in `warte` mit drin. */
-    const schritteGesamt = Math.max(1, Math.ceil((bis - von) / schritt));
-    const takt = Math.max(12, Math.min(tempoMs, Math.round((2500 * (Zeiger.tempo || 1)) / schritteGesamt)));
+    const zeigerMitfuehren = () => {
+      const r = ruhePunkt();
+      if (!r) return;
+      Zeiger.zeigen();
+      Zeiger.setzePosition(r.x, r.y);
+    };
+    // Hin zur Ruhestelle gleiten statt springen: am Anfang (der Zeiger kam
+    // von woanders, gemessen bis 608 Pixel) und nach jedem Halt (70 bis
+    // 106 Pixel von der Haltekarte zurueck).
+    const zurRuhe = async () => {
+      const r = ruhePunkt();
+      if (!r || Zeiger.abbruch) return;
+      const k = Zeiger.el.getBoundingClientRect();
+      if (Math.hypot(k.left - r.x, k.top - r.y) > 4) { Zeiger.zeigen(); await Zeiger.bewegeZu(r.x, r.y, { ueberschwingen: false }); }
+    };
+    /* Fliessend statt in Spruengen (21.11.2026).
+       ------------------------------------------------------------------
+       Ben: "Er ist jetzt so komisch verbuggt immer im oberen Bereich und
+       man kann gar nicht mehr richtig wahrnehmen, was er macht. Das ist so
+       ein ganz unruhiges Verhalten." Gemessen bei 435 Hotels: Die Seite
+       sprang in Schritten von 315 Pixeln (einmal 3411), dazwischen stand
+       sie in den meisten Bildern still, rund 14.000 Pixel pro Sekunde.
+       Die alte Rechnung peilte 2,5 Sekunden fuer jede Liste an - bei
+       140.000 Pixeln Seite geht das nur als Geflacker.
+
+       Jetzt rollt die Seite Bild fuer Bild mit fester Geschwindigkeit:
+       mindestens 3000, hoechstens 6000 Pixel pro Sekunde, sonst rund 20
+       Sekunden fuer die ganze Strecke. Eine lange Liste dauert damit
+       laenger - Bens Entscheidung: "Zur Not dauert das halt einfach ein
+       bisschen laenger." Im Hintergrundtab gibt es keine Bilder; dort
+       springt die Seite ans Ende, statt stehenzubleiben. */
+    const geschwindigkeit = Math.min(6000, Math.max(3000, (bis - von) / 20));
+    const naechstesBild = () => new Promise((f) => (document.hidden
+      ? setTimeout(() => f(performance.now()), 16)
+      : requestAnimationFrame(f)));
+    let imHalt = false;
     const startY = window.scrollY;
     let weiteste = startY;
     let naechstes = 0;
@@ -763,33 +815,49 @@ const Werkzeuge = {
        Position - die Zahl laeuft mit, Karte fuer Karte. */
     // Derselbe Takt fuehrt den Zeiger mit - auch waehrend des weichen
     // Scrollens zu einem Haltepunkt, wo die Schleife unten nicht laeuft.
-    const ticker = setInterval(() => { zeigerMitfuehren(); if (zaehlwort) beschriften(); }, 40);
+    /* Waehrend eines Halts schweigt der Takt (21.11.2026): Er setzte den
+       Zeiger alle 40 ms auf die Liste zurueck, waehrend `Zeiger.lies` ihn
+       zur Haltekarte fuhr, und ueberschrieb dessen Beschriftung ("sieht
+       sich X genauer an") mit dem Zaehler. Beides flackerte. */
+    const ticker = setInterval(() => { if (imHalt) return; zeigerMitfuehren(); if (zaehlwort) beschriften(); }, 40);
+    const halten = async (el, nr) => {
+      imHalt = true;
+      try { if (beiHalt) await beiHalt(el, nr); await zurRuhe(); } finally { imHalt = false; }
+    };
     try {
+    imHalt = true;
+    try { await zurRuhe(); } finally { imHalt = false; }
+    let zuletzt = await naechstesBild();
     while (y < bis && !Zeiger.abbruch) {
-      y = Math.min(bis, y + schritt);
-      // Liegt der naechste Haltepunkt in diesem Abschnitt, haelt er dort
-      // an, statt an ihm vorbeizuziehen.
+      // Ein Halt, sobald die naechste Haltekarte in der Mitte des Fensters
+      // steht. Dort ist sie ganz im Bild, und `Zeiger.lies` muss nicht
+      // mehr scrollen - vorher lag der Halt bis zu einer halben
+      // Fensterhoehe voraus und die Seite ruckte dafuer zurueck.
       while (naechstes < halte.length && !Zeiger.abbruch) {
         const el = halte[naechstes];
-        const ziel = window.scrollY + el.getBoundingClientRect().top;
-        if (ziel > y + window.innerHeight * 0.5) break;
-        if (beiHalt) await beiHalt(el, naechstes + 1);
+        const k = el.getBoundingClientRect();
+        if (k.top + Math.min(k.height, window.innerHeight * 0.6) / 2 > window.innerHeight * 0.5) break;
+        await halten(el, naechstes + 1);
         naechstes += 1;
         y = Math.max(y, window.scrollY);
         // Nach dem Halt wieder die Zahl - der Halt hat den Zeiger
         // beschriftet, und ohne das stand dort bis zum naechsten Schritt
         // "Bewertung 3 von 5" statt des Zaehlers.
         beschriften();
+        zuletzt = await naechstesBild();   // die Haltezeit zaehlt nicht als Strecke
       }
+      const jetzt = await naechstesBild();
+      const dt = Math.min(50, Math.max(0, jetzt - zuletzt));
+      zuletzt = jetzt;
+      y = document.hidden ? bis : Math.min(bis, y + geschwindigkeit * dt / 1000);
       window.scrollTo({ top: y, behavior: "instant" });   // "instant": style.css setzt scroll-behavior: smooth, und mit "auto" lief die Seite dem Zaehler hinterher
       weiteste = Math.max(weiteste, window.scrollY);
       zeigerMitfuehren();
       beschriften();
-      await Zeiger.warte(takt);
     }
     // Was noch offen ist, weil die Strecke vorher zu Ende war
     while (naechstes < halte.length && !Zeiger.abbruch) {
-      if (beiHalt) await beiHalt(halte[naechstes], naechstes + 1);
+      await halten(halte[naechstes], naechstes + 1);
       naechstes += 1;
     }
     } finally { if (ticker) clearInterval(ticker); }
@@ -806,7 +874,12 @@ const Werkzeuge = {
     // Zurueck nach oben sichtbar statt mit einem Sprung - der Sprung war
     // das "super schnell wieder nach oben" vom 02.10.2026
     window.scrollTo({ top: von, behavior: "smooth" });
-    await Zeiger.warte(450);
+    /* Warten, bis die Seite oben steht (21.11.2026). Mit festen 450 ms
+       lief der naechste Schritt schon los, waehrend die Seite noch ueber
+       100.000 Pixel zuruecklief. Die Notbremse von `warteAufScrollende`
+       (1,2 s) bleibt; danach steht die Seite in jedem Fall oben. */
+    await Zeiger.warteAufScrollende();
+    if (Math.abs(window.scrollY - von) > 4) window.scrollTo({ top: von, behavior: "instant" });
     return { gescrollt, strecke: bis - von, gesamt };
   },
 
@@ -830,6 +903,30 @@ const Werkzeuge = {
       await new Promise((f) => setTimeout(f, 60));
     }
     return null;
+  },
+
+  /* Nach einem Filter: Suchen klicken und die Zahl ablesen (21.11.2026).
+     ------------------------------------------------------------------
+     Ben: "Nachdem man zum Beispiel sowas wie Fruehstueck ausgewaehlt hat,
+     finde ich es gut, dass er den Filter dann setzt und nochmal auf
+     Suchen klickt. Aber da soll er sich dann nur an den Ausgaben von der
+     Seite orientieren, wie viele Hotels das bedeuten wuerde. Aber er soll
+     nicht schon mal alle Haeuser scannen."
+
+     Die Zahl kommt von der Seite ("26 von 462 Ergebnissen"), und der
+     Zeiger bleibt einen Moment darauf - so sieht man, woher der Agent sie
+     hat. Der Suchknopf ist derselbe, den auch die Person drueckt. */
+  async trefferZahlZeigen() {
+    if (this.seite() !== "results") return this.fehlt("Die Trefferliste");
+    const knopf = this.finde('#sbForm button[type="submit"]');
+    if (knopf) {
+      await Zeiger.klicke(knopf, { hinweis: "suchen" });
+      await Zeiger.warte(250);
+    }
+    const zahl = this.finde("#resultsCount");
+    const treffer = this.zustand().trefferGesamt;
+    if (zahl) await Zeiger.lies(zahl, { dauer: 900, hinweis: "liest die Trefferzahl" });
+    return { ok: true, text: `Trefferzahl abgelesen: ${treffer ?? "?"}`, daten: { treffer, geklickt: !!knopf } };
   },
 
   /* Einmal ganz durch die Liste.
@@ -864,7 +961,13 @@ const Werkzeuge = {
     if (karten.length !== alleKarten.length && typeof Kern !== "undefined") {
       Kern.notieren?.("karten_ausgeblendet", { sichtbar: karten.length, gesamt: alleKarten.length });
     }
-    if (!karten.length) return { ok: true, text: "Keine Treffer zum Durchsehen.", daten: { karten: 0, gescrollt: false } };
+    if (!karten.length) {
+      // Bei null Treffern zeigt der Zeiger auf das, was die Seite sagt,
+      // statt dort stehen zu bleiben, wo der letzte Filter war (21.11.2026)
+      const leer = this.finde(".result-empty") || this.finde("#resultsCount");
+      if (leer && !Zeiger.abbruch) await Zeiger.lies(leer, { dauer: 900, hinweis: "keine Treffer" });
+      return { ok: true, text: "Keine Treffer zum Durchsehen.", daten: { karten: 0, gescrollt: false } };
+    }
 
     /* Vier Halte, von oben nach unten, und er merkt sie sich.
        ----------------------------------------------------------------
@@ -1362,6 +1465,22 @@ const Werkzeuge = {
     await Zeiger.warte(400);
     location.href = "index.html";
     return { ok: true, daten: { navigiert: true } };
+  },
+
+  /* Die Art auf der Trefferliste wechseln, ueber den Reiter im Kopf
+     (21.11.2026). Ben: "Wenn man nur auf Hotels umsteigt, dass er dann
+     die Filter neu setzt" - der Agent ging dafuer zur Startseite und
+     fuellte die ganze Maske neu aus. Seit dem 20.11.2026 nehmen die Reiter
+     Ziel, Daten und Reisende mit, die Filter stehen im Sitzungsspeicher.
+     Ein Klick genuegt also. Fehlt der Reiter oder ist er nicht zu sehen,
+     meldet die Funktion das, und es bleibt beim Weg ueber die Startseite. */
+  async reiterWechseln(typ) {
+    const reiter = [...document.querySelectorAll(".header-nav a")].find((a) =>
+      new URLSearchParams((a.getAttribute("href") || "").split("?")[1] || "").get("type") === typ);
+    if (!reiter || !Zeiger.sichtbar(reiter)) return { ok: false, text: "Kein Reiter für diese Art." };
+    const wort = { apartment: "Ferienwohnungen", hotel: "Hotels", unterkunft: "Unterkünfte" }[typ] || "Unterkünfte";
+    await Zeiger.klicke(reiter, { hinweis: wort });
+    return { ok: true, text: `Reiter ${wort}`, daten: { navigiert: true } };
   },
 
   // Zurueck aus einer Detailseite in die Trefferliste. Wird gebraucht, wenn

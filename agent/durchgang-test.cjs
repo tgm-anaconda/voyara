@@ -2472,7 +2472,11 @@ const liesReisende = async (text, felder, urteil = "ja") => {
      Funktionen sind, landeten als "() => { ... }" auf der Seite. Und
      einige Antworten klangen wie Anweisungen an den Bot. */
   {
-    const fq = fs.readFileSync(alt && fs.existsSync(quelle + "faq.js") ? quelle + "faq.js" : B + "faq.js", "utf8");
+    /* In den Sicherungen liegt data/faq.js flach als "faq.js" und
+       ueberdeckt die Seitendatei gleichen Namens - dann gilt die Seite
+       aus dem Projekt (21.11.2026, Fehlalarm in der Gegenprobe). */
+    const fqFlach = alt && fs.existsSync(quelle + "faq.js") ? fs.readFileSync(quelle + "faq.js", "utf8") : null;
+    const fq = fqFlach && !/const FAQ = \[/.test(fqFlach) ? fqFlach : fs.readFileSync(B + "faq.js", "utf8");
     pruefe("FAQ-Seite ruft Funktionsantworten auf",
       /typeof e\.antwort === "function" \? String\(e\.antwort\(\)\)/.test(fq) ? "ja" : "nein", "ja");
     const liste = vm.runInContext("FAQ.map((e) => ({ id: e.id, t: typeof e.antwort === 'function' ? String(e.antwort()) : String(e.antwort || '') }))", ctx);
@@ -2517,6 +2521,37 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     } else {
       pruefe("Reiter 'Hotels' behaelt Ziel und Daten", "Funktion fehlt", "results.html?type=hotel&q=mallorca&from=2027-05-22&to=2027-05-29");
     }
+  }
+
+  /* Arbeit auf der Seite (21.11.2026). Die Bewegungen selbst sind im
+     Browser gemessen (Playwright, drei Fenstergroessen); hier steht, dass
+     der Code die Stellen noch hat, an denen die Fehler lagen.
+     Gegenprobe: _backup/21-11-morgen/ */
+  {
+    const lies = (name, pfad) => fs.readFileSync(alt && fs.existsSync(quelle + name) ? quelle + name : B + pfad, "utf8");
+    const wz = lies("werkzeuge.js", "agent/werkzeuge.js");
+    const ze = lies("zeiger.js", "agent/zeiger.js");
+    const wk = lies("werkzeugkasten.js", "agent/werkzeugkasten.js");
+    const rs = lies("results.js", "results.js");
+    const sd = wz.slice(wz.indexOf("async scrollDurch("), wz.indexOf("async strecke(", wz.indexOf("async scrollDurch(")));
+    pruefe("Liste rollt fliessend (feste Geschwindigkeit, kein Sprung je Schritt)",
+      /const geschwindigkeit = /.test(sd) && !/y = Math\.min\(bis, y \+ schritt\)/.test(sd) ? "ja" : "nein", "ja");
+    pruefe("Waehrend eines Halts setzt der Takt den Zeiger nicht",
+      /setInterval\(\(\) => \{ if \(imHalt\) return;/.test(sd) ? "ja" : "nein", "ja");
+    pruefe("Zeiger gleitet zur Ruhestelle statt zu springen", /const zurRuhe = async/.test(sd) ? "ja" : "nein", "ja");
+    pruefe("Nach dem Filter: Suchen klicken und Zahl ablesen statt Scan",
+      /async trefferZahlZeigen\(\)/.test(wz) && /ueberflogenFuer === lageJetzt/.test(wk) ? "ja" : "nein", "ja");
+    pruefe("Zielen erst, wenn das Element selbst stillsteht",
+      /await this\.warteBisRuhig\(el\);/.test(ze.slice(ze.indexOf("async insBlickfeld"), ze.indexOf("async insBlickfeld") + 1500)) ? "ja" : "nein", "ja");
+    pruefe("Klick zielt nach, wenn sich das Ziel bewegt hat",
+      /ziel = await this\.nachzielen\(el, ziel\)/.test(ze) && /ziel = await Zeiger\.nachzielen\(zeile, ziel\)/.test(wz) ? "ja" : "nein", "ja");
+    pruefe("Nach dem Filtern zurueck zur Trefferzahl", /Zurueck zur Trefferzahl, ruhig/.test(wz) ? "ja" : "nein", "ja");
+    pruefe("Filterzahlen je Gruppe einmal gerechnet", /const _zaehlSpeicher = /.test(rs) ? "ja" : "nein", "ja");
+    const faq = wk.slice(wk.indexOf("async faq_nachschlagen("), wk.indexOf("async faq_nachschlagen(") + 4000);
+    const iSpeichern = faq.search(/ausstehend\.stufe = 2;\s*kern\.sichern\(\);/), iKlick = faq.indexOf("Zeiger.klicke(link");
+    pruefe("FAQ: Rueckweg gespeichert, bevor geklickt wird", iSpeichern > 0 && iSpeichern < iKlick ? "ja" : "nein", "ja");
+    pruefe("Art wechseln ueber den Reiter statt ueber die Startseite",
+      /async reiterWechseln\(typ\)/.test(wz) && /Werkzeuge\.reiterWechseln\(Werkzeugkasten\.seitenTyp\(p\)\)/.test(wk) ? "ja" : "nein", "ja");
   }
 
   // Kinder oder Erwachsene

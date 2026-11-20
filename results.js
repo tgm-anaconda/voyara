@@ -349,7 +349,29 @@ function sortItems(list) {
 const countIn = (pred) => pool().filter(pred).length;
 /* Wie viele stuenden in der Liste, wenn man genau diesen Filter waehlt:
    alle gesetzten Filter ausser diesem einen, dann der Wert selbst. */
-const zaehleFuer = (feld, pred) => pool().filter((h) => matches(h, feld) && pred(h)).length;
+/* Je Filtergruppe einmal rechnen statt je Zeile (21.11.2026).
+   ------------------------------------------------------------------
+   Gemessen: Die Zahlen neben den Filtern brauchten 1,2 Sekunden, bei
+   jedem Klick, und so lange stand die Seite. Fuer jede der rund 60
+   Zeilen lief die volle Pruefung ueber alle Haeuser, obwohl sich die
+   Grundmenge nur je Gruppe unterscheidet (alle Filter ausser diesem).
+   Jetzt wird sie je Gruppe einmal bestimmt und dann nur noch der Wert
+   der Zeile darauf angewendet. Das Ergebnis ist dasselbe: Der Schluessel
+   enthaelt alles, wovon die Pruefung abhaengt (Vorgaben, Adresse, Art),
+   und aendert sich davon etwas, wird neu gerechnet. */
+const _zaehlSpeicher = { schluessel: "", je: new Map() };
+const zaehleFuer = (feld, pred) => {
+  const liste = pool();
+  if (!["unterkunft", "hotel", "apartment"].includes(state.type) || typeof Auswahl === "undefined") {
+    return liste.filter((h) => matches(h, feld) && pred(h)).length;
+  }
+  const v = seitenVorgaben();
+  const schluessel = JSON.stringify([state.type, location.search, liste.length, liste[0]?.id, liste[liste.length - 1]?.id, v]);
+  if (_zaehlSpeicher.schluessel !== schluessel) { _zaehlSpeicher.schluessel = schluessel; _zaehlSpeicher.je = new Map(); }
+  let basis = _zaehlSpeicher.je.get(feld);
+  if (!basis) { basis = liste.filter((h) => Auswahl.passt(h, v, feld)); _zaehlSpeicher.je.set(feld, basis); }
+  return basis.filter(pred).length;
+};
 
 /* ---------- Filterleiste ---------- */
 function group(title, inner) {

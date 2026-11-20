@@ -5160,6 +5160,17 @@ const Werkzeugkasten = {
         // Startseite umstellen - auf der Trefferliste sind die Reiter
         // ausgeblendet, und ein Klick darauf ging ins Leere (0/0)
         const artFalsch = seite === "results" && (new URLSearchParams(location.search).get("type") || "hotel") !== Werkzeugkasten.seitenTyp(p);
+        // Nur die Art falsch: Reiter im Kopf statt Startseite (21.11.2026,
+        // siehe Werkzeuge.reiterWechseln). Gespeichert wird vor dem Klick -
+        // der Seitenwechsel beginnt mit ihm.
+        if (artFalsch && Werkzeuge.hatSuchmaske() && typeof Werkzeuge.reiterWechseln === "function") {
+          kern.sichern();
+          const w = await Werkzeuge.reiterWechseln(Werkzeugkasten.seitenTyp(p));
+          if (w.ok) {
+            kern.notieren("art_ueber_reiter", { typ: Werkzeugkasten.seitenTyp(p) });
+            return { navigiert: true, stufe: 1 };
+          }
+        }
         if (!Werkzeuge.hatSuchmaske() || artFalsch) {
           await Werkzeuge.zurStartseite();
           return { navigiert: true, stufe: 1 };
@@ -5219,10 +5230,34 @@ const Werkzeugkasten = {
       const nach = p.sortierung === "preis" ? "preis-asc" : (p.sortierung === "bewertung" ? "rating" : null);
       if (nach) { kern.phase("Sortiert die Liste"); await Werkzeuge.sortieren(nach); }
       let gelesen = { daten: { treffer: [] } };
-      kern.phase("Geht die Trefferliste durch");
-      if (darfEmpfehlen) gelesen = await Werkzeuge.ergebnisseLesen(8);
-      // Erste Umschau: einmal ganz durch die Liste, ohne in Haeuser zu gehen
-      else if (Werkzeuge.seite() === "results") await Werkzeuge.listeUeberfliegen();
+      /* Ganz durch die Liste nur, wenn sich die Lage geaendert hat
+         (21.11.2026). Ben: Das Durchgehen dient dazu, zu wissen, welche
+         Regionen zur Verfuegung stehen - "aber er muss ja nicht durchgehen
+         dann jedes Mal, wenn er einen Filter umsetzt." Gemeldet: 38
+         Sekunden fuer "Nur Fruehstueck".
+         Die Lage ist, was die Regionen der Liste bestimmt: Ziel und
+         Regionen, Zeitraum, Reisende. Fruehstueck, Preis, Pool, die Art
+         und der Flug aendern sie nicht - dann klickt er auf Suchen und
+         liest die Zahl von der Seite ab. */
+      const qJetzt = new URLSearchParams(location.search);
+      const lageJetzt = JSON.stringify([qJetzt.get("q") || "", qJetzt.get("from") || "", qJetzt.get("to") || "",
+        qJetzt.get("flex") || "", qJetzt.get("monat") || "", qJetzt.get("nights") || "",
+        qJetzt.get("adults") || "", qJetzt.get("children") || "",
+        [...(Werkzeugkasten.filterWerte(p).ziele || [])].sort(), p.richtung || ""]);
+      if (darfEmpfehlen) {
+        kern.phase("Geht die Trefferliste durch");
+        gelesen = await Werkzeuge.ergebnisseLesen(8);
+      } else if (Werkzeuge.seite() === "results") {
+        if (kern.lauf.ueberflogenFuer === lageJetzt) {
+          kern.phase("Prüft die Trefferzahl");
+          await Werkzeuge.trefferZahlZeigen();
+        } else {
+          // Erste Umschau: einmal ganz durch die Liste, ohne in Haeuser zu gehen
+          kern.phase("Geht die Trefferliste durch");
+          await Werkzeuge.listeUeberfliegen();
+          if (!Zeiger.abbruch) kern.lauf.ueberflogenFuer = lageJetzt;
+        }
+      }
       kern.sperreAus();
       // Die Seite kennt nur grobe Stufen (Note ab 4,0 oder 4,5; Strand bis
       // 1 km). Die genauen Vorgaben der Person prueft der Agent selbst -
@@ -5507,6 +5542,15 @@ const Werkzeugkasten = {
       const aufFaq = Werkzeuge.seite() === "faq";
       if (stufe === 1 && kern.darf("suchen") && !aufFaq) {
         kern.lauf.faqZurueck = location.href;
+        /* Erst speichern, dann klicken (21.11.2026).
+           Ben: "Beim ersten Mal ist er wieder sauber auf die Startseite
+           gegangen, beim zweiten Mal nicht." Der Klick auf "Fragen"
+           startet den Seitenwechsel sofort; gespeichert hat der Kern aber
+           erst, nachdem der Klick fertig war (rund 150 ms spaeter). Kam
+           die FAQ-Seite schneller - beim zweiten Mal aus dem Cache -, war
+           der Rueckweg nie gespeichert, und der Agent blieb dort. */
+        if (kern.lauf.ausstehend) kern.lauf.ausstehend.stufe = 2;
+        kern.sichern();
         kern.sperreAn();
         /* Sichtbar oben auf "Fragen" klicken (20.11.2026).
            Ben: "Man sieht nicht, wie er oben auf den Reiter Fragen klickt,
