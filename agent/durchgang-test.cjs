@@ -2491,6 +2491,34 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     pruefe("Karten zeigen keinen durchgestrichenen Preis", /class="price-old"/.test(rq) ? "Streichpreis" : "keiner", "keiner");
   }
 
+  /* Suche ueber die Maske ohne Agent (20.11.2026): Filterspalte auf dem
+     neuen Monat, Rueckweg mit der neuen Adresse, Zuruecksetzen gemerkt,
+     Reiter nehmen die Suche mit. Gegenprobe: _backup/20-11-suche/ */
+  {
+    const rq = fs.readFileSync(alt && fs.existsSync(quelle + "results.js") ? quelle + "results.js" : B + "results.js", "utf8");
+    const cq = fs.readFileSync(alt && fs.existsSync(quelle + "components.js") ? quelle + "components.js" : B + "components.js", "utf8");
+    const abschnitt = rq.slice(rq.indexOf("onSubmit: (query)"), rq.indexOf("onSubmit: (query)") + 2600);
+    pruefe("Nach 'Suchen' wird die Filterspalte neu gezeichnet", /renderFilters\(\); renderFlightAddon\(\); renderResults\(\);/.test(abschnitt) ? "ja" : "nein", "ja");
+    pruefe("Nach 'Suchen' merkt sich der Rueckweg die neue Adresse", /Rueckweg\.merken\(\)/.test(abschnitt) ? "ja" : "nein", "ja");
+    const reset = rq.slice(rq.indexOf('#fReset").addEventListener'), rq.indexOf('#fReset").addEventListener') + 900);
+    pruefe("'Filter zuruecksetzen' wird gespeichert", /filterMerken\(\)/.test(reset) ? "ja" : "nein", "ja");
+    pruefe("Reiter nehmen die Suche mit", /reiterSetzen\(\)\s*\{/.test(cq) && /Rueckweg\.reiterSetzen\(\)/.test(cq) ? "ja" : "nein", "ja");
+    /* Ablauf im Kleinen: Reiter-Links aus einer gemerkten Suche */
+    if (/reiterSetzen\(\)\s*\{/.test(cq)) {
+      const links = ["results.html?type=unterkunft", "results.html?type=hotel"].map((h) => {
+        const a = { dataset: {}, h, getAttribute() { return this.h; }, setAttribute(_, v) { this.h = v; } }; return a; });
+      const c2 = { location: { pathname: "/stay.html", search: "?id=h1" }, URLSearchParams,
+        sessionStorage: { getItem: () => "?type=unterkunft&q=mallorca&from=2027-05-22&to=2027-05-29" },
+        document: { querySelectorAll: () => links } };
+      vm.createContext(c2);
+      const rw = cq.slice(cq.indexOf("const Rueckweg = {"), cq.indexOf("const Flug = {"));
+      vm.runInContext(rw + ";Rueckweg.reiterSetzen();", c2);
+      pruefe("Reiter 'Hotels' behaelt Ziel und Daten", links[1].h, "results.html?type=hotel&q=mallorca&from=2027-05-22&to=2027-05-29");
+    } else {
+      pruefe("Reiter 'Hotels' behaelt Ziel und Daten", "Funktion fehlt", "results.html?type=hotel&q=mallorca&from=2027-05-22&to=2027-05-29");
+    }
+  }
+
   // Kinder oder Erwachsene
   if (WK && WK.kinderErwachsenRueckfrage) {
     const f = WK.kinderErwachsenRueckfrage({ erwachsene: 1, kinder: 2 }, { alterZuHoch: [28, 34] });

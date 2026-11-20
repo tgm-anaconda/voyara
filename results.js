@@ -595,6 +595,9 @@ function renderFilters() {
     state.ziel = ""; state.ziele.clear();
     state.priceMax = priceBounds().max;
     state.gesamtMax = null;
+    // Auch das Zuruecksetzen merken - sonst kaemen die alten Filter nach
+    // einem Besuch auf der Hausseite wieder (20.11.2026)
+    filterMerken();
     renderFilters(); renderResults();
   });
 }
@@ -846,6 +849,7 @@ function switchType(type) {
     a.classList.toggle("active", a.getAttribute("href").includes(`type=${type}`)));
 
   renderSortOptions();
+  filterMerken();   // Gespeichert ist, was zu sehen ist (20.11.2026)
   renderFilters();
   renderFlightAddon();
   renderResults();
@@ -866,6 +870,9 @@ document.addEventListener("DOMContentLoaded", () => {
   SearchBox.mount("#searchBox", {
     onSubmit: (query) => {
       const typeChanged = query.type !== state.type;
+      // Preisgrenzen VOR dem Wechsel: Stand der Regler am Anschlag, soll er
+      // es im neuen Zeitraum auch tun (siehe unten).
+      const grenzenVorher = priceBounds();
       state.q = query.q;
       state.withFlight = query.flight === "1";
       if (typeof Flug !== "undefined") Flug.set({ mit: state.withFlight, ab: query.ab || "", klasse: query.klasse || "economy" });
@@ -873,8 +880,24 @@ document.addEventListener("DOMContentLoaded", () => {
       // Vorher wurde erst gerendert und danach die URL geschrieben - eine
       // geaenderte Personenzahl wirkte deshalb erst nach dem Neuladen.
       window.history.replaceState({}, "", `results.html?${new URLSearchParams(query).toString()}`);
+      /* Suche ueber die Maske, ohne Agent (20.11.2026). Gemeldet: "Mallorca,
+         22.05., Suchen - und links steht immer noch Mallorca ausserhalb der
+         Saison." Und: "Von der Hausseite zurueck, Filter wieder weg."
+         Zwei Luecken an derselben Stelle:
+         - Neu gezeichnet wurden nur die Karten. Die Filterspalte rechnet
+           Saison, Zahlen und Preisspanne aber auch aus dem Zeitraum und
+           blieb auf dem alten Monat stehen.
+         - Der Rueckweg (Pfeil "Zurueck zu den Ergebnissen" auf der
+           Hausseite) merkte sich die Adresse nur beim Laden und bei
+           Filterklicks. Wer erst filterte und dann suchte, landete auf
+           der Liste ohne Ziel und ohne Daten. */
+      if (typeof Rueckweg !== "undefined") { Rueckweg.merken(); Rueckweg.reiterSetzen?.(); }
       if (typeChanged) switchType(query.type);
-      else { renderFlightAddon(); renderResults(); }
+      else {
+        const grenzen = priceBounds();
+        if (state.priceMax >= grenzenVorher.max || !(state.priceMax >= grenzen.min && state.priceMax <= grenzen.max)) state.priceMax = grenzen.max;
+        renderFilters(); renderFlightAddon(); renderResults();
+      }
     },
   });
 

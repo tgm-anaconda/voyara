@@ -290,6 +290,27 @@ const Rueckweg = {
     try { s = sessionStorage.getItem(this.SCHLUESSEL) || ""; } catch { s = ""; }
     return s ? `results.html${s}` : `results.html?type=${typ}`;
   },
+  /* Die Reiter Unterkuenfte, Hotels, Ferienwohnungen nehmen die Suche mit
+     (20.11.2026). Gemeldet beim Testen ohne Agent: Wer Mallorca im Mai
+     gesucht hatte und auf "Hotels" klickte, stand wieder ohne Ziel und im
+     Dezember - die Reiter trugen nur den Typ. Die Filter ueberlebten das
+     (Sitzungsspeicher), Ziel und Daten nicht. Jetzt wechselt ein Reiter
+     nur den Typ und laesst den Rest der Suche stehen. Auf der Trefferliste
+     gilt die eigene Adresse, sonst die zuletzt gemerkte Suche. */
+  reiterSetzen() {
+    let such = "";
+    if (/results(\.html)?$/.test(location.pathname) && location.search) such = location.search;
+    else { try { such = sessionStorage.getItem(this.SCHLUESSEL) || ""; } catch { such = ""; } }
+    if (!such) return;
+    document.querySelectorAll(".header-nav a").forEach((a) => {
+      const roh = a.dataset.typ || new URLSearchParams((a.getAttribute("href") || "").split("?")[1] || "").get("type");
+      if (!roh) return;
+      a.dataset.typ = roh;
+      const p = new URLSearchParams(such);
+      p.set("type", roh);
+      a.setAttribute("href", `results.html?${p.toString()}`);
+    });
+  },
 };
 
 const Flug = {
@@ -1877,6 +1898,7 @@ function mountChrome(activeNav) {
   const shellFooter = document.getElementById("siteFooter");
   if (shellHeader) shellHeader.innerHTML = renderHeader(activeNav);
   if (shellFooter) shellFooter.innerHTML = renderFooter();
+  if (typeof Rueckweg !== "undefined") Rueckweg.reiterSetzen();
 
   AgentPanel.mount();
   // Der Agentenkern startet nach dem Panel: Er schreibt das Gespraech zurueck,
