@@ -160,6 +160,17 @@ const Werkzeuge = {
     if (feldZiel && ziel && feldZiel.value !== ziel) {
       await Zeiger.tippe(feldZiel, ziel, { hinweis: "Reiseziel" });
       getan.push(ziel);
+    } else if (feldZiel && !ziel && feldZiel.value.trim()) {
+      /* Ein fremdes Suchwort wird geleert (20.11.2026).
+         ----------------------------------------------------------------
+         Im Lauf vom 20.11.2026 hatte Ben selbst "Süden" ins Suchfeld
+         geschrieben. Danach suchte der Agent fuer "eher kalt" - ohne ein
+         einzelnes Ziel, also mit leerem `ziel` - und liess das Feld
+         unberuehrt. "Süden" ging mit der Suche wieder ab, und die Liste
+         zeigte "0 von 471 Ergebnissen für „Süden“". Sucht der Agent ohne
+         Ziel, darf im Feld auch keins stehen. */
+      await Zeiger.tippe(feldZiel, "", { hinweis: "Suchfeld leeren" });
+      getan.push("Suchfeld geleert");
     }
 
     // Zeitraum: flexibel im Monat (Monat, Dauer) oder feste Daten
@@ -1356,7 +1367,10 @@ const Werkzeuge = {
   // Zurueck aus einer Detailseite in die Trefferliste. Wird gebraucht, wenn
   // jemand nach dem Ansehen eines Vorschlags doch einen anderen will.
   async zurueckZurListe() {
-    const knopf = this.finde(".breadcrumb a[href*='results']") || this.finde("a[href*='results.html']");
+    // Zuerst der Zurueck-Pfeil (seit 20.11.2026), dann die Brotkrumen -
+    // beide fuehren zur gemerkten Suche. Nicht der Reiter im Kopf: der
+    // beginnt eine neue Suche und verliert die Filter.
+    const knopf = this.finde("#zurueckZurListe") || this.finde(".breadcrumb a[href*='results']") || this.finde("a[href*='results.html']");
     if (knopf) {
       await Zeiger.klicke(knopf, { hinweis: "zurück zur Liste" });
       return { ok: true, text: "Zurück zur Trefferliste.", daten: { navigiert: true } };

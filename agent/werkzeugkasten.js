@@ -1184,6 +1184,20 @@ const Werkzeugkasten = {
     return { text, mehrzahl, anzahl: teile.length };
   },
 
+  /* Fingerabdruck der Trefferliste (20.11.2026): Adresse plus alles, was
+     in der Filterspalte steht. Null ausserhalb der Trefferliste. Dient
+     nur dem Vergleich, ob die Person zwischen zwei Zuegen selbst etwas
+     umgestellt hat (siehe Kern, Anfang des Zugs). */
+  seitenSchluessel() {
+    if (typeof Werkzeuge === "undefined" || Werkzeuge.seite() !== "results") return null;
+    if (typeof state === "undefined") return null;
+    const s = state;
+    const menge = (x) => [...(x || [])].map(String).sort();
+    return JSON.stringify([location.search, String(s.q || "").trim(), s.typ ?? s.type ?? null,
+      menge(s.ziele), menge(s.amenities), menge(s.boards), menge(s.stars), menge(s.categories),
+      s.minRating ?? null, s.maxBeach ?? null, !!s.wlanFrei, s.priceMax ?? null, s.gesamtMax ?? null]);
+  },
+
   spanneRueckfrage(p, lauf) {
     if (!p?.richtung || !p.monat || !p.zieleErlaubt?.length) return null;
     if (lauf?.spanneFrage) return null;              // hoechstens einmal
@@ -3382,8 +3396,29 @@ const Werkzeugkasten = {
             kern.notieren("ausschluss_nicht_geleert", { bleibt: p.zieleAus });
           }
         }
+        /* Ergaenzen statt ersetzen (20.11.2026).
+           ------------------------------------------------------------
+           Im Lauf vom 20.11.2026 kamen Kapstadt und Mallorca zuerst
+           richtig dazu - zusammen mit den kalten Regionen. Aber das
+           Modell schickt `zieleAuswahl` in jeder spaeteren Antwort erneut,
+           oft nur mit den Regionen, die die Person zuletzt GENANNT hat.
+           Diese Zeile ersetzte dann die ganze Liste, und am Ende stand im
+           Band nur noch "Ziel Kapstadt", die Suche lief ins Leere.
+
+           Eine Region faellt deshalb nur noch weg, wenn die Person das
+           sagt: ueber `zieleAus` ("nicht Kreta") oder mit einem Wort, das
+           ersetzt ("nur noch", "statt", "lieber", "stattdessen"). Sonst
+           kommt Neues dazu, und Vorhandenes bleibt. */
         else if (!roh.length) setze(feld, []);
-        else if (nehmen.length) setze(feld, [...new Set(nehmen)]);
+        else if (nehmen.length) {
+          const letzteA = (kern.lauf.gespraech || []).filter((n) => n.role === "user").slice(-1)
+            .map((n) => String(n.content || "")).join(" ");
+          const ersetzt = /\bnur\s*(noch)?\b|\bstatt\b|stattdessen|\blieber\b|\bnicht mehr\b|\bausschlie(ß|ss)lich/i.test(letzteA);
+          const bisher = Array.isArray(p.zieleAuswahl) ? p.zieleAuswahl : [];
+          const neu = ersetzt ? [...new Set(nehmen)] : [...new Set([...bisher, ...nehmen])];
+          if (!ersetzt && bisher.length && neu.length > nehmen.length) kern.notieren("ziele_ergaenzt", { bisher: bisher.length, jetzt: neu.length });
+          setze(feld, neu);
+        }
       }
       /* Eine Region kann nicht gleichzeitig gewuenscht und abgelehnt sein.
          Die Ablehnung gewinnt: Sie ist die spaetere und deutlichere
@@ -7612,12 +7647,30 @@ const Werkzeugkasten = {
     };
   },
 
+  /* Gaengige zweite Namen der Regionen (20.11.2026).
+     Im Lauf vom 20.11.2026 schrieb Ben "malle kappstadt ergaenzen". Das
+     Modell verstand Mallorca richtig - der Kern verwarf es, weil "malle"
+     weder Name noch Kennung ist und fuer die Tippfehler-Regel zu weit weg
+     liegt. Das Schema nennt "Malle" sogar selbst als Beispiel. Die Liste
+     ist kurz und geschlossen: nur Namen, die eindeutig EINE Region des
+     Katalogs meinen. */
+  REGION_SPITZNAMEN: {
+    mallorca: ["malle", "balearen", "palma"],
+    teneriffa: ["kanaren", "tenerife"],
+    newyork: ["nyc", "manhattan", "big apple"],
+    kapstadt: ["cape town", "capetown"],
+    lappland: ["lapland", "finnisch lappland"],
+    marrakesch: ["marrakech", "marrakesh"],
+    lissabon: ["lisboa", "lisbon"],
+    barcelona: ["barca"],
+  },
+
   regionGenannt(lauf, id) {
     const z = typeof ZIEL_NACH_ID !== "undefined" ? ZIEL_NACH_ID[id] : null;
     if (!z) return false;
     const gesagt = (lauf.gespraech || []).filter((n) => n.role === "user")
       .map((n) => String(n.content).toLowerCase()).join(" ");
-    const woerter = [z.name, z.id, z.region, z.flughafen].filter(Boolean)
+    const woerter = [z.name, z.id, z.region, z.flughafen, ...(this.REGION_SPITZNAMEN[id] || [])].filter(Boolean)
       .map((x) => String(x).toLowerCase()).filter((x) => x.length >= 3);
     /* Auf ganze Woerter, nicht auf Teilstuecke.
        ------------------------------------------------------------------

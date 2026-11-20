@@ -1306,7 +1306,11 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     pruefe("Ziel bei halbem Ja bleibt streng", (await zielLauf("ans mittelmeer", "mallorca", "teilweise")).ziel, null);
     pruefe("Ziel ohne Antwort bleibt streng", (await zielLauf("ans mittelmeer", "mallorca", "keine_frage_offen")).ziel, null);
     // Die Ansage: nur, wenn der Kern den Namen NICHT selbst erkennen konnte
-    pruefe("Erschlossenes Ziel wird angesagt", (await zielLauf("nach malle", "mallorca", "ja")).angesagt, true);
+    /* "nach malle" erkennt der Kern seit dem 20.11.2026 selbst
+       (REGION_SPITZNAMEN). Ein wirklich erschlossenes Ziel braucht eine
+       Umschreibung, die nur das Modell aufloesen kann. */
+    pruefe("Erschlossenes Ziel wird angesagt", (await zielLauf("auf die Insel mit dem Ballermann", "mallorca", "ja")).angesagt, true);
+    pruefe("Malle erkennt der Kern selbst und wiederholt es nicht", (await zielLauf("nach malle", "mallorca", "ja")).angesagt, false);
     pruefe("Erkanntes Ziel wird nicht wiederholt", (await zielLauf("nach mallorca", "mallorca", "ja")).angesagt, false);
   }
 
@@ -1341,9 +1345,12 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     pruefe("'hotel. wir wollen nach malle' - Ziel kommt an",
       await nebenbei("hotel. wir wollen nach malle",
         { typ: "hotel", ziel: "mallorca", selbst_genannt: ["art", "ziel"] }, "zielId", "art"), "kommt an");
-    pruefe("Ohne selbst_genannt bleibt es verworfen",
-      await nebenbei("hotel. wir wollen nach malle",
+    pruefe("Ohne selbst_genannt bleibt eine Umschreibung verworfen",
+      await nebenbei("hotel. wir wollen auf die insel mit dem ballermann",
         { typ: "hotel", ziel: "mallorca" }, "zielId", "art"), "verworfen");
+    pruefe("Malle kommt auch ohne selbst_genannt an (Spitzname)",
+      await nebenbei("hotel. wir wollen nach malle",
+        { typ: "hotel", ziel: "mallorca" }, "zielId", "art"), "kommt an");
     pruefe("Nebenbei genanntes Alter kommt an",
       await nebenbei("ja zwei, die sind zwei und vier",
         { kinder: 2, kinderAlter: [2, 4], selbst_genannt: ["reisende", "kinderAlter"] },
@@ -2296,6 +2303,42 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     pruefe("Kein Angebotsfeld mehr im Modell", /nurAngebote: \{ type/.test(wq) ? "noch da" : "weg", "weg");
     pruefe("Keine alten Preise in den Daten", /oldPrice:/.test(fs.readFileSync(B + "data/hotels.js", "utf8")) ? "noch da" : "weg", "weg");
     pruefe("Die Hausseite passt neben den Chat", /\.app-main > \*, \.app-main \.wrap \{ min-width: 0; \}/.test(fs.readFileSync(B + "style.css", "utf8")) ? "ja" : "nein", "ja");
+  }
+
+  /* Funde aus Bens Lauf vom 20.11.2026. Gegenprobe: _backup/20-11-ben/ */
+  if (WK && WK.werkzeuge && WK.werkzeuge.stand_merken) {
+    const p = { monat: 7, naechte: 13, erwachsene: 3, kinder: 0, kinderAlter: [], artGenannt: true, artEgal: true, richtung: "kalt" };
+    p.zieleErlaubt = WK.regionenFuerRichtung((ctx.PO.THEMEN || []).find((t) => t.id === "kalt"), p);
+    const gespr = [{ role: "user", content: "Eher kalt" }, { role: "assistant", content: "Bei 21 Grad bleiben oder auf 25 gehen?" },
+      { role: "user", content: "bis 25 grade gehen und noch malle kappstadt ergänzen" }];
+    const kern = { lauf: { profil: p, protokoll: [], gespraech: gespr, verlauf: [], gefragtWie: {}, annahmeOffen: [], chips: null,
+        spanneOffen: { grenze: 21, weiter: 25 }, richtungRegionen: p.zieleErlaubt.slice() },
+      notieren(e, d) { this.lauf.protokoll.push({ ereignis: e, ...d }); }, sagen() {}, gespraechPush() {}, sichern() {}, logZeile() {},
+      standKurz: () => "", freigabe: () => "suchen", darf: () => false, standAnzeigen() {} };
+    await WK.werkzeuge.stand_merken.call(WK, { frage_beantwortet: "ja", zieleAuswahl: ["mallorca", "kapstadt"] }, kern);
+    const nach1 = (p.zieleAuswahl || p.zieleErlaubt || []).slice();
+    pruefe("Malle und Kappstadt kommen zu den kalten dazu",
+      nach1.includes("mallorca") && nach1.includes("kapstadt") && nach1.includes("island") ? "ja" : nach1.join(","), "ja");
+    kern.lauf.gespraech.push({ role: "assistant", content: "Soll ein Flug dazu?" }, { role: "user", content: "Mit Flug" });
+    await WK.werkzeuge.stand_merken.call(WK, { frage_beantwortet: "ja", flug: true, zieleAuswahl: ["kapstadt"] }, kern);
+    pruefe("Schickt das Modell spaeter nur Kapstadt, bleibt die Liste",
+      (p.zieleAuswahl || []).length === nach1.length ? "bleibt" : (p.zieleAuswahl || []).join(","), "bleibt");
+    kern.lauf.gespraech.push({ role: "assistant", content: "..." }, { role: "user", content: "doch lieber nur Kapstadt" });
+    await WK.werkzeuge.stand_merken.call(WK, { frage_beantwortet: "ja", zieleAuswahl: ["kapstadt"] }, kern);
+    pruefe("'lieber nur Kapstadt' ersetzt die Liste", (p.zieleAuswahl || []).join(","), "kapstadt");
+    const band = ctx.PO.eckdaten({ richtung: "kalt", zieleErlaubt: ["island", "ostsee"] }).find((z) => z.feld === "Ziel")?.wert || "";
+    pruefe("Das Band nennt die Regionen hinter der Richtung", /Island/.test(band) && /Ostsee/.test(band) ? "ja" : band, "ja");
+  }
+  {
+    const wz = fs.readFileSync(alt && fs.existsSync(quelle + "werkzeuge.js") ? quelle + "werkzeuge.js" : B + "agent/werkzeuge.js", "utf8");
+    const kq = fs.readFileSync(alt && fs.existsSync(quelle + "kern.js") ? quelle + "kern.js" : B + "agent/kern.js", "utf8");
+    const cq = fs.readFileSync(alt && fs.existsSync(quelle + "components.js") ? quelle + "components.js" : B + "components.js", "utf8");
+    const sq = fs.readFileSync(alt && fs.existsSync(quelle + "stay.js") ? quelle + "stay.js" : B + "stay.js", "utf8");
+    pruefe("Ein fremdes Suchwort wird geleert", /hinweis: "Suchfeld leeren"/.test(wz) ? "ja" : "nein", "ja");
+    pruefe("Eigene Aenderungen der Person werden bemerkt", /seite_von_person_geaendert/.test(kq) ? "ja" : "nein", "ja");
+    pruefe("Jede Seite beginnt oben", /history\.scrollRestoration = "manual"/.test(cq) ? "ja" : "nein", "ja");
+    pruefe("Die Hausseite hat einen Zurueck-Pfeil", /id="zurueckZurListe"/.test(sq) ? "ja" : "nein", "ja");
+    pruefe("Der Agent nimmt den Pfeil", /this\.finde\("#zurueckZurListe"\)/.test(wz) ? "ja" : "nein", "ja");
   }
 
   // Kinder oder Erwachsene

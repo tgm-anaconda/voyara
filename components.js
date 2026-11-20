@@ -1,6 +1,30 @@
 // Gemeinsame Bausteine: App-Rahmen (Agent-Panel + Website), Header, Footer,
 // Icons, Merkzettel, Login-Dialog, Karten. Jede Seite bindet das ein.
 
+/* Jede Seite beginnt oben (20.11.2026).
+   ------------------------------------------------------------------
+   Ben am 20.11.2026: "Wenn man aus dem Fenster wieder rauskommt, bei B,
+   ist die Seite ganz unten runtergescrollt. Die muss schon immer oben
+   starten, wenn man wieder reingeladen wird - im transparenten so wie
+   im verdeckten."
+
+   Das war die Scroll-Wiederherstellung des Browsers: Beim Neuladen und
+   beim Zurueck springt er an die Stelle, an der die Seite zuletzt stand.
+   Der Agent scrollt beim Durchsehen die ganze Liste hinunter und wechselt
+   danach auf ein Haus - die "letzte Stelle" lag also unten. Ausgeschaltet
+   gilt fuer alle Seiten und beide Arme dasselbe: oben anfangen. Die
+   Studie misst, was die Person sieht; ein zufaellig unten stehendes
+   Fenster waere ein anderer Reiz. */
+try { if ("scrollRestoration" in history) history.scrollRestoration = "manual"; } catch { /* egal */ }
+/* Beim normalen Laden reicht "manual" - der Browser springt dann nicht
+   mehr zurueck. Nur eine Seite aus dem Zurueck-Speicher des Browsers
+   (persisted) kommt mit ihrer alten Stelle wieder; die wird hier nach
+   oben gesetzt. Nicht bei jedem pageshow: Das Ereignis kommt nach dem
+   Laden, und dann kann der Agent schon am Scrollen sein. */
+window.addEventListener("pageshow", (e) => {
+  if (e.persisted && !location.hash) window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+});
+
 const ICONS = {
   search: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>',
   heart: '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 5.6a5.5 5.5 0 0 0-7.8 0L12 6.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 22l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8Z"/></svg>',

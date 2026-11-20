@@ -1606,7 +1606,14 @@ const Politik = {
     } else if ((profil.zieleAuswahl || []).length) {
       raus.push({ feld: "Ziel", wert: this.aufzaehlen(profil.zieleAuswahl.map(name)) });
     } else if (profil.richtung) {
-      raus.push({ feld: "Ziel", wert: this.THEMEN.find((t) => t.id === profil.richtung)?.label || profil.richtung });
+      /* Die Regionen hinter der Richtung stehen mit da (20.11.2026).
+         Ben: "Dass er in den Verstanden-Ordner alle anderen Staedte auch
+         reinschreibt und die alle angezeigt werden." Bis hierher stand
+         nur "eher kalt" - welche Regionen das gerade sind, sah niemand,
+         und eine verlorene Region fiel nicht auf. */
+      const label = this.THEMEN.find((t) => t.id === profil.richtung)?.label || profil.richtung;
+      const ids = profil.zieleErlaubt || [];
+      raus.push({ feld: "Ziel", wert: ids.length ? `${label}: ${this.aufzaehlen(ids.map(name))}` : label });
     } else if (profil.zielOffen) {
       raus.push({ feld: "Ziel", wert: "alle Regionen" });
     }

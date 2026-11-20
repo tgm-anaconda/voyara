@@ -70,8 +70,15 @@ function renderHead() {
   const listHref = `results.html?type=${isApartment ? "apartment" : "hotel"}`;
   const zurListe = typeof Rueckweg !== "undefined" ? Rueckweg.liste(isApartment ? "apartment" : "hotel") : listHref;
 
+  /* Ein sichtbarer Weg zurueck zur Trefferliste (20.11.2026).
+     Ben: "Es gibt keinen Zurueck-Pfeil. Wenn man auf eine Produktseite
+     geht und wieder zurueck moechte und oben auf den Reiter Hotels
+     klickt, sind die ganzen Filter wieder anders." Der Reiter beginnt eine
+     neue Suche; der Pfeil fuehrt zur gemerkten (Rueckweg), mit Adresse
+     und Filtern. Der Agent benutzt denselben Pfeil (Werkzeuge.zurueckZurListe). */
   document.getElementById("breadcrumb").innerHTML =
-    `<a href="index.html">Startseite</a> › <a href="${zurListe}">${isApartment ? "Ferienwohnungen" : "Hotels"}</a> › <a href="${listHref}&q=${encodeURIComponent(item.region)}">${item.region}</a> › <span>${item.name}</span>`;
+    `<a class="zurueck-pfeil" id="zurueckZurListe" href="${zurListe}">← Zurück zu den Ergebnissen</a>`
+    + `<a href="index.html">Startseite</a> › <a href="${zurListe}">${isApartment ? "Ferienwohnungen" : "Hotels"}</a> › <a href="${listHref}&q=${encodeURIComponent(item.region)}">${item.region}</a> › <span>${item.name}</span>`;
 
   document.getElementById("detailHead").innerHTML = `
     <div>

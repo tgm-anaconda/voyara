@@ -369,6 +369,9 @@ const Zeiger = {
     await this.warte(160);
 
     el.value = "";
+    // Auch ein Leeren muss die Seite mitbekommen (20.11.2026) - sonst
+    // haelt eine Vorschlagsliste am Feld noch das alte Wort fest
+    if (!String(text).length) el.dispatchEvent(new Event("input", { bubbles: true }));
     for (const zeichen of String(text)) {
       if (this.abbruch) break;
       el.value += zeichen;

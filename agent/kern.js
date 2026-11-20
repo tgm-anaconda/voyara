@@ -1865,6 +1865,29 @@ const Kern = {
         this.sichern();
       }
     }
+    /* Hat die Person selbst gesucht oder gefiltert? (20.11.2026)
+       ------------------------------------------------------------------
+       Ben am 20.11.2026: "Das lag daran, dass ich auf der Seite auch noch
+       selbst was nachgeschlagen hatte. Der Agent hat nicht erkannt, dass
+       die Filter geaendert worden sind, und haette sie wieder zurueck
+       aendern muessen." Er merkte sich nur, was ER zuletzt gesetzt hatte;
+       was tatsaechlich auf der Seite stand, las er nie.
+
+       Jetzt wird die Trefferliste am Ende jedes Zugs festgehalten
+       (zugBeenden) und hier verglichen. Weicht sie ab, gilt der eigene
+       Stand als nicht mehr auf der Seite, und der Fahrplan sucht neu -
+       sichtbar, mit den Vorgaben aus dem Gespraech. Was die Person auf
+       der Seite eingestellt hat, wird nicht still uebernommen: Es steht
+       nicht im Gespraech, und der Agent soll nur nach dem suchen, was
+       gesagt wurde. */
+    try {
+      const seiteJetzt = Werkzeugkasten.seitenSchluessel();
+      if (seiteJetzt && this.lauf.seiteNachAgent && seiteJetzt !== this.lauf.seiteNachAgent) {
+        this.lauf.gesuchtMit = null;
+        this.lauf.gefiltertMit = null;
+        this.notieren("seite_von_person_geaendert", {});
+      }
+    } catch { /* egal */ }
     if (Werkzeugkasten.FILTER_NEU.test(t)) {
       this.lauf.gesuchtMit = null;
       this.lauf.gefiltertMit = null;
@@ -3544,6 +3567,9 @@ const Kern = {
   zugBeenden() {
     this.laeuft = false;
     if (this.lauf.phase === "arbeitet") this.lauf.phase = "gespraech";
+    /* Wie die Trefferliste nach dem Zug aussieht (20.11.2026) - zum
+       Vergleich am Anfang des naechsten Zugs, siehe dort. */
+    try { this.lauf.seiteNachAgent = Werkzeugkasten.seitenSchluessel(); } catch { /* egal */ }
     /* Stand die Rueckfrage noch offen, als der Zug zu Ende ging, hat
        niemand widersprochen - der gedeutete Wert gilt als bestaetigt.
        Gegenstueck zu "verstaendnis_korrigiert" in `stand_merken`. */

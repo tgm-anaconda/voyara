@@ -3172,3 +3172,8 @@ body.vorschlag-offen { overflow: hidden; }
    sichtbar, aber zurueckhaltender als der Hauptknopf. */
 .einstieg-knopf.einstieg-knopf-leise { background: transparent; color: inherit; border: 1px solid currentColor; opacity: .75; margin-right: 10px; }
 .einstieg-knopf.einstieg-knopf-leise:hover { opacity: 1; }
+
+/* Zurueck-Pfeil auf der Hausseite (20.11.2026): eigene Zeile ueber den
+   Brotkrumen, deutlich als Weg zurueck erkennbar. */
+.zurueck-pfeil { display: block; width: max-content; margin-bottom: 8px; font-weight: 600; color: var(--brand-600, #157a66); text-decoration: none; }
+.zurueck-pfeil:hover { text-decoration: underline; }
