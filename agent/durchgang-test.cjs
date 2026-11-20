@@ -2821,6 +2821,29 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     pruefe("... und es ist nichts gesetzt", halb.kinder ?? "offen", "offen");
   }
 
+  /* Pruefung der Regeln, Runde 1 (21.11.2026). Gegenprobe: _backup/21-11-audit1/ */
+  {
+    const lies = (name, pfad) => fs.readFileSync(alt && fs.existsSync(quelle + name) ? quelle + name : B + pfad, "utf8");
+    const kq4 = lies("kern.js", "agent/kern.js"), wq5 = lies("werkzeugkasten.js", "agent/werkzeugkasten.js");
+    // A: Datum/Grenze/Verstaendnis nicht ueber eine Rueckfrage der ersten Gruppe hinweg
+    pruefe("Rueckfragen der zweiten Gruppe warten auf die erste (kernFrage)",
+      /if \(!freierZug && !tippGestellt && !artFrage && !kernFrage && !this\.lauf\.werkzeugSackgasse\)/.test(kq4) ? "ja" : "nein", "ja");
+    // B: Filterschluessel kennt Auswahl und abgelehnte Regionen
+    const a1 = { monat: 3, zieleAuswahl: ["lappland", "island"] }, a2 = { ...a1, zieleAuswahl: ["lappland", "island", "mallorca"] };
+    const x1 = { monat: 3 }, x2 = { monat: 3, zieleAus: ["lissabon"] };
+    pruefe("Filterschluessel aendert sich bei 'Malle dazu'", WK.filterSchluessel(a1) !== WK.filterSchluessel(a2) ? "ja" : "nein", "ja");
+    pruefe("Filterschluessel aendert sich bei 'nicht Lissabon'", WK.filterSchluessel(x1) !== WK.filterSchluessel(x2) ? "ja" : "nein", "ja");
+    // C: Engpass-Begruendung und Regionsueberblick nach der gemeinsamen Regel
+    pruefe("Engpass: mit Auswahl heisst es 'die Auswahl der Regionen'", /label: p\.zieleAuswahl\?\.length \? "die Auswahl der Regionen"/.test(wq5) ? "ja" : "nein", "ja");
+    pruefe("Regionsueberblick kennt Auswahl und abgelehnte Regionen", /const gebiet = Werkzeugkasten\.zielListe\(p\);\s*const regionen = Werkzeugkasten\.regionenInSaison/.test(wq5) ? "ja" : "nein", "ja");
+    // Neu gefunden: "beides" wird bei der ersten Suche nicht zu "nur Hotels"
+    pruefe("'Beides' bleibt beides (kein stiller Hotel-Standard)", /if \(!p\.typ && !p\.artEgal\) p\.typ = "hotel";/.test(wq5) ? "ja" : "nein", "ja");
+    // D: wer die Art schreibt, setzt auch das Merkmal, an dem 'erledigt' haengt
+    const schreiber = wq5.split("\n").filter((z) => /setze\("typ"|typ: "(hotel|apartment)"|typ: null/.test(z) && !/^\s*(\/\/|\*)/.test(z) && !/`/.test(z));
+    const ohne = schreiber.filter((z) => !/artGenannt|artEgal/.test(z));
+    pruefe("Jeder Schreiber der Art setzt auch artGenannt/artEgal", ohne.length ? ohne.map((z) => z.trim().slice(0, 60)).join(" | ") : "alle", "alle");
+  }
+
   // Kinder oder Erwachsene
   if (WK && WK.kinderErwachsenRueckfrage) {
     const f = WK.kinderErwachsenRueckfrage({ erwachsene: 1, kinder: 2 }, { alterZuHoch: [28, 34] });

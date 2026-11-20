@@ -3031,7 +3031,14 @@ const Kern = {
              Also eine Marke statt vier Bedingungen: Wer die Nachricht
              nimmt, setzt sie; wer danach kommt, sieht nach. */
           let zugBelegt = false;
-          if (!freierZug && !tippGestellt && !artFrage && !this.lauf.werkzeugSackgasse) {
+          /* Nicht ueber eine Rueckfrage der ersten Gruppe hinweg (21.11.2026,
+             Pruefung der Regeln). `kernFrage` (Kinder, Ziel-Widerspruch,
+             Preiswarnung, Engstelle) war hier nicht abgefragt: Datum, Grenze
+             und Verstaendnis ueberschrieben ihren Satz - und weil sie sich
+             schon als gestellt vermerkt hatte, kam sie nie wieder (etwa die
+             Preiswarnung, wenn im selben Satz Monat und Preis standen).
+             Diese Gruppe wartet jetzt bis zum naechsten Zug. */
+          if (!freierZug && !tippGestellt && !artFrage && !kernFrage && !this.lauf.werkzeugSackgasse) {
             const p2 = this.lauf.profil || {};
             /* Der Widerspruch geht vor: Erst klaeren, welcher Monat
                gemeint ist, dann wieder nach dem Tag fragen. Zweimal, dann

@@ -4729,7 +4729,9 @@ const Werkzeugkasten = {
       const p = kern.lauf.profil;
       await kern.denkpause(900, "sieht nach…");
       const bestand = Werkzeugkasten.katalog(p);
-      const regionen = Werkzeugkasten.regionenInSaison(p.monat).filter((z) => !p.zieleErlaubt?.length || p.zieleErlaubt.includes(z.id)).map((z) => ({
+      // Gemeinsame Regionsregel (21.11.2026): auch Auswahl und abgelehnte Regionen
+      const gebiet = Werkzeugkasten.zielListe(p);
+      const regionen = Werkzeugkasten.regionenInSaison(p.monat).filter((z) => !gebiet.length || gebiet.includes(z.id)).map((z) => ({
         id: z.id, name: z.name, land: z.land, art: z.typ,
         haeuser: bestand.filter((h) => h.ziel === z.id && Werkzeugkasten.passtGruppe(h, p)).length,
         saison: p.monat ? (typeof saisonPassung === "function" && saisonPassung(z, p.monat) === 1 ? "Hauptsaison" : "Nebensaison") : null,
@@ -4814,7 +4816,12 @@ const Werkzeugkasten = {
         else kern.notieren("ziel_verworfen", { ziel: id, wo: "suchen" });
       }
       if (a.sortierung) p.sortierung = a.sortierung;
-      if (!p.typ) p.typ = "hotel";
+      /* Kein Hotel-Standard, wenn die Person "beides" gesagt hat
+         (21.11.2026, Pruefung der Regeln). Setzte der Kern beim "beides"
+         auch `artGenannt` (Antwort auf seine Art-Frage, Karte "Beides offen
+         lassen"), machte diese Zeile aus der ersten Suche still eine reine
+         Hotelsuche - seitenTyp liest dann `typ`. */
+      if (!p.typ && !p.artEgal) p.typ = "hotel";
       kern.standAnzeigen();
 
       // Kein Flughafen genannt, aber Flug gewuenscht und egal welcher:
@@ -4822,7 +4829,7 @@ const Werkzeugkasten = {
       // Bei mehreren genannten Flughaefen fragt der Fahrplan; still
       // entschieden wird nur, wenn die Person gar keinen genannt hat.
       if (p.flug && p.flugAbEgal && !p.flugAb && (p.flugAbAuswahl || []).length < 2) {
-        const ziele = p.zielId ? [p.zielId] : (p.zieleErlaubt || []);
+        const ziele = Werkzeugkasten.zielListe(p);   // gemeinsame Regionsregel (21.11.2026)
         const w = Werkzeugkasten.guenstigsterFlughafen(ziele, p.flugAbAuswahl || null);
         if (w) {
           p.flugAb = w.ab;
@@ -8418,7 +8425,11 @@ const Werkzeugkasten = {
     return JSON.stringify([p.maxPreis || null, p.maxStrand ?? null, p.mindestbewertung || null, p.mindestSterne || null,
       (p.kriterien || []).map((k) => k.id), p.ausstattung || [], p.verpflegung || null,
       p.wlanInklusive || false,
-      p.zielId || null, (p.zieleErlaubt || []).slice().sort()]);
+      /* Die Regionen nach der gemeinsamen Regel (21.11.2026): Vorher standen
+         hier nur festes Ziel und Richtung - eine geaenderte Auswahl ("Malle
+         noch dazu") oder eine abgelehnte Region ("nicht Lissabon") bemerkte
+         der Kern nicht, filterte nicht neu und hielt die Liste fuer aktuell. */
+      this.zielListe(p).slice().sort()]);
   },
 
   /* Der Fahrplan (Fassung 3, 20.09.2026 nachts, nach dem dritten Gespraech
@@ -9550,7 +9561,7 @@ const Werkzeugkasten = {
        von ihm. */
     if (naechstes === "flugAb" && (p.flugAbAuswahl || []).length > 1 && typeof Flug !== "undefined") {
       const namen = p.flugAbAuswahl.map((c) => Flug.flughaefen().find((h) => h.code === c)?.name || c);
-      const ziele = p.zielId ? [p.zielId] : (p.zieleErlaubt || []);
+      const ziele = this.zielListe(p);   // gemeinsame Regionsregel (21.11.2026)
       const w = this.guenstigsterFlughafen(ziele, p.flugAbAuswahl);
       /* Zwei sind "beide", drei sind "alle drei".
          ----------------------------------------------------------------
@@ -10113,7 +10124,13 @@ const Werkzeugkasten = {
          wuerden weiche Wuensche weggeworfen. */
       { label: "die Ausstattungswünsche", weg: (x) => { x.ausstattung = []; },
         wenn: () => this.filterAusStand(p).ausstattung.length },
-      { label: p.richtung === "kalt" ? "die Beschränkung auf kalte Regionen" : p.richtung === "warm" ? "die Beschränkung auf warme Regionen" : "die Beschränkung auf diese Regionen", weg: (x) => { delete x.zieleErlaubt; delete x.richtung; }, wenn: () => !p.zielId && p.zieleErlaubt?.length },
+      /* Mit Auswahl zaehlt die Auswahl (21.11.2026): Vorher wurde nur die
+         Richtung probeweise weggenommen - galt eine Auswahl, aenderte das an
+         der Zahl nichts, und die Begruendung stimmte nicht. Abgelehnte
+         Regionen bleiben abgelehnt. */
+      { label: p.zieleAuswahl?.length ? "die Auswahl der Regionen" : p.richtung === "kalt" ? "die Beschränkung auf kalte Regionen" : p.richtung === "warm" ? "die Beschränkung auf warme Regionen" : "die Beschränkung auf diese Regionen",
+        weg: (x) => { delete x.zieleErlaubt; delete x.richtung; delete x.zieleAuswahl; delete x.zieleDazu; },
+        wenn: () => !p.zielId && (p.zieleAuswahl?.length || p.zieleErlaubt?.length) },
       // Seit der feste Anreisetag mitfiltert, kann er der Engpass sein -
       // und dann ist er der erste, den man nennen sollte
       { label: "der feste Anreisetag", weg: (x) => { delete x.von; delete x.bis; }, wenn: () => p.flug && p.von },
@@ -10191,9 +10208,10 @@ const Werkzeugkasten = {
        buchbar plus nicht dabei ergibt den Katalog des Monats. Die
        Regionsgrenze fehlte hier zuerst - dann fehlten in der Summe
        genau die Haeuser, die wegen "eher warm" weggefallen waren. */
+    const gebietListe = this.zielListe(p);   // gemeinsame Regionsregel (21.11.2026)
     for (const h of alle) {
       let grund = null;
-      if (!p.zielId && p.zieleErlaubt?.length && !p.zieleErlaubt.includes(h.ziel)) grund = "region";
+      if (!p.zielId && gebietListe.length && !gebietListe.includes(h.ziel)) grund = "region";
       else if (p.monat && typeof saisonPassung === "function" && typeof ZIEL_NACH_ID !== "undefined"
         && ZIEL_NACH_ID[h.ziel] && saisonPassung(ZIEL_NACH_ID[h.ziel], p.monat) < 0.5) grund = "saison";
       else if (personen && !this.passtGruppe(h, p)) grund = "gruppe";
