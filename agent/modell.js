@@ -64,6 +64,7 @@ const Modell = {
 
   async ruf(koerper) {
     if (!this.verfuegbar()) return null;
+    const beginn = Date.now();
     for (let versuch = 0; versuch <= this.WIEDERHOLUNGEN; versuch++) {
       this.aufrufe += 1;
       let status = null;
@@ -76,7 +77,13 @@ const Modell = {
         status = antwort.status;
         if (antwort.ok) {
           const daten = await antwort.json();
-          if (daten.ok) { this.fehler = 0; this.letzterStatus = 200; return daten; }
+          if (daten.ok) {
+            this.fehler = 0; this.letzterStatus = 200;
+            // Fuer die Messung (20.11.2026): ganze Dauer im Browser, mit
+            // Wiederholungen hier und auf dem Server
+            daten.dauer = { ...(daten.dauer || {}), browserMs: Date.now() - beginn, browserVersuche: versuch + 1 };
+            return daten;
+          }
           this.letzterStatus = "antwort_nicht_ok";
           this.merkeFehler(daten.fehler || "Fehler");
           return null;
@@ -117,7 +124,7 @@ const Modell = {
   async agent(nachrichten, werkzeuge, stand, werkzeugPflicht = false) {
     const d = await this.ruf({ aufgabe: "agent", nachrichten, werkzeuge, stand, werkzeugPflicht });
     if (!d) return null;
-    return { text: d.text || "", chips: d.chips || [], tool_calls: d.tool_calls || [], verbrauch: d.verbrauch || null };
+    return { text: d.text || "", chips: d.chips || [], tool_calls: d.tool_calls || [], verbrauch: d.verbrauch || null, dauer: d.dauer || null };
   },
 
   // Nur Text, ohne Werkzeuge - fuer "Warum dieses Haus?" und aehnliche

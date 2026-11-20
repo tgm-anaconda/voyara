@@ -179,11 +179,29 @@ export default async function handler(req, res) {
      Stelle kostet nichts und faengt sie weg, bevor irgendjemand
      "Da ist gerade etwas schiefgegangen" liest. */
   const VORUEBERGEHEND = [408, 409, 429, 500, 502, 503, 504];
+  /* Dauer und Versuche messen (20.11.2026).
+     Ben am 20.11.2026: "Denkt aktuell 20 Sekunden im Schnitt fuer jede
+     Antwort nach." Im eigenen Lauf am selben Tag waren es 1,2 bis 2,3
+     Sekunden je Aufruf - nachstellen liess es sich nicht, und bis hierher
+     schrieb der Server nichts ins Log. Jetzt steht je Aufruf eine Zeile
+     im Vercel-Log: wie lange OpenAI brauchte, ob wiederholt wurde und mit
+     welchem Status. Keine Inhalte, keine Kontodaten. */
+  const start = Date.now();
+  const erster = Date.now();
   let e = await openai(koerper);
+  const ersterMs = Date.now() - erster;
+  let versuche = 1, ersterStatus = e.ok ? 200 : e.status, gewartetMs = 0;
   if (!e.ok && VORUEBERGEHEND.includes(e.status)) {
-    await new Promise((r) => setTimeout(r, e.wartenMs || 900));
+    gewartetMs = e.wartenMs || 900;
+    await new Promise((r) => setTimeout(r, gewartetMs));
     e = await openai(koerper);
+    versuche = 2;
   }
+  const dauerMs = Date.now() - start;
+  console.log(JSON.stringify({ agentAufruf: true, dauerMs, ersterMs, versuche, ersterStatus,
+    status: e.ok ? 200 : e.status, code: e.ok ? null : (e.code || null), gewartetMs,
+    eingabe: e.daten?.usage?.prompt_tokens ?? null, gecacht: e.daten?.usage?.prompt_tokens_details?.cached_tokens ?? null,
+    pflicht: typeof werkzeugPflicht === "string" ? werkzeugPflicht : !!werkzeugPflicht }));
   if (!e.ok) {
     // Aufgebrauchtes Guthaben ist dauerhaft - Warten hilft nicht, und der
     // Browser soll gar nicht erst wiederholen.
@@ -204,6 +222,7 @@ export default async function handler(req, res) {
       id: c.id, function: { name: c.function?.name, arguments: c.function?.arguments || "{}" },
     })),
     beendet: wahl?.finish_reason || null,
+    dauer: { gesamtMs: dauerMs, versuche, ersterStatus },
     verbrauch: {
       eingabe: u.prompt_tokens || 0,
       zwischengespeichert: u.prompt_tokens_details?.cached_tokens || 0,

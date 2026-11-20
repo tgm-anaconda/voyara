@@ -2262,6 +2262,16 @@ const Kern = {
           break;
         }
         this.kostenMerken(antwort.verbrauch);
+        /* Langsame Aufrufe festhalten (20.11.2026). Ab drei Sekunden steht
+           ein Eintrag im Protokoll - mit der Zeit im Browser, der Zeit auf
+           dem Server und den Wiederholungen. Damit laesst sich ein
+           "denkt 20 Sekunden" spaeter zuordnen: OpenAI langsam, Ratenlimit
+           (Status 429) oder Netz der Person. */
+        if (antwort.dauer && antwort.dauer.browserMs >= 3000) {
+          this.notieren("modell_langsam", { browserMs: antwort.dauer.browserMs, serverMs: antwort.dauer.gesamtMs ?? null,
+            versuche: antwort.dauer.versuche ?? null, browserVersuche: antwort.dauer.browserVersuche ?? null,
+            ersterStatus: antwort.dauer.ersterStatus ?? null, zug: i });
+        }
         const nachricht = { role: "assistant", content: antwort.text || null };
         if (antwort.tool_calls?.length) {
           nachricht.tool_calls = antwort.tool_calls.map((c) => ({ id: c.id, type: "function", function: { name: c.function.name, arguments: c.function.arguments || "{}" } }));
