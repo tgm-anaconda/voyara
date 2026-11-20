@@ -1184,6 +1184,28 @@ const Werkzeugkasten = {
     return { text, mehrzahl, anzahl: teile.length };
   },
 
+  /* Themen, bei denen nicht angenommen, sondern nachgefragt wird
+     (20.11.2026, siehe die Annahmen im Fahrplan). */
+  VORSCHLAG_THEMEN: ["zeit", "dauer", "reisende", "kinderAlter", "zimmer", "flug", "flugAb", "flugKlasse", "anreise"],
+  ABFLUG_NAMEN: ["Hamburg", "Berlin", "Hannover", "Düsseldorf", "Köln", "Frankfurt", "Stuttgart", "München", "Zürich"],
+
+  // Der Vorschlag als Satzstueck: "mit einer Woche", "ab Hamburg"
+  vorschlagText(t, x) {
+    const monat = (m) => (typeof MONATSNAMEN !== "undefined" && m ? MONATSNAMEN[m - 1] : String(m));
+    switch (t) {
+      case "zeit": return x.monat ? `den ${monat(x.monat)}` : "diesen Zeitraum";
+      case "dauer": return x.naechte === 7 ? "einer Woche (7 Nächte)" : `${x.naechte} Nächten`;
+      case "reisende": return `${x.erwachsene} ${x.erwachsene === 1 ? "Erwachsenem" : "Erwachsenen"}${x.kinder ? ` und ${x.kinder} ${x.kinder === 1 ? "Kind" : "Kindern"}` : ""}`;
+      case "kinderAlter": return `${(x.kinderAlter || []).join(" und ")} Jahren`;
+      case "zimmer": return x.zimmer === 1 ? "einem gemeinsamen Zimmer" : `${x.zimmer} Zimmern`;
+      case "flug": return x.flug ? "Flug" : "nur der Unterkunft, ohne Flug";
+      case "flugAb": return `Abflug ab ${x.flugAb}`;
+      case "flugKlasse": return ({ economy: "Economy", premium: "Premium Economy", business: "Business" })[x.flugKlasse] || x.flugKlasse;
+      case "anreise": return x.anreise ? `Anreise am ${new Date(x.anreise).toLocaleDateString("de-DE", { day: "numeric", month: "long" })}` : "diesem Anreisetag";
+      default: return "diesem Vorschlag";
+    }
+  },
+
   /* Fingerabdruck der Trefferliste (20.11.2026): Adresse plus alles, was
      in der Filterspalte steht. Null ausserhalb der Trefferliste. Dient
      nur dem Vergleich, ob die Person zwischen zwei Zuegen selbst etwas
@@ -7900,18 +7922,19 @@ const Werkzeugkasten = {
        welchen und warum (ANNAHME.zeit, Feld `satz`). Angesagt wird es
        also im Moment, in dem es passiert - nur nicht mehr vorher als
        Angebot. */
-    reisende: "Sonst rechne ich erst mal mit zwei Erwachsenen.",
-    kinderAlter: "Sonst rechne ich vorläufig mit acht Jahren - vor der Buchung brauche ich es genau.",
+    /* Fuer Personen, Kinderalter, Dauer, Zimmer, Flug und Klasse stand
+       hier "Sonst rechne ich mit ...". Seit dem 20.11.2026 rechnet der
+       Agent dort mit nichts ohne Zustimmung, sondern fragt mit einem
+       Vorschlag nach (VORSCHLAG_THEMEN) - die Ankuendigung waere eine
+       falsche Auskunft. Geblieben ist, was nur offen laesst. `vorgehen`
+       und `anzahl` werden nicht gefragt, `wuensche` heisst seit dem
+       19.11.2026 `ausstattung` und `gewichtung`. */
     art: "Wenn es dir gleich ist, zeige ich dir beides.",
-    dauer: "Sonst rechne ich mit einer Woche.",
-    zimmer: "Sonst nehme ich ein gemeinsames Zimmer.",
-    flug: "Sonst suche ich erst mal ohne Flug.",
-    flugKlasse: "Sonst rechne ich mit Economy.",
-    vorgehen: "Sonst suche ich dir selbst etwas heraus.",
-    anzahl: "Sonst stelle ich dir drei zusammen.",
     preis: "Sonst lege ich dich beim Preis nicht fest.",
     verpflegung: "Sonst lasse ich die Verpflegung offen.",
-    wuensche: "Sonst suche ich ohne Ausstattungsvorgabe und ohne Schwerpunkt weiter.",
+    /* Keine Eintraege fuer `ausstattung` (wird nur einmal gefragt) und
+       `gewichtung` (die Saetze der Runden sagen schon, wie es weitergeht,
+       und mit genannten Wuenschen waere "auf keinen Aspekt" falsch). */
   },
 
 
@@ -8747,6 +8770,47 @@ const Werkzeugkasten = {
          Jetzt wird erst gesetzt und dann nachgesehen: Hat sich keines der
          Felder bewegt, bleibt das Thema offen. */
       const vorFeldern = JSON.stringify((a.schreibt || []).map((f) => p[f] ?? null));
+      /* Bei echten Werten: vorschlagen und fragen, nie setzen (20.11.2026).
+         ----------------------------------------------------------------
+         Ben am 20.11.2026: Auf "Welcher ist der naechste zu mir? Ich
+         wohne in Lueneburg" antwortete der Agent richtig mit Hamburg -
+         und setzte im selben Atemzug Duesseldorf: "Ich rechne erst mal ab
+         Duesseldorf." Seine Regel: "Er haette nicht einfach einen annehmen
+         duerfen, sondern nochmal aktiv nachfragen muessen. Das war auch
+         schon bei Dezember ein Problem, und das sollte so nicht sein bei
+         keiner der Antworten."
+
+         Entschieden am selben Tag: Fuer Themen, deren Annahme einen
+         bestimmten Wert setzt (Monat, Dauer, Personen, Kinderalter,
+         Zimmer, mit oder ohne Flug, Flughafen, Klasse, Anreisetag), wird
+         nicht mehr angenommen. Stattdessen fragt der Agent mit einem
+         Vorschlag nach - "Soll ich mit einer Woche rechnen?", mit einem
+         Knopf dafuer und einem fuer "etwas anderes". Und zwar so lange,
+         bis eine Antwort kommt; nichts landet ungefragt in den Daten.
+         Was nur offen laesst (Preis, Verpflegung, Ausstattung, Art),
+         bleibt wie es war - das schraenkt nichts ein.
+
+         Der Vorschlag beim Flughafen kommt aus dem Gespraech, wenn es
+         einen gibt: Hat der Agent selbst eben einen Flughafen genannt
+         ("Der naechste zu Lueneburg ist Hamburg"), wird der vorgeschlagen
+         und nicht der guenstigste. */
+      if (this.VORSCHLAG_THEMEN.includes(t)) {
+        if (lauf.vorschlag?.thema !== t) {
+          const probe = JSON.parse(JSON.stringify(p));
+          a.setzen(probe, this);
+          const werte = {};
+          for (const f of a.schreibt || []) if (JSON.stringify(probe[f] ?? null) !== JSON.stringify(p[f] ?? null)) werte[f] = probe[f];
+          if (t === "flugAb") {
+            const zuletzt = [...(lauf.gespraech || [])].reverse().find((n) => n.role === "assistant" && n.content)?.content || "";
+            const genannt = this.ABFLUG_NAMEN.find((n) => new RegExp(`\\b${n}\\b`, "i").test(zuletzt));
+            if (genannt) werte.flugAb = genannt;
+          }
+          if (Object.keys(werte).length) {
+            lauf.vorschlag = { thema: t, werte, text: this.vorschlagText(t, { ...p, ...werte }) };
+          }
+        }
+        continue;
+      }
       a.setzen(p, this);
       if (JSON.stringify((a.schreibt || []).map((f) => p[f] ?? null)) === vorFeldern) continue;
       fertig[t] = true;
@@ -9399,7 +9463,21 @@ const Werkzeugkasten = {
     const empfehlungBereit = p.vorgehen === "top3" && BERATUNG.every((t) => fertig[t])
       && fertig.dauer && fertig.flug && fertig.flugAb;
     if (vorsatz) frage = `Das steht schon im Chat, du hast es gerade gesagt: "${vorsatz}" - nicht wiederholen und nicht umformulieren.${frage ? ` Dann: ${frage}` : ""}`;
-    return { fertig, naechstes, frage, satz, vorsatz, erklaerung, chips, phase, suchbereit, eckdatenFertig, gesucht, schluessel, empfehlungBereit,
+    /* Der Vorschlag statt der Annahme (20.11.2026, siehe ANNAHME oben).
+       Ist das Thema inzwischen geklaert, faellt der Vorschlag weg; steht
+       es als naechstes an, wird statt der offenen Frage der Vorschlag
+       gefragt - mit einem Knopf dafuer und einem fuer etwas anderes. */
+    let vorschlag = null;
+    if (lauf.vorschlag && fertig[lauf.vorschlag.thema]) lauf.vorschlag = null;
+    if (lauf.vorschlag && lauf.vorschlag.thema === naechstes) {
+      const v = lauf.vorschlag;
+      const ja = `Ja, ${v.text.replace(/^(den|einer|einem|diesem|diesen) /, "")}`.slice(0, 48);
+      satz = `Damit ich weitermachen kann: Soll ich mit ${v.text} rechnen, oder möchtest du etwas anderes?`;
+      chips = `${ja} | Etwas anderes`;
+      frage = `Der Chat fragt, ob mit ${v.text} gerechnet werden soll. Stell GENAU diese Frage und setz den Wert NICHT selbst - das macht der Kern, wenn sie zustimmt. Nennt sie etwas anderes, nimm das.`;
+      vorschlag = { thema: v.thema, werte: v.werte, ja, anders: "Etwas anderes" };
+    }
+    return { fertig, naechstes, frage, satz, vorsatz, erklaerung, chips, phase, suchbereit, eckdatenFertig, gesucht, schluessel, empfehlungBereit, vorschlag,
       angenommen, ueberblickOffen: false, fehlt: [...KERN, ...ECKDATEN].filter((t) => !fertig[t]) };
   },
 

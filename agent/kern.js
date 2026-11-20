@@ -2047,6 +2047,18 @@ const Kern = {
        "lieber mehr", "noch ein paar" fuehrt zur Nachfrage, eine Zahl von
        zwei bis sechs gilt sofort. Ein "ja" oder "passt" laesst es bei
        der genannten Anzahl. */
+    /* Ein getipptes Ja auf den Vorschlag (20.11.2026). Der Knopf wirkt
+       ueber chipWirkung; wer "ja", "passt" oder "gern" tippt, meint
+       dasselbe. Alles andere geht wie jede Antwort ans Modell. */
+    if (this.lauf.vorschlagOffen) {
+      const v = this.lauf.vorschlagOffen;
+      this.lauf.vorschlagOffen = null;
+      if (/^\s*(ja|jap|jo|jep|ok|okay|gern|gerne|passt|genau|klar|stimmt|mach (das|so)|einverstanden)\b/i.test(String(t || ""))
+        && !(this.lauf.chipWirkung && Object.keys(this.lauf.chipWirkung).some((c) => c.trim().toLowerCase() === String(t).trim().toLowerCase()))) {
+        Werkzeugkasten.werteUebernehmen(this, v.thema, v.werte, t, "vorschlag_bestaetigt");
+        this.lauf.vorschlag = null;
+      }
+    }
     if (this.lauf.anzahlFrageOffen || this.lauf.anzahlZahlOffen) {
       const roh = String(t || "").toLowerCase();
       const WORT = { zwei: 2, drei: 3, vier: 4, "fünf": 5, fuenf: 5, sechs: 6 };
@@ -2884,6 +2896,17 @@ const Kern = {
                 kernFrage = { ...ef, thema: null };
               }
             }
+          }
+          /* Der Vorschlag statt der Annahme (20.11.2026): Der Knopf "Ja,
+             ..." setzt genau die vorgeschlagenen Werte; "Etwas anderes"
+             setzt nichts. Ein getipptes Ja liest der Kern am Anfang des
+             naechsten Zugs (siehe `vorschlagOffen`). */
+          if (!kernFrage && fpJetzt?.vorschlag) {
+            const v = fpJetzt.vorschlag;
+            this.lauf.chipWirkung = { [v.ja]: v.werte, [v.anders]: {} };
+            this.lauf.chipThema = v.thema;
+            this.lauf.vorschlagOffen = { thema: v.thema, werte: v.werte };
+            this.notieren("vorschlag_gefragt", { thema: v.thema, werte: v.werte });
           }
           if (kernFrage) {
             this.lauf.chipWirkung = kernFrage.wirkung || null;

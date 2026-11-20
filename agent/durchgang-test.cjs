@@ -228,11 +228,30 @@ const flugProfil = () => ({ flug: true, typ: "hotel", monat: 10, naechte: 7,
    weiter daneben, es bestimmt nur noch die Formulierung der Frage. */
 const flugLauf = () => ({ gefragtWie: { flugAb: 2 }, ohneAntwort: { flugAb: 2 },
   besprochen: {}, profil: null, nachrichtArt: "antwort", protokoll: [] });
+/* Seit dem 20.11.2026 wird der Flughafen nicht mehr angenommen, sondern
+   vorgeschlagen und gefragt (Ben: "Er haette nicht einfach einen annehmen
+   duerfen"). Geprueft wird: nichts gesetzt, aber ein begruendeter
+   Vorschlag liegt bereit. */
 const p4 = flugProfil(); const l4 = flugLauf();
 try { WK.fahrplan(p4, l4); } catch { /* der Fahrplan braucht mehr Welt, die Annahme reicht */ }
-pruefe("Flughafen gesetzt", typeof p4.flugAb === "string" && p4.flugAb.length > 0, true);
-pruefe("Flughafen ist begruendbar, nicht blind Frankfurt",
-  p4.flugAb !== "Frankfurt" || (WK.guenstigsterFlughafen([], null)?.ab === "Frankfurt"), true);
+pruefe("Flughafen wird nicht gesetzt", p4.flugAb == null ? "nicht gesetzt" : p4.flugAb, "nicht gesetzt");
+pruefe("Aber vorgeschlagen", typeof l4.vorschlag?.werte?.flugAb === "string" ? "ja" : "nein", "ja");
+pruefe("Vorschlag ist begruendbar, nicht blind Frankfurt",
+  l4.vorschlag?.werte?.flugAb !== "Frankfurt" || (WK.guenstigsterFlughafen([], null)?.ab === "Frankfurt"), true);
+/* Hat der Agent eben selbst einen Flughafen genannt ("der naechste zu
+   Lueneburg ist Hamburg"), wird der vorgeschlagen - der Fall vom
+   20.11.2026, in dem stattdessen Duesseldorf gesetzt wurde. */
+const p4b = flugProfil(); const l4b = flugLauf();
+l4b.gespraech = [{ role: "user", content: "Welcher ist der nächste zu mir. ich wohne in lüneburg" },
+  { role: "assistant", content: "Der nächste Flughafen zu Lüneburg ist Hamburg." }];
+try { WK.fahrplan(p4b, l4b); } catch { /* egal */ }
+pruefe("Der genannte Flughafen wird vorgeschlagen", l4b.vorschlag?.werte?.flugAb, "Hamburg");
+/* Damit der Flughafen die naechste Frage ist, muss davor alles stehen
+   und einmal gesucht worden sein. */
+Object.assign(p4b, { artGenannt: true, kinderAlter: [], zimmer: 1 });
+l4b.gesuchtMit = (() => { try { return WK.fahrplan(p4b, l4b).schluessel; } catch { return null; } })();
+const fpV = (() => { try { return WK.fahrplan(p4b, l4b); } catch { return null; } })();
+pruefe("Und als Frage gestellt", /Soll ich mit Abflug ab Hamburg rechnen/.test(fpV?.satz || "") ? "ja" : (fpV?.satz || "").slice(0, 60), "ja");
 
 /* ====================================================================
    5. Wer zurueckfragt, hat nicht abgelehnt
@@ -272,7 +291,8 @@ const p5e = flugProfil(); p5e.flugAb = null;
 const l5e = flugLauf(); l5e.nachrichtArt = "sonstiges";
 l5e.gespraech = [{ role: "user", content: "keine ahnung" }];
 try { WK.fahrplan(p5e, l5e); } catch { /* siehe oben */ }
-pruefe("Ausweichen fuehrt weiter zur Annahme", typeof p5e.flugAb === "string" && !!p5e.flugAb, true);
+pruefe("Ausweichen fuehrt zum Vorschlag, nicht zur Annahme",
+  p5e.flugAb == null && !!l5e.vorschlag ? "vorgeschlagen" : (p5e.flugAb ? "angenommen" : "nichts"), "vorgeschlagen");
 
 /* ====================================================================
    6. Keine Entschuldigung, wenn etwas angekommen ist
@@ -460,12 +480,13 @@ const zeitProfil = { typ: "hotel", artGenannt: true, erwachsene: 2, kinder: 0,
   naechte: 7, zielOffen: true, flug: false, vonPerson: {} };
 const zeitLauf = { gefragtWie: { zeit: 2 }, ohneAntwort: { zeit: 2 }, besprochen: {}, protokoll: [] };
 try { WK.fahrplan(zeitProfil, zeitLauf); } catch { /* egal */ }
-const zeitSatz = (zeitLauf.annahmeOffen || []).find((x) => x.thema === "zeit")?.text || "";
-pruefe("Monatsannahme: der Satz steht ueberhaupt da", zeitSatz.length > 0, true);
-pruefe("Monatsannahme: nur einmal verglichen",
-  (zeitSatz.match(/verglichen/g) || []).length, 1);
-pruefe("Monatsannahme: nur einmal Bescheid sagen",
-  (zeitSatz.match(/Sag (gern )?Bescheid/g) || []).length, 1);
+/* Seit dem 20.11.2026 wird der Monat nicht mehr angenommen (Ben: "Das
+   war auch schon bei Dezember ein Problem"). Statt des Annahmesatzes
+   kommt ein Vorschlag als Frage - und der Monat bleibt leer, bis die
+   Person zustimmt. */
+pruefe("Kein Monat ohne Zustimmung", zeitProfil.monat ?? "leer", "leer");
+pruefe("Kein Annahmesatz zum Monat", (zeitLauf.annahmeOffen || []).some((x) => x.thema === "zeit") ? "doch" : "nein", "nein");
+pruefe("Stattdessen ein Vorschlag", zeitLauf.vorschlag?.thema || "keiner", "zeit");
 
 /* Und der Auftrag ans Modell unterscheidet die beiden Faelle: Wer
    klaert, bekommt nicht vorgehalten, nicht geantwortet zu haben. */
@@ -611,6 +632,20 @@ const liesReisende = async (text, felder, urteil = "ja") => {
       }
       if (fp.phase === "vorschlaege" || fp.phase === "selbst") return { gestellt, fertig: true };
       if (!fp.naechstes) return { gestellt, fertig: false, grund: `SACKGASSE(${fp.phase})` };
+      /* Seit dem 20.11.2026 nimmt der Kern bei echten Werten nichts mehr
+         an, sondern fragt mit einem Vorschlag nach - so lange, bis eine
+         Antwort kommt. Eine Person, die NIE antwortet, kaeme also nie ans
+         Ende; das ist gewollt (Ben: "nicht einfach irgendwelche Sachen
+         nehmen, bei keiner der Antworten"). Gespielt wird deshalb eine
+         Person, die offene Fragen uebergeht, einen Vorschlag mit Knopf
+         aber annimmt. */
+      if (fp.vorschlag) {
+        gestellt.push(fp.naechstes);
+        Object.assign(p, fp.vorschlag.werte);
+        p.vonPerson = { ...(p.vonPerson || {}), ...Object.fromEntries(Object.keys(fp.vorschlag.werte).map((f) => [f, true])) };
+        lauf.vorschlag = null;
+        continue;
+      }
       // Die Frage steht im Chat - und die Person antwortet nicht
       gestellt.push(fp.naechstes);
       lauf.gefragtWie[fp.naechstes] = (lauf.gefragtWie[fp.naechstes] || 0) + 1;
@@ -639,7 +674,9 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     }
   }
   pruefe("Stumme Durchlaeufe: alle gespielt", laeufe, 27);
-  pruefe("Keine Frage steht ein drittes Mal", schlimmste <= 2 ? "hoechstens zweimal" : `${schlimmste}-mal: ${JSON.stringify(beispiel)}`, "hoechstens zweimal");
+  /* Zweimal offen, beim dritten Mal als Vorschlag mit Knopf - mehr
+     nicht (seit 20.11.2026; vorher war nach zweimal die Annahme). */
+  pruefe("Keine Frage steht ein viertes Mal", schlimmste <= 3 ? "hoechstens dreimal" : `${schlimmste}-mal: ${JSON.stringify(beispiel)}`, "hoechstens dreimal");
   pruefe("Kein Durchlauf bleibt stehen", haengt === 0 ? "keiner" : `${haengt}: ${JSON.stringify(beispiel)}`, "keiner");
 
   /* Die Verstaendnis-Rueckfrage (12.11.2026).
