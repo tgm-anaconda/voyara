@@ -6988,8 +6988,8 @@ const Werkzeugkasten = {
       if (a.nachsehen) await Werkzeuge.kasseAnsehen(a.nachsehen === "versicherung" ? "versicherung" : "zahlung");
       kern.sperreAus();
       const st = Kasse.stand();
-      if (a.versicherung != null) kern.notieren("kasse_versicherung", { an: !!a.versicherung, ueber: "modell" });
-      if (a.zahlung) kern.notieren("kasse_zahlung", { zahlung: a.zahlung, ueber: "modell" });
+      if (a.versicherung != null) kern.notieren("kasse_versicherung", { an: !!a.versicherung, ueber: "modell", geklappt: st.versicherung === !!a.versicherung });
+      if (a.zahlung) kern.notieren("kasse_zahlung", { zahlung: a.zahlung, ueber: "modell", geklappt: st.zahlung === a.zahlung });
       return { ergebnis: {
         versicherungGewaehlt: st.versicherung, versicherungPreis: st.versicherungPreis,
         zahlung: st.zahlung, zahlungsarten: st.zahlungsarten, gesamt: st.gesamt,

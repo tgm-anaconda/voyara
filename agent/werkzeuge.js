@@ -1608,7 +1608,8 @@ const Werkzeuge = {
       if (el && el.checked !== !!versicherung) {
         await Zeiger.klicke(el, { hinweis: versicherung ? "Versicherung dazu" : "Versicherung abwählen" });
         await Zeiger.warte(250);
-        getan.push(versicherung ? "versicherung_an" : "versicherung_aus");
+        // Nur, was danach wirklich so steht (20.11.2026)
+        if (el.checked === !!versicherung) getan.push(versicherung ? "versicherung_an" : "versicherung_aus");
       }
     }
     if (zahlung) {
@@ -1616,7 +1617,7 @@ const Werkzeuge = {
       if (el && !el.checked) {
         await Zeiger.klicke(el, { hinweis: zahlung === "karte" ? "Kreditkarte" : "Lastschrift" });
         await Zeiger.warte(250);
-        getan.push(`zahlung_${zahlung}`);
+        if (el.checked) getan.push(`zahlung_${zahlung}`);
       }
     }
     const nachher = Kasse.stand();
@@ -1673,7 +1674,12 @@ const Werkzeuge = {
           const wert = namen[i] || (i === 0 && konto ? `${konto.vorname} ${konto.nachname}`.trim() : "");
           if (wert) {
             await Zeiger.tippe(feldName, wert, { hinweis: i === 0 && !namen[i] ? "Name aus deinem Konto" : `Reisende ${i + 1}` });
-            geaendert.push(`Name ${i + 1}`);
+            /* Auf die Liste "ausgefuellt" kommt nur, was danach wirklich im
+               Feld steht (20.11.2026, Pruefung der Regeln, Runde 3). Sonst
+               stand ein Feld bei abgebrochenem Tippen zugleich unter
+               "ausgefuellt" und unter "fehlt" - und dieser Bericht ist
+               Gegenstand von H2. */
+            if (feldName.value.trim()) geaendert.push(`Name ${i + 1}`);
           }
         }
         if (feldName && !feldName.value.trim()) fehlt.push(`Name der ${i + 1}. Person`);
@@ -1686,7 +1692,7 @@ const Werkzeuge = {
       const feldMail = this.finde("#gMail");
       if (konto && feldMail && !feldMail.value.trim() && konto.mail) {
         await Zeiger.tippe(feldMail, konto.mail, { hinweis: "E-Mail aus deinem Konto" });
-        geaendert.push("E-Mail");
+        if (feldMail.value.trim()) geaendert.push("E-Mail");
       }
       if (feldMail && !feldMail.value.trim()) fehlt.push("E-Mail");
 
@@ -1701,7 +1707,7 @@ const Werkzeuge = {
         const moeglich = [...feldAnkunft.options].map((o) => o.value).filter(Boolean);
         const treffer = moeglich.includes(daten.ankunft) ? daten.ankunft : moeglich[moeglich.length - 1];
         await Zeiger.setzeWert(feldAnkunft, treffer, { hinweis: "Ankunft am Haus" });
-        geaendert.push(`Ankunft ${treffer}${daten.ankunftGrund ? ` (${daten.ankunftGrund})` : ""}`);
+        if (feldAnkunft.value) geaendert.push(`Ankunft ${feldAnkunft.value}${daten.ankunftGrund ? ` (${daten.ankunftGrund})` : ""}`);
       }
       // Ohne Landezeit keine Schaetzung: fragen statt raten
       if (feldAnkunft && !feldAnkunft.value) fehlt.push("ungefähre Ankunftszeit am Haus");
@@ -1709,7 +1715,7 @@ const Werkzeuge = {
       const feldTerms = this.finde("#gTerms");
       if (feldTerms && !feldTerms.checked) {
         await Zeiger.klicke(feldTerms, { hinweis: "Studienhinweis bestätigen" });
-        geaendert.push("Studienhinweis bestätigt");
+        if (feldTerms.checked) geaendert.push("Studienhinweis bestätigt");
       }
 
       if (fehlt.length) {

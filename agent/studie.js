@@ -336,13 +336,16 @@ const Studie = {
     this.ausstehendesSenden();
 
     switch (this.daten.phase) {
-      case "hinweis":
-        Startbildschirm.hinweisZeigen((messung) => {
+      case "hinweis": {
+        const los = () => Startbildschirm.hinweisZeigen((messung) => {
           this.daten.einstieg.hinweisSekunden = messung.hinweisSekunden;
           this.phaseSetzen("konto");
           this.kontoZeigen();
         });
+        // Am Handy oder in zu schmalem Fenster erst der Hinweis (20.11.2026)
+        if (!Startbildschirm.nurAmRechner?.(los)) los();
         return true;
+      }
       case "konto":
         this.kontoZeigen();
         return true;

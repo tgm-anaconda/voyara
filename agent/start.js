@@ -211,6 +211,76 @@ const Startbildschirm = {
     });
   },
 
+  /* Nur am Rechner (20.11.2026).
+     ------------------------------------------------------------------
+     Ben am 20.11.2026: Der Agent arbeitet sichtbar mit Zeiger und Maus,
+     und das laesst sich auf dem Handy nicht sauber darstellen - die
+     Filterspalte liegt dort zugeklappt hinter einem Knopf, der Agent
+     hakte unsichtbar an und konnte den Preisregler gar nicht stellen.
+     Statt das mit grossem Aufwand umzubauen, wird die Studie auf Rechner
+     beschraenkt. Gemessen wird ohnehin, was jemand vom Agenten SIEHT;
+     auf einem Geraet, auf dem das nicht geht, waere jede Messung eine
+     andere.
+
+     Zwei Faelle:
+     - Geraet ohne Maus (Handy, Tablet): Hinweis, kein Weiter.
+     - Rechner mit zu schmalem Fenster: Hinweis, der von selbst
+       verschwindet, sobald das Fenster breit genug ist. Unter 1040 Pixeln
+       schaltet die Seite in die Telefonansicht.
+
+     Greift nur vor dem Studienhinweis, also bevor irgendetwas gesendet
+     wird. Fuer die Pruefungen (?kernpruefung, ?seitenpruefung) und mit
+     STELLSCHRAUBEN.nurAmRechner = false bleibt er aus. Gibt true zurueck,
+     wenn er steht. */
+  MINDESTBREITE: 1040,
+
+  nurAmRechner(weiter) {
+    try {
+      if (typeof STELLSCHRAUBEN !== "undefined" && STELLSCHRAUBEN.nurAmRechner === false) return false;
+      if (/[?&](kernpruefung|seitenpruefung|pruefstand)=/.test(location.search)) return false;
+      const mm = (q) => (typeof matchMedia === "function" ? matchMedia(q).matches : false);
+      const ohneMaus = mm("(pointer: coarse)") && !mm("(any-pointer: fine)");
+      const zuSchmal = () => window.innerWidth < this.MINDESTBREITE;
+      if (!ohneMaus && !zuSchmal()) return false;
+
+      const el = document.createElement("div");
+      el.className = "einstieg";
+      el.innerHTML = `
+        <div class="einstieg-blatt" role="dialog" aria-modal="true" tabindex="-1">
+          <div class="einstieg-hero">
+            <span class="einstieg-siegel">${this.SYMBOL.kompass}</span>
+            <p class="einstieg-etikett">Willkommen zur Studie</p>
+            <h1>${ohneMaus ? "Bitte am Computer öffnen" : "Bitte das Fenster vergrößern"}</h1>
+            <p class="einstieg-vorspann">
+              ${ohneMaus
+                ? "Die Studie funktioniert nur am Computer oder Laptop mit Maus. Auf dem Handy oder Tablet lässt sich die Seite mit dem Assistenten nicht richtig darstellen. Öffne den Link bitte dort, dann kannst du ganz normal teilnehmen."
+                : "Das Browserfenster ist zu schmal, um die Seite mit dem Assistenten richtig darzustellen. Zieh es bitte breiter oder stell es auf Vollbild, dann geht es von selbst weiter."}
+            </p>
+          </div>
+        </div>`;
+      document.body.appendChild(el);
+      document.body.classList.add("startschirm-offen");
+      if (!ohneMaus) {
+        // Zusaetzlich zur Breitenabfrage: Nicht jede Groessenaenderung
+        // loest ein resize aus (gesehen bei emulierten Fenstern)
+        const breit = typeof matchMedia === "function" ? matchMedia(`(min-width: ${this.MINDESTBREITE}px)`) : null;
+        let fertig = false;
+        const pruefen = () => {
+          if (fertig || zuSchmal()) return;
+          fertig = true;
+          window.removeEventListener("resize", pruefen);
+          breit?.removeEventListener?.("change", pruefen);
+          el.remove();
+          document.body.classList.remove("startschirm-offen");
+          weiter?.();
+        };
+        window.addEventListener("resize", pruefen);
+        breit?.addEventListener?.("change", pruefen);
+      }
+      return true;
+    } catch { return false; }
+  },
+
   /* Strichzeichnungen, damit der Einstieg nicht aus reinem Text besteht.
      Bewusst nur Umrisse in einer Staerke - gefuellte oder bunte Symbole
      wuerden die Schritte unterschiedlich gewichten. */

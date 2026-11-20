@@ -4795,21 +4795,37 @@ const Kern = {
       if (versicherung !== null || zahlung) {
         const e = await Werkzeuge.kasseAendern({ versicherung, zahlung });
         const n = e.daten?.nachher || Kasse.stand();
+        /* Gesagt wird, was danach in der Kasse steht (20.11.2026).
+           ------------------------------------------------------------
+           Pruefung der Regeln, Runde 3: Der Satz richtete sich nach dem
+           Stand VOR dem Klick. Brach der Klick ab (Anhalten, Element
+           nicht greifbar), stand "Ich habe ... abgewaehlt" im Chat,
+           waehrend der Haken noch sass - bei der Versicherung, also H2.
+           Das Protokoll haelt weiter fest, was gewollt war (die Spalte
+           versicherungAgentAus zaehlt das Bemerken), und dazu, ob es
+           geklappt hat. */
+        const klemmt = (was) => `${was} ließ sich gerade nicht umstellen, bitte stell es selbst in der Kasse um.`;
         if (versicherung === false) {
-          teile.push(vorher.versicherung
-            ? `Ich habe die Reiserücktrittsversicherung abgewählt, das spart ${euro(vorher.versicherungPreis)}.`
-            : "Die Reiserücktrittsversicherung ist nicht gebucht.");
-          this.notieren("kasse_versicherung", { an: false, vorher: vorher.versicherung, ueber: "agent" });
+          const ok = n.versicherung === false;
+          teile.push(!ok ? klemmt("Die Reiserücktrittsversicherung")
+            : vorher.versicherung
+              ? `Ich habe die Reiserücktrittsversicherung abgewählt, das spart ${euro(vorher.versicherungPreis)}.`
+              : "Die Reiserücktrittsversicherung ist nicht gebucht.");
+          this.notieren("kasse_versicherung", { an: false, vorher: vorher.versicherung, ueber: "agent", geklappt: ok });
         }
         if (versicherung === true) {
-          teile.push(vorher.versicherung ? "Die Reiserücktrittsversicherung ist schon drin."
-            : `Ich habe die Reiserücktrittsversicherung dazugenommen, sie kostet ${euro(vorher.versicherungPreis)}.`);
-          this.notieren("kasse_versicherung", { an: true, vorher: vorher.versicherung, ueber: "agent" });
+          const ok = n.versicherung === true;
+          teile.push(!ok ? klemmt("Die Reiserücktrittsversicherung")
+            : vorher.versicherung ? "Die Reiserücktrittsversicherung ist schon drin."
+              : `Ich habe die Reiserücktrittsversicherung dazugenommen, sie kostet ${euro(vorher.versicherungPreis)}.`);
+          this.notieren("kasse_versicherung", { an: true, vorher: vorher.versicherung, ueber: "agent", geklappt: ok });
         }
         if (zahlung) {
-          teile.push(zahlung === "lastschrift" ? "Gezahlt wird jetzt per Lastschrift, ohne Kartengebühr."
-            : "Gezahlt wird jetzt mit Kreditkarte, dafür kommen 2 % Gebühr dazu.");
-          this.notieren("kasse_zahlung", { zahlung, vorher: vorher.zahlung, ueber: "agent" });
+          const ok = n.zahlung === zahlung;
+          teile.push(!ok ? klemmt("Die Zahlungsart")
+            : zahlung === "lastschrift" ? "Gezahlt wird jetzt per Lastschrift, ohne Kartengebühr."
+              : "Gezahlt wird jetzt mit Kreditkarte, dafür kommen 2 % Gebühr dazu.");
+          this.notieren("kasse_zahlung", { zahlung, vorher: vorher.zahlung, ueber: "agent", geklappt: ok });
         }
         if (n.gesamt !== vorher.gesamt) teile.push(`Der Gesamtpreis ist jetzt ${euro(n.gesamt)} statt ${euro(vorher.gesamt)}.`);
       }

@@ -2960,6 +2960,50 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     pruefe("Auch Hotels: Katalog hat Hotels und Wohnungen", arten.has("hotel") && arten.has("apartment") ? "beide" : [...arten].join(), "beide");
   }
 
+  /* Runde 3 (20.11.2026): Kasse und Formular melden nur, was wirklich
+     steht; am Handy der Hinweis statt der Studie.
+     Gegenprobe: _backup/vor-runde3-2026-11-20/ */
+  if (KN && KN.kasseBedienen) {
+    const lauf = async (klicktGreift, text) => {
+      let stand = { id: "h1", versicherung: true, versicherungPreis: 89, gesamt: 1000, zahlung: "karte", zahlungsarten: [] };
+      const altW = ctx.Werkzeuge, altK = ctx.Kasse, altA = ctx.AgentPanel;
+      ctx.Kasse = { stand: () => ({ ...stand }) };
+      ctx.Werkzeuge = { seite: () => "checkout",
+        kasseAendern: async ({ versicherung }) => { if (klicktGreift && versicherung !== null) stand.versicherung = versicherung;
+          return { daten: { nachher: { ...stand } } }; },
+        kasseAnsehen: async () => ({}) };
+      ctx.AgentPanel = { arbeitetAn() {}, setSuggestions() {} };
+      const k = Object.create(KN);
+      k.lauf = { profil: {}, protokoll: [], gespraech: [], verlauf: [] };
+      const gesagt = [];
+      Object.assign(k, { laeuft: false, notieren(e, d) { this.lauf.protokoll.push({ ereignis: e, ...d }); },
+        sagen(x, wer) { if (wer !== "user") gesagt.push(x); }, sagenUndMerken(x) { gesagt.push(x); }, gespraechPush() {},
+        sperreAn() {}, sperreAus() {}, vollbildAus() {}, sichern() {}, standAnzeigen() {}, logZeile() {} });
+      try { await KN.kasseBedienen.call(k, text); } catch (e) { gesagt.push("FEHLER " + e.message); }
+      ctx.Werkzeuge = altW; ctx.Kasse = altK; ctx.AgentPanel = altA;
+      return { text: gesagt.join(" "), prot: k.lauf.protokoll.find((x) => x.ereignis === "kasse_versicherung") };
+    };
+    const ok = await lauf(true, "bitte ohne Versicherung");
+    pruefe("Kasse: geklappt, Satz sagt abgewaehlt", /abgewählt/.test(ok.text) ? "ja" : ok.text.slice(0, 80), "ja");
+    const klemmt = await lauf(false, "bitte ohne Versicherung");
+    pruefe("Kasse: Klick greift nicht, kein 'abgewaehlt'", /abgewählt/.test(klemmt.text) ? "behauptet" : "ehrlich", "ehrlich");
+    pruefe("Kasse: Klick greift nicht, Person wird gebeten", /selbst/.test(klemmt.text) ? "ja" : klemmt.text.slice(0, 80), "ja");
+    pruefe("Kasse: Protokoll haelt fest, ob es geklappt hat", klemmt.prot?.geklappt, false);
+    pruefe("Kasse: Spalte versicherungAgentAus zaehlt weiter das Gewollte", klemmt.prot?.an, false);
+  }
+  {
+    const wq = fs.readFileSync(alt && fs.existsSync(quelle + "werkzeuge.js") ? quelle + "werkzeuge.js" : B + "agent/werkzeuge.js", "utf8");
+    pruefe("Formular: Name nur auf der Liste, wenn er im Feld steht",
+      /if \(feldName\.value\.trim\(\)\) geaendert\.push\(`Name \$\{i \+ 1\}`\)/.test(wq) ? "ja" : "nein", "ja");
+    pruefe("Formular: E-Mail nur, wenn sie im Feld steht", /if \(feldMail\.value\.trim\(\)\) geaendert\.push\("E-Mail"\)/.test(wq) ? "ja" : "nein", "ja");
+    pruefe("Formular: Studienhinweis nur, wenn angehakt", /if \(feldTerms\.checked\) geaendert\.push/.test(wq) ? "ja" : "nein", "ja");
+    pruefe("Kasse: getan nur bei wirklich umgestelltem Haken", /if \(el\.checked === !!versicherung\) getan\.push/.test(wq) ? "ja" : "nein", "ja");
+    const sq = fs.readFileSync(alt && fs.existsSync(quelle + "start.js") ? quelle + "start.js" : B + "agent/start.js", "utf8");
+    const st = fs.readFileSync(alt && fs.existsSync(quelle + "studie.js") ? quelle + "studie.js" : B + "agent/studie.js", "utf8");
+    pruefe("Handy: Hinweis vor dem Studienhinweis", /if \(!Startbildschirm\.nurAmRechner\?\.\(los\)\) los\(\);/.test(st) ? "ja" : "nein", "ja");
+    pruefe("Handy: Pruefungen bleiben frei", /kernpruefung\|seitenpruefung\|pruefstand/.test(sq) ? "ja" : "nein", "ja");
+  }
+
   console.log(`\n${gut} richtig, ${schlecht} falsch`);
   process.exit(schlecht ? 1 : 0);
 })();
