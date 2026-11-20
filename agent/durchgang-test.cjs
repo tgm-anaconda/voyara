@@ -2403,6 +2403,86 @@ const liesReisende = async (text, felder, urteil = "ja") => {
       sieb.test("Aus allgemeinem Wissen, nicht von der Seite: Von Lüneburg ist Hamburg der nächste Flughafen.") ? "gestrichen" : "bleibt", "bleibt");
   }
 
+  /* "Ja, August" wurde zu Dezember (20.11.2026, abends). Der Monats-
+     vorschlag war gemerkt, aber nie im Chat zu sehen - dort stand "Meinst
+     du August?". Und "Ja, August" galt als Ja zum Vorschlag.
+     Gegenprobe: _backup/20-11-abend/ */
+  if (KN && typeof KN.vorschlagJaLesen === "function") {
+    const kj = (letzte, t) => {
+      const k = Object.create(KN);
+      k.lauf = { profil: { monat: null }, protokoll: [], gespraech: [{ role: "assistant", content: letzte }],
+        vorschlagOffen: { thema: "zeit", werte: { monat: 12 }, text: "Dezember" }, chipWirkung: null };
+      k.notieren = function (e, d) { this.lauf.protokoll.push({ ereignis: e, ...d }); };
+      k.sichern = () => {}; k.standAnzeigen = () => {};
+      const ok = k.vorschlagJaLesen(t);
+      return { ok, monat: k.lauf.profil.monat };
+    };
+    pruefe("'Ja, August' auf 'Meinst du August?' setzt keinen Dezember",
+      kj("Meinst du August?", "Ja, August").monat ?? "nichts", "nichts");
+    pruefe("Auch ein reines Ja nicht, wenn der Vorschlag nie im Chat stand",
+      kj("Meinst du August?", "ja").monat ?? "nichts", "nichts");
+    pruefe("Ja mit eigenem Wert ist kein Ja zum Vorschlag",
+      kj("Damit ich weitermachen kann: Soll ich mit Dezember rechnen?", "Ja, aber lieber August").monat ?? "nichts", "nichts");
+    pruefe("Ein reines Ja auf den sichtbaren Vorschlag wirkt",
+      kj("Damit ich weitermachen kann: Soll ich mit Dezember rechnen, oder möchtest du etwas anderes?", "Ja gerne").monat, 12);
+    const satzZeit = WK.vorschlagText("zeit", { monat: 12 });
+    pruefe("Kein 'mit den Dezember'", /^den /.test(satzZeit) ? "falsch" : satzZeit, "Dezember");
+  } else {
+    pruefe("'Ja, August' auf 'Meinst du August?' setzt keinen Dezember", "Funktion fehlt", "nichts");
+  }
+
+  /* Haenger nach Seitenwechsel (20.11.2026, abends). Gemeldet: "Er hat
+     ewig geladen, ich habe rumgeklickt, dann ist nichts mehr passiert."
+     Wechselt die Seite, waehrend der Kern auf das Modell wartet, geht der
+     Zug verloren: Die letzte Nachricht im Gespraech ist die der Person,
+     eine Antwort kommt nie. Die neue Seite nimmt den Zug wieder auf.
+     Gegenprobe: _backup/20-11-abend/ */
+  if (KN && typeof KN.zugUnterbrochen === "function") {
+    const ku = (gespraech, extra = {}) => {
+      const k = Object.create(KN);
+      k.lauf = { gespraech, ...extra }; k.laeuft = false; k.istAngehalten = () => false;
+      return k.zugUnterbrochen() ? "aufnehmen" : "ruhig";
+    };
+    pruefe("Letzte Nachricht von der Person: Zug wird aufgenommen",
+      ku([{ role: "assistant", content: "Wann?" }, { role: "user", content: "Im Juli" }]), "aufnehmen");
+    pruefe("Werkzeugergebnis ohne Antwort: Zug wird aufgenommen",
+      ku([{ role: "user", content: "x" }, { role: "assistant", content: null, tool_calls: [{}] }, { role: "tool", content: "{}" }]), "aufnehmen");
+    pruefe("Agent hat geantwortet: nichts aufnehmen",
+      ku([{ role: "user", content: "Im Juli" }, { role: "assistant", content: "Wie lange?" }]), "ruhig");
+    pruefe("Laufende Kette (ausstehend) bleibt beim alten Weg",
+      ku([{ role: "user", content: "x" }], { ausstehend: { a: 1 } }), "ruhig");
+    pruefe("Angehalten: nichts aufnehmen",
+      ku([{ role: "user", content: "x" }], { stumm: true }), "ruhig");
+    const kq = fs.readFileSync(alt && fs.existsSync(quelle + "kern.js") ? quelle + "kern.js" : B + "agent/kern.js", "utf8");
+    pruefe("Die Seite ruft die Wiederaufnahme beim Laden",
+      /else if \(this\.zugUnterbrochen\(\)\)/.test(kq) ? "ja" : "nein", "ja");
+  } else {
+    pruefe("Letzte Nachricht von der Person: Zug wird aufgenommen", "Funktion fehlt", "aufnehmen");
+  }
+
+  /* Modellaufruf mit Zeitgrenze im Browser: Ein haengender Aufruf darf
+     nicht endlos "denkt" zeigen. */
+  {
+    const mq = fs.readFileSync(alt && fs.existsSync(quelle + "modell.js") ? quelle + "modell.js" : B + "agent/modell.js", "utf8");
+    pruefe("Modellaufruf hat eine Zeitgrenze",
+      /signal: abbruch\.signal/.test(mq) && /ZEITGRENZE_MS:\s*\d+/.test(mq) ? "ja" : "nein", "ja");
+  }
+
+  /* FAQ-Seite zeigte Quelltext (20.11.2026, abends): Antworten, die
+     Funktionen sind, landeten als "() => { ... }" auf der Seite. Und
+     einige Antworten klangen wie Anweisungen an den Bot. */
+  {
+    const fq = fs.readFileSync(alt && fs.existsSync(quelle + "faq.js") ? quelle + "faq.js" : B + "faq.js", "utf8");
+    pruefe("FAQ-Seite ruft Funktionsantworten auf",
+      /typeof e\.antwort === "function" \? String\(e\.antwort\(\)\)/.test(fq) ? "ja" : "nein", "ja");
+    const liste = vm.runInContext("FAQ.map((e) => ({ id: e.id, t: typeof e.antwort === 'function' ? String(e.antwort()) : String(e.antwort || '') }))", ctx);
+    const schlecht = liste.filter((e) => /=>|\bfunction\b|\$\{|\bundefined\b|\bnull\b|\bNaN\b|sehe ich nach|sag mir|frag mich|Regler/i.test(e.t));
+    pruefe("Keine FAQ-Antwort mit Code oder Bot-Anweisung", schlecht.map((e) => e.id).join(", ") || "keine", "keine");
+    const wq2 = fs.readFileSync(alt && fs.existsSync(quelle + "werkzeugkasten.js") ? quelle + "werkzeugkasten.js" : B + "agent/werkzeugkasten.js", "utf8");
+    pruefe("FAQ wird ueber den Reiter 'Fragen' geoeffnet",
+      /\.header-action\[href='faq\.html'\]/.test(wq2) ? "ja" : "nein", "ja");
+  }
+
   // Kinder oder Erwachsene
   if (WK && WK.kinderErwachsenRueckfrage) {
     const f = WK.kinderErwachsenRueckfrage({ erwachsene: 1, kinder: 2 }, { alterZuHoch: [28, 34] });

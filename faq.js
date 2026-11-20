@@ -13,11 +13,20 @@
 const FAQ_ICONS = { buchung: ICONS.check, aendern: ICONS.clock, unterkunft: ICONS.bed,
   flug: ICONS.plane, reisende: ICONS.users, preise: ICONS.tag, seite: ICONS.chat, daten: ICONS.shield };
 
+/* Eine Antwort darf eine Funktion sein (die Zahlen des Katalogs zaehlt
+   sie beim Aufruf). Die Seite gab sie bis zum 20.11.2026 als Text aus -
+   im Eintrag stand der Programmcode, und die Suche brach an
+   `.toLowerCase()` ab. Gemeldet von Ben mit Bildschirmfoto. */
+function faqText(e) {
+  try { return typeof e.antwort === "function" ? String(e.antwort()) : String(e.antwort || ""); }
+  catch { return ""; }
+}
+
 function faqEintrag(e, offen = false) {
   return `
     <details class="faq-eintrag" id="${e.id}" ${offen ? "open" : ""}>
       <summary>${e.frage}</summary>
-      <p>${e.antwort}</p>
+      <p>${faqText(e)}</p>
     </details>`;
 }
 
@@ -27,7 +36,7 @@ function faqRendern(filter = "") {
   const suche = String(filter).toLowerCase().trim();
   const passt = (e) => !suche
     || e.frage.toLowerCase().includes(suche)
-    || e.antwort.toLowerCase().includes(suche)
+    || faqText(e).toLowerCase().includes(suche)
     || (e.stichworte || []).some((w) => w.includes(suche));
 
   const gezeigt = FAQ.filter(passt);
@@ -35,7 +44,7 @@ function faqRendern(filter = "") {
 
   if (!gezeigt.length) {
     ziel.innerHTML = `<p class="faq-leer">Dazu steht hier nichts. Versuch ein anderes Stichwort,
-      oder frag den Reise-Assistenten unten links.</p>`;
+      oder frag den Reise-Assistenten im Chat.</p>`;
     return;
   }
 

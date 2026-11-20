@@ -1193,12 +1193,12 @@ const Werkzeugkasten = {
   vorschlagText(t, x) {
     const monat = (m) => (typeof MONATSNAMEN !== "undefined" && m ? MONATSNAMEN[m - 1] : String(m));
     switch (t) {
-      case "zeit": return x.monat ? `den ${monat(x.monat)}` : "diesen Zeitraum";
+      case "zeit": return x.monat ? `${monat(x.monat)}` : "diesem Zeitraum";
       case "dauer": return x.naechte === 7 ? "einer Woche (7 Nächte)" : `${x.naechte} Nächten`;
       case "reisende": return `${x.erwachsene} ${x.erwachsene === 1 ? "Erwachsenem" : "Erwachsenen"}${x.kinder ? ` und ${x.kinder} ${x.kinder === 1 ? "Kind" : "Kindern"}` : ""}`;
       case "kinderAlter": return `${(x.kinderAlter || []).join(" und ")} Jahren`;
       case "zimmer": return x.zimmer === 1 ? "einem gemeinsamen Zimmer" : `${x.zimmer} Zimmern`;
-      case "flug": return x.flug ? "Flug" : "nur der Unterkunft, ohne Flug";
+      case "flug": return x.flug ? "Flug" : "der Unterkunft allein, ohne Flug";
       case "flugAb": return `Abflug ab ${x.flugAb}`;
       case "flugKlasse": return ({ economy: "Economy", premium: "Premium Economy", business: "Business" })[x.flugKlasse] || x.flugKlasse;
       case "anreise": return x.anreise ? `Anreise am ${new Date(x.anreise).toLocaleDateString("de-DE", { day: "numeric", month: "long" })}` : "diesem Anreisetag";
@@ -5508,8 +5508,21 @@ const Werkzeugkasten = {
       if (stufe === 1 && kern.darf("suchen") && !aufFaq) {
         kern.lauf.faqZurueck = location.href;
         kern.sperreAn();
-        await Zeiger.warte(250);
-        location.href = `faq.html?frage=${encodeURIComponent(treffer[0].id)}`;
+        /* Sichtbar oben auf "Fragen" klicken (20.11.2026).
+           Ben: "Man sieht nicht, wie er oben auf den Reiter Fragen klickt,
+           sondern er ist direkt auf dem Reiter Fragen. Das geht zu
+           schnell. Da muss er erst mal raufklicken, damit man versteht,
+           wo er jetzt raufgeht." Bis hierher sprang die Seite per Adresse.
+           Den Eintrag findet die FAQ-Seite danach selbst wieder: Der
+           Aufruf kommt in Stufe 2 mit derselben Frage zurueck. Fehlt der
+           Link (andere Seite ohne Kopfzeile), bleibt es beim Sprung. */
+        const link = Werkzeuge.finde(".header-action[href='faq.html']") || Werkzeuge.finde("a[href='faq.html']");
+        if (link) {
+          await Zeiger.klicke(link, { hinweis: "Fragen öffnen" });
+        } else {
+          await Zeiger.warte(250);
+          location.href = `faq.html?frage=${encodeURIComponent(treffer[0].id)}`;
+        }
         return { navigiert: true, stufe: 2 };
       }
 
@@ -8797,7 +8810,13 @@ const Werkzeugkasten = {
       if (this.VORSCHLAG_THEMEN.includes(t)) {
         if (lauf.vorschlag?.thema !== t) {
           const probe = JSON.parse(JSON.stringify(p));
+          /* Nur durchrechnen, nichts hinterlassen (20.11.2026, abends).
+             `ANNAHME.zeit` schreibt beim Setzen `lauf.monatGrund` - den
+             Satz, mit dem der Kern einen gewaehlten Monat begruendet. Beim
+             blossen Vorschlagen darf davon nichts stehen bleiben. */
+          const grundVorher = lauf.monatGrund;
           a.setzen(probe, this);
+          lauf.monatGrund = grundVorher;
           const werte = {};
           for (const f of a.schreibt || []) if (JSON.stringify(probe[f] ?? null) !== JSON.stringify(p[f] ?? null)) werte[f] = probe[f];
           if (t === "flugAb") {
@@ -9475,7 +9494,7 @@ const Werkzeugkasten = {
       satz = `Damit ich weitermachen kann: Soll ich mit ${v.text} rechnen, oder möchtest du etwas anderes?`;
       chips = `${ja} | Etwas anderes`;
       frage = `Der Chat fragt, ob mit ${v.text} gerechnet werden soll. Stell GENAU diese Frage und setz den Wert NICHT selbst - das macht der Kern, wenn sie zustimmt. Nennt sie etwas anderes, nimm das.`;
-      vorschlag = { thema: v.thema, werte: v.werte, ja, anders: "Etwas anderes" };
+      vorschlag = { thema: v.thema, werte: v.werte, ja, anders: "Etwas anderes", satz, text: v.text };
     }
     return { fertig, naechstes, frage, satz, vorsatz, erklaerung, chips, phase, suchbereit, eckdatenFertig, gesucht, schluessel, empfehlungBereit, vorschlag,
       angenommen, ueberblickOffen: false, fehlt: [...KERN, ...ECKDATEN].filter((t) => !fertig[t]) };

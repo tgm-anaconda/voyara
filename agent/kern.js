@@ -1182,6 +1182,24 @@ const Kern = {
       AgentPanel.arbeitAn?.(weiter.gross);
       AgentPanel.status(weiter.klein);
       setTimeout(() => this.fortsetzenNachLaden(), 600);
+    } else if (this.zugUnterbrochen()) {
+      /* Ein Zug, der beim Seitenwechsel noch auf das Modell wartete
+         (20.11.2026).
+         --------------------------------------------------------------
+         Ben am 20.11.2026: "Er hat Ewigkeiten geladen, und als ich auf
+         der Seite rumgeklickt habe, hat er irgendwann aufgehoert zu
+         arbeiten, und es ist einfach nichts passiert."
+
+         Weitergemacht wurde nach einem Seitenwechsel bisher nur, wenn
+         eine Werkzeugkette lief (`ausstehend`). Wartete der Agent dagegen
+         auf die Antwort des Modells und die Person klickte einen Link,
+         ging die Anfrage mit der alten Seite verloren - die Nachricht der
+         Person stand unbeantwortet im Gespraech, und nichts setzte sie
+         wieder in Gang. Jetzt wird der Zug hier wieder aufgenommen: Das
+         Gespraech ist gesichert, `zug()` arbeitet damit weiter. */
+      this.notieren("zug_wiederaufgenommen", { seite: typeof Werkzeuge !== "undefined" ? Werkzeuge.seite() : null });
+      AgentPanel.arbeitetAn?.();
+      setTimeout(() => { if (!this.laeuft && this.zugUnterbrochen()) this.zug(); }, 800);
     } else if (this.lauf.phase === "gespraech" && this.lauf.verlauf.length) {
       AgentPanel.status("online");
     }
@@ -2050,15 +2068,16 @@ const Kern = {
     /* Ein getipptes Ja auf den Vorschlag (20.11.2026). Der Knopf wirkt
        ueber chipWirkung; wer "ja", "passt" oder "gern" tippt, meint
        dasselbe. Alles andere geht wie jede Antwort ans Modell. */
-    if (this.lauf.vorschlagOffen) {
-      const v = this.lauf.vorschlagOffen;
-      this.lauf.vorschlagOffen = null;
-      if (/^\s*(ja|jap|jo|jep|ok|okay|gern|gerne|passt|genau|klar|stimmt|mach (das|so)|einverstanden)\b/i.test(String(t || ""))
-        && !(this.lauf.chipWirkung && Object.keys(this.lauf.chipWirkung).some((c) => c.trim().toLowerCase() === String(t).trim().toLowerCase()))) {
-        Werkzeugkasten.werteUebernehmen(this, v.thema, v.werte, t, "vorschlag_bestaetigt");
-        this.lauf.vorschlag = null;
-      }
-    }
+    /* Zwei Bedingungen, beide aus Bens Lauf vom 20.11.2026 abends, in dem
+       "Ja, August" zu Dezember wurde:
+       1. Der Vorschlag muss wirklich im Chat gestanden haben. Damals stand
+          dort "Meinst du August?" (die Verstaendnis-Rueckfrage hatte den
+          Platz bekommen), der Monatsvorschlag war nie zu sehen - gemerkt
+          war er trotzdem.
+       2. Nur ein REINES Ja zaehlt. "Ja, August" ist kein Ja zum Vorschlag,
+          sondern eine Antwort mit eigenem Wert; die liest wie jede Antwort
+          das Modell. */
+    this.vorschlagJaLesen(t);
     if (this.lauf.anzahlFrageOffen || this.lauf.anzahlZahlOffen) {
       const roh = String(t || "").toLowerCase();
       const WORT = { zwei: 2, drei: 3, vier: 4, "fünf": 5, fuenf: 5, sechs: 6 };
@@ -2905,7 +2924,7 @@ const Kern = {
             const v = fpJetzt.vorschlag;
             this.lauf.chipWirkung = { [v.ja]: v.werte, [v.anders]: {} };
             this.lauf.chipThema = v.thema;
-            this.lauf.vorschlagOffen = { thema: v.thema, werte: v.werte };
+            this.lauf.vorschlagOffen = { thema: v.thema, werte: v.werte, satz: v.satz, text: v.text };
             this.notieren("vorschlag_gefragt", { thema: v.thema, werte: v.werte });
           }
           if (kernFrage) {
@@ -4356,6 +4375,45 @@ const Kern = {
     return { ergebnis: { nichtVorgelegt: true, grund: "zu wenige Treffer",
       hinweis: "Der Chat hat die Person gefragt, ob die Suche ausgeweitet werden soll. "
         + "Ruf KEIN Werkzeug und schreib nichts dazu - die Frage steht schon im Chat." } };
+  },
+
+  /* Wartet eine Nachricht der Person noch auf ihre Antwort? (20.11.2026)
+     Ja, wenn die letzte Nachricht im Gespraech von ihr stammt oder ein
+     Werkzeugergebnis ist, auf das das Modell noch nicht geantwortet hat.
+     Nein, wenn der Agent angehalten oder stumm ist, oder wenn die letzte
+     Zeile ein Werkzeugaufruf ohne Ergebnis ist - der liesse sich nicht
+     sauber fortsetzen. */
+  zugUnterbrochen() {
+    if (!this.lauf || this.lauf.ausstehend || this.laeuft) return false;
+    if (this.lauf.stumm || (typeof this.istAngehalten === "function" && this.istAngehalten())) return false;
+    const n = [...(this.lauf.gespraech || [])].reverse().find((x) => x.role !== "system");
+    if (!n) return false;
+    if (n.role === "user") return true;
+    if (n.role === "tool") return true;
+    return false;
+  },
+
+  /* Ein getipptes Ja auf den Vorschlag (20.11.2026). Eigene Methode,
+     damit es sich ohne Modell pruefen laesst. Gibt true zurueck, wenn
+     der Vorschlag uebernommen wurde. */
+  vorschlagJaLesen(t) {
+    if (!this.lauf.vorschlagOffen) return false;
+    {
+      const v = this.lauf.vorschlagOffen;
+      this.lauf.vorschlagOffen = null;
+      const zuletztGefragt = [...(this.lauf.gespraech || [])].reverse().find((n) => n.role === "assistant" && n.content)?.content || "";
+      // Der Wert selbst muss dastehen - den ganzen Satz formuliert das
+      // Modell manchmal um
+      const wert = String(v.text || "").replace(/^(den|einer|einem|diesem|diesen) /, "");
+      const standImChat = !!wert && zuletztGefragt.toLowerCase().includes(wert.toLowerCase());
+      if (standImChat && /^\s*(ja|jap|jo|jep|ok|okay|gern|gerne|passt|genau|klar|stimmt|mach (das|so)|einverstanden)[\s.!,]*(bitte|danke|gern|gerne)?[\s.!]*$/i.test(String(t || ""))
+        && !(this.lauf.chipWirkung && Object.keys(this.lauf.chipWirkung).some((c) => c.trim().toLowerCase() === String(t).trim().toLowerCase()))) {
+        Werkzeugkasten.werteUebernehmen(this, v.thema, v.werte, t, "vorschlag_bestaetigt");
+        this.lauf.vorschlag = null;
+        return true;
+      }
+    }
+    return false;
   },
 
   /* Wie viele Haeuser? Fragen, BEVOR der Rundgang laeuft.

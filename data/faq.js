@@ -55,14 +55,14 @@ const FAQ = [
   { id: "f-katalog-menge", thema: "seite", frage: "Wie viele Unterkünfte gibt es auf Voyara?",
     antwort: () => {
       const z = katalogZahlen();
-      return `Insgesamt ${z.gesamt} Unterkünfte: ${z.hotels} Hotels und ${z.wohnungen} Ferienwohnungen, verteilt auf ${z.regionen} Regionen. Wie viele davon für deine Reise frei sind, hängt vom Monat und von eurer Gruppe ab - das sehe ich nach, sobald ich beides weiß.`;
+      return `Insgesamt ${z.gesamt} Unterkünfte: ${z.hotels} Hotels und ${z.wohnungen} Ferienwohnungen, verteilt auf ${z.regionen} Regionen. Wie viele davon für deine Reise frei sind, hängt vom Zeitraum und von der Zahl der Reisenden ab - das zeigt dir die Suche.`;
     },
     stichworte: ["wie viele", "anzahl", "hotels", "unterkünfte", "unterkuenfte", "ferienwohnungen",
       "wohnungen", "häuser", "haeuser", "angebot", "auswahl", "umfang", "gross", "groß"] },
   { id: "f-katalog-regionen", thema: "seite", frage: "In welche Regionen kann ich reisen?",
     antwort: () => {
       const namen = typeof ZIELE !== "undefined" ? ZIELE.map((z) => z.name).join(", ") : "";
-      return `Wir haben ${katalogZahlen().regionen} Regionen im Angebot: ${namen}. Sag mir, wohin es ungefähr gehen soll, dann sehe ich nach, was dort frei ist.`;
+      return `Wir haben ${katalogZahlen().regionen} Regionen im Angebot: ${namen}. Was in deinem Reisezeitraum frei ist, zeigt dir die Suche.`;
     },
     stichworte: ["regionen", "länder", "laender", "ziele", "wohin", "destinationen", "gegenden",
       "welche orte", "reiseziele", "hinreisen", "überall", "ueberall", "angebotenen"] },
@@ -81,7 +81,7 @@ const FAQ = [
     antwort: "Ja, der Gesamtbetrag wird mit der Buchung fällig. Eine Anzahlung oder Zahlung vor Ort bieten wir nicht an.",
     stichworte: ["anzahlung", "sofort", "raten", "teilzahlung", "vorkasse"] },
   { id: "f-buchung-ohne-konto", thema: "buchung", frage: "Brauche ich ein Kundenkonto?",
-    antwort: "Nein. Du kannst ohne Konto buchen, es reicht eine E-Mail-Adresse für die Bestätigung.",
+    antwort: "Nein. Du kannst ohne Konto buchen. Eine E-Mail-Adresse brauchst du nur, wenn du die Bestätigung per Mail bekommen möchtest.",
     stichworte: ["konto", "anmelden", "registrieren", "account", "login"] },
   { id: "f-buchung-mehrere-zimmer", thema: "buchung", frage: "Kann ich mehrere Zimmer auf einmal buchen?",
     antwort: "Ja. Stell die Zimmerzahl in der Suche ein, dann rechnet die Seite den Preis für alle Zimmer zusammen. Die Zimmer liegen nicht automatisch nebeneinander - das kannst du im Bemerkungsfeld anfragen.",
@@ -144,7 +144,7 @@ const FAQ = [
     antwort: "Ja, zu Hotels. Setz in der Suche den Haken „Flug dazu“ und wähl deinen Abflughafen; der Preis auf der Karte enthält den Flug dann schon. Zu Ferienwohnungen bieten wir keine Flüge an.",
     stichworte: ["flug buchen", "flug dazu", "mit flug", "pauschalreise", "paket"] },
   { id: "f-flughaefen", thema: "flug", frage: "Von welchen Flughäfen geht es los?",
-    antwort: "Von Hamburg, Berlin, Hannover, Düsseldorf, Köln, Frankfurt, Stuttgart und München. Du kannst auch mehrere auswählen, dann suchen wir über alle.",
+    antwort: "Von Hamburg, Berlin, Hannover, Düsseldorf, Köln, Frankfurt, Stuttgart, München und Zürich. Du kannst auch mehrere auswählen, dann suchen wir über alle.",
     stichworte: ["flughafen", "abflughafen", "abflug", "von wo", "startflughafen"] },
   { id: "f-flug-wahl", thema: "flug", frage: "Wie wähle ich eine bestimmte Verbindung?",
     antwort: "Auf der Unterkunftsseite steht unter „Flug dazu“ die vorgeschlagene Verbindung. Über „Andere Verbindung“ öffnet sich die Übersicht mit allen Flügen zu diesem Ziel - mit Zeiten, Stopps, Gepäck und Preis.",
@@ -213,10 +213,10 @@ const FAQ = [
 
   /* ---------- Die Seite und der Assistent ---------- */
   { id: "f-assistent", thema: "seite", frage: "Was kann der Reise-Assistent?",
-    antwort: "Er sucht mit dir zusammen: stellt die Suche ein, setzt Filter, sieht sich Häuser und Bewertungen an und legt dir eine Auswahl vor. Wie weit er gehen darf, stellst du oben im Chat ein - vom reinen Suchen bis zum Buchen.",
+    antwort: "Er sucht mit dir zusammen: stellt die Suche ein, setzt Filter, sieht sich Häuser und Bewertungen an und legt dir eine Auswahl vor. Gebucht wird nur, wenn du es ihm ausdrücklich sagst.",
     stichworte: ["assistent", "agent", "bot", "was kannst du", "hilfe", "chat"] },
-  { id: "f-freigabe", thema: "seite", frage: "Was bedeuten die Freigabestufen?",
-    antwort: "„Suchen“ heißt, er sucht und zeigt, entscheidet aber nichts. „Buchung vorbereiten“ heißt, er füllt alles aus und legt es dir zur Bestätigung vor. „Buchen“ heißt, er schließt selbst ab. Du kannst die Stufe jederzeit ändern.",
+  { id: "f-freigabe", thema: "seite", frage: "Darf der Assistent für mich buchen?",
+    antwort: "Zuerst sucht er nur und zeigt dir, was er findet - entschieden wird nichts. Sagst du ihm im Chat, er soll die Buchung vorbereiten, füllt er alles aus und legt es dir zur Bestätigung vor. Selbst abschließen darf er nur, wenn du ihm das ausdrücklich erlaubst.",
     stichworte: ["freigabe", "stufe", "erlaubnis", "darf er", "berechtigung"] },
   { id: "f-partner", thema: "seite", frage: "Was ist ein Partnerhaus?",
     antwort: "Ein Haus, für dessen Buchung Voyara eine Provision vom Betreiber bekommt. Preis, Bewertungen und Verfügbarkeit sind davon unberührt - sie stammen aus denselben Daten wie bei allen anderen Häusern.",

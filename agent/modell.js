@@ -29,6 +29,7 @@ const Modell = {
   MAX_FEHLER: 3,
   MAX_AUFRUFE: 400,         // je Sitzung; ein Zug braucht oft zwei, drei Aufrufe
   ERHOLUNG_MS: 25000,       // so lange gilt eine Fehlerserie, dann wieder frei
+  ZEITGRENZE_MS: 45000,     // je Versuch im Browser, siehe ruf()
   WIEDERHOLUNGEN: 2,        // Versuche je Aufruf, bevor ein Fehler gezaehlt wird
   DAUERHAFT: [404, 405, 501, 503],
   fehler: 0,
@@ -68,11 +69,20 @@ const Modell = {
     for (let versuch = 0; versuch <= this.WIEDERHOLUNGEN; versuch++) {
       this.aufrufe += 1;
       let status = null;
+      /* Zeitschutz im Browser (20.11.2026). Gemeldet: "Er hat ewig geladen,
+         dann ist nichts mehr passiert." Ohne Grenze wartet ein haengender
+         Aufruf unbegrenzt (Verbindung verloren, Tab im Hintergrund
+         eingefroren). Der Server bricht selbst nach 20 s ab und versucht es
+         einmal neu, also hoechstens gut 40 s; danach gilt der Aufruf hier
+         als gescheitert, ohne weiteren Versuch, und der Kern meldet sich. */
+      const abbruch = typeof AbortController !== "undefined" ? new AbortController() : null;
+      const uhr = abbruch ? setTimeout(() => abbruch.abort(), this.ZEITGRENZE_MS) : null;
       try {
         const antwort = await fetch(this.PFAD, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(koerper),
+          ...(abbruch ? { signal: abbruch.signal } : {}),
         });
         status = antwort.status;
         if (antwort.ok) {
@@ -97,9 +107,12 @@ const Modell = {
           return null;
         }
       } catch (e) {
-        status = e.message;
+        status = e?.name === "AbortError" ? "zeitgrenze" : e.message;
+      } finally {
+        if (uhr) clearTimeout(uhr);
       }
       this.letzterStatus = status;
+      if (status === "zeitgrenze") { this.merkeFehler("Zeitgrenze"); return null; }
       // Voruebergehend: kurz warten und noch einmal, bevor ein Fehler
       // gezaehlt wird. 0,6 s, dann 1,8 s.
       if (versuch < this.WIEDERHOLUNGEN) {
