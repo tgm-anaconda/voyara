@@ -2266,11 +2266,19 @@ const Werkzeugkasten = {
     // 1.11. / 01.11 / 1.11.2027
     m = t.match(/\b(0?[1-9]|[12]\d|3[01])\.\s*(0?[1-9]|1[0-2])\.?(?!\d)/);
     if (m) return { tag: +m[1], monat: +m[2] };
-    // 15. Oktober, 15 Okt
-    m = t.match(/\b(0?[1-9]|[12]\d|3[01])\.?\s*(januar|jan|februar|feb|märz|maerz|mär|april|apr|mai|juni|jun|juli|jul|august|aug|september|sept|sep|oktober|okt|november|nov|dezember|dez)\b/);
+    // 15. Oktober, 15 Okt, 8ten März (Endungen seit dem 21.11.2026)
+    m = t.match(/\b(0?[1-9]|[12]\d|3[01])(?:\.|ten|ter|sten|ster)?\s*(januar|jan|februar|feb|märz|maerz|mär|april|apr|mai|juni|jun|juli|jul|august|aug|september|sept|sep|oktober|okt|november|nov|dezember|dez)\b/);
     if (m) return { tag: +m[1], monat: this.MONATSWORT[m[2]] || null };
     // Nur ein Tag: "14", "14.", "am 14.", "den 14."
     m = t.match(/^\s*(?:am\s+|ab\s+dem\s+|ab\s+|den\s+|der\s+)?(0?[1-9]|[12]\d|3[01])\.?\s*$/);
+    if (m) return { tag: +m[1], monat: null };
+    /* Ein Tag mitten im Satz (21.11.2026). Gemeldet: "nein wir wollen am
+       8ten reisen" - kein Tag gelesen, und weil "nein" darin stand, galt
+       die Antwort als "flexibel". Gelesen wird nur, was eindeutig ein Tag
+       ist: "am/zum/ab dem 8." oder eine Endung ("8ten", "der 8te"), nicht
+       "den 2 Kindern" oder "am 3 Naechte". */
+    m = t.match(/\b(?:am|zum|ab dem)\s+(0?[1-9]|[12]\d|3[01])(?:\.|ten|ter|sten|ster|te)?(?![\d.,])(?!\s*(?:n(?:ä|ae)cht|tag(?:e|en)?\b|woche|person|erwachsen|kind|leute|uhr|€|euro))/)
+      || t.match(/\b(0?[1-9]|[12]\d|3[01])(?:ten|ter|sten|ster|te)\b/);
     if (m) return { tag: +m[1], monat: null };
     return null;
   },
@@ -2935,6 +2943,24 @@ const Werkzeugkasten = {
     const monat = typeof MONATSNAMEN !== "undefined" ? MONATSNAMEN[p.monat - 1] : null;
     if (!monat) return null;
     const stufe = lauf.datumFrage || 0;
+    /* "89" statt eines Tags (21.11.2026): Ist die Zahl kein Tag, aber aus
+       zwei gueltigen Tagen zusammengesetzt, wird gefragt, welcher gemeint
+       ist - nicht geraten. Die Stufe bleibt, die Frage verbraucht keinen
+       Anlauf. */
+    if (lauf.tagUnklar && stufe >= 1) {
+      const z = String(lauf.tagUnklar);
+      lauf.tagUnklar = null;
+      const letzterTag = new Date(2027, p.monat, 0).getDate();
+      const kandidaten = [...new Set([+z[0], +z.slice(1), +z.slice(-1), +z.slice(0, 2)])]
+        .filter((t) => t >= 1 && t <= letzterTag && String(t) !== z).slice(0, 2);
+      if (kandidaten.length === 2) {
+        return { stufe, satz: `Meinst du den ${kandidaten[0]}. oder den ${kandidaten[1]}. ${monat}?`,
+          chips: [`${kandidaten[0]}. ${monat}`, `${kandidaten[1]}. ${monat}`, "Ich bin flexibel"] };
+      }
+    }
+    // Ein lesbarer Tag ist eine Antwort, auch wenn "nein" darin steht
+    // ("nein wir wollen am 8ten reisen", 21.11.2026)
+    const abgewunken = this.DATUM_ABWINKEN.test(String(letzte || "")) && !this.tagAusText(letzte);
     if (stufe === 0) {
       return {
         stufe: 1,
@@ -2944,7 +2970,7 @@ const Werkzeugkasten = {
       };
     }
     // Zweite Stufe nur fuer die, die nicht abgewunken haben
-    if (stufe === 1 && !this.DATUM_ABWINKEN.test(String(letzte || ""))) {
+    if (stufe === 1 && !abgewunken) {
       return {
         stufe: 2,
         satz: `An welchem Tag im ${monat} wollt ihr anreisen? Es ist jeder Tag frei, und der Preis bleibt im Monat gleich.`,
@@ -2963,7 +2989,7 @@ const Werkzeugkasten = {
        angekommen ist, und mit Tagen als Vorschlag. Danach ist Schluss:
        Die Suche laeuft flexibel im Monat weiter, und auch das wird
        gesagt. Zwei Anlaeufe sind Nachfragen, fuenf sind ein Verhoer. */
-    if (stufe === 2 && !this.DATUM_ABWINKEN.test(String(letzte || ""))) {
+    if (stufe === 2 && !abgewunken) {
       const tage = this.anreiseTage(p);
       const bsp = tage.length > 1 ? tage[1] : (tage[0] || null);
       return {
@@ -3805,7 +3831,9 @@ const Werkzeugkasten = {
         if (!passtZumMonat) {
           kern.notieren("datum_anderer_monat", { von: a.von, bis: a.bis, monat: p.monat });
           delete a.von; delete a.bis;
-        } else if (gesagt(/\b\d{1,2}\.\s*(\d{1,2}\.|[a-zäöü]{3,})|\d{4}-\d{2}-\d{2}|\b(vom|ab|am)\s+\d{1,2}\b/i)) {
+        } else if (gesagt(/\b\d{1,2}(?:\.|ten|ter|sten|ster)\s*(\d{1,2}\.?|[a-zäöü]{3,})|\d{4}-\d{2}-\d{2}|\b(vom|ab|am|zum)\s+\d{1,2}(?:\.|ten|ter|sten|ster|te)?(?!\d)/i)) {
+          // Endungen ("am 8ten Maerz") seit dem 21.11.2026 - vorher fiel ein
+          // solches Datum hier als "nicht gesagt" durch
           setze("von", a.von); setze("bis", a.bis);
           const n = Math.round((new Date(a.bis) - new Date(a.von)) / 86400000);
           /* Eine Dauer, die die Person selbst genannt hat, wird nicht aus
@@ -3836,6 +3864,29 @@ const Werkzeugkasten = {
         kern.notieren("naechte_verworfen", { naechte: a.naechte });
         Werkzeugkasten.merkeVerworfen(kern, "naechte", a.naechte);
         delete a.naechte;
+      }
+      /* Keine Naechte aus der Antwort auf die Frage nach dem Anreisetag
+         (21.11.2026). Gemeldet: Auf "Weisst du im Maerz schon einen
+         genauen Anreisetag?" kam "89" - offensichtlich der 8. oder 9. -,
+         und der Agent notierte 89 Naechte. Danach lief das Gespraech
+         schief. Steht in der Antwort kein Wort fuer eine Dauer, gehoert
+         die Zahl zum Tag; ist sie kein gueltiger Tag, fragt datumRueckfrage
+         nach (lauf.tagUnklar). Ebenso gilt eine Dauer ueber 30 Naechte
+         ohne ein solches Wort als nicht gelesen - buchbar sind hoechstens
+         28 (Suchmaske). */
+      if (a.naechte) {
+        const letzte = (kern.lauf.gespraech || []).filter((n) => n.role === "user").slice(-1).map((n) => String(n.content)).join(" ");
+        const dauerWort = /n(ä|ae)cht|woche|tage\b|\btag\b|(ü|ue)bernacht/i.test(letzte);
+        const tagGefragt = kern.lauf.gefragt === "anreise" || [1, 2, 3].includes(kern.lauf.datumFrage);
+        if (!dauerWort && tagGefragt) {
+          kern.notieren("naechte_verworfen", { naechte: a.naechte, grund: "antwort_auf_tagesfrage" });
+          const zahl = letzte.match(/^\s*(\d{2,3})\s*\.?\s*$/);
+          if (zahl && +zahl[1] > 31) kern.lauf.tagUnklar = zahl[1];
+          delete a.naechte;
+        } else if (!dauerWort && +a.naechte > 30) {
+          kern.notieren("naechte_verworfen", { naechte: a.naechte, grund: "ueber_30" });
+          delete a.naechte;
+        }
       }
       setze("naechte", a.naechte);
       /* Wer die Zahl der Reisenden lesen darf (09.11.2026)
@@ -7121,10 +7172,12 @@ const Werkzeugkasten = {
       /* Stehen die Erwachsenen schon fest und fehlen nur die Kinder,
          fragt er nach den Kindern (21.11.2026). Vorher kam "Wie viele seid
          ihr denn insgesamt?", obwohl die Zahl genannt und bestaetigt war. */
-      satz: [(p) => (Number.isFinite(p?.erwachsene) && p?.kinder == null ? "Reist auch ein Kind mit?" : "Wer reist mit?"),
-        (p) => (Number.isFinite(p?.erwachsene) && p?.kinder == null ? "Ist ein Kind mit dabei, oder seid ihr nur Erwachsene?" : "Wie viele seid ihr denn insgesamt?")],
+      /* Auch wenn nur die Gesamtzahl feststeht ("wir sind zu 5"): dann
+         nach Kindern fragen, nicht noch einmal nach der Zahl (21.11.2026). */
+      satz: [(p) => ((Number.isFinite(p?.erwachsene) || Number.isFinite(p?.personen)) && p?.kinder == null ? "Reist auch ein Kind mit?" : "Wer reist mit?"),
+        (p) => ((Number.isFinite(p?.erwachsene) || Number.isFinite(p?.personen)) && p?.kinder == null ? "Ist ein Kind mit dabei, oder seid ihr nur Erwachsene?" : "Wie viele seid ihr denn insgesamt?")],
       frage: "Mit wem sie reist - in einem Fragesatz. Nicht zwei Fragesaetze daraus machen.",
-      chips: (p) => (Number.isFinite(p?.erwachsene) && p?.kinder == null ? "Keine Kinder | 1 Kind | 2 Kinder" : "1 | 2 | 3 | 4 | mehr") },
+      chips: (p) => ((Number.isFinite(p?.erwachsene) || Number.isFinite(p?.personen)) && p?.kinder == null ? "Keine Kinder | 1 Kind | 2 Kinder" : "1 | 2 | 3 | 4 | mehr") },
 
     kinderAlter: {
 

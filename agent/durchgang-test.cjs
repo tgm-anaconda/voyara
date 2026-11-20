@@ -2666,6 +2666,43 @@ const liesReisende = async (text, felder, urteil = "ja") => {
       vm.runInContext("JSON.stringify([saisonPassung(ZIEL_NACH_ID.mallorca, null), freiImMonat(HOTELS[0], null), preisImMonat(HOTELS[0], null) === HOTELS[0].pricePerNight])", ctx), "[1,true,true]");
   }
 
+  /* Bens Verlauf vom 21.11.2026: "89" auf die Frage nach dem Anreisetag
+     wurde zu 89 Naechten, "nein wir wollen am 8ten reisen" zu "flexibel",
+     "wir sind zu 5" fuehrte zu "Wie viele seid ihr?".
+     Gegenprobe: _backup/21-11-verstehen/ */
+  {
+    const tag = (t) => JSON.stringify(WK.tagAusText(t));
+    pruefe("'nein wir wollen am 8ten reisen' liest den 8.", tag("nein wir wollen am 8ten reisen"), JSON.stringify({ tag: 8, monat: null }));
+    pruefe("'am 8ten märz' liest den 8. März", tag("nein also ich willl am 8ten märz reisen und für 9 nächte"), JSON.stringify({ tag: 8, monat: 3 }));
+    pruefe("'den 2 Kindern' ist kein Tag", tag("mit den 2 Kindern"), "null");
+    pruefe("'am 3 Naechte' ist kein Tag", tag("am liebsten 3 nächte"), "null");
+    pruefe("'8.03' bleibt der 8. März", tag("8.03 will ich reisen"), JSON.stringify({ tag: 8, monat: 3 }));
+    const marz = { monat: 3, vonPerson: { monat: true } };
+    const r1 = WK.datumRueckfrage(marz, { datumFrage: 1 }, "nein wir wollen am 8ten reisen");
+    pruefe("Lesbarer Tag mit 'nein' gilt nicht als abgewunken", r1 && r1.stufe === 2 ? "fragt weiter" : (r1 ? "anders" : "abgewunken"), "fragt weiter");
+    const r2 = WK.datumRueckfrage(marz, { datumFrage: 1, tagUnklar: "89" }, "89");
+    pruefe("'89' auf die Tagesfrage: 'Meinst du den 8. oder den 9. März?'", r2?.satz, "Meinst du den 8. oder den 9. März?");
+    pruefe("... mit beiden Tagen zur Wahl", (r2?.chips || []).slice(0, 2).join(" | "), "8. März | 9. März");
+    pruefe("Nur Gesamtzahl bekannt: Frage nach Kindern", WK.themenSatz("reisende", { personen: 5 }, { gefragtWie: { reisende: 1 } }), "Ist ein Kind mit dabei, oder seid ihr nur Erwachsene?");
+  }
+  if (WK && WK.werkzeuge && WK.werkzeuge.stand_merken) {
+    const lauf89 = async (satz, extra = {}) => {
+      const kern = { lauf: { gespraech: [{ role: "user", content: satz }], profil: { monat: 3, vonPerson: { monat: true } }, protokoll: [],
+          annahmeOffen: [], gefragtWie: {}, verlauf: [{ rolle: "user", text: satz }], nachrichtArt: "antwort", runde: 1, ...extra },
+        notieren(e, d) { this.lauf.protokoll.push({ ereignis: e, ...d }); },
+        freigabe: () => "suchen", darf: () => false, logZeile() {}, sagen() {}, standAnzeigen() {}, sichern() {}, standKurz: () => "" };
+      try { await WK.werkzeuge.stand_merken.call(WK, { nachricht_art: "antwort", frage_beantwortet: "ja", naechte: +satz.match(/\d+/)?.[0] || 89 }, kern); } catch (e) { return { fehler: e.message }; }
+      return { naechte: kern.lauf.profil.naechte ?? null, tagUnklar: kern.lauf.tagUnklar ?? null };
+    };
+    const a = await lauf89("89", { gefragt: "anreise", datumFrage: 1 });
+    pruefe("'89' auf die Tagesfrage wird nicht zu 89 Naechten", a.naechte ?? "nichts", "nichts");
+    pruefe("... und merkt sich die Zahl fuer die Rueckfrage", a.tagUnklar, "89");
+    const b = await lauf89("89", { gefragt: "dauer" });
+    pruefe("Ueber 30 Naechte ohne Dauerwort: nicht gelesen", b.naechte ?? "nichts", "nichts");
+    const c = await lauf89("10 nächte", { gefragt: "dauer" });
+    pruefe("'10 nächte' auf die Dauerfrage kommt weiter an", c.naechte, 10);
+  }
+
   // Kinder oder Erwachsene
   if (WK && WK.kinderErwachsenRueckfrage) {
     const f = WK.kinderErwachsenRueckfrage({ erwachsene: 1, kinder: 2 }, { alterZuHoch: [28, 34] });
