@@ -479,7 +479,8 @@ function renderFilters() {
              Nebensaison (gar nichts) und ausserhalb ("ausserhalb der
              Saison"). Dass "nichts" Nebensaison hiess, konnte niemand
              wissen. Jetzt steht an jeder Zeile, woran sie ist. */
-          const zusatz = aus ? " ·&nbsp;außerhalb der Saison"
+          // Ohne Reisemonat kein Saisonetikett - es gaebe keinen Bezug (21.11.2026)
+          const zusatz = !monat ? "" : aus ? " ·&nbsp;außerhalb der Saison"
             : (saisonPassung(z, monat) === 1 ? " ·&nbsp;Hauptsaison" : " ·&nbsp;Nebensaison");
           // Immer die Zahl aus der Liste - bei gesperrten Regionen ist das
           // null, und dann steht dort nichts.
@@ -637,7 +638,8 @@ function stayResultCard(item) {
   const tags = item.amenities.filter((a) => a !== "wifi").slice(0, 5);
 
   const ziel = typeof ZIEL_NACH_ID !== "undefined" ? ZIEL_NACH_ID[item.ziel] : null;
-  const saison = ziel ? saisonLabel(ziel, reisemonat()) : null;
+  // Ohne Reisemonat keine Saisonzeile auf der Karte (21.11.2026)
+  const saison = ziel && reisemonat() ? saisonLabel(ziel, reisemonat()) : null;
   const preis = saisonpreis(item);
 
   return `

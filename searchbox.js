@@ -438,12 +438,12 @@ ${showFlightAddon ? `
        Mallorca eingibt, also einen Ort, der nicht in der Hauptsaison ist
        waehrend der Zeit, die dort standardmaessig ausgewaehlt ist, dann ist
        man halt verwirrt, weil man keine Ergebnisse bekommt."
-       Die Startseite erkennt man daran, dass sie die Suche nicht selbst
-       verarbeitet (kein onSubmit), sondern zur Trefferliste springt. Auf
-       der Trefferliste bleibt die Vorbelegung: Die Liste rechnet ohne Datum
-       mit dem Standardzeitraum, und ein leeres Feld wuerde verschweigen,
-       womit gerechnet wird. */
-    const ohneVorbelegung = !onSubmit && !params.get("from") && !params.get("to");
+       Ohne Daten zeigt die Liste alle Haeuser ohne Saisongrenze (siehe
+       Reisedaten.monat). */
+    /* Seit dem 21.11.2026 auch auf der Trefferliste: Ohne gewaehlte Daten
+       rechnet sie nicht mehr mit einem Standardzeitraum (Reisedaten.monat),
+       ein vorbelegtes Feld wuerde also etwas zeigen, das nicht gilt. */
+    const ohneVorbelegung = !params.get("from") && !params.get("to");
     const initial = {
       ziel: params.get("ziel") || "",
       q: params.get("q") || options.q || "",

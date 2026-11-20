@@ -221,11 +221,20 @@ const Reisedaten = {
     return `${a.getDate()}. ${a.getMonth() !== b.getMonth() ? `${this.MONATSNAMEN[a.getMonth()]} ` : ""}bis ${b.getDate()}. ${this.MONATSNAMEN[b.getMonth()]} ${b.getFullYear()}`;
   },
   // Reisemonat 1-12, aus festen Daten oder dem flexiblen Monat
+  /* Ohne gewaehlte Daten: kein Monat (21.11.2026).
+     Bis hierher galt still der Standardzeitraum (in 30 Tagen), und die
+     Liste filterte nach dessen Saison - Mallorca im Dezember: null
+     Treffer, obwohl niemand ein Datum gewaehlt hatte. Ben: "Erstmal kann
+     er dann ja einfach alle Haeuser anzeigen und alle Regionen links frei
+     machen." Die Datenschicht kennt den Fall schon: saisonPassung,
+     freiImMonat und preisImMonat behandeln einen fehlenden Monat als
+     "keine Saisongrenze, Grundpreis". `get()` und `naechte()` bleiben, wie
+     sie sind - Buchung und Gesamtpreis brauchen einen Zeitraum. */
   monat() {
     const f = this.flex();
     if (f) return f.monat;
-    const { von } = this.get();
-    return von ? new Date(von).getMonth() + 1 : new Date().getMonth() + 1;
+    const { von } = this.roh();
+    return von ? new Date(von).getMonth() + 1 : null;
   },
   // Vorbelegung der Suchmaske: in 30 Tagen, eine Woche lang. Steht hier und
   // nicht in searchbox.js, damit Anzeige und Saisonrechnung denselben Zeitraum

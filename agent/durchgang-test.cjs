@@ -2658,7 +2658,12 @@ const liesReisende = async (text, felder, urteil = "ja") => {
      Gegenprobe: _backup/21-11-datum/ */
   {
     const sb = fs.readFileSync(alt && fs.existsSync(quelle + "searchbox.js") ? quelle + "searchbox.js" : B + "searchbox.js", "utf8");
-    pruefe("Startseite: Datumsfelder starten leer", /const ohneVorbelegung = !onSubmit && !params\.get\("from"\) && !params\.get\("to"\);/.test(sb) ? "ja" : "nein", "ja");
+    pruefe("Ohne gesuchte Daten starten die Datumsfelder leer", /const ohneVorbelegung = !params\.get\("from"\) && !params\.get\("to"\);/.test(sb) ? "ja" : "nein", "ja");
+    const cq3 = fs.readFileSync(alt && fs.existsSync(quelle + "components.js") ? quelle + "components.js" : B + "components.js", "utf8");
+    const mon = cq3.slice(cq3.indexOf("  monat() {"), cq3.indexOf("  monat() {") + 200);
+    pruefe("Ohne Daten kein Reisemonat (keine Saisongrenze)", /const \{ von \} = this\.roh\(\);\s*return von \? new Date\(von\)\.getMonth\(\) \+ 1 : null;/.test(mon) ? "ja" : "nein", "ja");
+    pruefe("Datenschicht: ohne Monat keine Saisongrenze, Grundpreis, frei",
+      vm.runInContext("JSON.stringify([saisonPassung(ZIEL_NACH_ID.mallorca, null), freiImMonat(HOTELS[0], null), preisImMonat(HOTELS[0], null) === HOTELS[0].pricePerNight])", ctx), "[1,true,true]");
   }
 
   // Kinder oder Erwachsene
