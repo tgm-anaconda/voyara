@@ -848,7 +848,14 @@ const Werkzeugkasten = {
 
      Bei "kalt" ist die Grenze die Gegenrichtung: hoechstens 12 Grad,
      oder was die Person nennt. */
-  regionenFuerRichtung(thema, p) {
+  /* `genau` (21.11.2026): Hat die Person die Grenze selbst genannt ("maximal
+     8 Grad"), gilt sie genau - kein stilles Aufweiten auf fuenf Regionen.
+     Gemeldet: aus "maximal 8 Grad" wurden 10 Grad, Tirol und New York kamen
+     dazu. Das Aufweiten bleibt fuer die eigene Grenze des Agenten (12/22)
+     und als Rueckfall, wenn bei der genannten Grenze gar keine Region
+     uebrig bliebe - eine leere Liste hiesse sonst "alle Regionen". */
+  regionenFuerRichtung(thema, p, { genau = false } = {}) {
+    const exakt = genau || !!p?.vonPerson?.mindestGrad;
     const fallback = (thema.ziele || []).slice();
     if (!thema || !p?.monat || typeof regionenAbGrad !== "function") return fallback;
     const alle = (typeof ZIELE !== "undefined" ? ZIELE : []).filter((z) => grad(z, p.monat) != null);
@@ -863,7 +870,7 @@ const Werkzeugkasten = {
       let liste = alle.filter((z) => grad(z, p.monat) >= grenze);
       /* Mindestens fuenf Regionen statt drei (03.10.2026): Mit drei
          Regionen blieben im Januar keine 40 Haeuser uebrig. */
-      for (let g = grenze - 2; liste.length < 5 && g >= 18; g -= 2) {
+      for (let g = grenze - 2; liste.length < (exakt ? 1 : 5) && g >= 18; g -= 2) {
         liste = alle.filter((z) => grad(z, p.monat) >= g);
       }
       return liste.sort((a, b) => grad(b, p.monat) - grad(a, p.monat)).map((z) => z.id);
@@ -873,7 +880,7 @@ const Werkzeugkasten = {
       // Dasselbe von der anderen Seite: im Juli ist nirgends unter zwoelf
       // Grad, dann steigt die Grenze schrittweise - hoechstens bis 22.
       let liste = alle.filter((z) => grad(z, p.monat) <= grenze);
-      for (let g = grenze + 2; liste.length < 5 && g <= 22; g += 2) {
+      for (let g = grenze + 2; liste.length < (exakt ? 1 : 5) && g <= 22; g += 2) {
         liste = alle.filter((z) => grad(z, p.monat) <= g);
       }
       return liste.sort((a, b) => grad(a, p.monat) - grad(b, p.monat)).map((z) => z.id);
@@ -1290,7 +1297,7 @@ const Werkzeugkasten = {
     const was = [];
     if (dazu.length) was.push(`${dazu.length === 1 ? "kommt" : "kommen"} ${aufzaehlen(dazu)} dazu`);
     if (weg.length) was.push(`${weg.length === 1 ? "fällt" : "fallen"} ${aufzaehlen(weg)} weg`);
-    return `${kopf} Damit ${was.join(" und ")} - jetzt ${jetzt.length} Regionen statt ${vorherMit.length}.`;
+    return `${kopf} Damit ${was.join(" und ")} - jetzt ${jetzt.length} ${jetzt.length === 1 ? "Region" : "Regionen"} statt ${vorherMit.length}.`;
   },
 
   richtungAnsagen(kern, p) {
@@ -1302,11 +1309,19 @@ const Werkzeugkasten = {
       if (k) {
         kern.lauf.richtungRegionen = ((p.zieleAuswahl?.length ? p.zieleAuswahl : p.zieleErlaubt) || []).slice();
         kern.lauf.richtungGesagt = k;
+        // Die neue Lage ist damit gesagt - sonst folgte im naechsten Zug
+        // dieselbe Erklaerung noch einmal ganz (21.11.2026)
+        kern.lauf.richtungWorueber = JSON.stringify([p.richtung, p.mindestGrad ?? null, (p.zieleErlaubt || []).slice().sort()]);
         kern.notieren("richtung_korrigiert", { vorher: vorher.length, jetzt: (p.zieleErlaubt || []).length, grad: p.mindestGrad ?? null });
         this.ableiten(kern, "richtung", k);
         return;
       }
     }
+    /* Hat die Person ihre Regionen selbst zusammengestellt ("nur noch
+       Lappland"), bestimmt die Richtung die Suche nicht mehr - dann keine
+       Erklaerung, welche Regionen "kalt" waeren (21.11.2026). Mit
+       dazugenommenen Regionen (zieleDazu) gilt die Richtung weiter. */
+    if (p.zieleAuswahl?.length && !p.zieleDazu?.length) return;
     /* Folgt gleich die Frage nach der Grenze, endet dieser Satz ohne
        "Sag Bescheid ..." - sonst stand die Einladung da und direkt danach
        die Frage zur selben Sache (03.10.2026, "sehr doppelt"). */
@@ -3321,7 +3336,7 @@ const Werkzeugkasten = {
         if (a.mindestGrad != null && p.richtung && typeof Politik !== "undefined"
           && [spanne.weiter, spanne.grenze].includes(Math.round(Number(a.mindestGrad)))) {
           const thS = (Politik.THEMEN || []).find((t) => t.id === p.richtung);
-          if (thS) p.zieleErlaubt = Werkzeugkasten.regionenFuerRichtung(thS, { ...p, mindestGrad: Math.round(Number(a.mindestGrad)) });
+          if (thS) p.zieleErlaubt = Werkzeugkasten.regionenFuerRichtung(thS, { ...p, mindestGrad: Math.round(Number(a.mindestGrad)) }, { genau: true });
           kern.lauf.spanneNeu = Math.round(Number(a.mindestGrad));
         }
       }
@@ -3464,13 +3479,17 @@ const Werkzeugkasten = {
            sagt: ueber `zieleAus` ("nicht Kreta") oder mit einem Wort, das
            ersetzt ("nur noch", "statt", "lieber", "stattdessen"). Sonst
            kommt Neues dazu, und Vorhandenes bleibt. */
-        else if (!roh.length) setze(feld, []);
+        else if (!roh.length) { setze(feld, []); delete p.zieleDazu; }
         else if (nehmen.length) {
           const letzteA = (kern.lauf.gespraech || []).filter((n) => n.role === "user").slice(-1)
             .map((n) => String(n.content || "")).join(" ");
           const ersetzt = /\bnur\s*(noch)?\b|\bstatt\b|stattdessen|\blieber\b|\bnicht mehr\b|\bausschlie(ß|ss)lich/i.test(letzteA);
           const bisher = Array.isArray(p.zieleAuswahl) ? p.zieleAuswahl : [];
           const neu = ersetzt ? [...new Set(nehmen)] : [...new Set([...bisher, ...nehmen])];
+          // Ersetzt die Person die Liste, gilt nichts Dazugenommenes mehr, und
+          // die neue Liste ist der Stand, mit dem spaetere Saetze vergleichen
+          // (21.11.2026 - sonst "fallen ... weg, jetzt 1 statt 7")
+          if (ersetzt) { delete p.zieleDazu; if (kern.lauf.richtungRegionen) kern.lauf.richtungRegionen = [...new Set(nehmen)]; }
           if (!ersetzt && bisher.length && neu.length > nehmen.length) kern.notieren("ziele_ergaenzt", { bisher: bisher.length, jetzt: neu.length });
           setze(feld, neu);
         }
@@ -3519,6 +3538,7 @@ const Werkzeugkasten = {
           setze("richtung", th.id);
           p.zieleErlaubt = Werkzeugkasten.regionenFuerRichtung(th, p);
           if (!p.zielId) p.zielOffen = true;
+          Werkzeugkasten.auswahlNachRichtung(p);
           Werkzeugkasten.richtungAnsagen(kern, p);
         } else kern.notieren("richtung_verworfen", { richtung: a.richtung });
       }
@@ -3554,8 +3574,9 @@ const Werkzeugkasten = {
           if (p.richtung && typeof Politik !== "undefined") {
             const th2 = (Politik.THEMEN || []).find((t) => t.id === p.richtung);
             if (th2) {
-              p.zieleErlaubt = Werkzeugkasten.regionenFuerRichtung(th2, p);
+              p.zieleErlaubt = Werkzeugkasten.regionenFuerRichtung(th2, p, { genau: true });
               geaendert.push("zieleErlaubt");
+              Werkzeugkasten.auswahlNachRichtung(p);
               Werkzeugkasten.richtungAnsagen(kern, p);
             }
           }
@@ -4891,7 +4912,23 @@ const Werkzeugkasten = {
             kern.lauf.lageFuer = fp.schluessel;
             const fertigJetzt = fp.fertig || {};
             await kern.denkpause(600, "fasst zusammen…");
-            const lage = Werkzeugkasten.lageSatz(liste, p, umfang, gesamt ?? null, kern.lauf);
+            let lage = Werkzeugkasten.lageSatz(liste, p, umfang, gesamt ?? null, kern.lauf);
+            /* Letzte Sicherung fuer die Zahl (21.11.2026).
+               ----------------------------------------------------------
+               Gemeldet: "Es sind 223 im Chat ausgegeben, es sind aber nur
+               123." Seit dem 21.11.2026 zaehlen Kern und Seite mit
+               derselben Regionsregel (zielListe); weicht die Zahl trotzdem
+               ab, waehrend die Liste offen ist und die Spalte alle Filter
+               einstellen konnte, gilt die Liste. Dann nur deren Zahl - die
+               uebrigen Zahlen des Lagesatzes stammen aus derselben
+               (abweichenden) Rechnung und wuerden nicht zueinander passen.
+               Die Abweichung steht im Protokoll. */
+            const aufSeite = typeof Werkzeuge !== "undefined" && Werkzeuge.seite() === "results" && Number.isFinite(gesamt) ? gesamt : null;
+            if (aufSeite != null && aufSeite !== liste.length && !(kern.lauf.nichtGesetzt || []).length) {
+              kern.notieren("lage_zahl_abweichung", { kern: liste.length, seite: aufSeite, filter: Werkzeugkasten.filterText(p) });
+              const monatW = p.monat && typeof MONATSNAMEN !== "undefined" ? `Im ${MONATSNAMEN[p.monat - 1]}` : "Gerade";
+              lage = `${monatW} stehen mit deinen Angaben ${aufSeite} ${Werkzeugkasten.artWort(p, true)} auf der Liste.`;
+            }
             /* Die Zahl ist vorlaeufig, und das steht dabei.
                ----------------------------------------------------------
                Wunsch des Nutzers vom 28.09.2026: Der Agent sucht frueh,
@@ -5222,7 +5259,8 @@ const Werkzeugkasten = {
       if (stufe === 1 && !kern.lauf.gesuchtMit && !kern.lauf.rechercheAngesagt) {
         kern.lauf.rechercheAngesagt = true;
         const wohin = p.zielId && typeof ZIEL_NACH_ID !== "undefined" ? (Werkzeugkasten.ortSatz(p.zielId) || "")
-          : p.richtung === "warm" ? "in den warmen Regionen" : p.richtung === "kalt" ? "in den kalten Regionen" : "";
+          : p.zieleAuswahl?.length ? "in den ausgewählten Regionen"
+            : p.richtung === "warm" ? "in den warmen Regionen" : p.richtung === "kalt" ? "in den kalten Regionen" : "";
         const wann = p.monat && typeof MONATSNAMEN !== "undefined" ? `im ${MONATSNAMEN[p.monat - 1]}` : "";
         const art = Werkzeugkasten.artWort(p, true);
         kern.sagen(`Ich sehe erst mal nach, wie viele ${art} es ${[wohin, wann].filter(Boolean).join(" ")} überhaupt gibt und was frei ist.`.replace(/\s+/g, " "));
@@ -7751,7 +7789,14 @@ const Werkzeugkasten = {
     const erlaubt = (p.zieleErlaubt || []).filter((x) => !ids.includes(x));
     p.zieleAuswahl = [...new Set([...erlaubt, ...ids])];
     p.zielId = null; p.zielOffen = false;
-    delete p.richtung; delete p.zieleErlaubt; delete p.zielVorgemerkt; delete p.zieleVorgemerkt;
+    /* Die Richtung bleibt (21.11.2026). Bis hierher wurden `richtung` und
+       `zieleErlaubt` geloescht - danach war jede neue Gradgrenze wirkungslos
+       ("nein ich will maximal 8 Grad"), und die Zielfrage galt als offen.
+       Jetzt bleibt die Richtung, und was ausdruecklich dazukam, steht in
+       `zieleDazu`. Aendert sich die Grenze, rechnet auswahlNachRichtung die
+       Auswahl neu: Regionen der Richtung plus die dazugenommenen. */
+    p.zieleDazu = [...new Set([...(p.zieleDazu || []), ...ids])];
+    delete p.zielVorgemerkt; delete p.zieleVorgemerkt;
     (geaendert || []).push("zieleAuswahl");
     for (const id of ids) (kern.lauf.widerspruchGefragt ||= {})[id] = true;
     kern.notieren("ziel_dazugenommen", { ziele: ids, anzahl: p.zieleAuswahl.length });
@@ -7771,6 +7816,16 @@ const Werkzeugkasten = {
     (kern.lauf.annahmeOffen ||= []).push({ thema: "ziel", eigenesTun: true,
       text: `${teile.join(". ")}.`, felder: { zieleAuswahl: p.zieleAuswahl.slice() } });
     kern.lauf.richtungRegionen = p.zieleAuswahl.slice();
+    return true;
+  },
+
+  /* Nach einer neuen Grenze: Auswahl = Regionen der Richtung + dazugenommene
+     (21.11.2026, siehe zielDazunehmen). Nur, wenn es Dazugenommenes gibt -
+     eine Auswahl, die die Person selbst zusammengestellt hat, bleibt sonst
+     unberuehrt. */
+  auswahlNachRichtung(p) {
+    if (!p?.zieleDazu?.length || !p.zieleAuswahl?.length || !p.zieleErlaubt?.length) return false;
+    p.zieleAuswahl = [...new Set([...p.zieleErlaubt, ...p.zieleDazu])];
     return true;
   },
 
@@ -8476,7 +8531,11 @@ const Werkzeugkasten = {
       zeit: !!p.monat || !!(p.von && p.bis),
       reisende: p.erwachsene != null && p.kinder != null,
       kinderAlter: kinderAlterOk,
-      ziel: !!p.zielId || !!p.zielOffen || !!p.richtung,
+      /* Auch eine ausdrueckliche Auswahl beantwortet die Zielfrage
+         (21.11.2026). "Malle noch dazu nehmen" legte eine Auswahl an und
+         loeschte Richtung und zielOffen - danach galt das Ziel als offen,
+         und die Frage kam immer wieder, egal was die Person antwortete. */
+      ziel: !!p.zielId || !!p.zielOffen || !!p.richtung || (p.zieleAuswahl || []).length > 0,
       art: !!p.artGenannt || !!p.artEgal,
       // weiter und beratung werden nicht mehr gefragt: Die eine Frage nach
       // der Lage (vorgehen) ersetzt beide. Sie bleiben im Stand, weil
@@ -10141,9 +10200,9 @@ const Werkzeugkasten = {
        groesste Teil weg, und ohne dieses Glied landete er im Sammeltopf
        "erfuellt die uebrigen Vorgaben nicht" - richtig gerechnet, aber
        nichtssagend. */
-    const imGebiet = p.zielId
-      ? alle.filter((h) => h.ziel === p.zielId)
-      : (p.zieleErlaubt?.length ? alle.filter((h) => p.zieleErlaubt.includes(h.ziel)) : alle);
+    // Dieselbe Regionsregel wie Seite und Zaehlung (zielListe, 21.11.2026)
+    const gebiet = this.zielListe(p);
+    const imGebiet = gebiet.length ? alle.filter((h) => gebiet.includes(h.ziel)) : alle;
     const passend = personen ? imGebiet.filter((h) => this.passtGruppe(h, p)) : imGebiet;
     const saisonPrueft = p.monat && typeof saisonPassung === "function" && typeof ZIEL_NACH_ID !== "undefined";
     const ausserSaison = saisonPrueft
@@ -10877,7 +10936,10 @@ const Werkzeugkasten = {
     // "in den warmen Regionen in 8 Regionen" stand so auf der Seite - die
     // Himmelsrichtung gehoert vor das Wort Regionen, nicht davor und danach.
     const warmKalt = p.richtung === "warm" ? "warmen " : p.richtung === "kalt" ? "kalten " : "";
-    const wo = p.zielId ? (this.ortSatz(p.zielId) || p.zielId) : (warmKalt ? `in den ${warmKalt}Regionen` : "");
+    // Gilt eine ausdrueckliche Auswahl, zaehlt sie - nicht die Richtung
+    // (21.11.2026, "in den warmen Regionen" bei Lappland bis Mallorca)
+    const wo = p.zielId ? (this.ortSatz(p.zielId) || p.zielId)
+      : (p.zieleAuswahl?.length ? "in den ausgewählten Regionen" : (warmKalt ? `in den ${warmKalt}Regionen` : ""));
     const regionen = umfang.jeRegion || [];
     const teile = [];
     /* Die Zahl im Chat und die Zahl auf der Seite muessen zusammenpassen.
@@ -11021,9 +11083,10 @@ const Werkzeugkasten = {
     if (kette.katalog > liste.length && !p.zielId && etwasVorgegeben) {
       const gruende = [];
       if (kette.woanders) {
-        gruende.push(p.richtung === "warm" ? `${kette.woanders} liegen nicht in einer warmen Region`
-          : p.richtung === "kalt" ? `${kette.woanders} liegen nicht in einer kalten Region`
-            : `${kette.woanders} liegen außerhalb der gewünschten Regionen`);
+        gruende.push(p.zieleAuswahl?.length ? `${kette.woanders} liegen außerhalb der gewünschten Regionen`
+          : p.richtung === "warm" ? `${kette.woanders} liegen nicht in einer warmen Region`
+            : p.richtung === "kalt" ? `${kette.woanders} liegen nicht in einer kalten Region`
+              : `${kette.woanders} liegen außerhalb der gewünschten Regionen`);
       }
       if (kette.zuKlein) gruende.push(`${kette.zuKlein} sind für ${kette.personen} ${kette.personen === 1 ? "Person" : "Personen"} zu klein`);
       if (kette.ausserSaison) gruende.push(`${kette.ausserSaison} liegen in Regionen, die ${monatText.replace(/^Im /, "im ")} außerhalb ihrer Saison sind`);
@@ -11202,6 +11265,33 @@ const Werkzeugkasten = {
   // Monat ist keiner mehr (im September "im September" heisst naechstes Jahr)
   // Die Filterwerte fuer die Seite - an zwei Stellen gebraucht: beim Suchen
   // und nach dem Rundgang, wenn die Liste neu geladen wurde
+  /* Welche Regionen gelten - EINE Regel fuer Seite und Kern (21.11.2026).
+     ------------------------------------------------------------------
+     Gemeldet: "Es sind 223 im Chat ausgegeben, es sind aber nur 123."
+     Die Seite filterte nach dieser Reihenfolge (festes Ziel, sonst die
+     ausdrueckliche Auswahl, sonst die Regionen der Richtung, abgelehnte
+     abgezogen), der Kern zaehlte nach einer eigenen (festes Ziel, sonst
+     Richtung) und kannte weder die Auswahl noch die abgelehnten
+     Regionen. Lagen Auswahl und Richtung zugleich im Stand, zaehlten
+     beide verschiedene Regionen.
+     `nurInSaison`: Die Filterspalte kann Regionen ausserhalb der Saison
+     nicht anhaken, also fehlen sie dort. Der Kern zaehlt sie als eigenes
+     Glied ("ausserhalb der Saison"); an der Trefferzahl aendert das
+     nichts, weil die Saisonregel in `Auswahl` fuer beide gilt.
+     Leer heisst: alle Regionen. */
+  zielListe(p, { nurInSaison = false } = {}) {
+    const inSaison = (id) => !nurInSaison || !p.monat || typeof saisonPassung !== "function"
+      || typeof ZIEL_NACH_ID === "undefined" || !ZIEL_NACH_ID[id]
+      || saisonPassung(ZIEL_NACH_ID[id], p.monat) >= 0.5;
+    const aus = new Set(p.zieleAus || []);
+    const alleIds = (typeof ZIELE !== "undefined" ? ZIELE : []).map((z) => z.id);
+    const basis = p.zielId ? [p.zielId]
+      : (p.zieleAuswahl?.length ? p.zieleAuswahl
+        : (p.zieleErlaubt?.length ? p.zieleErlaubt.filter(inSaison)
+          : (aus.size ? alleIds.filter(inSaison) : [])));
+    return basis.filter((id) => !aus.has(id));
+  },
+
   filterWerte(p) {
     const filter = this.filterAusStand(p);
     /* Was in die Spalte gehoert: das feste Ziel, sonst die Regionen der
@@ -11214,20 +11304,12 @@ const Werkzeugkasten = {
        ihrer Saison weglaesst (Koh Lanta im August, Monsun). Zwei Zahlen
        fuer dieselbe Sache sind genau die Art Unstimmigkeit, die eine
        Person fuer einen Fehler haelt, und sie hat recht damit. */
-    const inSaison = (id) => !p.monat || typeof saisonPassung !== "function"
-      || typeof ZIEL_NACH_ID === "undefined" || !ZIEL_NACH_ID[id]
-      || saisonPassung(ZIEL_NACH_ID[id], p.monat) >= 0.5;
     /* Die Filterspalte kennt nur eine Erlaubnisliste, kein "ohne diese".
        Ein Ausschluss wird deshalb zur Liste aller anderen Regionen -
        anders bliebe das abgelehnte Ziel in der Liste stehen, und genau
-       das soll es nicht (01.11.2026). */
-    const aus = new Set(p.zieleAus || []);
-    const alleIds = (typeof ZIELE !== "undefined" ? ZIELE : []).map((z) => z.id);
-    const basis = p.zielId ? [p.zielId]
-      : (p.zieleAuswahl?.length ? p.zieleAuswahl
-        : (p.zieleErlaubt?.length ? p.zieleErlaubt.filter(inSaison)
-          : (aus.size ? alleIds.filter(inSaison) : [])));
-    const ziele = basis.filter((id) => !aus.has(id));
+       das soll es nicht (01.11.2026). Die Regel steht seit dem 21.11.2026
+       in `zielListe`, die auch der Kern zum Zaehlen benutzt. */
+    const ziele = this.zielListe(p, { nurInSaison: true });
     return {
       ziele,
       /* Ein Gesamtbudget gehoert an den Gesamtregler.
@@ -11723,7 +11805,8 @@ const Werkzeugkasten = {
      sagte der Agent 22 Haeuser, die Seite zeigte 34. */
   vorgaben(p, filter = null) {
     const f = filter || this.filterAusStand(p);
-    const zielIds = p.zielId ? [p.zielId] : (p.zieleErlaubt?.length ? [...p.zieleErlaubt] : []);
+    // Dieselbe Regionsregel wie die Seite (zielListe, 21.11.2026)
+    const zielIds = this.zielListe(p);
     return {
       monat: p.monat || null,
       naechte: p.naechte || null,

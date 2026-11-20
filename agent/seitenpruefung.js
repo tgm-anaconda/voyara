@@ -350,6 +350,23 @@ const Seitenpruefung = {
         }
       }
     }
+    /* Die Regionen als eigene Achse (21.11.2026). Gemeldet: Chat 223,
+       Liste 123 - der Kern kannte die ausdrueckliche Auswahl und die
+       abgelehnten Regionen nicht. Keine dieser Varianten stand oben drin,
+       deshalb blieb es unentdeckt. Eine kleine Reihe, nicht mal alles. */
+    const kalt = ["lappland", "island", "ostsee", "tirol", "newyork", "wien"];
+    const warm = ["krabi", "marrakesch", "teneriffa", "kapstadt", "kreta", "algarve", "lissabon", "kyoto"];
+    for (const monat of [3, 8, 12]) {
+      for (const gruppe of [{ erwachsene: 2, kinder: 0, zimmer: 1 }, { erwachsene: 5, kinder: 0, zimmer: 1 }]) {
+        for (const typ of ["hotel", "apartment"]) {
+          for (const reg of [{ zieleAuswahl: ["mallorca", "kreta"] }, { richtung: "kalt", zieleErlaubt: kalt },
+            { richtung: "warm", zieleErlaubt: warm, zieleAuswahl: [...kalt, "mallorca"] }, { zieleAus: ["lissabon", "marrakesch"] },
+            { richtung: "warm", zieleErlaubt: warm, zieleAus: ["kreta"] }, { zieleAuswahl: ["tirol", "wien", "kreta"], zieleAus: ["wien"] }]) {
+            raus.push({ monat, naechte: 7, typ, ...gruppe, flug: false, verpflegung: null, budgetGesamt: null, ...reg });
+          }
+        }
+      }
+    }
     return raus;
   },
 

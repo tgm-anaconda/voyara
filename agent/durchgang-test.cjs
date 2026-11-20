@@ -2703,6 +2703,94 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     pruefe("'10 nächte' auf die Dauerfrage kommt weiter an", c.naechte, 10);
   }
 
+  /* Zahlen, Zielschleife, Gradgrenze, Halte (21.11.2026).
+     Gegenprobe: _backup/21-11-zahlen/ */
+  {
+    const kaltL = ["lappland", "island", "ostsee", "tirol", "newyork", "wien"];
+    const warmL = ["krabi", "marrakesch", "teneriffa", "kapstadt", "kreta", "algarve", "lissabon", "kyoto"];
+    // 1. Kern zaehlt wie die Seite: Bens Stand (Auswahl kalt+Mallorca, Richtung warm)
+    const ben = { monat: 3, naechte: 9, erwachsene: 5, kinder: 0, typ: "hotel", flug: true, flugAb: "Hamburg", flugKlasse: "economy",
+      richtung: "warm", zieleErlaubt: warmL, zieleAuswahl: [...kaltL, "mallorca"] };
+    const seiteZahl = (p) => vm.runInContext("Auswahl", ctx).treffer(WK.katalog(p), { ...WK.vorgaben(p, WK.filterAusStand(p)), zielIds: WK.filterWerte(p).ziele }).length;
+    const kernZahl = (p) => WK.katalogTreffer(p, WK.filterAusStand(p)).length;
+    pruefe("Bens Stand: Kern zaehlt wie die Seite", kernZahl(ben) === seiteZahl(ben) ? "gleich" : `Kern ${kernZahl(ben)}, Seite ${seiteZahl(ben)}`, "gleich");
+    const aus = { monat: 8, naechte: 7, erwachsene: 2, kinder: 0, typ: "hotel", zieleAus: ["mallorca", "kreta"] };
+    pruefe("Abgelehnte Regionen: Kern zaehlt wie die Seite", kernZahl(aus) === seiteZahl(aus) ? "gleich" : `Kern ${kernZahl(aus)}, Seite ${seiteZahl(aus)}`, "gleich");
+    // 2. Wortlaut
+    const liste = WK.katalogTreffer(ben, WK.filterAusStand(ben));
+    const lage = WK.lageSatz(liste, ben, WK.umfang(liste, ben), null, { protokoll: [] });
+    pruefe("Mit Auswahl heisst es nicht 'in den warmen Regionen'", /warmen Regionen/.test(lage) ? lage.slice(0, 80) : "ok", "ok");
+    // 3. Gradgrenze genau
+    const th = (id) => vm.runInContext("Politik", ctx).THEMEN.find((t) => t.id === id);
+    pruefe("Eigene Grenze 'bis 8 Grad' im Maerz gilt genau", WK.regionenFuerRichtung(th("kalt"), { monat: 3, mindestGrad: 8 }, { genau: true }).join(","), "lappland,island,ostsee");
+    pruefe("Eigene Standardgrenze (12) bleibt wie bisher", WK.regionenFuerRichtung(th("kalt"), { monat: 3 }).join(","), kaltL.join(","));
+    pruefe("Unerfuellbare Grenze wird nicht zu 'alle Regionen'", WK.regionenFuerRichtung(th("kalt"), { monat: 3, mindestGrad: -10 }, { genau: true }).length > 0 ? "nicht leer" : "leer", "nicht leer");
+    // 4. Keine Halte in der ersten Umschau
+    const wz2 = fs.readFileSync(alt && fs.existsSync(quelle + "werkzeuge.js") ? quelle + "werkzeuge.js" : B + "agent/werkzeuge.js", "utf8");
+    const ueb = wz2.slice(wz2.indexOf("async listeUeberfliegen()"), wz2.indexOf("async listeUeberfliegen()") + 4000);
+    pruefe("Erste Umschau ohne Halte", /const anteile = \[\];/.test(ueb) ? "ja" : "nein", "ja");
+    // 5. Seitenpruefung kennt die Regionsfaelle
+    const sp = fs.readFileSync(alt && fs.existsSync(quelle + "seitenpruefung.js") ? quelle + "seitenpruefung.js" : B + "agent/seitenpruefung.js", "utf8");
+    pruefe("Seitenpruefung vergleicht auch Auswahl und abgelehnte Regionen", /Die Regionen als eigene Achse/.test(sp) ? "ja" : "nein", "ja");
+  }
+  if (WK && WK.werkzeuge && WK.werkzeuge.stand_merken) {
+    // 6. Bens Verlauf als Gespraechsfolge
+    const th = (id) => vm.runInContext("Politik", ctx).THEMEN.find((t) => t.id === id);
+    const kalt = WK.regionenFuerRichtung(th("kalt"), { monat: 3 });
+    const lauf = { gespraech: [], profil: { monat: 3, naechte: 9, erwachsene: 5, kinder: 0, richtung: "kalt", zieleErlaubt: kalt, zielOffen: true,
+        vonPerson: { monat: true, richtung: true, erwachsene: true, kinder: true, naechte: true } },
+      protokoll: [], annahmeOffen: [], gefragtWie: {}, verlauf: [], nachrichtArt: "antwort", runde: 1, richtungRegionen: kalt.slice(), richtungGesagt: "x", gefragt: "ziel" };
+    const kern = { lauf, notieren(e, d) { this.lauf.protokoll.push({ ereignis: e, ...d }); }, freigabe: () => "suchen", darf: () => false,
+      logZeile() {}, sagen() {}, standAnzeigen() {}, sichern() {}, standKurz: () => "" };
+    const zug = async (satz, a) => {
+      lauf.gespraech.push({ role: "user", content: satz }); lauf.verlauf.push({ rolle: "user", text: satz });
+      try { await WK.werkzeuge.stand_merken.call(WK, { nachricht_art: "antwort", frage_beantwortet: "ja", ...a }, kern); } catch (e) { return { fehler: e.message }; }
+      return { ziele: WK.filterWerte(lauf.profil).ziele.join(","), ziel: WK.fahrplan(lauf.profil, lauf).fertig.ziel };
+    };
+    const z1 = await zug("ich würde gerne auf 8 grad gehen. und aber malle noch dazu nehmen", { mindestGrad: 8, zieleAuswahl: ["mallorca"] });
+    pruefe("'8 Grad und Malle dazu': Lappland, Island, Ostsee, Mallorca", z1.ziele, "lappland,island,ostsee,mallorca");
+    pruefe("... und die Zielfrage gilt als beantwortet (keine Schleife)", z1.ziel, true);
+    const z2 = await zug("nein ich will maximal 8 grad", { mindestGrad: 8 });
+    pruefe("'maximal 8 Grad' danach: Ziel bleibt beantwortet", z2.ziel, true);
+    const z3 = await zug("doch lieber bis 12 grad", { mindestGrad: 12 });
+    pruefe("Spaetere Grenze wirkt weiter, Mallorca bleibt", z3.ziele, [...kalt, "mallorca"].join(","));
+    const z4 = await zug("nur noch lappland", { zieleAuswahl: ["lappland"] });
+    const z5 = await zug("bis 8 grad", { mindestGrad: 8 });
+    pruefe("'nur noch Lappland': Mallorca kommt nicht zurueck", z5.ziele, "lappland");
+  }
+
+  /* Schleifenpruefung (21.11.2026): Vom leeren Gespraech an kommt auf
+     jede Frage des Fahrplans eine normale Antwort. Danach darf kein Thema
+     ein drittes Mal drankommen. Mehrere Wege zum Ziel, weil genau dort
+     die Schleifen lagen ("Malle dazu"; am alten Stand auch "Mallorca
+     oder Kreta"). Gegenprobe: _backup/21-11-zahlen/ */
+  if (WK && WK.werkzeuge && WK.werkzeuge.stand_merken) {
+    const ANTWORT = { zeit: ["im märz", { monat: 3 }], dauer: ["9 nächte", { naechte: 9 }],
+      reisende: ["wir sind 2 erwachsene, keine kinder", { erwachsene: 2, kinder: 0 }], art: ["nur hotels", { typ: "hotel" }],
+      flug: ["ohne flug", { flug: false }], kinderAlter: ["6 und 9", { kinderAlter: [6, 9] }] };
+    const WEGE = { fest: [["mallorca", { ziel: "mallorca" }]], mehrere: [["mallorca oder kreta", { zieleAuswahl: ["mallorca", "kreta"] }]],
+      kalt: [["eher kalt", { richtung: "kalt" }]], kaltDazu: [["eher kalt", { richtung: "kalt" }], ["und malle noch dazu nehmen bis 8 grad", { mindestGrad: 8, zieleAuswahl: ["mallorca"] }]] };
+    for (const [weg, zielAntworten] of Object.entries(WEGE)) {
+      const lauf = { gespraech: [], profil: {}, protokoll: [], annahmeOffen: [], gefragtWie: {}, verlauf: [], nachrichtArt: "antwort", runde: 1 };
+      const kern = { lauf, notieren(e, d) { this.lauf.protokoll.push({ ereignis: e, ...d }); }, freigabe: () => "suchen", darf: () => false,
+        logZeile() {}, sagen() {}, standAnzeigen() {}, sichern() {}, standKurz: () => "" };
+      const sag = async (satz, a) => { lauf.gespraech.push({ role: "user", content: satz }); lauf.verlauf.push({ rolle: "user", text: satz });
+        await WK.werkzeuge.stand_merken.call(WK, { nachricht_art: "antwort", frage_beantwortet: "ja", ...a }, kern); };
+      const gefragt = {}; let ergebnis = "kommt bis zur Suche";
+      try {
+        for (let i = 0; i < 14; i++) {
+          const t = WK.fahrplan(lauf.profil, lauf).naechstes;
+          if (!t || !(t in ANTWORT || t === "ziel")) break;
+          gefragt[t] = (gefragt[t] || 0) + 1;
+          if (gefragt[t] > 2) { ergebnis = `Schleife bei ${t}`; break; }
+          lauf.gefragt = t;
+          if (t === "ziel") { for (const [satz, a] of zielAntworten) await sag(satz, a); } else await sag(ANTWORT[t][0], ANTWORT[t][1]);
+        }
+      } catch (e) { ergebnis = "FEHLER " + e.message.slice(0, 50); }
+      pruefe(`Keine Schleife im Fahrplan (Ziel: ${weg})`, ergebnis, "kommt bis zur Suche");
+    }
+  }
+
   // Kinder oder Erwachsene
   if (WK && WK.kinderErwachsenRueckfrage) {
     const f = WK.kinderErwachsenRueckfrage({ erwachsene: 1, kinder: 2 }, { alterZuHoch: [28, 34] });

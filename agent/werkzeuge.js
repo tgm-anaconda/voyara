@@ -991,8 +991,14 @@ const Werkzeuge = {
        heisst deshalb, was er ist: Er sieht sich eines genauer an. Das
        Merken gehoert in den zweiten Durchgang (haeuser_ansehen), wo die
        Auswahl bekannt ist - das steht noch aus. */
-    const anteile = karten.length >= 20 ? [0.12, 0.38, 0.64, 0.88]
-      : karten.length >= 8 ? [0.15, 0.5, 0.85] : [];
+    /* Keine Halte mehr in der ersten Umschau (21.11.2026). Ben: "Er haelt
+       jetzt schon bei den ersten Recherchen an bei manchen Haeusern. Das
+       ist einfach nur unnoetige Zeitverschwendung und macht noch gar
+       keinen Sinn, dass er sich jetzt manche Haeuser schon im Detail
+       anguckt. Das soll erst bei spaeteren Durchlaeufen passieren, wenn er
+       auf der Suche nach einem passenden Haus ist." Dort (ergebnisseLesen,
+       Rundgang) bleiben die Halte. */
+    const anteile = [];
     const halte = anteile.map((a) => karten[Math.round(a * (karten.length - 1))])
       .filter((el, i, liste) => el && liste.indexOf(el) === i);
     const gesehen = [];
