@@ -10781,7 +10781,11 @@ const Werkzeugkasten = {
        untergeschoben. */
     const auchHotels = "Auch Hotels zeigen";
     const darfAusweiten = wohnung && !p.vonPerson?.typ && e.feld !== "art";
-    if (darfAusweiten) { chips.push(auchHotels); wirkung[auchHotels] = { typ: "beides" }; }
+    /* Dieselbe Form wie "Beides offen lassen" (20.11.2026). Hier stand
+       `typ: "beides"` - ein Wert, den keine andere Stelle kennt. Er wirkte
+       nur, weil alles ausser "hotel" und "apartment" als beides gelesen
+       wird, und Art galt damit weder als genannt noch als egal. */
+    if (darfAusweiten) { chips.push(auchHotels); wirkung[auchHotels] = { typ: null, artEgal: true, artGenannt: true }; }
     chips.push(nein);
     wirkung[nein] = {};
 

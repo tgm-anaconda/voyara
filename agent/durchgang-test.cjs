@@ -971,7 +971,13 @@ const liesReisende = async (text, felder, urteil = "ja") => {
       const sechs = ["a","b","c","d","e","f"].map((id) => ({ id }));
       const plaetze = {};
       let hintenVerschoben = 0;
-      for (let i = 0; i < 2000; i++) {
+      /* 20.000 statt 2.000 Lose (20.11.2026): Bei 2.000 schlug die
+         Gleichverteilung rein zufaellig etwa einmal in 40 bis 400 Laeufen
+         fehl - gemessen, das Los selbst ist fair (200.000 Lose: 33,5 /
+         33,1 / 33,3 %). Die Toleranz bleibt bei 10 %, liegt jetzt aber bei
+         rund zehn Standardabweichungen statt drei. */
+      const LOSE = 20000;
+      for (let i = 0; i < LOSE; i++) {
         kern.lauf = {};
         const r = kern.anzeigeReihenfolge(sechs);
         plaetze[r.indexOf("a")] = (plaetze[r.indexOf("a")] || 0) + 1;
@@ -979,9 +985,9 @@ const liesReisende = async (text, felder, urteil = "ja") => {
         if (r.slice(3).join("") !== "def") hintenVerschoben++;
       }
       const erste = (plaetze[0] || 0) + (plaetze[1] || 0) + (plaetze[2] || 0);
-      pruefe("Sechs Karten: Favorit immer in der ersten Reihe", erste, 2000);
+      pruefe("Sechs Karten: Favorit immer in der ersten Reihe", erste, LOSE);
       pruefe("Sechs Karten: zweite Reihe bleibt nach Guete", hintenVerschoben, 0);
-      const ab = [0, 1, 2].map((i) => Math.abs((plaetze[i] || 0) - 2000 / 3) / (2000 / 3));
+      const ab = [0, 1, 2].map((i) => Math.abs((plaetze[i] || 0) - LOSE / 3) / (LOSE / 3));
       pruefe("Sechs Karten: erste Reihe gleichverteilt",
         Math.max(...ab) < 0.1 ? "gleich" : `${Math.round(Math.max(...ab) * 100)} % daneben: ${JSON.stringify(plaetze)}`, "gleich");
       // Bei drei Karten aendert sich nichts
@@ -2932,6 +2938,26 @@ const liesReisende = async (text, felder, urteil = "ja") => {
         pruefe("Von der Person genannt: bleibt drin", (c.vorgelegt || []).includes(fremd) ? "drin" : "raus", "drin");
       }
     }
+  }
+
+  /* E: "Auch Hotels zeigen" setzt die uebliche Form fuer beide Arten
+     (20.11.2026). Gegenprobe: _backup/vor-regelpruefung-runde2-2026-11-20/ */
+  if (WK && WK.chipAntwortLesen) {
+    const kern = { lauf: { profil: { zielId: "mallorca", typ: "apartment", artGenannt: true, monat: 7, naechte: 7, erwachsene: 2, kinder: 0 },
+        chipWirkung: null, protokoll: [], gespraech: [], verlauf: [], gefragtWie: {}, annahmeOffen: [] },
+      notieren(e, d) { this.lauf.protokoll.push({ ereignis: e, ...d }); }, sagen() {}, gespraechPush() {}, sichern() {},
+      logZeile() {}, standKurz: () => "", standAnzeigen() {}, freigabe: () => "suchen", darf: () => true };
+    const q = fs.readFileSync(alt && fs.existsSync(quelle + "werkzeugkasten.js") ? quelle + "werkzeugkasten.js" : B + "agent/werkzeugkasten.js", "utf8");
+    const m = q.match(/wirkung\[auchHotels\] = (\{[^}]*\})/);
+    let w = null; try { w = m ? eval("(" + m[1] + ")") : null; } catch { w = null; }
+    kern.lauf.chipWirkung = { "Auch Hotels zeigen": w || {} };
+    try { WK.chipAntwortLesen(kern, "Auch Hotels zeigen"); } catch (e) { /* unten sichtbar */ }
+    const p = kern.lauf.profil;
+    pruefe("Auch Hotels: kein Sonderwert im typ", p.typ === undefined ? "leer" : String(p.typ), "leer");
+    pruefe("Auch Hotels: Art gilt als egal", p.artEgal ? "ja" : "nein", "ja");
+    pruefe("Auch Hotels: Seite zeigt alle Unterkuenfte", WK.seitenTyp(p), "unterkunft");
+    const arten = new Set(WK.katalog(p).map((h) => h.type));
+    pruefe("Auch Hotels: Katalog hat Hotels und Wohnungen", arten.has("hotel") && arten.has("apartment") ? "beide" : [...arten].join(), "beide");
   }
 
   console.log(`\n${gut} richtig, ${schlecht} falsch`);
