@@ -2654,6 +2654,14 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     pruefe("Arbeitsuhr zaehlt ab Beginn des Zugs", /this\._arbeitSeit = \(typeof Kern !== "undefined" && Kern\.lauf\?\.zugSeit\) \|\| Date\.now\(\)/.test(cq2) ? "ja" : "nein", "ja");
   }
 
+  /* Startseite ohne vorbelegte Daten, Suche nur mit Zeitraum (21.11.2026).
+     Gegenprobe: _backup/21-11-datum/ */
+  {
+    const sb = fs.readFileSync(alt && fs.existsSync(quelle + "searchbox.js") ? quelle + "searchbox.js" : B + "searchbox.js", "utf8");
+    pruefe("Startseite: Datumsfelder starten leer", /const ohneVorbelegung = !onSubmit && !params\.get\("from"\) && !params\.get\("to"\);/.test(sb) ? "ja" : "nein", "ja");
+    pruefe("Ohne Reisezeitraum wird nicht gesucht, sondern nachgefragt", /if \(vonFeld && bisFeld && \(!vonFeld\.value \|\| !bisFeld\.value\)\)/.test(sb) ? "ja" : "nein", "ja");
+  }
+
   // Kinder oder Erwachsene
   if (WK && WK.kinderErwachsenRueckfrage) {
     const f = WK.kinderErwachsenRueckfrage({ erwachsene: 1, kinder: 2 }, { alterZuHoch: [28, 34] });

@@ -375,6 +375,12 @@ ${showFlightAddon ? `
     if (from && to) {
       from.min = isoDate(new Date());
       to.min = from.value;   // sonst laesst sich vor dem ersten Wechsel ein Rueckreisedatum vor der Anreise waehlen
+      // Ein gewaehltes Datum nimmt die Markierung wieder weg
+      const aufraeumen = () => {
+        [from, to].forEach((f) => { if (f.value) { f.classList.remove("fehlt"); f.setAttribute("aria-invalid", "false"); } });
+        if (from.value && to.value) mountEl.querySelector("#sbDatumHinweis")?.remove();
+      };
+      to.addEventListener("change", aufraeumen);
       from.addEventListener("change", () => {
         to.min = from.value;
         if (to.value <= from.value) {
@@ -382,6 +388,7 @@ ${showFlightAddon ? `
           next.setDate(next.getDate() + (activeType === "car" ? 3 : 7));
           to.value = isoDate(next);
         }
+        aufraeumen();
       });
     }
 
@@ -407,6 +414,26 @@ ${showFlightAddon ? `
 
     mountEl.querySelector("#sbForm").addEventListener("submit", (e) => {
       e.preventDefault();
+      /* Ohne Reisezeitraum keine Suche (21.11.2026): Die Felder starten auf
+         der Startseite leer; gesucht wurde sonst still mit einem
+         Standardzeitraum - genau die Verwirrung, die beseitigt werden
+         sollte. "Flexibel im Monat" braucht kein Datum. */
+      const vonFeld = mountEl.querySelector("#sbFrom");
+      const bisFeld = mountEl.querySelector("#sbTo");
+      if (vonFeld && bisFeld && (!vonFeld.value || !bisFeld.value)) {
+        [vonFeld, bisFeld].forEach((f) => { f.classList.toggle("fehlt", !f.value); f.setAttribute("aria-invalid", f.value ? "false" : "true"); });
+        let hinweis = mountEl.querySelector("#sbDatumHinweis");
+        if (!hinweis) {
+          hinweis = document.createElement("p");
+          hinweis.id = "sbDatumHinweis";
+          hinweis.className = "sb-datum-hinweis";
+          hinweis.setAttribute("role", "alert");
+          mountEl.querySelector("#sbForm").appendChild(hinweis);
+        }
+        hinweis.textContent = "Bitte wähle deinen Reisezeitraum - oder stell oben auf „Flexibel im Monat“.";
+        (vonFeld.value ? bisFeld : vonFeld).focus();
+        return;
+      }
       const query = currentQuery();
       if (onSubmit) onSubmit(query);
       else window.location.href = `results.html?${new URLSearchParams(query).toString()}`;
@@ -431,11 +458,25 @@ ${showFlightAddon ? `
     flightAb = flug.ab || "";
     flightKlasse = flug.klasse || "economy";
 
+    /* Auf der Startseite ohne vorbelegte Daten (21.11.2026).
+       ------------------------------------------------------------------
+       Ben: "Wenn man normal in der Suche ist, dann sind ja immer schon zwei
+       Daten ausgewaehlt, quasi beispielhaft. Wenn man dann zum Beispiel
+       Mallorca eingibt, also einen Ort, der nicht in der Hauptsaison ist
+       waehrend der Zeit, die dort standardmaessig ausgewaehlt ist, dann ist
+       man halt verwirrt, weil man keine Ergebnisse bekommt."
+       Die Startseite erkennt man daran, dass sie die Suche nicht selbst
+       verarbeitet (kein onSubmit), sondern zur Trefferliste springt. Auf
+       der Trefferliste bleibt die Vorbelegung: Die Liste rechnet ohne Datum
+       mit dem Standardzeitraum, und ein leeres Feld wuerde verschweigen,
+       womit gerechnet wird. Ohne Daten wird auf der Startseite nicht
+       gesucht, sondern nachgefragt (siehe submit). */
+    const ohneVorbelegung = !onSubmit && !params.get("from") && !params.get("to");
     const initial = {
       ziel: params.get("ziel") || "",
       q: params.get("q") || options.q || "",
-      from: params.get("from") || d.start,
-      to: params.get("to") || d.end,
+      from: params.get("from") || (ohneVorbelegung ? "" : d.start),
+      to: params.get("to") || (ohneVorbelegung ? "" : d.end),
     };
     const flex = typeof Reisedaten !== "undefined" && Reisedaten.flex ? Reisedaten.flex() : null;
     if (flex) { flexibel = true; flexMonat = flex.schluessel; flexNaechte = flex.naechte; }

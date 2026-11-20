@@ -3177,3 +3177,9 @@ body.vorschlag-offen { overflow: hidden; }
    Brotkrumen, deutlich als Weg zurueck erkennbar. */
 .zurueck-pfeil { display: block; width: max-content; margin-bottom: 8px; font-weight: 600; color: var(--brand-600, #157a66); text-decoration: none; }
 .zurueck-pfeil:hover { text-decoration: underline; }
+
+/* Fehlender Reisezeitraum auf der Startseite (21.11.2026) */
+.input.fehlt { border-color: var(--warn); box-shadow: 0 0 0 3px rgba(201, 118, 27, .15); }
+/* Ueber die ganze Breite der Maske (sie ist ein Gitter), und mit Vorrang
+   vor der Absatzfarbe des Titelbereichs der Startseite (weiss) */
+#searchBox .sb-datum-hinweis { grid-column: 1 / -1; margin: 2px 0 0; font-size: .85rem; font-weight: 600; color: var(--warn); }
