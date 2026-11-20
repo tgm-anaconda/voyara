@@ -782,7 +782,7 @@ body.agent-collapsed .agent-head .icon-btn { margin-left: 0; transform: rotate(4
 .rating-text strong { display: block; font-size: .78rem; }
 .rating-text span { color: var(--ink-500); }
 .price-block { text-align: right; }
-.price-old { font-size: .76rem; color: var(--ink-300); text-decoration: line-through; }
+/* .price-old entfernt am 20.11.2026 (kein Streichpreis mehr auf den Karten) */
 .price-main { font-family: var(--font-display); font-weight: 800; font-size: 1.14rem; color: var(--brand-900); }
 .price-note { font-size: .7rem; color: var(--ink-500); }
 

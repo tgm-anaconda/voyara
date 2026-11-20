@@ -639,7 +639,10 @@ function stayResultCard(item) {
         <span class="rating-score">${item.rating.toFixed(1)}</span>
       </div>
       <div class="result-price">
-        ${preisImMonat(item, reisemonat()) < item.pricePerNight ? `<div class="price-old">${formatPrice(preis + item.pricePerNight - preisImMonat(item, reisemonat()))}</div>` : ""}
+        ${/* Kein durchgestrichener Normalpreis mehr (20.11.2026): Er wirkt
+             wie ein Angebot und waere ein Kaufanreiz, der nur bei manchen
+             Haeusern auftaucht. Dann liesse sich nicht mehr sagen, ob eine
+             Wahl am Agenten oder am Streichpreis lag. */ ""}
         <div class="price-main">${formatPrice(preis)}</div>
         <div class="price-note">pro Nacht${Reisedaten.flex() ? ` im ${Reisedaten.MONATSNAMEN[Reisedaten.flex().monat - 1]}` : ""} ${preisFuerText(item)}</div>
         ${paketZeile(item, preis)}

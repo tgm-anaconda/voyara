@@ -2483,6 +2483,14 @@ const liesReisende = async (text, felder, urteil = "ja") => {
       /\.header-action\[href='faq\.html'\]/.test(wq2) ? "ja" : "nein", "ja");
   }
 
+  /* Kein Streichpreis auf den Karten (20.11.2026): Ein durchgestrichener
+     Normalpreis wirkt wie ein Angebot und waere ein Kaufanreiz neben dem
+     Agenten. Gegenprobe: _backup/20-11-saisonpreis/ */
+  {
+    const rq = fs.readFileSync(alt && fs.existsSync(quelle + "results.js") ? quelle + "results.js" : B + "results.js", "utf8");
+    pruefe("Karten zeigen keinen durchgestrichenen Preis", /class="price-old"/.test(rq) ? "Streichpreis" : "keiner", "keiner");
+  }
+
   // Kinder oder Erwachsene
   if (WK && WK.kinderErwachsenRueckfrage) {
     const f = WK.kinderErwachsenRueckfrage({ erwachsene: 1, kinder: 2 }, { alterZuHoch: [28, 34] });
