@@ -1915,8 +1915,12 @@ const Kern = {
       this.notieren("filter_neu_gewuenscht", { text: String(t).slice(0, 80) });
     }
     // Sagt die Person etwas, bevor der Abschluss lief, entscheidet wieder das
-    // Gespraech - nur ein glattes Ja haelt den Abschluss am Leben
-    if (this.lauf.abschlussFaellig && !/^\s*(ja|jap|jo|okay|ok|gern|bitte|mach|klar|passt|genau)\b/i.test(t)) this.lauf.abschlussFaellig = false;
+    // Gespraech - nur ein reines Ja haelt den Abschluss am Leben (die ganze
+    // Nachricht, nicht ihr Anfang: "ja, aber lieber das andere Hotel")
+    if (this.lauf.abschlussFaellig && !Werkzeugkasten.abschlussJa(t)) {
+      this.lauf.abschlussFaellig = false;
+      this.notieren("abschluss_zurueckgestellt", { text: String(t).slice(0, 80) });
+    }
     // Die Antwort auf ein gefragtes Thema zaehlt als besprochen - was die
     // Person dazu gesagt hat, traegt das Modell mit stand_merken ein
     /* Was in diesem Zug aufgenommen wurde, sammelt sich erst. Ohne das
@@ -4680,7 +4684,8 @@ const Kern = {
     if (!this.lauf.abschlussFrage) return;
     const satz = String(t).toLowerCase().trim();
     this.lauf.abschlussFrage = null;
-    if (/^(ja|jap|jo|ok|okay|gerne|bitte)\b|abschlie|buch(e|en)? (sie|es|jetzt)|mach(s| es)? fertig/.test(satz) && !/\b(nein|nicht|noch nicht|warte)\b/.test(satz)) {
+    // Dieselbe Regel wie beim autonomen Abschluss: nur ein reines Ja
+    if (Werkzeugkasten.abschlussJa(satz)) {
       this.lauf.fortsetzenMit = "buchung_abschliessen";
       this.notieren("abschluss_ja", {});
     }

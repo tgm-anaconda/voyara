@@ -5509,8 +5509,28 @@ const Werkzeugkasten = {
       const anzahlHalt = kern.anzahlVorRundgang(kern.lauf.profil || {}, (a.ids || []).length || 3);
       if (anzahlHalt) return anzahlHalt;
       const wieViele = Math.max(2, Math.min(6, kern.lauf.profil?.anzahlVorschlaege || 3));
-      const ids = (a.ids || []).filter((id) => typeof getItemById === "function" && getItemById(id)).slice(0, wieViele);
-      if (!ids.length) return { ergebnis: { fehler: "Keine gueltigen Haus-ids." } };
+      const bekannt = (a.ids || []).filter((id) => typeof getItemById === "function" && getItemById(id));
+      if (!bekannt.length) return { ergebnis: { fehler: "Keine gueltigen Haus-ids." } };
+      /* Vorgelegt wird nur, was zu den Vorgaben passt (20.11.2026).
+         --------------------------------------------------------------
+         Pruefung der Regeln, Runde 2: Das Modell kann dieses Werkzeug
+         direkt rufen, und geprueft wurde nur, ob es die Haeuser gibt. Ein
+         Haus aus einer aelteren Liste oder eins ohne den gewuenschten Pool
+         kam so in die Vorlage - und das Partnerhaus wird aus genau dieser
+         Menge gewaehlt. Jetzt gilt dieselbe Treffermenge wie fuer die
+         Liste. Ausnahme: Haeuser, die die Person in ihrer letzten
+         Nachricht selbst beim Namen nennt ("vergleich X und Y") - das ist
+         ihr Wunsch, keine Auswahl des Modells. */
+      const pj = kern.lauf.profil || {};
+      let passend = null;
+      try { passend = new Set(Werkzeugkasten.katalogTreffer(pj, Werkzeugkasten.filterAusStand(pj)).map((h) => h.id)); } catch { passend = null; }
+      const zuletzt = String([...(kern.lauf.gespraech || [])].reverse().find((x) => x.role === "user")?.content || "").toLowerCase();
+      const genannt = (id) => { const n = String(getItemById(id)?.name || "").toLowerCase(); return n.length > 3 && zuletzt.includes(n); };
+      const ids = (passend ? bekannt.filter((id) => passend.has(id) || genannt(id)) : bekannt).slice(0, wieViele);
+      const raus = bekannt.filter((id) => !ids.includes(id) && passend && !passend.has(id) && !genannt(id));
+      if (raus.length) kern.notieren("vorlage_unpassend_entfernt", { ids: raus });
+      if (!ids.length) return { ergebnis: { fehler: "Diese Haeuser passen nicht zu den jetzigen Vorgaben.",
+        hinweis: "Nichts vorlegen. Ruf erst suchen mit den jetzigen Vorgaben und leg dann aus dieser Liste vor." } };
       kern.lauf.vorlageFuer = Werkzeugkasten.vorlageSchluessel(kern.lauf.profil);
       kern.lauf.vorlagen = Math.max(0, (kern.lauf.vorlagen || 1) - (kern.lauf.letzteVorlage?.join() === ids.join() ? 1 : 0));
       return kern.auswahlVorlegen(ids);
@@ -6974,7 +6994,10 @@ const Werkzeugkasten = {
         versicherungGewaehlt: st.versicherung, versicherungPreis: st.versicherungPreis,
         zahlung: st.zahlung, zahlungsarten: st.zahlungsarten, gesamt: st.gesamt,
         vorher: e?.daten?.vorher ? { gesamt: e.daten.vorher.gesamt, versicherung: e.daten.vorher.versicherung, zahlung: e.daten.vorher.zahlung } : null,
-        hinweis: "Sag genau das, was hier steht - nichts anderes ueber Versicherung oder Zahlung. Danach frag, ob du abschliessen sollst." },
+        hinweis: "Sag genau das, was hier steht - nichts anderes ueber Versicherung oder Zahlung. "
+          // Steht der Abschluss schon an (Freigabe "buchen"), folgt er im
+          // selben Zug - eine Frage danach widerspraeche dem, was passiert
+          + (kern.lauf.abschlussFaellig ? "Frag nichts, der Abschluss folgt direkt." : "Danach frag, ob du abschliessen sollst.") },
         log: `Kasse: Versicherung ${st.versicherung ? "drin" : "nicht drin"}, ${st.zahlung === "karte" ? "Kreditkarte" : "Lastschrift"}, ${st.gesamt} €` };
     },
 
@@ -11972,6 +11995,28 @@ const Werkzeugkasten = {
 
   katalogTreffer(p, filter) {
     return Auswahl.treffer(this.katalog(p), this.vorgaben(p, filter));
+  },
+
+  /* Nur ein reines Ja schliesst eine Buchung ab (20.11.2026).
+     ----------------------------------------------------------------
+     Pruefung der Regeln, Runde 2: Gelesen wurde nur der Anfang der
+     Nachricht. "bitte nicht buchen", "ja, aber lieber das andere Hotel"
+     und "ok warte kurz" hielten den Abschluss am Leben, bei "ja, aber
+     ohne Versicherung" lief er sogar ohne Freigabe "buchen" an. Jetzt
+     muss die ganze Nachricht aus Zustimmung bestehen. Alles andere -
+     ein Einwand, ein Wunsch, eine Frage - geht zurueck ins Gespraech;
+     die Person kann danach immer noch Ja sagen. Lieber einmal zu oft
+     nachfragen als einmal gegen ihren Willen buchen. */
+  abschlussJa(t) {
+    const satz = String(t || "").toLowerCase().replace(/[.!,;:]+/g, " ").replace(/\s+/g, " ").trim();
+    if (!satz || satz.length > 60) return false;
+    const ERLAUBT = new Set(["ja", "jap", "jo", "jep", "jawohl", "yes", "ok", "okay", "gern", "gerne", "bitte", "klar", "passt",
+      "genau", "los", "mach", "machs", "mach's", "das", "es", "sie", "so", "jetzt", "fertig", "abschließen", "abschliessen",
+      "schließ", "schliess", "ab", "buchen", "buche", "buch", "danke", "super", "perfekt", "gut", "sehr", "ruhig", "gleich",
+      "direkt", "einfach", "und", "dann"]);
+    const ZUSTIMMUNG = /^(ja|jap|jo|jep|jawohl|yes|ok|okay|gern|gerne|bitte|klar|passt|genau|los|mach|machs|mach's|abschlie(ß|ss)en|schlie(ß|ss)|buchen|buche|buch)$/;
+    const woerter = satz.split(" ");
+    return woerter.every((w) => ERLAUBT.has(w)) && woerter.some((w) => ZUSTIMMUNG.test(w));
   },
 
 };

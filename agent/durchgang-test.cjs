@@ -2869,6 +2869,71 @@ const liesReisende = async (text, felder, urteil = "ja") => {
       /const ohneSuche = offen === "ausstattung" && !lauf\.gefiltertMit;/.test(wq) ? "ja" : "nein", "ja");
   }
 
+  /* Pruefung der Regeln, Runde 2 (20.11.2026).
+     Gegenprobe: _backup/vor-regelpruefung-runde2-2026-11-20/ */
+  {
+    // R2-1: Nur ein reines Ja schliesst ab
+    const ja = (t) => (WK && typeof WK.abschlussJa === "function") ? (WK.abschlussJa(t) ? "ja" : "nein") : "fehlt";
+    for (const t of ["ja", "Ja, abschließen", "ja bitte", "ok", "passt", "ja, buch es", "Ja gerne, bitte buchen.", "mach das", "schließ ab", "klar, los"])
+      pruefe(`Abschluss bei "${t}"`, ja(t), "ja");
+    for (const t of ["bitte nicht buchen", "ja, aber lieber das andere Hotel", "mach erstmal nichts", "ok warte kurz",
+      "ja aber ohne Versicherung", "nein", "noch nicht", "buch das andere", "ja, mit Kreditkarte bitte", "ist das storniert­bar?"])
+      pruefe(`Kein Abschluss bei "${t}"`, ja(t), "nein");
+    // Auch ohne Freigabe "buchen": die Antwort auf "Soll ich abschliessen?"
+    const antwort = (t) => {
+      const k = { lauf: { abschlussFrage: "h1", protokoll: [] }, notieren(e) { this.lauf.protokoll.push(e); } };
+      try { KN.abschlussAntwort.call(k, t); } catch (e) { return "FEHLER"; }
+      return k.lauf.fortsetzenMit === "buchung_abschliessen" ? "bucht" : "fragt nach";
+    };
+    pruefe("Gegenzeichnung: Ja bucht", antwort("Ja, abschließen"), "bucht");
+    pruefe("Gegenzeichnung: Ja mit Einwand bucht nicht", antwort("ja, aber ohne Versicherung"), "fragt nach");
+    pruefe("Gegenzeichnung: anderes Haus bucht nicht", antwort("ja, aber lieber das andere Hotel"), "fragt nach");
+    const kq = fs.readFileSync(alt && fs.existsSync(quelle + "kern.js") ? quelle + "kern.js" : B + "agent/kern.js", "utf8");
+    pruefe("Der faellige Abschluss nutzt dieselbe Regel",
+      /if \(this\.lauf\.abschlussFaellig && !Werkzeugkasten\.abschlussJa\(t\)\)/.test(kq) ? "ja" : "nein", "ja");
+
+    // R2-3: Nach einer Aenderung an der Kasse keine Frage, wenn der Abschluss ansteht
+    const wq = fs.readFileSync(alt && fs.existsSync(quelle + "werkzeugkasten.js") ? quelle + "werkzeugkasten.js" : B + "agent/werkzeugkasten.js", "utf8");
+    pruefe("Kasse: Hinweis haengt am faelligen Abschluss",
+      /kern\.lauf\.abschlussFaellig \? "Frag nichts, der Abschluss folgt direkt\." : "Danach frag, ob du abschliessen sollst\."/.test(wq) ? "ja" : "nein", "ja");
+  }
+
+  // R2-2: Vorgelegt wird nur, was zu den Vorgaben passt
+  if (WK && WK.werkzeuge && WK.werkzeuge.auswahl_vorlegen) {
+    const profil = { zielId: "mallorca", typ: "hotel", monat: 7, naechte: 7, erwachsene: 2, kinder: 0, kinderAlter: [], zimmer: 1,
+      artGenannt: true, flug: false, anreise: "2027-07-10", maxPreis: 2000, verpflegungEgal: true, ausstattungEgal: true,
+      gewichtungEgal: true, wuensche: [], vorgehen: "top3", anzahlVorschlaege: 3 };
+    const passend = WK.katalogTreffer(profil, WK.filterAusStand(profil)).map((h) => h.id);
+    const fremd = WK.katalog({ ...profil, zielId: null, maxPreis: null }).map((h) => h.id).find((id) => !passend.includes(id))
+      || ctx.HOTELS?.find?.((h) => !passend.includes(h.id))?.id;
+    const ruf = async (ids, letzte = "ja") => {
+      let vorgelegt = null;
+      const kern = { lauf: { profil: { ...profil }, protokoll: [], gespraech: [{ role: "user", content: letzte }], verlauf: [],
+          gefragtWie: {}, annahmeOffen: [], anzahlBestaetigt: true },
+        notieren(e, d) { this.lauf.protokoll.push({ ereignis: e, ...d }); }, sagen() {}, gespraechPush() {}, sichern() {},
+        logZeile() {}, standKurz: () => "", freigabe: () => "suchen", darf: () => false, standAnzeigen() {},
+        anzahlVorRundgang: KN.anzahlVorRundgang,
+        auswahlVorlegen(x) { vorgelegt = x; return { ergebnis: { vorgelegt: true } }; } };
+      const r = await WK.werkzeuge.auswahl_vorlegen.call(WK, { ids }, kern);
+      return { r, vorgelegt, kern };
+    };
+    pruefe("Testdaten: passende und fremde Haeuser vorhanden", passend.length >= 2 && fremd ? "ja" : "nein", "ja");
+    if (passend.length >= 2 && fremd) {
+      const a = await ruf([passend[0], fremd, passend[1]]);
+      pruefe("Unpassendes Haus faellt aus der Vorlage", (a.vorgelegt || []).includes(fremd) ? "drin" : "raus", "raus");
+      pruefe("Passende bleiben", (a.vorgelegt || []).join(), [passend[0], passend[1]].join());
+      pruefe("Das Entfernen steht im Protokoll", a.kern.lauf.protokoll.some((x) => x.ereignis === "vorlage_unpassend_entfernt") ? "ja" : "nein", "ja");
+      const b = await ruf([fremd]);
+      pruefe("Nur Unpassendes: nichts vorgelegt", b.vorgelegt ? "vorgelegt" : "nicht", "nicht");
+      pruefe("Nur Unpassendes: Hinweis auf neue Suche", /suchen/.test(b.r?.ergebnis?.hinweis || "") ? "ja" : "nein", "ja");
+      const name = vm.runInContext(`typeof getItemById==='function'?getItemById(${JSON.stringify(fremd)})?.name:null`, ctx);
+      if (name) {
+        const c = await ruf([passend[0], fremd], `vergleich mal ${name} mit den anderen`);
+        pruefe("Von der Person genannt: bleibt drin", (c.vorgelegt || []).includes(fremd) ? "drin" : "raus", "drin");
+      }
+    }
+  }
+
   console.log(`\n${gut} richtig, ${schlecht} falsch`);
   process.exit(schlecht ? 1 : 0);
 })();
