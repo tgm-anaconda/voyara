@@ -1676,7 +1676,16 @@ const Werkzeugkasten = {
             "Ohne Flug, dafür beides": { typ: null, artEgal: true, artGenannt: true, flug: false } },
       };
     }
-    if (!p.artEgal || p.artGenannt) return null;
+    /* Was die Liste zeigt, nicht wie die Art zustande kam (21.11.2026).
+       ----------------------------------------------------------------
+       Hier stand `if (!p.artEgal || p.artGenannt) return null`. Seit
+       "Beides zeigen" und "Ohne Flug, dafuer beides" auch artGenannt
+       setzen (Runde 1, Befund E), kam die Frage dort nie: In Bens Lauf
+       vom 21.11. war All Inclusive gewuenscht, gezeigt wurden vier
+       Ferienwohnungen ohne Verpflegung. Massgeblich ist wie oben beim
+       Flug `seitenTyp`. Wer "beides offen lassen" waehlt, wird ueber
+       `artGefragt` nicht noch einmal gefragt. */
+    if (!(p.artEgal || p.artGenannt) || zeigt !== "unterkunft") return null;
     const verpflegung = this.VERPFLEGUNG_HOTEL.includes(p.verpflegung);
     if (!verpflegung && !p.mindestSterne) return null;
     const grund = verpflegung ? "verpflegung" : "sterne";

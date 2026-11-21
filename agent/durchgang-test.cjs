@@ -3128,6 +3128,17 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     const bq = fs.readFileSync(alt && fs.existsSync(quelle + "bewertungen.js") ? quelle + "bewertungen.js" : B + "data/bewertungen.js", "utf8");
     pruefe("Teilnoten: Stichprobe aus der alten Anzahl", /const wie = Math\.min\(basis, stichprobe\);/.test(bq) ? "ja" : "nein", "ja");
   }
+  /* Runde 5, B10 (21.11.2026): "Beides zeigen" plus All Inclusive - die
+     Frage "gibt es nur bei Hotels" muss kommen. */
+  {
+    const g = (pr, l = {}) => WK.artRueckfrage(pr, l)?.grund || null;
+    pruefe("Verpflegung: 'beides' (artGenannt) plus All Inclusive fragt", g({ artGenannt: true, artEgal: true, typ: null, verpflegung: "ai" }), "verpflegung");
+    pruefe("Verpflegung: nach 'Ohne Flug, dafuer beides' plus AI fragt", g({ artGenannt: true, artEgal: true, typ: null, flug: false, verpflegung: "ai" }, { artGefragt: { flug: true } }), "verpflegung");
+    pruefe("Verpflegung: Hotel gewaehlt fragt nicht", g({ artGenannt: true, typ: "hotel", verpflegung: "ai" }), null);
+    pruefe("Verpflegung: Ferienwohnung gewaehlt fragt nicht", g({ artGenannt: true, typ: "apartment", verpflegung: "ai" }), null);
+    pruefe("Verpflegung: Art noch offen fragt nicht", g({ verpflegung: "ai" }), null);
+    pruefe("Verpflegung: schon gefragt fragt nicht", g({ artGenannt: true, artEgal: true, verpflegung: "ai" }, { artGefragt: { verpflegung: true } }), null);
+  }
   /* Runde 4 (21.11.2026): Gebucht, dann vor dem Schliessen der Aufgabe
      neu geladen - beim naechsten Laden muss die Aufgabe zu Ende gehen. */
   {
