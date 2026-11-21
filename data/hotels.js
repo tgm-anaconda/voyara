@@ -59,7 +59,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 89,
     rating: 4.3,
-    reviewCount: 612,
+    reviewCount: 570, reviewBasis: 612,
     image: { type: "city", palette: "mint" },
     gallery: [
       { type: "city", palette: "mint" },
@@ -102,7 +102,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 142,
     rating: 4.6,
-    reviewCount: 1284,
+    reviewCount: 610, reviewBasis: 1284,
     image: { type: "beach", palette: "azur" },
     gallery: [
       { type: "beach", palette: "azur" },
@@ -146,7 +146,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 118,
     rating: 4.8,
-    reviewCount: 347,
+    reviewCount: 506, reviewBasis: 347,
     image: { type: "country", palette: "olive" },
     gallery: [
       { type: "country", palette: "olive" },
@@ -188,7 +188,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 64,
     rating: 3.9,
-    reviewCount: 203,
+    reviewCount: 442, reviewBasis: 203,
     image: { type: "harbor", palette: "azur" },
     gallery: [
       { type: "harbor", palette: "azur" },
@@ -231,7 +231,7 @@ const HOTELS = [
     stars: 5,
     pricePerNight: 231,
     rating: 4.7,
-    reviewCount: 956,
+    reviewCount: 601, reviewBasis: 956,
     image: { type: "city", palette: "dusk" },
     gallery: [
       { type: "city", palette: "dusk" },
@@ -275,7 +275,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 176,
     rating: 4.5,
-    reviewCount: 421,
+    reviewCount: 530, reviewBasis: 421,
     image: { type: "beach", palette: "mint" },
     gallery: [
       { type: "beach", palette: "mint" },
@@ -318,7 +318,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 97,
     rating: 4.1,
-    reviewCount: 788,
+    reviewCount: 590, reviewBasis: 788,
     image: { type: "city", palette: "stone" },
     gallery: [
       { type: "city", palette: "stone" },
@@ -361,7 +361,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 205,
     rating: 4.4,
-    reviewCount: 1102,
+    reviewCount: 605, reviewBasis: 1102,
     image: { type: "pool", palette: "azur" },
     gallery: [
       { type: "pool", palette: "azur" },
@@ -406,7 +406,7 @@ const HOTELS = [
     stars: 5,
     pricePerNight: 268,
     rating: 4.9,
-    reviewCount: 214,
+    reviewCount: 451, reviewBasis: 214,
     image: { type: "mountain", palette: "sunset" },
     gallery: [
       { type: "mountain", palette: "sunset" },
@@ -449,7 +449,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 112,
     rating: 4.0,
-    reviewCount: 534,
+    reviewCount: 558, reviewBasis: 534,
     image: { type: "pool", palette: "mint" },
     gallery: [
       { type: "pool", palette: "mint" },
@@ -492,7 +492,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 158,
     rating: 4.2,
-    reviewCount: 869,
+    reviewCount: 596, reviewBasis: 869,
     image: { type: "beach", palette: "sunset" },
     gallery: [
       { type: "beach", palette: "sunset" },
@@ -536,7 +536,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 134,
     rating: 4.6,
-    reviewCount: 296,
+    reviewCount: 486, reviewBasis: 296,
     image: { type: "mountain", palette: "stone" },
     gallery: [
       { type: "mountain", palette: "stone" },
@@ -579,7 +579,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 149,
     rating: 4.4,
-    reviewCount: 1893,
+    reviewCount: 618, reviewBasis: 1893,
     shortDescription:
       "Großes Strandhotel an der Promenade von Cala Millor, mit zwei Pools und Familienzimmern.",
     description:
@@ -617,7 +617,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 102,
     rating: 4.5,
-    reviewCount: 428,
+    reviewCount: 534, reviewBasis: 428,
     shortDescription:
       "Kleines Haus am Marktplatz von Santanyí, elf Zimmer in einem Sandsteinbau.",
     description:
@@ -654,7 +654,7 @@ const HOTELS = [
     stars: 5,
     pricePerNight: 289,
     rating: 4.8,
-    reviewCount: 512,
+    reviewCount: 552, reviewBasis: 512,
     shortDescription:
       "Adults-only-Haus über dem Naturhafen, mit Infinity-Pool und Blick auf die Yachten.",
     description:
@@ -691,7 +691,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 168,
     rating: 4.3,
-    reviewCount: 1476,
+    reviewCount: 613, reviewBasis: 1476,
     shortDescription:
       "Familienhotel hinter dem Pinienstreifen der Bucht von Pollença, mit Kinderclub und Wasserrutschen.",
     description:
@@ -729,7 +729,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 132,
     rating: 4.7,
-    reviewCount: 289,
+    reviewCount: 485, reviewBasis: 289,
     shortDescription:
       "Arbeitendes Weingut im Inselinneren, neun Zimmer zwischen Reben und Mandelbäumen.",
     description:
@@ -766,7 +766,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 58,
     rating: 3.8,
-    reviewCount: 641,
+    reviewCount: 577, reviewBasis: 641,
     shortDescription:
       "Einfaches Haus zwei Straßen hinter der Promenade, sauber und günstig.",
     description:
@@ -803,7 +803,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 161,
     rating: 4.6,
-    reviewCount: 733,
+    reviewCount: 587, reviewBasis: 733,
     shortDescription:
       "Ruhiges Strandhotel im Süden, Ausgangspunkt für Es Trenc und die Cabrera-Fahrten.",
     description:
@@ -840,7 +840,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 124,
     rating: 4.1,
-    reviewCount: 967,
+    reviewCount: 603, reviewBasis: 967,
     shortDescription:
       "Apartmentanlage mit Küchenzeile in jeder Einheit, fünf Minuten vom Strand von Alcúdia.",
     description:
@@ -878,7 +878,7 @@ const HOTELS = [
     stars: 5,
     pricePerNight: 246,
     rating: 4.7,
-    reviewCount: 604,
+    reviewCount: 570, reviewBasis: 604,
     shortDescription:
       "Stadtpalais aus dem 17. Jahrhundert, hinter dem Portal ein Innenhof mit Arkaden.",
     description:
@@ -915,7 +915,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 158,
     rating: 4.6,
-    reviewCount: 351,
+    reviewCount: 507, reviewBasis: 351,
     shortDescription:
       "Vierzehn Zimmer am Ortsrand von Valldemossa, Terrasse mit Blick ins Tal.",
     description:
@@ -952,7 +952,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 187,
     rating: 4.2,
-    reviewCount: 2140,
+    reviewCount: 619, reviewBasis: 2140,
     shortDescription:
       "Große All-inclusive-Anlage mit Wasserpark, Bühnenprogramm und Betreuung ab zwei Jahren.",
     description:
@@ -990,7 +990,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 108,
     rating: 4.4,
-    reviewCount: 372,
+    reviewCount: 509, reviewBasis: 372,
     shortDescription:
       "Kleines Haus über dem Fischerhafen von Cala Figuera, zehn Zimmer mit Blick auf die Boote.",
     description:
@@ -1028,7 +1028,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 96,
     rating: 4.5,
-    reviewCount: 264,
+    reviewCount: 468, reviewBasis: 264,
     shortDescription:
       "Umgebautes Landhaus am Rand von Artà, zwischen Olivenhainen und dem Naturpark Llevant.",
     description:
@@ -1065,7 +1065,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 195,
     rating: 4.3,
-    reviewCount: 1558,
+    reviewCount: 615, reviewBasis: 1558,
     shortDescription:
       "Terrassenanlage über einer der Buchten von Cala d'Or, mit eigenem Zugang zum Wasser.",
     description:
@@ -1103,7 +1103,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 168,
     rating: 4.5,
-    reviewCount: 892,
+    reviewCount: 597, reviewBasis: 892,
     shortDescription:
       "Terrassenhotel über der Bucht von Agia Pelagia, weiß und grün, mit Pool über dem Meer.",
     description:
@@ -1141,7 +1141,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 124,
     rating: 4.7,
-    reviewCount: 486,
+    reviewCount: 542, reviewBasis: 486,
     shortDescription:
       "Neun Zimmer in einem venezianischen Haus direkt am alten Hafen von Chania.",
     description:
@@ -1178,7 +1178,7 @@ const HOTELS = [
     stars: 5,
     pricePerNight: 289,
     rating: 4.8,
-    reviewCount: 407,
+    reviewCount: 521, reviewBasis: 407,
     shortDescription:
       "Steinhaus-Anlage über dem Golf von Mirabello, Adults only ab sechzehn.",
     description:
@@ -1215,7 +1215,7 @@ const HOTELS = [
     stars: 5,
     pricePerNight: 268,
     rating: 4.8,
-    reviewCount: 614,
+    reviewCount: 572, reviewBasis: 614,
     shortDescription:
       "Flügelbau auf der Sandsteinklippe über einer Bucht, mit Terrassen bis an die Kante.",
     description:
@@ -1246,7 +1246,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 142,
     rating: 4.7,
-    reviewCount: 288,
+    reviewCount: 484, reviewBasis: 288,
     shortDescription:
       "Weiß gekalktes Landhaus zwischen Mandelbäumen, zwölf Zimmer, tiefe Ruhe.",
     description:
@@ -1277,7 +1277,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 176,
     rating: 4.3,
-    reviewCount: 1642,
+    reviewCount: 616, reviewBasis: 1642,
     shortDescription:
       "Großes Familienhaus hinter dem Dünenstreifen, mit Rutschen und Betreuung ab vier Jahren.",
     description:
@@ -1309,7 +1309,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 62,
     rating: 3.9,
-    reviewCount: 437,
+    reviewCount: 535, reviewBasis: 437,
     shortDescription:
       "Einfaches Haus mit Fliesenfassade, zwei Straßen hinter dem Fischereihafen.",
     description:
@@ -1340,7 +1340,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 158,
     rating: 4.5,
-    reviewCount: 523,
+    reviewCount: 554, reviewBasis: 523,
     shortDescription:
       "Weiße Kuben auf der Klippe am Südwestzipfel, viel Glas und noch mehr Wind.",
     description:
@@ -1372,7 +1372,7 @@ const HOTELS = [
     stars: 5,
     pricePerNight: 392,
     rating: 4.9,
-    reviewCount: 341,
+    reviewCount: 499, reviewBasis: 341,
     shortDescription:
       "Rosa Granitblöcke auf der Landzunge, halb hinter Wacholder verborgen.",
     description:
@@ -1403,7 +1403,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 164,
     rating: 4.7,
-    reviewCount: 216,
+    reviewCount: 452, reviewBasis: 216,
     shortDescription:
       "Umgebautes Steingehöft in der Macchia, Korkeichen ringsum, Innenhof mit Bogen.",
     description:
@@ -1434,7 +1434,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 196,
     rating: 4.5,
-    reviewCount: 874,
+    reviewCount: 596, reviewBasis: 874,
     shortDescription:
       "Korallenrot gestrichen, drei Etagen mit tiefen Loggien über einer weißen Bucht.",
     description:
@@ -1466,7 +1466,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 118,
     rating: 4.4,
-    reviewCount: 193,
+    reviewCount: 436, reviewBasis: 193,
     shortDescription:
       "Kleines Steinhaus am Dorfrand, Tonnengewölbe im Eingang, Feigenbäume im Hof.",
     description:
@@ -1497,7 +1497,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 148,
     rating: 4.4,
-    reviewCount: 1218,
+    reviewCount: 609, reviewBasis: 1218,
     shortDescription:
       "Langer flacher Bau aus dunklem Vulkanstein über einem schwarzen Lavastrand.",
     description:
@@ -1529,7 +1529,7 @@ const HOTELS = [
     stars: 5,
     pricePerNight: 286,
     rating: 4.8,
-    reviewCount: 706,
+    reviewCount: 581, reviewBasis: 706,
     shortDescription:
       "Kolonialbau mit Arkadengalerien und rotem Ziegeldach in subtropischen Gärten.",
     description:
@@ -1560,7 +1560,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 86,
     rating: 4.1,
-    reviewCount: 492,
+    reviewCount: 551, reviewBasis: 492,
     shortDescription:
       "Vier Etagen, weiß mit blauen Geländern, Außentreppen, Bananenplantagen nebenan.",
     description:
@@ -1592,7 +1592,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 172,
     rating: 4.7,
-    reviewCount: 264,
+    reviewCount: 469, reviewBasis: 264,
     shortDescription:
       "Kanarisches Herrenhaus mit dunklen Schnitzbalkonen, oberhalb Lorbeerwald.",
     description:
@@ -1623,7 +1623,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 184,
     rating: 4.2,
-    reviewCount: 2341,
+    reviewCount: 619, reviewBasis: 2341,
     shortDescription:
       "Große Anlage in Sand- und Terrakottatönen mit geschwungener Balkonfront.",
     description:
@@ -1655,7 +1655,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 168,
     rating: 4.5,
-    reviewCount: 1487,
+    reviewCount: 614, reviewBasis: 1487,
     shortDescription:
       "Modernisme-Eckhaus mit schmiedeeisernen Balkonen an einer breiten Allee.",
     description:
@@ -1686,7 +1686,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 194,
     rating: 4.6,
-    reviewCount: 612,
+    reviewCount: 571, reviewBasis: 612,
     shortDescription:
       "Schmales Stadthaus in einer Gasse des gotischen Viertels, Fensterläden aus Holz.",
     description:
@@ -1717,7 +1717,7 @@ const HOTELS = [
     stars: 5,
     pricePerNight: 324,
     rating: 4.8,
-    reviewCount: 938,
+    reviewCount: 600, reviewBasis: 938,
     shortDescription:
       "Palasthotel von 1912 mit Steinfassade und verglastem Dachpavillon.",
     description:
@@ -1748,7 +1748,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 68,
     rating: 3.8,
-    reviewCount: 721,
+    reviewCount: 584, reviewBasis: 721,
     shortDescription:
       "Schlichtes Gästehaus im alten Industrieviertel, vier Etagen, kleiner Eingang.",
     description:
@@ -1779,7 +1779,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 124,
     rating: 4.2,
-    reviewCount: 538,
+    reviewCount: 559, reviewBasis: 538,
     shortDescription:
       "Modernes Apartmenthaus mit Rasterfassade, wenige Straßen hinter dem Stadtstrand.",
     description:
@@ -1811,7 +1811,7 @@ const HOTELS = [
     stars: 5,
     pricePerNight: 298,
     rating: 4.8,
-    reviewCount: 574,
+    reviewCount: 566, reviewBasis: 574,
     shortDescription:
       "Stadtpalais mit Stuckfassade, hohen Bogenfenstern und Durchfahrtstor.",
     description:
@@ -1842,7 +1842,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 162,
     rating: 4.4,
-    reviewCount: 1806,
+    reviewCount: 617, reviewBasis: 1806,
     shortDescription:
       "Gründerzeit-Eckhaus, sechs Etagen, ockerfarben, Straßenbahn vor der Tür.",
     description:
@@ -1873,7 +1873,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 74,
     rating: 4,
-    reviewCount: 649,
+    reviewCount: 578, reviewBasis: 649,
     shortDescription:
       "Bescheidenes Wiener Zinshaus in einer ruhigen Wohnstraße, schlichte Haustür.",
     description:
@@ -1904,7 +1904,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 186,
     rating: 4.6,
-    reviewCount: 423,
+    reviewCount: 530, reviewBasis: 423,
     shortDescription:
       "Schmales Stadthaus neben der Marktgasse, grünes Erdgeschoss, hohe Fenster.",
     description:
@@ -1935,7 +1935,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 158,
     rating: 4.6,
-    reviewCount: 518,
+    reviewCount: 553, reviewBasis: 518,
     shortDescription:
       "Schmales Haus, ganz mit blau-weißen Kacheln verkleidet, Eisenbalkone.",
     description:
@@ -1966,7 +1966,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 142,
     rating: 4.4,
-    reviewCount: 1129,
+    reviewCount: 607, reviewBasis: 1129,
     shortDescription:
       "Cremefarbener Fünfgeschosser auf dem Hügel, Dachterrasse mit Pergola.",
     description:
@@ -1997,7 +1997,7 @@ const HOTELS = [
     stars: 5,
     pricePerNight: 312,
     rating: 4.9,
-    reviewCount: 447,
+    reviewCount: 537, reviewBasis: 447,
     shortDescription:
       "Palast aus dem 18. Jahrhundert, rosa gekalkt, mit ummauertem Garten.",
     description:
@@ -2028,7 +2028,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 106,
     rating: 4.2,
-    reviewCount: 864,
+    reviewCount: 595, reviewBasis: 864,
     shortDescription:
       "Pombalinischer Block im Rasterviertel, kleine Balkone, Studios mit Küche.",
     description:
@@ -2060,7 +2060,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 218,
     rating: 4.5,
-    reviewCount: 1372,
+    reviewCount: 612, reviewBasis: 1372,
     shortDescription:
       "Großes Alpenhotel am Pistenfuß, dunkle Holzbalkone auf jeder Etage.",
     description:
@@ -2092,7 +2092,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 186,
     rating: 4.4,
-    reviewCount: 1918,
+    reviewCount: 618, reviewBasis: 1918,
     shortDescription:
       "Breiter Tiroler Bau mit bemalten Fenstergewänden und Blumenkästen.",
     description:
@@ -2124,7 +2124,7 @@ const HOTELS = [
     stars: 5,
     pricePerNight: 368,
     rating: 4.9,
-    reviewCount: 398,
+    reviewCount: 520, reviewBasis: 398,
     shortDescription:
       "Modernes Chalet aus Altholz und Glas, niedrig und lang, Panoramafenster.",
     description:
@@ -2155,7 +2155,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 82,
     rating: 4.1,
-    reviewCount: 536,
+    reviewCount: 559, reviewBasis: 536,
     shortDescription:
       "Einfacher Dorfgasthof mit Steildach, weißen Wänden und Holzbalkon.",
     description:
@@ -2186,7 +2186,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 232,
     rating: 4.7,
-    reviewCount: 341,
+    reviewCount: 500, reviewBasis: 341,
     shortDescription:
       "Kompaktes Spa-Hotel in dunkler Lärche mit Gründach am Waldrand.",
     description:
@@ -2217,7 +2217,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 224,
     rating: 4.6,
-    reviewCount: 892,
+    reviewCount: 597, reviewBasis: 892,
     shortDescription:
       "Steinsockel, Holzobergeschosse, tiefer Dachüberstand unter den Felswänden.",
     description:
@@ -2249,7 +2249,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 178,
     rating: 4.7,
-    reviewCount: 364,
+    reviewCount: 508, reviewBasis: 364,
     shortDescription:
       "Ansitz mit Zinnenturm zwischen Weinbergen, dicke Mauern, Rundbogenfenster.",
     description:
@@ -2280,7 +2280,7 @@ const HOTELS = [
     stars: 5,
     pricePerNight: 394,
     rating: 4.9,
-    reviewCount: 512,
+    reviewCount: 552, reviewBasis: 512,
     shortDescription:
       "Heller Stein und Glas, auskragende Geschosse zu den Dolomitengipfeln.",
     description:
@@ -2311,7 +2311,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 118,
     rating: 4.4,
-    reviewCount: 287,
+    reviewCount: 483, reviewBasis: 287,
     shortDescription:
       "Kleines Familienhaus, weißer Putz und dunkles Holz, geschnitzter Balkon.",
     description:
@@ -2342,7 +2342,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 286,
     rating: 4.8,
-    reviewCount: 621,
+    reviewCount: 572, reviewBasis: 621,
     shortDescription:
       "Reihe kleiner Hütten mit Glasdach auf Holzplattformen im Schneewald.",
     description:
@@ -2373,7 +2373,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 212,
     rating: 4.5,
-    reviewCount: 734,
+    reviewCount: 588, reviewBasis: 734,
     shortDescription:
       "Lange Holzlodge am zugefrorenen See, tiefe Traufen voller Schnee.",
     description:
@@ -2405,7 +2405,7 @@ const HOTELS = [
     stars: 5,
     pricePerNight: 428,
     rating: 4.9,
-    reviewCount: 389,
+    reviewCount: 518, reviewBasis: 389,
     shortDescription:
       "Schwarze Holzsuiten mit vollverglaster Stirnwand nach Norden.",
     description:
@@ -2436,7 +2436,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 164,
     rating: 4.3,
-    reviewCount: 598,
+    reviewCount: 570, reviewBasis: 598,
     shortDescription:
       "Rot gestrichene finnische Hofgebäude mit weißen Fensterrahmen im Schnee.",
     description:
@@ -2468,7 +2468,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 168,
     rating: 4.5,
-    reviewCount: 947,
+    reviewCount: 600, reviewBasis: 947,
     shortDescription:
       "Weiße Bäderarchitektur mit Veranda und Zierggiebeln hinter den Dünen.",
     description:
@@ -2500,7 +2500,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 152,
     rating: 4.6,
-    reviewCount: 386,
+    reviewCount: 516, reviewBasis: 386,
     shortDescription:
       "Restauriertes Backsteingutshaus im Park am Bodden, kleiner Säulenportikus.",
     description:
@@ -2531,7 +2531,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 138,
     rating: 4.2,
-    reviewCount: 1264,
+    reviewCount: 610, reviewBasis: 1264,
     shortDescription:
       "Langer flacher Bau mit Reetdach zwischen Kiefernwald und Dünen.",
     description:
@@ -2563,7 +2563,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 72,
     rating: 4,
-    reviewCount: 428,
+    reviewCount: 534, reviewBasis: 428,
     shortDescription:
       "Schlichtes zweigeschossiges Backsteinhaus mit Gartentor im Ostseedorf.",
     description:
@@ -2594,7 +2594,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 172,
     rating: 4.2,
-    reviewCount: 2087,
+    reviewCount: 618, reviewBasis: 2087,
     shortDescription:
       "Weiße Kuben mit blauen Läden um einen Innenhof, hinter langem Sandstrand.",
     description:
@@ -2626,7 +2626,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 58,
     rating: 4.1,
-    reviewCount: 312,
+    reviewCount: 493, reviewBasis: 312,
     shortDescription:
       "Kleines weißes Haus über dem Hafen, kahle Berge im Rücken.",
     description:
@@ -2657,7 +2657,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 134,
     rating: 4.7,
-    reviewCount: 694,
+    reviewCount: 581, reviewBasis: 694,
     shortDescription:
       "Ockerfarbene Stampflehmwand mit einer geschnitzten Zederntür, dahinter der Riad.",
     description:
@@ -2688,7 +2688,7 @@ const HOTELS = [
     stars: 5,
     pricePerNight: 346,
     rating: 4.8,
-    reviewCount: 528,
+    reviewCount: 558, reviewBasis: 528,
     shortDescription:
       "Großer Ockerpalast mit Hufeisenbögen und Zellige, Atlas am Horizont.",
     description:
@@ -2719,7 +2719,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 112,
     rating: 4.3,
-    reviewCount: 1043,
+    reviewCount: 604, reviewBasis: 1043,
     shortDescription:
       "Rosafarbener Sechzigerjahre-Bau mit umlaufenden Balkonbändern.",
     description:
@@ -2750,7 +2750,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 54,
     rating: 4.2,
-    reviewCount: 287,
+    reviewCount: 483, reviewBasis: 287,
     shortDescription:
       "Flachdachhaus in Erdfarben im Bergdorf, beschattete Dachterrasse.",
     description:
@@ -2781,7 +2781,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 156,
     rating: 4.5,
-    reviewCount: 812,
+    reviewCount: 591, reviewBasis: 812,
     shortDescription:
       "Weißes kapholländisches Haus mit Schweifgiebeln und grünen Läden.",
     description:
@@ -2812,7 +2812,7 @@ const HOTELS = [
     stars: 5,
     pricePerNight: 298,
     rating: 4.9,
-    reviewCount: 436,
+    reviewCount: 535, reviewBasis: 436,
     shortDescription:
       "Weiß gekalktes Weingut mit Reetdach und Säulenveranda in den Reben.",
     description:
@@ -2843,7 +2843,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 214,
     rating: 4.7,
-    reviewCount: 519,
+    reviewCount: 553, reviewBasis: 519,
     shortDescription:
       "Weißer Terrassenbau am Hang, Glasbrüstungen, Granitgipfel im Rücken.",
     description:
@@ -2874,7 +2874,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 118,
     rating: 4.3,
-    reviewCount: 624,
+    reviewCount: 577, reviewBasis: 624,
     shortDescription:
       "Zweigeschossiges Strandhaus mit Holzdeck und schattiger Veranda an der Bucht.",
     description:
@@ -2906,7 +2906,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 142,
     rating: 4.6,
-    reviewCount: 1128,
+    reviewCount: 607, reviewBasis: 1128,
     shortDescription:
       "Niedrige Pavillons mit Steildach und Teakstützen unter den Kalksteinfelsen.",
     description:
@@ -2938,7 +2938,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 118,
     rating: 4.3,
-    reviewCount: 1642,
+    reviewCount: 616, reviewBasis: 1642,
     shortDescription:
       "Vier Etagen in Creme mit breiten Balkonen und Walmdach, eine Straße vom Strand.",
     description:
@@ -2970,7 +2970,7 @@ const HOTELS = [
     stars: 5,
     pricePerNight: 312,
     rating: 4.9,
-    reviewCount: 407,
+    reviewCount: 521, reviewBasis: 407,
     shortDescription:
       "Dunkles Teak und weißer Stein, tiefe Dachüberstände, Infinity-Terrassen.",
     description:
@@ -3001,7 +3001,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 76,
     rating: 4.4,
-    reviewCount: 538,
+    reviewCount: 559, reviewBasis: 538,
     shortDescription:
       "Einfache Holzbungalows auf Stelzen mit Palmdach im Dschungel.",
     description:
@@ -3032,7 +3032,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 248,
     rating: 4.7,
-    reviewCount: 412,
+    reviewCount: 528, reviewBasis: 412,
     shortDescription:
       "Niedriger schwarzer Holzbau mit Grasdach, dampfender Boden nebenan.",
     description:
@@ -3063,7 +3063,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 186,
     rating: 4.5,
-    reviewCount: 1327,
+    reviewCount: 611, reviewBasis: 1327,
     shortDescription:
       "Wellblechhaus in Dunkelrot mit weißen Fensterrahmen am Hafen.",
     description:
@@ -3094,7 +3094,7 @@ const HOTELS = [
     stars: 5,
     pricePerNight: 386,
     rating: 4.9,
-    reviewCount: 364,
+    reviewCount: 508, reviewBasis: 364,
     shortDescription:
       "Dunkler Basalt und raumhohes Glas, eingeschossig, lang und niedrig.",
     description:
@@ -3125,7 +3125,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 94,
     rating: 4.1,
-    reviewCount: 716,
+    reviewCount: 583, reviewBasis: 716,
     shortDescription:
       "Kleines weißes Giebelhaus mit rotem Dach unter der grünen Steilwand.",
     description:
@@ -3156,7 +3156,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 268,
     rating: 4.6,
-    reviewCount: 734,
+    reviewCount: 588, reviewBasis: 734,
     shortDescription:
       "Klassischer Brownstone mit hoher Freitreppe, Eisengeländer und Erkern.",
     description:
@@ -3187,7 +3187,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 232,
     rating: 4.3,
-    reviewCount: 2814,
+    reviewCount: 620, reviewBasis: 2814,
     shortDescription:
       "Schlanker Vorkriegsturm aus Kalkstein mit Staffelgeschossen und Krone.",
     description:
@@ -3218,7 +3218,7 @@ const HOTELS = [
     stars: 5,
     pricePerNight: 448,
     rating: 4.8,
-    reviewCount: 961,
+    reviewCount: 601, reviewBasis: 961,
     shortDescription:
       "Roter Backstein und Terrakotta, Markise am Eingang, reich verziertes Gesims.",
     description:
@@ -3249,7 +3249,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 128,
     rating: 4,
-    reviewCount: 1187,
+    reviewCount: 608, reviewBasis: 1187,
     shortDescription:
       "Umgebautes Backsteinlager mit Industriefenstern unter der Hochbahn.",
     description:
@@ -3280,7 +3280,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 242,
     rating: 4.8,
-    reviewCount: 486,
+    reviewCount: 551, reviewBasis: 486,
     shortDescription:
       "Traditionelles Machiya-Stadthaus mit dunklem Holzgitter und Ziegeldach.",
     description:
@@ -3311,7 +3311,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 286,
     rating: 4.9,
-    reviewCount: 392,
+    reviewCount: 518, reviewBasis: 392,
     shortDescription:
       "Niedriges Holz-Ryokan am Fluss, tiefe Traufen, Schiebetüren, Moosgarten.",
     description:
@@ -3342,7 +3342,7 @@ const HOTELS = [
     stars: 5,
     pricePerNight: 412,
     rating: 4.9,
-    reviewCount: 447,
+    reviewCount: 537, reviewBasis: 447,
     shortDescription:
       "Dunkles Holz und heller Stein, waagerechte Dächer, Kiesvorplatz.",
     description:
@@ -3373,7 +3373,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 118,
     rating: 4.2,
-    reviewCount: 1638,
+    reviewCount: 615, reviewBasis: 1638,
     shortDescription:
       "Schmale graue Fassade mit gleichmäßigen kleinen Fenstern an großer Straße.",
     description:
@@ -3404,7 +3404,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 246,
     rating: 4.8,
-    reviewCount: 329,
+    reviewCount: 498, reviewBasis: 329,
     shortDescription:
       "Kleines Bergsteinhaus mit grünen Läden, Terrasse auf Trockenmauern.",
     description:
@@ -3435,7 +3435,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 142,
     rating: 4.6,
-    reviewCount: 387,
+    reviewCount: 517, reviewBasis: 387,
     shortDescription:
       "Umgebautes Salzgut zwischen den Salinen, mit Solebecken und viel Ruhe.",
     description:
@@ -3466,7 +3466,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 168,
     rating: 4.4,
-    reviewCount: 1240,
+    reviewCount: 609, reviewBasis: 1240,
     shortDescription:
       "Direkt hinter dem Sandstrand, mit zwei Pools und kurzen Wegen in den Ort.",
     description:
@@ -3498,7 +3498,7 @@ const HOTELS = [
     stars: 5,
     pricePerNight: 312,
     rating: 4.8,
-    reviewCount: 296,
+    reviewCount: 486, reviewBasis: 296,
     shortDescription:
       "Auf der Landzunge beim Leuchtturm, mit Infinity-Pool über der Atlantikkante.",
     description:
@@ -3529,7 +3529,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 68,
     rating: 4,
-    reviewCount: 612,
+    reviewCount: 570, reviewBasis: 612,
     shortDescription:
       "Einfache Pension im Fischerort, zwei Minuten vom Markt und den Bootsanlegern.",
     description:
@@ -3560,7 +3560,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 124,
     rating: 4.7,
-    reviewCount: 238,
+    reviewCount: 461, reviewBasis: 238,
     shortDescription:
       "Neun Zimmer in einem alten Feigengut, dreißig Kilometer landeinwärts.",
     description:
@@ -3591,7 +3591,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 156,
     rating: 4.3,
-    reviewCount: 1687,
+    reviewCount: 616, reviewBasis: 1687,
     shortDescription:
       "Große Familienanlage über der Bucht, mit Kinderbecken, Club und Rutschen.",
     description:
@@ -3623,7 +3623,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 148,
     rating: 4.5,
-    reviewCount: 1421,
+    reviewCount: 613, reviewBasis: 1421,
     shortDescription:
       "An der Sandbucht, mit langem Pool zur Wasserseite und Tamariskenschatten.",
     description:
@@ -3655,7 +3655,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 132,
     rating: 4.8,
-    reviewCount: 204,
+    reviewCount: 445, reviewBasis: 204,
     shortDescription:
       "Zwölf Zimmer in restaurierten Steinhäusern eines Bergdorfs.",
     description:
@@ -3686,7 +3686,7 @@ const HOTELS = [
     stars: 5,
     pricePerNight: 386,
     rating: 4.9,
-    reviewCount: 418,
+    reviewCount: 529, reviewBasis: 418,
     shortDescription:
       "Terrassenanlage über der Bucht von Elounda, mit eigenem Strandabschnitt.",
     description:
@@ -3717,7 +3717,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 58,
     rating: 3.9,
-    reviewCount: 347,
+    reviewCount: 507, reviewBasis: 347,
     shortDescription:
       "Schlichte Herberge auf 740 Metern, Ausgangspunkt für die Nida-Hochebene.",
     description:
@@ -3748,7 +3748,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 162,
     rating: 4.2,
-    reviewCount: 2104,
+    reviewCount: 619, reviewBasis: 2104,
     shortDescription:
       "Große Anlage hinter dem Sandstrand, mit Rutschenpark und Animation.",
     description:
@@ -3780,7 +3780,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 128,
     rating: 4.7,
-    reviewCount: 261,
+    reviewCount: 467, reviewBasis: 261,
     shortDescription:
       "Gut im Olivenhain, mit eigener Ölmühle und Verkostung im Keller.",
     description:
@@ -3810,7 +3810,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 174,
     rating: 4.5,
-    reviewCount: 786,
+    reviewCount: 590, reviewBasis: 786,
     shortDescription:
       "Über einer kleinen Bucht zwischen Granitblöcken, mit Treppe zum Wasser.",
     description:
@@ -3842,7 +3842,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 118,
     rating: 4.6,
-    reviewCount: 193,
+    reviewCount: 436, reviewBasis: 193,
     shortDescription:
       "Zehn Zimmer im Inselinneren, zwei Kilometer vom Nuraghen Su Nuraxi.",
     description:
@@ -3873,7 +3873,7 @@ const HOTELS = [
     stars: 5,
     pricePerNight: 428,
     rating: 4.8,
-    reviewCount: 342,
+    reviewCount: 501, reviewBasis: 342,
     shortDescription:
       "An der Costa Smeralda über tiefblauer Bucht, mit Wacholder und Bootssteg.",
     description:
@@ -3904,7 +3904,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 62,
     rating: 4.1,
-    reviewCount: 289,
+    reviewCount: 485, reviewBasis: 289,
     shortDescription:
       "Kleine Locanda in der Gasse, Ausgangspunkt für den Supramonte.",
     description:
@@ -3935,7 +3935,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 178,
     rating: 4.3,
-    reviewCount: 1342,
+    reviewCount: 611, reviewBasis: 1342,
     shortDescription:
       "Im Pinienwald hinter dem Strand, mit weit auseinandergezogenen Bungalows.",
     description:
@@ -3967,7 +3967,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 136,
     rating: 4.7,
-    reviewCount: 224,
+    reviewCount: 457, reviewBasis: 224,
     shortDescription:
       "Weingut in der Gallura, mit Verkostung und Blick über die Rebzeilen.",
     description:
@@ -3998,7 +3998,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 164,
     rating: 4.5,
-    reviewCount: 934,
+    reviewCount: 599, reviewBasis: 934,
     shortDescription:
       "Hinter der Düne, mit Reetdach, Strandkörben und Sauna im Haus.",
     description:
@@ -4030,7 +4030,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 186,
     rating: 4.7,
-    reviewCount: 312,
+    reviewCount: 492, reviewBasis: 312,
     shortDescription:
       "Bäderarchitektur an der Promenade, vierzehn Zimmer, direkt am Wasser.",
     description:
@@ -4061,7 +4061,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 142,
     rating: 4.6,
-    reviewCount: 268,
+    reviewCount: 472, reviewBasis: 268,
     shortDescription:
       "Gutshaus im alten Park, sieben Kilometer landeinwärts von der Küste.",
     description:
@@ -4092,7 +4092,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 158,
     rating: 4.4,
-    reviewCount: 1128,
+    reviewCount: 606, reviewBasis: 1128,
     shortDescription:
       "Zwischen Kiefernwald und Düne, mit Hallenbad, Spielscheune und Kinderbetreuung.",
     description:
@@ -4124,7 +4124,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 86,
     rating: 4,
-    reviewCount: 421,
+    reviewCount: 530, reviewBasis: 421,
     shortDescription:
       "Einfache Pension in der Seitenstraße, fünf Minuten zum Weststrand.",
     description:
@@ -4155,7 +4155,7 @@ const HOTELS = [
     stars: 5,
     pricePerNight: 298,
     rating: 4.7,
-    reviewCount: 386,
+    reviewCount: 510, reviewBasis: 386,
     shortDescription:
       "Klassizistischer Bau in erster Reihe, mit Meerblick und großem Spa.",
     description:
@@ -4185,7 +4185,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 178,
     rating: 4.6,
-    reviewCount: 842,
+    reviewCount: 593, reviewBasis: 842,
     shortDescription:
       "Familiengeführtes Haus im Talort, mit Sauna und Skibus vor der Tür.",
     description:
@@ -4217,7 +4217,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 172,
     rating: 4.3,
-    reviewCount: 1064,
+    reviewCount: 605, reviewBasis: 1064,
     shortDescription:
       "Auf der Wiesenterrasse über dem Zillertal, mit Kinderbetreuung und Hallenbad.",
     description:
@@ -4249,7 +4249,7 @@ const HOTELS = [
     stars: 5,
     pricePerNight: 412,
     rating: 4.9,
-    reviewCount: 218,
+    reviewCount: 453, reviewBasis: 218,
     shortDescription:
       "Zwölf Suiten auf dem Sonnenplateau, mit privatem Spa und Ski-in.",
     description:
@@ -4280,7 +4280,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 74,
     rating: 4,
-    reviewCount: 536,
+    reviewCount: 559, reviewBasis: 536,
     shortDescription:
       "Alter Dorfgasthof mit einfachen Zimmern und guter Küche im Erdgeschoss.",
     description:
@@ -4311,7 +4311,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 192,
     rating: 4.7,
-    reviewCount: 614,
+    reviewCount: 572, reviewBasis: 614,
     shortDescription:
       "Am Waldrand über dem Achensee, mit Seezugang und Panoramasauna.",
     description:
@@ -4343,7 +4343,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 246,
     rating: 4.6,
-    reviewCount: 394,
+    reviewCount: 519, reviewBasis: 394,
     shortDescription:
       "Am Hang über der Altstadt, sechzehn Zimmer, Blick auf das Horn.",
     description:
@@ -4374,7 +4374,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 198,
     rating: 4.7,
-    reviewCount: 726,
+    reviewCount: 587, reviewBasis: 726,
     shortDescription:
       "Am Sonnenhang unter der Seiser Alm, mit Panoramasauna und Halbpension.",
     description:
@@ -4406,7 +4406,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 186,
     rating: 4.8,
-    reviewCount: 312,
+    reviewCount: 492, reviewBasis: 312,
     shortDescription:
       "Ansitz aus dem 16. Jahrhundert in den Weinbergen über dem Kalterer See.",
     description:
@@ -4437,7 +4437,7 @@ const HOTELS = [
     stars: 5,
     pricePerNight: 398,
     rating: 4.8,
-    reviewCount: 264,
+    reviewCount: 468, reviewBasis: 264,
     shortDescription:
       "Achtzehn Suiten auf der Wiesenterrasse unter dem Sella-Massiv.",
     description:
@@ -4468,7 +4468,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 78,
     rating: 4.1,
-    reviewCount: 448,
+    reviewCount: 537, reviewBasis: 448,
     shortDescription:
       "Kleiner Gasthof zwischen Apfelwiesen, mit einfacher Ausstattung und gutem Frühstück.",
     description:
@@ -4499,7 +4499,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 184,
     rating: 4.4,
-    reviewCount: 892,
+    reviewCount: 596, reviewBasis: 892,
     shortDescription:
       "Im breiten Tal, mit Bauernhof, Streichelzoo und Hallenbad.",
     description:
@@ -4531,7 +4531,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 168,
     rating: 4.7,
-    reviewCount: 248,
+    reviewCount: 466, reviewBasis: 248,
     shortDescription:
       "Elf Zimmer am Fichtenwald, mit Waldsauna und ohne Fernseher.",
     description:
@@ -4561,7 +4561,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 172,
     rating: 4.4,
-    reviewCount: 1564,
+    reviewCount: 615, reviewBasis: 1564,
     shortDescription:
       "Über dem dunklen Sandstrand, mit zwei Pools, Spa und Blick nach La Gomera.",
     description:
@@ -4593,7 +4593,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 138,
     rating: 4.7,
-    reviewCount: 246,
+    reviewCount: 464, reviewBasis: 246,
     shortDescription:
       "Altes Landgut über den Bananenplantagen, mit Pool und Blick auf den Teide.",
     description:
@@ -4624,7 +4624,7 @@ const HOTELS = [
     stars: 5,
     pricePerNight: 268,
     rating: 4.7,
-    reviewCount: 432,
+    reviewCount: 535, reviewBasis: 432,
     shortDescription:
       "Traditionshaus im subtropischen Park, mit großem Spa über der Stadt.",
     description:
@@ -4655,7 +4655,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 62,
     rating: 4,
-    reviewCount: 698,
+    reviewCount: 581, reviewBasis: 698,
     shortDescription:
       "Einfache Unterkunft in der Kolonialaltstadt, zwischen Universität und Kathedrale.",
     description:
@@ -4686,7 +4686,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 164,
     rating: 4.3,
-    reviewCount: 1876,
+    reviewCount: 617, reviewBasis: 1876,
     shortDescription:
       "Große Anlage an der Südküste, mit Rutschen, Miniclub und Wellness für Eltern.",
     description:
@@ -4718,7 +4718,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 142,
     rating: 4.8,
-    reviewCount: 186,
+    reviewCount: 431, reviewBasis: 186,
     shortDescription:
       "Acht Zimmer im Lorbeerwald des Anaga-Gebirges, mit Blick auf die Grate.",
     description:
@@ -4749,7 +4749,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 158,
     rating: 4.6,
-    reviewCount: 862,
+    reviewCount: 594, reviewBasis: 862,
     shortDescription:
       "Am Strand unter den Kalkfelsen von Railay, nur per Boot erreichbar.",
     description:
@@ -4781,7 +4781,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 126,
     rating: 4.7,
-    reviewCount: 274,
+    reviewCount: 474, reviewBasis: 274,
     shortDescription:
       "Vierzehn Pavillons in einem tropischen Garten, zwei Kilometer hinter der Küste.",
     description:
@@ -4812,7 +4812,7 @@ const HOTELS = [
     stars: 5,
     pricePerNight: 288,
     rating: 4.8,
-    reviewCount: 386,
+    reviewCount: 511, reviewBasis: 386,
     shortDescription:
       "Auf der Landzunge über der Andamansee, mit Infinity-Pool und Privatstrand.",
     description:
@@ -4843,7 +4843,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 48,
     rating: 4,
-    reviewCount: 742,
+    reviewCount: 589, reviewBasis: 742,
     shortDescription:
       "Einfaches Haus am Fluss, mit Blick auf die Longtailboote und den Nachtmarkt.",
     description:
@@ -4874,7 +4874,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 134,
     rating: 4.4,
-    reviewCount: 968,
+    reviewCount: 603, reviewBasis: 968,
     shortDescription:
       "Eine Straße hinter dem Strand von Koh Lanta, mit flachem Wasser und Kinderpool.",
     description:
@@ -4906,7 +4906,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 176,
     rating: 4.5,
-    reviewCount: 624,
+    reviewCount: 573, reviewBasis: 624,
     shortDescription:
       "Ruhige Anlage an einem stillen Strand, mit Villen und eigenen Tauchbecken.",
     description:
@@ -4937,7 +4937,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 232,
     rating: 4.7,
-    reviewCount: 548,
+    reviewCount: 560, reviewBasis: 548,
     shortDescription:
       "Am zugefrorenen See, mit Rauchsauna, Huskytouren und Blick nach Norden.",
     description:
@@ -4969,7 +4969,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 264,
     rating: 4.8,
-    reviewCount: 212,
+    reviewCount: 450, reviewBasis: 212,
     shortDescription:
       "Zwölf einzelne Hütten auf einer Waldlichtung, jede mit eigener Sauna.",
     description:
@@ -5000,7 +5000,7 @@ const HOTELS = [
     stars: 5,
     pricePerNight: 446,
     rating: 4.8,
-    reviewCount: 394,
+    reviewCount: 519, reviewBasis: 394,
     shortDescription:
       "Glasiglus auf dem Höhenrücken, mit Panoramadach und beheiztem Außenbecken.",
     description:
@@ -5031,7 +5031,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 92,
     rating: 4.1,
-    reviewCount: 286,
+    reviewCount: 478, reviewBasis: 286,
     shortDescription:
       "Schlichtes Gästehaus am Fluss, mit gemeinsamer Sauna und Selbstversorgerküche.",
     description:
@@ -5062,7 +5062,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 168,
     rating: 4.3,
-    reviewCount: 464,
+    reviewCount: 538, reviewBasis: 464,
     shortDescription:
       "Auf einer Lichtung mit Rentiergehege, Schlittenhang und Innenspielbereich.",
     description:
@@ -5094,7 +5094,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 248,
     rating: 4.7,
-    reviewCount: 532,
+    reviewCount: 558, reviewBasis: 532,
     shortDescription:
       "Am Fuß des Ylläs-Fjells, mit vier Saunen, Loipenanschluss und Aurora-Terrasse.",
     description:
@@ -5126,7 +5126,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 316,
     rating: 4.7,
-    reviewCount: 298,
+    reviewCount: 489, reviewBasis: 298,
     shortDescription:
       "Achtzehn Zimmer auf der Lavaebene, mit eigenem Thermalbecken.",
     description:
@@ -5157,7 +5157,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 238,
     rating: 4.6,
-    reviewCount: 386,
+    reviewCount: 511, reviewBasis: 386,
     shortDescription:
       "Über dem Eyjafjörður, mit Hot Pots auf der Terrasse und Blick über das Wasser.",
     description:
@@ -5189,7 +5189,7 @@ const HOTELS = [
     stars: 5,
     pricePerNight: 424,
     rating: 4.8,
-    reviewCount: 246,
+    reviewCount: 464, reviewBasis: 246,
     shortDescription:
       "Auf der Moosebene vor dem Gletscher, mit Glasfront und großem Thermalbereich.",
     description:
@@ -5220,7 +5220,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 118,
     rating: 4,
-    reviewCount: 518,
+    reviewCount: 552, reviewBasis: 518,
     shortDescription:
       "Einfaches Gästehaus mit rotem Blechdach, guter Ausgangspunkt für den Golden Circle.",
     description:
@@ -5251,7 +5251,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 186,
     rating: 4.2,
-    reviewCount: 642,
+    reviewCount: 578, reviewBasis: 642,
     shortDescription:
       "Auf der Ebene bei den Geysiren, mit warmem Außenbecken und Spielraum.",
     description:
@@ -5283,7 +5283,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 286,
     rating: 4.7,
-    reviewCount: 312,
+    reviewCount: 492, reviewBasis: 312,
     shortDescription:
       "Am Rand des Birkenwalds vor dem Hochland, mit Badeflügel und Grasdach.",
     description:
@@ -5315,7 +5315,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 158,
     rating: 4.6,
-    reviewCount: 1132,
+    reviewCount: 607, reviewBasis: 1132,
     shortDescription:
       "Direkt am langen Sandstrand von Rethymno, mit Pool zur Wasserseite und Spa.",
     description:
@@ -5347,7 +5347,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 104,
     rating: 4.5,
-    reviewCount: 318,
+    reviewCount: 493, reviewBasis: 318,
     shortDescription:
       "Kleines Haus mit zwölf Zimmern über der Bucht von Plakias, zwei Minuten zum Strand.",
     description:
@@ -5378,7 +5378,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 176,
     rating: 4.1,
-    reviewCount: 2260,
+    reviewCount: 619, reviewBasis: 2260,
     shortDescription:
       "Große Familienanlage direkt am Strand, mit Wasserrutschen, Kinderclub und All-inclusive.",
     description:
@@ -5410,7 +5410,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 78,
     rating: 4,
-    reviewCount: 541,
+    reviewCount: 560, reviewBasis: 541,
     shortDescription:
       "Einfache Apartments mit Küche und Balkon, hundertfünfzig Meter vom Stadtstrand.",
     description:
@@ -5442,7 +5442,7 @@ const HOTELS = [
     stars: 5,
     pricePerNight: 342,
     rating: 4.8,
-    reviewCount: 523,
+    reviewCount: 553, reviewBasis: 523,
     shortDescription:
       "Fünf-Sterne-Haus auf einer Landzunge mit eigenem Strand, Spa und drei Restaurants.",
     description:
@@ -5473,7 +5473,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 54,
     rating: 3.8,
-    reviewCount: 276,
+    reviewCount: 474, reviewBasis: 276,
     shortDescription:
       "Familiengeführte Pension im Westen Kretas, drei Minuten zum Kiesstrand.",
     description:
@@ -5504,7 +5504,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 152,
     rating: 4.4,
-    reviewCount: 1380,
+    reviewCount: 612, reviewBasis: 1380,
     shortDescription:
       "Auf der Klippe über dem breiten Sandstrand, mit Treppe hinunter und Pool auf der Terrasse.",
     description:
@@ -5536,7 +5536,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 138,
     rating: 4.7,
-    reviewCount: 402,
+    reviewCount: 521, reviewBasis: 402,
     shortDescription:
       "Boutique-Haus in einer alten Kapitänsvilla oberhalb der Felsbuchten von Lagos.",
     description:
@@ -5567,7 +5567,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 182,
     rating: 4.2,
-    reviewCount: 2045,
+    reviewCount: 618, reviewBasis: 2045,
     shortDescription:
       "Weitläufige Familienanlage mit Wasserpark, Kinderclub und Weg durch die Dünen zum Strand.",
     description:
@@ -5599,7 +5599,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 84,
     rating: 3.9,
-    reviewCount: 614,
+    reviewCount: 572, reviewBasis: 614,
     shortDescription:
       "Apartmenthaus an der Promenade von Quarteira, hundert Meter zum Sandstrand.",
     description:
@@ -5631,7 +5631,7 @@ const HOTELS = [
     stars: 5,
     pricePerNight: 298,
     rating: 4.8,
-    reviewCount: 571,
+    reviewCount: 565, reviewBasis: 571,
     shortDescription:
       "Fünf Sterne zwischen Marina und Strand, mit zwei Pools, Spa und eigenem Strandclub.",
     description:
@@ -5662,7 +5662,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 66,
     rating: 4,
-    reviewCount: 388,
+    reviewCount: 517, reviewBasis: 388,
     shortDescription:
       "Einfache Pension auf der Insel vor Tavira, zweihundert Meter über den Dünenweg zum Strand.",
     description:
@@ -5693,7 +5693,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 188,
     rating: 4.6,
-    reviewCount: 964,
+    reviewCount: 602, reviewBasis: 964,
     shortDescription:
       "Am weißen Sandstrand von Villasimius, mit Pool im Garten und Blick auf die Inseln vor der Küste.",
     description:
@@ -5725,7 +5725,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 112,
     rating: 4.5,
-    reviewCount: 287,
+    reviewCount: 483, reviewBasis: 287,
     shortDescription:
       "Kleines Haus am Strand von Bosa Marina, mit zehn Zimmern und Terrasse zum Sonnenuntergang.",
     description:
@@ -5756,7 +5756,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 172,
     rating: 4.2,
-    reviewCount: 1590,
+    reviewCount: 615, reviewBasis: 1590,
     shortDescription:
       "Feriendorf mit Bungalows im Pinienhain, hundertfünfzig Meter zum langen Strand La Cinta.",
     description:
@@ -5788,7 +5788,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 92,
     rating: 4.1,
-    reviewCount: 466,
+    reviewCount: 539, reviewBasis: 466,
     shortDescription:
       "Apartments in den Dünen, mit Pool, Küche und zweihundert Meter bis zum Strand.",
     description:
@@ -5820,7 +5820,7 @@ const HOTELS = [
     stars: 5,
     pricePerNight: 356,
     rating: 4.7,
-    reviewCount: 398,
+    reviewCount: 520, reviewBasis: 398,
     shortDescription:
       "Resort in einer Pinienbucht bei Alghero, mit eigenem Strand, Spa und Restaurant am Wasser.",
     description:
@@ -5851,7 +5851,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 64,
     rating: 3.9,
-    reviewCount: 241,
+    reviewCount: 462, reviewBasis: 241,
     shortDescription:
       "Kleine Pension hinter den Buchten von Cala Liberotto, ein paar Minuten zu Fuß zum Sand.",
     description:
@@ -5882,7 +5882,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 146,
     rating: 4.5,
-    reviewCount: 1287,
+    reviewCount: 610, reviewBasis: 1287,
     shortDescription:
       "An der Promenade über dem schwarzen Sandstrand, mit Pool im Palmengarten und Spa.",
     description:
@@ -5914,7 +5914,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 158,
     rating: 4.7,
-    reviewCount: 312,
+    reviewCount: 493, reviewBasis: 312,
     shortDescription:
       "Restauriertes Herrenhaus am Hafen von Garachico, zwei Minuten zu den Lavabecken.",
     description:
@@ -5945,7 +5945,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 178,
     rating: 4.1,
-    reviewCount: 2412,
+    reviewCount: 620, reviewBasis: 2412,
     shortDescription:
       "Großes Familienhotel mit vier Pools und Kinderclub, über die Promenade zum Strand.",
     description:
@@ -5977,7 +5977,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 82,
     rating: 4,
-    reviewCount: 623,
+    reviewCount: 573, reviewBasis: 623,
     shortDescription:
       "Apartments am Strand von El Médano, dem Surfort der Insel, mit Dachterrasse und Küche.",
     description:
@@ -6009,7 +6009,7 @@ const HOTELS = [
     stars: 5,
     pricePerNight: 372,
     rating: 4.8,
-    reviewCount: 486,
+    reviewCount: 540, reviewBasis: 486,
     shortDescription:
       "Fünf-Sterne-Anlage an der Westküste mit eigenem Strand, Golfplatz und Blick nach La Gomera.",
     description:
@@ -6040,7 +6040,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 58,
     rating: 3.8,
-    reviewCount: 417,
+    reviewCount: 528, reviewBasis: 417,
     shortDescription:
       "Kleine Herberge in der Altstadt von Puerto de la Cruz, drei Minuten zum Strand.",
     description:
@@ -6091,7 +6091,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 188,
     rating: 4.4,
-    reviewCount: 967,
+    reviewCount: 603, reviewBasis: 967,
     shortDescription:
       "Suitenhaus am Hang über der Bucht, mit Pool auf zwei Ebenen.",
     description:
@@ -6123,7 +6123,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 164,
     rating: 4.2,
-    reviewCount: 1342,
+    reviewCount: 611, reviewBasis: 1342,
     shortDescription:
       "Großes Strandresort mit dem bekannten Blick über die Bucht zum Tafelberg.",
     description:
@@ -6155,7 +6155,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 198,
     rating: 4.7,
-    reviewCount: 418,
+    reviewCount: 529, reviewBasis: 418,
     shortDescription:
       "Zwölf Zimmer am Rand des botanischen Gartens, unter alten Bäumen.",
     description:
@@ -6185,7 +6185,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 116,
     rating: 4.1,
-    reviewCount: 736,
+    reviewCount: 588, reviewBasis: 736,
     shortDescription:
       "Apartments mit Küche an der Promenade, zum Selbstversorgen.",
     description:
@@ -6216,7 +6216,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 132,
     rating: 4.3,
-    reviewCount: 524,
+    reviewCount: 554, reviewBasis: 524,
     shortDescription:
       "Hinter den Dünen am acht Kilometer langen Strand von Noordhoek.",
     description:
@@ -6246,7 +6246,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 178,
     rating: 4.6,
-    reviewCount: 389,
+    reviewCount: 518, reviewBasis: 389,
     shortDescription:
       "Gästehaus auf einem arbeitenden Weingut, Reben bis an die Terrasse.",
     description:
@@ -6278,7 +6278,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 72,
     rating: 4.0,
-    reviewCount: 1128,
+    reviewCount: 606, reviewBasis: 1128,
     shortDescription:
       "Einfache Zimmer in einem der bunten Häuser am Hang über der Stadt.",
     description:
@@ -6309,7 +6309,7 @@ const HOTELS = [
     stars: 5,
     pricePerNight: 332,
     rating: 4.8,
-    reviewCount: 612,
+    reviewCount: 571, reviewBasis: 612,
     shortDescription:
       "Auf dem Fels zwischen Bergkette und Atlantik, mit eigenem Spa.",
     description:
@@ -6340,7 +6340,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 104,
     rating: 4.2,
-    reviewCount: 847,
+    reviewCount: 593, reviewBasis: 847,
     shortDescription:
       "Am alten Hafen, zwanzig Minuten von den Pinguinen am Boulders Beach.",
     description:
@@ -6371,7 +6371,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 186,
     rating: 4.5,
-    reviewCount: 1074,
+    reviewCount: 605, reviewBasis: 1074,
     shortDescription:
       "Weitläufige Anlage zwischen Weinbergen, mit Kinderclub und Reitstall.",
     description:
@@ -6403,7 +6403,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 152,
     rating: 4.0,
-    reviewCount: 1693,
+    reviewCount: 617, reviewBasis: 1693,
     shortDescription:
       "Großes Resort am Dünenstrand, mit Golfplatz gleich dahinter.",
     description:
@@ -6435,7 +6435,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 212,
     rating: 4.7,
-    reviewCount: 296,
+    reviewCount: 487, reviewBasis: 296,
     shortDescription:
       "Acht Zimmer auf einem Weingut im Tal, mit eigener Küche im Hof.",
     description:
@@ -6466,7 +6466,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 126,
     rating: 4.6,
-    reviewCount: 534,
+    reviewCount: 558, reviewBasis: 534,
     shortDescription:
       "Sieben Zimmer um einen Innenhof mit Orangenbäumen und Brunnen.",
     description:
@@ -6496,7 +6496,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 162,
     rating: 4.3,
-    reviewCount: 1486,
+    reviewCount: 613, reviewBasis: 1486,
     shortDescription:
       "Weitläufiges Resort im Palmenhain, mit Wasserpark und Kinderclub.",
     description:
@@ -6528,7 +6528,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 94,
     rating: 4.4,
-    reviewCount: 712,
+    reviewCount: 581, reviewBasis: 712,
     shortDescription:
       "Kleines Riad im Handwerkerviertel, mit Küche zum Mitkochen.",
     description:
@@ -6558,7 +6558,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 146,
     rating: 4.7,
-    reviewCount: 248,
+    reviewCount: 466, reviewBasis: 248,
     shortDescription:
       "Lehmbau am Fluss im Ourika-Tal, eine Stunde vor der Stadt.",
     description:
@@ -6589,7 +6589,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 118,
     rating: 4.2,
-    reviewCount: 1264,
+    reviewCount: 609, reviewBasis: 1264,
     shortDescription:
       "Stadthotel am Park, zwischen Medina und Neustadt.",
     description:
@@ -6620,7 +6620,7 @@ const HOTELS = [
     stars: 5,
     pricePerNight: 298,
     rating: 4.8,
-    reviewCount: 342,
+    reviewCount: 501, reviewBasis: 342,
     shortDescription:
       "Palastriad mit zwei Höfen, Hammam und eigenem Patio je Suite.",
     description:
@@ -6651,7 +6651,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 88,
     rating: 4.0,
-    reviewCount: 596,
+    reviewCount: 569, reviewBasis: 596,
     shortDescription:
       "Wohnungen mit Küche im Neubauviertel, mit Pool auf dem Dach.",
     description:
@@ -6682,7 +6682,7 @@ const HOTELS = [
     stars: 5,
     pricePerNight: 346,
     rating: 4.7,
-    reviewCount: 214,
+    reviewCount: 451, reviewBasis: 214,
     shortDescription:
       "Kasbah in der Steinwüste, mit Blick auf den Hohen Atlas.",
     description:
@@ -6712,7 +6712,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 58,
     rating: 3.9,
-    reviewCount: 1052,
+    reviewCount: 604, reviewBasis: 1052,
     shortDescription:
       "Einfaches Haus am Stadttor, mit Dachterrasse und ohne Schnörkel.",
     description:
@@ -6743,7 +6743,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 138,
     rating: 4.4,
-    reviewCount: 824,
+    reviewCount: 591, reviewBasis: 824,
     shortDescription:
       "Gartenanlage am Stadtrand, mit flachem Pool und Betreuung.",
     description:
@@ -6775,7 +6775,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 156,
     rating: 4.5,
-    reviewCount: 468,
+    reviewCount: 539, reviewBasis: 468,
     shortDescription:
       "Riad mit Olivenbäumen im Hof und einem Becken zum Abkühlen.",
     description:
@@ -6805,7 +6805,7 @@ const HOTELS = [
     stars: 5,
     pricePerNight: 244,
     rating: 4.4,
-    reviewCount: 738,
+    reviewCount: 588, reviewBasis: 738,
     shortDescription:
       "Resort am Golfplatz, mit großer Poollandschaft und Atlasblick.",
     description:
@@ -6837,7 +6837,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 142,
     rating: 4.5,
-    reviewCount: 892,
+    reviewCount: 596, reviewBasis: 892,
     shortDescription:
       "Flache Bucht mit Blick auf die Kalkfelsen, Wasser bis weit draußen seicht.",
     description:
@@ -6869,7 +6869,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 156,
     rating: 4.3,
-    reviewCount: 1218,
+    reviewCount: 608, reviewBasis: 1218,
     shortDescription:
       "Resort am ruhigen Strand von Klong Muang, mit Pool zum Meer hin.",
     description:
@@ -6900,7 +6900,7 @@ const HOTELS = [
     stars: 5,
     pricePerNight: 276,
     rating: 4.8,
-    reviewCount: 184,
+    reviewCount: 427, reviewBasis: 184,
     shortDescription:
       "Zwölf Villen in den Mangroven, jede mit eigenem Pool.",
     description:
@@ -6931,7 +6931,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 54,
     rating: 4.1,
-    reviewCount: 1486,
+    reviewCount: 614, reviewBasis: 1486,
     shortDescription:
       "Einfache Zimmer um einen Garten, fünf Minuten vom Strand.",
     description:
@@ -6961,7 +6961,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 128,
     rating: 4.2,
-    reviewCount: 1364,
+    reviewCount: 612, reviewBasis: 1364,
     shortDescription:
       "Am langen Strand von Nopparat Thara, mit Wasserspielplatz.",
     description:
@@ -6993,7 +6993,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 76,
     rating: 4.6,
-    reviewCount: 326,
+    reviewCount: 497, reviewBasis: 326,
     shortDescription:
       "Holzhäuser auf Stelzen auf der Insel gegenüber, ohne Autos.",
     description:
@@ -7024,7 +7024,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 172,
     rating: 4.4,
-    reviewCount: 1538,
+    reviewCount: 614, reviewBasis: 1538,
     shortDescription:
       "Familienresort über der Felsbucht, mit drei Pools und Rutschen.",
     description:
@@ -7056,7 +7056,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 148,
     rating: 4.2,
-    reviewCount: 964,
+    reviewCount: 602, reviewBasis: 964,
     shortDescription:
       "Am schwarzen Sandstrand unter den Klippen von Los Gigantes.",
     description:
@@ -7088,7 +7088,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 136,
     rating: 4.7,
-    reviewCount: 284,
+    reviewCount: 475, reviewBasis: 284,
     shortDescription:
       "Alte Finca zwischen Weinterrassen, mit Blick auf den Teide.",
     description:
@@ -7119,7 +7119,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 64,
     rating: 4.0,
-    reviewCount: 742,
+    reviewCount: 589, reviewBasis: 742,
     shortDescription:
       "Einfache Pension am Kirchplatz, zwei Straßen vom Wasser.",
     description:
@@ -7150,7 +7150,7 @@ const HOTELS = [
     stars: 5,
     pricePerNight: 312,
     rating: 4.7,
-    reviewCount: 864,
+    reviewCount: 594, reviewBasis: 864,
     shortDescription:
       "Bäderarchitektur an der Binzer Promenade, Thalasso und Seebrücke vor dem Haus.",
     description:
@@ -7181,7 +7181,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 224,
     rating: 4.6,
-    reviewCount: 486,
+    reviewCount: 541, reviewBasis: 486,
     shortDescription:
       "Weiße Villa über der Steilküste, Tauchgondel an der Seebrücke nebenan.",
     description:
@@ -7212,7 +7212,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 172,
     rating: 4.4,
-    reviewCount: 718,
+    reviewCount: 584, reviewBasis: 718,
     shortDescription:
       "Zwischen Nord- und Südstrand, flaches Wasser, Rasender Roland hält im Ort.",
     description:
@@ -7244,7 +7244,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 146,
     rating: 4.6,
-    reviewCount: 264,
+    reviewCount: 468, reviewBasis: 264,
     shortDescription:
       "Reetgedeckter Hof am Kap Arkona, acht Zimmer, kein Durchgangsverkehr.",
     description:
@@ -7275,7 +7275,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 192,
     rating: 4.5,
-    reviewCount: 926,
+    reviewCount: 599, reviewBasis: 926,
     shortDescription:
       "An der historischen Seebrücke, zwölf Kilometer Promenade bis nach Polen.",
     description:
@@ -7307,7 +7307,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 186,
     rating: 4.5,
-    reviewCount: 412,
+    reviewCount: 522, reviewBasis: 412,
     shortDescription:
       "Bädervilla am ruhigsten der drei Kaiserbäder, Buchenwald hinter dem Haus.",
     description:
@@ -7338,7 +7338,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 214,
     rating: 4.7,
-    reviewCount: 486,
+    reviewCount: 541, reviewBasis: 486,
     shortDescription:
       "Reetgedecktes Haus im Künstlerort, Hohes Ufer und Bodden in zehn Minuten.",
     description:
@@ -7369,7 +7369,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 138,
     rating: 4.5,
-    reviewCount: 318,
+    reviewCount: 494, reviewBasis: 318,
     shortDescription:
       "Kapitänshaus am Boddenufer, Surfrevier vor dem Haus, Räder inklusive.",
     description:
@@ -7400,7 +7400,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 164,
     rating: 4.6,
-    reviewCount: 284,
+    reviewCount: 475, reviewBasis: 284,
     shortDescription:
       "Auf der autofreien Insel, Pferdefuhrwerk vom Hafen, Strand über die Düne.",
     description:
@@ -7431,7 +7431,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 168,
     rating: 4.3,
-    reviewCount: 688,
+    reviewCount: 580, reviewBasis: 688,
     shortDescription:
       "Hinter der Steilküste, flacher Sandstrand, Hallenbad und Betreuung im Haus.",
     description:
@@ -7463,7 +7463,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 182,
     rating: 4.4,
-    reviewCount: 842,
+    reviewCount: 593, reviewBasis: 842,
     shortDescription:
       "An der längsten Strandpromenade Mecklenburgs, Molli-Bahn hält im Ort.",
     description:
@@ -7495,7 +7495,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 174,
     rating: 4.3,
-    reviewCount: 964,
+    reviewCount: 602, reviewBasis: 964,
     shortDescription:
       "Am Alten Strom, breitester Strand der Küste, Bahn nach Rostock alle zehn Minuten.",
     description:
@@ -7526,7 +7526,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 82,
     rating: 4.1,
-    reviewCount: 396,
+    reviewCount: 519, reviewBasis: 396,
     shortDescription:
       "Einfache Pension zwischen Kiefernwald und Strand, Frühstück inklusive.",
     description:
@@ -7557,7 +7557,7 @@ const HOTELS = [
     stars: 5,
     pricePerNight: 288,
     rating: 4.6,
-    reviewCount: 622,
+    reviewCount: 573, reviewBasis: 622,
     shortDescription:
       "An der Lübecker Bucht, Spa über zwei Etagen, Travemünde in zehn Minuten.",
     description:
@@ -7588,7 +7588,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 268,
     rating: 4.6,
-    reviewCount: 894,
+    reviewCount: 597, reviewBasis: 894,
     shortDescription:
       "Hundert Meter zur Galzigbahn, Skiraum mit Schuhheizung, Sauna im Dachgeschoss.",
     description:
@@ -7620,7 +7620,7 @@ const HOTELS = [
     stars: 5,
     pricePerNight: 426,
     rating: 4.7,
-    reviewCount: 682,
+    reviewCount: 579, reviewBasis: 682,
     shortDescription:
       "Direkt an der Silvrettabahn, Spa über drei Etagen, Schneesicherheit bis Mai.",
     description:
@@ -7651,7 +7651,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 232,
     rating: 4.5,
-    reviewCount: 748,
+    reviewCount: 589, reviewBasis: 748,
     shortDescription:
       "Auf dem Plateau, zweihundertfünfzig Loipenkilometer, fünfundzwanzig Kilometer zum Flughafen.",
     description:
@@ -7683,7 +7683,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 196,
     rating: 4.4,
-    reviewCount: 1126,
+    reviewCount: 606, reviewBasis: 1126,
     shortDescription:
       "Skischule und Kinderland an der Ahornbahn, Hallenbad mit Rutsche.",
     description:
@@ -7715,7 +7715,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 186,
     rating: 4.7,
-    reviewCount: 486,
+    reviewCount: 541, reviewBasis: 486,
     shortDescription:
       "Arbeitender Hof im schönsten Dorf Österreichs, Milch und Käse aus eigener Herstellung.",
     description:
@@ -7746,7 +7746,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 214,
     rating: 4.6,
-    reviewCount: 962,
+    reviewCount: 601, reviewBasis: 962,
     shortDescription:
       "Autofreies Dorf mit U-Bahn, größtes Kinderland der Alpen vor der Tür.",
     description:
@@ -7778,7 +7778,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 94,
     rating: 4.2,
-    reviewCount: 342,
+    reviewCount: 501, reviewBasis: 342,
     shortDescription:
       "Einfacher Gasthof im hintersten Paznaun, Bergbahn fünfhundert Meter entfernt.",
     description:
@@ -7809,7 +7809,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 242,
     rating: 4.5,
-    reviewCount: 418,
+    reviewCount: 529, reviewBasis: 418,
     shortDescription:
       "Höchstes Skidorf Österreichs auf 2020 Metern, Lift vor der Tür, vierzig Minuten zum Flughafen.",
     description:
@@ -7841,7 +7841,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 208,
     rating: 4.5,
-    reviewCount: 724,
+    reviewCount: 584, reviewBasis: 724,
     shortDescription:
       "Im Talort unter dem Gletscher, Skibus vor dem Haus, dreißig Minuten zum Flughafen.",
     description:
@@ -7873,7 +7873,7 @@ const HOTELS = [
     stars: 5,
     pricePerNight: 438,
     rating: 4.7,
-    reviewCount: 586,
+    reviewCount: 566, reviewBasis: 586,
     shortDescription:
       "In der Altstadt, Hahnenkammbahn in fünf Minuten, Spa mit Blick auf den Wilden Kaiser.",
     description:
@@ -7904,7 +7904,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 198,
     rating: 4.6,
-    reviewCount: 438,
+    reviewCount: 536, reviewBasis: 438,
     shortDescription:
       "Blick über das Moor auf die Zugspitzwand, zwanzig Zimmer, keine Durchfahrt.",
     description:
@@ -7935,7 +7935,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 112,
     rating: 4.3,
-    reviewCount: 486,
+    reviewCount: 541, reviewBasis: 486,
     shortDescription:
       "Günstiges Haus mitten im Zillertal, Zillertalbahn und Skibus fußläufig.",
     description:
@@ -7966,7 +7966,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 252,
     rating: 4.4,
-    reviewCount: 1042,
+    reviewCount: 604, reviewBasis: 1042,
     shortDescription:
       "Zwischen beiden Gondelbahnen, zwei Gletscher im Gebiet, Ski bis Mai.",
     description:
@@ -7998,7 +7998,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 268,
     rating: 4.6,
-    reviewCount: 724,
+    reviewCount: 584, reviewBasis: 724,
     shortDescription:
       "Am Fuß des Sassongher, Sellaronda ab Haus, Spa mit Heubad.",
     description:
@@ -8030,7 +8030,7 @@ const HOTELS = [
     stars: 5,
     pricePerNight: 412,
     rating: 4.7,
-    reviewCount: 586,
+    reviewCount: 566, reviewBasis: 586,
     shortDescription:
       "Im Zentrum von St. Ulrich, drei Seilbahnen fußläufig, Spa über zwei Etagen.",
     description:
@@ -8061,7 +8061,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 246,
     rating: 4.6,
-    reviewCount: 542,
+    reviewCount: 560, reviewBasis: 542,
     shortDescription:
       "Auf der Hochalm, Loipen und Pisten vor der Tür, Schlern im Blick.",
     description:
@@ -8093,7 +8093,7 @@ const HOTELS = [
     stars: 5,
     pricePerNight: 368,
     rating: 4.7,
-    reviewCount: 712,
+    reviewCount: 582, reviewBasis: 712,
     shortDescription:
       "An der Kurpromenade, Palmen und Thermalbad, mildestes Klima Südtirols.",
     description:
@@ -8124,7 +8124,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 216,
     rating: 4.7,
-    reviewCount: 468,
+    reviewCount: 539, reviewBasis: 468,
     shortDescription:
       "Arbeitendes Weingut am Kalterer See, Verkostung im Keller, Räder inklusive.",
     description:
@@ -8155,7 +8155,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 224,
     rating: 4.6,
-    reviewCount: 528,
+    reviewCount: 557, reviewBasis: 528,
     shortDescription:
       "In den Laubengängen der Altstadt, Plose-Bahn mit dem Bus in zehn Minuten.",
     description:
@@ -8186,7 +8186,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 198,
     rating: 4.5,
-    reviewCount: 864,
+    reviewCount: 594, reviewBasis: 864,
     shortDescription:
       "An der Kronplatz-Talstation, Kinderland am Berg, Hallenbad mit Rutsche.",
     description:
@@ -8218,7 +8218,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 232,
     rating: 4.6,
-    reviewCount: 486,
+    reviewCount: 542, reviewBasis: 486,
     shortDescription:
       "Unter den Sextner Dolomiten, Drei Zinnen im Skiverbund, Sonnenuhr am Berg.",
     description:
@@ -8250,7 +8250,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 156,
     rating: 4.6,
-    reviewCount: 342,
+    reviewCount: 502, reviewBasis: 342,
     shortDescription:
       "Apfelhof am Sonnenhang, Waalwege vor der Tür, Räder und Saft aus eigener Presse.",
     description:
@@ -8281,7 +8281,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 92,
     rating: 4.3,
-    reviewCount: 286,
+    reviewCount: 478, reviewBasis: 286,
     shortDescription:
       "Einfacher Gasthof im Seitental, Geisler vor dem Fenster, Küche aus dem Dorf.",
     description:
@@ -8312,7 +8312,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 186,
     rating: 4.6,
-    reviewCount: 372,
+    reviewCount: 509, reviewBasis: 372,
     shortDescription:
       "Auf dem Hochplateau über Bozen, Seilbahn ins Tal, Erdpyramiden am Weg.",
     description:
@@ -8343,7 +8343,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 148,
     rating: 4.4,
-    reviewCount: 424,
+    reviewCount: 531, reviewBasis: 424,
     shortDescription:
       "In den Sterzinger Lauben, Rosskopf-Bahn fußläufig, Brenner in zwanzig Minuten.",
     description:
@@ -8374,7 +8374,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 192,
     rating: 4.6,
-    reviewCount: 396,
+    reviewCount: 520, reviewBasis: 396,
     shortDescription:
       "Ansitz zwischen Reben und Burgen, Bozen in zwanzig Minuten.",
     description:
@@ -8405,7 +8405,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 258,
     rating: 4.7,
-    reviewCount: 448,
+    reviewCount: 537, reviewBasis: 448,
     shortDescription:
       "Am Pragser Wildsee, Zufahrt ab zehn Uhr gesperrt, Boote am Steg.",
     description:
@@ -8436,7 +8436,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 246,
     rating: 4.5,
-    reviewCount: 684,
+    reviewCount: 579, reviewBasis: 684,
     shortDescription:
       "Am Fuß des Levi-Fells, größtes Skigebiet Finnlands, Flughafen in zwanzig Minuten.",
     description:
@@ -8468,7 +8468,7 @@ const HOTELS = [
     stars: 5,
     pricePerNight: 486,
     rating: 4.8,
-    reviewCount: 412,
+    reviewCount: 523, reviewBasis: 412,
     shortDescription:
       "Glasdachsuiten am Inarisee, Nordlicht vom Bett aus, Rauchsauna am Ufer.",
     description:
@@ -8499,7 +8499,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 224,
     rating: 4.6,
-    reviewCount: 386,
+    reviewCount: 511, reviewBasis: 386,
     shortDescription:
       "Am Rand des Nationalparks, steilste Pisten Lapplands, Schlucht am Wanderweg.",
     description:
@@ -8531,7 +8531,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 192,
     rating: 4.3,
-    reviewCount: 824,
+    reviewCount: 592, reviewBasis: 824,
     shortDescription:
       "In der Stadt am Polarkreis, Flughafen neun Kilometer, Arktikum zu Fuß.",
     description:
@@ -8562,7 +8562,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 168,
     rating: 4.5,
-    reviewCount: 342,
+    reviewCount: 502, reviewBasis: 342,
     shortDescription:
       "Blockhütten am See, Ofen und Sauna in jeder Einheit, Loipen vor der Tür.",
     description:
@@ -8593,7 +8593,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 398,
     rating: 4.6,
-    reviewCount: 568,
+    reviewCount: 562, reviewBasis: 568,
     shortDescription:
       "Einzelne Suiten im Kiefernwald, Glaskuppel und Kamin, kein Nachbar in Sicht.",
     description:
@@ -8624,7 +8624,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 176,
     rating: 4.5,
-    reviewCount: 288,
+    reviewCount: 484, reviewBasis: 288,
     shortDescription:
       "Mitten im Pallas-Yllästunturi-Nationalpark, Wanderweg Hetta-Pallas ab Haus.",
     description:
@@ -8656,7 +8656,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 232,
     rating: 4.4,
-    reviewCount: 396,
+    reviewCount: 520, reviewBasis: 396,
     shortDescription:
       "Am zugefrorenen Bottnischen Meerbusen, Eisbrecherfahrten und Schneeburg im Ort.",
     description:
@@ -8687,7 +8687,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 98,
     rating: 4.2,
-    reviewCount: 246,
+    reviewCount: 464, reviewBasis: 246,
     shortDescription:
       "Einfache Station am Ounasjärvi, Nordende des Hetta-Pallas-Wegs.",
     description:
@@ -8718,7 +8718,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 206,
     rating: 4.4,
-    reviewCount: 712,
+    reviewCount: 582, reviewBasis: 712,
     shortDescription:
       "An der Rukatunturi-Talstation, Kinderland am Hang, Hallenbad und Betreuung.",
     description:
@@ -8750,7 +8750,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 88,
     rating: 4.1,
-    reviewCount: 218,
+    reviewCount: 453, reviewBasis: 218,
     shortDescription:
       "Günstiges Haus am Kitinen, Holzkirche von 1689 im Ort.",
     description:
@@ -8781,7 +8781,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 258,
     rating: 4.6,
-    reviewCount: 432,
+    reviewCount: 535, reviewBasis: 432,
     shortDescription:
       "Chalets am Rand des Urho-Kekkonen-Nationalparks, Loipen und Ofen in jeder Einheit.",
     description:
@@ -8812,7 +8812,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 182,
     rating: 4.6,
-    reviewCount: 364,
+    reviewCount: 508, reviewBasis: 364,
     shortDescription:
       "Arbeitender Rentierhof am See, Fütterung zum Mitmachen, Schlittenfahrten ab Hof.",
     description:
@@ -8844,7 +8844,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 214,
     rating: 4.5,
-    reviewCount: 408,
+    reviewCount: 521, reviewBasis: 408,
     shortDescription:
       "Auf dem Olostunturi, Loipe und Piste am Haus, freier Blick nach Norden.",
     description:
@@ -8876,7 +8876,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 224,
     rating: 4.4,
-    reviewCount: 1142,
+    reviewCount: 608, reviewBasis: 1142,
     shortDescription:
       "An der Einkaufsstraße im Zentrum, Thermalbad Sundhöll zwei Straßen weiter.",
     description:
@@ -8907,7 +8907,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 268,
     rating: 4.6,
-    reviewCount: 524,
+    reviewCount: 554, reviewBasis: 524,
     shortDescription:
       "Über dem schwarzen Strand von Reynisfjara, Felsnadeln vor dem Fenster.",
     description:
@@ -8938,7 +8938,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 412,
     rating: 4.7,
-    reviewCount: 386,
+    reviewCount: 512, reviewBasis: 386,
     shortDescription:
       "Zwanzig Kilometer von der Gletscherlagune, Hot Pots mit Blick auf den Vatnajökull.",
     description:
@@ -8969,7 +8969,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 232,
     rating: 4.6,
-    reviewCount: 348,
+    reviewCount: 507, reviewBasis: 348,
     shortDescription:
       "An der Küste unter dem Snæfellsjökull, Klippenweg nach Arnarstapi ab Haus.",
     description:
@@ -9000,7 +9000,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 196,
     rating: 4.4,
-    reviewCount: 712,
+    reviewCount: 582, reviewBasis: 712,
     shortDescription:
       "Am Eyjafjörður, nördlichstes Skigebiet Islands, Thermalbad im Ort.",
     description:
@@ -9031,7 +9031,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 248,
     rating: 4.6,
-    reviewCount: 462,
+    reviewCount: 538, reviewBasis: 462,
     shortDescription:
       "Am Mývatn, Naturbad mit Silikatwasser drei Kilometer entfernt, Krater rundherum.",
     description:
@@ -9063,7 +9063,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 206,
     rating: 4.5,
-    reviewCount: 286,
+    reviewCount: 478, reviewBasis: 286,
     shortDescription:
       "Im abgelegensten Teil Islands, Vogelfelsen Hornstrandir per Boot.",
     description:
@@ -9094,7 +9094,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 218,
     rating: 4.6,
-    reviewCount: 418,
+    reviewCount: 529, reviewBasis: 418,
     shortDescription:
       "Im Geothermalort, eigene Gewächshäuser, Hot Pots im Garten.",
     description:
@@ -9125,7 +9125,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 176,
     rating: 4.4,
-    reviewCount: 342,
+    reviewCount: 502, reviewBasis: 342,
     shortDescription:
       "Hafenort unter dem Vatnajökull, Langustinen als Ortsspezialität.",
     description:
@@ -9156,7 +9156,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 212,
     rating: 4.6,
-    reviewCount: 324,
+    reviewCount: 494, reviewBasis: 324,
     shortDescription:
       "Im ehemaligen Heringshafen am Nordrand, Museum und Skigebiet im Ort.",
     description:
@@ -9187,7 +9187,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 124,
     rating: 4.2,
-    reviewCount: 386,
+    reviewCount: 512, reviewBasis: 386,
     shortDescription:
       "Günstig am Ölfusá, Golden Circle und Südküste in einer Stunde.",
     description:
@@ -9218,7 +9218,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 186,
     rating: 4.4,
-    reviewCount: 424,
+    reviewCount: 531, reviewBasis: 424,
     shortDescription:
       "Am Borgarfjörður, Hot Pot im Garten, Pferdehof nebenan.",
     description:
@@ -9250,7 +9250,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 224,
     rating: 4.6,
-    reviewCount: 298,
+    reviewCount: 489, reviewBasis: 298,
     shortDescription:
       "Am Lagarfljót im größten Wald Islands, Rentiere in der Umgebung.",
     description:
@@ -9281,7 +9281,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 142,
     rating: 4.2,
-    reviewCount: 268,
+    reviewCount: 472, reviewBasis: 268,
     shortDescription:
       "Günstiges Haus am Fjord, Kirkjufell drei Kilometer entfernt.",
     description:
@@ -9312,7 +9312,7 @@ const HOTELS = [
     stars: 5,
     pricePerNight: 386,
     rating: 4.7,
-    reviewCount: 824,
+    reviewCount: 592, reviewBasis: 824,
     shortDescription:
       "Am Graben hinter dem Stephansdom, Spa im Gewölbe, Oper in acht Minuten.",
     description:
@@ -9343,7 +9343,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 86,
     rating: 4.2,
-    reviewCount: 486,
+    reviewCount: 542, reviewBasis: 486,
     shortDescription:
       "Einfache Pension im ersten Bezirk, Lage besser als der Preis vermuten lässt.",
     description:
@@ -9374,7 +9374,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 168,
     rating: 4.3,
-    reviewCount: 724,
+    reviewCount: 585, reviewBasis: 724,
     shortDescription:
       "Am Prater, Flughafenbahn in sechzehn Minuten, Dachterrasse über der Stadt.",
     description:
@@ -9405,7 +9405,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 196,
     rating: 4.6,
-    reviewCount: 412,
+    reviewCount: 523, reviewBasis: 412,
     shortDescription:
       "Biedermeierhaus im achten Bezirk, Innenhof mit Kastanie, Theater um die Ecke.",
     description:
@@ -9436,7 +9436,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 152,
     rating: 4.5,
-    reviewCount: 568,
+    reviewCount: 563, reviewBasis: 568,
     shortDescription:
       "Im siebten Bezirk zwischen Läden und Lokalen, zwanzig Zimmer im Hinterhaus.",
     description:
@@ -9467,7 +9467,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 178,
     rating: 4.4,
-    reviewCount: 864,
+    reviewCount: 594, reviewBasis: 864,
     shortDescription:
       "Am Schlosspark Schönbrunn, Tiergarten in zehn Minuten, Hallenbad im Haus.",
     description:
@@ -9499,7 +9499,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 186,
     rating: 4.6,
-    reviewCount: 386,
+    reviewCount: 512, reviewBasis: 386,
     shortDescription:
       "Heurigenhof in Grinzing, eigene Rieden am Nussberg, Straßenbahn ins Zentrum.",
     description:
@@ -9530,7 +9530,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 186,
     rating: 4.4,
-    reviewCount: 692,
+    reviewCount: 580, reviewBasis: 692,
     shortDescription:
       "Am Karlsplatz zwischen Secession und Naschmarkt, drei U-Bahnlinien unter dem Haus.",
     description:
@@ -9561,7 +9561,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 142,
     rating: 4.4,
-    reviewCount: 448,
+    reviewCount: 538, reviewBasis: 448,
     shortDescription:
       "Im neunten Bezirk am Alten AKH, Hof mit Kastanien, Ring in zehn Minuten.",
     description:
@@ -9592,7 +9592,7 @@ const HOTELS = [
     stars: 5,
     pricePerNight: 348,
     rating: 4.7,
-    reviewCount: 524,
+    reviewCount: 555, reviewBasis: 524,
     shortDescription:
       "Palais am Rand des dritten Bezirks, Belvedere in sechs Minuten, Flughafenzug am Haus.",
     description:
@@ -9623,7 +9623,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 132,
     rating: 4.3,
-    reviewCount: 612,
+    reviewCount: 571, reviewBasis: 612,
     shortDescription:
       "An der Mariahilfer Straße, U3 vor der Tür, Westbahnhof in vier Stationen.",
     description:
@@ -9654,7 +9654,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 74,
     rating: 4,
-    reviewCount: 342,
+    reviewCount: 503, reviewBasis: 342,
     shortDescription:
       "Günstigster Gasthof der Stadt, dreizehn Kilometer zum Flughafen, U3 in Gehweite.",
     description:
@@ -9685,7 +9685,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 212,
     rating: 4.5,
-    reviewCount: 586,
+    reviewCount: 566, reviewBasis: 586,
     shortDescription:
       "Am Schottenring mit Blick auf den Donaukanal, Straßenbahn rund um die Altstadt.",
     description:
@@ -9716,7 +9716,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 148,
     rating: 4.4,
-    reviewCount: 486,
+    reviewCount: 542, reviewBasis: 486,
     shortDescription:
       "Apartments mit Küche am Grünen Prater, günstiger bei längeren Aufenthalten.",
     description:
@@ -9748,7 +9748,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 298,
     rating: 4.5,
-    reviewCount: 864,
+    reviewCount: 595, reviewBasis: 864,
     shortDescription:
       "An der High Line, Whitney Museum und Chelsea Market in Gehweite.",
     description:
@@ -9779,7 +9779,7 @@ const HOTELS = [
     stars: 5,
     pricePerNight: 486,
     rating: 4.7,
-    reviewCount: 624,
+    reviewCount: 573, reviewBasis: 624,
     shortDescription:
       "Gusseisengebäude in SoHo, Loft-Suiten mit sechs Metern Deckenhöhe.",
     description:
@@ -9810,7 +9810,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 242,
     rating: 4.5,
-    reviewCount: 748,
+    reviewCount: 590, reviewBasis: 748,
     shortDescription:
       "In Williamsburg am East River, Skyline von Manhattan vom Dach.",
     description:
@@ -9841,7 +9841,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 216,
     rating: 4.6,
-    reviewCount: 486,
+    reviewCount: 543, reviewBasis: 486,
     shortDescription:
       "Brownstone an der 83. Straße, Central Park und Naturkundemuseum um die Ecke.",
     description:
@@ -9872,7 +9872,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 138,
     rating: 4.1,
-    reviewCount: 692,
+    reviewCount: 580, reviewBasis: 692,
     shortDescription:
       "Einfache Zimmer in einem Mietshaus von 1904, Bars und Delis rundherum.",
     description:
@@ -9903,7 +9903,7 @@ const HOTELS = [
     stars: 5,
     pricePerNight: 524,
     rating: 4.8,
-    reviewCount: 438,
+    reviewCount: 536, reviewBasis: 438,
     shortDescription:
       "Lagerhaus in Tribeca, Pool im Keller, One World Trade in zehn Minuten.",
     description:
@@ -9934,7 +9934,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 268,
     rating: 4.3,
-    reviewCount: 1248,
+    reviewCount: 609, reviewBasis: 1248,
     shortDescription:
       "Zwei Blocks von Grand Central, Flughafenbahn und alle Linien im Umkreis.",
     description:
@@ -9965,7 +9965,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 182,
     rating: 4.5,
-    reviewCount: 412,
+    reviewCount: 523, reviewBasis: 412,
     shortDescription:
       "Brownstone an der 125. Straße, Apollo Theater und Jazzclubs zu Fuß.",
     description:
@@ -9996,7 +9996,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 398,
     rating: 4.7,
-    reviewCount: 524,
+    reviewCount: 555, reviewBasis: 524,
     shortDescription:
       "Unter der Manhattan Bridge, Zimmer mit Blick auf beide Brücken.",
     description:
@@ -10027,7 +10027,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 198,
     rating: 4.2,
-    reviewCount: 894,
+    reviewCount: 598, reviewBasis: 894,
     shortDescription:
       "Zwischen Times Square und Hudson, Broadway-Theater um die Ecke.",
     description:
@@ -10058,7 +10058,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 206,
     rating: 4.4,
-    reviewCount: 688,
+    reviewCount: 580, reviewBasis: 688,
     shortDescription:
       "In Queens am East River, eine Station nach Midtown, achtzehn Kilometer zum Flughafen.",
     description:
@@ -10089,7 +10089,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 312,
     rating: 4.7,
-    reviewCount: 486,
+    reviewCount: 543, reviewBasis: 486,
     shortDescription:
       "Stadthaus an einer Baumstraße, Washington Square und Jazzclubs zu Fuß.",
     description:
@@ -10120,7 +10120,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 228,
     rating: 4.3,
-    reviewCount: 1024,
+    reviewCount: 604, reviewBasis: 1024,
     shortDescription:
       "Hochhaus an der Wall Street, am Wochenende still, Fähren und Bahn am Haus.",
     description:
@@ -10151,7 +10151,7 @@ const HOTELS = [
     stars: 5,
     pricePerNight: 462,
     rating: 4.7,
-    reviewCount: 548,
+    reviewCount: 561, reviewBasis: 548,
     shortDescription:
       "An der Museum Mile, Met und Guggenheim in Gehweite, Park gegenüber.",
     description:
@@ -10182,7 +10182,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 224,
     rating: 4.7,
-    reviewCount: 386,
+    reviewCount: 512, reviewBasis: 386,
     shortDescription:
       "Umgebautes Stadthaus im Weberviertel, acht Zimmer, Innengarten mit Moos.",
     description:
@@ -10213,7 +10213,7 @@ const HOTELS = [
     stars: 5,
     pricePerNight: 486,
     rating: 4.8,
-    reviewCount: 424,
+    reviewCount: 531, reviewBasis: 424,
     shortDescription:
       "Am Shirakawa-Kanal im Geisha-Viertel, vierzehn Zimmer, Kirschbäume am Wasser.",
     description:
@@ -10244,7 +10244,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 342,
     rating: 4.7,
-    reviewCount: 468,
+    reviewCount: 539, reviewBasis: 468,
     shortDescription:
       "Am Bambuswald, Onsen aus eigener Quelle, Fluss Hozu vor dem Haus.",
     description:
@@ -10275,7 +10275,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 186,
     rating: 4.4,
-    reviewCount: 894,
+    reviewCount: 598, reviewBasis: 894,
     shortDescription:
       "An der Kreuzung Karasuma Oike, zwei U-Bahnlinien, Bahnhof in fünf Minuten.",
     description:
@@ -10306,7 +10306,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 248,
     rating: 4.6,
-    reviewCount: 442,
+    reviewCount: 536, reviewBasis: 442,
     shortDescription:
       "An der Steigung zum Kiyomizu-dera, zehn Zimmer, Blick über die Dächer.",
     description:
@@ -10337,7 +10337,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 168,
     rating: 4.6,
-    reviewCount: 342,
+    reviewCount: 503, reviewBasis: 342,
     shortDescription:
       "Im Sake-Viertel, Brauerei im Haus, Fushimi Inari mit vier Stationen.",
     description:
@@ -10368,7 +10368,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 286,
     rating: 4.7,
-    reviewCount: 286,
+    reviewCount: 479, reviewBasis: 286,
     shortDescription:
       "Im Bergdorf nördlich der Stadt, Onsen und Moosgärten, Bus in einer Stunde.",
     description:
@@ -10400,7 +10400,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 268,
     rating: 4.6,
-    reviewCount: 486,
+    reviewCount: 543, reviewBasis: 486,
     shortDescription:
       "In der Pontocho-Gasse am Kamo, Balkone über dem Fluss.",
     description:
@@ -10431,7 +10431,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 92,
     rating: 4.3,
-    reviewCount: 524,
+    reviewCount: 555, reviewBasis: 524,
     shortDescription:
       "Einfaches Gästehaus am Kamo-Delta, Küche zur Mitbenutzung, Räder leihbar.",
     description:
@@ -10462,7 +10462,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 212,
     rating: 4.6,
-    reviewCount: 268,
+    reviewCount: 472, reviewBasis: 268,
     shortDescription:
       "Im Bergwald am Kurama-dera, Außen-Onsen unter Zedern, Bahn ab Stadt.",
     description:
@@ -10494,7 +10494,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 176,
     rating: 4.4,
-    reviewCount: 486,
+    reviewCount: 543, reviewBasis: 486,
     shortDescription:
       "Gegenüber dem Nijo-Schloss, Familienzimmer mit Tatami, Küche im Haus.",
     description:
@@ -10526,7 +10526,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 196,
     rating: 4.7,
-    reviewCount: 324,
+    reviewCount: 495, reviewBasis: 324,
     shortDescription:
       "Teehaus am Uji-Fluss, Matcha aus eigenem Anbau, Byodo-in in Gehweite.",
     description:
@@ -10557,7 +10557,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 198,
     rating: 4.3,
-    reviewCount: 1142,
+    reviewCount: 608, reviewBasis: 1142,
     shortDescription:
       "Am Hauptbahnhof, Shinkansen und Flughafenexpress unter dem Haus.",
     description:
@@ -10588,7 +10588,7 @@ const HOTELS = [
     stars: 5,
     pricePerNight: 438,
     rating: 4.8,
-    reviewCount: 368,
+    reviewCount: 509, reviewBasis: 368,
     shortDescription:
       "Am Philosophenweg, Ginkaku-ji und Nanzen-ji zu Fuß, Garten von 1910.",
     description:
@@ -10619,7 +10619,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 206,
     rating: 4.6,
-    reviewCount: 624,
+    reviewCount: 574, reviewBasis: 624,
     shortDescription:
       "Modernisme-Wohnhaus am Passeig de Gràcia, Dachterrasse über den Blöcken.",
     description:
@@ -10650,7 +10650,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 224,
     rating: 4.4,
-    reviewCount: 894,
+    reviewCount: 598, reviewBasis: 894,
     shortDescription:
       "Am Strand von Barceloneta, Promenade vor der Tür, Altstadt in zehn Minuten.",
     description:
@@ -10682,7 +10682,7 @@ const HOTELS = [
     stars: 5,
     pricePerNight: 398,
     rating: 4.7,
-    reviewCount: 568,
+    reviewCount: 563, reviewBasis: 568,
     shortDescription:
       "Stadtpalast im gotischen Viertel, Spa im römischen Keller.",
     description:
@@ -10713,7 +10713,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 158,
     rating: 4.6,
-    reviewCount: 486,
+    reviewCount: 544, reviewBasis: 486,
     shortDescription:
       "An einem Platz in Gràcia, Park Güell in zwanzig Minuten, Viertel ohne Touristen.",
     description:
@@ -10744,7 +10744,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 186,
     rating: 4.5,
-    reviewCount: 542,
+    reviewCount: 560, reviewBasis: 542,
     shortDescription:
       "Umgebaute Fabrik im Poblenou, Strand in fünf Minuten, Dachpool.",
     description:
@@ -10775,7 +10775,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 212,
     rating: 4.6,
-    reviewCount: 624,
+    reviewCount: 574, reviewBasis: 624,
     shortDescription:
       "Am alten Markt El Born, Picasso-Museum und Santa Maria del Mar um die Ecke.",
     description:
@@ -10806,7 +10806,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 148,
     rating: 4.4,
-    reviewCount: 568,
+    reviewCount: 563, reviewBasis: 568,
     shortDescription:
       "Am Mercat de Sant Antoni, ruhiges Eixample-Viertel, Metro vor der Tür.",
     description:
@@ -10837,7 +10837,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 192,
     rating: 4.3,
-    reviewCount: 812,
+    reviewCount: 590, reviewBasis: 812,
     shortDescription:
       "Am Olympiahafen, flacher Strand, Pool und Betreuung im Haus.",
     description:
@@ -10869,7 +10869,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 224,
     rating: 4.6,
-    reviewCount: 386,
+    reviewCount: 513, reviewBasis: 386,
     shortDescription:
       "Stadtvilla mit Garten im Oberstadtviertel, Tibidabo in Reichweite.",
     description:
@@ -10900,7 +10900,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 94,
     rating: 4.1,
-    reviewCount: 724,
+    reviewCount: 585, reviewBasis: 724,
     shortDescription:
       "Am Hauptbahnhof Sants, günstigste Lage mit guter Anbindung, zwölf Kilometer zum Flughafen.",
     description:
@@ -10931,7 +10931,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 286,
     rating: 4.6,
-    reviewCount: 448,
+    reviewCount: 538, reviewBasis: 448,
     shortDescription:
       "Am Hang des Montjuïc, Blick über Stadt und Hafen, Pool auf der Terrasse.",
     description:
@@ -10962,7 +10962,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 162,
     rating: 4.3,
-    reviewCount: 586,
+    reviewCount: 567, reviewBasis: 586,
     shortDescription:
       "Apartments mit Küche im Raval, Boquería und MACBA zu Fuß.",
     description:
@@ -10994,7 +10994,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 198,
     rating: 4.6,
-    reviewCount: 624,
+    reviewCount: 574, reviewBasis: 624,
     shortDescription:
       "In den Gassen der Alfama, Dachterrasse über dem Tejo, Tram 28 um die Ecke.",
     description:
@@ -11025,7 +11025,7 @@ const HOTELS = [
     stars: 5,
     pricePerNight: 386,
     rating: 4.7,
-    reviewCount: 548,
+    reviewCount: 561, reviewBasis: 548,
     shortDescription:
       "Palacete im Chiado, Spa im Gewölbe, Opernhaus und Buchläden zu Fuß.",
     description:
@@ -11056,7 +11056,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 178,
     rating: 4.4,
-    reviewCount: 712,
+    reviewCount: 583, reviewBasis: 712,
     shortDescription:
       "In Belém am Fluss, Mosteiro dos Jerónimos und Pastéis de Belém zu Fuß.",
     description:
@@ -11087,7 +11087,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 216,
     rating: 4.7,
-    reviewCount: 486,
+    reviewCount: 544, reviewBasis: 486,
     shortDescription:
       "Stadtpalais am Garten von Príncipe Real, Becken im Hof, Läden ringsum.",
     description:
@@ -11118,7 +11118,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 158,
     rating: 4.5,
-    reviewCount: 568,
+    reviewCount: 563, reviewBasis: 568,
     shortDescription:
       "Auf dem Fabrikgelände unter der Brücke, Buchhandlung und Markt im Haus.",
     description:
@@ -11149,7 +11149,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 92,
     rating: 4.3,
-    reviewCount: 486,
+    reviewCount: 544, reviewBasis: 486,
     shortDescription:
       "Einfache Pension in Graça, einer der besten Aussichtspunkte der Stadt.",
     description:
@@ -11180,7 +11180,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 172,
     rating: 4.4,
-    reviewCount: 824,
+    reviewCount: 592, reviewBasis: 824,
     shortDescription:
       "Am Tejo im Expo-Viertel, Ozeanarium nebenan, vier Kilometer zum Flughafen.",
     description:
@@ -11212,7 +11212,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 142,
     rating: 4.5,
-    reviewCount: 412,
+    reviewCount: 524, reviewBasis: 412,
     shortDescription:
       "Im ältesten Viertel, Fado-Geburtsort, Dachterrasse mit Burgblick.",
     description:
@@ -11243,7 +11243,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 186,
     rating: 4.4,
-    reviewCount: 894,
+    reviewCount: 598, reviewBasis: 894,
     shortDescription:
       "Im Raster der Baixa, Praça do Comércio und Elevador zu Fuß, Metro vor der Tür.",
     description:
@@ -11274,7 +11274,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 192,
     rating: 4.6,
-    reviewCount: 386,
+    reviewCount: 513, reviewBasis: 386,
     shortDescription:
       "Stadthaus am Jardim da Estrela, Garten mit Becken, Tram 28 Endstation.",
     description:
@@ -11305,7 +11305,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 164,
     rating: 4.3,
-    reviewCount: 524,
+    reviewCount: 555, reviewBasis: 524,
     shortDescription:
       "Apartments am Fluss, Time Out Market und Fähren nach Cacilhas im Haus.",
     description:
@@ -11337,7 +11337,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 206,
     rating: 4.5,
-    reviewCount: 568,
+    reviewCount: 564, reviewBasis: 568,
     shortDescription:
       "Im Bairro Alto mit Schallschutzfenstern, Miradouro und Fado in Gehweite.",
     description:
@@ -11368,7 +11368,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 148,
     rating: 4.4,
-    reviewCount: 486,
+    reviewCount: 545, reviewBasis: 486,
     shortDescription:
       "Am Windsurfstrand im Süden, acht Kilometer zum Flughafen, Passat das ganze Jahr.",
     description:
@@ -11400,7 +11400,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 268,
     rating: 4.6,
-    reviewCount: 586,
+    reviewCount: 567, reviewBasis: 586,
     shortDescription:
       "Über den Klippen von Los Gigantes, sechshundert Meter Wand, Wale vor der Küste.",
     description:
@@ -11431,7 +11431,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 186,
     rating: 4.6,
-    reviewCount: 524,
+    reviewCount: 556, reviewBasis: 524,
     shortDescription:
       "Am Botanischen Garten im Norden, Teide-Blick, Lago Martiánez in Gehweite.",
     description:
@@ -11462,7 +11462,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 164,
     rating: 4.6,
-    reviewCount: 342,
+    reviewCount: 503, reviewBasis: 342,
     shortDescription:
       "Im Lavaort am Meer, Naturbecken El Caletón vor dem Haus.",
     description:
@@ -11493,7 +11493,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 142,
     rating: 4.5,
-    reviewCount: 412,
+    reviewCount: 524, reviewBasis: 412,
     shortDescription:
       "Im Weltkulturerbe-Zentrum, Universitätsstadt, Anaga-Gebirge in Reichweite.",
     description:
@@ -11524,7 +11524,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 192,
     rating: 4.3,
-    reviewCount: 948,
+    reviewCount: 600, reviewBasis: 948,
     shortDescription:
       "Dreihundert Meter zur Bucht, drei Becken, Betreuung ganzjährig.",
     description:
@@ -11556,7 +11556,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 178,
     rating: 4.7,
-    reviewCount: 286,
+    reviewCount: 479, reviewBasis: 286,
     shortDescription:
       "Finca im Teno-Massiv, Ziegenkäse aus eigener Herstellung, Wanderwege ab Hof.",
     description:
@@ -11587,7 +11587,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 168,
     rating: 4.4,
-    reviewCount: 624,
+    reviewCount: 575, reviewBasis: 624,
     shortDescription:
       "An der Hafenpromenade, Calatrava-Auditorium nebenan, Las Teresitas mit dem Bus.",
     description:
@@ -11618,7 +11618,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 186,
     rating: 4.7,
-    reviewCount: 524,
+    reviewCount: 556, reviewBasis: 524,
     shortDescription:
       "Riad in der Medina, Innenhof mit Orangenbäumen, Dachterrasse über den Dächern.",
     description:
@@ -11649,7 +11649,7 @@ const HOTELS = [
     stars: 5,
     pricePerNight: 398,
     rating: 4.7,
-    reviewCount: 586,
+    reviewCount: 567, reviewBasis: 586,
     shortDescription:
       "Im Hivernage mit Garten, Hammam über zwei Etagen, vier Kilometer zum Flughafen.",
     description:
@@ -11680,7 +11680,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 206,
     rating: 4.4,
-    reviewCount: 824,
+    reviewCount: 592, reviewBasis: 824,
     shortDescription:
       "In der Palmeraie, drei Becken, Betreuung und Kamelhof nebenan.",
     description:
@@ -11712,7 +11712,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 74,
     rating: 4.2,
-    reviewCount: 486,
+    reviewCount: 545, reviewBasis: 486,
     shortDescription:
       "Einfaches Haus im jüdischen Viertel, Gewürzmarkt und Bahia-Palast zu Fuß.",
     description:
@@ -11743,7 +11743,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 248,
     rating: 4.7,
-    reviewCount: 412,
+    reviewCount: 524, reviewBasis: 412,
     shortDescription:
       "Zelte in der Steinwüste, Atlas am Horizont, Sternenhimmel ohne Streulicht.",
     description:
@@ -11774,7 +11774,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 152,
     rating: 4.4,
-    reviewCount: 624,
+    reviewCount: 575, reviewBasis: 624,
     shortDescription:
       "In der Neustadt, Jardin Majorelle in Gehweite, fünf Kilometer zum Flughafen.",
     description:
@@ -11805,7 +11805,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 142,
     rating: 4.6,
-    reviewCount: 386,
+    reviewCount: 513, reviewBasis: 386,
     shortDescription:
       "Riad im Kasbah-Viertel, Saadier-Gräber um die Ecke, vierzehn Zimmer.",
     description:
@@ -11836,7 +11836,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 158,
     rating: 4.6,
-    reviewCount: 324,
+    reviewCount: 495, reviewBasis: 324,
     shortDescription:
       "Im Ourika-Tal am Fluss, Wasserfälle und Berberdörfer, Atlas über dem Haus.",
     description:
@@ -11867,7 +11867,7 @@ const HOTELS = [
     stars: 5,
     pricePerNight: 426,
     rating: 4.8,
-    reviewCount: 548,
+    reviewCount: 561, reviewBasis: 548,
     shortDescription:
       "Über dem Strand von Camps Bay, Zwölf Apostel im Rücken, Pool auf der Klippe.",
     description:
@@ -11898,7 +11898,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 198,
     rating: 4.6,
-    reviewCount: 486,
+    reviewCount: 545, reviewBasis: 486,
     shortDescription:
       "Im Viertel der bunten Häuser, Signal Hill über dem Dach, Zentrum zu Fuß.",
     description:
@@ -11929,7 +11929,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 268,
     rating: 4.5,
-    reviewCount: 894,
+    reviewCount: 599, reviewBasis: 894,
     shortDescription:
       "An der V&A Waterfront, Robben-Island-Fähre und Zeitz-Museum am Haus.",
     description:
@@ -11960,7 +11960,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 286,
     rating: 4.7,
-    reviewCount: 424,
+    reviewCount: 531, reviewBasis: 424,
     shortDescription:
       "Weingut im ältesten Anbaugebiet der südlichen Hemisphäre, Verkostung im Haus.",
     description:
@@ -11991,7 +11991,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 98,
     rating: 4.2,
-    reviewCount: 568,
+    reviewCount: 564, reviewBasis: 568,
     shortDescription:
       "Am Indischen Ozean, warmes Wasser, bunte Umkleidehäuschen am Strand.",
     description:
@@ -12022,7 +12022,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 168,
     rating: 4.4,
-    reviewCount: 486,
+    reviewCount: 545, reviewBasis: 486,
     shortDescription:
       "Am Hafen von Hout Bay, Robbenbootsfahrten, Chapman's Peak vor der Tür.",
     description:
@@ -12054,7 +12054,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 212,
     rating: 4.5,
-    reviewCount: 724,
+    reviewCount: 585, reviewBasis: 724,
     shortDescription:
       "An der Promenade, Meerwasserbecken nebenan, vier Kilometer ins Zentrum.",
     description:
@@ -12085,7 +12085,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 224,
     rating: 4.7,
-    reviewCount: 386,
+    reviewCount: 513, reviewBasis: 386,
     shortDescription:
       "Im Marinehafen an der False Bay, Pinguine von Boulders Beach zu Fuß.",
     description:
@@ -12116,7 +12116,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 246,
     rating: 4.7,
-    reviewCount: 624,
+    reviewCount: 575, reviewBasis: 624,
     shortDescription:
       "Nur per Boot erreichbar, Kalksteinwände im Rücken, Kletterfelsen am Strand.",
     description:
@@ -12148,7 +12148,7 @@ const HOTELS = [
     stars: 5,
     pricePerNight: 386,
     rating: 4.7,
-    reviewCount: 548,
+    reviewCount: 562, reviewBasis: 548,
     shortDescription:
       "Am ruhigen Nordstrand, drei Becken, Inseln im Blick, Spa am Wasser.",
     description:
@@ -12179,7 +12179,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 186,
     rating: 4.4,
-    reviewCount: 948,
+    reviewCount: 600, reviewBasis: 948,
     shortDescription:
       "Über Ao Nang, zwei Becken mit Rutschen, Boote zu den Inseln am Strand.",
     description:
@@ -12211,7 +12211,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 198,
     rating: 4.6,
-    reviewCount: 586,
+    reviewCount: 567, reviewBasis: 586,
     shortDescription:
       "Direkt am Phra Ae Beach, vier Kilometer Sand, Sonnenuntergang im Westen.",
     description:
@@ -12243,7 +12243,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 224,
     rating: 4.7,
-    reviewCount: 412,
+    reviewCount: 524, reviewBasis: 412,
     shortDescription:
       "Am Fuß des Khao Ngon Nak, stiller Strand, Aussichtspunkt in zwei Stunden.",
     description:
@@ -12274,7 +12274,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 124,
     rating: 4.3,
-    reviewCount: 524,
+    reviewCount: 556, reviewBasis: 524,
     shortDescription:
       "Am Fluss in der Stadt, Nachtmarkt und Pier zu Fuß, zwölf Kilometer zum Flughafen.",
     description:
@@ -12305,7 +12305,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 152,
     rating: 4.6,
-    reviewCount: 324,
+    reviewCount: 495, reviewBasis: 324,
     shortDescription:
       "In den Mangroven von Ao Thalane, Kajaks am Steg, Felsen im Wasser.",
     description:
@@ -12336,7 +12336,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 86,
     rating: 4.2,
-    reviewCount: 486,
+    reviewCount: 546, reviewBasis: 486,
     shortDescription:
       "Günstige Bungalows am Nationalparkstrand, Sandbank bei Ebbe.",
     description:
@@ -12367,7 +12367,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 158,
     rating: 4.4,
-    reviewCount: 724,
+    reviewCount: 585, reviewBasis: 724,
     shortDescription:
       "Hinter den Dünen von Son Bauló, flaches Wasser, Naturschutzgebiet nebenan.",
     description:
@@ -12399,7 +12399,7 @@ const HOTELS = [
     stars: 5,
     pricePerNight: 426,
     rating: 4.8,
-    reviewCount: 386,
+    reviewCount: 514, reviewBasis: 386,
     shortDescription:
       "Natursteinhaus über Deià, Tramuntana im Rücken, Cala Deià zu Fuß.",
     description:
@@ -12430,7 +12430,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 88,
     rating: 4.2,
-    reviewCount: 486,
+    reviewCount: 546, reviewBasis: 486,
     shortDescription:
       "Günstiges Haus am Hafen, Straßenbahn nach Sóller, Bucht mit flachem Wasser.",
     description:
@@ -12461,7 +12461,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 206,
     rating: 4.7,
-    reviewCount: 342,
+    reviewCount: 503, reviewBasis: 342,
     shortDescription:
       "Olivenfinca unter dem Castell d'Alaró, eigenes Öl, Räder im Preis.",
     description:
@@ -12492,7 +12492,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 168,
     rating: 4.5,
-    reviewCount: 412,
+    reviewCount: 525, reviewBasis: 412,
     shortDescription:
       "Am rosa Sand von Elafonisi, Lagune mit knietiefem Wasser, Naturschutzgebiet.",
     description:
@@ -12524,7 +12524,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 96,
     rating: 4.5,
-    reviewCount: 324,
+    reviewCount: 495, reviewBasis: 324,
     shortDescription:
       "Nur per Boot oder zu Fuß erreichbar, weiße Häuser am Wasser, keine Autos.",
     description:
@@ -12555,7 +12555,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 186,
     rating: 4.6,
-    reviewCount: 586,
+    reviewCount: 568, reviewBasis: 586,
     shortDescription:
       "In der venezianischen Altstadt, Fortezza über dem Haus, Strand in fünf Minuten.",
     description:
@@ -12586,7 +12586,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 286,
     rating: 4.7,
-    reviewCount: 424,
+    reviewCount: 532, reviewBasis: 424,
     shortDescription:
       "Über der Bucht von Kissamos, Balos und Gramvousa per Boot ab Hafen.",
     description:
@@ -12617,7 +12617,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 142,
     rating: 4.6,
-    reviewCount: 286,
+    reviewCount: 479, reviewBasis: 286,
     shortDescription:
       "Auf der Lassithi-Hochebene, 850 Meter, Windmühlen und Zeus-Höhle.",
     description:
@@ -12648,7 +12648,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 206,
     rating: 4.6,
-    reviewCount: 586,
+    reviewCount: 568, reviewBasis: 586,
     shortDescription:
       "Über der Steilküste bei Carvoeiro, Benagil-Höhle per Kajak, Klippenweg ab Haus.",
     description:
@@ -12679,7 +12679,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 152,
     rating: 4.4,
-    reviewCount: 412,
+    reviewCount: 525, reviewBasis: 412,
     shortDescription:
       "Am westlichsten Punkt Europas, Surfstrände auf beiden Seiten.",
     description:
@@ -12711,7 +12711,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 186,
     rating: 4.6,
-    reviewCount: 486,
+    reviewCount: 546, reviewBasis: 486,
     shortDescription:
       "Stadthaus in Tavira, Fähre zur Inselsandbank, Ria Formosa vor der Stadt.",
     description:
@@ -12742,7 +12742,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 172,
     rating: 4.6,
-    reviewCount: 342,
+    reviewCount: 504, reviewBasis: 342,
     shortDescription:
       "In der Serra de Monchique, Thermalquelle im Tal, kühler als die Küste.",
     description:
@@ -12773,7 +12773,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 178,
     rating: 4.3,
-    reviewCount: 824,
+    reviewCount: 593, reviewBasis: 824,
     shortDescription:
       "Zwischen Lagune und Strand, drei Becken, Holzsteg durch das Feuchtgebiet.",
     description:
@@ -12805,7 +12805,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 214,
     rating: 4.6,
-    reviewCount: 586,
+    reviewCount: 568, reviewBasis: 586,
     shortDescription:
       "An der Pelosa, türkises Flachwasser, aragonesischer Turm vor der Bucht.",
     description:
@@ -12837,7 +12837,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 158,
     rating: 4.6,
-    reviewCount: 342,
+    reviewCount: 504, reviewBasis: 342,
     shortDescription:
       "Bunte Altstadt am Temo, Burg über dem Haus, Strand mit dem Bus.",
     description:
@@ -12868,7 +12868,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 196,
     rating: 4.5,
-    reviewCount: 424,
+    reviewCount: 532, reviewBasis: 424,
     shortDescription:
       "Hinter den Dünen von Chia, Wachturm auf dem Felsen, Surfstrand im Westen.",
     description:
@@ -12900,7 +12900,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 148,
     rating: 4.7,
-    reviewCount: 286,
+    reviewCount: 479, reviewBasis: 286,
     shortDescription:
       "Hof im Supramonte, Schafskäse und Ferkel aus eigener Haltung, Schluchten ringsum.",
     description:
@@ -12931,7 +12931,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 178,
     rating: 4.5,
-    reviewCount: 624,
+    reviewCount: 575, reviewBasis: 624,
     shortDescription:
       "Im Burgviertel über der Stadt, Poetto-Strand mit dem Bus, neun Kilometer zum Flughafen.",
     description:
@@ -12962,7 +12962,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 188,
     rating: 4.4,
-    reviewCount: 724,
+    reviewCount: 586, reviewBasis: 724,
     shortDescription:
       "Fünf Kilometer Sandstrand südlich der Stadt, flaches Wasser, Bahn ins Zentrum.",
     description:
@@ -12994,7 +12994,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 196,
     rating: 4.5,
-    reviewCount: 648,
+    reviewCount: 578, reviewBasis: 648,
     shortDescription:
       "In Sitges an der Strandpromenade, siebzehn Buchten, Betreuung ganzjährig.",
     description:
@@ -13026,7 +13026,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 184,
     rating: 4.3,
-    reviewCount: 486,
+    reviewCount: 546, reviewBasis: 486,
     shortDescription:
       "Nördlicher Nachbar der Stadt, breiter Strand, Metro L2 vor der Tür.",
     description:
@@ -13058,7 +13058,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 176,
     rating: 4.4,
-    reviewCount: 812,
+    reviewCount: 591, reviewBasis: 812,
     shortDescription:
       "Am Strand von Mar Bella, Park nebenan, Metro L4 in fünf Minuten.",
     description:
@@ -13090,7 +13090,7 @@ const HOTELS = [
     stars: 5,
     pricePerNight: 324,
     rating: 4.7,
-    reviewCount: 412,
+    reviewCount: 525, reviewBasis: 412,
     shortDescription:
       "Über der Küste bei Sitges, Spa mit Meerwasser, Naturpark im Rücken.",
     description:
@@ -13121,7 +13121,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 78,
     rating: 4.2,
-    reviewCount: 568,
+    reviewCount: 564, reviewBasis: 568,
     shortDescription:
       "Günstige Pension am Fuß des Montjuïc, Tapasgasse Blai um die Ecke.",
     description:
@@ -13152,7 +13152,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 74,
     rating: 4.1,
-    reviewCount: 486,
+    reviewCount: 547, reviewBasis: 486,
     shortDescription:
       "Günstig im nördlichen Wohnviertel, Metro L1, Markthalle gegenüber.",
     description:
@@ -13183,7 +13183,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 214,
     rating: 4.6,
-    reviewCount: 386,
+    reviewCount: 514, reviewBasis: 386,
     shortDescription:
       "Modernisme-Haus im Oberstadtviertel, Innenhof mit Becken, Bahn ins Zentrum.",
     description:
@@ -13214,7 +13214,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 168,
     rating: 4.3,
-    reviewCount: 724,
+    reviewCount: 586, reviewBasis: 724,
     shortDescription:
       "Neben dem Camp Nou, Metro L3 und L5, zwölf Kilometer zum Flughafen.",
     description:
@@ -13245,7 +13245,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 152,
     rating: 4.6,
-    reviewCount: 288,
+    reviewCount: 484, reviewBasis: 288,
     shortDescription:
       "Umgebautes Landhaus am Stadtrand, Labyrinthpark nebenan, Collserola im Rücken.",
     description:
@@ -13276,7 +13276,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 142,
     rating: 4.4,
-    reviewCount: 486,
+    reviewCount: 547, reviewBasis: 486,
     shortDescription:
       "Apartments mit Küche im Clot, Bahnhof Sants und Flughafen gut erreichbar.",
     description:
@@ -13308,7 +13308,7 @@ const HOTELS = [
     stars: 5,
     pricePerNight: 326,
     rating: 4.7,
-    reviewCount: 486,
+    reviewCount: 547, reviewBasis: 486,
     shortDescription:
       "Am Kurpark Oberlaa, Thermalwasser im Haus, U1 in die Innenstadt.",
     description:
@@ -13339,7 +13339,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 78,
     rating: 4.2,
-    reviewCount: 412,
+    reviewCount: 525, reviewBasis: 412,
     shortDescription:
       "Günstige Pension im sechzehnten Bezirk, Brunnenmarkt und U3 in Gehweite.",
     description:
@@ -13370,7 +13370,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 178,
     rating: 4.6,
-    reviewCount: 348,
+    reviewCount: 507, reviewBasis: 348,
     shortDescription:
       "Gründerzeithaus im fünften Bezirk, Innenhof, Naschmarkt in zehn Minuten.",
     description:
@@ -13401,7 +13401,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 196,
     rating: 4.6,
-    reviewCount: 286,
+    reviewCount: 480, reviewBasis: 286,
     shortDescription:
       "Villa am Türkenschanzpark, Garten mit alten Bäumen, Straßenbahn 41.",
     description:
@@ -13432,7 +13432,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 124,
     rating: 4.2,
-    reviewCount: 624,
+    reviewCount: 576, reviewBasis: 624,
     shortDescription:
       "Am Bahnhof Meidling, Schönbrunn zwei Stationen, Züge nach Graz und Salzburg.",
     description:
@@ -13463,7 +13463,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 168,
     rating: 4.4,
-    reviewCount: 712,
+    reviewCount: 583, reviewBasis: 712,
     shortDescription:
       "An der Alten Donau, Badeplätze und Tretboote, U1 in Gehweite.",
     description:
@@ -13495,7 +13495,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 148,
     rating: 4.5,
-    reviewCount: 264,
+    reviewCount: 469, reviewBasis: 264,
     shortDescription:
       "Heuriger am Wienerwaldrand, eigener Wein, Straßenbahn 43.",
     description:
@@ -13526,7 +13526,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 136,
     rating: 4.3,
-    reviewCount: 486,
+    reviewCount: 547, reviewBasis: 486,
     shortDescription:
       "Am Alten AKH, drei Straßenbahnlinien, Ring in zwölf Minuten.",
     description:
@@ -13557,7 +13557,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 132,
     rating: 4.3,
-    reviewCount: 412,
+    reviewCount: 526, reviewBasis: 412,
     shortDescription:
       "Apartments mit Küche am Donaukanal, Donauinsel in Gehweite.",
     description:
@@ -13589,7 +13589,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 86,
     rating: 4.1,
-    reviewCount: 524,
+    reviewCount: 556, reviewBasis: 524,
     shortDescription:
       "Günstig am Westbahnhof, U3 und U6, Schönbrunn drei Stationen.",
     description:
@@ -13620,7 +13620,7 @@ const HOTELS = [
     stars: 5,
     pricePerNight: 338,
     rating: 4.7,
-    reviewCount: 424,
+    reviewCount: 532, reviewBasis: 424,
     shortDescription:
       "Palacete im Wohnviertel, Spa über zwei Etagen, Markthalle um die Ecke.",
     description:
@@ -13651,7 +13651,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 334,
     rating: 4.6,
-    reviewCount: 486,
+    reviewCount: 548, reviewBasis: 486,
     shortDescription:
       "An der Gulbenkian-Stiftung, Spa mit Becken, sechs Kilometer zum Flughafen.",
     description:
@@ -13682,7 +13682,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 102,
     rating: 4.2,
-    reviewCount: 568,
+    reviewCount: 564, reviewBasis: 568,
     shortDescription:
       "Günstige Pension an der Metro Anjos, Mouraria und Baixa zu Fuß.",
     description:
@@ -13713,7 +13713,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 98,
     rating: 4.3,
-    reviewCount: 412,
+    reviewCount: 526, reviewBasis: 412,
     shortDescription:
       "Einfaches Haus im alten Fischerviertel, Tram 25, Museu de Arte Antiga nah.",
     description:
@@ -13744,7 +13744,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 146,
     rating: 4.3,
-    reviewCount: 486,
+    reviewCount: 548, reviewBasis: 486,
     shortDescription:
       "Im Wohnviertel der fünfziger Jahre, vier Kilometer zum Flughafen.",
     description:
@@ -13775,7 +13775,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 168,
     rating: 4.5,
-    reviewCount: 342,
+    reviewCount: 504, reviewBasis: 342,
     shortDescription:
       "Umgebaute Weinlager am Fluss, Brauereien und Galerien im Viertel.",
     description:
@@ -13806,7 +13806,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 158,
     rating: 4.5,
-    reviewCount: 288,
+    reviewCount: 485, reviewBasis: 288,
     shortDescription:
       "Am Palácio da Ajuda, Botanischer Garten nebenan, Belém in zehn Minuten.",
     description:
@@ -13837,7 +13837,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 186,
     rating: 4.5,
-    reviewCount: 424,
+    reviewCount: 533, reviewBasis: 424,
     shortDescription:
       "Im Designviertel am Fluss, Tram 15 und 25, Cais do Sodré in zehn Minuten.",
     description:
@@ -13868,7 +13868,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 138,
     rating: 4.3,
-    reviewCount: 386,
+    reviewCount: 514, reviewBasis: 386,
     shortDescription:
       "Auf einem der sieben Hügel, Aussicht ohne Gedränge, Tram 28 in Gehweite.",
     description:
@@ -13899,7 +13899,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 172,
     rating: 4.6,
-    reviewCount: 286,
+    reviewCount: 480, reviewBasis: 286,
     shortDescription:
       "Quinta mit Garten am Monsanto-Wald, Becken unter Orangenbäumen.",
     description:
@@ -13930,7 +13930,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 136,
     rating: 4.3,
-    reviewCount: 412,
+    reviewCount: 526, reviewBasis: 412,
     shortDescription:
       "Apartments mit Küche, drei Kilometer zum Flughafen, Metro ins Zentrum.",
     description:
@@ -13962,7 +13962,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 152,
     rating: 4.5,
-    reviewCount: 264,
+    reviewCount: 469, reviewBasis: 264,
     shortDescription:
       "Am Parque Quinta das Conchas, ruhig im Norden, fünf Kilometer zum Flughafen.",
     description:
@@ -13993,7 +13993,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 126,
     rating: 4.2,
-    reviewCount: 624,
+    reviewCount: 576, reviewBasis: 624,
     shortDescription:
       "Günstig in Queens, griechische Tavernen im Viertel, Linie N in Midtown.",
     description:
@@ -14024,7 +14024,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 122,
     rating: 4.1,
-    reviewCount: 486,
+    reviewCount: 548, reviewBasis: 486,
     shortDescription:
       "Im vielsprachigsten Viertel der Stadt, Linie 7, sechs Kilometer nach LaGuardia.",
     description:
@@ -14055,7 +14055,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 124,
     rating: 4.3,
-    reviewCount: 412,
+    reviewCount: 526, reviewBasis: 412,
     shortDescription:
       "Im Süden Brooklyns, Promenade unter der Verrazzano-Brücke, Linie R.",
     description:
@@ -14086,7 +14086,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 248,
     rating: 4.7,
-    reviewCount: 486,
+    reviewCount: 549, reviewBasis: 486,
     shortDescription:
       "Reihenhaus am Prospect Park, Farmers Market am Samstag, Linie F.",
     description:
@@ -14117,7 +14117,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 196,
     rating: 4.5,
-    reviewCount: 324,
+    reviewCount: 496, reviewBasis: 324,
     shortDescription:
       "Am Wasser in Red Hook, Freiheitsstatue im Blick, Fähre nach Manhattan.",
     description:
@@ -14148,7 +14148,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 186,
     rating: 4.4,
-    reviewCount: 568,
+    reviewCount: 565, reviewBasis: 568,
     shortDescription:
       "Am Campus der Columbia, Kathedrale nebenan, Linie 1.",
     description:
@@ -14179,7 +14179,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 178,
     rating: 4.4,
-    reviewCount: 486,
+    reviewCount: 549, reviewBasis: 486,
     shortDescription:
       "Umgebaute Lagerhalle, Wandbilder im Viertel, Linie L nach Manhattan.",
     description:
@@ -14210,7 +14210,7 @@ const HOTELS = [
     stars: 5,
     pricePerNight: 468,
     rating: 4.7,
-    reviewCount: 424,
+    reviewCount: 533, reviewBasis: 424,
     shortDescription:
       "Am Madison Square Park, Suiten mit hohen Decken, Spa im Haus.",
     description:
@@ -14241,7 +14241,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 168,
     rating: 4.3,
-    reviewCount: 486,
+    reviewCount: 549, reviewBasis: 486,
     shortDescription:
       "Am Botanischen Garten, Kindermuseum nebenan, Familienzimmer mit Küche.",
     description:
@@ -14273,7 +14273,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 164,
     rating: 4.5,
-    reviewCount: 286,
+    reviewCount: 480, reviewBasis: 286,
     shortDescription:
       "Am letzten Urwald Manhattans, Cloisters in Gehweite, Linie A.",
     description:
@@ -14304,7 +14304,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 90,
     rating: 4.3,
-    reviewCount: 486,
+    reviewCount: 549, reviewBasis: 486,
     shortDescription:
       "Günstiges Gästehaus im Weberviertel, Küche zur Mitbenutzung, Busknoten nah.",
     description:
@@ -14335,7 +14335,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 94,
     rating: 4.2,
-    reviewCount: 412,
+    reviewCount: 527, reviewBasis: 412,
     shortDescription:
       "Am Toji-Tempel mit der höchsten Pagode Japans, Hauptbahnhof zu Fuß.",
     description:
@@ -14366,7 +14366,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 88,
     rating: 4.2,
-    reviewCount: 524,
+    reviewCount: 557, reviewBasis: 524,
     shortDescription:
       "Günstig am Kamo, Sanjusangendo in Gehweite, Bahnhof zwei Stationen.",
     description:
@@ -14397,7 +14397,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 308,
     rating: 4.7,
-    reviewCount: 324,
+    reviewCount: 496, reviewBasis: 324,
     shortDescription:
       "Im Bergtal Takao, Onsen über dem Fluss, Ahornlaub im November.",
     description:
@@ -14429,7 +14429,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 232,
     rating: 4.6,
-    reviewCount: 386,
+    reviewCount: 514, reviewBasis: 386,
     shortDescription:
       "An der Töpfergasse zum Kiyomizu, Werkstätten für Kiyomizu-Keramik.",
     description:
@@ -14460,7 +14460,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 246,
     rating: 4.6,
-    reviewCount: 268,
+    reviewCount: 472, reviewBasis: 268,
     shortDescription:
       "Am kaiserlichen Garten Shugakuin, Reisfelder ringsum, Eizan-Bahn.",
     description:
@@ -14491,7 +14491,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 212,
     rating: 4.6,
-    reviewCount: 286,
+    reviewCount: 480, reviewBasis: 286,
     shortDescription:
       "Am ältesten Schrein Kyotos, Priesterhäuser am Bach, Weltkulturerbe.",
     description:
@@ -14522,7 +14522,7 @@ const HOTELS = [
     stars: 5,
     pricePerNight: 426,
     rating: 4.8,
-    reviewCount: 342,
+    reviewCount: 504, reviewBasis: 342,
     shortDescription:
       "An der Togetsukyo-Brücke, Onsen am Fluss, Boote auf dem Hozu.",
     description:
@@ -14553,7 +14553,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 182,
     rating: 4.4,
-    reviewCount: 412,
+    reviewCount: 527, reviewBasis: 412,
     shortDescription:
       "Am Flussufer mit Spielwiese, Familienzimmer mit Futons, Botanischer Garten nah.",
     description:
@@ -14585,7 +14585,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 158,
     rating: 4.3,
-    reviewCount: 724,
+    reviewCount: 586, reviewBasis: 724,
     shortDescription:
       "An der Shijo-Karasuma-Kreuzung, U-Bahn und Hankyu, Nishiki-Markt nah.",
     description:
@@ -14616,7 +14616,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 168,
     rating: 4.4,
-    reviewCount: 724,
+    reviewCount: 587, reviewBasis: 724,
     shortDescription:
       "Am flachen Sandstrand bei Georgioupoli, Kinderclub, Eukalyptusallee ins Dorf.",
     description:
@@ -14648,7 +14648,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 54,
     rating: 4.2,
-    reviewCount: 386,
+    reviewCount: 515, reviewBasis: 386,
     shortDescription:
       "Einfache Pension auf der Halbinsel, Sand im Westen, Kies im Osten.",
     description:
@@ -14679,7 +14679,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 198,
     rating: 4.7,
-    reviewCount: 586,
+    reviewCount: 568, reviewBasis: 586,
     shortDescription:
       "Am venezianischen Hafen, Leuchtturm im Blick, Markthalle in Gehweite.",
     description:
@@ -14710,7 +14710,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 176,
     rating: 4.4,
-    reviewCount: 624,
+    reviewCount: 576, reviewBasis: 624,
     shortDescription:
       "Am Süßwassersee mitten in der Stadt, Spinalonga per Boot.",
     description:
@@ -14741,7 +14741,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 148,
     rating: 4.4,
-    reviewCount: 486,
+    reviewCount: 550, reviewBasis: 486,
     shortDescription:
       "An der Bucht mit den Felshöhlen, Sandstrand, Sonnenuntergang nach Westen.",
     description:
@@ -14773,7 +14773,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 142,
     rating: 4.6,
-    reviewCount: 324,
+    reviewCount: 496, reviewBasis: 324,
     shortDescription:
       "Olivenhof über der Bucht von Plakias, Kourtaliotiko-Schlucht nebenan.",
     description:
@@ -14804,7 +14804,7 @@ const HOTELS = [
     stars: 5,
     pricePerNight: 288,
     rating: 4.7,
-    reviewCount: 468,
+    reviewCount: 540, reviewBasis: 468,
     shortDescription:
       "Thalasso über der Steilküste, vier Meerwasserbecken, eigener Strandzugang.",
     description:
@@ -14835,7 +14835,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 62,
     rating: 4.2,
-    reviewCount: 412,
+    reviewCount: 527, reviewBasis: 412,
     shortDescription:
       "Günstig im Fischerort, zwei Markthallen am Wasser, Inseln per Boot.",
     description:
@@ -14866,7 +14866,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 186,
     rating: 4.6,
-    reviewCount: 568,
+    reviewCount: 565, reviewBasis: 568,
     shortDescription:
       "Über den Felsnadeln der Ponta da Piedade, Treppe zur Bucht.",
     description:
@@ -14897,7 +14897,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 136,
     rating: 4.6,
-    reviewCount: 286,
+    reviewCount: 481, reviewBasis: 286,
     shortDescription:
       "Quinta im Binnenland, Quellen im Dorf, kühler als die Küste.",
     description:
@@ -14928,7 +14928,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 174,
     rating: 4.3,
-    reviewCount: 948,
+    reviewCount: 601, reviewBasis: 948,
     shortDescription:
       "Über der Praia da Oura, drei Becken mit Rutschen, Betreuung ganzjährig.",
     description:
@@ -14960,7 +14960,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 128,
     rating: 4.3,
-    reviewCount: 342,
+    reviewCount: 505, reviewBasis: 342,
     shortDescription:
       "Am Ortsplatz von Sagres, Festung und Leuchtturm in Gehweite.",
     description:
@@ -14991,7 +14991,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 178,
     rating: 4.4,
-    reviewCount: 684,
+    reviewCount: 579, reviewBasis: 684,
     shortDescription:
       "Im Pinienwald an der Südküste, flaches Wasser, Betreuung in der Saison.",
     description:
@@ -15023,7 +15023,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 172,
     rating: 4.3,
-    reviewCount: 548,
+    reviewCount: 562, reviewBasis: 548,
     shortDescription:
       "Hinter dem Dünengürtel der Nordküste, acht Kilometer Sand, Kinderclub.",
     description:
@@ -15055,7 +15055,7 @@ const HOTELS = [
     stars: 5,
     pricePerNight: 358,
     rating: 4.7,
-    reviewCount: 424,
+    reviewCount: 533, reviewBasis: 424,
     shortDescription:
       "Über einer Bucht der Costa Smeralda, Spa mit Meerwasser, Granit und Macchia.",
     description:
@@ -15086,7 +15086,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 192,
     rating: 4.6,
-    reviewCount: 586,
+    reviewCount: 569, reviewBasis: 586,
     shortDescription:
       "Auf der Stadtmauer von Alghero, katalanische Altstadt, Flughafen in zwölf Kilometern.",
     description:
@@ -15117,7 +15117,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 144,
     rating: 4.7,
-    reviewCount: 268,
+    reviewCount: 473, reviewBasis: 268,
     shortDescription:
       "Hof am Fuß des Supramonte, eigener Cannonau, Quelle Su Gologone nah.",
     description:
@@ -15148,7 +15148,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 196,
     rating: 4.5,
-    reviewCount: 624,
+    reviewCount: 576, reviewBasis: 624,
     shortDescription:
       "Am Meeresschutzgebiet Capo Carbonara, weißer Sand, Granit im Wasser.",
     description:
@@ -15180,7 +15180,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 92,
     rating: 4.3,
-    reviewCount: 286,
+    reviewCount: 481, reviewBasis: 286,
     shortDescription:
       "Auf der Insel San Pietro, ligurische Fischer, Fähre ab Portovesme.",
     description:
@@ -15211,7 +15211,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 144,
     rating: 4.5,
-    reviewCount: 724,
+    reviewCount: 587, reviewBasis: 724,
     shortDescription:
       "Über dem Hafen von Los Cristianos, Meerwasserbecken, Spa im Haus.",
     description:
@@ -15242,7 +15242,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 64,
     rating: 4.2,
-    reviewCount: 342,
+    reviewCount: 505, reviewBasis: 342,
     shortDescription:
       "Günstige Pension in der Kolonialstadt, Teide-Auffahrt vor der Tür.",
     description:
@@ -15273,7 +15273,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 80,
     rating: 4.2,
-    reviewCount: 312,
+    reviewCount: 493, reviewBasis: 312,
     shortDescription:
       "Einfacher Gasthof am Reschenpass, Dreiländereck, Lift in Gehweite.",
     description:
@@ -15304,7 +15304,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 206,
     rating: 4.5,
-    reviewCount: 386,
+    reviewCount: 515, reviewBasis: 386,
     shortDescription:
       "Im Seitental unter dem Gletscher, Panoramastraße, Ski bis Juni.",
     description:
@@ -15336,7 +15336,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 186,
     rating: 4.5,
-    reviewCount: 468,
+    reviewCount: 540, reviewBasis: 468,
     shortDescription:
       "In Osttirol unter den Lienzer Dolomiten, Loipen im Tal, Stadt mit Arkaden.",
     description:
@@ -15368,7 +15368,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 158,
     rating: 4.6,
-    reviewCount: 342,
+    reviewCount: 505, reviewBasis: 342,
     shortDescription:
       "Arbeitender Hof im Hochtal, Milch aus dem Stall, Skibus unten an der Straße.",
     description:
@@ -15399,7 +15399,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 82,
     rating: 4.3,
-    reviewCount: 286,
+    reviewCount: 481, reviewBasis: 286,
     shortDescription:
       "Einfacher Gasthof im hintersten Tal, Klausberg-Bahn in Gehweite.",
     description:
@@ -15430,7 +15430,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 86,
     rating: 4.3,
-    reviewCount: 248,
+    reviewCount: 466, reviewBasis: 248,
     shortDescription:
       "Günstige Pension im stillsten Tal, Urlärchen und drei Seen.",
     description:
@@ -15461,7 +15461,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 224,
     rating: 4.5,
-    reviewCount: 386,
+    reviewCount: 515, reviewBasis: 386,
     shortDescription:
       "Am Gletscher auf 2000 Metern, Lift vor dem Haus, Ötzi-Fundstelle im Tal.",
     description:
@@ -15493,7 +15493,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 178,
     rating: 4.7,
-    reviewCount: 324,
+    reviewCount: 496, reviewBasis: 324,
     shortDescription:
       "Hof im Loipental, Gsieser Tal Lauf im Februar, keine Lifte.",
     description:
@@ -15524,7 +15524,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 90,
     rating: 4.2,
-    reviewCount: 224,
+    reviewCount: 457, reviewBasis: 224,
     shortDescription:
       "Günstig am Rand des Riisitunturi, Hängeschnee im Februar.",
     description:
@@ -15555,7 +15555,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 182,
     rating: 4.5,
-    reviewCount: 268,
+    reviewCount: 473, reviewBasis: 268,
     shortDescription:
       "Im Osten an der russischen Grenze, Rentiere im Park, kaum Besucher.",
     description:
@@ -15587,7 +15587,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 196,
     rating: 4.6,
-    reviewCount: 186,
+    reviewCount: 431, reviewBasis: 186,
     shortDescription:
       "Nördlichste Gemeinde Finnlands, Lachsfischen am Teno, Polarnacht.",
     description:
@@ -15618,7 +15618,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 212,
     rating: 4.6,
-    reviewCount: 342,
+    reviewCount: 505, reviewBasis: 342,
     shortDescription:
       "Am Oulanka-Nationalpark, Karhunkierros ab Haus, Stromschnellen am Fluss.",
     description:
@@ -15649,7 +15649,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 182,
     rating: 4.6,
-    reviewCount: 548,
+    reviewCount: 562, reviewBasis: 548,
     shortDescription:
       "Am Südstrand von Fehmarn, Meerwasserbecken, sonnenreichste Insel Deutschlands.",
     description:
@@ -15680,7 +15680,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 76,
     rating: 4.2,
-    reviewCount: 386,
+    reviewCount: 516, reviewBasis: 386,
     shortDescription:
       "Günstige Pension an der schmalsten Stelle Usedoms, Seebrücke und Steilufer.",
     description:
@@ -15711,7 +15711,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 206,
     rating: 4.6,
-    reviewCount: 486,
+    reviewCount: 550, reviewBasis: 486,
     shortDescription:
       "An der Trave-Mündung, Viermaster vor dem Fenster, Lübeck in zwanzig Minuten.",
     description:
@@ -15742,7 +15742,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 168,
     rating: 4.6,
-    reviewCount: 324,
+    reviewCount: 497, reviewBasis: 324,
     shortDescription:
       "Auf der Steilküste über dem Königsstuhl, Sonnenuntergang über dem Wasser.",
     description:
@@ -15773,7 +15773,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 168,
     rating: 4.6,
-    reviewCount: 486,
+    reviewCount: 550, reviewBasis: 486,
     shortDescription:
       "Riad an der Rue Riad Zitoun, Hof mit Brunnen, Jemaa el-Fna in acht Minuten.",
     description:
@@ -15804,7 +15804,7 @@ const HOTELS = [
     stars: 5,
     pricePerNight: 348,
     rating: 4.6,
-    reviewCount: 424,
+    reviewCount: 533, reviewBasis: 424,
     shortDescription:
       "Am Golfplatz südlich der Stadt, Atlasblick, Hammam und drei Becken.",
     description:
@@ -15835,7 +15835,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 186,
     rating: 4.3,
-    reviewCount: 624,
+    reviewCount: 577, reviewBasis: 624,
     shortDescription:
       "Familienhaus am Stadtrand, zwei Becken mit Rutschen, Shuttle in die Medina.",
     description:
@@ -15867,7 +15867,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 148,
     rating: 4.6,
-    reviewCount: 286,
+    reviewCount: 482, reviewBasis: 286,
     shortDescription:
       "Lehmhaus unter dem Toubkal, Berberdörfer am Hang, kühl im Sommer.",
     description:
@@ -15898,7 +15898,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 162,
     rating: 4.4,
-    reviewCount: 586,
+    reviewCount: 569, reviewBasis: 586,
     shortDescription:
       "Am Bloubergstrand mit dem Postkartenblick auf den Tafelberg.",
     description:
@@ -15930,7 +15930,7 @@ const HOTELS = [
     stars: 5,
     pricePerNight: 298,
     rating: 4.8,
-    reviewCount: 412,
+    reviewCount: 528, reviewBasis: 412,
     shortDescription:
       "Weingut im Tal der Hugenotten, Spa im Kelterhaus, Bergkessel ringsum.",
     description:
@@ -15961,7 +15961,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 164,
     rating: 4.4,
-    reviewCount: 486,
+    reviewCount: 550, reviewBasis: 486,
     shortDescription:
       "Umgebaute Werkstatt im Künstlerviertel, Old Biscuit Mill am Samstag.",
     description:
@@ -15992,7 +15992,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 102,
     rating: 4.3,
-    reviewCount: 412,
+    reviewCount: 528, reviewBasis: 412,
     shortDescription:
       "Günstig im Fischerort an der False Bay, Zug entlang der Küste.",
     description:
@@ -16023,7 +16023,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 70,
     rating: 4.2,
-    reviewCount: 386,
+    reviewCount: 516, reviewBasis: 386,
     shortDescription:
       "Einfache Bungalows an der stillen Bucht, Pier nach Railay nebenan.",
     description:
@@ -16054,7 +16054,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 168,
     rating: 4.7,
-    reviewCount: 286,
+    reviewCount: 482, reviewBasis: 286,
     shortDescription:
       "Insel ohne Straßenlaternen, Hütten im Sand, Strom bis Mitternacht.",
     description:
@@ -16086,7 +16086,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 298,
     rating: 4.6,
-    reviewCount: 524,
+    reviewCount: 557, reviewBasis: 524,
     shortDescription:
       "Am Nordstrand von Phi Phi Don, abseits des Orts, Longtail als Zubringer.",
     description:
@@ -16117,7 +16117,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 146,
     rating: 4.6,
-    reviewCount: 268,
+    reviewCount: 473, reviewBasis: 268,
     shortDescription:
       "Zwischen Kalkfelsen und Mangroven, Kajak und Kletterfelsen vor der Tür.",
     description:
@@ -16148,7 +16148,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 268,
     rating: 4.7,
-    reviewCount: 324,
+    reviewCount: 497, reviewBasis: 324,
     shortDescription:
       "Am Thingvallavatn, Kontinentalspalte nebenan, Golden Circle vor der Tür.",
     description:
@@ -16179,7 +16179,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 212,
     rating: 4.6,
-    reviewCount: 286,
+    reviewCount: 482, reviewBasis: 286,
     shortDescription:
       "Auf den Westmännerinseln, Vulkan von 1973 im Ort, größte Papageitaucherkolonie.",
     description:
@@ -16210,7 +16210,7 @@ const HOTELS = [
     stars: 4,
     pricePerNight: 232,
     rating: 4.6,
-    reviewCount: 386,
+    reviewCount: 516, reviewBasis: 386,
     shortDescription:
       "Am Geothermalsee, Dampfbäder über den Quellen, Roggenbrot aus dem Sand.",
     description:
@@ -16242,7 +16242,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 186,
     rating: 4.6,
-    reviewCount: 268,
+    reviewCount: 474, reviewBasis: 268,
     shortDescription:
       "Pferdehof im Skagafjörður, Islandpferde aus eigener Zucht, Torfkirche nebenan.",
     description:
@@ -16273,7 +16273,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 112,
     rating: 4.2,
-    reviewCount: 342,
+    reviewCount: 506, reviewBasis: 342,
     shortDescription:
       "Günstig an der Ringstraße, Küche zur Mitbenutzung, Südküste in einer Stunde.",
     description:
@@ -16310,7 +16310,7 @@ const HOTELS = [
     name: "Hotel Somorrostro",
     location: "Barcelona", region: "Barceloneta",
     category: "strand", stars: 3,
-    pricePerNight: 158, rating: 4.4, reviewCount: 1286,
+    pricePerNight: 158, rating: 4.4, reviewCount: 610, reviewBasis: 1286,
     shortDescription: "Kleines Haus hundertfünfzig Meter vom Strand der Barceloneta, Dachterrasse mit Blick aufs Wasser.",
     description: "Das Haus steht in einer Seitengasse der Barceloneta, benannt nach dem Barackenviertel, das hier bis 1966 am Strand stand. Vierundzwanzig Zimmer auf fünf Etagen, schlicht eingerichtet, mit Schallschutzfenstern, die in diesem Viertel nötig sind. Auf dem Dach eine Terrasse mit Liegen und Blick über die Dächer aufs Mittelmeer. Zum Strand sind es hundertfünfzig Meter, zur Markthalle der Barceloneta vier Gehminuten, zur Metro Barceloneta sechs. Frühstück gibt es im Erdgeschoss, es ist ordentlich und nicht mehr. Wer abends Ruhe braucht, sollte ein Zimmer zum Innenhof nehmen.",
     highlights: ["Hundertfünfzig Meter zum Strand","Dachterrasse mit Meerblick","Vier Minuten zur Markthalle","Schallschutzfenster"],
@@ -16329,7 +16329,7 @@ const HOTELS = [
     name: "Nova Icària Beachhotel",
     location: "Barcelona", region: "Vila Olímpica",
     category: "strand", stars: 4,
-    pricePerNight: 196, rating: 4.5, reviewCount: 1842,
+    pricePerNight: 196, rating: 4.5, reviewCount: 617, reviewBasis: 1842,
     shortDescription: "Vierhundert Zimmer am Strand Nova Icària, Pool auf dem Dach, Hafen nebenan.",
     description: "Das Haus wurde für die Spiele von 1992 gebaut und gehört zu den Hotels, die seitdem die Strandfront der Vila Olímpica prägen. Zweihundertvierzig Zimmer, die meisten mit Balkon, auf dem Dach ein Pool mit Blick über den Port Olímpic. Zum Strand Nova Icària sind es zweihundert Meter, zur Metro Ciutadella fünf Minuten, in die Altstadt zwanzig. Der Strandabschnitt hier ist breiter und ruhiger als die Barceloneta. Frühstücksbuffet, Fitnessraum, ein Restaurant mit katalanischer Karte. Das Viertel ist abends still, die Lokale liegen am Hafen zweihundert Meter weiter.",
     highlights: ["Zweihundert Meter zum Strand Nova Icària","Dachpool über dem Port Olímpic","Ruhiger als die Barceloneta","Fünf Minuten zur Metro"],
@@ -16348,7 +16348,7 @@ const HOTELS = [
     name: "Pension Mar i Cel",
     location: "Barcelona", region: "Barceloneta",
     category: "budget", stars: 2,
-    pricePerNight: 96, rating: 4.1, reviewCount: 864,
+    pricePerNight: 96, rating: 4.1, reviewCount: 595, reviewBasis: 864,
     shortDescription: "Günstige Pension in der Barceloneta, zweihundertfünfzig Meter zum Sand.",
     description: "Achtzehn Zimmer über zwei Etagen in einem Haus von 1890, schmal geschnitten wie alles in diesem Viertel. Die Zimmer sind klein, sauber und einfach, einige mit Gemeinschaftsbad auf dem Gang, was den Preis erklärt. Kein Aufzug. Zum Strand sind es zweihundertfünfzig Meter, zur Metro Barceloneta fünf Gehminuten, zum Hafen drei. Frühstück gibt es nicht, dafür eine Küche zur Mitbenutzung und einen Aufenthaltsraum. Die Familie, der das Haus gehört, wohnt im Erdgeschoss und ist seit drei Generationen da. Für den Preis die beste Lage am Strand.",
     highlights: ["Zweihundertfünfzig Meter zum Strand","Günstigstes Strandhaus der Stadt","Küche zur Mitbenutzung","Familienbetrieb seit drei Generationen"],
@@ -16367,7 +16367,7 @@ const HOTELS = [
     name: "Bogatell Design Rooms",
     location: "Barcelona", region: "Poblenou",
     category: "boutique", stars: 4,
-    pricePerNight: 172, rating: 4.6, reviewCount: 1124,
+    pricePerNight: 172, rating: 4.6, reviewCount: 606, reviewBasis: 1124,
     shortDescription: "Boutiquehaus in Poblenou, dreihundert Meter zum Strand Bogatell.",
     description: "Eine ehemalige Druckerei, die zu einem Haus mit zweiunddreißig Zimmern umgebaut wurde; die Stahlträger stehen noch, die Böden sind aus gegossenem Beton, und in der Lobby hängen Arbeiten von Künstlern aus dem Viertel. Zum Strand Bogatell sind es dreihundert Meter, zur Rambla del Poblenou fünf Gehminuten, zur Metro Llacuna vier. Der Bogatell ist der Strand, an dem die Barceloner selbst liegen. Frühstück à la carte, Bar auf der Dachterrasse, ein kleiner Wellnessbereich mit Sauna im Untergeschoss. Fahrräder kann man im Haus leihen.",
     highlights: ["Dreihundert Meter zum Strand Bogatell","Umgebaute Druckerei mit Stahlträgern","Wellnessbereich mit Sauna","Fahrräder im Haus"],
@@ -16386,7 +16386,7 @@ const HOTELS = [
     name: "Hotel Platja Llevant",
     location: "Barcelona", region: "Diagonal Mar",
     category: "familie", stars: 4,
-    pricePerNight: 142, rating: 4.3, reviewCount: 1468,
+    pricePerNight: 142, rating: 4.3, reviewCount: 613, reviewBasis: 1468,
     shortDescription: "Familienhotel am ruhigsten Stadtstrand, Pool und Kinderbecken.",
     description: "Das Haus liegt am östlichen Ende der Strandfront, wo der Llevant-Strand beginnt, der ruhigste der Stadt. Hundertachtzig Zimmer, davon vierzig Familienzimmer für vier Personen, auf der Gartenebene ein Pool mit separatem Kinderbecken. Zum Strand sind es dreihundertfünfzig Meter, zur Metro El Maresme fünf Gehminuten, in die Altstadt fünfundzwanzig. Das Einkaufszentrum Diagonal Mar liegt nebenan, was mit Kindern bei Regen praktisch ist. Halbpension möglich, das Buffet ist auf Familien ausgelegt. Der Strandabschnitt hat einen bewachten Bereich und flaches Wasser.",
     highlights: ["Pool mit separatem Kinderbecken","Vierzig Familienzimmer für vier","Ruhigster Stadtstrand mit flachem Wasser","Fünf Minuten zur Metro"],
@@ -16409,7 +16409,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 128,
     rating: 4.3,
-    reviewCount: 418,
+    reviewCount: 530, reviewBasis: 418,
     shortDescription:
       "Letzter Ort vor dem Gletscherlauf-Sander, Gemeinschaftsküche, Fjaðrárgljúfur in zehn Minuten.",
     description:
@@ -16440,7 +16440,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 136,
     rating: 4.4,
-    reviewCount: 627,
+    reviewCount: 577, reviewBasis: 627,
     shortDescription:
       "Am Borgarfjörður, eine Stunde von Reykjavík, mit Blick über das Wasser auf die Berge.",
     description:
@@ -16471,7 +16471,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 141,
     rating: 4.5,
-    reviewCount: 289,
+    reviewCount: 486, reviewBasis: 289,
     shortDescription:
       "Arbeitender Schafhof am Húnaflói, Robben am Strand von Illugastaðir, Abendessen auf Anmeldung.",
     description:
@@ -16503,7 +16503,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 146,
     rating: 4.3,
-    reviewCount: 503,
+    reviewCount: 551, reviewBasis: 503,
     shortDescription:
       "Am Lagarfljót im Osten, Ausgangspunkt für die Ostfjorde, Gemeinschaftsküche und Sauna.",
     description:
@@ -16534,7 +16534,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 148,
     rating: 4.6,
-    reviewCount: 741,
+    reviewCount: 589, reviewBasis: 741,
     shortDescription:
       "Altes Kaufmannshaus am Hafen, Blick auf die Inseln im Breiðafjörður.",
     description:
@@ -16565,7 +16565,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 132,
     rating: 4.3,
-    reviewCount: 612,
+    reviewCount: 571, reviewBasis: 612,
     shortDescription:
       "Familienpension über der Stadt, Dachterrasse mit Blick auf das Castelo, Tram 28 vor der Tür.",
     description:
@@ -16596,7 +16596,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 144,
     rating: 4.2,
-    reviewCount: 1104,
+    reviewCount: 605, reviewBasis: 1104,
     shortDescription:
       "Schlichtes Stadthotel an der Metro Anjos, acht Minuten in die Baixa, Schallschutzfenster.",
     description:
@@ -16627,7 +16627,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 118,
     rating: 4.5,
-    reviewCount: 486,
+    reviewCount: 551, reviewBasis: 486,
     shortDescription:
       "Traditioneller Gasthof im Ortskern, eigene Küche, Zillertalbahn zwei Minuten entfernt.",
     description:
@@ -16659,7 +16659,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 128,
     rating: 4.3,
-    reviewCount: 341,
+    reviewCount: 500, reviewBasis: 341,
     shortDescription:
       "Kleine Pension am Hang über Oetz, Frühstücksraum mit Blick ins Tal, Acherkogelbahn in zehn Minuten.",
     description:
@@ -16690,7 +16690,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 142,
     rating: 4.4,
-    reviewCount: 892,
+    reviewCount: 597, reviewBasis: 892,
     shortDescription:
       "Stadthotel am Inn unterhalb der Festung, Altstadt vor der Tür, Bahnhof in acht Minuten.",
     description:
@@ -16721,7 +16721,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 126,
     rating: 4.6,
-    reviewCount: 374,
+    reviewCount: 510, reviewBasis: 374,
     shortDescription:
       "Gasthof im Villnößtal mit Blick auf die Geislerspitzen, eigener Hof, Abendessen aus der Region.",
     description:
@@ -16753,7 +16753,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 138,
     rating: 4.3,
-    reviewCount: 658,
+    reviewCount: 579, reviewBasis: 658,
     shortDescription:
       "Am Rand der Brixner Altstadt, Plose-Seilbahn mit dem Bus in zehn Minuten, Innenhof mit Garten.",
     description:
@@ -16784,7 +16784,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 128,
     rating: 4,
-    reviewCount: 1487,
+    reviewCount: 614, reviewBasis: 1487,
     shortDescription:
       "Einfaches Haus in Queens, eine Station mit der 7 nach Manhattan, Blick auf die Skyline.",
     description:
@@ -16814,7 +16814,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 134,
     rating: 4.1,
-    reviewCount: 964,
+    reviewCount: 602, reviewBasis: 964,
     shortDescription:
       "Ruhiges Quartier in Queens, zwölf Minuten mit der 7 zum Times Square, Frühstück inklusive.",
     description:
@@ -16844,7 +16844,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 142,
     rating: 4.4,
-    reviewCount: 523,
+    reviewCount: 554, reviewBasis: 523,
     shortDescription:
       "Kleines Haus in Süd-Brooklyn, Promenade am Wasser, Blick auf die Verrazzano-Brücke.",
     description:
@@ -16874,7 +16874,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 148,
     rating: 4.2,
-    reviewCount: 1316,
+    reviewCount: 611, reviewBasis: 1316,
     shortDescription:
       "Am Nordrand des Central Park, zwei Linien vor der Tür, Brownstones in der Nachbarschaft.",
     description:
@@ -16905,7 +16905,7 @@ const HOTELS = [
     stars: 3,
     pricePerNight: 134,
     rating: 4.4,
-    reviewCount: 712,
+    reviewCount: 583, reviewBasis: 712,
     shortDescription:
       "Am Dorfplatz von Kastelruth, Seiser-Alm-Bahn in sieben Minuten, Stube mit eigener Küche.",
     description:
@@ -16937,7 +16937,7 @@ const HOTELS = [
     stars: 2,
     pricePerNight: 122,
     rating: 4.3,
-    reviewCount: 429,
+    reviewCount: 534, reviewBasis: 429,
     shortDescription:
       "In der mittelalterlichen Gasse von Klausen, Kloster Säben über dem Ort, Bahnhof zu Fuß erreichbar.",
     description:

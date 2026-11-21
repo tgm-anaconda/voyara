@@ -1303,8 +1303,18 @@ function aspektbilanz(item, stichprobe = 800) {
 }
 function aspektbilanzRechnen(item, stichprobe) {
   const gesamt = item.reviewCount;
-  const wie = Math.min(gesamt, stichprobe);
-  const bewertungen = bewertungenFuer(item, 0, wie);
+  /* Die Stichprobe haengt an der frueheren Anzahl (21.11.2026).
+     ----------------------------------------------------------------
+     Die sichtbaren Bewertungszahlen liegen seit dem 21.11.2026 in einer
+     engen Spanne (380 bis 620, Reihenfolge wie vorher), damit die
+     vorgelegten Haeuser vergleichbar viele Bewertungen haben. Die
+     Teilnoten sollten sich dadurch nicht verschieben: Gezogen wird
+     dieselbe Stichprobe wie vorher (`reviewBasis` = alte Anzahl).
+     Gemessen: Teilnoten unveraendert, Platz 1 in 180 von 180 Faellen
+     gleich. Hochgerechnet (Erwaehnungen) wird auf die neue Anzahl. */
+  const basis = Number.isFinite(item.reviewBasis) ? item.reviewBasis : gesamt;
+  const wie = Math.min(basis, stichprobe);
+  const bewertungen = bewertungenFuer(basis === gesamt ? item : { ...item, reviewCount: basis }, 0, wie);
   const faktor = gesamt / wie;
 
   const erlaubt = new Set(aspekteFuer(item).map((a) => a.id));

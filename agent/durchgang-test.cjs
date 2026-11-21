@@ -3119,6 +3119,15 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     pruefe("Band: Ferienwohnung bleibt Ferienwohnung", art({ artGenannt: true, typ: "apartment" }), "Ferienwohnung");
     pruefe("Band: nichts gesagt, keine Zeile", art({}), null);
   }
+  /* Runde 5, B8 (21.11.2026): Bewertungszahlen in einer Spanne, die
+     Analyse zieht dieselbe Stichprobe wie vorher. */
+  {
+    const r = vm.runInContext("(() => { const a = HOTELS.concat(APARTMENTS); return [a.length, a.filter((h) => h.reviewCount >= 380 && h.reviewCount <= 620).length, a.filter((h) => Number.isFinite(h.reviewBasis)).length]; })()", ctx);
+    pruefe("Bewertungszahlen: alle Haeuser zwischen 380 und 620", r[1], r[0]);
+    pruefe("Bewertungszahlen: jede alte Anzahl als Basis erhalten", r[2], r[0]);
+    const bq = fs.readFileSync(alt && fs.existsSync(quelle + "bewertungen.js") ? quelle + "bewertungen.js" : B + "data/bewertungen.js", "utf8");
+    pruefe("Teilnoten: Stichprobe aus der alten Anzahl", /const wie = Math\.min\(basis, stichprobe\);/.test(bq) ? "ja" : "nein", "ja");
+  }
   /* Runde 4 (21.11.2026): Gebucht, dann vor dem Schliessen der Aufgabe
      neu geladen - beim naechsten Laden muss die Aufgabe zu Ende gehen. */
   {
