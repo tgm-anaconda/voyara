@@ -1827,6 +1827,7 @@ const Kern = {
     this.zimmerAntwort(t);
     this.abschlussAntwort(t);
     this.flugAntwort(t);
+    this.flugAnzahlLesen(t);
     /* Jede neue Nachricht beendet das Anhalten - die Person spricht wieder
        mit dem Agenten. Ohne das liefe ein Zug, der ueber einen Sonderweg
        startet (Filter neu, Vorschlaege zeigen), sofort in den Halt. */
@@ -4757,6 +4758,8 @@ const Kern = {
      buchung_vorbereiten das Fenster neu oeffnen. */
   flugWunsch(t, opts = {}) {
     if (!this.lauf.flugWartet || (this.lauf.profil || {}).flugId) return false;
+    // Erst die Anzahl (21.11.2026): Ein "passt" gilt dann der Anzahlfrage
+    if (this.lauf.flugAnzahlOffen) return false;
     const p = this.lauf.profil;
     const satz = String(t).toLowerCase();
     const ORDNUNG = ["frueh", "mittag", "abend"];
@@ -4789,6 +4792,43 @@ const Kern = {
     this.notieren("flug_andere", { zeit: zeit || null, ort: ort || null });
     this.lauf.fortsetzenMit = "buchung_vorbereiten";
     return false;   // normaler Zug: buchung_vorbereiten oeffnet das Fenster neu
+  },
+
+  /* Die Antwort auf "Wie viele Fluege?" (21.11.2026, siehe
+     Werkzeugkasten.kasseFlug). Gelesen wie die Anzahl bei den Haeusern:
+     eine Zahl von zwei bis sechs gilt sofort, ein Ja laesst es bei drei,
+     "mehr" fuehrt zur Nachfrage. Alles andere geht ans Modell; ruft es
+     danach buchung_vorbereiten, gilt drei. Hat die Person im Fenster
+     schon eine Verbindung angeklickt, ist die Frage erledigt. */
+  flugAnzahlLesen(t) {
+    const offen = this.lauf.flugAnzahlOffen;
+    if (!offen) return;
+    this.lauf.flugAnzahlOffen = null;
+    const p = (this.lauf.profil ||= {});
+    if (p.flugId) return;
+    const roh = String(t || "").toLowerCase().trim();
+    const WORT = { zwei: 2, drei: 3, vier: 4, "fünf": 5, fuenf: 5, sechs: 6 };
+    const ziffer = roh.match(/(^|[^0-9])([2-6])([^0-9]|$)/);
+    const wort = Object.keys(WORT).find((w) => new RegExp(`(^|[^a-zäöüß])${w}([^a-zäöüß]|$)`).test(roh));
+    let zahl = ziffer ? Number(ziffer[2]) : wort ? WORT[wort] : null;
+    if (!zahl && offen === "erste" && /^(ja|jap|jo|genau|passt|ok|okay|gern|gerne|klar|such sie raus)\b/.test(roh)) zahl = 3;
+    if (zahl) {
+      p.flugAnzahl = zahl;
+      (p.vonPerson ||= {}).flugAnzahl = true;
+      this.lauf.fortsetzenMit = "buchung_vorbereiten";
+      this.notieren("flug_anzahl", { anzahl: zahl });
+      return;
+    }
+    /* "Welche hat mehr Gepaeck?" ist eine Frage, kein Wunsch nach mehr
+       Verbindungen: also nur kurze Antworten oder solche, die vom
+       Vergleichen sprechen, und keine Fragen. */
+    const mehr = /mehr|weitere|noch ein paar|zus(ä|ae)tzlich/.test(roh) && !roh.includes("?")
+      && (roh.split(/\s+/).length <= 4 || /vergleich|zeig|sehen|verbindung|fl(ü|ue)ge|optionen/.test(roh));
+    if (offen === "erste" && mehr) {
+      this.lauf.flugAnzahlMehr = true;
+      this.lauf.fortsetzenMit = "buchung_vorbereiten";
+      this.notieren("flug_anzahl_mehr", {});
+    }
   },
 
   flugAntwort(t) {

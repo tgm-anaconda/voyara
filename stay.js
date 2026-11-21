@@ -449,8 +449,12 @@ function renderWidget() {
   // Abflughafen aus der Suchleiste, Klasse aenderbar
   const flugAn = !isApartment && typeof Flug !== "undefined" && Flug.get().mit;
   const flugStand = flugAn ? Flug.get() : null;
-  const flugOptionen = flugAn ? (Flug.optionen(item.ziel, flugStand.ab).length ? Flug.optionen(item.ziel, flugStand.ab) : Flug.optionen(item.ziel, "")) : [];
   const flug = flugAn ? Flug.wahl(item.ziel) : null;
+  /* Gewaehlt wird die Verbindung in der Kasse (21.11.2026), siehe
+     Kasse.flugFenster in checkout.js. Hier steht bis dahin nur, ab wann
+     und ab wo - ohne Airline, sonst stuende die guenstigste wie eine
+     Vorgabe da. */
+  const flugGewaehlt = !!flug && flugStand.flugId === flug.id;
   const flugProPerson = flug ? Flug.preisProPerson(flug) : 0;
   const flugGesamt = flugProPerson * b.personen;
   const totalMitFlug = total + flugGesamt;
@@ -469,12 +473,14 @@ function renderWidget() {
       <div class="field">
         <label>Verbindung</label>
         <div class="bw-flug-wahl">
-          <div class="bw-flug-jetzt">
+          ${flugGewaehlt ? `<div class="bw-flug-jetzt">
             <strong>${flug.airline}</strong>
             <small>${flug.depart}–${flug.arrive} · ${flug.stops === 0 ? "direkt" : `${flug.stops} Stopp`}${flug.baggage ? ` · ${flug.baggage}` : ""}</small>
             <small>${formatPrice(Flug.preisProPerson(flug))} pro Person</small>
-          </div>
-          ${flugOptionen.length > 1 ? `<button type="button" class="btn btn-ghost" id="bwFlugWahl">Andere Verbindung</button>` : ""}
+          </div>` : `<div class="bw-flug-jetzt">
+            <strong>ab ${flug.from}, ab ${formatPrice(Flug.preisProPerson(flug))} pro Person</strong>
+            <small>Die Verbindung wählst du in der Kasse.</small>
+          </div>`}
         </div>
       </div>
       <div class="field" style="margin-bottom:0">
@@ -571,77 +577,10 @@ function renderWidget() {
   document.getElementById("bwAnreise")?.addEventListener("change", (e) => { anreise = e.target.value; renderWidget(); });
   document.getElementById("bwKlasse")?.addEventListener("change", (e) => { Flug.set({ klasse: e.target.value }); renderWidget(); });
 
-  /* Die Verbindung waehlt man in der Uebersicht - an zwei Stellen.
-     ------------------------------------------------------------------
-     Der Nutzer am 02.10.2026: "Wenn ich mich fuer ein Hotel entschieden
-     habe und auf Buchen klicke, dass dann das Flugpop-up noch kommt" -
-     und: "Dass man es in keinem Dropdown bestimmen kann, sondern nur in
-     so einer Uebersichtskarte. Genau wie auch bei den Hotels."
-
-     Beides fuehrt hierher: der Klick auf "Jetzt buchen", solange noch
-     keine Verbindung gewaehlt ist, und der Knopf "Andere Verbindung" in
-     der Leiste. Dieselben Zeilen, dieselbe Kennzeichnung der
-     Partner-Airline wie beim Agenten - sonst haenge die Manipulation
-     davon ab, ob jemand den Agenten benutzt oder selbst klickt. */
-  function flugKandidaten() {
-    if (!flug || typeof Fluege === "undefined" || typeof Werkzeugkasten === "undefined") return [];
-    const b = Belegung.get();
-    // flugAb bleibt null: Flug.optionen nimmt dann den gemerkten
-    // Flughafen - dieselbe Quelle, aus der die Leiste rechnet.
-    try {
-      return Werkzeugkasten.flugAuswahl(item, { flug: true, flugAb: null,
-        flugKlasse: Flug.get().klasse || null, erwachsene: b.erwachsene, kinder: b.kinder });
-    } catch { return []; }
-  }
-
-  function flugFensterOeffnen(weiterZu) {
-    const kandidaten = flugKandidaten();
-    if (kandidaten.length < 2) return false;
-    const ids = kandidaten.map((k) => k.id);
-    const partnerId = typeof Studie !== "undefined" && Studie.partnerflug ? Studie.partnerflug(ids) : null;
-    /* Dieselbe Kennzeichnung wie beim Partnerhaus und beim Agenten - die
-       Logik steht in Studie.gruppe(), damit es nicht zwei Wahrheiten gibt
-       (siehe Kern.kennzeichnung). */
-    const feste = ["ohne", "etikett", "text"];
-    let stufe = typeof STELLSCHRAUBEN !== "undefined" && feste.includes(STELLSCHRAUBEN.kennzeichnung)
-      ? STELLSCHRAUBEN.kennzeichnung : null;
-    if (!stufe && typeof Studie !== "undefined" && Studie.daten && Studie.gruppe) {
-      stufe = Studie.gruppe().kennzeichnung || null;
-    }
-    Fluege.zeigen(kandidaten.map((k) => ({ ...k, partner: k.id === partnerId })), null, {
-      kennzeichnung: feste.includes(stufe) ? stufe : "etikett",
-      kontext: `${item.name} · ${kandidaten.length} Verbindungen`,
-      nachWahl: (id, gewaehlt) => {
-        if (typeof Studie !== "undefined" && Studie.notieren) {
-          Studie.notieren("flug_gewaehlt_selbst", { id, partner: id === partnerId,
-            airline: gewaehlt?.flug?.airline || null, haus: item.id, wo: weiterZu ? "buchen" : "leiste" });
-        }
-        if (weiterZu) {
-          /* Mit der Wahl im Gepaeck weiter zur Kasse. Der Link wurde ohne
-             Flugkennung gebaut (es war keine gewaehlt), also kommt sie
-             jetzt dazu - nicht noch einmal anLink, das wuerde ab und
-             klasse doppelt anhaengen. */
-          location.href = `${weiterZu}${weiterZu.includes("?") ? "&" : "?"}flug=${encodeURIComponent(id)}`;
-          return;
-        }
-        // Aus der Leiste heraus: Flugtage und Preise neu rechnen
-        anreise = anreise === null ? null : "";
-        renderWidget();
-      },
-    });
-    return true;
-  }
-
-  document.getElementById("bwFlugWahl")?.addEventListener("click", () => flugFensterOeffnen(null));
-
-  const knopf = document.getElementById("bwBook");
-  if (knopf && knopf.tagName === "A" && flug) {
-    knopf.addEventListener("click", (e) => {
-      if (Flug.get().flugId) return;            // schon gewaehlt
-      const ziel = knopf.getAttribute("href");
-      if (flugFensterOeffnen(ziel)) e.preventDefault();
-    });
-  }
+  /* Bis zum 21.11.2026 oeffnete hier "Andere Verbindung" und der erste
+     Klick auf "Jetzt buchen" das Flugfenster. Die Wahl ist in die Kasse
+     gewandert (checkout.js, Kasse.flugFenster); ein zweiter Ort waere
+     eine zweite Wahrheit. */
 }
 
 document.addEventListener("DOMContentLoaded", () => {

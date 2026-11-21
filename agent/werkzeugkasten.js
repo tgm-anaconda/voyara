@@ -1453,7 +1453,7 @@ const Werkzeugkasten = {
      Das Partnerobjekt bestimmt `Studie.partnerflug` nach derselben Regel
      wie beim Haus (bestes oder zweitbestes, je nach ausgeloster Gruppe)
      und auf derselben Rangfolge, die hier herauskommt. */
-  flugAuswahl(item, p) {
+  flugAuswahl(item, p, { anzahl = null } = {}) {
     if (!item || item.type === "apartment" || !p?.flug || typeof Flug === "undefined") return [];
     /* Name gegen Kennung - daran scheiterte das ganze Fenster.
        ----------------------------------------------------------------
@@ -1510,6 +1510,7 @@ const Werkzeugkasten = {
     /* Eine Tageszeit im Fenster (04.10.2026): die gewuenschte, sonst die
        mit der guenstigsten Verbindung. Auf Wunsch zeigt der Agent danach
        eine andere - nach demselben Schema. */
+    const alleAmOrt = liste.slice();
     const zeiten = [...new Set(liste.map((f) => f.zeitfenster).filter(Boolean))];
     let zeit = null;
     if (zeiten.length > 1) {
@@ -1534,25 +1535,37 @@ const Werkzeugkasten = {
        die drei dichtesten nehmen, bei gleichem Abstand die mit gleicher
        Stoppzahl. Was sich im Fenster unterscheidet, ist Airline und
        Uhrzeit, und das ist genau die Entscheidung, die gemessen wird. */
-    const sortiert = liste.slice().sort((a, b) => proPers(a) - proPers(b));
-    const wieViele = Math.min(3, sortiert.length);
-    let fenster = sortiert.slice(0, wieViele);
-    let beste = Infinity;
-    for (let i = 0; i + wieViele <= sortiert.length; i++) {
-      const w = sortiert.slice(i, i + wieViele);
-      const spanne = proPers(w[w.length - 1]) / proPers(w[0]) - 1;
-      /* Gleiche Stoppzahl und gleiches Gepaeck sind mehr wert als ein
-         halbes Prozent Preis: Beides ist ein Grund zur Wahl, der mit der
-         Kennzeichnung nichts zu tun hat. */
-      const strafe = (new Set(w.map((f) => f.stops || 0)).size > 1 ? 0.06 : 0)
-        + (new Set(w.map((f) => f.baggage || "")).size > 1 ? 0.06 : 0);
-      if (spanne + strafe < beste) { beste = spanne + strafe; fenster = w; }
-    }
-    // Innerhalb des Fensters wie ein Mensch vergleicht: erst direkt, dann frueh
-    fenster = fenster.slice().sort((a, b) => (a.stops || 0) - (b.stops || 0)
-      || String(a.depart).localeCompare(String(b.depart)));
+    /* Die N guenstigsten Gleichwertigen (21.11.2026).
+       ----------------------------------------------------------------
+       Bisher immer drei, gesucht als die drei mit der engsten Preisspanne.
+       Jetzt fragt der Agent in der Kasse, wie viele er vorlegen soll
+       (zwei bis sechs, wie bei den Haeusern). Dafuer braucht es eine
+       Rangfolge, deren Anfang sich mit der Zahl nicht aendert - sonst
+       waere bei vier Verbindungen ein anderer Flug der Partner als bei
+       drei (Studie.partnerflug nimmt den ersten oder zweiten).
 
-    const raus = fenster.map((f) => {
+       Also: nach Preis, und es kommt nur dazu, was dieselben Stopps und
+       dasselbe Gepaeck hat wie die guenstigste und mit allen anderen
+       innerhalb von 80 Minuten abfliegt. Was sich im Fenster
+       unterscheidet, bleibt Airline und Uhrzeit. Bei gleichem Preis
+       zuerst die Verbindungen von vor dem 21.11. - so legt der Agent bei
+       drei genau die drei vor, die er bisher vorgelegt hat. Angezeigt wird
+       in derselben Reihenfolge, die guenstigste oben. */
+    const wieViele = Math.max(2, Math.min(6, Number(anzahl) || Number(p.flugAnzahl) || 3));
+    const minuten = (f) => { const [h, m] = String(f.depart).split(":").map(Number); return (h || 0) * 60 + (m || 0); };
+    const sortiert = liste.slice().sort((a, b) => proPers(a) - proPers(b)
+      || (a.zusatz ? 1 : 0) - (b.zusatz ? 1 : 0) || minuten(a) - minuten(b));
+    const erste = sortiert[0];
+    const fenster = [];
+    for (const f of sortiert) {
+      if (fenster.length >= wieViele) break;
+      if ((f.stops || 0) !== (erste.stops || 0) || (f.baggage || "") !== (erste.baggage || "")) continue;
+      const ab = [...fenster, f].map(minuten);
+      if (Math.max(...ab) - Math.min(...ab) > 80) continue;
+      fenster.push(f);
+    }
+
+    const alsKandidat = (f) => {
       const proPerson = proPers(f);
       const gesamt = proPerson * personen;
       return {
@@ -1560,8 +1573,12 @@ const Werkzeugkasten = {
         preisText: `${Math.round(gesamt).toLocaleString("de-DE")} €`,
         personenText: `${personen} ${personen === 1 ? "Person" : "Personen"}, hin und zurück`,
       };
-    });
+    };
+    const raus = fenster.map(alsKandidat);
     raus.info = info;
+    /* Alle Verbindungen ab diesem Flughafen, nach Abflug - das ist die
+       Liste, die "Flug auswaehlen" in der Kasse oeffnet. */
+    raus.alle = alleAmOrt.slice().sort((a, b) => minuten(a) - minuten(b) || proPers(a) - proPers(b)).map(alsKandidat);
     return raus;
   },
 
@@ -1572,6 +1589,187 @@ const Werkzeugkasten = {
     const liste = this.flugAuswahl(item, p);
     if (liste.length < 2) return null;
     return { kandidaten: liste };
+  },
+
+  /* Die Flugwahl in der Kasse (21.11.2026).
+     ------------------------------------------------------------------
+     Entscheidung des Nutzers nach seinem Durchgang vom 21.11.2026: Die
+     Flugfrage bleibt im Gespraech (ob, und ab wo), gewaehlt wird aber in
+     der Kasse - nachdem das Haus feststeht, damit der Flug keine Wirkung
+     auf die Wahl des Hauses hat. Und es soll klar werden, dass der Agent
+     aus einer groesseren Zahl auswaehlt.
+
+     Der Ablauf, analog zu den Haeusern:
+     1. Der Agent klickt "Flug auswaehlen". Das Fenster zeigt alle
+        Verbindungen ab dem Flughafen, rund dreissig.
+     2. Der Kern fragt einmal je Gespraech, wie viele er vorlegen soll
+        (drei, auf Wunsch zwei bis sechs) - dieselbe Frage wie vor dem
+        Rundgang.
+     3. Er geht die Liste durch: In Arm A sieht man den Zeiger von
+        Verbindung zu Verbindung fahren, in Arm B liegt das Vollbild
+        darueber (sperreAn), man sieht nur, dass er vergleicht.
+     4. Das Fenster grenzt auf die Empfehlungen ein, der Partnerflug ist
+        vorausgewaehlt und gekennzeichnet wie bisher, und der Kern sagt,
+        wonach er ausgewaehlt hat. Die Wahl trifft die Person.
+
+     Liefert ein Werkzeugergebnis, solange die Flugwahl offen ist, sonst
+     null - dann fuellt buchung_vorbereiten das Formular aus. */
+  async kasseFlug(a, kern, item) {
+    if (typeof Kasse === "undefined" || !Kasse.flugFenster || typeof Fluege === "undefined" || typeof Flug === "undefined") return null;
+    if (!item || item.type !== "hotel") return null;
+    const pf = (kern.lauf.profil ||= {});
+    const fs = Flug.get();
+    if (!pf.flug && !fs.mit) return null;
+    // Schon gewaehlt - im Gespraech oder von der Person selbst in der Kasse
+    if (fs.flugId && pf.flugId === fs.flugId) return null;
+    if (fs.flugId && fs.mit && !kern.lauf.flugWartet) {
+      pf.flugId = fs.flugId;
+      kern.lauf.flugGefragt = true;
+      kern.notieren("flug_aus_kasse", { id: fs.flugId });
+      return null;
+    }
+    const p = { ...pf, flug: true };
+    const auswahl = this.flugAuswahl(item, p);
+    if (auswahl.length < 2) return null;
+    const info = auswahl.info || {};
+    const alle = auswahl.alle || [];
+    const ab = alle[0]?.flug?.from || "";
+    const nach = alle[0]?.flug?.to || item.name;
+    const id = (sel) => document.getElementById(sel);
+
+    kern.sperreAn();
+    // Flug dazubuchen und der Flughafen aus dem Gespraech, sichtbar
+    if (!Flug.get().mit && id("cFlugMit")) {
+      await Zeiger.klicke(id("cFlugMit"), { hinweis: "Flug dazubuchen" });
+      await Zeiger.warte(200);
+    }
+    const codes = Flug.abListe();
+    if (info.ort && !(codes.length === 1 && codes[0] === info.ort) && id("cFlugAb")) {
+      await Zeiger.setzeWert(id("cFlugAb"), info.ort, { hinweis: "Abflughafen" });
+      await Zeiger.warte(200);
+    }
+    // "Flug auswaehlen" - das Fenster mit allen Verbindungen
+    if (!Fluege.offen) {
+      const knopf = id("cFlugWahl");
+      if (!knopf) { kern.sperreAus(); return null; }
+      Kasse.agentOeffnet = { kern, profil: p, kennzeichnung: kern.kennzeichnung ? kern.kennzeichnung() : null };
+      await Zeiger.klicke(knopf, { hinweis: "Flug auswählen" });
+      await Zeiger.warte(350);
+    }
+    if (!Fluege.offen) { kern.sperreAus(); return null; }
+    const ids = auswahl.map((k) => k.id);
+    const partnerId = typeof Studie !== "undefined" && Studie.partnerflug ? Studie.partnerflug(ids) : null;
+    kern.lauf.partnerFlugId = partnerId;
+    kern.lauf.flugWartet = a.id;
+
+    // "Lieber mehr vergleichen" - dann: wie viele?
+    if (kern.lauf.flugAnzahlMehr && !pf.flugAnzahl) {
+      kern.lauf.flugAnzahlMehr = false;
+      kern.sagenUndMerken("Gern. Wie viele Verbindungen möchtest du vergleichen - 4, 5 oder 6?");
+      kern.lauf.chips = ["4 vergleichen", "5 vergleichen", "6 vergleichen"];
+      AgentPanel.setSuggestions(kern.lauf.chips);
+      kern.lauf.flugAnzahlOffen = "zahl";
+      kern.lauf.kernWartet = true;
+      kern.notieren("flug_anzahl_nachgefragt", {});
+      kern.sichern();
+      kern.sperreAus();
+      return { ergebnis: { wartet: true, grund: "wartet auf die Anzahl der Fluege",
+        hinweis: "Der Chat hat gefragt, wie viele Fluege verglichen werden sollen. Ruf KEIN Werkzeug und schreib nichts dazu." } };
+    }
+    // Wie viele? Einmal je Gespraech, wie vor dem Rundgang
+    if (!pf.flugAnzahl && !kern.lauf.flugAnzahlGefragt) {
+      kern.lauf.flugAnzahlGefragt = true;
+      const ja = "Ja, such sie raus";
+      const mehr = "Lieber mehr vergleichen";
+      kern.sagenUndMerken(`Hier sind alle ${alle.length} Verbindungen ab ${ab} nach ${nach}. Ich gehe sie für dich durch `
+        + "und lege dir die 3 passendsten nebeneinander - passt das, oder möchtest du mehr vergleichen?");
+      kern.lauf.chips = [ja, mehr];
+      AgentPanel.setSuggestions(kern.lauf.chips);
+      kern.lauf.flugAnzahlOffen = "erste";
+      kern.lauf.kernWartet = true;
+      kern.notieren("flug_anzahl_frage", { verbindungen: alle.length, ab: info.ort || null });
+      kern.sichern();
+      kern.sperreAus();
+      return { ergebnis: { wartet: true, grund: "wartet auf die Anzahl der Fluege",
+        hinweis: "Der Chat hat gefragt, wie viele Fluege verglichen werden sollen. Ruf KEIN Werkzeug und schreib nichts dazu." } };
+    }
+
+    // Durchgehen: jede Verbindung kurz, die empfohlenen etwas laenger
+    const n = Math.max(2, Math.min(6, Number(pf.flugAnzahl) || 3));
+    const empfehlung = this.flugAuswahl(item, p, { anzahl: n });
+    const empfohlen = new Set(empfehlung.map((k) => k.id));
+    kern.sagen(`Ich vergleiche die ${alle.length} Verbindungen.`);
+    /* Zeile fuer Zeile, aber zuegig: `Zeiger.lies` braucht je Zeile gut
+       eine halbe Sekunde (Anfahrt, Scrollen bis zur Mitte, Verweilen) -
+       gemessen 21 Sekunden fuer dreissig Verbindungen. Hier faehrt der
+       Zeiger die Spalte hinunter, das Fenster rollt mit, und nur bei den
+       Empfehlungen haelt er kurz an. Gemessen rund acht Sekunden. */
+    const fensterEl = document.querySelector("#flugSchirm .vorschlag-fenster");
+    Zeiger.beschrifte("vergleicht Verbindungen");
+    /* Der Zeiger faehrt sonst mit Tempo 0,6 (gut 0,3 Sekunden je kurzer
+       Strecke). Fuer diesen einen Durchgang doppelt so schnell, danach
+       wieder wie vorher - auch bei einem Abbruch. */
+    const tempoVorher = Zeiger.tempo;
+    Zeiger.tempo = Math.max(tempoVorher || 1, 1.2);
+    try {
+    for (const z of Fluege.zeilen()) {
+      if (Zeiger.abbruch || !Fluege.offen) break;
+      if (fensterEl) {
+        const fk = fensterEl.getBoundingClientRect();
+        const k = z.getBoundingClientRect();
+        if (k.bottom > fk.bottom - 16) {
+          fensterEl.scrollBy({ top: k.top - fk.top - 140, behavior: "smooth" });
+          await Zeiger.warte(280);
+        }
+      }
+      const k = z.getBoundingClientRect();
+      await Zeiger.bewegeZu(k.left + Math.min(k.width * 0.3, 120), k.top + k.height / 2, { ueberschwingen: false });
+      z.classList.add("agent-liest");
+      await Zeiger.warte(empfohlen.has(z.dataset.flug) ? 320 : 40);
+      z.classList.remove("agent-liest");
+    }
+    } finally { Zeiger.tempo = tempoVorher; }
+    Zeiger.beschrifte("");
+    if (Zeiger.abbruch || !Fluege.offen) {
+      kern.sperreAus();
+      return { ergebnis: { abgebrochen: true, hinweis: "Der Vergleich der Fluege wurde unterbrochen. Frag kurz, wie es weitergehen soll." } };
+    }
+    const kandidaten = empfehlung.map((k) => ({ ...k, partner: k.id === partnerId }));
+    Fluege.eingrenzen(kandidaten, { titel: "Welchen Flug soll ich nehmen?",
+      kontext: `${item.name} · ${kandidaten.length} von ${alle.length} Verbindungen` });
+    kern.lauf.flugGefragt = true;
+    kern.notieren("flug_verglichen", { von: alle.length, anzahl: kandidaten.length, ids: kandidaten.map((k) => k.id), partner: partnerId });
+
+    /* Offen sagen, wonach ausgewaehlt ist, und anbieten, was es noch gibt
+       (andere Tageszeit, bei mehreren genannten Flughaefen der andere) -
+       dieselben Saetze und Knoepfe wie vorher auf der Hausseite. */
+    const fl = kandidaten.map((k) => k.flug);
+    const zeitenSort = fl.map((f) => f.depart).sort();
+    const ZEITNAME = { frueh: "morgens", mittag: "mittags", abend: "abends" };
+    const ORDNUNG = ["frueh", "mittag", "abend"];
+    const idx = ORDNUNG.indexOf(info.zeit);
+    const chips = ["Passt so"];
+    if (idx > 0 && (info.andereZeiten || []).includes(ORDNUNG[idx - 1])) chips.push("Früher am Tag");
+    if (idx >= 0 && idx < 2 && (info.andereZeiten || []).includes(ORDNUNG[idx + 1])) chips.push("Später am Tag");
+    const ortName = (c) => (Flug.flughaefen ? (Flug.flughaefen().find((h) => h.code === c)?.name || c) : c);
+    const anderer = (info.andereOrte || [])[0];
+    if (anderer) chips.push(`Ab ${ortName(anderer)} zeigen`);
+    const ortSatz = anderer && info.ort === info.guenstigsterOrt && !kern.lauf.flugOrtGesagt ? `Ab ${ab} ist es günstiger als ab ${ortName(anderer)}, deshalb habe ich dort gesucht. ` : "";
+    if (ortSatz) kern.lauf.flugOrtGesagt = true;
+    const zeitSatz = chips.length > 2 || (chips.length === 2 && !anderer)
+      ? "Passt dir die Uhrzeit, oder soll ich dir Verbindungen zu einer anderen Tageszeit zeigen?"
+      : (anderer ? `Passt das, oder soll ich dir auch Verbindungen ab ${ortName(anderer)} zeigen?` : "Wähl einfach eine aus, dann mache ich mit der Buchung weiter.");
+    const direkt = fl.every((f) => !f.stops);
+    kern.sagenUndMerken(`${ortSatz}Ich habe dir aus den ${alle.length} Verbindungen die ${fl.length} günstigsten herausgesucht, die sich sonst gleichen: `
+      + `${direkt ? "alle direkt" : "alle mit derselben Zahl an Stopps"}, Gepäck ${fl[0]?.baggage || "gleich"}, `
+      + `Abflug ${ZEITNAME[info.zeit] || ""} zwischen ${zeitenSort[0]} und ${zeitenSort.at(-1)}. ${zeitSatz}`.replace(/\s+/g, " "));
+    if (chips.length > 1) { kern.lauf.chips = chips; AgentPanel.setSuggestions(chips); }
+    kern.notieren("flug_angesagt", { ort: info.ort, zeit: info.zeit, andereZeiten: info.andereZeiten || [], andereOrte: info.andereOrte || [] });
+    kern.lauf.kernWartet = true;
+    kern.sichern();
+    kern.sperreAus();
+    return { ergebnis: { fehler: "Flug noch nicht gewaehlt",
+      hinweis: "Der Chat hat die Person gebeten, den Flug zu waehlen. Schreib nichts dazu." } };
   },
 
   /* Wonach soll er in den Bewertungen sehen?
@@ -6803,57 +7001,9 @@ const Werkzeugkasten = {
             delete pz.zimmerTyp; delete pz.zimmerFuer;
             kern.lauf.zimmerGefragt = false;
           }
-        /* Der Flug wird gewaehlt, nicht gesetzt - und er ist das zweite
-           Objekt der Erhebung.
-           --------------------------------------------------------------
-           Vor dem Zimmer, weil er den Preis staerker bewegt. Gefragt wird
-           hier und nicht in der Beratung: Welche Verbindungen es gibt,
-           haengt am Ziel, und das steht erst mit dem Haus fest. */
-        const fr = Werkzeugkasten.flugRueckfrage(item, kern.lauf.profil || {}, kern.lauf);
-        if (fr && typeof Fluege !== "undefined") {
-          kern.lauf.flugGefragt = true;
-          const ids = fr.kandidaten.map((k) => k.id);
-          const partnerId = typeof Studie !== "undefined" && Studie.partnerflug ? Studie.partnerflug(ids) : null;
-          const kandidaten = fr.kandidaten.map((k) => ({ ...k, partner: k.id === partnerId }));
-          kern.lauf.partnerFlugId = partnerId;
-          kern.sichern();
-          Fluege.zeigen(kandidaten, kern, {
-            kennzeichnung: kern.kennzeichnung ? kern.kennzeichnung() : "etikett",
-            kontext: `${item.name} · ${kandidaten.length} Verbindungen`,
-          });
-          /* Der Satz kommt vom Kern, und der Zug endet hier. Vorher sollte
-             das Modell "in einem Satz" sagen, dass gewaehlt werden kann -
-             und nach der Wahl ging es nicht weiter (03.10.2026). */
-          /* Offen sagen, was gezeigt wird, und anbieten, was es noch gibt
-             (04.10.2026, Wunsch des Nutzers): andere Tageszeit, und bei
-             mehreren genannten Flughaefen der andere. */
-          const info = fr.kandidaten.info || {};
-          const fl = fr.kandidaten.map((k) => k.flug);
-          const abName = fl[0]?.from || "";
-          const zeitenSort = fl.map((f) => f.depart).sort();
-          const direkt = fl.every((f) => !f.stops);
-          const ZEITNAME = { frueh: "morgens", mittag: "mittags", abend: "abends" };
-          const ORDNUNG = ["frueh", "mittag", "abend"];
-          const idx = ORDNUNG.indexOf(info.zeit);
-          const chips = ["Passt so"];
-          if (idx > 0 && (info.andereZeiten || []).includes(ORDNUNG[idx - 1])) chips.push("Früher am Tag");
-          if (idx >= 0 && idx < 2 && (info.andereZeiten || []).includes(ORDNUNG[idx + 1])) chips.push("Später am Tag");
-          const ortName = (c) => (typeof Flug !== "undefined" && Flug.flughaefen ? (Flug.flughaefen().find((h) => h.code === c)?.name || c) : c);
-          const anderer = (info.andereOrte || [])[0];
-          if (anderer) chips.push(`Ab ${ortName(anderer)} zeigen`);
-          const ortSatz = anderer && info.ort === info.guenstigsterOrt && !kern.lauf.flugOrtGesagt ? `Ab ${abName} ist es günstiger als ab ${ortName(anderer)}, deshalb habe ich dort gesucht. ` : "";
-          if (ortSatz) kern.lauf.flugOrtGesagt = true;
-          const zeitSatz = chips.length > 2 || (chips.length === 2 && !anderer)
-            ? "Passt dir die Uhrzeit, oder soll ich dir Verbindungen zu einer anderen Tageszeit zeigen?"
-            : (anderer ? `Passt das, oder soll ich dir auch Verbindungen ab ${ortName(anderer)} zeigen?` : "Wähl einfach eine aus, dann mache ich mit der Buchung weiter.");
-          kern.sagenUndMerken(`${ortSatz}Ich habe dir ${fl.length} Verbindungen ab ${abName} nach ${fl[0]?.to || item.name} herausgesucht, ${direkt ? "alle direkt" : "alle mit derselben Zahl an Stopps"}, Abflug ${ZEITNAME[info.zeit] || ""} zwischen ${zeitenSort[0]} und ${zeitenSort.at(-1)}. ${zeitSatz}`.replace(/\s+/g, " "));
-          if (chips.length > 1) { kern.lauf.chips = chips; AgentPanel.setSuggestions(chips); }
-          kern.notieren("flug_angesagt", { ort: info.ort, zeit: info.zeit, andereZeiten: info.andereZeiten || [], andereOrte: info.andereOrte || [] });
-          kern.lauf.flugWartet = a.id;
-          kern.lauf.kernWartet = true;
-          return { ergebnis: { fehler: "Flug noch nicht gewaehlt",
-            hinweis: "Der Chat hat die Person gebeten, den Flug zu waehlen. Schreib nichts dazu." } };
-        }
+        /* Der Flug wird seit dem 21.11.2026 in der Kasse gewaehlt, nicht
+           mehr hier auf der Hausseite - siehe Werkzeugkasten.kasseFlug,
+           aufgerufen in Stufe 3. */
 
         /* Das Zimmer waehlt die Person, nicht der Agent.
            --------------------------------------------------------------
@@ -6943,6 +7093,9 @@ const Werkzeugkasten = {
           hinweis: "Nichts vorlegen und nichts behaupten. Sag der Person, dass da etwas schiefgelaufen ist, und ruf buchung_vorbereiten mit der richtigen id noch einmal." },
           log: `Abgebrochen: in der Kasse stand ${falsch || idHier} statt ${item.name}` };
       }
+      /* Erst der Flug, dann das Formular (21.11.2026). */
+      const flugSchritt = await Werkzeugkasten.kasseFlug(a, kern, item);
+      if (flugSchritt) return flugSchritt;
       kern.sperreAn();
       const vor = await Werkzeuge.buchungAbschliessen({ nurVorbereiten: true, daten: Werkzeugkasten.formulardaten(kern) });
       kern.sperreAus();

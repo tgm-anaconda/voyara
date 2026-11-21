@@ -147,7 +147,7 @@ const FAQ = [
     antwort: "Von Hamburg, Berlin, Hannover, Düsseldorf, Köln, Frankfurt, Stuttgart, München und Zürich. Du kannst auch mehrere auswählen, dann suchen wir über alle.",
     stichworte: ["flughafen", "abflughafen", "abflug", "von wo", "startflughafen"] },
   { id: "f-flug-wahl", thema: "flug", frage: "Wie wähle ich eine bestimmte Verbindung?",
-    antwort: "Auf der Unterkunftsseite steht unter „Flug dazu“ die vorgeschlagene Verbindung. Über „Andere Verbindung“ öffnet sich die Übersicht mit allen Flügen zu diesem Ziel - mit Zeiten, Stopps, Gepäck und Preis.",
+    antwort: "Die Verbindung wählst du in der Kasse: Unter „Flug“ öffnet „Flug auswählen“ die Übersicht mit allen Flügen ab deinem Flughafen - mit Zeiten, Stopps, Gepäck und Preis. Dort kannst du auch den Abflughafen ändern oder den Flug dazubuchen.",
     stichworte: ["verbindung wählen", "anderer flug", "flug ändern", "welcher flug", "flugauswahl"] },
   { id: "f-gepaeck", thema: "flug", frage: "Wie viel Gepäck ist dabei?",
     antwort: "Das steht bei jeder Verbindung in der Flugübersicht: von „nur kleines Handgepäck“ bis „23 kg inklusive“. Einen Koffer pro Person buchst du in der Kasse dazu: bis 20 kg für 45 €, bis 30 kg für 75 €.",

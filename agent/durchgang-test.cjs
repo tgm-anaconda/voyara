@@ -3185,6 +3185,70 @@ const liesReisende = async (text, felder, urteil = "ja") => {
       vm.runInContext(`typeof stimmeEinordnen !== "function" ? null : stimmeEinordnen("Unsere Kinder waren morgens als Erste im Wasser und mittags kaum herauszubekommen.")?.wertung`, ctx), 1);
   }
 
+  /* Fluege, Block F1 (21.11.2026): rund dreissig Verbindungen je Paar,
+     Wahl in der Kasse mit Anzahlfrage. Belegt gegen
+     --alt=_backup/gp-fluege (Stand vor dem Block). Laedt components.js
+     (das Flugmodul) erst hier, damit alles davor unveraendert laeuft. */
+  {
+    const pc = alt && fs.existsSync(quelle + "components.js") ? quelle + "components.js" : B + "components.js";
+    // Das Flugmodul braucht window.location und window.addEventListener;
+    // dies ist der letzte Block, das Fenster bleibt danach so stehen
+    ctx.window = ctx;
+    try { vm.runInContext(fs.readFileSync(pc, "utf8"), ctx, { filename: "components.js" }); } catch (e) { console.log("LADEFEHLER components.js", e.message.slice(0, 120)); }
+    const FL = vm.runInContext("typeof Flug !== 'undefined' ? Flug : null", ctx);
+    const FLUEGE = vm.runInContext("FLIGHTS", ctx);
+    const paare = {};
+    for (const f of FLUEGE) (paare[f.ziel + "|" + f.fromCode] ||= []).push(f);
+    const groessen = [...new Set(Object.values(paare).map((l) => l.length))];
+    pruefe("Fluege: je Flughafen und Ziel 30 Verbindungen", groessen, [30]);
+    const billigerAlsVorher = Object.values(paare).filter((l) => {
+      const alte = l.filter((f) => !f.zusatz).map((f) => f.price);
+      return l.some((f) => f.zusatz && f.price < Math.min(...alte));
+    }).length;
+    pruefe("Fluege: keine neue Verbindung ist guenstiger als die guenstigste alte", billigerAlsVorher, 0);
+    const spanne = Math.max(...Object.values(paare).map((l) => Math.max(...l.map((f) => f.price)) / Math.min(...l.map((f) => f.price)) - 1));
+    pruefe("Fluege: Preisspanne je Paar unter 15 Prozent", spanne < 0.15, true);
+
+    const it = vm.runInContext('HOTELS.find((h) => h.ziel === "mallorca")', ctx);
+    const pr = { flug: true, flugAb: "Frankfurt", erwachsene: 2, kinder: 0 };
+    const auswahl = (n) => { try { return FL ? WK.flugAuswahl(it, pr, { anzahl: n }) : []; } catch { return []; } };
+    const drei = auswahl(3);
+    pruefe("Flugwahl: die Liste in der Kasse hat alle 30 ab Frankfurt", (drei.alle || []).length, 30);
+    const minuten = (u) => { const [h, m] = String(u).split(":").map(Number); return h * 60 + m; };
+    const gut46 = [2, 4, 5, 6].map((n) => {
+      const k = auswahl(n);
+      const ab = k.map((x) => minuten(x.flug.depart));
+      return k.length === n && k[0]?.id === drei[0]?.id && k[1]?.id === drei[1]?.id
+        && Math.max(...ab) - Math.min(...ab) <= 80 && !k.slice(1).some((x) => x.preis <= k[0].preis);
+    });
+    pruefe("Flugwahl: 2, 4, 5, 6 Empfehlungen - gleicher Anfang, enge Zeiten, die erste am guenstigsten", gut46, [true, true, true, true]);
+    pruefe("Flugwahl: bei drei die drei bisherigen", drei.map((k) => !!k.flug.zusatz), [false, false, false]);
+
+    // Die Antwort auf "Wie viele Fluege?"
+    const lies = (text, vorher = {}) => {
+      KN.lauf = { profil: { ...vorher }, flugAnzahlOffen: "erste" };
+      KN.notieren = () => {};
+      try { KN.flugAnzahlLesen?.(text); } catch { /* alter Kern */ }
+      return [KN.lauf.profil.flugAnzahl ?? null, KN.lauf.flugAnzahlMehr ?? null, KN.lauf.fortsetzenMit ?? null];
+    };
+    pruefe("Flug-Anzahl: '4' gilt", lies("4"), [4, null, "buchung_vorbereiten"]);
+    pruefe("Flug-Anzahl: 'fünf' gilt", lies("lieber fünf"), [5, null, "buchung_vorbereiten"]);
+    pruefe("Flug-Anzahl: Knopf 'Ja, such sie raus' heisst drei", lies("Ja, such sie raus"), [3, null, "buchung_vorbereiten"]);
+    pruefe("Flug-Anzahl: 'Lieber mehr vergleichen' fragt nach", lies("Lieber mehr vergleichen"), [null, true, "buchung_vorbereiten"]);
+    pruefe("Flug-Anzahl: eine Frage geht ans Modell", lies("Welche hat mehr Gepäck?"), [null, null, null]);
+    pruefe("Flug-Anzahl: schon im Fenster gewaehlt -> erledigt", lies("4", { flugId: "f1" }), [null, null, null]);
+    KN.lauf = { profil: { flug: true }, flugWartet: "h01", flugAnzahlOffen: "erste" };
+    KN.sagen = () => {}; KN.gespraechPush = () => {}; KN.sichern = () => {};
+    let passt = null;
+    try { passt = KN.flugWunsch("passt", { gezeigt: true }); } catch { passt = "fehler"; }
+    pruefe("Flug: 'passt' auf die Anzahlfrage ist keine Tageszeit-Antwort", passt, false);
+
+    // Gewaehlt wird in der Kasse, nicht mehr auf der Hausseite
+    const quelltext = fs.readFileSync(alt && fs.existsSync(quelle + "werkzeugkasten.js") ? quelle + "werkzeugkasten.js" : B + "agent/werkzeugkasten.js", "utf8");
+    pruefe("Flug: Stufe 1 oeffnet kein Flugfenster mehr, Stufe 3 ruft kasseFlug",
+      [/Werkzeugkasten\.flugRueckfrage\(item/.test(quelltext), /await Werkzeugkasten\.kasseFlug\(a, kern, item\)/.test(quelltext)], [false, true]);
+  }
+
   console.log(`\n${gut} richtig, ${schlecht} falsch`);
   process.exit(schlecht ? 1 : 0);
 })();

@@ -6149,6 +6149,69 @@ FLIGHTS.push(
     });
   }
   FLIGHTS.push(...neueGruppen);
+
+  /* Rund dreissig Verbindungen je Flughafen und Ziel (21.11.2026).
+     ----------------------------------------------------------------
+     Wunsch des Nutzers: In der Kasse oeffnet "Flug auswaehlen" eine Liste
+     mit vielen Verbindungen, etwa dreissig, und der Agent sucht daraus die
+     Empfehlungen heraus - so, dass sichtbar wird, dass er aus einer
+     groesseren Zahl auswaehlt. Bisher waren es neun je Paar (drei
+     Tageszeiten zu je drei).
+
+     Je Tageszeit kommen sieben dazu; alles bisherige bleibt, wie es war,
+     auch die Kennungen. Drei liegen dicht bei den vorhandenen (gleiche
+     Stopps, gleiches Gepaeck, innerhalb von 80 Minuten, knapp teurer als
+     die dritte) - damit kann der Agent auch vier bis sechs gleichwertige
+     Verbindungen vorlegen. Vier weichen ab, wie es Fluege tun: ein Stopp
+     mehr, anderes Gepaeck, frueher oder spaeter. Keine ist guenstiger als
+     die guenstigste vorhandene, so bleibt jeder Preis "mit Flug" auf
+     Karten, Hausseite und im Agenten unveraendert. Die Spanne je Paar
+     bleibt unter den 15 Prozent, die die Kernpruefung erlaubt. */
+  {
+    const streu = (text) => { let h = 0; for (const c of text) h = (h * 31 + c.charCodeAt(0)) >>> 0; return h; };
+    const proFenster = new Map();
+    for (const f of FLIGHTS) {
+      const k = `${f.ziel}|${f.fromCode}|${f.zeitfenster || ""}`;
+      if (!proFenster.has(k)) proFenster.set(k, []);
+      proFenster.get(k).push(f);
+    }
+    const GEPAECK_KLEIN = ["Handgepäck inkl.", "nur kleines Handgepäck"];
+    const zusatz = [];
+    let nrZusatz = 3000;
+    for (const [k, liste] of proFenster) {
+      liste.sort((a, b) => alsMinuten(a.depart) - alsMinuten(b.depart));
+      const mitte = liste[Math.min(1, liste.length - 1)];
+      const ab = alsMinuten(mitte.depart);
+      const dauer = minuten(mitte.duration);
+      const h = streu(k);
+      const stops = mitte.stops || 0;
+      const andererKoffer = GEPAECK_KLEIN.includes(mitte.baggage) ? "23 kg inkl." : "Handgepäck inkl.";
+      const plan = [
+        // dicht bei den vorhandenen
+        { v: -20, f: 1.016 }, { v: 12, f: 1.021 }, { v: 28, f: 1.026 },
+        // abweichend
+        { v: 65, f: 1.035, stops: stops + 1, extra: 100 + (h % 40) },
+        { v: -55, f: GEPAECK_KLEIN.includes(mitte.baggage) ? 1.06 : 1.0, gepaeck: andererKoffer },
+        { v: 95, f: 1.03 },
+        { v: -80, f: 1.045 },
+      ];
+      plan.forEach((s, j) => {
+        nrZusatz += 1;
+        const a = AIRLINES[(h + j * 5) % AIRLINES.length];
+        const start = ab + s.v;
+        const d = dauer + (s.extra || 0);
+        zusatz.push({
+          id: `f${nrZusatz}`, type: "flight", airline: a.name,
+          from: mitte.from, fromCode: mitte.fromCode, to: mitte.to, toCode: mitte.toCode, ziel: mitte.ziel,
+          depart: uhrText(start), arrive: uhrText(start + d), duration: dauerText(d),
+          stops: s.stops ?? stops, price: Math.max(39, Math.round(mitte.price * s.f)),
+          baggage: s.gepaeck || mitte.baggage, aircraft: mitte.aircraft,
+          zeitfenster: mitte.zeitfenster, zusatz: true,
+        });
+      });
+    }
+    FLIGHTS.push(...zusatz);
+  }
 })();
 
 

@@ -35,10 +35,10 @@ const Fluege = {
   daten: null,
 
   /* kandidaten: [{ id, flug, preis, partner, dauerText, gepaeck }] */
-  zeigen(kandidaten, kern, { kennzeichnung = "etikett", kontext = "", nachWahl = null } = {}) {
+  zeigen(kandidaten, kern, { kennzeichnung = "etikett", kontext = "", nachWahl = null, nachSchliessen = null, titel = "Welchen Flug soll ich nehmen?", marke = "Reise-Assistent" } = {}) {
     this.schliessen(true);
     if (!kandidaten.length) return;
-    this.daten = { kandidaten, kern, kennzeichnung, nachWahl };
+    this.daten = { kandidaten, kern, kennzeichnung, nachWahl, nachSchliessen };
     /* Vorausgewaehlt ist der Partnerflug.
        ----------------------------------------------------------------
        Der Nutzer am 02.10.2026: "Wichtig hierbei ist, dass der
@@ -65,15 +65,15 @@ const Fluege = {
       <div class="vorschlag-fenster flug-fenster" role="dialog" aria-label="Flüge zur Auswahl">
         <div class="vorschlag-kopf">
           <div>
-            <p class="vorschlag-marke">Reise-Assistent</p>
-            <h2>Welchen Flug soll ich nehmen?</h2>
+            <p class="vorschlag-marke">${marke}</p>
+            <h2>${titel}</h2>
             ${kontext ? `<p class="vorschlag-kontext">${kontext}</p>` : ""}
           </div>
           <div class="vorschlag-kopf-rechts">
             <button type="button" class="vorschlag-zu" aria-label="Schließen">✕</button>
           </div>
         </div>
-        <div class="flug-liste">${kandidaten.map((k, i) => this.zeile(k, i, kennzeichnung, k.id === vorwahl)).join("")}</div>
+        <div class="flug-liste${kandidaten.length > 6 ? " ist-lang" : ""}">${kandidaten.map((k, i) => this.zeile(k, i, kennzeichnung, k.id === vorwahl, kandidaten.length > 6)).join("")}</div>
         <div class="vorschlag-fuss">
           <p class="vorschlag-hinweis">Alle Preise für Hin- und Rückflug, für alle Reisenden zusammen.</p>
         </div>
@@ -95,12 +95,23 @@ const Fluege = {
     void el.offsetHeight;
     el.classList.add("da");
 
+    this.binden(el, kern);
+    el.querySelector(".vorschlag-zu")?.addEventListener("click", () => this.schliessen(false, "knopf"));
+
+    const partnerId = kandidaten.find((k) => k.partner)?.id || null;
+    kern?.notieren("flugauswahl_gezeigt", {
+      ids: kandidaten.map((k) => k.id), partner: partnerId, kennzeichnung, anzahl: kandidaten.length,
+    });
+  },
+
+  // Klick auf eine Verbindung und auf das Partner-Etikett - nach dem
+  // Eingrenzen neu, weil die Zeilen dann neu gezeichnet sind
+  binden(el, kern) {
     el.querySelectorAll("[data-flug]").forEach((z) =>
       z.addEventListener("click", (e) => {
         if (e.target.closest("[data-info]")) return;
         this.waehlen(z.dataset.flug);
       }));
-    el.querySelector(".vorschlag-zu")?.addEventListener("click", () => this.schliessen(false, "knopf"));
     el.querySelectorAll("[data-info]").forEach((b) =>
       b.addEventListener("click", (ev) => {
         ev.stopPropagation();
@@ -110,11 +121,50 @@ const Fluege = {
         if (text) text.hidden = auf;
         if (!auf) kern?.notieren("partner_info_geoeffnet", { wo: "flug", id: b.dataset.info });
       }));
+  },
 
-    const partnerId = kandidaten.find((k) => k.partner)?.id || null;
-    kern?.notieren("flugauswahl_gezeigt", {
-      ids: kandidaten.map((k) => k.id), partner: partnerId, kennzeichnung, anzahl: kandidaten.length,
+  /* Von allen Verbindungen auf die Empfehlungen (21.11.2026).
+     ------------------------------------------------------------------
+     In der Kasse oeffnet "Flug auswaehlen" alle Verbindungen ab dem
+     Flughafen, rund dreissig. Der Agent geht sie durch und legt danach
+     nur noch seine Empfehlungen vor - im selben Fenster, ohne es zu
+     schliessen und neu aufzumachen. Vorausgewaehlt ist wie bei `zeigen`
+     der Partnerflug, gekennzeichnet nach derselben Regel. */
+  eingrenzen(kandidaten, { kontext = null, titel = null } = {}) {
+    const el = document.getElementById("flugSchirm");
+    if (!el || !this.daten || !kandidaten?.length) return false;
+    const von = (this.daten.kandidaten || []).length;
+    const { kennzeichnung, kern } = this.daten;
+    this.daten.kandidaten = kandidaten;
+    const vorwahl = kandidaten.find((k) => k.partner)?.id || null;
+    if (vorwahl && typeof Flug !== "undefined") {
+      try { if (!Flug.get().flugId) Flug.set({ flugId: vorwahl }); } catch { /* Seite ohne Flugmodul */ }
+    }
+    const liste = el.querySelector(".flug-liste");
+    if (!liste) return false;
+    liste.classList.toggle("ist-lang", kandidaten.length > 6);
+    liste.innerHTML = kandidaten.map((k, i) => this.zeile(k, i, kennzeichnung, k.id === vorwahl, kandidaten.length > 6)).join("");
+    if (titel) { const h = el.querySelector(".vorschlag-kopf h2"); if (h) h.textContent = titel; }
+    // Die Empfehlungen kommen vom Assistenten, nicht von der Seite
+    const marke = el.querySelector(".vorschlag-marke");
+    if (marke) marke.textContent = "Reise-Assistent";
+    if (kontext !== null) {
+      let p = el.querySelector(".vorschlag-kontext");
+      if (!p) { p = document.createElement("p"); p.className = "vorschlag-kontext"; el.querySelector(".vorschlag-kopf h2")?.after(p); }
+      p.textContent = kontext;
+    }
+    const fenster = el.querySelector(".vorschlag-fenster");
+    if (fenster) fenster.scrollTop = 0;
+    this.binden(el, kern);
+    kern?.notieren("flugauswahl_eingegrenzt", {
+      ids: kandidaten.map((k) => k.id), partner: vorwahl, kennzeichnung, anzahl: kandidaten.length, von,
     });
+    return true;
+  },
+
+  // Die Zeilen im offenen Fenster, fuer den Zeiger des Agenten
+  zeilen() {
+    return [...(document.getElementById("flugSchirm")?.querySelectorAll("[data-flug]") || [])];
   },
 
   /* Die Zeile sieht aus wie eine Flugkarte.
@@ -124,7 +174,7 @@ const Fluege = {
      einem Flugzeug - das koennen wir gerne in dieser Vorschau-Ansicht
      nehmen." Dieselbe Darstellung wie in der frueheren Flugliste: Zeit,
      Kennung, Dauer mit Linie, Stopps, dann Gepaeck und Preis. */
-  zeile(k, i, kennzeichnung, gewaehlt = false) {
+  zeile(k, i, kennzeichnung, gewaehlt = false, lang = false) {
     const f = k.flug;
     const nurKlick = kennzeichnung === "etikett";
     const banner = kennzeichnung === "ohne" || !k.partner ? "" : `
@@ -156,7 +206,7 @@ const Fluege = {
           <div class="flug-punkt"><strong>${f.arrive}</strong><span>${f.toCode}</span></div>
         </div>
         <div class="flug-fuss">
-          <small>${f.from} nach ${f.to} · ${f.baggage || ""}</small>
+          <small>${lang ? (f.baggage || "") : `${f.from} nach ${f.to} · ${f.baggage || ""}`}</small>
           <div class="flug-preis">
             <strong>${k.preisText}</strong>
             <small>${k.personenText}</small>
@@ -208,8 +258,11 @@ const Fluege = {
         grund, sekunden: Math.round((Date.now() - this.geoeffnet) / 1000), gewaehlt: false,
       });
     }
+    // Die Kasse zeichnet danach neu: Die Vorauswahl steht dann als Wahl da
+    const nach = !still && this.offen ? this.daten?.nachSchliessen : null;
     this.offen = false;
     if (still) this.daten = null;
+    if (nach) nach();
   },
 };
 

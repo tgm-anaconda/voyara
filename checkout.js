@@ -154,10 +154,68 @@ const Kasse = {
       ],
       gesamt: p.total + gebuehr, kartengebuehr: gebuehr, zimmer, board, naechte: nights,
       belegung: Belegung.get(), flugId: p.flug?.id || null,
+      flugMit: flugMoeglich() && Flug.get().mit, flugGewaehlt: !!(p.flug && p.flug.gewaehlt),
     };
   },
   zeichnen() { render(); },
+
+  /* "Flug auswaehlen" in der Kasse (21.11.2026).
+     ------------------------------------------------------------------
+     Entscheidung des Nutzers: Die Flugwahl gehoert in die Kasse, nicht
+     auf die Hausseite - "dass der Flug quasi keine Auswirkung auf die Wahl
+     des Hotels hat". Das Fenster zeigt alle Verbindungen ab dem
+     Flughafen, rund dreissig. Wer selbst bucht, waehlt darin; der Agent
+     klickt denselben Knopf, geht die Liste durch und grenzt auf seine
+     Empfehlungen ein (Werkzeugkasten, buchung_vorbereiten).
+
+     Partner und Kennzeichnung nach derselben Regel wie bisher auf der
+     Hausseite: Studie.partnerflug auf der Rangfolge aus flugAuswahl, die
+     Stufe aus Studie.gruppe(). Der Agent gibt seine eigene mit - das
+     Gespraech kennt Flughafen, Tageszeit und Gruppe. */
+  flugFenster({ kern = null, profil = null, kennzeichnung = null, nachWahl = null } = {}) {
+    if (!flugMoeglich() || typeof Fluege === "undefined" || typeof Werkzeugkasten === "undefined") return null;
+    const b = Belegung.get();
+    const p = profil || { flugAb: null, flugKlasse: Flug.get().klasse || null, erwachsene: b.erwachsene, kinder: b.kinder };
+    let auswahl = [];
+    try { auswahl = Werkzeugkasten.flugAuswahl(entry, { ...p, flug: true }); } catch { auswahl = []; }
+    if (auswahl.length < 2 || !auswahl.alle?.length) return null;
+    const partnerId = typeof Studie !== "undefined" && Studie.partnerflug ? Studie.partnerflug(auswahl.map((k) => k.id)) : null;
+    const stufe = kennzeichnung || flugKennzeichnung();
+    const alle = auswahl.alle.map((k) => ({ ...k, partner: k.id === partnerId }));
+    const erster = alle[0].flug;
+    Fluege.zeigen(alle, kern, {
+      kennzeichnung: stufe, titel: "Flug auswählen", marke: "Flüge",
+      kontext: `${alle.length} Verbindungen ab ${erster.from} nach ${erster.to} · Hin- und Rückflug`,
+      nachWahl: (id, gewaehlt) => {
+        if (!kern && typeof Studie !== "undefined" && Studie.notieren) {
+          Studie.notieren("flug_gewaehlt_selbst", { id, partner: id === partnerId,
+            airline: gewaehlt?.flug?.airline || null, haus: entry.id, wo: "kasse" });
+        }
+        render();
+        if (nachWahl) nachWahl(id, gewaehlt);
+      },
+      nachSchliessen: () => render(),
+    });
+    return { auswahl, partnerId, kennzeichnung: stufe };
+  },
 };
+
+/* Flug geht in der Kasse, wo es eine Unterkunft mit Flugmodul ist -
+   in diesem Schritt nur zu Hotels, wie bisher. */
+function flugMoeglich() {
+  return !!entry && entry.type === "hotel" && typeof Flug !== "undefined";
+}
+
+// Dieselbe Kennzeichnung wie beim Partnerhaus (vorher stay.js)
+function flugKennzeichnung() {
+  const feste = ["ohne", "etikett", "text"];
+  let stufe = typeof STELLSCHRAUBEN !== "undefined" && feste.includes(STELLSCHRAUBEN.kennzeichnung)
+    ? STELLSCHRAUBEN.kennzeichnung : null;
+  if (!stufe && typeof Studie !== "undefined" && Studie.daten && Studie.gruppe) {
+    stufe = Studie.gruppe().kennzeichnung || null;
+  }
+  return feste.includes(stufe) ? stufe : "etikett";
+}
 
 function isStay() { return entry.type === "hotel" || entry.type === "apartment"; }
 
@@ -226,12 +284,51 @@ function endsumme() {
 }
 
 function flugDazu() {
-  if (entry.type !== "hotel" || typeof Flug === "undefined" || !Flug.get().mit) return null;
+  if (!flugMoeglich() || !Flug.get().mit) return null;
   const flug = Flug.wahl(entry.ziel);
   if (!flug) return null;
   const personen = Belegung.get().personen;
   const proPerson = Flug.preisProPerson(flug);
-  return { flug, id: flug.id, proPerson, personen, gesamt: proPerson * personen, text: Flug.text(flug) };
+  // Ohne Wahl rechnet die Kasse mit der guenstigsten Verbindung, wie
+  // bisher - nur steht sie dann als "noch nicht gewaehlt" da
+  const gewaehlt = Flug.get().flugId === flug.id;
+  return { flug, id: flug.id, proPerson, personen, gesamt: proPerson * personen, text: Flug.text(flug), gewaehlt };
+}
+
+/* Der Flugabschnitt im Formular: dazubuchen, Flughafen, Verbindung. */
+function flugAbschnitt() {
+  if (!flugMoeglich()) return "";
+  const fs = Flug.get();
+  const f = flugDazu();
+  let zeile = "";
+  if (fs.mit) {
+    const b = Belegung.get();
+    let info = {};
+    let alle = [];
+    try {
+      const a = Werkzeugkasten.flugAuswahl(entry, { flug: true, flugAb: null, flugKlasse: fs.klasse || null, erwachsene: b.erwachsene, kinder: b.kinder });
+      info = a.info || {}; alle = a.alle || [];
+    } catch { /* ohne Werkzeugkasten */ }
+    const ort = info.ort || (f && f.flug.fromCode) || "";
+    const ab = Flug.flughaefen().map((h) => `<option value="${h.code}" ${h.code === ort ? "selected" : ""}>${h.name}</option>`).join("");
+    const text = f && f.gewaehlt
+      ? `<strong>${f.flug.airline} · ${f.flug.depart}–${f.flug.arrive}</strong>
+         <small>ab ${f.flug.from} · ${f.flug.stops === 0 ? "direkt" : `${f.flug.stops} Stopp`} · ${f.flug.baggage || ""} · ${formatPrice(f.gesamt)} für ${f.personen} ${f.personen === 1 ? "Person" : "Personen"}</small>`
+      : `<strong>Noch keine Verbindung gewählt</strong>
+         <small>${alle.length ? `${alle.length} Verbindungen ab ${alle[0].flug.from}, ` : ""}${f ? `ab ${formatPrice(f.proPerson)} pro Person` : "kein Flug ab diesem Flughafen"}</small>`;
+    zeile = `
+        <div class="kasse-flug">
+          <div class="kasse-flug-text">${text}</div>
+          ${alle.length > 1 ? `<button type="button" class="btn btn-ghost" id="cFlugWahl">${f && f.gewaehlt ? "Andere Verbindung" : "Flug auswählen"}</button>` : ""}
+        </div>
+        <div class="kasse-flug-ab"><label for="cFlugAb">Abflughafen</label><select class="select" id="cFlugAb">${ab}</select></div>`;
+  }
+  return `
+        <h3 class="formular-titel">Flug</h3>
+        <label class="check-row">
+          <input type="checkbox" id="cFlugMit" ${fs.mit ? "checked" : ""} />
+          <span>Flug dazubuchen <small style="color:var(--ink-500)">— Hin- und Rückflug für alle Reisenden</small></span>
+        </label>${zeile}`;
 }
 
 function subtitle() {
@@ -279,7 +376,7 @@ function renderStep1() {
       <h2>Deine Daten</h2>
       <p class="hint" style="margin-bottom:16px">Reine Demo-Eingabe. Es werden keine Daten an einen Server gesendet und keine Zahlungsdaten abgefragt. Die Namen dürfen erfunden sein.</p>
       <form id="guestForm" class="form-stack">
-
+${flugAbschnitt()}
         <h3 class="formular-titel">Reisende</h3>
         <p class="hint">Die Namen müssen mit dem Ausweis übereinstimmen, sonst wird am Flughafen abgewiesen.</p>
         <div id="reisendeListe">${reisende.map(zeile).join("")}</div>
@@ -340,8 +437,35 @@ function renderStep1() {
     kasseMerken();
   });
 
+  document.getElementById("cFlugMit")?.addEventListener("change", (e) => {
+    Flug.set(e.target.checked ? { mit: true } : { mit: false, flugId: null });
+    render();
+  });
+  document.getElementById("cFlugAb")?.addEventListener("change", (e) => {
+    Flug.set({ ab: e.target.value, flugId: null });
+    render();
+  });
+  /* Der Agent klickt denselben Knopf; was er dabei braucht (sein Stand,
+     seine Kennzeichnung), legt er vorher in Kasse.agentOeffnet ab. */
+  document.getElementById("cFlugWahl")?.addEventListener("click", () => {
+    const ag = Kasse.agentOeffnet || {};
+    Kasse.agentOeffnet = null;
+    Kasse.flugFenster(ag);
+  });
+
   document.getElementById("guestForm").addEventListener("submit", (e) => {
     e.preventDefault();
+    /* Mit Flug, aber ohne gewaehlte Verbindung: erst das Fenster, nach
+       der Wahl weiter - so wie bisher "Jetzt buchen" auf der Hausseite.
+       Weiter ohne zweites Absenden: Die Kasse zeichnet nach der Wahl neu,
+       und das Formular war beim ersten Klick schon vollstaendig. */
+    const f = flugDazu();
+    if (f && !f.gewaehlt && Kasse.flugFenster({ nachWahl: weiterZurPruefung })) return;
+    weiterZurPruefung();
+  });
+}
+
+function weiterZurPruefung() {
     guest = {
       name: reisende[0]?.name?.trim() || "",
       mail: document.getElementById("gMail").value.trim(),
@@ -357,7 +481,6 @@ function renderStep1() {
     // an, sobald der Agent die Gastdaten eingetragen hatte: Die Person
     // kam nie dazu, selbst zu bestaetigen, und in den Daten stand
     // trotzdem "gebucht". Genau die Hauptmessgroesse war damit falsch.
-  });
 }
 
 function renderStep2() {

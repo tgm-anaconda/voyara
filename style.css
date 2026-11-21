@@ -2561,6 +2561,14 @@ body.agent-vollbild .agent-liest {
    nichts auszuweichen, sie nimmt die volle Breite ueber dem Chat. */
 body.agent-vollbild.agent-open .vorschlag-schirm { left: 0; }
 
+/* Das Flugfenster der Kasse (21.11.2026) dagegen ist Teil der Arbeit:
+   Der Agent oeffnet es und geht darin alle Verbindungen durch. In Arm B
+   bleibt es deshalb verborgen, solange das Vollbild steht - man sieht,
+   DASS er vergleicht, nicht WAS. Sichtbar wird es, wenn das Vollbild
+   faellt: mit der Frage nach der Anzahl oder mit den Empfehlungen. Die
+   Zeilen behalten ihre Flaeche, der Zeiger kann sie weiter anfahren. */
+body.agent-vollbild .flug-schirm { visibility: hidden; }
+
 /* Log in beiden Armen erreichbar (Festlegung des Nutzers).
    Blase und Tafel liegen auf 150 und 160, also unter dem Chat (660) -
    in Arm B waeren sie hinter dem Vollbild verschwunden. */
@@ -3167,6 +3175,29 @@ body.vorschlag-offen { overflow: hidden; }
 .flug-preis { text-align: left; white-space: nowrap; }
 .flug-preis strong { display: block; font-size: 1.1rem; }
 .flug-preis small { font-size: .73rem; color: var(--ink-500); }
+
+/* Alle Verbindungen auf einmal (21.11.2026): In der Kasse oeffnet "Flug
+   auswaehlen" rund dreissig. Als Karten waeren das zehn Reihen, also
+   untereinander als schmale Zeilen wie auf jedem Flugportal. Die
+   Empfehlungen danach (zwei bis sechs) stehen wieder als Karten. */
+.flug-liste.ist-lang { grid-template-columns: 1fr; gap: 8px; }
+.flug-liste.ist-lang .flug-zeile { flex-direction: row; align-items: center; gap: 18px; padding: 10px 14px; }
+.flug-liste.ist-lang .flug-zeile:hover { transform: none; }
+.flug-liste.ist-lang .flug-kopf { flex: 0 0 220px; }
+.flug-liste.ist-lang .flug-strecke { flex: 1; }
+.flug-liste.ist-lang .flug-fuss { margin-top: 0; flex: 0 0 150px; text-align: right; }
+.flug-liste.ist-lang .flug-preis { text-align: right; }
+@media (max-width: 640px) {
+  .flug-liste.ist-lang .flug-zeile { flex-direction: column; align-items: stretch; }
+  .flug-liste.ist-lang .flug-kopf, .flug-liste.ist-lang .flug-fuss { flex: none; text-align: left; }
+  .flug-liste.ist-lang .flug-preis { text-align: left; }
+}
+/* Der Flugabschnitt in der Kasse */
+.kasse-flug { border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.kasse-flug-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.kasse-flug-text small { color: var(--ink-500); font-size: .8rem; }
+.kasse-flug-ab { display: flex; gap: 8px; align-items: center; margin-top: 8px; font-size: .86rem; }
+.kasse-flug-ab .select { width: auto; padding: 4px 8px; }
 
 /* "Ueberspringen" neben "Weiter" auf dem Kontobildschirm (19.11.2026):
    sichtbar, aber zurueckhaltender als der Hauptknopf. */
