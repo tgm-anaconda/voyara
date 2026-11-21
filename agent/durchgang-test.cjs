@@ -3207,7 +3207,22 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     }).length;
     pruefe("Fluege: keine neue Verbindung ist guenstiger als die guenstigste alte", billigerAlsVorher, 0);
     const spanne = Math.max(...Object.values(paare).map((l) => Math.max(...l.map((f) => f.price)) / Math.min(...l.map((f) => f.price)) - 1));
+    /* Auch nach der Senkung der Europafluege (21.11.2026) unter 15 %:
+       dichte Strecken werden dafuer etwas weniger gesenkt (inventory.js). */
     pruefe("Fluege: Preisspanne je Paar unter 15 Prozent", spanne < 0.15, true);
+    // Unter den bis zu sechs empfohlenen Fluegen bleibt sie eng
+    const engSechs = vm.runInContext("[...new Set(FLIGHTS.map((f) => f.ziel))]", ctx).every((z) => {
+      const hz = vm.runInContext(`HOTELS.find((h) => h.ziel === "${z}")`, ctx);
+      return ["Frankfurt", "München", "Hamburg", "Hannover", "Stuttgart"].every((ab) => {
+        let k = []; try { k = WK.flugAuswahl(hz, { flug: true, flugAb: ab, erwachsene: 2, kinder: 0 }, { anzahl: 6 }) || []; } catch { k = []; }
+        const pz = k.map((x) => x.flug.price);
+        return !pz.length || Math.max(...pz) / Math.min(...pz) - 1 <= 0.1;
+      });
+    });
+    pruefe("Fluege: unter den empfohlenen hoechstens 10 Prozent Spanne", engSechs, true);
+    // Europafluege 20 % guenstiger, Fernflug unveraendert (Stichprobe)
+    const minProStrecke = (z, ab) => Math.min(...FLUEGE.filter((f) => f.ziel === z && f.fromCode === ab).map((f) => f.price));
+    pruefe("Fluege: Mallorca ab Frankfurt guenstiger, Kyoto unveraendert", [minProStrecke("mallorca", "FRA"), minProStrecke("kyoto", "FRA")], [90, 758]);
 
     const it = vm.runInContext('HOTELS.find((h) => h.ziel === "mallorca")', ctx);
     const pr = { flug: true, flugAb: "Frankfurt", erwachsene: 2, kinder: 0 };

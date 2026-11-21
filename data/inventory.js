@@ -6212,6 +6212,56 @@ FLIGHTS.push(
     }
     FLIGHTS.push(...zusatz);
   }
+
+  /* Europa- und Mittelstreckenfluege 20 % guenstiger (21.11.2026).
+     ------------------------------------------------------------------
+     Ben: Viele Teilnehmende werden Studierende sein, mit kleinem Budget.
+     Gemessen: Bei 2.000 € fuer eine Woche passten mit Flug nur 57 % der
+     Europa-Haeuser, die ohne Flug passen; mit 20 % guenstigeren Fluegen
+     sind es 67 %. Mallorca liegt damit bei rund 140 bis 210 € hin und
+     zurueck - fuer Billigflieger realistisch. Die vier Fernziele bleiben,
+     dort aendert auch ein Abschlag nichts (vier Personen nach Kyoto
+     kosten allein ueber 5.000 €), und guenstiger waere unrealistisch.
+
+     Ein Faktor fuer alle Verbindungen einer Strecke: Die Reihenfolge der
+     Fluege bleibt, damit auch Empfehlung und Partnerflug (geprueft ueber
+     alle 162 Strecken und 2 bis 6 Empfehlungen). */
+  const FERNZIELE = ["kapstadt", "krabi", "kyoto", "newyork"];
+  /* Gerundet ohne neuen Gleichstand: Je Strecke gilt ein Faktor nahe
+     0,8 (0,770 bis 0,830), mit dem keine zwei vorher verschiedenen Preise
+     gleich werden. Mit 0,8 fuer alle kippte auf fuenf Strecken die
+     Rangfolge und damit die Empfehlung; mit "mindestens einen Euro mehr"
+     wuchs die Spanne bei billigen Strecken ueber 15 Prozent. */
+  const strecken = {};
+  for (const f of FLIGHTS) if (!FERNZIELE.includes(f.ziel)) (strecken[`${f.ziel}|${f.fromCode}`] ||= []).push(f);
+  // 0,800 zuerst, dann abwechselnd naeher und weiter weg, in Tausendsteln
+  const FAKTOREN = [0.8];
+  for (let d = 1; d <= 30; d++) FAKTOREN.push(0.8 + d / 1000, 0.8 - d / 1000);
+  for (const liste of Object.values(strecken)) {
+    const alt = liste.map((f) => f.price);
+    const passt = (k) => alt.every((x, i) => alt.every((y, j) => x === y || (x < y) === (Math.round(x * k) < Math.round(y * k)) && Math.round(x * k) !== Math.round(y * k)));
+    const k = FAKTOREN.find(passt);
+    if (k != null) { liste.forEach((f, i) => { f.price = Math.round(alt[i] * k); }); continue; }
+    /* Dichte Strecken (Preise je einen Euro auseinander) lassen sich mit
+       keinem Faktor ohne Gleichstand runden. Dort bleibt, wer vorher
+       teurer war, mindestens einen Euro teurer - und der Faktor steigt in
+       Hundertsteln ueber 0,8, bis die Spanne der Strecke unter 15 Prozent
+       bleibt (die Regel der Kernpruefung: darueber entscheidet der Preis,
+       nicht das Etikett). Betrifft nur wenige Strecken. */
+    const reihe = liste.map((f, i) => ({ f, alt: alt[i] })).sort((a, b) => a.alt - b.alt);
+    const abbilden = (faktor) => {
+      let altVorher = null, neuVorher = null;
+      return reihe.map((o) => {
+        let neu = Math.round(o.alt * faktor);
+        if (altVorher != null) neu = o.alt === altVorher ? neuVorher : Math.max(neu, neuVorher + 1);
+        altVorher = o.alt; neuVorher = neu;
+        return neu;
+      });
+    };
+    let neu = abbilden(0.8);
+    for (let f100 = 80; f100 <= 95 && neu[neu.length - 1] / neu[0] - 1 >= 0.15; f100++) neu = abbilden(f100 / 100);
+    reihe.forEach((o, i) => { o.f.price = neu[i]; });
+  }
 })();
 
 
