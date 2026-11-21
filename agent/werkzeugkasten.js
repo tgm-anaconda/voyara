@@ -4808,6 +4808,30 @@ const Werkzeugkasten = {
       kern.antwortWerten?.();
       p.vonPerson = p.vonPerson || {};
       for (const f of geaendert) p.vonPerson[f] = true;
+      /* Nach der Preisangabe die Zahl (C11, 21.11.2026).
+         ----------------------------------------------------------------
+         Der Kern zaehlt, einmal je genanntem Wert, sobald die Zeit steht.
+         Bleiben wenige, sagt es die Rueckfrage (preisWarnung bzw.
+         budgetWarnung) mit Zahlen und Vorschlag - dann hier nichts, sonst
+         stuende die Zahl zweimal da. */
+      const preisFeld = p.maxPreis ? "maxPreis" : (p.budgetGesamt ? "budgetGesamt" : null);
+      if (preisFeld && p.vonPerson?.[preisFeld] && (p.monat || (p.von && p.bis))
+        && kern.lauf.preisGezaehlt !== `${preisFeld}:${p[preisFeld]}`) {
+        let warnt = null;
+        try { warnt = preisFeld === "maxPreis" ? Werkzeugkasten.preisWarnung(p, kern.lauf) : Werkzeugkasten.budgetWarnung(p, kern.lauf); } catch { warnt = null; }
+        if (!warnt) {
+          let n = 0;
+          try { n = Werkzeugkasten.katalogTreffer(p, Werkzeugkasten.filterAusStand(p)).length; } catch { n = 0; }
+          if (n > 0) {
+            kern.lauf.preisGezaehlt = `${preisFeld}:${p[preisFeld]}`;
+            const wert = `${Math.round(p[preisFeld]).toLocaleString("de-DE")} €`;
+            kern.notieren("preis_gezaehlt", { feld: preisFeld, wert: p[preisFeld], treffer: n });
+            Werkzeugkasten.ableiten(kern, preisFeld, preisFeld === "maxPreis"
+              ? `Bis ${wert} pro Nacht ${n === 1 ? "kommt" : "kommen"} ${Werkzeugkasten.artZahl(n, p)} in Frage.`
+              : `Mit ${wert} für die ganze Reise ${n === 1 ? "kommt" : "kommen"} ${Werkzeugkasten.artZahl(n, p)} in Frage.`);
+          }
+        }
+      }
       /* Gedeutete Felder vormerken (12.11.2026).
          ----------------------------------------------------------------
          `vonPerson` bleibt gesetzt, auch wenn das Modell unsicher ist:
@@ -5215,7 +5239,11 @@ const Werkzeugkasten = {
            Seite sortiert nach Preis; der Wunsch der Person (gutes Essen)
            steht dort nicht vorn, und so landeten Haeuser mit 57 Prozent in
            der Vorlage, obwohl es 73 Prozent gab. */
-        const auswahl = darfEmpfehlen ? sortiere(imKatalog.slice()) : liste;
+        // Budget mit dem teuersten empfehlbaren Flug (budgetMitFlugPuffer)
+        const auswahl = darfEmpfehlen ? sortiere(Werkzeugkasten.budgetMitFlugPuffer(imKatalog.slice(), p)) : liste;
+        if (darfEmpfehlen && auswahl.length < imKatalog.length) {
+          kern.notieren("budget_flugpuffer", { vorher: imKatalog.length, nachher: auswahl.length });
+        }
         kern.lauf.letzteTreffer = auswahl.map((h) => h.id);
         kern.lauf.vorgehenFuer = fp.schluessel + p.vorgehen;
         if (!auswahl.length) {
@@ -5580,7 +5608,10 @@ const Werkzeugkasten = {
         [...(Werkzeugkasten.filterWerte(p).ziele || [])].sort(), p.richtung || ""]);
       if (darfEmpfehlen) {
         kern.phase("Geht die Trefferliste durch");
-        gelesen = await Werkzeuge.ergebnisseLesen(8);
+        // Halte bei den Haeusern, die fuer die Vorlage in Frage kommen (C12)
+        let halteIds = null;
+        try { halteIds = sortiere(Werkzeugkasten.budgetMitFlugPuffer(imKatalog.slice(), p)).slice(0, 20).map((h) => h.id); } catch { halteIds = null; }
+        gelesen = await Werkzeuge.ergebnisseLesen(8, { halteIds });
       } else if (Werkzeuge.seite() === "results") {
         if (kern.lauf.ueberflogenFuer === lageJetzt) {
           kern.phase("Prüft die Trefferzahl");
@@ -5605,24 +5636,14 @@ const Werkzeugkasten = {
       // Agent den Rest aus dem Katalog dazu - dieselben Haeuser, nur weiter unten
       if (darfEmpfehlen && liste.length < 3) liste = sortiere([...new Map([...liste, ...imKatalog].map((h) => [h.id, h])).values()]);
 
-      // Bevor drei Haeuser mit Bewertungssaetzen vorgelegt werden, sieht der
-      // Agent die Kandidaten sichtbar durch. Vorher stand in der Vorlage
-      // "gelobt wird das Essen", ohne dass sich auf der Seite etwas bewegt
-      // hatte - fuer die Person nicht von einer Behauptung zu unterscheiden.
-      if (darfEmpfehlen && liste.length) {
-        kern.sperreAn();
-        kern.phase("Liest Bewertungen");
-        const sicht = await Werkzeuge.bewertungenSichten(liste.slice(0, 5).map((h) => h.id));
-        kern.sperreAus();
-        const gesichtet = sicht.daten?.gesichtet || [];
-        if (gesichtet.length) {
-          kern.lauf.gelesen = kern.lauf.gelesen || {};
-          for (const id of gesichtet) kern.lauf.gelesen[id] = kern.lauf.gelesen[id] || "trefferliste";
-          kern.notieren("bewertungen_gesichtet", { ids: gesichtet });
-          kern.logZeile(sicht.text, "ergebnis");
-        }
-      }
-
+      /* Keine Bewertungen mehr in der Trefferliste (21.11.2026).
+         ----------------------------------------------------------------
+         Hier fuhr der Agent fuenf Karten an ("X: Bewertungen") und galt
+         danach als jemand, der Lob und Kritik dieser Haeuser kennt. Ben:
+         Bewertungen stehen nur auf der Hausseite - dort liest er sie
+         (Rundgang, bewertungen_lesen). In der Liste sieht er Note und
+         Anzahl, die Halte dafuer liegen jetzt in ergebnisseLesen. Der
+         alte Block liegt in _backup/vor-blockC-2026-11-21. */
       kern.lauf.runde = (kern.lauf.runde || 0) + 1;
       const gesamt = Werkzeuge.zustand().trefferGesamt ?? liste.length;
       kern.notieren("suche", { weg: "seite", treffer: gesamt, filter: Werkzeugkasten.filterText(p), empfehlung: darfEmpfehlen, selbst });
@@ -5858,7 +5879,10 @@ const Werkzeugkasten = {
           jeAspekt: (d.bilanz || []).slice(0, 6).map((x) => ({ aspekt: x.aspekt || x.label,
             teilnoteVon10: Politik.teilnote(x.anteilPositiv ?? 0), rueckmeldungen: x.erwaehnungen })),
           stimmen: (d.stimmen || []).slice(0, 4).map((x) => ({ gast: x.autor, note: x.note, titel: x.titel, text: x.text })),
-          hinweis: "Teilnoten als 'x von 10' nennen, nie als Prozent. Wird es konkret, gib wieder, was in stimmen steht - erfinde keine Inhalte, die dort nicht vorkommen.",
+          hinweis: "Teilnoten als 'x von 10' nennen, nie als Prozent. Wird es konkret, gib wieder, was in stimmen steht - erfinde keine Inhalte, die dort nicht vorkommen."
+            // C13: ehrlich, wie viel im Wortlaut gelesen wurde
+            + (d.sichtbarGelesen && (item.reviewCount || 0) > d.sichtbarGelesen
+              ? ` Sag nie, du haettest alle ${item.reviewCount} gelesen: im Wortlaut gelesen hast du ${d.sichtbarGelesen}, die Teilnoten rechnen ueber alle.` : ""),
         },
         log: `${item.name}: ${(d.anzahl ?? item.reviewCount).toLocaleString("de-DE")} Bewertungen ausgewertet${d.sichtbarGelesen ? `, ${d.sichtbarGelesen} im Wortlaut gelesen` : ""}`,
       };
@@ -7800,6 +7824,7 @@ const Werkzeugkasten = {
      Inhalt und Reihenfolge bleiben. */
   KERNTHEMEN: ["lage", "sauberkeit", "service", "essen", "ausstattung", "preis", "ruhe"],
 
+  BEWERTUNGEN_GELESEN: 100,
   hausSchema(item, p, platz = 0) {
     if (!item || typeof aspektbilanz !== "function" || typeof Politik === "undefined") return null;
     const bilanz = aspektbilanz(item) || [];
@@ -7833,7 +7858,8 @@ const Werkzeugkasten = {
       if (!e) return null;
       return e.length > 110 ? `${e.slice(0, 107).trim()}…` : e;
     };
-    const roh = typeof bewertungenFuer === "function" ? bewertungenFuer(item, 0, Math.min(item.reviewCount || 0, 120)) : [];
+    // Zitate nur aus den 100, die er auf der Seite gelesen hat (C13, 21.11.2026; vorher 120)
+    const roh = typeof bewertungenFuer === "function" ? bewertungenFuer(item, 0, Math.min(item.reviewCount || 0, this.BEWERTUNGEN_GELESEN)) : [];
     let lobSatz = null, kritikSatz = null;
     if (typeof stimmeEinordnen === "function") {
       /* Die Richtung aus den Satzlisten, nicht geraten (21.11.2026).
@@ -7871,6 +7897,13 @@ const Werkzeugkasten = {
       () => `${item.name} liegt bei ${note}. Stark sind ${t(s1)} und ${t(s2)}, Abstriche gibt es bei ${t(schwach)}.`,
     ];
     const teile = [FORMEN[platz % FORMEN.length]()];
+    /* Ehrlich, wie viel gelesen wurde (C13, 21.11.2026). Die Hausseite
+       laedt dem Agenten hoechstens 100 Bewertungen; die Teilnoten rechnen
+       ueber alle. "Die neuesten" waere falsch - die Seite sortiert nicht
+       nach Datum. */
+    if ((item.reviewCount || 0) > this.BEWERTUNGEN_GELESEN) {
+      teile.push(`Durchgelesen habe ich ${this.BEWERTUNGEN_GELESEN} davon, die Teilnoten zählen alle ${(item.reviewCount || 0).toLocaleString("de-DE")}.`);
+    }
     /* Wuensche, zu denen keine Teilnote dasteht, fallen nicht still weg
        (21.11.2026). Im Lauf vom 21.11. waren Getraenke und
        Kinderfreundlichkeit gewuenscht, in keiner Zusammenfassung stand
@@ -10669,6 +10702,7 @@ const Werkzeugkasten = {
      (auf 10 € aufgerundet). Seiteneffektfrei - was gefragt wurde, merkt
      sich der Kern. */
   PREIS_WARNUNG_HOECHSTENS: 30,
+  PREIS_STUFE: 1.1,
   PREIS_WARNUNG_ANTEIL: 0.2,
   preisWarnung(p, lauf) {
     if (!p || !lauf || !Number.isFinite(p.maxPreis) || p.budgetGesamt) return null;
@@ -10698,7 +10732,8 @@ const Werkzeugkasten = {
        am 19.11.2026: "Eine Person, die 170 Euro angibt, ist auch nicht
        bereit, offen 400 Euro zu zahlen." Die Empfehlung kann deutlich
        hoeher liegen; die Wahl dazwischen soll da sein. */
-    const vorsichtig = Math.ceil((p.maxPreis * 1.25) / 10) * 10;
+    // C11 (21.11.2026): die vorsichtige Stufe ist 10 % statt 25 %
+    const vorsichtig = Math.ceil((p.maxPreis * this.PREIS_STUFE) / 10) * 10;
     let mitVorsichtig = 0;
     if (vorsichtig < empfohlen) {
       try { mitVorsichtig = this.katalogTreffer({ ...p, maxPreis: vorsichtig }, this.filterAusStand({ ...p, maxPreis: vorsichtig })).length; } catch { mitVorsichtig = 0; }
@@ -10715,6 +10750,41 @@ const Werkzeugkasten = {
     if (mitte) wirkung[mitte] = { maxPreis: vorsichtig };
     return { grund: "preis", grenze: p.maxPreis, empfohlen, satz, chips: mitte ? [ja, mitte, nein] : [ja, nein], wirkung,
       zahlen: { mit: mit.length, ohne: ohneListe.length, haelfte, mitEmpfohlen, ...(zwischen ? { vorsichtig, mitVorsichtig } : {}) } };
+  },
+
+  /* Dasselbe fuer das Gesamtbudget (C11, 21.11.2026).
+     ------------------------------------------------------------------
+     preisWarnung kennt nur den Nachtpreis. Wer "2.000 Euro fuer alles"
+     sagt, bekam bei wenigen Treffern bisher keine Rueckmeldung. Gleiche
+     Schwellen (unter 30 Haeusern UND unter einem Fuenftel derer ohne
+     Budget), vorgeschlagen werden 10 % mehr, auf 50 € aufgerundet - nur
+     wenn das wirklich Haeuser dazubringt. */
+  budgetWarnung(p, lauf) {
+    if (!p || !lauf || !Number.isFinite(p.budgetGesamt) || p.maxPreis) return null;
+    if (!p.vonPerson?.budgetGesamt) return null;
+    if ((lauf.preisGewarnt || {})[`gesamt:${p.budgetGesamt}`]) return null;
+    const ohne = { ...p };
+    delete ohne.budgetGesamt;
+    let mit = null, ohneListe = null;
+    try {
+      mit = this.katalogTreffer(p, this.filterAusStand(p));
+      ohneListe = this.katalogTreffer(ohne, this.filterAusStand(ohne));
+    } catch { return null; }
+    if (!ohneListe || ohneListe.length < 8) return null;
+    if (mit.length >= this.PREIS_WARNUNG_HOECHSTENS || mit.length >= ohneListe.length * this.PREIS_WARNUNG_ANTEIL) return null;
+    const mehr = Math.ceil((p.budgetGesamt * this.PREIS_STUFE) / 50) * 50;
+    let mitMehr = 0;
+    try { mitMehr = this.katalogTreffer({ ...p, budgetGesamt: mehr }, this.filterAusStand({ ...p, budgetGesamt: mehr })).length; } catch { return null; }
+    if (mitMehr <= mit.length) return null;
+    const euro = (n) => `${Math.round(n).toLocaleString("de-DE")} €`;
+    const zahl = (n) => this.artZahl(n, p);
+    const satz = `Kurz zum Budget: Mit ${euro(p.budgetGesamt)} für die ganze Reise ${mit.length === 1 ? "bleibt" : "bleiben"} ${mit.length ? zahl(mit.length) : "keine"}, `
+      + `mit ${euro(mehr)} (10 % mehr) wären es ${zahl(mitMehr)}. Soll ich bis ${euro(mehr)} suchen?`;
+    const ja = `Bis ${euro(mehr)}`;
+    const nein = `Bei ${euro(p.budgetGesamt)} bleiben`;
+    return { grund: "preis", grenze: `gesamt:${p.budgetGesamt}`, empfohlen: mehr, satz, chips: [ja, nein],
+      wirkung: { [ja]: { budgetGesamt: mehr }, [nein]: {} },
+      zahlen: { mit: mit.length, ohne: ohneListe.length, mitMehr } };
   },
 
   engstelleRueckfrage(p, lauf) {
@@ -12202,6 +12272,39 @@ const Werkzeugkasten = {
 
   katalogTreffer(p, filter) {
     return Auswahl.treffer(this.katalog(p), this.vorgaben(p, filter));
+  },
+
+  /* Budget mit Flug: mit dem teuersten empfehlbaren Flug (21.11.2026).
+     ------------------------------------------------------------------
+     Ben: Ist der Preis mit dem guenstigsten Flug gerechnet, passt ein
+     Haus knapp an der Grenze womoeglich nur mit diesem Flug ins Budget.
+     Der Partnerflug ist aber der guenstigste ODER der zweitguenstigste -
+     wer dann zum guenstigsten greift, tut es wegen des Geldes, nicht
+     wegen der Empfehlung. Das waere eine Verzerrung.
+
+     Deshalb prueft der Agent bei seinen Hausempfehlungen das Budget mit
+     dem teuersten der Fluege, die er in der Kasse ueberhaupt empfehlen
+     kann (bis zu sechs, `flugAuswahl`). Dann passt jede Kombination aus
+     empfohlenem Haus und empfohlenem Flug, in beiden Gruppen gleich.
+     Gemessen ueber 336 Konstellationen: 1,67 Prozent der Haeuser fallen
+     heraus, fast nur bei sehr knappen Budgets. Seite und Zahlen bleiben
+     beim guenstigsten Flug ("ab"). Bleibt nichts uebrig, gilt die Liste
+     wie vorher - eine leere Vorlage waere schlechter als keine Regel. */
+  FLUG_PUFFER_ANZAHL: 6,
+  budgetMitFlugPuffer(liste, p) {
+    if (!Array.isArray(liste) || !p?.flug || !p.budgetGesamt || typeof Flug === "undefined" || typeof Auswahl === "undefined") return liste;
+    const v = this.vorgaben(p);
+    const personen = Math.max(1, (p.erwachsene || 0) + (p.kinder || 0));
+    const passt = liste.filter((h) => {
+      const r = Auswahl.reisepreis(h, v);
+      if (!r) return true;
+      let rec = [];
+      try { rec = this.flugAuswahl(h, p, { anzahl: this.FLUG_PUFFER_ANZAHL }) || []; } catch { rec = []; }
+      if (!rec.length) return r.gesamt <= p.budgetGesamt;
+      const teuerster = Math.max(...rec.map((k) => Flug.preisProPerson(k.flug, p.flugKlasse || null)));
+      return r.unterkunft + teuerster * personen <= p.budgetGesamt;
+    });
+    return passt.length ? passt : liste;
   },
 
   /* Nur ein reines Ja schliesst eine Buchung ab (20.11.2026).

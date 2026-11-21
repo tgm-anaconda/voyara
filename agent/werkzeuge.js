@@ -587,10 +587,52 @@ const Werkzeuge = {
 
   // Der Agent scrollt die Liste durch, statt sie stumm auszulesen. Ohne diese
   // Geste wirken seine Aussagen, als kaemen sie aus dem Nichts.
-  async ergebnisseLesen(anzahl = 5) {
+  async ergebnisseLesen(anzahl = 5, { halteIds = null } = {}) {
     const alle = [...document.querySelectorAll(".result-card")];
     const karten = alle.slice(0, anzahl);
     if (!karten.length) return { ok: true, text: "Keine Treffer zum Ansehen.", daten: { treffer: [] } };
+    /* Halte ueber die ganze Liste, nicht an den ersten acht (21.11.2026).
+       ----------------------------------------------------------------
+       Ben: "Er hat sich immer nur die ersten acht Haeuser angeguckt. Das
+       ist halt unnatuerlich." Mit `halteIds` haelt er bei den Haeusern,
+       die fuer die Vorlage in Frage kommen - dort, wo sie in der Liste
+       stehen. Fehlen sie auf der Seite, ergaenzen gleichmaessig verteilte
+       Karten bis drei. Was zurueckgegeben wird (`treffer`), bleibt die
+       Stichprobe der ersten `anzahl` - sonst verschoebe die Bewegung das
+       Ergebnis. Die Vorlage waehlt ohnehin aus dem ganzen Katalog. */
+    const sichtbareKarten = alle.filter((k) => k.offsetParent !== null || k.getClientRects().length);
+    let halte = karten;
+    if (Array.isArray(halteIds) && halteIds.length) {
+      /* Die drei staerksten Kandidaten und drei weitere aus dem Rest der
+         Liste. Die Seite sortiert nach Bewertung, und die passendsten
+         Haeuser stehen deshalb meist oben - mit nur ihnen hielte er
+         wieder bei 1 bis 6. Jeder Halt ist ein echter Kandidat; verteilt
+         wird ueber die Position in der Liste. */
+      const pos = new Map(sichtbareKarten.map((k, i) => [this.kartenDaten(k)?.id, i]));
+      const vorhanden = halteIds.filter((id) => pos.has(id));
+      const zuerst = vorhanden.slice(0, 3);
+      const rest = vorhanden.slice(3).filter((id) => !zuerst.includes(id));
+      const weitere = [];
+      const n = sichtbareKarten.length;
+      for (const anteil of [0.35, 0.6, 0.85]) {
+        const ziel = anteil * (n - 1);
+        const frei = rest.filter((id) => !weitere.includes(id) && pos.get(id) > Math.max(...zuerst.map((x) => pos.get(x)), -1));
+        if (!frei.length) break;
+        frei.sort((a, b) => Math.abs(pos.get(a) - ziel) - Math.abs(pos.get(b) - ziel));
+        weitere.push(frei[0]);
+      }
+      const gewaehlt = new Set([...zuerst, ...weitere]);
+      halte = sichtbareKarten.filter((k) => gewaehlt.has(this.kartenDaten(k)?.id));
+      if (halte.length < 3 && sichtbareKarten.length > 3) {
+        for (const a of [0.15, 0.45, 0.75]) {
+          const k = sichtbareKarten[Math.round(a * (sichtbareKarten.length - 1))];
+          if (k && !halte.includes(k)) halte.push(k);
+          if (halte.length >= 3) break;
+        }
+        halte.sort((x, y) => sichtbareKarten.indexOf(x) - sichtbareKarten.indexOf(y));
+      }
+      if (!halte.length) halte = karten;
+    }
 
     /* Gelesen werden die ersten Karten - durchlaufen wird die ganze Liste.
        ----------------------------------------------------------------
@@ -605,10 +647,15 @@ const Werkzeuge = {
        es bleiben dieselben ersten `anzahl`. Sonst waere mit einer
        Bewegung auch das Ergebnis der Erhebung verschoben. */
     const beiHalt = async (karte) => {
-      await Zeiger.lies(karte, { dauer: 420, hinweis: "vergleiche" });
+      // Am Halt steht, was auf der Karte zu sehen ist: Name und Note.
+      // Bewertungen liest er erst auf der Hausseite (21.11.2026).
+      const d = this.kartenDaten(karte);
+      const item = d && typeof getItemById === "function" ? getItemById(d.id) : null;
+      const note = item?.rating != null ? String(item.rating).replace(".", ",") : null;
+      await Zeiger.lies(karte, { dauer: 420, hinweis: item ? `${item.name}${note ? ` · ${note} von 5` : ""}` : "vergleiche" });
     };
     const r = await this.scrollDurch({
-      elemente: alle, halte: karten, beiHalt, zaehlwort: Werkzeugkasten.artWortJetzt(true), tempoMs: 22,
+      elemente: alle, halte, beiHalt, zaehlwort: Werkzeugkasten.artWortJetzt(true), tempoMs: 22,
     });
     // Dieselbe Selbstpruefung wie bei den Bewertungen: Steht die Seite still,
     // waehrend der Agent "vergleicht", steht das im Protokoll. Bei wenigen
@@ -1104,7 +1151,8 @@ const Werkzeuge = {
       const menge = Math.min(item.reviewCount || 0, 100);
       let geladen = panel.querySelectorAll(".review-item").length;
       if (typeof window.bewertungenAufstocken === "function" && menge > geladen) {
-        Zeiger.beschrifte?.(`${menge} Bewertungen laden`);
+        // Ehrlich, wie viele von wie vielen (C13, 21.11.2026)
+        Zeiger.beschrifte?.((item.reviewCount || 0) > menge ? `${menge} von ${item.reviewCount.toLocaleString("de-DE")} Bewertungen laden` : `${menge} Bewertungen laden`);
         geladen = window.bewertungenAufstocken(menge) || geladen;
         await Zeiger.warte(260);
       }

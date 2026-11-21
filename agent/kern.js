@@ -2957,7 +2957,9 @@ const Kern = {
                  sagt sie, was die Haeuser kosten, und empfiehlt eine
                  Grenze. Danach gilt der Preis als besprochen - die
                  Engstelle fragt ihn nicht ein zweites Mal ab. */
-              const pw = typeof Werkzeugkasten.preisWarnung === "function" ? Werkzeugkasten.preisWarnung(this.lauf.profil || {}, this.lauf) : null;
+              const pw = (typeof Werkzeugkasten.preisWarnung === "function" ? Werkzeugkasten.preisWarnung(this.lauf.profil || {}, this.lauf) : null)
+                // Dasselbe fuer das Gesamtbudget (C11, 21.11.2026)
+                || (typeof Werkzeugkasten.budgetWarnung === "function" ? Werkzeugkasten.budgetWarnung(this.lauf.profil || {}, this.lauf) : null);
               if (pw) {
                 (this.lauf.preisGewarnt ||= {})[pw.grenze] = true;
                 (this.lauf.engstelleGefragt ||= {}).preis = true;

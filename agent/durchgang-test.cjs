@@ -3295,6 +3295,82 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     pruefe("F2: 'mit Flug' bei der Wohnung gilt jetzt", flugAusSatz("Eine Wohnung mit Flug bitte"), true);
   }
 
+  /* Block C (21.11.2026): Budget mit dem teuersten empfehlbaren Flug, Halte
+     ueber die ganze Liste, keine Bewertungen in der Liste, "100 von X",
+     Zahl nach der Preisangabe. Gegenprobe: --alt=_backup/gp-blockC. */
+  {
+    const versuch = (f) => { try { return f(); } catch (e) { return "fehler"; } };
+    const H = vm.runInContext("HOTELS", ctx);
+    const pB = { monat: 7, naechte: 7, erwachsene: 2, kinder: 0, flug: true, flugAb: "Frankfurt", flugKlasse: "economy", artEgal: true };
+    // Ein Haus, das mit dem guenstigsten Flug genau ins Budget passt, mit dem teuersten der sechs aber nicht
+    const AW = vm.runInContext("Auswahl", ctx);
+    const kandidat = versuch(() => {
+      const v = WK.vorgaben(pB);
+      for (const h of H.filter((x) => x.ziel === "mallorca")) {
+        const r = AW.reisepreis(h, v); if (!r) continue;
+        const rec = WK.flugAuswahl(h, pB, { anzahl: 6 }) || [];
+        const pp = rec.map((k) => vm.runInContext("Flug", ctx).preisProPerson(k.flug));
+        if (pp.length < 2 || Math.max(...pp) === Math.min(...pp)) continue;
+        return { h, billig: r.unterkunft + Math.min(...pp) * 2, teuer: r.unterkunft + Math.max(...pp) * 2 };
+      }
+      return null;
+    });
+    pruefe("Block C: Budget mit dem teuersten empfehlbaren Flug - knappes Haus faellt heraus, mit Luft bleibt es",
+      versuch(() => {
+        if (!kandidat || !WK.budgetMitFlugPuffer) return "fehlt";
+        // Ein zweites Haus, das sicher passt - sonst bliebe nichts uebrig, und
+        // dann gilt absichtlich die alte Liste
+        const v = WK.vorgaben(pB);
+        const andere = H.filter((x) => x.id !== kandidat.h.id && x.ziel === "mallorca")
+          .map((x) => ({ x, r: AW.reisepreis(x, v) })).filter((o) => o.r)
+          .sort((a, b) => a.r.unterkunft - b.r.unterkunft)[0].x;
+        const knapp = WK.budgetMitFlugPuffer([kandidat.h, andere], { ...pB, budgetGesamt: kandidat.billig }).map((h) => h.id).includes(kandidat.h.id);
+        const luft = WK.budgetMitFlugPuffer([kandidat.h, andere], { ...pB, budgetGesamt: kandidat.teuer }).map((h) => h.id).includes(kandidat.h.id);
+        return [knapp, luft];
+      }), [false, true]);
+    pruefe("Block C: ohne Flug oder ohne Budget bleibt die Liste unveraendert",
+      versuch(() => {
+        const l = H.slice(0, 20);
+        return [WK.budgetMitFlugPuffer(l, { ...pB, flug: false, budgetGesamt: 500 }) === l, WK.budgetMitFlugPuffer(l, { ...pB }) === l];
+      }), [true, true]);
+    pruefe("Block C: bleibt nichts uebrig, gilt die Liste wie vorher",
+      versuch(() => { const l = H.slice(0, 5); return WK.budgetMitFlugPuffer(l, { ...pB, budgetGesamt: 10 }) === l; }), true);
+    const wkText = fs.readFileSync(alt && fs.existsSync(quelle + "werkzeugkasten.js") ? quelle + "werkzeugkasten.js" : B + "agent/werkzeugkasten.js", "utf8");
+    const wText = fs.readFileSync(alt && fs.existsSync(quelle + "werkzeuge.js") ? quelle + "werkzeuge.js" : B + "agent/werkzeuge.js", "utf8");
+    pruefe("Block C: die Vorlage waehlt aus der Liste mit Flugpuffer", /sortiere\(Werkzeugkasten\.budgetMitFlugPuffer\(imKatalog\.slice\(\), p\)\) : liste/.test(wkText), true);
+    pruefe("C12: keine Bewertungen mehr in der Trefferliste, Halte bei den Kandidaten",
+      [/Werkzeuge\.bewertungenSichten\(/.test(wkText), /ergebnisseLesen\(8, \{ halteIds \}\)/.test(wkText), /halteIds = null/.test(wText)], [false, true, true]);
+    const hs = versuch(() => WK.hausSchema(H.find((h) => (h.reviewCount || 0) > 100), {}, 0));
+    pruefe("C13: die Zusammenfassung sagt, wie viele gelesen wurden", typeof hs === "string" && /Durchgelesen habe ich 100 davon, die Teilnoten zählen alle/.test(hs), true);
+    pruefe("C13: der Zeiger nennt 'X von Y Bewertungen laden'", /von \$\{item\.reviewCount\.toLocaleString\("de-DE"\)\} Bewertungen laden/.test(wText), true);
+    pruefe("C11: die vorsichtige Preisstufe ist 10 Prozent", versuch(() => WK.PREIS_STUFE), 1.1);
+    // Ein knappes Gesamtbudget bekommt eine Rueckfrage mit 10 % mehr
+    const bw = versuch(() => {
+      if (!WK.budgetWarnung) return null;
+      for (const b of [450, 500, 550, 600, 650, 700, 750, 800]) {
+        const q = { monat: 7, naechte: 7, erwachsene: 2, kinder: 0, zimmer: 1, artEgal: true, flug: false, zielId: "mallorca", budgetGesamt: b, vonPerson: { budgetGesamt: true } };
+        const r = WK.budgetWarnung(q, {});
+        if (r) return r;
+      }
+      return null;
+    });
+    pruefe("C11: knappes Gesamtbudget - Rueckfrage mit 10 % mehr und zwei Chips",
+      bw && bw !== "fehler" ? [/\(10 % mehr\)/.test(bw.satz), (bw.chips || []).length, (bw.satz.match(/\?/g) || []).length] : bw, [true, 2, 1]);
+    pruefe("C11: grosszuegiges Budget - keine Rueckfrage",
+      versuch(() => WK.budgetWarnung ? WK.budgetWarnung({ monat: 7, naechte: 7, erwachsene: 2, kinder: 0, zimmer: 1, artEgal: true, flug: false, budgetGesamt: 20000, vonPerson: { budgetGesamt: true } }, {}) : "fehlt"), null);
+    // Nach der Preisangabe nennt der Kern die Zahl
+    const gesagt = versuch(() => {
+      const pp = { monat: 7, naechte: 7, erwachsene: 2, kinder: 0, zimmer: 1, artEgal: true, artGenannt: true, flug: false };
+      const saetze = [];
+      const kern = { lauf: { profil: pp, gespraech: [{ role: "user", content: "höchstens 400 Euro pro Nacht" }] },
+        notieren() {}, standAnzeigen() {}, sichern() {}, sagen(x) { saetze.push(x); }, logZeile() {}, standKurz: () => "",
+        eingabe() {}, darf: () => true, freigabe: () => "suchen", antwortWerten() {} };
+      try { WK.werkzeuge.stand_merken({ maxPreis: 400 }, kern); } catch { /* nur die Saetze zaehlen */ }
+      return saetze.some((x) => /^Bis 400 € pro Nacht kommen \d+ \S+ in Frage\.$/.test(x));
+    });
+    pruefe("C11: nach der Preisangabe nennt der Kern die Zahl", gesagt, true);
+  }
+
   console.log(`\n${gut} richtig, ${schlecht} falsch`);
   process.exit(schlecht ? 1 : 0);
 })();
