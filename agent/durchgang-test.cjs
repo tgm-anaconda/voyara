@@ -3003,6 +3003,31 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     pruefe("Handy: Hinweis vor dem Studienhinweis", /if \(!Startbildschirm\.nurAmRechner\?\.\(los\)\) los\(\);/.test(st) ? "ja" : "nein", "ja");
     pruefe("Handy: Pruefungen bleiben frei", /kernpruefung\|seitenpruefung\|pruefstand/.test(sq) ? "ja" : "nein", "ja");
   }
+  /* Runde 4 (21.11.2026): Gebucht, dann vor dem Schliessen der Aufgabe
+     neu geladen - beim naechsten Laden muss die Aufgabe zu Ende gehen. */
+  {
+    const pfad = alt && fs.existsSync(quelle + "studie.js") ? quelle + "studie.js" : B + "agent/studie.js";
+    const modul = { exports: {} };
+    vm.runInNewContext(fs.readFileSync(pfad, "utf8"), { module: modul, Date, Math, JSON, setTimeout });
+    const S0 = modul.exports.Studie;
+    const lauf = (buchung, beendet) => {
+      const S = Object.assign(Object.create(Object.getPrototypeOf(S0)), S0);
+      const gerufen = [];
+      S.daten = { phase: "arbeitet", aktuelle: 0, einstieg: {}, gesendet: { start: { ok: true } }, ereignisse: [],
+        durchlaeufe: [{ buchung, beendet }] };
+      S.laden = () => S.daten; S.messungenAnbinden = () => {}; S.ausstehendesSenden = () => {};
+      S.senden = () => gerufen.push("senden"); S.sichern = () => {};
+      S.reiterZeigen = () => gerufen.push("reiter");
+      S.aufgabeAbschliessen = (g) => gerufen.push("abschliessen:" + g);
+      const gesperrt = S.start(null);
+      return { gerufen: gerufen.join(","), gesperrt };
+    };
+    const mit = lauf({ id: "h01", gesamt: 600 }, null);
+    pruefe("Studie: Buchung erfasst, Aufgabe offen -> beim Laden abgeschlossen", mit.gerufen, "abschliessen:gebucht");
+    pruefe("Studie: dabei bleibt die Seite gesperrt (Fragebogen)", mit.gesperrt, true);
+    pruefe("Studie: ohne Buchung bleibt die Aufgabe offen", lauf(null, null).gerufen, "reiter");
+    pruefe("Studie: schon beendet -> nicht noch einmal", lauf({ id: "h01" }, 123).gerufen, "reiter");
+  }
 
   console.log(`\n${gut} richtig, ${schlecht} falsch`);
   process.exit(schlecht ? 1 : 0);

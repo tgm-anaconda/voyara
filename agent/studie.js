@@ -352,7 +352,20 @@ const Studie = {
       case "aufgabe":
         this.aufgabeZeigen();
         return true;
-      case "arbeitet":
+      case "arbeitet": {
+        /* Gebucht, aber die Aufgabe nie geschlossen (21.11.2026).
+           ------------------------------------------------------------
+           Die Kasse schliesst die Aufgabe 2,6 Sekunden nach dem Klick auf
+           "Buchung abschliessen". Wer in dieser Zeit neu laedt oder die
+           Seite wechselt, hatte die Buchung erfasst, sass aber weiter in
+           der Aufgabe: das Formular stand wieder da, der Fragebogen kam
+           nie. Liegt eine Buchung vor, wird hier nachgeholt. */
+        const offen = this.durchlauf();
+        if (offen?.buchung && !offen.beendet) {
+          this.aufgabeAbschliessen("gebucht");
+          return true;
+        }
+      }
         this.reiterZeigen();
         // Die Freigabestufe wird nicht mehr vorab erfragt, sondern als
         // erste Nachricht des Agenten, wenn jemand ihn oeffnet
