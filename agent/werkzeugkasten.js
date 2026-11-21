@@ -684,8 +684,13 @@ const Werkzeugkasten = {
     return i != null && vorlage[i] ? vorlage[i] : null;
   },
 
+  /* Werkzeuge, nach denen der Agent stehen bleibt, wo er aufgehoert hat
+     (C15, siehe Kern.rahmenZurueck): Ihr Ergebnis IST die Seite. */
+  RAHMEN_BLEIBT: ["suchen", "haus_suchen", "zurueck_zur_liste", "auswahl_vorlegen", "haeuser_ansehen", "mietwagen_suchen",
+    "reisedaten_aendern", "buchung_vorbereiten", "formular_ausfuellen", "kasse_aendern", "buchung_abschliessen"],
   async ausfuehren(name, args, kern, stufe = 1) {
     const a = args || {};
+    if (kern?.lauf?.rahmen && this.RAHMEN_BLEIBT.includes(name)) kern.lauf.rahmen.bleibt ||= name;
     if (a.id && stufe === 1 && ["haus_oeffnen", "haus_details", "merken", "buchung_vorbereiten", "bewertungen_lesen"].includes(name)) {
       const gemeint = this.hausAusVorlage(kern);
       if (gemeint && gemeint !== a.id) {

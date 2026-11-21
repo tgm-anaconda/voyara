@@ -1064,6 +1064,7 @@ const Kern = {
       AgentPanel.say(n.text, n.rolle, { still: true, links: n.links, aktionen, etikett: n.etikett || null });
     }
     this.auswahlLeisteZeigen();
+    this.rahmenEinstellen();
 
     /* Steht die Spalte noch so, wie der Agent sie gesetzt hat?
        ------------------------------------------------------------------
@@ -1698,6 +1699,7 @@ const Kern = {
     const zaehle = () => (this.lauf.verlauf || []).filter((x) => x.rolle === "bot").length;
     const vorher = zaehle();
     const liefSchon = this.laeuft;
+    if (!liefSchon && !this.lauf.ausstehend && String(text || "").trim()) this.rahmenMerken(text);
     const fest = this.festeWerte();
     this.lauf.festeWerteErlaubt = false;
     await this.eingabeInnen(text, opts);
@@ -3737,6 +3739,16 @@ const Kern = {
       // Die Karten der Meldung gelten weiter - der Zug darf sie nicht leeren
       if (this.lauf.stumm) AgentPanel.setSuggestions(this.lauf.chips || []);
     }
+    /* Dorthin zurueck, wo die Person den Agenten losgeschickt hat (C15).
+       Am Ende, damit Schritte, Status und Vorhang vorher aufgeraeumt
+       sind. Nicht mitten in einer Werkzeugkette, nicht wenn noch eine
+       Nachricht wartet (der naechste Zug kommt gleich), und nicht, wenn
+       die Person selbst uebernommen hat. Muss die Seite gewechselt
+       werden, stellt start() auf der Zielseite die Scrollstelle ein. */
+    if (!this.lauf.ausstehend && !(this.lauf.nachtrag || []).length) {
+      if (this.lauf.anhalt || this.lauf.phase === "angehalten") this.lauf.rahmen = null;
+      else this.rahmenZurueck();
+    }
     // Nachricht, die waehrend der Arbeit kam
     const nachtrag = this.lauf.nachtrag || [];
     if (nachtrag.length && this.lauf.anhalt?.gesagt) {
@@ -3991,6 +4003,7 @@ const Kern = {
 
     this.lauf.kandidaten = kandidaten;
     this.lauf.letzteVorlage = kandidaten.map((k) => k.id);
+    if (this.lauf.rahmen) this.lauf.rahmen.bleibt ||= "vorlage";   // C15: neue Vorschlaege sind das Ergebnis
     this.auswahlLeisteZeigen();   // Leiste "Deine Auswahl (N)" (C14)
     this.lauf.vorlageImZug = true;
     this.notieren("shortlist", { runde: this.lauf.vorlagen || 0, ids: this.lauf.letzteVorlage, partnerId: this.lauf.partnerId || null, offenlegung: this.lauf.offenlegung || null });
@@ -5394,6 +5407,66 @@ const Kern = {
     for (const k of kandidaten) if (k.id === this.lauf.partnerId) k.partner = true;
     this.notieren("vorschlaege_erneut", { ueber, ids });
     this.vorschlagsansicht(kandidaten);
+  },
+
+  /* Zurueck, wo man war (C15, 21.11.2026).
+     ------------------------------------------------------------------
+     Ben: "Wenn ich irgendwo selbst gescrollt hab auf der Seite, irgendwo
+     bin und der Agent uebernimmt, weil ich dann mit dem Agent schreibe,
+     dass der Agent dann genau dort die Seite wieder hinterlaesst, wo ich
+     ihn losgeschickt habe" - aber "nur bei Sachen, wo es auch wirklich
+     sinnig ist".
+
+     Gemerkt werden Seite, Scrollstelle und ob die Vorschlagsansicht offen
+     war. Zurueck geht es, wenn das Ergebnis im Chat steht (Bewertungen,
+     Details zu einem Haus, eine Frage). Er bleibt, wo er aufgehoert hat,
+     wenn genau das gewollt ist: ausdruecklich etwas oeffnen oder zeigen
+     lassen, neue Vorschlaege, geaenderte Suche oder Filter, Kasse und
+     Buchung (RAHMEN_BLEIBT, gesetzt in Werkzeugkasten.ausfuehren). */
+  // Ohne \b: Die Wortgrenze greift in JavaScript nicht vor Umlauten ("Öffne")
+  RAHMEN_HINGEHEN: /(?<![a-zäöüß])(öffne|oeffne|öffnen|oeffnen|zeig|zeige|zeigen|geh(e)?\s+(zu|zur|zum|auf|in)|bring\s+mich|wechsel|navigier)/i,
+  rahmenMerken(text) {
+    if (typeof Werkzeuge === "undefined") return;
+    this.lauf.rahmen = {
+      pfad: location.pathname + location.search,
+      y: Math.round(window.scrollY || 0),
+      vorschlaege: typeof Vorschlaege !== "undefined" && !!Vorschlaege.offen,
+      bleibt: this.RAHMEN_HINGEHEN.test(String(text || "")) ? "hingehen" : null,
+    };
+  },
+  rahmenZurueck() {
+    const r = this.lauf.rahmen;
+    this.lauf.rahmen = null;
+    if (!r || r.bleibt) { if (r?.bleibt) this.notieren("rahmen_bleibt", { grund: r.bleibt }); return false; }
+    const hier = location.pathname + location.search;
+    const offen = typeof Vorschlaege !== "undefined" && !!Vorschlaege.offen;
+    if (hier === r.pfad && Math.abs((window.scrollY || 0) - r.y) < 40 && offen === r.vorschlaege) return false;
+    this.notieren("rahmen_zurueck", { von: hier, nach: r.pfad, y: r.y, vorschlaege: r.vorschlaege });
+    this.lauf.rahmenEinstellen = { y: r.y, vorschlaege: r.vorschlaege };
+    if (hier !== r.pfad) {
+      this.sichern();
+      location.href = r.pfad;
+      return true;
+    }
+    this.rahmenEinstellen();
+    return false;
+  },
+  rahmenEinstellen() {
+    const e = this.lauf.rahmenEinstellen;
+    if (!e) return;
+    this.lauf.rahmenEinstellen = null;
+    const offen = typeof Vorschlaege !== "undefined" && !!Vorschlaege.offen;
+    if (e.vorschlaege && !offen) { try { this.vorschlaegeNochmal("rahmen"); } catch { /* ohne Vorlage nichts zu zeigen */ } }
+    else if (!e.vorschlaege && offen) { try { Vorschlaege.schliessen(true, "rahmen"); } catch { /* egal */ } }
+    // Erst nach dem Aufbau der Liste scrollen, sonst ist die Seite noch zu kurz
+    const ziel = e.y;
+    let n = 0;
+    const versuch = () => {
+      window.scrollTo({ top: ziel, behavior: "auto" });
+      if (Math.abs((window.scrollY || 0) - ziel) > 40 && n++ < 20) setTimeout(versuch, 100);
+    };
+    setTimeout(versuch, 60);
+    this.sichern();
   },
 
   /* Die Leiste "Deine Auswahl (N)" ueber dem Eingabefeld (C14, 21.11.2026).

@@ -3386,6 +3386,32 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     pruefe("C11: nach der Preisangabe nennt der Kern die Zahl", gesagt, true);
   }
 
+  /* C15 (21.11.2026): zurueck, wo die Person den Agenten losgeschickt hat -
+     nur, wo es Sinn ergibt. Gegenprobe: --alt=_backup/gp-blockC. */
+  {
+    const versuch = (f) => { try { return f(); } catch (e) { return "fehler"; } };
+    const lauf0 = () => ({ verlauf: [], profil: {} });
+    const fall = (text, werkzeug, { vorlage = false } = {}) => versuch(() => {
+      if (!KN.rahmenMerken || !KN.rahmenZurueck) return "fehlt";
+      KN.lauf = lauf0(); KN.notieren = () => {}; KN.sichern = () => {};
+      if (vm.runInContext("typeof Werkzeuge", ctx) === "undefined") ctx.Werkzeuge = {};   // nur, damit gemerkt wird
+      ctx.location = { pathname: "/results.html", search: "?type=hotel", href: "" };
+      ctx.scrollY = 1500; ctx.window.scrollY = 1500;
+      KN.rahmenMerken(text);
+      if (werkzeug) { try { WK.RAHMEN_BLEIBT.includes(werkzeug) && (KN.lauf.rahmen.bleibt ||= werkzeug); } catch { /* alt */ } }
+      if (vorlage) KN.lauf.rahmen.bleibt ||= "vorlage";
+      ctx.location = { pathname: "/stay.html", search: "?id=h01", href: "" };
+      const nav = KN.rahmenZurueck();
+      return [nav, ctx.location.href || null];
+    });
+    pruefe("C15: 'Erzähl mir mehr' auf der Hausseite -> zurueck zur Liste", fall("Erzähl mir mehr über Casa Anaga", "bewertungen_lesen"), [true, "/results.html?type=hotel"]);
+    pruefe("C15: 'Öffne Casa Anaga' -> bleibt auf der Hausseite", fall("Öffne Casa Anaga", "haus_oeffnen"), [false, null]);
+    pruefe("C15: neue Suche -> bleibt", fall("nur mit Pool bitte", "suchen"), [false, null]);
+    pruefe("C15: neue Vorschlaege -> bleibt", fall("such mir was raus", null, { vorlage: true }), [false, null]);
+    pruefe("C15: Buchung -> bleibt", fall("buch das", "buchung_vorbereiten"), [false, null]);
+    pruefe("C15: Bewertungen lesen und Details sind kein Grund zu bleiben", versuch(() => ["bewertungen_lesen", "haus_details", "haus_oeffnen", "faq_nachschlagen"].some((w) => WK.RAHMEN_BLEIBT.includes(w))), false);
+  }
+
   console.log(`\n${gut} richtig, ${schlecht} falsch`);
   process.exit(schlecht ? 1 : 0);
 })();
