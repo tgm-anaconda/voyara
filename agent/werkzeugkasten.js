@@ -7709,15 +7709,56 @@ const Werkzeugkasten = {
       return e.length > 110 ? `${e.slice(0, 107).trim()}…` : e;
     };
     const roh = typeof bewertungenFuer === "function" ? bewertungenFuer(item, 0, Math.min(item.reviewCount || 0, 120)) : [];
-    const lobSatz = roh.filter((r) => r.rating >= 5).map((r) => satzAus(r, false)).find(Boolean);
-    const kritikSatz = roh.filter((r) => r.rating <= 3).map((r) => satzAus(r, true)).find(Boolean);
+    let lobSatz = null, kritikSatz = null;
+    if (typeof stimmeEinordnen === "function") {
+      /* Die Richtung aus den Satzlisten, nicht geraten (21.11.2026).
+         ----------------------------------------------------------------
+         Ben am 21.11.2026: "Unsere Kinder waren morgens als Erste im
+         Wasser und mittags kaum herauszubekommen" stand als Kritik da,
+         "Zwei Familien, fuenf Kinder, das ist fuer jedes Haus eine
+         Belastungsprobe" als Lob, und einem Paar ohne Hund wurde
+         "Mit Hund durften wir nicht in den Fruehstuecksraum" gezeigt.
+         Jetzt: Lob nur aus Loblisten, Kritik nur aus Kritiklisten
+         (stimmeEinordnen), Kinder- und Hundesaetze nur, wenn Kinder bzw.
+         ein Hund mitreisen. Vorrang haben die Aspekte, die die Person
+         genannt hat, danach die Stärken bzw. die Schwaeche, die der Satz
+         davor nennt. Fuer alle Haeuser der Auswahl dieselbe Regel. */
+      const mitKindern = (p.kinder || 0) > 0;
+      const mitHund = (p.ausstattung || []).includes("petsAllowed");
+      const stimmen = (wertung) => roh.flatMap((r) => Werkzeugkasten.saetze(String(r?.text || "")))
+        .map((x) => ({ x: x.trim(), e: stimmeEinordnen(x) }))
+        .filter((o) => o.e && o.e.wertung === wertung && o.x.length > 25
+          && (!o.e.familie || mitKindern) && (!o.e.hund || mitHund));
+      const waehle = (liste, vorrang) => {
+        for (const id of vorrang) { const o = liste.find((y) => y.e.aspekt === id); if (o) return o.x; }
+        return liste[0]?.x || null;
+      };
+      const kurz = (x) => (x && x.length > 110 ? `${x.slice(0, 107).trim()}…` : x);
+      lobSatz = kurz(waehle(stimmen(1), [...wunschIds, s1.id, s2.id]));
+      kritikSatz = kurz(waehle(stimmen(-1), [...wunschIds, schwach.id]));
+    } else {
+      lobSatz = roh.filter((r) => r.rating >= 5).map((r) => satzAus(r, false)).find(Boolean);
+      kritikSatz = roh.filter((r) => r.rating <= 3).map((r) => satzAus(r, true)).find(Boolean);
+    }
     const FORMEN = [
       () => `${item.name} hat ${note}. Gäste loben vor allem ${t(s1)} und ${t(s2)}, weniger gut kommt ${t(schwach)} weg.`,
       () => `Zu ${item.name}: ${note}. Am besten bewertet sind ${t(s1)} und ${t(s2)}, am schwächsten ${t(schwach)}.`,
       () => `${item.name} liegt bei ${note}. Stark sind ${t(s1)} und ${t(s2)}, Abstriche gibt es bei ${t(schwach)}.`,
     ];
     const teile = [FORMEN[platz % FORMEN.length]()];
-    if (wunsch.length) teile.push(`Zu deinen Wünschen: ${wunsch.map(t).join(", ")}.`);
+    /* Wuensche, zu denen keine Teilnote dasteht, fallen nicht still weg
+       (21.11.2026). Im Lauf vom 21.11. waren Getraenke und
+       Kinderfreundlichkeit gewuenscht, in keiner Zusammenfassung stand
+       ein Wort dazu. Ohne Teilnote: was das Haus ausweist (Merkmal),
+       sonst offen gesagt, dass die Bewertungen dazu nichts hergeben. */
+    const imSatz = new Set([s1.id, s2.id, schwach.id, ...wunsch.map((b) => b.id)]);
+    const wunschTeile = wunsch.map(t);
+    for (const k of (p.kriterien || []).map((x) => Politik.kriterium(x.id)).filter(Boolean)) {
+      if (k.aspekt && imSatz.has(k.aspekt)) continue;
+      if (k.aspekt && !bilanz.some((b) => b.id === k.aspekt)) wunschTeile.push(`${k.label} (in den Bewertungen kaum erwähnt)`);
+      else if (!k.aspekt && k.merkmal) wunschTeile.push(`${k.label} (${(item.amenities || []).includes(k.merkmal) ? "ausgewiesen" : "nicht ausgewiesen"})`);
+    }
+    if (wunschTeile.length) teile.push(`Zu deinen Wünschen: ${wunschTeile.join(", ")}.`);
     // Beide oder keine - eine Seite allein wuerde das Bild kippen
     if (lobSatz && kritikSatz) teile.push(`Ein Gast schreibt: „${lobSatz}“ Kritisch: „${kritikSatz}“`);
     teile.push("Soll ich es vormerken, oder möchtest du ein anderes ansehen?");

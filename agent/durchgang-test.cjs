@@ -3154,6 +3154,26 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     pruefe("Studie: schon beendet -> nicht noch einmal", lauf({ id: "h01" }, 123).gerufen, "reiter");
   }
 
+  /* Runde 5, B9 (21.11.2026): Lob und Kritik in der Zusammenfassung aus
+     den Satzlisten, passend zur Reise. Laedt die Bewertungsdaten erst hier,
+     damit die Pruefungen davor unveraendert laufen. */
+  {
+    for (const f of ["bewertungen.js", "teilnoten.js"]) {
+      const pf = alt && fs.existsSync(quelle + f) ? quelle + f : B + "data/" + f;
+      try { vm.runInContext(fs.readFileSync(pf, "utf8"), ctx, { filename: f }); } catch (e) { console.log("LADEFEHLER", f, e.message.slice(0, 120)); }
+    }
+    const it = (id) => vm.runInContext(`getItemById("${id}")`, ctx);
+    const paar = { erwachsene: 2, kinder: 0, kriterien: [{ id: "getraenke", gewicht: 1 }, { id: "familie", gewicht: 1 }] };
+    const texte = ["a141", "a311", "a369", "a146"].map((id) => String(WK.hausSchema(it(id), paar, 0) || ""));
+    const zitate = texte.map((x) => [(x.match(/Ein Gast schreibt: „([^“]+)“/) || [])[1], (x.match(/Kritisch: „([^“]+)“/) || [])[1]]);
+    pruefe("Zusammenfassung: Lob stammt aus Loblisten", zitate.every(([l]) => vm.runInContext(`typeof stimmeEinordnen === "function" ? stimmeEinordnen(${JSON.stringify(l || "")})?.wertung : null`, ctx) === 1) ? "ja" : JSON.stringify(zitate), "ja");
+    pruefe("Zusammenfassung: Kritik stammt aus Kritiklisten", zitate.every(([, k]) => vm.runInContext(`typeof stimmeEinordnen === "function" ? stimmeEinordnen(${JSON.stringify(k || "")})?.wertung : null`, ctx) === -1) ? "ja" : JSON.stringify(zitate), "ja");
+    pruefe("Zusammenfassung: fuer ein Paar keine Kinder- oder Hundesaetze", texte.some((x) => /kinder|hund/i.test((x.match(/Ein Gast schreibt:.*$/) || [""])[0])) ? "doch" : "keine", "keine");
+    pruefe("Zusammenfassung: beide Wuensche werden genannt", texte.every((x) => /Getränke & Bar/.test(x) && /Familienfreundlichkeit/.test(x)) ? "ja" : "nein", "ja");
+    pruefe("Satzlisten: 'kaum herauszubekommen' ist Lob",
+      vm.runInContext(`typeof stimmeEinordnen !== "function" ? null : stimmeEinordnen("Unsere Kinder waren morgens als Erste im Wasser und mittags kaum herauszubekommen.")?.wertung`, ctx), 1);
+  }
+
   console.log(`\n${gut} richtig, ${schlecht} falsch`);
   process.exit(schlecht ? 1 : 0);
 })();

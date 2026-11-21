@@ -69,6 +69,38 @@ function saetzeFuer(item, liste) {
   return genutzt.map((s) => (typeof s === "string" ? s : s[0]));
 }
 
+/* Woher ein Satz stammt (21.11.2026).
+   ------------------------------------------------------------------
+   Jeder Satz einer erzeugten Bewertung kommt aus der Lob- oder der
+   Kritikliste eines Aspekts. Die Zusammenfassung des Kerns (hausSchema)
+   riet die Richtung bisher an Woertern wie "kaum" - und zitierte
+   "Unsere Kinder waren morgens als Erste im Wasser und mittags kaum
+   herauszubekommen" als Kritik, obwohl der Satz auf der Lobliste des
+   Pools steht. Hier steht die Antwort aus den Listen selbst: Richtung,
+   Aspekt und ob der Satz von Kindern oder einem Hund handelt. Saetze,
+   die in keiner Liste stehen (Einleitungen wie "Zwei Familien, fuenf
+   Kinder ..."), liefern null. */
+let STIMMEN_INDEX = null;
+function stimmeEinordnen(satz) {
+  if (!STIMMEN_INDEX) {
+    STIMMEN_INDEX = [];
+    for (const a of ASPEKTE) {
+      for (const [wertung, liste] of [[1, a.plus || []], [-1, a.minus || []]]) {
+        for (const s of liste) {
+          const text = typeof s === "string" ? s : s[0];
+          const bedingung = typeof s === "string" ? null : s[1];
+          STIMMEN_INDEX.push({ text, wertung, aspekt: a.id,
+            familie: bedingung === fuerFamilien || /\bkind|kinder|familie|baby|kleinkind/i.test(text),
+            hund: a.id === "haustiere" || /\bhund/i.test(text) });
+        }
+      }
+    }
+  }
+  const t = String(satz || "").trim();
+  if (!t) return null;
+  return STIMMEN_INDEX.find((e) => t === e.text || t.endsWith(" " + e.text) || t.endsWith(": " + e.text)) || null;
+}
+
 // Zieht aus einer Liste mit Gewichten
 function waehleGewichtet(rnd, eintraege, gewicht) {
   const summe = eintraege.reduce((s, e) => s + gewicht(e), 0);
