@@ -431,6 +431,25 @@ img, svg { max-width: 100%; }
 
 /* Eingabe als Kapsel statt als Rechteck mit drei Knoepfen daneben.
    Gilt fuer beide Arme; in der Schublade ist sie nur schmaler. */
+/* Leiste "Deine Auswahl (N)" ueber dem Eingabefeld (C14, 21.11.2026).
+   Einzeilig und schmal, damit dem Chat kein Platz verloren geht; Abstand
+   innen, damit der Knopf als Knopf erkennbar ist. */
+.agent-auswahl-leiste {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  margin: 10px 16px 0; height: 40px; box-sizing: border-box; padding: 0 6px 0 14px;
+  background: rgba(255,255,255,.055); border: 1px solid rgba(95,195,164,.55); border-radius: 10px;
+  white-space: nowrap;
+}
+.agent-auswahl-leiste[hidden] { display: none; }
+.agent-auswahl-text { display: flex; align-items: center; gap: 8px; color: #d6f0e7; font-size: .95rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
+.agent-auswahl-text svg { width: 17px; height: 17px; flex: none; }
+.agent-auswahl-knopf {
+  height: 28px; padding: 0 16px; border: none; border-radius: 7px; cursor: pointer;
+  background: var(--brand-500); color: #fff; font: inherit; font-size: .88rem; font-weight: 600;
+}
+.agent-auswahl-knopf:hover { background: var(--brand-700); }
+.agent-auswahl-knopf:focus-visible { outline: 2px solid #5fc3a4; outline-offset: 2px; }
+
 .agent-input {
   display: flex; gap: 6px; align-items: flex-end;
   margin: 10px 16px 0; padding: 6px 6px 6px 16px;

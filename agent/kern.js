@@ -1063,6 +1063,7 @@ const Kern = {
       const aktionen = this.aktionenBinden(n.aktionen || []);
       AgentPanel.say(n.text, n.rolle, { still: true, links: n.links, aktionen, etikett: n.etikett || null });
     }
+    this.auswahlLeisteZeigen();
 
     /* Steht die Spalte noch so, wie der Agent sie gesetzt hat?
        ------------------------------------------------------------------
@@ -3990,6 +3991,7 @@ const Kern = {
 
     this.lauf.kandidaten = kandidaten;
     this.lauf.letzteVorlage = kandidaten.map((k) => k.id);
+    this.auswahlLeisteZeigen();   // Leiste "Deine Auswahl (N)" (C14)
     this.lauf.vorlageImZug = true;
     this.notieren("shortlist", { runde: this.lauf.vorlagen || 0, ids: this.lauf.letzteVorlage, partnerId: this.lauf.partnerId || null, offenlegung: this.lauf.offenlegung || null });
     this.lauf.vorlagen = (this.lauf.vorlagen || 0) + 1;
@@ -5394,9 +5396,27 @@ const Kern = {
     this.vorschlagsansicht(kandidaten);
   },
 
+  /* Die Leiste "Deine Auswahl (N)" ueber dem Eingabefeld (C14, 21.11.2026).
+     Sichtbar, solange es eine Vorlage gibt; derselbe Weg wie der Knopf in
+     der Nachricht (vorschlaegeNochmal), protokolliert als "leiste". */
+  auswahlLeisteZeigen() {
+    const leiste = document.getElementById("agentAuswahlLeiste");
+    if (!leiste) return;
+    const n = (this.lauf?.letzteVorlage || []).length;
+    leiste.hidden = !n || typeof Vorschlaege === "undefined";
+    const text = document.getElementById("agentAuswahlText");
+    if (text) text.textContent = `Deine Auswahl (${n})`;
+    const knopf = document.getElementById("agentAuswahlKnopf");
+    if (knopf && !knopf.dataset.gebunden) {
+      knopf.dataset.gebunden = "1";
+      knopf.addEventListener("click", () => this.vorschlaegeNochmal("leiste"));
+    }
+  },
+
   // Der Knopf, der die Auswahl erreichbar haelt. Steht im Verlauf, damit er
   // einen Seitenwechsel ueberlebt.
   vorschlaegeMerken() {
+    this.auswahlLeisteZeigen();
     const text = "Deine Auswahl bleibt hier stehen, bis du dich entschieden hast.";
     const aktion = { text: "Die Vorschläge ansehen", vorschlaegeZeigen: true };
     // Nur einmal im ganzen Gespraech - der Knopf bleibt ja stehen

@@ -26,6 +26,8 @@ window.addEventListener("pageshow", (e) => {
 });
 
 const ICONS = {
+  // Kacheln fuer die Leiste "Deine Auswahl" im Chat (C14, 21.11.2026)
+  grid: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>',
   search: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>',
   heart: '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 5.6a5.5 5.5 0 0 0-7.8 0L12 6.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 22l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8Z"/></svg>',
   heartFilled: '<svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M20.8 5.6a5.5 5.5 0 0 0-7.8 0L12 6.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 22l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8Z"/></svg>',
@@ -784,6 +786,15 @@ function renderAgentRail() {
   <div class="agent-messages" id="agentMessages"></div>
 
   <div class="agent-suggestions" id="agentSuggestions"></div>
+
+  <!-- Die Auswahl bleibt erreichbar (C14, 21.11.2026). Der Knopf "Die
+       Vorschlaege ansehen" stand nur in einer Nachricht und scrollte mit
+       dem Gespraech weg. Gefuellt und eingeblendet von
+       Kern.auswahlLeisteZeigen, sobald es Vorschlaege gibt. -->
+  <div class="agent-auswahl-leiste" id="agentAuswahlLeiste" hidden>
+    <span class="agent-auswahl-text">${ICONS.grid}<span id="agentAuswahlText">Deine Auswahl</span></span>
+    <button type="button" class="agent-auswahl-knopf" id="agentAuswahlKnopf">Ansehen</button>
+  </div>
 
   <form class="agent-input" id="agentForm">
     <textarea class="input" id="agentInput" placeholder="Nachricht schreiben…" rows="1" autocomplete="off"></textarea>
