@@ -3325,16 +3325,26 @@ const Werkzeugkasten = {
         const letzteS = (kern.lauf.gespraech || []).filter((n) => n.role === "user").slice(-1)
           .map((n) => String(n.content || "")).join(" ");
         const nennt = (n) => new RegExp(`(^|[^0-9])${n}([^0-9]|$)`).test(letzteS);
+        /* Eine eigene Zahl mit "Grad" (21.11.2026). Ben auf "Bei 19 Grad
+           bleiben oder auf 15 gehen?": "lieber erst am 23 grad, aber
+           dennoch wuerde ich gerne noch Lappland behalten". Gelesen wurden
+           nur die beiden angebotenen Zahlen, die 23 kam nicht an. */
+        const mitGrad = (n) => new RegExp(`(^|[^0-9])${n}\\s*(grad|°)`, "i").test(letzteS);
         if (a.mindestGrad == null) {
           if (nennt(spanne.weiter) && !nennt(spanne.grenze)) a.mindestGrad = spanne.weiter;
           else if (/bleib/i.test(letzteS) && !nennt(spanne.weiter)) a.mindestGrad = spanne.grenze;
+          else {
+            const eigen = letzteS.match(/(^|[^0-9])(-?\d{1,2})\s*(grad|°)/i);
+            if (eigen) a.mindestGrad = Number(eigen[2]);
+          }
           if (a.mindestGrad != null) kern.notieren("spanne_vom_kern", { grad: a.mindestGrad, satz: letzteS.slice(0, 80) });
         }
         /* Die neue Grenze gleich in die Liste, damit ein Dazunehmen
            im selben Satz auf der richtigen Liste aufsetzt. Das eigentliche
            Setzen (mit Ansage) passiert unten wie bisher. */
         if (a.mindestGrad != null && p.richtung && typeof Politik !== "undefined"
-          && [spanne.weiter, spanne.grenze].includes(Math.round(Number(a.mindestGrad)))) {
+          && ([spanne.weiter, spanne.grenze].includes(Math.round(Number(a.mindestGrad)))
+            || mitGrad(Math.round(Number(a.mindestGrad))))) {
           const thS = (Politik.THEMEN || []).find((t) => t.id === p.richtung);
           if (thS) p.zieleErlaubt = Werkzeugkasten.regionenFuerRichtung(thS, { ...p, mindestGrad: Math.round(Number(a.mindestGrad)) }, { genau: true });
           kern.lauf.spanneNeu = Math.round(Number(a.mindestGrad));
@@ -4257,7 +4267,11 @@ const Werkzeugkasten = {
       if (a.wlanInklusive !== undefined) { if (p.wlanInklusive !== !!a.wlanInklusive) geaendert.push("wlanInklusive"); p.wlanInklusive = !!a.wlanInklusive; }
       if (Array.isArray(a.wuensche)) {
         const ALIAS = { strand: "strandnah", meer: "strandnah", beach: "strandnah", kids: "kinderclub", kinder: "familie", spa: "wellness", bewertungen: "bewertung", essen: "essen",
-          alkohol: "getraenke", drinks: "getraenke", bar: "getraenke", "getränke": "getraenke", entspannung: "ruhe", erholung: "ruhe" };
+          alkohol: "getraenke", drinks: "getraenke", bar: "getraenke", "getränke": "getraenke", entspannung: "ruhe", erholung: "ruhe",
+          // 21.11.2026: "den alkohol und die kinderfreundlichkeit" - das
+          // Modell schickte "kinderfreundlichkeit", das hier fehlte
+          kinderfreundlichkeit: "familie", kinderfreundlich: "familie", familienfreundlichkeit: "familie",
+          familienfreundlich: "familie" };
         // Ein Wunsch zaehlt nur, wenn die Person ein passendes Wort gesagt
         // hat (Wortlisten der Kriterien) - sonst wurde aus "warm" Strand und Pool
         const alt = new Set((p.kriterien || []).map((k) => k.id));
@@ -4573,6 +4587,12 @@ const Werkzeugkasten = {
           if (/ohne flug|kein flug|nicht fliegen|mit dem auto|fahren wir|selbst anreisen|eigene anreise/i.test(letzteNachricht)) a.flug = false;
           else if (/mit flug|flug dazu|fliegen wir|wir fliegen|flug mitbuchen/i.test(letzteNachricht)) a.flug = true;
         }
+      }
+      // Hat der Kern eine unklare Zahl erkannt ("55"), fragt er nach -
+      // das Modell darf sie nicht still eintragen (21.11.2026)
+      if (a.anzahlVorschlaege != null && kern.lauf.anzahlUnklar) {
+        kern.notieren("anzahl_modell_verworfen", { wert: a.anzahlVorschlaege });
+        delete a.anzahlVorschlaege;
       }
       if (a.anzahlVorschlaege != null) {
         const n = Math.max(2, Math.min(6, a.anzahlVorschlaege));
@@ -9841,6 +9861,28 @@ const Werkzeugkasten = {
         if (lauf.faqErzwungenFuer !== schluessel) { lauf.keinZwangFuer = schluessel; return null; }
       }
       if (lauf.keinZwangFuer && lauf.keinZwangFuer === (lauf.gespraech || []).filter((n) => n.role === "user").length) return null;
+    } else if (typeof faqSuchen === "function" && !["anweisung", "einwand"].includes(lauf.nachrichtArt)
+      && !(lauf.letzteVorlage || []).length) {
+      /* Ein Fragezeichen zaehlt auch (21.11.2026).
+         --------------------------------------------------------------
+         Ben am 21.11.2026: "Erstmal will ich wissen ob ihr auch ueber
+         weinachten fliegt?" - das FAQ hat genau diesen Eintrag, der Agent
+         antwortete trotzdem aus dem Kopf. Das Modell hatte die Nachricht
+         nicht als Frage eingeordnet. Endet sie mit "?", hat mindestens
+         vier Woerter und das FAQ einen Treffer, wird nachgeschlagen. Nur
+         dieser Teil der Regel: Ohne Treffer aendert sich nichts.
+         Nicht bei Anweisung oder Einwand und nicht nach der Vorlage: Die
+         FAQ-Suche ist breit ("Kannst du das erste Haus buchen?" trifft
+         den Eintrag zum Buchungsablauf), dort soll gehandelt werden. */
+      const nutzer = (lauf.gespraech || []).filter((n) => n.role === "user");
+      const schluessel = nutzer.length;
+      const letzte = String(nutzer[nutzer.length - 1]?.content || "").trim();
+      if (schluessel && lauf.faqErzwungenFuer !== schluessel && /\?\s*$/.test(letzte)
+        && letzte.split(/\s+/).length >= 4) {
+        let treffer = [];
+        try { treffer = faqSuchen(letzte, 1); } catch { treffer = []; }
+        if (treffer.length) { lauf.faqErzwungenFuer = schluessel; return "faq_nachschlagen"; }
+      }
     }
     /* Der Monatsvergleich geht allem voran.
        ----------------------------------------------------------------

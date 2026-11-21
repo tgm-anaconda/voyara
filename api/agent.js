@@ -112,9 +112,16 @@ async function openai(koerper, zeitgrenzeMs = ZEITGRENZE_MS, aussen = null) {
          27.09.2026 nicht unterscheiden, ob der Agent kurz ueberlastet war
          oder ob das Guthaben aufgebraucht ist - das eine geht von selbst
          vorbei, das andere nie. */
-      let code = null;
-      try { code = String((await antwort.json())?.error?.code || "").slice(0, 60) || null; } catch { /* egal */ }
-      return { ok: false, status: antwort.status, code,
+      let code = null, feld = null, art = null;
+      try {
+        const f = (await antwort.json())?.error || {};
+        code = String(f.code || "").slice(0, 60) || null;
+        // Welches Feld abgelehnt wurde ("messages.[12].content") und die
+        // Fehlerart - feste Bezeichner, kein Inhalt (21.11.2026)
+        feld = String(f.param || "").slice(0, 60) || null;
+        art = String(f.type || "").slice(0, 40) || null;
+      } catch { /* egal */ }
+      return { ok: false, status: antwort.status, code, feld, art,
         wartenMs: Math.min(8000, Math.round(parseFloat(antwort.headers.get("retry-after") || "0") * 1000)) || null };
     }
     return { ok: true, daten: await antwort.json() };
@@ -254,7 +261,8 @@ export default async function handler(req, res) {
   const { ersterMs, versuche, ersterStatus, gewartetMs, nachzuegler, gewinner } = r;
   const dauerMs = Date.now() - start;
   console.log(JSON.stringify({ agentAufruf: true, dauerMs, ersterMs, versuche, ersterStatus, nachzuegler, gewinner,
-    status: e.ok ? 200 : e.status, code: e.ok ? null : (e.code || null), gewartetMs,
+    status: e.ok ? 200 : e.status, code: e.ok ? null : (e.code || null),
+    feld: e.ok ? null : (e.feld || null), art: e.ok ? null : (e.art || null), gewartetMs,
     eingabe: e.daten?.usage?.prompt_tokens ?? null, gecacht: e.daten?.usage?.prompt_tokens_details?.cached_tokens ?? null,
     pflicht: typeof werkzeugPflicht === "string" ? werkzeugPflicht : !!werkzeugPflicht }));
   if (!e.ok) {

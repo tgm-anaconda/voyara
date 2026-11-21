@@ -2091,7 +2091,27 @@ const Kern = {
       const WORT = { zwei: 2, drei: 3, vier: 4, "fünf": 5, fuenf: 5, sechs: 6 };
       const ziffer = roh.match(/(^|[^0-9])([2-6])([^0-9]|$)/);
       const wort = Object.keys(WORT).find((w) => new RegExp(`\\b${w}\\b`).test(roh));
-      const zahl = ziffer ? Number(ziffer[2]) : wort ? WORT[wort] : null;
+      let zahl = ziffer ? Number(ziffer[2]) : wort ? WORT[wort] : null;
+      // Ein Ja auf "Meinst du 5?" (siehe unten)
+      if (!zahl && this.lauf.anzahlMeinst && /^\s*(ja|jap|jo|jep|genau|richtig|stimmt|ok|okay)\b/.test(roh)) zahl = this.lauf.anzahlMeinst;
+      this.lauf.anzahlMeinst = null;
+      /* Eine Zahl ausserhalb von 2 bis 6 (21.11.2026).
+         ----------------------------------------------------------------
+         Ben tippte "lieber 55" statt 5. Der Kern las nichts, das Modell
+         trug 55 ein, und der Kern kappte still auf 6 - vorgelegt wurden
+         dann vier. Bei einem Vertipper wird gefragt, nicht angenommen:
+         "55" -> "Meinst du 5?", sonst die Spanne nennen. Nur bei kurzen
+         Antworten ohne Einheit, damit "ja, aber unter 1100 Euro" nicht
+         als Anzahl gilt. */
+      const fremd = roh.match(/(^|[^0-9])(\d{2,}|[01])([^0-9]|$)/);
+      if (!zahl && fremd && roh.trim().split(/\s+/).length <= 4
+        && !/€|euro|eur\b|nacht|nächt|naecht|person|grad|tag|stern|meter|km\b/.test(roh)) {
+        const z = fremd[2];
+        const meinst = /^(\d)\1+$/.test(z) && +z[0] >= 2 && +z[0] <= 6 ? +z[0] : null;
+        this.lauf.anzahlUnklar = { genannt: z, meinst };
+        this.lauf.vorgehenFuer = null;
+        this.notieren("anzahl_unklar", { genannt: z, meinst });
+      }
       if (zahl && this.lauf.profil) {
         this.lauf.profil.anzahlVorschlaege = zahl;
         (this.lauf.profil.vonPerson ||= {}).anzahlVorschlaege = true;
@@ -2186,9 +2206,19 @@ const Kern = {
   verlaufReparieren(liste) {
     const raus = [];
     let geflickt = 0;
+    /* Leere Antworten des Assistenten (21.11.2026).
+       ----------------------------------------------------------------
+       Eine Assistenten-Nachricht ohne Text und ohne Werkzeugaufruf nimmt
+       die Schnittstelle nicht an (400), und zwar bei jedem weiteren
+       Aufruf. Sie entsteht, wenn das Modell nichts schreibt oder eine
+       Leitplanke den ganzen Text streicht. Im Durchgang vom 21.11.2026
+       war das Gespraech danach tot. Hier faellt sie weg. */
+    const leer = (m) => m.role === "assistant" && !m.tool_calls?.length
+      && (m.content == null || !String(m.content).trim());
     for (let i = 0; i < liste.length; i++) {
       const n = liste[i];
       if (n.role === "tool") { geflickt += 1; continue; }   // ohne Aufruf davor
+      if (leer(n)) { geflickt += 1; continue; }
       raus.push(n);
       if (n.role !== "assistant" || !n.tool_calls?.length) continue;
       const offen = new Set(n.tool_calls.map((c) => c.id));
@@ -2199,6 +2229,7 @@ const Kern = {
         if (m.role === "tool" && offen.has(m.tool_call_id)) { raus.push(m); offen.delete(m.tool_call_id); }
         else if (m.role === "tool") geflickt += 1;
         else if (m.role === "assistant" && m.tool_calls?.length) break;
+        else if (leer(m)) geflickt += 1;
         else dazwischen.push(m);
         j += 1;
       }
@@ -3132,7 +3163,12 @@ const Kern = {
               zugBelegt = true;
               (this.lauf.rueckversichert ||= {})[vr.feld] = true;
               this.lauf.unsicher = (this.lauf.unsicher || []).filter((f) => f !== vr.feld);
-              this.lauf.rueckfrageOffen = { feld: vr.feld, wert: JSON.parse(JSON.stringify(p2[vr.feld] ?? null)) };
+              /* Aus einem verworfenen Wert steht die Zahl nicht im Stand,
+                 sondern nur in der Frage (21.11.2026). Gemerkt wird
+                 deshalb der gefragte Wert, damit ein "Ja" ihn setzen kann. */
+              const gefragt = vr.ausVerworfen ? this.lauf.verworfenWert?.[vr.feld] : p2[vr.feld];
+              this.lauf.rueckfrageOffen = { feld: vr.feld, wert: JSON.parse(JSON.stringify(gefragt ?? null)),
+                ...(vr.ausVerworfen ? { ausVerworfen: true } : {}) };
               this.notieren("verstaendnis_rueckfrage", { feld: vr.feld, wert: this.lauf.rueckfrageOffen.wert });
               fpJetzt = { ...fpJetzt, satz: vr.satz, chips: (vr.chips || []).join(" | "),
                 naechstes: null, fragtThema: null, kernFragt: true };
@@ -4520,6 +4556,31 @@ const Kern = {
        nicht zu einer Zahl gedraengt werden, weil sich mit sechs Karten
        der Reiz aendert (der Favorit rutscht unter die Bildkante). Wer
        ausdruecklich mehr will, bekommt die Wahl. */
+    // Die Rueckfrage bei einer Zahl ausserhalb von 2 bis 6 (21.11.2026),
+    // gebaut wie die Frage nach "Lieber mehr vergleichen" darunter
+    if (this.lauf.anzahlUnklar) {
+      const u = this.lauf.anzahlUnklar;
+      this.lauf.anzahlUnklar = null;
+      this.lauf.vorgehenFuer = null;
+      const optionen = u.meinst ? [u.meinst, ...[3, 4, 6].filter((n) => n !== u.meinst).slice(0, 2)] : [3, 4, 5, 6];
+      const chips = optionen.map((n, i) => (u.meinst && i === 0 ? `Ja, ${n}` : `${n} vergleichen`));
+      const satz = u.meinst
+        ? `Meinst du ${u.meinst}? Ich kann dir bis zu 6 Unterkünfte nebeneinanderlegen.`
+        : `Ich kann dir 2 bis 6 Unterkünfte nebeneinanderlegen. Wie viele sollen es sein?`;
+      this.sagen(satz);
+      this.gespraechPush({ role: "assistant", content: satz });
+      this.lauf.chipWirkung = Object.fromEntries(optionen.map((n, i) => [chips[i], { anzahlVorschlaege: n }]));
+      this.lauf.chipThema = null;
+      this.lauf.chips = chips;
+      this.lauf.anzahlZahlOffen = true;
+      this.lauf.anzahlMeinst = u.meinst || null;
+      AgentPanel.setSuggestions(this.lauf.chips);
+      this.lauf.kernWartet = true;
+      this.notieren("anzahl_nachgefragt", { grund: "unklar", genannt: u.genannt });
+      this.sichern();
+      return { ergebnis: { nichtVorgelegt: true, grund: "wartet auf die Anzahl",
+        hinweis: "Der Chat hat nachgefragt, wie viele Haeuser verglichen werden sollen. Ruf KEIN Werkzeug und schreib nichts dazu." } };
+    }
     if (this.lauf.anzahlMehrOffen) {
       this.lauf.anzahlMehrOffen = false;
       this.lauf.vorgehenFuer = null;   // siehe unten: sonst erzwingt niemand die naechste Suche

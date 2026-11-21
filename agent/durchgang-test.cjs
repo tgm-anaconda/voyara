@@ -2295,6 +2295,33 @@ const liesReisende = async (text, felder, urteil = "ja") => {
       pruefe("Bis 20 ohne das Wort Grad kommt an, auch ohne Modell",
         p.mindestGrad === 20 && (p.zieleErlaubt || []).includes("suedtirol") ? "ja" : `${p.mindestGrad}`, "ja");
     }
+    /* Runde 5, A6 (21.11.2026): Kinderfreundlichkeit fiel als Wunsch weg. */
+    {
+      const p = { monat: 12, naechte: 9, erwachsene: 2, kinder: 0, kinderAlter: [] };
+      await merke({ wuensche: ["alkohol", "kinderfreundlichkeit"] }, p, {}, ["gerne den alkohol und die kinderfreundlichkeit analyiseren"]);
+      pruefe("Wunsch Kinderfreundlichkeit kommt an", (p.kriterien || []).map((k) => k.id).sort(), ["familie", "getraenke"]);
+    }
+    /* Runde 5, A5 (21.11.2026): eine eigene Zahl mit "Grad" statt der
+       beiden angebotenen, zusammen mit einer Region. */
+    {
+      const warm = () => {
+        const p = { monat: 12, naechte: 9, erwachsene: 2, kinder: 0, kinderAlter: [], artGenannt: true, artEgal: true, richtung: "warm" };
+        const th = (ctx.PO.THEMEN || []).find((t) => t.id === "warm");
+        p.zieleErlaubt = WK.regionenFuerRichtung(th, p);
+        return p;
+      };
+      const g5 = ["Eher warm", "Ab 15 Grad kämen Barcelona und Lissabon dazu. Bei 19 Grad bleiben oder auf 15 gehen?",
+        "lieber erst am 23 grad, aber dennoch würde ich gerne noch Lappland behalten als region"];
+      const l5 = (p) => ({ spanneOffen: { grenze: 19, weiter: 15 }, richtungRegionen: p.zieleErlaubt.slice() });
+      const p = warm(); const vorher = p.zieleErlaubt.slice();
+      const k5 = await merke({ ziel: "lappland" }, p, l5(p), g5);
+      const l = p.zieleAuswahl || p.zieleErlaubt || [];
+      pruefe("23 Grad kommt an, auch ohne Modell", p.mindestGrad, 23);
+      pruefe("Marrakesch (19 Grad) faellt weg", l.includes("marrakesch") ? "drin" : "weg", "weg");
+      pruefe("Krabi bleibt", l.includes("krabi") ? "ja" : "nein", "ja");
+      pruefe("Lappland (kalt) wird vorgemerkt, der Kern fragt nach", [p.zielVorgemerkt || null, l.includes("lappland")], ["lappland", false]);
+      pruefe("Vorher war Marrakesch drin (Testaufbau)", vorher.includes("marrakesch") ? "ja" : "nein", "ja");
+    }
     {
       const p = kalt(); await merke({ mindestGrad: 20 }, p, {}, ["wir sind 20 Leute"]);
       pruefe("Ohne offene Frage und ohne Grad bleibt die Sperre", p.mindestGrad ?? "nicht gesetzt", "nicht gesetzt");
@@ -3002,6 +3029,95 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     const st = fs.readFileSync(alt && fs.existsSync(quelle + "studie.js") ? quelle + "studie.js" : B + "agent/studie.js", "utf8");
     pruefe("Handy: Hinweis vor dem Studienhinweis", /if \(!Startbildschirm\.nurAmRechner\?\.\(los\)\) los\(\);/.test(st) ? "ja" : "nein", "ja");
     pruefe("Handy: Pruefungen bleiben frei", /kernpruefung\|seitenpruefung\|pruefstand/.test(sq) ? "ja" : "nein", "ja");
+  }
+  /* Runde 5, A1 (21.11.2026): Eine leere Assistenten-Nachricht im Verlauf
+     legte das ganze Gespraech lahm (OpenAI 400 bei jedem Aufruf). */
+  {
+    const k = Object.assign(Object.create(KN), { lauf: { protokoll: [] }, notieren() {} });
+    const rep = (l) => KN.verlaufReparieren.call(k, l);
+    const ok = (l) => l.every((m) => m.role !== "assistant" || m.tool_calls?.length || (m.content && String(m.content).trim()));
+    const v1 = rep([{ role: "user", content: "Vormerken" }, { role: "assistant", content: null }, { role: "user", content: "Flug?" }]);
+    pruefe("Verlauf: leere Antwort (null) faellt weg", ok(v1) && v1.length === 2 ? "ja" : JSON.stringify(v1), "ja");
+    const v2 = rep([{ role: "user", content: "a" }, { role: "assistant", content: "  " }]);
+    pruefe("Verlauf: leere Antwort (nur Leerzeichen) faellt weg", v2.length, 1);
+    const v3 = rep([{ role: "user", content: "a" },
+      { role: "assistant", content: null, tool_calls: [{ id: "c1", type: "function", function: { name: "haus_oeffnen", arguments: "{}" } }] },
+      { role: "assistant", content: null }, { role: "assistant", content: "Satz vom Kern" },
+      { role: "tool", tool_call_id: "c1", content: "{}" }]);
+    pruefe("Verlauf: leere Antwort zwischen Aufruf und Ergebnis faellt weg", ok(v3) ? "ja" : "nein", "ja");
+    pruefe("Verlauf: Werkzeugaufruf ohne Text bleibt", v3[1]?.tool_calls?.[0]?.id, "c1");
+    pruefe("Verlauf: Satz des Kerns bleibt, hinter dem Ergebnis", v3.map((m) => m.role).join(","), "user,assistant,tool,assistant");
+  }
+  /* Runde 5, A2 (21.11.2026): "mein schatzi und ich" -> Zahl verworfen ->
+     "zwei Erwachsene. Stimmt das?" -> "Ja, genau" musste die Zahl setzen.
+     Vorher stand in der offenen Rueckfrage der Wert aus dem Stand (null). */
+  {
+    const kq = fs.readFileSync(alt && fs.existsSync(quelle + "kern.js") ? quelle + "kern.js" : B + "agent/kern.js", "utf8");
+    pruefe("Rueckfrage aus Verworfenem merkt den gefragten Wert",
+      /const gefragt = vr\.ausVerworfen \? this\.lauf\.verworfenWert\?\.\[vr\.feld\] : p2\[vr\.feld\];/.test(kq) ? "ja" : "nein", "ja");
+    const ja = async (offen, text) => {
+      const k = Object.create(KN);
+      k.lauf = { profil: { monat: 12, vonPerson: {} }, protokoll: [], verlauf: [], gespraech: [], rueckfrageOffen: offen, chips: [] };
+      k.zug = async () => {}; k.sichern = () => {}; k.sagen = () => {}; k.standAnzeigen = () => {};
+      const altA = ctx.AgentPanel, altZ = ctx.Zeiger;
+      ctx.AgentPanel = new Proxy({}, { get: () => () => {} });
+      ctx.Zeiger = new Proxy({ abbruch: false }, { get: (o, n) => (n in o ? o[n] : () => {}) });
+      try { await KN.eingabeInnen.call(k, text); } catch (e) { k.lauf.fehler = e.message; }
+      ctx.AgentPanel = altA; ctx.Zeiger = altZ;
+      return k.lauf;
+    };
+    const l1 = await ja({ feld: "erwachsene", wert: 2, ausVerworfen: true }, "Ja, genau");
+    pruefe("'Ja, genau' setzt die gefragten zwei Erwachsenen", [l1.profil.erwachsene, l1.profil.kinder, l1.fehler || null], [2, 0, null]);
+    const l2 = await ja({ feld: "erwachsene", wert: 2, ausVerworfen: true }, "nein, wir sind drei");
+    pruefe("Widerspruch setzt nichts selbst (geht ans Modell)", l2.profil.erwachsene ?? null, null);
+  }
+  /* Runde 5, A3 (21.11.2026): "lieber 55" auf die Anzahlfrage. */
+  {
+    const neu = () => {
+      const k = Object.create(KN);
+      k.lauf = { profil: { vonPerson: {} }, protokoll: [], verlauf: [], gespraech: [], chips: [], anzahlFrageOffen: true };
+      k.zug = async () => {}; k.sichern = () => {}; k.sagen = (s) => { (k.gesagt ||= []).push(s); }; k.standAnzeigen = () => {};
+      return k;
+    };
+    const altA = ctx.AgentPanel, altZ = ctx.Zeiger;
+    ctx.AgentPanel = new Proxy({}, { get: () => () => {} });
+    ctx.Zeiger = new Proxy({ abbruch: false }, { get: (o, n) => (n in o ? o[n] : () => {}) });
+    const ein = async (k, t) => { try { await KN.eingabeInnen.call(k, t); } catch (e) { k.fehler = e.message; } };
+    const k1 = neu(); await ein(k1, "lieber 55");
+    pruefe("'55': nichts eingetragen, Rueckfrage vorgemerkt", [k1.lauf.profil.anzahlVorschlaege ?? null, k1.lauf.anzahlUnklar?.meinst ?? null, k1.fehler || null], [null, 5, null]);
+    const r1 = KN.anzahlVorRundgang.call(k1, k1.lauf.profil, 4);
+    pruefe("'55': Kern fragt 'Meinst du 5?'", (k1.gesagt || []).slice(-1)[0], "Meinst du 5? Ich kann dir bis zu 6 Unterkünfte nebeneinanderlegen.");
+    pruefe("'55': Vorlage wartet", r1?.ergebnis?.nichtVorgelegt, true);
+    await ein(k1, "ja");
+    pruefe("'55' -> 'ja': fuenf Haeuser", k1.lauf.profil.anzahlVorschlaege, 5);
+    const k2 = neu(); await ein(k2, "10");
+    KN.anzahlVorRundgang.call(k2, k2.lauf.profil, 4);
+    pruefe("'10': Spanne genannt", /2 bis 6/.test((k2.gesagt || []).join(" ")) ? "ja" : "nein", "ja");
+    const k3 = neu(); await ein(k3, "lieber 5");
+    pruefe("'5' gilt weiter direkt", [k3.lauf.profil.anzahlVorschlaege, k3.lauf.anzahlUnklar ?? null], [5, null]);
+    const k4 = neu(); await ein(k4, "ja aber unter 1100 euro");
+    pruefe("Betrag ist keine Anzahl", k4.lauf.anzahlUnklar ?? null, null);
+    ctx.AgentPanel = altA; ctx.Zeiger = altZ;
+  }
+  /* Runde 5, A4 (21.11.2026): Frage mit "?", vom Modell nicht als Frage
+     eingeordnet - das FAQ wird trotzdem nachgeschlagen. */
+  {
+    const z = (art, text) => WK.zwang({}, { nachrichtArt: art, gespraech: [{ role: "user", content: text }], protokoll: [] });
+    pruefe("FAQ: Weihnachtsfrage, Modell sagt 'antwort'", z("antwort", "Erstmal will ich wissen ob ihr auch über weinachten fliegt?"), "faq_nachschlagen");
+    pruefe("FAQ: Weihnachtsfrage, Modell sagt nichts", z(null, "Erstmal will ich wissen ob ihr auch über weinachten fliegt?"), "faq_nachschlagen");
+    pruefe("FAQ: kurze Rueckantwort mit ? zwingt nichts", z("antwort", "im Dezember?") === "faq_nachschlagen" ? "faq" : "nicht", "nicht");
+    pruefe("FAQ: Anweisung mit ? bleibt Anweisung", z("anweisung", "Kannst du das erste Haus buchen?") === "faq_nachschlagen" ? "faq" : "nicht", "nicht");
+    pruefe("FAQ: nach der Vorlage greift nur die alte Regel",
+      WK.zwang({}, { nachrichtArt: "antwort", letzteVorlage: ["a141"], gespraech: [{ role: "user", content: "Erzähl mir mehr über Casa Anaga?" }], protokoll: [] }) === "faq_nachschlagen" ? "faq" : "nicht", "nicht");
+    pruefe("FAQ: ohne ? zwingt nichts", z("antwort", "Erstmal will ich wissen ob ihr auch über weinachten fliegt") === "faq_nachschlagen" ? "faq" : "nicht", "nicht");
+  }
+  /* Runde 5, A7 (21.11.2026): Band zeigte "Art Hotel" bei "beides". */
+  {
+    const art = (pr) => (PO.eckdaten(pr) || []).find((x) => x.feld === "Art")?.wert || null;
+    pruefe("Band: 'Beides zeigen' heisst Hotels und Ferienwohnungen", art({ artGenannt: true, artEgal: true, typ: null }), "Hotels und Ferienwohnungen");
+    pruefe("Band: Hotel bleibt Hotel", art({ artGenannt: true, typ: "hotel" }), "Hotel");
+    pruefe("Band: Ferienwohnung bleibt Ferienwohnung", art({ artGenannt: true, typ: "apartment" }), "Ferienwohnung");
+    pruefe("Band: nichts gesagt, keine Zeile", art({}), null);
   }
   /* Runde 4 (21.11.2026): Gebucht, dann vor dem Schliessen der Aufgabe
      neu geladen - beim naechsten Laden muss die Aufgabe zu Ende gehen. */

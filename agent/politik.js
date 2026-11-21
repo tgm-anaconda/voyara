@@ -1622,8 +1622,13 @@ const Politik = {
     if ((profil.zieleAus || []).length) {
       raus.push({ feld: "Nicht", wert: this.aufzaehlen(profil.zieleAus.map(name)) });
     }
-    if (profil.artGenannt) raus.push({ feld: "Art", wert: profil.typ === "apartment" ? "Ferienwohnung" : "Hotel" });
-    else if (profil.artEgal) raus.push({ feld: "Art", wert: "Hotels und Ferienwohnungen" });
+    /* "Beides" zuerst (21.11.2026). Bei "Beides zeigen" stehen artGenannt
+       UND artEgal, ohne Art - hier stand dann "Hotel", obwohl Hotels und
+       Ferienwohnungen gesucht wurden (Bens Lauf: vier Ferienwohnungen
+       vorgelegt, im Band "Art Hotel"). */
+    if (profil.artGenannt && (profil.typ === "apartment" || profil.typ === "hotel")) {
+      raus.push({ feld: "Art", wert: profil.typ === "apartment" ? "Ferienwohnung" : "Hotel" });
+    } else if (profil.artEgal || profil.artGenannt) raus.push({ feld: "Art", wert: "Hotels und Ferienwohnungen" });
     // Dieselbe Falle wie anderswo: "Mai" hat drei Buchstaben und fiel
     // durch die Laengenpruefung, die Kurzformen aussortieren sollte
     /* Mehrere Monate stehen als Spanne da (04.10.2026, Wunsch des
