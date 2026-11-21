@@ -133,9 +133,8 @@ const Kernpruefung = {
     // Ein unmoeglicher Stand zaehlt erst, wenn der Kern darauf aufbaut.
     // Die Staende hier sind erfunden, auch die, die es nie geben kann -
     // entscheidend ist, was der Fahrplan daraus macht.
-    if (p.typ === "apartment" && ["flug", "flugAb", "flugKlasse"].includes(fp.naechstes)) {
-      melde("frage_unmoeglich", "Fragt nach dem Flug bei einer Ferienwohnung");
-    }
+    // Die Flugfrage bei einer Ferienwohnung galt hier bis zum 21.11.2026
+    // als unmoeglich. Seit Block F2 gibt es den Flug auch zur Wohnung.
 
     /* Reste aus der Vorlage.
        ------------------------------------------------------------------
@@ -366,9 +365,11 @@ const Kernpruefung = {
            ist das eine Aenderung, die jemand bewusst treffen muss. */
         const mussKommen = ["zeit", "reisende", "art", "ziel", "dauer", "preis", "ausstattung", "gewichtung"];
         // Verpflegung nur, wo es sie gibt - eine Ferienwohnung hat keine
-        if (f.art !== "apartment") mussKommen.push("verpflegung", "flug");
-        // Der Flughafen nur mit Flug, und Fluege gibt es nicht zur Wohnung
-        if (f.flug === "mitFlug" && f.art !== "apartment") mussKommen.push("flugAb", "flugKlasse");
+        if (f.art !== "apartment") mussKommen.push("verpflegung");
+        // Der Flug bei jeder Art - seit 21.11.2026 auch zur Wohnung (Block F2)
+        mussKommen.push("flug");
+        // Der Flughafen nur mit Flug
+        if (f.flug === "mitFlug") mussKommen.push("flugAb", "flugKlasse");
         /* Der Anreisetag kommt immer, auch mit Flug (seit 19.11.2026).
            Bis dahin stand er mit Flug erst in der Buchungsstrecke, mit der
            Begruendung, er haenge an den Flugtagen. Geflogen wird aber
@@ -390,9 +391,9 @@ const Kernpruefung = {
         }
       }
 
-      // Eine Ferienwohnung hat keine Verpflegung und keinen Flug
+      // Eine Ferienwohnung hat keine Verpflegung (einen Flug seit 21.11.2026 schon)
       if (f.art === "apartment") {
-        for (const t of ["verpflegung", "flug", "flugAb", "flugKlasse"]) {
+        for (const t of ["verpflegung"]) {
           if (schritte.includes(t)) melde("thema_unpassend", `${t} bei einer Ferienwohnung gefragt`);
         }
       }
@@ -712,15 +713,20 @@ const Kernpruefung = {
      Seite zeigt den Flugblock nur auf dem Hotelreiter, also darf der
      Agent nicht "mit Flug" merken und weiter unter Ferienwohnungen
      suchen. Die Zeilen mit `label: null` sind die, in denen die Frage
-     NICHT kommen darf. */
+     NICHT kommen darf.
+
+     Seit Block F2 (21.11.2026) gibt es den Flug auch zur Ferienwohnung.
+     Der Flug ist damit kein Grund mehr fuer die Rueckfrage - die
+     Flugzeilen erwarten jetzt alle `grund: null`. Sie bleiben stehen,
+     damit die alte Frage nicht unbemerkt zurueckkommt. */
   ART_FAELLE: [
-    { name: "beides offen, Flug gewuenscht", p: { artEgal: true, flug: true }, lauf: {}, grund: "flug" },
-    { name: "Ferienwohnung gewaehlt, Flug gewuenscht", p: { typ: "apartment", artGenannt: true, flug: true }, lauf: {}, grund: "flug" },
+    { name: "beides offen, Flug gewuenscht", p: { artEgal: true, flug: true }, lauf: {}, grund: null },
+    { name: "Ferienwohnung gewaehlt, Flug gewuenscht", p: { typ: "apartment", artGenannt: true, flug: true }, lauf: {}, grund: null },
     { name: "Hotel gewaehlt, Flug gewuenscht", p: { typ: "hotel", artGenannt: true, flug: true }, lauf: {}, grund: null },
     /* Der Stand aus dem Testlauf: artEgal UND typ hotel zugleich. Die
        Liste steht dann auf dem gemeinsamen Reiter, also muss gefragt
        werden - frueher sah die Pruefung nur auf `typ` und schwieg. */
-    { name: "artEgal, aber typ noch hotel", p: { artEgal: true, typ: "hotel", flug: true }, lauf: {}, grund: "flug" },
+    { name: "artEgal, aber typ noch hotel", p: { artEgal: true, typ: "hotel", flug: true }, lauf: {}, grund: null },
     { name: "beides offen, ohne Flug", p: { artEgal: true, flug: false }, lauf: {}, grund: null },
     { name: "beides offen, Halbpension", p: { artEgal: true, verpflegung: "halb" }, lauf: {}, grund: "verpflegung" },
     { name: "beides offen, vier Sterne", p: { artEgal: true, mindestSterne: 4 }, lauf: {}, grund: "sterne" },
@@ -728,10 +734,12 @@ const Kernpruefung = {
     { name: "beides offen, ohne Verpflegung", p: { artEgal: true, verpflegung: "ohne" }, lauf: {}, grund: null },
     // Einmal je Grund, aber der Flug kommt auch nach der Verpflegungsfrage noch
     { name: "Verpflegung schon gefragt", p: { artEgal: true, verpflegung: "halb" }, lauf: { artGefragt: { verpflegung: true } }, grund: null },
-    { name: "Verpflegung gefragt, jetzt der Flug", p: { artEgal: true, verpflegung: "halb", flug: true }, lauf: { artGefragt: { verpflegung: true } }, grund: "flug" },
+    { name: "Verpflegung gefragt, jetzt der Flug", p: { artEgal: true, verpflegung: "halb", flug: true }, lauf: { artGefragt: { verpflegung: true } }, grund: null },
     { name: "Flug schon gefragt", p: { artEgal: true, flug: true }, lauf: { artGefragt: { flug: true } }, grund: null },
     // Alte Laeufe hatten nur den Schalter true - der darf nicht alles sperren
-    { name: "alter Schalter, jetzt der Flug", p: { artEgal: true, flug: true }, lauf: { artGefragt: true }, grund: "flug" },
+    { name: "alter Schalter, jetzt der Flug", p: { artEgal: true, flug: true }, lauf: { artGefragt: true }, grund: null },
+    // Flug und Halbpension zugleich: gefragt wird nur noch nach der Verpflegung
+    { name: "beides offen, Flug und Halbpension", p: { artEgal: true, flug: true, verpflegung: "halb" }, lauf: {}, grund: "verpflegung" },
   ],
 
   art() {
@@ -1829,8 +1837,8 @@ const Kernpruefung = {
     const melde = (art, text, satz = "") => fehler.push({ art, thema: "art", text, satz });
     if (typeof Werkzeugkasten === "undefined") return fehler;
     const faelle = [
-      { name: "Flug, gemeinsamer Reiter", p: { flug: true, artEgal: true } },
-      { name: "Flug, Ferienwohnung gewaehlt", p: { flug: true, typ: "apartment", artGenannt: true } },
+      // Die beiden Flugfaelle sind seit Block F2 (21.11.2026) weg: Zum Flug
+      // gibt es keine Rueckfrage zur Art mehr (siehe ART_FAELLE)
       { name: "All Inclusive ohne Art", p: { artEgal: true, verpflegung: "ai" } },
       { name: "Sterne ohne Art", p: { artEgal: true, mindestSterne: 4 } },
     ];

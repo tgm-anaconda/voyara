@@ -141,7 +141,7 @@ const FAQ = [
 
   /* ---------- Flüge ---------- */
   { id: "f-flug-dazu", thema: "flug", frage: "Kann ich den Flug mitbuchen?",
-    antwort: "Ja, zu Hotels. Setz in der Suche den Haken „Flug dazu“ und wähl deinen Abflughafen; der Preis auf der Karte enthält den Flug dann schon. Zu Ferienwohnungen bieten wir keine Flüge an.",
+    antwort: "Ja, zu Hotels und zu Ferienwohnungen. Setz in der Suche den Haken „Flug dazubuchen“ und wähl deinen Abflughafen; der Preis auf der Karte enthält den Flug dann schon.",
     stichworte: ["flug buchen", "flug dazu", "mit flug", "pauschalreise", "paket"] },
   { id: "f-flughaefen", thema: "flug", frage: "Von welchen Flughäfen geht es los?",
     antwort: "Von Hamburg, Berlin, Hannover, Düsseldorf, Köln, Frankfurt, Stuttgart, München und Zürich. Du kannst auch mehrere auswählen, dann suchen wir über alle.",

@@ -200,10 +200,10 @@ const Kasse = {
   },
 };
 
-/* Flug geht in der Kasse, wo es eine Unterkunft mit Flugmodul ist -
-   in diesem Schritt nur zu Hotels, wie bisher. */
+/* Flug geht in der Kasse zu jeder Unterkunft - seit Block F2
+   (21.11.2026) auch zur Ferienwohnung. */
 function flugMoeglich() {
-  return !!entry && entry.type === "hotel" && typeof Flug !== "undefined";
+  return !!entry && (entry.type === "hotel" || entry.type === "apartment") && typeof Flug !== "undefined";
 }
 
 // Dieselbe Kennzeichnung wie beim Partnerhaus (vorher stay.js)
@@ -244,7 +244,7 @@ function priceLines() {
   const base = kosten.unterkunft;
   const verpflegung = kosten.verpflegung;
   const cleaning = kosten.reinigung;
-  // Flug dazu (nur Hotels): gewaehlte Verbindung, Hin- und Rueckflug, alle Reisenden
+  // Flug dazu (Hotel und Ferienwohnung): gewaehlte Verbindung, Hin- und Rueckflug, alle Reisenden
   const f = flugDazu();
   const zusatz = zusatzkosten(f);
   return {

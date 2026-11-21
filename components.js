@@ -440,9 +440,10 @@ const Flug = {
     const k = this.KLASSEN[klasse || this.lesen().klasse] || this.KLASSEN.economy;
     return Math.round(flug.price * 2 * k.faktor);   // Hin- und Rueckflug
   },
-  // Paket fuer ein Hotel: Flug fuer alle Reisenden
+  // Paket fuer eine Unterkunft: Flug fuer alle Reisenden (seit 21.11.2026
+  // auch zur Ferienwohnung)
   paket(item, personen, klasse = null) {
-    if (!item || item.type === "apartment") return null;
+    if (!item) return null;
     const flug = this.wahl(item.ziel);
     if (!flug) return null;
     const proPerson = this.preisProPerson(flug, klasse);

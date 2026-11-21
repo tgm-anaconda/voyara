@@ -1599,8 +1599,8 @@ const Kern = {
     const bloecke = [];
 
     // Flug: sobald er im Gespraech ist oder gleich gefragt wird
-    if (p.flug || fp.naechstes === "flug" || fp.naechstes === "flugAb" || (p.flug == null && p.typ !== "apartment")) {
-      bloecke.push("FLUG: Bei Hotels kann die Seite einen Flug dazubuchen (Hin- und Rueckflug fuer alle Reisenden; Abflughaefen Hamburg, Stuttgart, Duesseldorf, Hannover, Muenchen, Koeln, Frankfurt, Berlin, Zuerich; jeder Flughafen fliegt jedes Ziel an, taeglich; Klassen Economy, Premium Economy (1,5-fach), Business (2,6-fach), gerechnet ist Economy - die Klasse betrifft nur den Flugpreis pro Person, nie die Nacht). Bei Ferienwohnungen gibt es keinen Flug.");
+    if (p.flug || fp.naechstes === "flug" || fp.naechstes === "flugAb" || p.flug == null) {
+      bloecke.push("FLUG: Zu jeder Unterkunft (Hotel und Ferienwohnung) kann die Seite einen Flug dazubuchen (Hin- und Rueckflug fuer alle Reisenden; Abflughaefen Hamburg, Stuttgart, Duesseldorf, Hannover, Muenchen, Koeln, Frankfurt, Berlin, Zuerich; jeder Flughafen fliegt jedes Ziel an, taeglich; Klassen Economy, Premium Economy (1,5-fach), Business (2,6-fach), gerechnet ist Economy - die Klasse betrifft nur den Flugpreis pro Person, nie die Nacht).");
     }
     // Vorlage und Vergleiche: sobald Haeuser im Spiel sind
     if (this.lauf.letzteVorlage?.length || fp.phase === "vorschlaege" || this.lauf.gewaehlt || seite === "stay") {
@@ -4255,7 +4255,7 @@ const Kern = {
           return wb - wa || b.anteilPositiv - a.anteilPositiv;
         }).slice(0, 4);
       const preisInfo = Politik.aufenthaltspreis(item, p, k.preis);
-      const paket = p.flug && item.type !== "apartment" && typeof Flug !== "undefined" ? Flug.paket(item, personen || 1, p.flugKlasse || null) : null;
+      const paket = p.flug && typeof Flug !== "undefined" ? Flug.paket(item, personen || 1, p.flugKlasse || null) : null;
       const gesamt = preisInfo.gesamt + (paket?.gesamt || 0);
       // "der beste Wert der Auswahl" nur bei dem Haus, das ihn wirklich hat
       const istBest = einordnung && wunsch && bilanz.some((a) => a.id === wunsch.aspekt && Math.abs(a.anteilPositiv - einordnung.best) < 0.005);
@@ -4399,7 +4399,7 @@ const Kern = {
     const personen = (p.erwachsene || 0) + (p.kinder || 0);
     const preis = Werkzeugkasten.preis(item, p.monat, p);
     const aufenthalt = Politik.aufenthaltspreis(item, p, preis).gesamt;
-    const paket = p.flug && item.type !== "apartment" && typeof Flug !== "undefined" ? Flug.paket(item, personen || 1, p.flugKlasse || null) : null;
+    const paket = p.flug && typeof Flug !== "undefined" ? Flug.paket(item, personen || 1, p.flugKlasse || null) : null;
     return aufenthalt + (paket?.gesamt || 0);
   },
 

@@ -74,7 +74,7 @@ const Auswahl = {
        Preis die Unterkunft, und `mitFlug` sagt, dass die Zahl
        unvollständig ist - statt sie als ganze auszugeben. */
     let paket = null;
-    if (v.flug && h.type !== "apartment" && typeof Flug !== "undefined") {
+    if (v.flug && typeof Flug !== "undefined") {
       try { paket = Flug.paket(h, personen || 1, v.flugKlasse || null); } catch { paket = null; }
     }
     return { unterkunft, flug: paket ? paket.gesamt : 0,
@@ -121,7 +121,7 @@ const Auswahl = {
        Hin- und Rückflug. Eine Empfehlung, die man nicht buchen kann, ist
        keine. Diese Regel fehlte auf der Seite und war am 02.10.2026 die
        größte Einzelabweichung zwischen Chat und Liste. */
-    if (!aus("flugtag") && v.flug && v.flugAnreise && h.type !== "apartment"
+    if (!aus("flugtag") && v.flug && v.flugAnreise
       && typeof Flug !== "undefined") {
       const f = Flug.wahl(h.ziel);
       if (!f || Flug.passtTag(f, v.flugAnreise, v.naechte || 7) === false) return "flugtag";
@@ -129,7 +129,7 @@ const Auswahl = {
 
     /* Mit Flug nur, wohin ab dem gewaehlten Flughafen etwas fliegt.
        Gemeldet am 03.10.2026: "ab Zuerich" - und Haeuser auf Kreta. */
-    if (!aus("flug") && v.flug && h.type !== "apartment" && typeof Flug !== "undefined"
+    if (!aus("flug") && v.flug && typeof Flug !== "undefined"
       && !Flug.optionen(h.ziel).length) return "flug";
 
     /* Der Nachtpreis fuer DIESE Gruppe: passendes Zimmer, Zahl der

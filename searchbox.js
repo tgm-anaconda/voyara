@@ -171,9 +171,12 @@ const SearchBox = (() => {
          Produkt ohne diese Kennzeichnung waere ein Leck in der Messung.
          Die Kachelansicht von dort lebt in der Flugauswahl weiter. */
     ];
-    // Flug dazu gibt es nur bei Hotels (Wunsch des Nutzers: bei Wohnungen
-    // passt es selten)
-    const showFlightAddon = activeType === "hotel";
+    /* Flug dazu bei allen Unterkuenften (21.11.2026).
+       Bis dahin nur bei Hotels ("bei Wohnungen passt es selten"). Seit
+       Block F2 gibt es den Flug auch zur Ferienwohnung, also auch im
+       gemeinsamen Reiter - sonst stuende er im Stand des Agenten und
+       auf der Seite nirgends. */
+    const showFlightAddon = ["unterkunft", "hotel", "apartment"].includes(activeType);
     const flughaefen = typeof Flug !== "undefined" ? Flug.flughaefen() : [];
     const klassen = typeof Flug !== "undefined" ? Flug.KLASSEN : { economy: { label: "Economy" } };
 
@@ -315,7 +318,7 @@ ${showFlightAddon ? `
       if (ziel) query.ziel = ziel;
     }
     if (activeType === "car") query.age = get("#sbAge");
-    if (activeType === "hotel") {
+    if (unterkunft) {
       query.flight = withFlight ? "1" : "0";
       if (withFlight) { query.ab = flightAb; query.klasse = flightKlasse; }
     }

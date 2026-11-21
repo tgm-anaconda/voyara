@@ -1454,7 +1454,7 @@ const Werkzeugkasten = {
      wie beim Haus (bestes oder zweitbestes, je nach ausgeloster Gruppe)
      und auf derselben Rangfolge, die hier herauskommt. */
   flugAuswahl(item, p, { anzahl = null } = {}) {
-    if (!item || item.type === "apartment" || !p?.flug || typeof Flug === "undefined") return [];
+    if (!item || !p?.flug || typeof Flug === "undefined") return [];
     /* Name gegen Kennung - daran scheiterte das ganze Fenster.
        ----------------------------------------------------------------
        Im Stand steht der Flughafen als Name ("München", oder "Hamburg,
@@ -1616,7 +1616,7 @@ const Werkzeugkasten = {
      null - dann fuellt buchung_vorbereiten das Formular aus. */
   async kasseFlug(a, kern, item) {
     if (typeof Kasse === "undefined" || !Kasse.flugFenster || typeof Fluege === "undefined" || typeof Flug === "undefined") return null;
-    if (!item || item.type !== "hotel") return null;
+    if (!item || (item.type !== "hotel" && item.type !== "apartment")) return null;
     const pf = (kern.lauf.profil ||= {});
     const fs = Flug.get();
     if (!pf.flug && !fs.mit) return null;
@@ -1850,30 +1850,13 @@ const Werkzeugkasten = {
        schweigt. `seitenTyp` ist die eine Stelle, die beantwortet, worauf
        die Trefferliste gerade steht. */
     const zeigt = this.seitenTyp(p);
-    if (p.flug === true && zeigt !== "hotel" && !schon.flug) {
-      const wohnung = zeigt === "apartment";
-      return {
-        grund: "flug",
-        satz: wohnung
-          ? "Eine Sache dazu: Zu einer Ferienwohnung kann ich hier keinen Flug dazubuchen, den gibt es nur zum Hotel. "
-            + "Soll ich stattdessen unter Hotels suchen, oder bleibt es bei der Ferienwohnung ohne Flug?"
-          : "Eine Sache dazu: Einen Flug kann ich nur zu einem Hotel dazubuchen, zu Ferienwohnungen gibt es hier keine. "
-            + "Soll ich auf Hotels eingrenzen, oder lieber ohne Flug bei beidem bleiben?",
-        chips: wohnung
-          ? ["Dann Hotels mit Flug", "Ferienwohnung ohne Flug"]
-          : ["Nur Hotels, mit Flug", "Ohne Flug, dafür beides"],
-        /* Was der eigene Chip bedeutet - angemeldet an der Frage, die ihn
-           anbietet. Ohne das blieb "Ohne Flug, dafür beides" ohne Wirkung:
-           Der Kern liest einen Flugwunsch aus freiem Text nur, solange im
-           Stand noch nichts steht, und hier stand schon `flug: true`. Die
-           Person konnte ihren eigenen Chip also nicht durchsetzen. */
-        wirkung: wohnung
-          ? { "Dann Hotels mit Flug": { typ: "hotel", artGenannt: true, artEgal: false, flug: true },
-            "Ferienwohnung ohne Flug": { typ: "apartment", artGenannt: true, artEgal: false, flug: false } }
-          : { "Nur Hotels, mit Flug": { typ: "hotel", artGenannt: true, artEgal: false, flug: true },
-            "Ohne Flug, dafür beides": { typ: null, artEgal: true, artGenannt: true, flug: false } },
-      };
-    }
+    /* Die Flugfrage ist seit Block F2 (21.11.2026) weg.
+       ----------------------------------------------------------------
+       Hier fragte der Agent "Einen Flug kann ich nur zu einem Hotel
+       dazubuchen - soll ich auf Hotels eingrenzen?". Seit es den Flug
+       auch zur Ferienwohnung gibt, ist das kein Grund mehr, die Art
+       einzugrenzen. Der alte Zweig liegt in
+       _backup/vor-f2-2026-11-21/agent/werkzeugkasten.js. */
     /* Was die Liste zeigt, nicht wie die Art zustande kam (21.11.2026).
        ----------------------------------------------------------------
        Hier stand `if (!p.artEgal || p.artGenannt) return null`. Seit
@@ -2590,7 +2573,6 @@ const Werkzeugkasten = {
     let min = null;
     for (const h of this.katalog(p)) {
       if (!Auswahl.passtGruppe(h, v)) continue;
-      if (v.flug && h.type === "apartment") continue;
       const r = Auswahl.reisepreis(h, v);
       if (r && Number.isFinite(r.gesamt) && (min == null || r.gesamt < min)) min = r.gesamt;
     }
@@ -3373,7 +3355,7 @@ const Werkzeugkasten = {
   // Flug dazu, wenn gewuenscht: Preis pro Person (Hin und zurueck) und
   // Paket fuer alle Reisenden ueber die gemerkte Dauer
   flugTeil(item, profil) {
-    if (!profil.flug || item.type === "apartment" || typeof Flug === "undefined") return {};
+    if (!profil.flug || typeof Flug === "undefined") return {};
     const personen = (profil.erwachsene || 0) + (profil.kinder || 0);
     const paket = Flug.paket(item, personen || 1, profil.flugKlasse || null);
     if (!paket) return { flug: `kein Flug ab ${Flug.code(profil.flugAb) || "dem gewuenschten Flughafen"} zu diesem Ziel` };
@@ -4593,31 +4575,9 @@ const Werkzeugkasten = {
       }
       setze("verpflegung", a.verpflegung);
       Werkzeugkasten.getraenkeHinweis(kern, p);
-      /* Ein Flug zur Ferienwohnung ist keine Frage des Wollens.
-         ----------------------------------------------------------------
-         Am 27.09.2026 fragte jemand bei einer Ferienwohnung nach einem
-         Flug. Die Seite kennt das nicht. Der Agent probierte trotzdem
-         etwas, klickte irgendwo und legte danach wortlos drei Vorschlaege
-         vor - der Faden war weg.
-
-         Die Grenze steht zwar im Stand fuer das Modell, aber eine Grenze,
-         die nur als Hinweis existiert, wird irgendwann uebergangen.
-         Deshalb sagt der Kern sie selbst, sobald das Thema aufkommt, und
-         nimmt den Flug gar nicht erst auf. Danach geht es normal weiter -
-         genau so wollte es der Nutzer: einen Satz, dann die naechste
-         Frage. */
-      if (p.typ === "apartment") {
-        const letzte = (kern.lauf.gespraech || []).filter((n) => n.role === "user").slice(-1)
-          .map((n) => String(n.content)).join(" ");
-        const nachFlugGefragt = /\bflug\b|\bfliegen\b|\bfliege\b|\bflieg\b|\bfluege\b|\bflüge\b|\bhinflug\b|\babflug\b/i.test(letzte);
-        if ((a.flug !== undefined || nachFlugGefragt) && !kern.lauf.flugGrenzeGesagt) {
-          kern.lauf.flugGrenzeGesagt = true;
-          kern.sagen("Zu Ferienwohnungen bietet Voyara leider keine Flüge an - das geht nur bei Hotels. Du kannst die Wohnung buchen und den Flug getrennt suchen, oder wir schauen doch nach einem Hotel.");
-          kern.notieren("grenze_genannt", { was: "flug_ferienwohnung" });
-        }
-        delete a.flug; delete a.flugAb; delete a.flugKlasse; delete a.flugAbEgal;
-        p.flug = false;
-      }
+      /* Hier sagte der Kern bis zum 21.11.2026 "Zu Ferienwohnungen bietet
+         Voyara leider keine Flüge an" und strich den Flug aus dem Stand.
+         Seit Block F2 gibt es ihn auch zur Wohnung - die Grenze ist weg. */
       if (a.flug !== undefined) setze("flug", !!a.flug);
       /* Was die Person selbst zum Flug gesagt hat, faellt nicht durch.
          ----------------------------------------------------------------
@@ -4642,11 +4602,14 @@ const Werkzeugkasten = {
          "nur das Hotel" und "mit Flug", "Flug dazu". Kein blankes
          "Flug" - "wie teuer waere der Flug" ist keine Entscheidung.
          Bedeutung bleibt beim Modell; hier geht es um einen Satz, bei
-         dem nichts zu deuten ist. */
-      if (a.flug === undefined && p.flug == null && p.typ !== "apartment") {
+         dem nichts zu deuten ist.
+         Seit es den Flug auch zur Ferienwohnung gibt (21.11.2026), endet
+         "hotel" und "wohnung" an der Wortgrenze: "nur Ferienwohnungen"
+         oder "nur Hotels" sagt etwas ueber die Art, nichts ueber den Flug. */
+      if (a.flug === undefined && p.flug == null) {
         const letzte = (kern.lauf.gespraech || []).filter((n) => n.role === "user").slice(-1)
           .map((n) => String(n.content || "")).join(" ");
-        const ohne = /\bohne\s+(den\s+)?flug|\bkein(en)?\s+flug|nur\s+(die\s+)?(unterkunft|uebernachtung|übernachtung)|nur\s+(das\s+)?hotel|nur\s+(die\s+)?(ferienwohnung|wohnung)|flug\s+brauch(e|en)?\s+(ich|wir)\s+(nicht|keinen)|selbst\s+anreisen|mit\s+dem\s+auto/i.test(letzte);
+        const ohne = /\bohne\s+(den\s+)?flug|\bkein(en)?\s+flug|nur\s+(die\s+)?(unterkunft|uebernachtung|übernachtung)|nur\s+(das\s+)?hotel\b|nur\s+(die\s+)?(ferienwohnung|wohnung)\b|flug\s+brauch(e|en)?\s+(ich|wir)\s+(nicht|keinen)|selbst\s+anreisen|mit\s+dem\s+auto/i.test(letzte);
         const mit = /\bmit\s+flug|flug\s+(dazu|mit\s+dazu|dabei)|flug\s+(soll|bitte)\s+dazu|inklusive\s+flug|\bflug\s+inklusive/i.test(letzte);
         if (ohne !== mit) {
           p.flug = mit;
@@ -6074,7 +6037,7 @@ const Werkzeugkasten = {
       }
       const k = aufenthaltKosten(item, monat, probe, naechte);
       const personen = Math.max(1, (p.erwachsene || 0) + (p.kinder || 0));
-      const flug = p.flug && item.type !== "apartment" && typeof Flug !== "undefined" ? Flug.paket(item, personen, p.flugKlasse || null) : null;
+      const flug = p.flug && typeof Flug !== "undefined" ? Flug.paket(item, personen, p.flugKlasse || null) : null;
       const gesamt = k.gesamt + (flug ? flug.gesamt : 0);
       const vorher = p.monat && p.monat !== monat ? aufenthaltKosten(item, p.monat, p, p.naechte || 7).gesamt + (flug ? flug.gesamt : 0) : null;
       const euro = (n) => `${Math.round(n).toLocaleString("de-DE")} €`;
@@ -6891,7 +6854,7 @@ const Werkzeugkasten = {
       // Mit Flug: nur an Flugtagen der Verbindung, und nach n Naechten muss
       // wieder einer sein - das gilt auch fuer feste Daten
       const pf = kern.lauf.profil;
-      const flug = pf.flug && item.type !== "apartment" && typeof Flug !== "undefined" ? Flug.wahl(item.ziel) : null;
+      const flug = pf.flug && typeof Flug !== "undefined" ? Flug.wahl(item.ziel) : null;
       const monatSchluessel = flexibel ? Werkzeugkasten.flexWahl(pf)?.monat : (pf.von || "").slice(0, 7);
       if (flug && monatSchluessel && pf.naechte) {
         const tage = Flug.anreiseTage(flug, monatSchluessel, pf.naechte);
@@ -8711,8 +8674,6 @@ const Werkzeugkasten = {
     if (p.personen === 1 && (p.erwachsene == null || p.kinder == null)) { p.erwachsene = 1; p.kinder = 0; }
     if (p.kinder === 0) p.kinderAlter = [];
     if (p.kinder > 0 && (p.kinderAlter || []).length > p.kinder) p.kinderAlter = p.kinderAlter.slice(0, p.kinder);
-    // Zur Ferienwohnung gibt es keinen Flug - die Seite kennt das nicht
-    if (p.typ === "apartment") { p.flug = false; delete p.flugAb; delete p.flugKlasse; }
     for (const w of this.zeitWidersprueche(p, true)) (p.widersprueche ||= []).push(w);
     return p;
   },
@@ -8798,8 +8759,8 @@ const Werkzeugkasten = {
     // Frage "schon mal schauen oder noch Eckdaten klaeren?" waere dann eine
     // Warteschleife - sie kam im Test, nachdem die Person alles in einem
     // Satz gesagt hatte.
-    const alleEckdaten = !!p.naechte && (p.flug != null || p.typ === "apartment")
-      && (!p.flug || !!p.flugAb || p.typ === "apartment");
+    const alleEckdaten = !!p.naechte && p.flug != null
+      && (!p.flug || !!p.flugAb);
     const fertig = {
       zeit: !!p.monat || !!(p.von && p.bis),
       reisende: p.erwachsene != null && p.kinder != null,
@@ -8815,14 +8776,14 @@ const Werkzeugkasten = {
       // Ableitungen und Auswertung sie lesen.
       weiter: true,
       dauer: !!p.naechte,
-      flug: p.flug != null || p.typ === "apartment",
+      flug: p.flug != null,
       /* Mit mehreren genannten Flughaefen ist die Frage noch offen, auch
          wenn die Person die Wahl abgegeben hat: Der Agent sagt, welcher
          guenstiger ist, und fragt, ob er eingrenzen soll oder beide
          offen laesst (Wunsch des Nutzers, 30.09.2026). */
-      flugAb: !p.flug || !!p.flugAb || p.typ === "apartment"
+      flugAb: !p.flug || !!p.flugAb
         || (!!p.flugAbEgal && (p.flugAbAuswahl || []).length < 2),
-      flugKlasse: !p.flug || !!p.flugKlasse || p.typ === "apartment",
+      flugKlasse: !p.flug || !!p.flugKlasse,
       vorgehen: !!p.vorgehen,
       /* Die Anzahl wird nicht mehr gefragt (16.11.2026).
          --------------------------------------------------------------
@@ -12038,9 +11999,6 @@ const Werkzeugkasten = {
      einem Weg, der stattdessen offen steht. Das Muster ist immer
      dasselbe: was nicht geht, warum, und was dafuer geht. */
   GRENZEN: [
-    { wenn: (p) => p.typ === "apartment",
-      gilt: "Flug zu einer Ferienwohnung",
-      satz: "Zu Ferienwohnungen bietet Voyara keine Fluege an - das geht nur bei Hotels. Wenn ein Flug dazu soll, kannst du auf ein Hotel wechseln; sonst buchst du die Wohnung und den Flug getrennt." },
     { wenn: () => true,
       gilt: "Mietwagen zusammen mit der Unterkunft in einem Vorgang buchen",
       satz: "Den Mietwagen buchst du getrennt von der Unterkunft. Ich kann dir aber gern drei passende Wagen am Ziel heraussuchen." },
@@ -12091,7 +12049,7 @@ const Werkzeugkasten = {
     // Hat die Person die Ankunftszeit selbst gesagt, gilt die - vor jeder Rechnung
     if (p.ankunft) { daten.ankunft = p.ankunft; daten.ankunftGrund = "wie du gesagt hast"; return daten; }
     const item = typeof getItemById === "function" ? getItemById(kern.lauf.gewaehlt) : null;
-    if (p.flug && item && item.type !== "apartment" && typeof Flug !== "undefined") {
+    if (p.flug && item && typeof Flug !== "undefined") {
       /* Nur aus dem Flug, den die Person gewaehlt hat.
          ----------------------------------------------------------------
          Hier stand `Flug.wahl`, und das liefert ohne Wahl die erste

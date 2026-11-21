@@ -675,7 +675,7 @@ const Politik = {
       // Gruppe passt (mit Aufpreis), die erste Verpflegung, Gebuehr je Zimmer
       const a = this.aufenthaltspreis(item, profil, k.preis);
       const personen = (profil.erwachsene || 0) + (profil.kinder || 0);
-      const paket = profil.flug && item.type !== "apartment" && typeof Flug !== "undefined" ? Flug.paket(item, personen || 1, profil.flugKlasse || null) : null;
+      const paket = profil.flug && typeof Flug !== "undefined" ? Flug.paket(item, personen || 1, profil.flugKlasse || null) : null;
       const zusatz = [a.zimmer && a.zimmer.priceDelta ? a.zimmer.name : null,
         profil.verpflegung && a.board && a.board.key === profil.verpflegung && typeof BOARD_LABELS !== "undefined" ? BOARD_LABELS[a.board.key] : null].filter(Boolean);
       const womit = zusatz.length ? ` (${zusatz.join(", ")})` : "";

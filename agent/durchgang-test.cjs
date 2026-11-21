@@ -3249,6 +3249,52 @@ const liesReisende = async (text, felder, urteil = "ja") => {
       [/Werkzeugkasten\.flugRueckfrage\(item/.test(quelltext), /await Werkzeugkasten\.kasseFlug\(a, kern, item\)/.test(quelltext)], [false, true]);
   }
 
+  /* Fluege, Block F2 (21.11.2026): Flug auch zur Ferienwohnung. Belegt
+     gegen --alt=_backup/gp-f2 (Stand nach F1, vor F2). Laeuft nach F1,
+     components.js ist dort schon geladen. */
+  {
+    const FL = vm.runInContext("typeof Flug !== 'undefined' ? Flug : null", ctx);
+    const wohnung = vm.runInContext('APARTMENTS.find((h) => h.ziel === "mallorca")', ctx);
+    const prW = { typ: "apartment", flug: true, flugAb: "Frankfurt", erwachsene: 2, kinder: 0, naechte: 7, monat: 6 };
+    const versuch = (f) => { try { return f(); } catch { return "fehler"; } };
+    pruefe("F2: Flugpaket zur Ferienwohnung", versuch(() => !!FL.paket(wohnung, 2)), true);
+    pruefe("F2: Flugwahl in der Kasse auch zur Ferienwohnung (3 Empfehlungen, 30 in der Liste)",
+      versuch(() => { const k = WK.flugAuswahl(wohnung, prW); return [k.length, (k.alle || []).length]; }), [3, 30]);
+    /* Am Quelltext, nicht am Aufruf: `Auswahl.reisepreis` lief in diesem
+       Test schon, bevor components.js geladen war, und Node haelt `Flug`
+       danach dort fuer undefiniert (eine frische Kopie derselben Funktion
+       rechnet richtig). Der Preis selbst ist im Browser geprueft. */
+    const aw = fs.readFileSync(alt && fs.existsSync(quelle + "auswahl.js") ? quelle + "auswahl.js" : B + "data/auswahl.js", "utf8");
+    pruefe("F2: Reisepreis und Flugtag-Regel gelten auch fuer die Wohnung",
+      /v\.flug && h\.type !== "apartment"/.test(aw), false);
+    pruefe("F2: der Stand behaelt den Flug bei einer Wohnung",
+      versuch(() => { const q = { typ: "apartment", flug: true, flugAb: "Frankfurt" }; WK.stimmigMachen(q); return [q.flug, q.flugAb]; }), [true, "Frankfurt"]);
+    pruefe("F2: der Fahrplan fragt auch bei einer Wohnung nach dem Flug",
+      versuch(() => WK.fahrplan({ typ: "apartment", artGenannt: true, monat: 6, naechte: 7, erwachsene: 2, kinder: 0, zielId: "mallorca" }, {}).fertig.flug), false);
+    pruefe("F2: keine Rueckfrage 'nur Hotels?' wegen des Flugs",
+      versuch(() => [WK.artRueckfrage({ artEgal: true, flug: true }, {}), WK.artRueckfrage({ typ: "apartment", artGenannt: true, flug: true }, {})]), [null, null]);
+    // Gegenprobe zur Gegenprobe: Die Verpflegung fragt weiter nach
+    pruefe("F2: die Rueckfrage zur Verpflegung bleibt",
+      versuch(() => WK.artRueckfrage({ artEgal: true, flug: true, verpflegung: "halb" }, {})?.grund), "verpflegung");
+    pruefe("F2: keine Grenze 'Flug zu einer Ferienwohnung' mehr",
+      versuch(() => WK.GRENZEN.some((g) => /Ferienwohnung/.test(g.gilt))), false);
+    const wk = fs.readFileSync(alt && fs.existsSync(quelle + "werkzeugkasten.js") ? quelle + "werkzeugkasten.js" : B + "agent/werkzeugkasten.js", "utf8");
+    pruefe("F2: die Kasse waehlt den Flug auch zur Wohnung",
+      /if \(!item \|\| \(item\.type !== "hotel" && item\.type !== "apartment"\)\) return null;\n    const pf = \(kern\.lauf\.profil/.test(wk), true);
+    // "nur Ferienwohnungen" sagt etwas ueber die Art, nicht ueber den Flug
+    const flugAusSatz = (satz) => versuch(() => {
+      const pp = { typ: "apartment", artGenannt: true };
+      const kern = { lauf: { profil: pp, gespraech: [{ role: "user", content: satz }] },
+        notieren() {}, standAnzeigen() {}, sichern() {}, sagen() {}, logZeile() {}, standKurz: () => "",
+        eingabe() {}, darf: () => true, freigabe: () => "suchen" };
+      try { WK.werkzeuge.stand_merken({}, kern); } catch { /* nur der Flug zaehlt */ }
+      return pp.flug ?? null;
+    });
+    pruefe("F2: 'nur Ferienwohnungen' setzt keinen Flug", flugAusSatz("Wir wollen nur Ferienwohnungen"), null);
+    pruefe("F2: 'ohne Flug' bei der Wohnung gilt weiter", flugAusSatz("Eine Wohnung, ohne Flug bitte"), false);
+    pruefe("F2: 'mit Flug' bei der Wohnung gilt jetzt", flugAusSatz("Eine Wohnung mit Flug bitte"), true);
+  }
+
   console.log(`\n${gut} richtig, ${schlecht} falsch`);
   process.exit(schlecht ? 1 : 0);
 })();

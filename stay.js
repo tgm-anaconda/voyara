@@ -445,9 +445,9 @@ function renderWidget() {
     ? `Gesamte Wohnung · ${Belegung.text()}`
     : `${item.rooms[selectedRoom].name} · ${BOARD_LABELS[item.boards[selectedBoard].key]} · ${Belegung.text()}`;
 
-  // Flug dazu (nur Hotels): der gewaehlte oder guenstigste Flug ab dem
-  // Abflughafen aus der Suchleiste, Klasse aenderbar
-  const flugAn = !isApartment && typeof Flug !== "undefined" && Flug.get().mit;
+  // Flug dazu (seit 21.11.2026 auch zur Ferienwohnung): der gewaehlte oder
+  // guenstigste Flug ab dem Abflughafen aus der Suchleiste
+  const flugAn = typeof Flug !== "undefined" && Flug.get().mit;
   const flugStand = flugAn ? Flug.get() : null;
   const flug = flugAn ? Flug.wahl(item.ziel) : null;
   /* Gewaehlt wird die Verbindung in der Kasse (21.11.2026), siehe

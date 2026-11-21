@@ -212,9 +212,9 @@ const Werkzeuge = {
       getan.push(`${erwachsene ?? "?"} Erwachsene${kinder ? `, ${kinder} Kinder${kinderAlter?.length ? ` (${kinderAlter.join(", ")} J.)` : ""}` : ""}`);
     }
 
-    // Flug dazu: Haken und Leiste (Abflughafen, Klasse), nur bei Hotels
-    // Flug nur bei Hotels - im gemeinsamen Reiter gibt es ihn nicht
-    if (flug && typ === "hotel") {
+    // Flug dazu: Haken und Leiste (Abflughafen, Klasse) - seit 21.11.2026
+    // bei allen Unterkuenften, auch im gemeinsamen Reiter
+    if (flug && ["hotel", "apartment", "unterkunft"].includes(typ)) {
       const haken = this.finde("#sbWithFlight");
       if (haken && haken.checked !== !!flug.mit) {
         await Zeiger.klicke(haken, { hinweis: flug.mit ? "mit Flug" : "ohne Flug" });

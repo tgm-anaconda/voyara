@@ -102,7 +102,7 @@ function priceBounds() {
 // Verweis auf die Hausseite mit Reisedaten, Reisenden und Flugwahl
 function hausLink(id) {
   let href = Reisedaten.anLink(Belegung.anLink(`stay.html?id=${id}`));
-  if (typeof Flug !== "undefined" && state.type === "hotel") href = Flug.anLink(href);
+  if (typeof Flug !== "undefined" && ["unterkunft", "hotel", "apartment"].includes(state.type)) href = Flug.anLink(href);
   return href;
 }
 
@@ -123,9 +123,9 @@ function gesamtpreisFuer(item) {
 }
 
 
-// Paketpreis mit Flug in der Trefferkarte (nur Hotels, nur mit Flug dazu)
+// Paketpreis mit Flug in der Trefferkarte (alle Unterkuenfte seit 21.11.2026, nur mit Flug dazu)
 function paketZeile(item, preisProNacht) {
-  if (!state.withFlight || state.type !== "hotel" || typeof Flug === "undefined") return "";
+  if (!state.withFlight || !["unterkunft", "hotel", "apartment"].includes(state.type) || typeof Flug === "undefined") return "";
   const b = Belegung.get();
   const paket = Flug.paket(item, b.personen);
   if (!paket) return `<div class="price-flight"><small>Kein Flug ab ${Flug.abText(null, "deinem Flughafen")} zu diesem Ziel</small></div>`;
@@ -432,7 +432,7 @@ function renderFilters() {
       const gMax = Math.ceil(Math.max(...summen) / 50) * 50;
       const wert = state.gesamtMax == null ? gMax : Math.min(gMax, Math.max(gMin, state.gesamtMax));
       const naechte = typeof Reisedaten !== "undefined" ? Reisedaten.naechte(7) : 7;
-      const mitFlug = state.withFlight && state.type === "hotel";
+      const mitFlug = state.withFlight && ["unterkunft", "hotel", "apartment"].includes(state.type);
       html += group("Gesamt für die Reise",
         `<div class="range-row"><input type="range" id="fGesamt" min="${gMin}" max="${gMax}" step="50" value="${wert}" /></div>
          <div style="font-size:.84rem;color:var(--ink-500);margin-top:6px">bis <strong id="fGesamtOut">${wert >= gMax ? "ohne Grenze" : formatPrice(wert)}</strong>
@@ -770,7 +770,7 @@ function cardFor(item) {
 /* ---------- Flug-Zusatzblock bei Unterkunftssuche ---------- */
 function renderFlightAddon() {
   const box = document.getElementById("flightAddon");
-  if (!state.withFlight || state.type !== "hotel" || typeof Flug === "undefined") { box.innerHTML = ""; return; }
+  if (!state.withFlight || !["unterkunft", "hotel", "apartment"].includes(state.type) || typeof Flug === "undefined") { box.innerHTML = ""; return; }
   // Eine Zeile: was der Flug kostet, steht bei jedem Hotel in der Karte.
   // Den konkreten Flug waehlt man auf der Hausseite.
   const s = Flug.get();
