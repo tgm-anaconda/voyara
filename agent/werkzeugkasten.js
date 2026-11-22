@@ -10861,6 +10861,45 @@ const Werkzeugkasten = {
   PREIS_WARNUNG_HOECHSTENS: 30,
   PREIS_STUFE: 1.1,
   PREIS_WARNUNG_ANTEIL: 0.2,
+  /* Der Nachtpreis, den der Agent vorschlaegt (22.11.2026): bis dahin
+     kostet ein Viertel der Haeuser, die ohne Preisgrenze passen, auf 10 EUR
+     aufgerundet. Dieselbe Rechnung wie in preisWarnung, hier als eigene
+     Stelle, damit auch die Engstellen-Rueckfrage sie nutzt. */
+  preisEmpfehlung(p) {
+    if (!p || !Number.isFinite(p.maxPreis) || typeof nachtpreisGruppe !== "function") return null;
+    const ohne = { ...p }; delete ohne.maxPreis;
+    let ohneListe = null, vg = null;
+    try { ohneListe = this.katalogTreffer(ohne, this.filterAusStand(ohne)); vg = this.vorgaben(ohne, this.filterAusStand(ohne)); } catch { return null; }
+    if (!ohneListe || ohneListe.length < 8) return null;
+    const preise = ohneListe.map((h) => nachtpreisGruppe(h, ohne.monat || null, vg)).filter(Number.isFinite).sort((a, b) => a - b);
+    if (preise.length < 8) return null;
+    const q = preise[Math.min(preise.length - 1, Math.floor(0.25 * (preise.length - 1)))];
+    return Math.ceil(q / 10) * 10;
+  },
+
+  /* Der kleinste Wert (Nachtpreis in 10-EUR-, Budget in 50-EUR-Schritten),
+     mit dem die Liste wirklich waechst: mindestens ein Viertel der Haeuser
+     ohne diese Grenze und mindestens ENGSTELLE_MINDESTGEWINN mehr als
+     jetzt. Fuer die Engstellen-Rueckfrage (22.11.2026). Null, wenn auch
+     das Vielfache nicht reicht. */
+  grenzeFuerAuswahl(p, feld) {
+    const schritt = feld === "maxPreis" ? 10 : 50;
+    const a0 = p[feld];
+    if (!Number.isFinite(a0) || a0 <= 0) return null;
+    const zaehle = (w) => { try { return this.katalogTreffer({ ...p, [feld]: w }, this.filterAusStand({ ...p, [feld]: w })).length; } catch { return -1; } };
+    const ohne = { ...p }; delete ohne[feld];
+    let alle = 0;
+    try { alle = this.katalogTreffer(ohne, this.filterAusStand(ohne)).length; } catch { return null; }
+    const ziel = Math.max(Math.ceil(alle * 0.25), zaehle(a0) + this.ENGSTELLE_MINDESTGEWINN);
+    if (ziel > alle) return null;
+    let hi = a0, n = 0;
+    while (zaehle(hi) < ziel && n++ < 8) hi *= 2;
+    if (zaehle(hi) < ziel) return null;
+    let a = Math.ceil(a0 / schritt), b = Math.ceil(hi / schritt);
+    while (a < b) { const m = Math.floor((a + b) / 2); if (zaehle(m * schritt) >= ziel) b = m; else a = m + 1; }
+    return a * schritt;
+  },
+
   preisWarnung(p, lauf) {
     if (!p || !lauf || !Number.isFinite(p.maxPreis) || p.budgetGesamt) return null;
     if (!p.vonPerson?.maxPreis) return null;
@@ -11158,6 +11197,10 @@ const Werkzeugkasten = {
            19.11.2026; dieselbe Falle wie bei der Ausstattung eine
            Ebene darueber. */
         if (gebaut) continue;
+        /* Beim Preis gibt es keinen Rueckfall (22.11.2026, Ben): Bringt
+           auch der gerechnete Betrag nichts, wird die Grenze nicht
+           angeboten - "offen lassen" waere nicht realistisch. */
+        if (r.feld === "preis" || r.feld === "gesamt") continue;
         /* Keine Stufe hat gereicht: dann die Vollform, mit ihrer
            wirklichen Zahl. */
         const voll = this.ENGSTELLE_OFFEN[r.feld];
@@ -11336,9 +11379,16 @@ const Werkzeugkasten = {
       const a = p.maxPreis;
       if (!a) return null;
       const auf = (f) => Math.round((a * f) / 10) * 10;
+      /* Statt 25 % mehr der gerechnete Nachtpreis, und nie "ohne
+         Preisgrenze" (22.11.2026). Ben: "Wenn jemand nur bereit ist, 50 EUR
+         zu zahlen, macht es keinen Sinn, wenn er dann sagt, komplett ohne
+         Budget." - wie beim Gesamtbudget (ENGSTELLE_STUFEN.gesamt). */
+      let empf = null;
+      try { empf = Werkzeugkasten.grenzeFuerAuswahl(p, "maxPreis"); } catch { empf = null; }
+      const zweite = empf && empf > auf(1.1) ? empf : auf(1.25);
       return [
         { id: "10", werte: { maxPreis: auf(1.1) }, kurz: `${auf(1.1)} €`, was: `die Grenze auf ${auf(1.1)} € anheben (10 % mehr)` },
-        { id: "25", werte: { maxPreis: auf(1.25) }, kurz: `${auf(1.25)} €`, was: `die Grenze auf ${auf(1.25)} € anheben (25 % mehr)` },
+        { id: "mehr", werte: { maxPreis: zweite }, kurz: `${zweite} €`, was: `die Grenze auf ${zweite} € pro Nacht anheben` },
       ];
     },
     gesamt: (p) => {
@@ -11352,7 +11402,7 @@ const Werkzeugkasten = {
          kleinste Betrag, mit dem eine solide Auswahl bleibt (ein Viertel
          der Haeuser ohne Budget) - wie in budgetWarnung. */
       let empf = null;
-      try { empf = Werkzeugkasten.budgetEmpfehlung(p); } catch { empf = null; }
+      try { empf = Werkzeugkasten.grenzeFuerAuswahl(p, "budgetGesamt"); } catch { empf = null; }
       const zweite = empf && empf > auf(1.1) ? empf : auf(1.25);
       return [
         { id: "10", werte: { budgetGesamt: auf(1.1) }, kurz: euro(auf(1.1)), was: `das Budget auf ${euro(auf(1.1))} anheben (10 % mehr)` },
@@ -11419,7 +11469,7 @@ const Werkzeugkasten = {
      Zahl ganz oben, und genau das wollte Ben nicht: "Eine Person, die
      170 Euro angibt, ist nicht bereit, offen 400 Euro zu zahlen." */
   ENGSTELLE_OFFEN: {
-    preis: { werte: { maxPreis: null }, kurz: "Ohne Preisgrenze", was: "die Preisgrenze ganz offen lassen" },
+    // Kein "Ohne Preisgrenze" mehr (22.11.2026, Ben) - siehe ENGSTELLE_STUFEN.preis
     // Kein "Ohne Budget" mehr (22.11.2026, Ben) - siehe ENGSTELLE_STUFEN.gesamt
     strand: { werte: { maxStrand: null, strandEgal: true }, kurz: "Strand egal", was: "den Strandabstand ganz offen lassen" },
     bewertung: { werte: { mindestbewertung: null, bewertungEgal: true }, kurz: "Ohne Mindestnote", was: "die Mindestnote ganz weglassen" },

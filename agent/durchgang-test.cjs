@@ -1925,8 +1925,10 @@ const liesReisende = async (text, felder, urteil = "ja") => {
       strandK.length >= 2 ? "ja" : `${strandK.length}`, "ja");
     pruefe("Und zwar groesser, nicht gestrichen",
       strandK.every((k) => k.werte.maxStrand > 0.2 && !k.werte.strandEgal) ? "ja" : "nein", "ja");
+    // Seit dem 22.11.2026 statt 25 % der gerechnete Wert (grenzeFuerAuswahl)
+    const preisZiel = WK.grenzeFuerAuswahl ? WK.grenzeFuerAuswahl(basis(), "maxPreis") : 150;
     pruefe("Die Stufe ist die, die wirklich etwas bringt",
-      preisK.some((k) => k.werte.maxPreis === 150) ? "ja" : preisK.map((k) => k.werte.maxPreis).join(","), "ja");
+      preisK.some((k) => k.werte.maxPreis === preisZiel) ? "ja" : preisK.map((k) => k.werte.maxPreis).join(","), "ja");
     pruefe("Eine Stufe, die zu wenig bringt, steht nicht da",
       preisK.some((k) => k.werte.maxPreis === 130) ? "doch" : "nein", "nein");
     const probe = async (args, offen = true) => {
@@ -1950,7 +1952,7 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     pruefe("Ein Nein laesst die Vorgabe stehen",
       (await probe({ ausweiten: "nein" })).lauf.profil.maxPreis, 120);
     pruefe("Eine genannte Stufe wird genau so gesetzt",
-      (await probe({ ausweiten: "preis:25" })).lauf.profil.maxPreis, 150);
+      (await probe({ ausweiten: WK.grenzeFuerAuswahl ? "preis:mehr" : "preis:25" })).lauf.profil.maxPreis, preisZiel);
     pruefe("Ein Nein schliesst die Frage trotzdem",
       (await probe({ ausweiten: "nein" })).lauf.engstelleOffen ? "offen" : "zu", "zu");
     pruefe("Ohne Antwort bleibt die Frage offen",
@@ -2216,8 +2218,9 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     const r = WK.engstelleRueckfrage(eng, lf);
     pruefe("Die Preisgrenze steht zur Wahl, wenn sie der Engpass ist",
       (r?.kandidaten || []).some((k) => k.feld.startsWith("preis")) ? "ja" : (r?.kandidaten || []).map((k) => k.feld).join(",") || "keine", "ja");
-    pruefe("Und zwar als ganz offen, weil die Stufen zu wenig bringen",
-      (r?.kandidaten || []).some((k) => k.feld === "preis:offen") ? "ja" : "nein", "ja");
+    // Seit dem 22.11.2026 nie "ganz offen" (Ben), sondern angehoben
+    pruefe("Und zwar angehoben, nicht ganz offen",
+      [(r?.kandidaten || []).some((k) => k.feld === "preis:offen"), (r?.kandidaten || []).filter((k) => k.feld.startsWith("preis")).every((k) => k.werte.maxPreis > 200)], [false, true]);
     pruefe("Der Knopf heisst nicht \"Auf ohne Grenze\"",
       (r?.chips || []).some((c) => /^Auf ohne/.test(c)) ? "falsch" : "richtig", "richtig");
     /* Jede genannte Zahl muss auch erreichbar sein: Der Wert, den der
@@ -2244,7 +2247,7 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     pruefe("Wo die Stufen reichen, kommt kein ganz offen",
       (r2?.kandidaten || []).some((k) => k.feld.endsWith(":offen")) ? "doch" : "nein", "nein");
     pruefe("Dort stehen die Stufen",
-      (r2?.kandidaten || []).filter((k) => /^preis:\d/.test(k.feld)).length >= 2 ? "ja" : "nein", "ja");
+      (r2?.kandidaten || []).filter((k) => /^preis:(\d|mehr)/.test(k.feld)).length >= 2 ? "ja" : "nein", "ja");
   }
 
   /* Die Gewichtungsfrage schreibt Substantive gross (19.11.2026) */
@@ -3604,6 +3607,36 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     pruefe("... und nach der Suche sagt der Kern sie", danach, [true, true]);
     pruefe("Beides offen gelassen: keine zweite Hotel-Frage, normale Beratung",
       versuch(() => WK.fahrplan({ ...beides }, { ...lBeides, artGefragt: { verpflegung: true }, gefiltertMit: WK.filterSchluessel(beides) }).phase), "beratung");
+  }
+
+  /* Kein "Ohne Preisgrenze" / "Ohne Budget" in der Engstelle (22.11.2026).
+     Gegenprobe: --alt=_backup/gp-nachtpreis */
+  {
+    const versuch = (f) => { try { return f(); } catch (e) { return "fehler " + e.message; } };
+    const basis = { zielId: "mallorca", monat: 3, naechte: 9, erwachsene: 2, kinder: 1, kinderAlter: [17], flug: true, flugAb: "Hamburg",
+      flugKlasse: "economy", typ: "hotel", artEgal: false, artGenannt: true, verpflegung: "halb", vorgehen: "top3",
+      vonPerson: { monat: true, zielId: true, verpflegung: true, maxPreis: true } };
+    const fall = (preis) => versuch(() => {
+      const p = { ...basis, maxPreis: preis };
+      const lauf = {};
+      WK.engstelle(WK.katalogTreffer(p, WK.filterAusStand(p)), p, lauf);
+      const r = WK.engstelleRueckfrage(p, lauf);
+      return { r, empf: WK.preisEmpfehlung ? WK.preisEmpfehlung(p) : null };
+    });
+    let gefunden = null;
+    for (const preis of [40, 50, 60, 70, 80, 90, 100, 120]) { const f = fall(preis); if (f?.r) { gefunden = { preis, ...f }; break; } }
+    console.log("   Engstelle Nachtpreis:", gefunden ? `${gefunden.preis} €: ${gefunden.r.satz} [${gefunden.r.chips.join(" | ")}]` : "keine");
+    pruefe("Nachtpreis: eine Engstellen-Rueckfrage kommt zustande", !!gefunden, true);
+    pruefe("Nachtpreis: kein 'Ohne Preisgrenze', kein 'offen lassen'",
+      gefunden ? [gefunden.r.chips.some((c) => /ohne preisgrenze/i.test(c)), /offen lassen/.test(gefunden.r.satz)] : null, [false, false]);
+    pruefe("Nachtpreis: der gerechnete Betrag steht zur Wahl, wenn er etwas bringt",
+      gefunden ? (gefunden.empf > gefunden.preis * 1.1 ? gefunden.r.chips.some((c) => c.includes(`${gefunden.empf} €`)) || "nicht angeboten" : "keine Stufe noetig") : null,
+      gefunden && gefunden.empf > gefunden.preis * 1.1 ? true : "keine Stufe noetig");
+    pruefe("Nachtpreis-Empfehlung = Empfehlung der Preiswarnung", versuch(() => {
+      for (const preis of [40, 50, 60, 70, 80]) { const p = { ...basis, maxPreis: preis }; const w = WK.preisWarnung(p, {}); if (w) return w.empfohlen === WK.preisEmpfehlung(p); }
+      return "keine Warnung";
+    }), true);
+    pruefe("Die Vollformen fuer Preis und Budget sind weg", versuch(() => [!!WK.ENGSTELLE_OFFEN.preis, !!WK.ENGSTELLE_OFFEN.gesamt]), [false, false]);
   }
 
   console.log(`\n${gut} richtig, ${schlecht} falsch`);
