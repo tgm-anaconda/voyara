@@ -3710,9 +3710,50 @@ const Werkzeugkasten = {
          verneint und die Nachricht keine Frage ist. Was dann im Stand
          landet, laeuft durch dieselben Pruefungen wie die Angabe des
          Modells (Richtung, Widerspruch). */
+      /* Formfehler des Modells retten, wo es richtig verstanden hat
+         (22.11.2026, Satzbank gegen das echte Modell).
+         - "am 3. Oktober" kam als `von` ohne `bis` - gemeint ist der
+           Anreisetag (das Jahr richtet die Anreise-Regel unten).
+         - "nach Spanien" kam als ein einzelnes Ziel (Mallorca) - gemeint
+           sind alle Regionen des Landes; das Einzelziel wuerde unten zu
+           Recht verworfen und das Land ginge verloren. */
+      // ... auch als von = bis am selben Tag (zweiter Modell-Lauf)
+      if (a.von && a.bis && String(a.von) === String(a.bis)) delete a.bis;
+      if (a.von && !a.bis && !a.anreise && /^\d{4}-\d{2}-\d{2}$/.test(String(a.von))) {
+        a.anreise = a.von;
+        if (!a.monat) a.monat = Number(String(a.von).slice(5, 7));
+        delete a.von;
+        kern.notieren("von_als_anreise", { anreise: a.anreise });
+      }
+      // Ein Land oder Kontinent als "Ziel" ("spanien") -> seine Regionen
+      if (a.ziel && typeof ZIEL_NACH_ID !== "undefined" && !ZIEL_NACH_ID[String(a.ziel).toLowerCase().trim()]) {
+        const wort = String(a.ziel).toLowerCase().trim();
+        const g = (Werkzeugkasten.GEBIETE || []).find((x) => x.woerter.includes(wort));
+        if (g && g.ziele.length) {
+          if (g.ziele.length === 1) a.ziel = g.ziele[0];
+          else { a.zieleAuswahl = g.ziele.slice(); delete a.ziel; }
+          kern.notieren("gebiet_als_ziel", { wort, ziele: g.ziele });
+        }
+      }
+      if (a.ziel && a.zieleAuswahl === undefined) {
+        const idZ = String(a.ziel).toLowerCase().trim();
+        const letzteG = String((kern.lauf.gespraech || []).filter((n) => n.role === "user").slice(-1)[0]?.content || "");
+        if (!Werkzeugkasten.regionGenannt(kern.lauf, idZ, { einzeln: true })) {
+          const gebiet = Werkzeugkasten.zieleAusText(letzteG, { locker: true });
+          if (gebiet.length >= 2 && gebiet.includes(idZ)) {
+            a.zieleAuswahl = gebiet; delete a.ziel;
+            kern.notieren("einzelziel_zu_gebiet", { ziel: idZ, auswahl: gebiet });
+          }
+        }
+      }
       if (a.ziel === undefined && a.zieleAuswahl === undefined && !p.zielId && !(p.zieleAuswahl || []).length) {
         const letzteZ = String((kern.lauf.gespraech || []).filter((n) => n.role === "user").slice(-1)[0]?.content || "");
-        const ids = Werkzeugkasten.zieleAusText(letzteZ);
+        let ids = Werkzeugkasten.zieleAusText(letzteZ);
+        /* Eine kurze Antwort auf die Zielfrage ("Skandinavien", "Portugal")
+           braucht kein "nach" davor (zweiter Modell-Lauf). */
+        if (!ids.length && [kern.lauf.gefragt, kern.lauf.zuletztGefragt].includes("ziel") && letzteZ.trim().split(/\s+/).length <= 4) {
+          ids = Werkzeugkasten.zieleAusText(letzteZ, { locker: true });
+        }
         if (ids.length === 1) { a.ziel = ids[0]; kern.notieren("ziel_vom_kern", { ziele: ids }); }
         else if (ids.length > 1) { a.zieleAuswahl = ids; kern.notieren("ziel_vom_kern", { ziele: ids }); }
       }
@@ -4447,8 +4488,33 @@ const Werkzeugkasten = {
          16") und kommt niemand dazu, wird aus einem Erwachsenen ein Kind -
          die Gruppe bleibt gleich gross. */
       const vorErw = p.erwachsene, vorKind = p.kinder || 0;
+      /* Erwachsene genannt, kein Wort von Kindern: keine Kinder (Modell-
+         Satzbank: "ich und zwei freunde" kam als erwachsene 3 ohne kinder,
+         und danach fragte der Agent noch, ob Kinder dabei sind). */
+      if (a.erwachsene != null && a.kinder == null && p.kinder == null
+        && !gesagt(/kind|kids|sohn|s(ö|oe)hne|tochter|t(ö|oe)chter|baby|enkel|nichte|neffe|jahre|j(ä|ae)hrig|familie|klein/i, 1)) {
+        a.kinder = 0;
+      }
       const neuDazu = /\b(zus(ä|ae)tzlich|dazu|au(ß|ss)erdem|plus|kommt (auch )?mit|kommen (auch )?mit|noch (ein|eine|einen|zwei|drei) (kind|kinder|person|freund|freundin|sohn|tochter))\b/i;
       const altersNachtrag = /\b(mein|meine|meiner|meinem|meinen|der|die|das|einer|eine|eins|davon|er|sie)\b[^.!?]{0,40}\b(ist|sind|wird)\b[^.!?]{0,12}?\b(\d{1,2})\b/i;
+      /* "unser Sohn kommt auch mit, er ist 5" - das Modell schickte nichts
+         (zweiter Modell-Lauf). Ein Kind, das ausdruecklich dazukommt, mit
+         genau einem Alter: der Kern traegt es ein. */
+      if (a.kinder == null && !Array.isArray(a.kinderAlter) && p.kinder != null) {
+        const letzteK = String((kern.lauf.gespraech || []).filter((n) => n.role === "user").slice(-1)[0]?.content || "").toLowerCase();
+        const mk = letzteK.match(/\b(sohn|tochter|kind|kleine[rn]?|enkel\w*|neffe|nichte)\b[^.!?]{0,30}\b(kommt|kommen)\s+(auch\s+|noch\s+)?mit\b[^.!?]{0,30}?\b(\d{1,2})\b/);
+        if (mk && +mk[4] <= 17) {
+          a.kinder = (p.kinder || 0) + 1;
+          a.kinderAlter = [...(p.kinderAlter || []), +mk[4]];
+          kern.notieren("kind_dazu_vom_kern", { alter: +mk[4] });
+        }
+      }
+      // Nur das Alter geschickt (Modell-Satzbank): die Zahl der Kinder folgt daraus
+      if (a.kinder == null && Array.isArray(a.kinderAlter) && a.kinderAlter.length && !(p.kinder || 0)
+        && gesagt(altersNachtrag, 1) && !gesagt(neuDazu, 1)) {
+        a.kinder = a.kinderAlter.length;
+        kern.notieren("kinderzahl_aus_alter", { kinder: a.kinder });
+      }
       if (a.kinder != null && a.kinder > (p.kinder || 0) && (p.erwachsene || 0) >= 2
         && (a.erwachsene == null || a.erwachsene === p.erwachsene)
         && gesagt(altersNachtrag, 1) && !gesagt(neuDazu, 1)) {
@@ -8633,7 +8699,9 @@ const Werkzeugkasten = {
   },
 
   belegPruefen(feld, wert, belege, letzteNachricht, p = {}) {
-    const beleg = belege && typeof belege === "object" ? belege[feld] : null;
+    let beleg = belege && typeof belege === "object" ? belege[feld] : null;
+    // Das Modell schickt das Zitat manchmal als Liste (22.11.2026, Modell-Satzbank)
+    if (Array.isArray(beleg)) beleg = beleg.filter((x) => typeof x === "string").join(" ");
     if (!beleg || typeof beleg !== "string") return { ok: false, grund: "kein_beleg" };
     const b = this.belegNorm(beleg), n = this.belegNorm(letzteNachricht);
     // Regel 1: woertlich in der letzten Nachricht, mindestens zwei Zeichen
@@ -8716,7 +8784,8 @@ const Werkzeugkasten = {
         return { ok: false, grund: "art_nicht_im_zitat" };
       }
       case "artEgal": {
-        if (wert === true && /(^|[^a-zäöüß])(beide[sn]?|sowohl|egal|alles|beides|ist mir gleich)([^a-zäöüß]|$)/.test(b)) return { ok: true };
+        if (wert === true && (/(^|[^a-zäöüß])(beide[sn]?|sowohl|egal|alles|beides|ist mir gleich)([^a-zäöüß]|$)/.test(b)
+          || /\bauch\s+(gern(e)?\s+)?(ein(e|en)?\s+)?(hotels?|ferienwohn\w*|fewo|apartments?|ferienh(a|ä)us\w*)/.test(b))) return { ok: true };
         return { ok: false, grund: "kein_beides_im_zitat" };
       }
       default: return { ok: false, grund: "feld_ohne_regel" };
@@ -8725,7 +8794,7 @@ const Werkzeugkasten = {
 
   // Kurzform fuer stand_merken: prueft und protokolliert
   belegGilt(kern, feld, wert, belege) {
-    if (!belege || !belege[feld]) return false;
+    if (!belege || !belege[feld] || (Array.isArray(belege[feld]) && !belege[feld].length)) return false;
     const letzte = String((kern?.lauf?.gespraech || []).filter((n) => n.role === "user").slice(-1)[0]?.content || "");
     const r = this.belegPruefen(feld, wert, belege, letzte, kern?.lauf?.profil || {});
     kern?.notieren?.(r.ok ? "beleg_angenommen" : "beleg_abgelehnt", { feld, wert, beleg: String(belege[feld]).slice(0, 80), ...(r.ok ? {} : { grund: r.grund }) });
@@ -8758,7 +8827,7 @@ const Werkzeugkasten = {
         const sicher = w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return opts.locker
           ? new RegExp(`(^|[^a-zäöüß])${sicher}([^a-zäöüß]|$)`, "i").test(t)
-          : new RegExp(`\\b(nach|auf|aufs|in|ins|an|an die|an den|richtung)\\s+(die\\s+|den\\s+|das\\s+)?${sicher}([^a-zäöüß]|$)`, "i").test(t);
+          : new RegExp(`\\b(nach|auf|aufs|in|ins|an|ans|an die|an den|richtung)\\s+(die\\s+|den\\s+|das\\s+)?${sicher}([^a-zäöüß]|$)`, "i").test(t);
       });
       if (treffer && !raus.includes(z.id)) raus.push(z.id);
     }
