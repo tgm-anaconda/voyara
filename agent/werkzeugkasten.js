@@ -4938,25 +4938,12 @@ const Werkzeugkasten = {
          Bleiben wenige, sagt es die Rueckfrage (preisWarnung bzw.
          budgetWarnung) mit Zahlen und Vorschlag - dann hier nichts, sonst
          stuende die Zahl zweimal da. */
-      const preisFeld = p.maxPreis ? "maxPreis" : (p.budgetGesamt ? "budgetGesamt" : null);
-      if (preisFeld && p.vonPerson?.[preisFeld] && (p.monat || (p.von && p.bis))
-        && kern.lauf.preisGezaehlt !== `${preisFeld}:${p[preisFeld]}`) {
-        let warnt = null;
-        try { warnt = preisFeld === "maxPreis" ? Werkzeugkasten.preisWarnung(p, kern.lauf) : Werkzeugkasten.budgetWarnung(p, kern.lauf); } catch { warnt = null; }
-        if (!warnt) {
-          let n = 0;
-          try { n = Werkzeugkasten.katalogTreffer(p, Werkzeugkasten.filterAusStand(p)).length; } catch { n = 0; }
-          if (n > 0) {
-            kern.lauf.preisGezaehlt = `${preisFeld}:${p[preisFeld]}`;
-            const wert = `${Math.round(p[preisFeld]).toLocaleString("de-DE")} €`;
-            kern.notieren("preis_gezaehlt", { feld: preisFeld, wert: p[preisFeld], treffer: n });
-            Werkzeugkasten.ableiten(kern, preisFeld, preisFeld === "maxPreis"
-              ? `Bis ${wert} pro Nacht ${n === 1 ? "kommt" : "kommen"} ${Werkzeugkasten.artZahl(n, p)} in Frage.`
-              : `Mit ${wert} für ${p.flug ? "die Unterkunft" : "die ganze Reise"} ${n === 1 ? "kommt" : "kommen"} ${Werkzeugkasten.artZahl(n, p)} in Frage.${p.flug && !kern.lauf.budgetOhneFlugGesagt ? " Den Flug schauen wir uns danach in der Kasse an." : ""}`);
-            if (preisFeld === "budgetGesamt" && p.flug) kern.lauf.budgetOhneFlugGesagt = true;
-          }
-        }
-      }
+      /* Seit dem 22.11.2026 sagt der Kern die Zahl erst NACH der sichtbaren
+         Suche, wenn eine ansteht (Ben: "nach jeder Absprache direkt
+         nachgucken"). Sucht der Fahrplan nicht, bleibt es hier. */
+      let sucheFolgt = false;
+      try { sucheFolgt = Werkzeugkasten.fahrplan(p, kern.lauf).phase === "suche" && !!kern.lauf.gesuchtMit; } catch { sucheFolgt = false; }
+      if (!sucheFolgt) Werkzeugkasten.preisZahlSagen(kern, p);
       /* Gedeutete Felder vormerken (12.11.2026).
          ----------------------------------------------------------------
          `vonPerson` bleibt gesetzt, auch wenn das Modell unsicher ist:
@@ -5341,6 +5328,9 @@ const Werkzeugkasten = {
             // Dasselbe, wenn gleich die Preiswarnung kommt (siehe preisWarnung)
             let preisFrage = null;
             try { preisFrage = Werkzeugkasten.preisWarnung(p, kern.lauf); } catch { preisFrage = null; }
+            // Und das Gesamtbudget (22.11.2026): sonst nannte das Modell die
+            // Zahl, und die Warnung des Kerns sagte sie gleich noch einmal
+            if (!preisFrage) { try { preisFrage = Werkzeugkasten.budgetWarnung(p, kern.lauf); } catch { preisFrage = null; } }
             if (engFrage || preisFrage) {
               kern.notieren("engstelle_in_beratung", { treffer: liste.length, feld: preisFrage ? "preis_warnung" : (kern.lauf.letzteEngstelle?.feld || null) });
               return { ...basis, haeuser: "noch nicht - erst die Beratung",
@@ -5351,6 +5341,16 @@ const Werkzeugkasten = {
                     + "Sag das in einem Satz, ohne Zahlen zu anderen Dingen. Stell KEINE Frage und sprich kein anderes Thema an - "
                     + "die Rueckfrage dazu stellt der Kern direkt im Anschluss.") };
             }
+          }
+          /* Die Zahl zum Preis nach der Suche (22.11.2026): Ist der Preis
+             gerade erst genannt worden, sagt der Kern sie jetzt - nach der
+             sichtbaren Arbeit, nicht davor. */
+          let preisGesagt = false;
+          if (fp.suchbereit) { try { preisGesagt = Werkzeugkasten.preisZahlSagen(kern, p); } catch { preisGesagt = false; } }
+          if (preisGesagt) {
+            return { ...basis, haeuser: "noch nicht - erst die Beratung",
+              hinweis: `${flughafenSatz}Die neue Zahl steht schon im Chat (vom Kern): nicht wiederholen, keine Zahlen noch einmal. Dann das naechste Thema.`,
+              ...Werkzeugkasten.fahrplanFuerModell(Werkzeugkasten.fahrplan(p, kern.lauf), p, kern.lauf) };
           }
           return { ...basis, haeuser: "noch nicht - erst die Beratung",
             hinweis: flughafenSatz + (fp.phase === "suche" || !fp.gesucht
@@ -7831,7 +7831,7 @@ const Werkzeugkasten = {
      gestellte Frage braucht keine eigene Bestaetigung. */
   FELDWORT: {
     wuensche: { thema: "gewichtung", wort: (p) => (p.kriterien || []).map((k) => (typeof Politik !== "undefined" ? Politik.kriterium(k.id)?.label : null)).filter(Boolean).slice(-2).join(" und ") },
-    budgetGesamt: { thema: "preis", wort: (p) => `höchstens ${p.budgetGesamt} € insgesamt` },
+    budgetGesamt: { thema: "preis", wort: (p) => `höchstens ${p.budgetGesamt} € ${p.flug ? "für die Unterkunft" : "insgesamt"}` },
     maxPreis: { thema: "preis", wort: (p) => (p.preisProPerson
       ? `${p.preisProPerson} € pro Person, also höchstens ${p.maxPreis} € pro Nacht für euch alle`
       : `höchstens ${p.maxPreis} € pro Nacht${((p.erwachsene || 0) + (p.kinder || 0)) > 1 ? " für euch alle" : ""}`) },
@@ -7856,6 +7856,10 @@ const Werkzeugkasten = {
     for (const f of [...new Set(felder)]) {
       const e = this.FELDWORT[f];
       if (!e) continue;
+      // Hat der Kern den Wert in diesem Zug schon mit Zahl gesagt ("Mit
+      // 1.200 EUR fuer die Unterkunft bleiben ..."), wird er nicht noch
+      // einmal quittiert (22.11.2026)
+      if ((kern.lauf.abgeleitet || []).some((x) => x.feld === f)) continue;
       // Eine Antwort auf die gestellte Frage braucht keine Bestaetigung -
       // die steht in der Leiste, und "Oktober ist notiert" nervt
       if (e.thema && e.thema === gefragt) continue;
@@ -8801,6 +8805,9 @@ const Werkzeugkasten = {
     return JSON.stringify([p.maxPreis || null, p.maxStrand ?? null, p.mindestbewertung || null, p.mindestSterne || null,
       (p.kriterien || []).map((k) => k.id), p.ausstattung || [], p.verpflegung || null,
       p.wlanInklusive || false,
+      // Das Budget fuer die Unterkunft ist ein Filter wie der Nachtpreis:
+      // aendert es sich, wird neu gesucht (22.11.2026)
+      p.budgetGesamt || null,
       /* Die Regionen nach der gemeinsamen Regel (21.11.2026): Vorher standen
          hier nur festes Ziel und Richtung - eine geaenderte Auswahl ("Malle
          noch dazu") oder eine abgelehnte Region ("nicht Lissabon") bemerkte
@@ -9805,7 +9812,20 @@ const Werkzeugkasten = {
            setzt - im stummen Durchlauf lief er genau deshalb in die 40
            Zuege. Steht keine Zahl bereit, laesst der Satz sie weg. */
         const ohneSuche = offen === "ausstattung" && !lauf.gefiltertMit;
-        if (offen && (filterVeraltet || ohneSuche)) { phase = "suche"; }
+        /* Nach jeder Absprache nachsehen (22.11.2026).
+           --------------------------------------------------------------
+           Ben: "Nach jeder Absprache muss er einmal direkt nachgucken,
+           wie viele Hotels noch uebrig bleiben." Zwei Luecken: Die Art
+           ("Nur Hotels") steht im Eckdatenschluessel, nicht im
+           Filterschluessel - nach der Antwort wurde nicht gesucht. Und das
+           Budget stand in keinem (jetzt im Filterschluessel).
+           Steht die Frage "Soll ich auf Hotels eingrenzen?" an, wird
+           ZUERST gefragt und danach gesucht - sonst zaehlt die Suche
+           Ferienwohnungen mit, die gleich wegfallen koennen. */
+        const artVeraltet = !gesucht;
+        let artOffen = null;
+        try { artOffen = this.artRueckfrage(p, lauf); } catch { artOffen = null; }
+        if (offen && (filterVeraltet || ohneSuche || artVeraltet) && !artOffen) { phase = "suche"; }
         else if (offen) { naechstes = offen; phase = "beratung"; }
         else {
           phase = "vorschlaege";
@@ -10896,6 +10916,65 @@ const Werkzeugkasten = {
      Schwellen (unter 30 Haeusern UND unter einem Fuenftel derer ohne
      Budget), vorgeschlagen werden 10 % mehr, auf 50 € aufgerundet - nur
      wenn das wirklich Haeuser dazubringt. */
+  /* Nach der Preisangabe die Zahl (C11, 21.11.2026).
+     ------------------------------------------------------------------
+     Der Kern zaehlt, einmal je genanntem Wert, sobald die Zeit steht.
+     Bleiben wenige, sagt es die Rueckfrage (preisWarnung bzw.
+     budgetWarnung) mit Zahlen und Vorschlag - dann hier nichts, sonst
+     stuende die Zahl zweimal da. Gerufen aus stand_merken oder, wenn
+     gleich gesucht wird, nach der Suche (22.11.2026). Gibt zurueck, ob
+     etwas gesagt wurde. */
+  preisZahlSagen(kern, p) {
+    const preisFeld = p.maxPreis ? "maxPreis" : (p.budgetGesamt ? "budgetGesamt" : null);
+    let gesagt = false;
+      if (preisFeld && p.vonPerson?.[preisFeld] && (p.monat || (p.von && p.bis))
+        && kern.lauf.preisGezaehlt !== `${preisFeld}:${p[preisFeld]}`) {
+        let warnt = null;
+        try { warnt = preisFeld === "maxPreis" ? Werkzeugkasten.preisWarnung(p, kern.lauf) : Werkzeugkasten.budgetWarnung(p, kern.lauf); } catch { warnt = null; }
+        if (!warnt) {
+          let n = 0;
+          try { n = Werkzeugkasten.katalogTreffer(p, Werkzeugkasten.filterAusStand(p)).length; } catch { n = 0; }
+          if (n > 0) {
+            kern.lauf.preisGezaehlt = `${preisFeld}:${p[preisFeld]}`;
+            const wert = `${Math.round(p[preisFeld]).toLocaleString("de-DE")} €`;
+            kern.notieren("preis_gezaehlt", { feld: preisFeld, wert: p[preisFeld], treffer: n });
+            Werkzeugkasten.ableiten(kern, preisFeld, preisFeld === "maxPreis"
+              // "kommt ein Hotel in Frage" las sich wie "ein Hotel ist moeglich" (22.11.2026)
+              ? `Bis ${wert} pro Nacht ${n === 1 ? "bleibt" : "bleiben"} ${n < 10 ? "nur " : ""}${Werkzeugkasten.artZahl(n, p)}.`
+              : `Mit ${wert} für ${p.flug ? "die Unterkunft" : "die ganze Reise"} ${n === 1 ? "bleibt" : "bleiben"} ${n < 10 ? "nur " : ""}${Werkzeugkasten.artZahl(n, p)}.${p.flug && !kern.lauf.budgetOhneFlugGesagt ? " Den Flug schauen wir uns danach in der Kasse an." : ""}`);
+            if (preisFeld === "budgetGesamt" && p.flug) kern.lauf.budgetOhneFlugGesagt = true;
+            gesagt = true;
+          }
+        }
+      }
+    return gesagt;
+  },
+
+  // Wie viele Haeuser bei einem Budget bleiben (alle anderen Vorgaben gleich)
+  budgetZahl(p, b) {
+    try { return this.katalogTreffer({ ...p, budgetGesamt: b }, this.filterAusStand({ ...p, budgetGesamt: b })).length; } catch { return -1; }
+  },
+  // Der kleinste Betrag (in 50-EUR-Schritten), mit dem mindestens `ziel`
+  // Haeuser bleiben; null, wenn auch das Vielfache nicht reicht
+  budgetFuer(p, ziel) {
+    const a0 = p.budgetGesamt;
+    if (!Number.isFinite(a0) || a0 <= 0) return null;
+    let hi = a0, n = 0;
+    while (this.budgetZahl(p, hi) < ziel && n++ < 8) hi *= 2;
+    if (this.budgetZahl(p, hi) < ziel) return null;
+    let a = Math.ceil(a0 / 50), b = Math.ceil(hi / 50);
+    while (a < b) { const m = Math.floor((a + b) / 2); if (this.budgetZahl(p, m * 50) >= ziel) b = m; else a = m + 1; }
+    return a * 50;
+  },
+  // Der Betrag, den der Agent vorschlaegt: ein Viertel der Haeuser ohne Budget
+  budgetEmpfehlung(p) {
+    const ohne = { ...p }; delete ohne.budgetGesamt;
+    let alle = 0;
+    try { alle = this.katalogTreffer(ohne, this.filterAusStand(ohne)).length; } catch { return null; }
+    if (alle < 8) return null;
+    return this.budgetFuer(p, Math.ceil(alle * 0.25));
+  },
+
   budgetWarnung(p, lauf) {
     if (!p || !lauf || !Number.isFinite(p.budgetGesamt) || p.maxPreis) return null;
     if (!p.vonPerson?.budgetGesamt) return null;
@@ -10909,19 +10988,38 @@ const Werkzeugkasten = {
     } catch { return null; }
     if (!ohneListe || ohneListe.length < 8) return null;
     if (mit.length >= this.PREIS_WARNUNG_HOECHSTENS || mit.length >= ohneListe.length * this.PREIS_WARNUNG_ANTEIL) return null;
-    const mehr = Math.ceil((p.budgetGesamt * this.PREIS_STUFE) / 50) * 50;
-    let mitMehr = 0;
-    try { mitMehr = this.katalogTreffer({ ...p, budgetGesamt: mehr }, this.filterAusStand({ ...p, budgetGesamt: mehr })).length; } catch { return null; }
-    if (mitMehr <= mit.length) return null;
+    /* Ein Betrag mit genug Auswahl, nicht nur 10 % mehr (22.11.2026).
+       ----------------------------------------------------------------
+       Gemeldet: Mit 1.200 EUR blieb ein Hotel, und weil 1.320 EUR keines
+       dazubrachten, kam gar keine Rueckfrage - nur "kommt ein Hotel in
+       Frage". Ben: Empfohlen wird wie beim Nachtpreis ein Betrag, mit dem
+       ein Viertel der Haeuser ohne Budget bleibt, auf 50 EUR gerundet; die
+       10-%-Stufe steht dazwischen, wenn sie etwas bringt. Die Zahl je
+       Betrag steigt mit dem Betrag, also reicht eine Halbierungssuche. */
+    const zaehle = (b) => this.budgetZahl(p, b);
+    const betragFuer = (ziel) => this.budgetFuer(p, ziel);
+    const empfohlen = betragFuer(Math.ceil(ohneListe.length * 0.25));
+    if (!empfohlen || !(empfohlen > p.budgetGesamt)) return null;
+    const mitEmpfohlen = zaehle(empfohlen);
+    if (mitEmpfohlen <= mit.length) return null;
+    const haelfte = betragFuer(Math.ceil(ohneListe.length * 0.5));
+    const vorsichtig = Math.ceil((p.budgetGesamt * this.PREIS_STUFE) / 50) * 50;
+    const mitVorsichtig = vorsichtig < empfohlen ? zaehle(vorsichtig) : 0;
+    const zwischen = vorsichtig < empfohlen && mitVorsichtig - mit.length >= this.ENGSTELLE_MINDESTGEWINN;
     const euro = (n) => `${Math.round(n).toLocaleString("de-DE")} €`;
     const zahl = (n) => this.artZahl(n, p);
-    const satz = `Kurz zum Budget: Mit ${euro(p.budgetGesamt)} für die ganze Reise ${mit.length === 1 ? "bleibt" : "bleiben"} ${mit.length ? zahl(mit.length) : "keine"}, `
-      + `mit ${euro(mehr)} (10 % mehr) wären es ${zahl(mitMehr)}. Soll ich bis ${euro(mehr)} suchen?`;
-    const ja = `Bis ${euro(mehr)}`;
+    const wofuer = p.flug ? "für die Unterkunft" : "für die ganze Reise";
+    const satz = `Kurz zum Budget: ${haelfte ? `Bei deinen übrigen Vorgaben kostet die Hälfte der ${this.artWort(p, true)} bis ${euro(haelfte)} ${wofuer}. ` : ""}`
+      + `Mit ${euro(p.budgetGesamt)} ${mit.length === 1 ? "bleibt nur" : mit.length ? "bleiben nur" : "bleiben"} ${mit.length ? zahl(mit.length) : "keine"}`
+      + (zwischen ? `, bis ${euro(vorsichtig)} wären es ${mitVorsichtig}, bis ${euro(empfohlen)} ${mitEmpfohlen}. ` : `, bis ${euro(empfohlen)} wären es ${zahl(mitEmpfohlen)}. `)
+      + `Ich würde eher bis ${euro(empfohlen)} suchen, sonst schränkst du die Auswahl sehr stark ein. Wie möchtest du es?`;
+    const ja = `Bis ${euro(empfohlen)}`;
+    const mitte = zwischen ? `Bis ${euro(vorsichtig)}` : null;
     const nein = `Bei ${euro(p.budgetGesamt)} bleiben`;
-    return { grund: "preis", grenze: `gesamt:${p.budgetGesamt}`, empfohlen: mehr, satz, chips: [ja, nein],
-      wirkung: { [ja]: { budgetGesamt: mehr }, [nein]: {} },
-      zahlen: { mit: mit.length, ohne: ohneListe.length, mitMehr } };
+    const wirkung = { [ja]: { budgetGesamt: empfohlen }, [nein]: {} };
+    if (mitte) wirkung[mitte] = { budgetGesamt: vorsichtig };
+    return { grund: "preis", grenze: `gesamt:${p.budgetGesamt}`, empfohlen, satz, chips: mitte ? [ja, mitte, nein] : [ja, nein], wirkung,
+      zahlen: { mit: mit.length, ohne: ohneListe.length, mitEmpfohlen, haelfte, ...(zwischen ? { vorsichtig, mitVorsichtig } : {}) } };
   },
 
   engstelleRueckfrage(p, lauf) {
@@ -11247,9 +11345,18 @@ const Werkzeugkasten = {
       const a = p.budgetGesamt;
       if (!a) return null;
       const auf = (f) => Math.round((a * f) / 50) * 50;
+      const euro = (n) => `${n.toLocaleString("de-DE")} €`;
+      /* Statt 25 % mehr der gerechnete Betrag, und nie "ohne Budget"
+         (22.11.2026). Ben: "Er schlaegt vor, das Budget komplett
+         aufzuheben. Das macht gar keinen Sinn." Vorgeschlagen wird der
+         kleinste Betrag, mit dem eine solide Auswahl bleibt (ein Viertel
+         der Haeuser ohne Budget) - wie in budgetWarnung. */
+      let empf = null;
+      try { empf = Werkzeugkasten.budgetEmpfehlung(p); } catch { empf = null; }
+      const zweite = empf && empf > auf(1.1) ? empf : auf(1.25);
       return [
-        { id: "10", werte: { budgetGesamt: auf(1.1) }, kurz: `${auf(1.1)} €`, was: `das Budget auf ${auf(1.1)} € anheben (10 % mehr)` },
-        { id: "25", werte: { budgetGesamt: auf(1.25) }, kurz: `${auf(1.25)} €`, was: `das Budget auf ${auf(1.25)} € anheben (25 % mehr)` },
+        { id: "10", werte: { budgetGesamt: auf(1.1) }, kurz: euro(auf(1.1)), was: `das Budget auf ${euro(auf(1.1))} anheben (10 % mehr)` },
+        { id: "mehr", werte: { budgetGesamt: zweite }, kurz: euro(zweite), was: `das Budget auf ${euro(zweite)} anheben` },
       ];
     },
     strand: (p) => {
@@ -11313,7 +11420,7 @@ const Werkzeugkasten = {
      170 Euro angibt, ist nicht bereit, offen 400 Euro zu zahlen." */
   ENGSTELLE_OFFEN: {
     preis: { werte: { maxPreis: null }, kurz: "Ohne Preisgrenze", was: "die Preisgrenze ganz offen lassen" },
-    gesamt: { werte: { budgetGesamt: null }, kurz: "Ohne Budget", was: "das Budget ganz offen lassen" },
+    // Kein "Ohne Budget" mehr (22.11.2026, Ben) - siehe ENGSTELLE_STUFEN.gesamt
     strand: { werte: { maxStrand: null, strandEgal: true }, kurz: "Strand egal", was: "den Strandabstand ganz offen lassen" },
     bewertung: { werte: { mindestbewertung: null, bewertungEgal: true }, kurz: "Ohne Mindestnote", was: "die Mindestnote ganz weglassen" },
     sterne: { werte: { mindestSterne: null }, kurz: "Ohne Sternevorgabe", was: "die Sternevorgabe ganz weglassen" },
@@ -11328,7 +11435,7 @@ const Werkzeugkasten = {
   },
 
   ENGSTELLE: {
-    gesamt: (p) => `dein Budget von ${Math.round(p.budgetGesamt).toLocaleString("de-DE")} € für die ganze Reise`,
+    gesamt: (p) => `dein Budget von ${Math.round(p.budgetGesamt).toLocaleString("de-DE")} € ${p.flug ? "für die Unterkunft" : "für die ganze Reise"}`,
     preis: (p) => `die Grenze von ${Math.round(p.maxPreis).toLocaleString("de-DE")} € pro Nacht`,
     ziel: (p) => (p.zielId ? "die Festlegung auf diese Region"
       : p.richtung === "warm" ? "die Beschränkung auf warme Regionen"

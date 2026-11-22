@@ -2899,7 +2899,7 @@ const liesReisende = async (text, felder, urteil = "ja") => {
        in der Bedingung: Vor der Ausstattungsfrage muss ueberhaupt
        einmal gefiltert worden sein, sonst hat sie keine Zahl zu nennen. */
     pruefe("Zwischensuche waehrend der Beratung",
-      /if \(offen && \(filterVeraltet \|\| ohneSuche\)\) \{ phase = "suche"; \}/.test(wq) ? "ja" : "nein", "ja");
+      /if \(offen && \(filterVeraltet \|\| ohneSuche[^)]*\)[^{]*\) \{ phase = "suche"; \}/.test(wq) ? "ja" : "nein", "ja");
     pruefe("Vor der Ausstattungsfrage wird gesucht",
       /const ohneSuche = offen === "ausstattung" && !lauf\.gefiltertMit;/.test(wq) ? "ja" : "nein", "ja");
   }
@@ -3402,8 +3402,9 @@ const liesReisende = async (text, felder, urteil = "ja") => {
       }
       return null;
     });
-    pruefe("C11: knappes Gesamtbudget - Rueckfrage mit 10 % mehr und zwei Chips",
-      bw && bw !== "fehler" ? [/\(10 % mehr\)/.test(bw.satz), (bw.chips || []).length, (bw.satz.match(/\?/g) || []).length] : bw, [true, 2, 1]);
+    // Seit dem 22.11.2026 mit empfohlenem Betrag (wie beim Nachtpreis), 2 oder 3 Chips
+    pruefe("C11: knappes Gesamtbudget - Rueckfrage mit Betrag und Chips",
+      bw && bw !== "fehler" ? [/Ich würde eher bis [\d.]+ € suchen/.test(bw.satz), [2, 3].includes((bw.chips || []).length), (bw.satz.match(/\?/g) || []).length] : bw, [true, true, 1]);
     pruefe("C11: grosszuegiges Budget - keine Rueckfrage",
       versuch(() => WK.budgetWarnung ? WK.budgetWarnung({ monat: 7, naechte: 7, erwachsene: 2, kinder: 0, zimmer: 1, artEgal: true, flug: false, budgetGesamt: 20000, vonPerson: { budgetGesamt: true } }, {}) : "fehlt"), null);
     // Nach der Preisangabe nennt der Kern die Zahl
@@ -3414,7 +3415,7 @@ const liesReisende = async (text, felder, urteil = "ja") => {
         notieren() {}, standAnzeigen() {}, sichern() {}, sagen(x) { saetze.push(x); }, logZeile() {}, standKurz: () => "",
         eingabe() {}, darf: () => true, freigabe: () => "suchen", antwortWerten() {} };
       try { WK.werkzeuge.stand_merken({ maxPreis: 400 }, kern); } catch { /* nur die Saetze zaehlen */ }
-      return saetze.some((x) => /^Bis 400 € pro Nacht kommen \d+ \S+ in Frage\.$/.test(x));
+      return saetze.some((x) => /^Bis 400 € pro Nacht bleiben (nur )?\d+ \S+\.$/.test(x));
     });
     pruefe("C11: nach der Preisangabe nennt der Kern die Zahl", gesagt, true);
   }
@@ -3533,6 +3534,76 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     pruefe("Ostern: der Kern sagt an, wann Ostern ist (Satz wird nicht verworfen)", saetze.find((x) => /Ostern/.test(x)) || "kein Satz",
       "Ostern ist 2027 schon Ende März: Karfreitag ist der 26., Ostersonntag der 28. März. Ich suche deshalb im März - je nach Dauer reicht die Reise dann in den April. Wenn du einen anderen Monat im Kopf hast, sag Bescheid.");
     pruefe("Ostern: Datum fuer den Stand des Modells gemerkt", kern.lauf.zeitankerDatum?.ostersonntag, "28.3.");
+  }
+
+  /* Nach jeder Absprache nachsehen, Budget mit Betrag (22.11.2026).
+     Gemeldet: Halbpension bei "beides" - erst gesucht, dann "Soll ich auf
+     Hotels eingrenzen?"; nach "Nur Hotels" und nach dem Budget keine
+     Suche; "Mit 1.200 EUR ... kommt ein Hotel in Frage" ohne Rueckfrage.
+     Gegenprobe: --alt=_backup/gp-absprache */
+  {
+    const versuch = (f) => { try { return f(); } catch (e) { return "fehler " + e.message; } };
+    const basis = { zielId: "mallorca", monat: 3, naechte: 9, erwachsene: 2, kinder: 1, kinderAlter: [17], flug: true, flugAb: "Hamburg",
+      flugKlasse: "economy", vonPerson: { monat: true, zielId: true }, artGenannt: true, vorgehen: "top3" };
+    // Bens Stand nach "Nur Hotels" und "1200 euro"
+    const ben = { ...basis, typ: "hotel", artEgal: false, verpflegung: "halb", budgetGesamt: 1200,
+      vonPerson: { ...basis.vonPerson, budgetGesamt: true, verpflegung: true } };
+    const bw = versuch(() => WK.budgetWarnung(ben, {}));
+    console.log("   Budgetwarnung bei Bens Stand:", bw?.satz || bw);
+    pruefe("Budget 1.200 EUR mit 1 Hotel: Rueckfrage kommt", !!(bw && bw.satz), true);
+    pruefe("... mit Betrag ueber 1.200 EUR und dem Wort 'Unterkunft'", bw?.satz ? [bw.empfohlen > 1200, /für die Unterkunft/.test(bw.satz), /ganze Reise/.test(bw.satz)] : bw, [true, true, false]);
+    pruefe("... der Chip setzt genau den empfohlenen Betrag", bw?.wirkung?.[bw.chips?.[0]]?.budgetGesamt, bw?.empfohlen);
+    pruefe("... mit dem Betrag bleibt mindestens ein Viertel", versuch(() => {
+      const ohne = { ...ben }; delete ohne.budgetGesamt;
+      return bw.zahlen.mitEmpfohlen >= Math.ceil(bw.zahlen.ohne * 0.25);
+    }), true);
+    // Die Engstellen-Rueckfrage bietet nie "Ohne Budget" an, sondern den Betrag
+    const ef = versuch(() => {
+      const lauf = {};
+      const liste = WK.katalogTreffer(ben, WK.filterAusStand(ben));
+      WK.engstelle(liste, ben, lauf);
+      const r = WK.engstelleRueckfrage(ben, lauf);
+      return r ? { chips: r.chips, satz: r.satz } : null;
+    });
+    console.log("   Engstelle bei Bens Stand:", ef?.satz || ef);
+    pruefe("Engstelle: kein 'Ohne Budget'", ef && ef.chips ? ef.chips.some((c) => /ohne budget/i.test(c)) : ef, false);
+    pruefe("Engstelle: der gerechnete Betrag steht zur Wahl", ef && ef.chips ? ef.chips.some((c) => c.includes(`${(bw?.empfohlen || 0).toLocaleString("de-DE")} €`)) : ef, true);
+    pruefe("Quittung Budget mit Flug: 'fuer die Unterkunft', nicht 'insgesamt'", versuch(() => WK.FELDWORT.budgetGesamt.wort(ben)), "höchstens 1200 € für die Unterkunft");
+    pruefe("Budget steht im Filterschluessel", versuch(() => WK.filterSchluessel(ben) !== WK.filterSchluessel({ ...ben, budgetGesamt: 1500 })), true);
+    // Fahrplan: nach "Nur Hotels" wird gesucht
+    const nachSuche = (p) => ({ gesuchtMit: WK.eckdatenSchluessel(p), gefiltertMit: WK.filterSchluessel(p), lageFuer: WK.eckdatenSchluessel(p) });
+    const beides = { ...basis, typ: null, artEgal: true, verpflegung: "halb", vonPerson: { ...basis.vonPerson, verpflegung: true } };
+    const lBeides = { ...nachSuche({ ...beides, verpflegung: null }) };
+    const fp1 = versuch(() => WK.fahrplan({ ...beides }, { ...lBeides }));
+    pruefe("Halbpension bei 'beides': erst die Hotel-Frage, keine Suche", [fp1?.phase, !!WK.artRueckfrage({ ...beides }, { ...lBeides })], ["beratung", true]);
+    const nurHotels = { ...beides, typ: "hotel", artEgal: false };
+    const fp2 = versuch(() => WK.fahrplan({ ...nurHotels }, { ...lBeides, artGefragt: { verpflegung: true } }));
+    pruefe("Nach 'Nur Hotels': der Fahrplan sucht", fp2?.phase, "suche");
+    pruefe("... und der Kern erzwingt die Suche", versuch(() => WK.zwang({ ...nurHotels }, { ...lBeides, artGefragt: { verpflegung: true } })), "suchen");
+    // Wie in Bens Lauf: mit Halbpension schon gesucht (beides), dann "Nur Hotels"
+    pruefe("Nach 'Nur Hotels' auch nach einer Suche mit Halbpension: es wird gesucht",
+      versuch(() => WK.fahrplan({ ...nurHotels }, { ...nachSuche(beides), artGefragt: { verpflegung: true } }).phase), "suche");
+    const lHotel = { ...nachSuche(nurHotels), artGefragt: { verpflegung: true } };
+    pruefe("Nach der Suche: weiter mit der naechsten Frage", versuch(() => WK.fahrplan({ ...nurHotels }, { ...lHotel }).phase), "beratung");
+    const mitBudget = { ...nurHotels, budgetGesamt: 1200, vonPerson: { ...nurHotels.vonPerson, budgetGesamt: true } };
+    pruefe("Nach dem Budget: der Fahrplan sucht", versuch(() => WK.fahrplan({ ...mitBudget }, { ...lHotel }).phase), "suche");
+    // Die Zahl zum Budget erst nach der sichtbaren Suche
+    const zahlSaetze = (lauf) => {
+      const saetze = [];
+      const pp = { ...nurHotels, verpflegung: null };
+      const kern = { lauf: { profil: pp, gespraech: [{ role: "user", content: "2500 euro" }], ...lauf },
+        notieren() {}, standAnzeigen() {}, sichern() {}, sagen(x) { saetze.push(x); }, logZeile() {}, standKurz: () => "",
+        eingabe() {}, darf: () => true, freigabe: () => "suchen", antwortWerten() {} };
+      try { WK.werkzeuge.stand_merken({ budgetGesamt: 2500 }, kern); } catch { /* nur die Saetze */ }
+      return { saetze, kern };
+    };
+    const vorSuche = zahlSaetze({ ...nachSuche({ ...nurHotels, verpflegung: null }) });
+    pruefe("Budget mitten in der Beratung: keine Zahl vor der Suche", vorSuche.saetze.filter((x) => /^Mit 2\.500 €/.test(x)).length, 0);
+    const danach = versuch(() => { const k = vorSuche.kern; k.lauf.profil.budgetGesamt = 2500; (k.lauf.profil.vonPerson ||= {}).budgetGesamt = true;
+      const gesagt = WK.preisZahlSagen(k, k.lauf.profil); return [gesagt, vorSuche.saetze.some((x) => /^Mit 2\.500 € für die Unterkunft bleiben (nur )?\d+ Hotels\./.test(x))]; });
+    pruefe("... und nach der Suche sagt der Kern sie", danach, [true, true]);
+    pruefe("Beides offen gelassen: keine zweite Hotel-Frage, normale Beratung",
+      versuch(() => WK.fahrplan({ ...beides }, { ...lBeides, artGefragt: { verpflegung: true }, gefiltertMit: WK.filterSchluessel(beides) }).phase), "beratung");
   }
 
   console.log(`\n${gut} richtig, ${schlecht} falsch`);
