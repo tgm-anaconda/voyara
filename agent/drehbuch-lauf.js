@@ -67,6 +67,20 @@ async (page) => {
       { du: "40 euro", stand: { frage_beantwortet: "ja" } },
       { du: "Für alle zusammen", stand: { frage_beantwortet: "ja", maxPreis: 40 } },
     ],
+    region_vergleich: [
+      { du: "im Oktober", stand: { frage_beantwortet: "ja", monat: 10 } },
+      { du: "flexibel", stand: { frage_beantwortet: "ja" } },
+      { du: "9", stand: { frage_beantwortet: "ja", naechte: 9 } },
+      { du: "ich und eine freundin", stand: { frage_beantwortet: "ja", personenGesamt: 2, erwachsene: 2, kinder: 0 } },
+      { du: "ein Hotel auf Malle", stand: { frage_beantwortet: "ja", typ: "hotel", ziel: "mallorca" } },
+      { du: "Mit Flug", stand: { frage_beantwortet: "ja", flug: true } },
+      { du: "Hamburg", stand: { frage_beantwortet: "ja", flugAb: "Hamburg" } },
+      { du: "All Inclusive", stand: { frage_beantwortet: "ja", verpflegung: "ai", verpflegungEgal: false } },
+      { du: "210 euro pro nacht für uns beide", stand: { frage_beantwortet: "ja", maxPreis: 210 } },
+      { du: "Bei 210 € bleiben", stand: { frage_beantwortet: "ja" } },
+      { du: "was für regionen empfiehlst du mir denn noch?", stand: { nachricht_art: "frage", frage_beantwortet: "nein_klaert_noch", ausweiten: "ziel" } },
+      { du: "Krabi dazu", stand: { frage_beantwortet: "ja" } },
+    ],
     kapstadt_9grad_wie_live: [
       { du: "Im März", stand: { frage_beantwortet: "ja", monat: 3 } },
       { du: "9 Nächte", stand: { frage_beantwortet: "ja", naechte: 9 } },
@@ -79,7 +93,7 @@ async (page) => {
       { du: "Mit Flug", stand: { frage_beantwortet: "ja", flug: true } },
     ],
   };
-  const nur = globalThis.__drehbuchNur || Object.keys(DREHBUECHER);
+  const nur = globalThis.__drehbuchNur || Object.keys(DREHBUECHER).filter((n) => n !== "region_vergleich");
   const arm = globalThis.__drehbuchArm || "schublade";
 
   const initDrehbuch = () => {

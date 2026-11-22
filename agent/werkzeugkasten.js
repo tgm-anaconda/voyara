@@ -3020,6 +3020,13 @@ const Werkzeugkasten = {
   werteUebernehmen(kern, thema, werte, text = "", grund = "antwort_selbst_gelesen") {
     const p = kern.lauf.profil || (kern.lauf.profil = {});
     const gesetzt = [];
+    if (werte && werte._regionVergleich) {
+      werte = { ...werte }; delete werte._regionVergleich;
+      Werkzeugkasten.regionVergleichStarten(kern, p);
+    } else if (kern.lauf.regionVergleich?.gefragt && werte && ("zieleAuswahl" in werte || "zielId" in werte)) {
+      // Ein Knopf der Regionsfrage beantwortet sie
+      kern.lauf.regionVergleich = null;
+    }
     for (const f of Object.keys(werte || {})) {
       const w = werte[f];
       /* `null` heisst hier ausdruecklich "dieses Feld raeumen" - gebraucht
@@ -3132,6 +3139,8 @@ const Werkzeugkasten = {
       const weiter = vorher !== null
         && (/\b\d{1,2}\.$/.test(vorher)
           || this.ABKUERZUNG.test(vorher)
+          // "der 7. Okt. oder der 15. Okt." - ein Monatskuerzel nach einer Tageszahl (22.11.2026)
+          || /\b\d{1,2}\.\s*(jan|feb|mär|maer|apr|jun|jul|aug|sep|sept|okt|nov|dez)\.$/i.test(vorher)
           // Ein einzelner Grossbuchstabe mit Punkt ist nie ein Satzende -
           // er ist die zweite Haelfte von "z. B." oder eine Initiale.
           || /(?:^|\s)[A-ZÄÖÜ]\.$/.test(vorher));
@@ -3630,6 +3639,7 @@ const Werkzeugkasten = {
           kern.lauf.engstelleOffen = null;
           kern.notieren("ausweiten_abgelehnt", { feld: offen.feld });
         } else if (treffer) {
+          if (String(treffer.feld) === "ziel") Werkzeugkasten.regionVergleichStarten(kern, p);
           for (const [f, w] of Object.entries(treffer.werte || {})) {
             if (w === undefined || w === null) delete p[f]; else p[f] = w;
           }
@@ -3927,6 +3937,19 @@ const Werkzeugkasten = {
           if (ersetzt) { delete p.zieleDazu; if (kern.lauf.richtungRegionen) kern.lauf.richtungRegionen = [...new Set(nehmen)]; }
           if (!ersetzt && bisher.length && neu.length > nehmen.length) kern.notieren("ziele_ergaenzt", { bisher: bisher.length, jetzt: neu.length });
           setze(feld, neu);
+        }
+      }
+      /* Antwort auf die Regionsfrage nach dem Vergleich (22.11.2026): Was
+         die Person nennt, kommt zur Auswahl von vorher dazu. */
+      if (kern.lauf.regionVergleich?.gefragt && (a.ziel || (Array.isArray(a.zieleAuswahl) && a.zieleAuswahl.length))) {
+        const neu = [...(a.zieleAuswahl || []), ...(a.ziel ? [String(a.ziel).toLowerCase()] : [])].filter((id) => typeof ZIEL_NACH_ID !== "undefined" && ZIEL_NACH_ID[id]);
+        if (neu.length) {
+          p.zieleAuswahl = [...new Set([...kern.lauf.regionVergleich.vorher, ...neu])];
+          p.zielId = null; p.zielOffen = false;
+          geaendert.push("zieleAuswahl");
+          kern.notieren("region_wahl_getippt", { dazu: neu });
+          kern.lauf.regionVergleich = null;
+          delete a.ziel; delete a.zieleAuswahl;
         }
       }
       /* Auswahl vor festem Ziel, Gebiete vollstaendig (22.11.2026).
@@ -9301,6 +9324,48 @@ const Werkzeugkasten = {
        - nur, was in sich moeglich ist (Region im Katalog, mind. ein
          Erwachsener, Alter 0-17, Tag 1-31)
        - je Wert hoechstens einmal. */
+  /* Regionen vergleichen statt alle oeffnen (22.11.2026).
+     ------------------------------------------------------------------
+     Ben: Der Vergleich (Regionsfilter raus, sichtbar suchen) ist gut - aber
+     danach muss der Agent sagen, was er gefunden hat, und die Auswahl
+     ermoeglichen, statt einfach auf alle Regionen zu gehen. Der Kern merkt
+     sich die Auswahl davor; nach der Suche fragt regionWahlRueckfrage. */
+  regionVergleichStarten(kern, p) {
+    if (!kern?.lauf || kern.lauf.regionVergleich) return;
+    const vorher = p.zielId ? [p.zielId] : (p.zieleAuswahl || []).slice();
+    if (!vorher.length) return;
+    kern.lauf.regionVergleich = { vorher, zielOffen: !!p.zielOffen, gefragt: false };
+    kern.notieren("region_vergleich_gestartet", { vorher });
+  },
+
+  regionWahlRueckfrage(p, lauf) {
+    const rv = lauf?.regionVergleich;
+    if (!rv || rv.gefragt) return null;
+    // Erst nach der Suche ueber alle Regionen
+    if (!lauf.gesuchtMit || lauf.gesuchtMit !== this.eckdatenSchluessel(p)) return null;
+    const name = (id) => (typeof ZIEL_NACH_ID !== "undefined" ? ZIEL_NACH_ID[id]?.name : null) || id;
+    const zahl = (id) => { try { return this.katalogTreffer({ ...p, zielId: id, zieleAuswahl: [] }, this.filterAusStand({ ...p, zielId: id, zieleAuswahl: [] })).length; } catch { return 0; } };
+    const kandidaten = (typeof ZIELE !== "undefined" ? ZIELE : []).map((z) => z.id)
+      .filter((id) => !rv.vorher.includes(id) && !(p.zieleAus || []).includes(id))
+      .map((id) => ({ id, n: zahl(id) })).filter((x) => x.n > 0).sort((a, b) => b.n - a.n).slice(0, 3);
+    if (!kandidaten.length) return null;
+    rv.gefragt = true;
+    const art = (n) => this.artZahl(n, p);
+    const temp = (id) => { const z = typeof ZIEL_NACH_ID !== "undefined" ? ZIEL_NACH_ID[id] : null; try { return z && typeof grad === "function" && p.monat ? grad(z, p.monat) : null; } catch { return null; } };
+    const teile = kandidaten.map((k) => { const t = temp(k.id); return `${name(k.id)} (${art(k.n)}${t != null ? `, ${t} Grad` : ""})`; });
+    const liste = teile.length > 1 ? `${teile.slice(0, -1).join(", ")} und ${teile[teile.length - 1]}` : teile[0];
+    const vorherNamen = rv.vorher.map(name);
+    const vorherText = vorherNamen.length > 1 ? `${vorherNamen.slice(0, -1).join(", ")} und ${vorherNamen[vorherNamen.length - 1]}` : vorherNamen[0];
+    const wirkung = {}, chips = [];
+    for (const k of kandidaten) { const c = `${name(k.id)} dazu`; chips.push(c); wirkung[c] = { zieleAuswahl: [...rv.vorher, k.id], zielId: null, zielOffen: false }; }
+    chips.push("Alle Regionen"); wirkung["Alle Regionen"] = { zielId: null, zieleAuswahl: [], zielOffen: true };
+    const bleiben = `Bei ${vorherText} bleiben`;
+    chips.push(bleiben);
+    wirkung[bleiben] = rv.vorher.length === 1 ? { zielId: rv.vorher[0], zieleAuswahl: [], zielOffen: false } : { zieleAuswahl: rv.vorher.slice(), zielId: null, zielOffen: false };
+    return { grund: "region_wahl", thema: "ziel", satz: `Ohne die Festlegung auf ${vorherText} passen diese Regionen zu deinen übrigen Vorgaben: ${liste}. Möchtest du davon welche in deine Auswahl aufnehmen?`,
+      chips, wirkung, kandidaten: kandidaten.map((k) => k.id) };
+  },
+
   bestaetigungRueckfrage(p, lauf) {
     if (!p || !lauf || !lauf.verworfenWert) return null;
     const jetzt = lauf.zugSeit || lauf.runde || true;
@@ -11999,7 +12064,8 @@ const Werkzeugkasten = {
       // Zwei gleiche Beschriftungen waeren nicht auseinanderzuhalten
       while (wirkung[c]) c += " ";
       chips.push(c);
-      wirkung[c] = k.werte;
+      // Die Region wird nicht einfach geoeffnet, sondern verglichen (22.11.2026, siehe regionWahlRueckfrage)
+      wirkung[c] = k.feld === "ziel" ? { ...k.werte, _regionVergleich: true } : k.werte;
     }
     /* Dritter Weg bei den Ferienwohnungen: Statt eine Vorgabe zu lockern,
        kann der Agent auch Hotels dazunehmen. Das ist die eigentliche
@@ -12119,7 +12185,8 @@ const Werkzeugkasten = {
   ENGSTELLE_TUN: {
     gesamt: () => "das Budget offen lassen",
     preis: () => "die Preisgrenze offen lassen",
-    ziel: () => "die Region offen lassen",
+    // "andere Regionen ansehen" statt "offen lassen" (22.11.2026): es folgt eine Auswahl, kein Oeffnen
+    ziel: () => "andere Regionen dazunehmen",
     verpflegung: () => "die Verpflegung offen lassen",
     gruppe: () => "die Gruppe aufteilen",
     strand: () => "den Strandabstand offen lassen",

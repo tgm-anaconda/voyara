@@ -3986,6 +3986,32 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     const kt = fs.readFileSync(alt && fs.existsSync(quelle + "kern.js") ? quelle + "kern.js" : B + "agent/kern.js", "utf8");
     pruefe("Kern: die Nachfrage steht in der Kette der Rueckfragen", /bestaetigungRueckfrage\(this\.lauf\.profil/.test(kt), true);
   }
+  // Regionsvergleich statt alle Regionen (22.11.2026). Gegenprobe: --alt=_backup/gp-regionwahl
+  if (WK && WK.werkzeuge && WK.werkzeuge.stand_merken) {
+    const versuch = (f) => { try { return f(); } catch (e) { return "fehler " + e.message; } };
+    const p = { zielId: "mallorca", typ: "hotel", artGenannt: true, monat: 10, naechte: 9, erwachsene: 2, kinder: 1, kinderAlter: [17], verpflegung: "ai", maxPreis: 330,
+      vonPerson: { maxPreis: true, zielId: true } };
+    const lauf = { profil: p, gespraech: [{ role: "assistant", content: "Was soll ich aendern?" }, { role: "user", content: "was für regionen empfiehlst du mir denn noch?" }], protokoll: [],
+      annahmeOffen: [], gefragtWie: {}, verlauf: [], nachrichtArt: "frage", runde: 1, zugSeit: 5,
+      engstelleOffen: { feld: "ziel", kandidaten: [{ feld: "ziel", kurz: "Region", werte: { zielId: null, zieleAuswahl: [], zielOffen: true } }] } };
+    const kern = { lauf, notieren(e, d) { this.lauf.protokoll.push({ ereignis: e, ...d }); }, freigabe: () => "suchen", darf: () => false, logZeile() {}, sagen() {},
+      standAnzeigen() {}, sichern() {}, standKurz: () => "", antwortWerten() {} };
+    try { await WK.werkzeuge.stand_merken.call(WK, { nachricht_art: "frage", ausweiten: "ziel" }, kern); } catch (e) { /* weiter */ }
+    pruefe("Regionsvergleich: Auswahl davor wird gemerkt, Suche laeuft ueber alle", [JSON.stringify(lauf.regionVergleich?.vorher || null), p.zielOffen === true], ['["mallorca"]', true]);
+    lauf.gesuchtMit = WK.eckdatenSchluessel(p);
+    const rw = versuchZ(() => WK.regionWahlRueckfrage(p, lauf));
+    console.log("   Regionsfrage:", rw?.satz, "|", (rw?.chips || []).join(" | "));
+    pruefe("Regionsvergleich: danach die Frage mit Regionen, Anzahl und Knoepfen",
+      rw && rw.satz ? [/^Ohne die Festlegung auf Mallorca passen diese Regionen zu deinen übrigen Vorgaben: .+\. Möchtest du davon welche in deine Auswahl aufnehmen\?$/.test(rw.satz),
+        rw.chips.slice(-2).join(" | ")] : rw, [true, "Alle Regionen | Bei Mallorca bleiben"]);
+    const erste = rw?.kandidaten?.[0];
+    pruefe("Regionsvergleich: Knopf 'X dazu' nimmt X zu Mallorca dazu", JSON.stringify((rw?.wirkung?.[rw.chips[0]] || {}).zieleAuswahl || null), JSON.stringify(["mallorca", erste]));
+    pruefe("Regionsvergleich: 'Bei Mallorca bleiben' stellt Mallorca wieder her", JSON.stringify(rw?.wirkung?.["Bei Mallorca bleiben"]?.zielId || null), '"mallorca"');
+    const kt = fs.readFileSync(alt && fs.existsSync(quelle + "kern.js") ? quelle + "kern.js" : B + "agent/kern.js", "utf8");
+    pruefe("Regionsvergleich: als Frage formuliert ist es kein freier Zug", /const freierZug = !regionFrageFaellig/.test(kt), true);
+  }
+  pruefe("Satzzerlegung: 'der 7. Okt. oder der 15. Okt.?' bleibt ein Satz",
+    WK.saetze("Im Oktober ist jeder Tag frei. Passt euch der 1. Okt., der 7. Okt. oder der 15. Okt.?").length, 2);
   // Fortsetzung nach dem Anhalten zaehlt nicht als Antwort
   {
     const kt = fs.readFileSync(alt && fs.existsSync(quelle + "kern.js") ? quelle + "kern.js" : B + "agent/kern.js", "utf8");

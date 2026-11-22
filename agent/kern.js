@@ -1778,6 +1778,11 @@ const Kern = {
       if ((f === "maxPreis" || f === "budgetGesamt") && (p.preisEgal || p.maxPreis != null || p.budgetGesamt != null)) continue;
       if (f === "kinderAlter" && !p.kinder) continue;
       if ((f === "von" || f === "bis") && p.anreise) continue;
+      /* Ein festes Ziel, das durch eine Auswahl oder "alle Regionen"
+         ersetzt wurde, ist nicht verloren (22.11.2026, Regionsvergleich):
+         sonst kam "Ziel Mallorca" neben der Auswahl Mallorca/Krabi zurueck. */
+      if (f === "zielId" && ((p.zieleAuswahl || []).length || p.zielOffen)) continue;
+      if (f === "zieleAuswahl" && (p.zielId || p.zielOffen)) continue;
       p[f] = wert;
       zurueck.push(f);
     }
@@ -2755,7 +2760,12 @@ const Kern = {
         let kernSatzImZug = null;
         // Gilt fuer beide Bloecke unten: den, der die Nachricht
         // zusammensetzt, und den, der die Chips setzt.
-        const freierZug = ["frage", "einwand", "unklar", "sonstiges"].includes(this.lauf.nachrichtArt);
+        /* Ein laufender Regionsvergleich beantwortet die Lockerungsfrage - auch
+           wenn die Person es als Frage formuliert hat ("was fuer Regionen
+           empfiehlst du?"). Dann stellt der Kern im selben Zug seine
+           Regionsfrage (22.11.2026). */
+        const regionFrageFaellig = !!(this.lauf.regionVergleich && !this.lauf.regionVergleich.gefragt);
+        const freierZug = !regionFrageFaellig && ["frage", "einwand", "unklar", "sonstiges"].includes(this.lauf.nachrichtArt);
         if (!nachricht.tool_calls) {
           // Falls das Modell in diesem Zug kein stand_merken gerufen hat:
           // Die Nachricht wird trotzdem gewertet, bevor der Fahrplan
@@ -2982,6 +2992,12 @@ const Kern = {
             /* Nachfragen statt still verwerfen (22.11.2026, siehe
                Werkzeugkasten.bestaetigungRueckfrage) - gleich nach der
                Kinder-Frage, weil auch sie die Gruppe betrifft. */
+            // Nach dem Regionsvergleich: welche Regionen dazu? (22.11.2026)
+            const rw = kernFrage ? null : Werkzeugkasten.regionWahlRueckfrage(this.lauf.profil || {}, this.lauf);
+            if (rw) {
+              this.notieren("region_wahl_gefragt", { kandidaten: rw.kandidaten });
+              kernFrage = { ...rw };
+            }
             const bf = kernFrage ? null : Werkzeugkasten.bestaetigungRueckfrage(this.lauf.profil || {}, this.lauf);
             if (bf) {
               (this.lauf.bestaetigtGefragt ||= {})[bf.schluessel] = true;
