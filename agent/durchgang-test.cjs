@@ -3465,6 +3465,32 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     pruefe("A: kern haengt den Flugtext in den Modellstand", /Fluege\.fuerModell\(\)/.test(fs.readFileSync(quelle + (alt && fs.existsSync(quelle + "kern.js") ? "kern.js" : "agent/kern.js"), "utf8")), true);
   }
 
+  /* Sicherheitspruefung zum Flugfilter (22.11.2026): fruehe Wuensche und
+     Aenderungen nach den Empfehlungen. Gegenprobe: --alt=_backup/gp-flugfilter. */
+  {
+    const lies = (text, vorher = { flug: true }) => {
+      KN.lauf = { profil: { ...vorher } }; KN.notieren = () => {};
+      try { KN.flugWuenscheLesen?.(text); } catch { return "fehler"; }
+      return [KN.lauf.profil.flugStopps ?? null, KN.lauf.profil.flugKoffer ?? null];
+    };
+    pruefe("Flugwunsch frueh: 'bitte nur Direktflüge, mit Koffer'", lies("bitte nur Direktflüge, mit Koffer"), ["direkt", true]);
+    pruefe("Flugwunsch frueh: 'nur Handgepäck reicht'", lies("nur Handgepäck reicht uns"), [null, false]);
+    pruefe("Flugwunsch frueh: eine Frage setzt nichts", lies("Ist ein Koffer dabei?"), [null, null]);
+    pruefe("Flugwunsch frueh: ohne Flug wird nichts gelesen", lies("nur Direktflüge", { flug: false }), [null, null]);
+    pruefe("Flugwunsch frueh: Gesagtes wird in der Kasse nicht noch einmal gefragt",
+      WK.flugFrageOffen?.({ flugKlasse: "economy", flugKoffer: true, flugZeit: "frueh", flugStopps: "direkt" }), null);
+    // Nach den Empfehlungen: Klasse oder Koffer aendern legt neu vor
+    const aendern = (text, vorher) => {
+      KN.lauf = { profil: { flug: true, flugAb: "Frankfurt", erwachsene: 2, kinder: 0, flugZeit: "frueh", flugStopps: "egal", ...vorher }, flugWartet: "h01" };
+      KN.notieren = () => {}; KN.sagen = () => {}; KN.sichern = () => {}; KN.gespraechPush = () => {};
+      try { KN.flugWunsch(text, { gezeigt: true }); } catch (e) { return "fehler " + e.message; }
+      return [KN.lauf.profil.flugKlasse ?? null, KN.lauf.profil.flugKoffer ?? null, KN.lauf.fortsetzenMit ?? null];
+    };
+    pruefe("Nach den Empfehlungen: 'doch lieber Economy' legt neu vor", aendern("doch lieber Economy", { flugKlasse: "business", flugKoffer: false }), ["economy", false, "buchung_vorbereiten"]);
+    pruefe("Nach den Empfehlungen: 'doch ohne Koffer' legt neu vor", aendern("doch ohne Koffer", { flugKlasse: "economy", flugKoffer: true }), ["economy", false, "buchung_vorbereiten"]);
+    pruefe("Nach den Empfehlungen: dieselbe Klasse aendert nichts", aendern("Economy passt", { flugKlasse: "economy", flugKoffer: false }), ["economy", false, null]);
+  }
+
   console.log(`\n${gut} richtig, ${schlecht} falsch`);
   process.exit(schlecht ? 1 : 0);
 })();

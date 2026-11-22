@@ -1523,7 +1523,11 @@ const Kern = {
     if (egal.length) teile.push(`egal: ${egal.join(", ")}`);
     if (p.kriterien?.length) teile.push(`Wünsche: ${p.kriterien.map((k) => k.id).join(", ")}`);
     if (p.verpflegung) teile.push(`Verpflegung ${p.verpflegung}`);
-    if (p.flug != null) teile.push(p.flug ? `mit Flug${p.flugAb ? ` ab ${p.flugAb}` : ""}${p.flugKlasse ? `, ${p.flugKlasse}` : ""}` : "nur Unterkunft");
+    if (p.flug != null) teile.push(p.flug ? `mit Flug${p.flugAb ? ` ab ${p.flugAb}` : ""}${p.flugKlasse ? `, ${p.flugKlasse}` : ""}`
+      + `${p.flugKoffer != null ? (p.flugKoffer ? ", mit Koffer" : ", nur Handgepaeck") : ""}`
+      + `${p.flugZeit ? `, Abflug ${({ frueh: "morgens", mittag: "mittags", abend: "abends" })[p.flugZeit]}` : (p.flugZeitEgal ? ", Abflugzeit egal" : "")}`
+      + `${p.flugStopps ? (p.flugStopps === "direkt" ? ", nur direkt" : ", auch mit Umstieg") : ""}`
+      + " (Flug wird erst in der Kasse gewaehlt)" : "nur Unterkunft");
     return teile.length ? teile.join("; ") : "noch nichts";
   },
 
@@ -1939,6 +1943,7 @@ const Kern = {
     this.lauf.zuletztGemerkt = [];
     // Nach dem Zuruecksetzen, sonst ginge die Quittung verloren
     this.haustierLesen(t);
+    this.flugWuenscheLesen(t);
     this.lauf.selbstGelesen = [];
     this.budgetUebernehmen();
     this.regionenLesen(t);
@@ -4812,8 +4817,16 @@ const Kern = {
     if (/ohne umstieg|nur direkt|direktfl(ü|ue)ge?\b|nonstop/.test(satz)) stopps = "direkt";
     else if (/(auch )?mit umstieg|umstieg (ist )?(ok|okay|egal)/.test(satz)) stopps = "egal";
     if (stopps === p.flugStopps) stopps = null;
-    if (!zeit && !ort && !mehr && !stopps) return false;
-    if (zeit && zeit === info.zeit && !ort && !mehr && !stopps) return false;
+    // Klasse und Koffer aendern nur den Preis - trotzdem neu vorlegen, damit Karten und Kasse stimmen
+    const klasseNeu = /business|premium|economy/.test(satz) ? this.flugFrageDeuten("klasse", satz)?.flugKlasse : null;
+    const klasse = klasseNeu && klasseNeu !== p.flugKlasse ? klasseNeu : null;
+    const kofferDeutung = /koffer|handgep(ä|ae)ck/.test(satz) ? this.flugFrageDeuten("koffer", satz) : null;
+    const koffer = kofferDeutung && kofferDeutung.flugKoffer !== !!p.flugKoffer ? kofferDeutung.flugKoffer : null;
+    if (!zeit && !ort && !mehr && !stopps && !klasse && koffer === null) return false;
+    if (zeit && zeit === info.zeit && !ort && !mehr && !stopps && !klasse && koffer === null) return false;
+    if (klasse) p.flugKlasse = klasse;
+    if (koffer !== null) p.flugKoffer = koffer;
+    if (klasse || koffer !== null) { try { Flug.set({ ...(klasse ? { klasse } : {}), ...(koffer !== null ? { koffer } : {}) }); } catch { /* ohne Flugmodul */ } }
     if (zeit) { p.flugZeit = zeit; delete p.flugZeitEgal; }
     if (ort) p.flugAbWahl = ort;
     if (stopps) p.flugStopps = stopps;
@@ -4822,7 +4835,7 @@ const Kern = {
     // Die alte Vorauswahl gehoert zur alten Gruppe
     try { Flug.set({ flugId: null }); } catch { /* ohne Flugmodul */ }
     if (typeof Fluege !== "undefined") Fluege.schliessen?.(false, "andere");
-    this.notieren("flug_andere", { zeit: zeit || null, ort: ort || null, stopps: stopps || null, mehr: !!mehr });
+    this.notieren("flug_andere", { zeit: zeit || null, ort: ort || null, stopps: stopps || null, mehr: !!mehr, klasse: klasse || null, koffer });
     this.lauf.fortsetzenMit = "buchung_vorbereiten";
     return false;   // normaler Zug: buchung_vorbereiten oeffnet das Fenster neu
   },
@@ -5385,6 +5398,30 @@ const Kern = {
      das Schema des Werkzeugs kannte das Feld nicht, und das Modell
      quittierte nur die Lage. Ein Haustier ist eine harte Bedingung: Ohne
      sie stehen Haeuser in der Auswahl, die man nicht buchen kann. */
+  /* Flugwuensche, die schon im Gespraech fallen (22.11.2026).
+     ------------------------------------------------------------------
+     Die Kasse fragt Klasse, Koffer, Abflugzeit und Stopps einzeln - aber
+     nicht, was die Person schon gesagt hat. Die Klasse traegt das Modell
+     ein (stand_merken), Stopps und Koffer liest der Kern hier selbst, und
+     nur bei eindeutigen Worten, die nur zum Flug passen. Eine offene
+     Flugfrage liest flugFrageLesen, nicht diese Stelle. */
+  flugWuenscheLesen(t) {
+    const p = (this.lauf.profil ||= {});
+    if (!p.flug || this.lauf.flugFrageOffen) return;
+    const satz = String(t).toLowerCase();
+    if (satz.includes("?")) return;   // "Ist ein Koffer dabei?" ist eine Frage, kein Wunsch
+    const neu = {};
+    if (!p.flugStopps && /nur direkt|direktfl(ü|ue)ge?|ohne umsteig|ohne umstieg|nonstop/.test(satz) && !/egal|nicht (nur )?direkt/.test(satz)) neu.flugStopps = "direkt";
+    if (p.flugKoffer == null) {
+      if (/ohne koffer|kein(en)? koffer|nur (mit )?handgep(ä|ae)ck/.test(satz)) neu.flugKoffer = false;
+      else if (/mit koffer|koffer (mit|dabei|dazu)|(einen|ein) koffer|aufgabegep(ä|ae)ck/.test(satz)) neu.flugKoffer = true;
+    }
+    if (!Object.keys(neu).length) return;
+    Object.assign(p, neu);
+    for (const k of Object.keys(neu)) (p.vonPerson ||= {})[k] = true;
+    this.notieren("flugwunsch_gelesen", neu);
+  },
+
   haustierLesen(t) {
     const satz = String(t).toLowerCase();
     if (!/hund|haustier|katze|vierbeiner/.test(satz)) return;
