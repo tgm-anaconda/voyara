@@ -2465,6 +2465,11 @@ const Werkzeugkasten = {
       if (m) { const n = wk.selbstZahl(m[1]); if (n >= 1 && n <= 12) return { personen: n }; }
       m = t.match(/^\s*(\d{1,2})\s*$/);
       if (m) { const n = +m[1]; if (n >= 1 && n <= 12) return { personen: n }; }
+      /* Eindeutige Kurzformen (22.11.2026, Satzbank): "ich alleine" und
+         "ich und mein(e) X" - ausser X kann ein Kind sein. */
+      if (/^\s*(ich\s+)?(ganz\s+)?allein(e)?\s*[.!]?\s*$/.test(t)) return { erwachsene: 1, kinder: 0 };
+      m = t.match(/^\s*ich und (mein|meine|meinem|meinen|meiner)\s+([a-zäöüß]+)\s*[.!]?\s*$/);
+      if (m && !/sohn|tochter|kind|kleine|baby|enkel|nichte|neffe|bub|maedchen|mädchen|junge/.test(m[2])) return { erwachsene: 2, kinder: 0 };
       return null;
     },
     /* "6 und 9", "sechs, neun". Gelesen wird nur, wenn jede Zahl im
@@ -2489,6 +2494,23 @@ const Werkzeugkasten = {
        heißt ja das Gegenteil von dem, was es in der ersten Fassung
        heißt. Gelesen wird nur, was in sich eindeutig ist; die Chips
        schicken genau diese Wörter. */
+    /* Verpflegung und Flughafen, nur eindeutige Antworten (22.11.2026,
+       Satzbank: der Kern allein las hier nichts). */
+    verpflegung(t, p) {
+      if (p.verpflegung || p.verpflegungEgal) return null;
+      if (/^\s*(ist (mir )?)?(egal|offen|gleich|keine (pr(ä|ae)ferenz|vorgabe))\s*[.!]?\s*$/.test(t)) return { verpflegungEgal: true };
+      const treffer = [
+        [/\ball[\s-]?inclusive?\b|^\s*ai\b/, "ai"], [/halbpension|^\s*hp\b/, "halb"], [/vollpension|^\s*vp\b/, "voll"],
+        [/^(\s*nur)?\s*fr(ü|ue)hst(ü|ue)ck/, "fruehstueck"],
+      ].filter(([re]) => re.test(t)).map(([, k]) => k);
+      return treffer.length === 1 ? { verpflegung: treffer[0], verpflegungEgal: false } : null;
+    },
+    flugAb(t, p, wk) {
+      if (p.flugAb || !p.flug) return null;
+      if (/n(ä|ae)chste|n(ä|ae)he|\?/.test(t)) return null;
+      const namen = (wk.ABFLUG_NAMEN || []).filter((n) => new RegExp(`(^|[^a-zäöüß])${n.toLowerCase()}([^a-zäöüß]|$)`).test(t));
+      return namen.length === 1 ? { flugAb: namen[0], flugAbEgal: false } : null;
+    },
     flug(t, p) {
       if (p.flug != null) return null;
       if (/ohne flug|kein(en)? flug|nur (die )?unterkunft|selbst buch|buche ich selbst|buchen wir selbst|flug (haben|habe) (wir|ich)/.test(t)) return { flug: false };
@@ -4371,7 +4393,8 @@ const Werkzeugkasten = {
          Kern die Zahl, ohne sie mit einem Regex zu ueberstimmen. Sagt es
          nichts oder etwas anderes, gilt wie bisher die Wortliste als
          zweiter Weg - dann hat niemand die Verantwortung uebernommen. */
-      const ZAHL = /\d|\b(ein|eine|einem|einen|zwei|drei|vier|fünf|fuenf|sechs|sieben|acht|zweit|dritt|viert|fünft|fuenft|sechst|kein|keine|ohne|allein|alleine|beide|zwilling|sohn|tochter|frau|mann|freundin|freund|partner|eltern|paar|erwachsene)\b/i;
+      // "ich und mein(e) ..." sind zwei - wer auch immer (22.11.2026, Satzbank: "ich und meine Oma")
+      const ZAHL = /\d|\bich und (mein|meine|meinem|meinen|meiner)\b|\b(ein|eine|einem|einen|zwei|drei|vier|fünf|fuenf|sechs|sieben|acht|zweit|dritt|viert|fünft|fuenft|sechst|kein|keine|ohne|allein|alleine|beide|zwilling|sohn|tochter|frau|mann|freundin|freund|partner|eltern|paar|erwachsene)\b/i;
       for (const f of ["personenGesamt", "erwachsene", "kinder"]) {
         if (a[f] != null && p[f === "personenGesamt" ? "personen" : f] == null
           && !gesagt(ZAHL, 1) && !beantwortet("reisende", "kinderAlter")
@@ -4932,6 +4955,20 @@ const Werkzeugkasten = {
         p.flugAbEgal = false;
         geaendert.push("flugAb");
         kern.notieren("flughaefen_beide", { auswahl: p.flugAbAuswahl });
+      }
+      /* Die Frage nach dem naechsten Flughafen ist keine Wahl (22.11.2026,
+         Satzbank): "der naechste von Lueneburg" - setzt das Modell dabei
+         schon Hamburg, wurde es uebernommen, obwohl die Person nur gefragt
+         hat. Steht in der Nachricht kein Flughafen, faellt der Wert weg; die
+         Antwort des Modells ("Soll ich Hamburg nehmen?") bleibt. */
+      if (a.flugAb) {
+        const letzteFA = String((kern.lauf.gespraech || []).filter((n) => n.role === "user").slice(-1)[0]?.content || "");
+        const fragtNaechsten = /n(ä|ae)chste[nrs]?\b|am n(ä|ae)chsten|in der n(ä|ae)he/i.test(letzteFA);
+        const nenntFlughafen = (Werkzeugkasten.ABFLUG_NAMEN || []).some((n) => new RegExp(`\\b${n}\\b`, "i").test(letzteFA));
+        if (fragtNaechsten && !nenntFlughafen) {
+          kern.notieren("flughafen_aus_frage_verworfen", { flugAb: a.flugAb });
+          delete a.flugAb;
+        }
       }
       setze("flugAb", a.flugAb); setze("flugKlasse", a.flugKlasse);
       if (a.flugAb) p.flugAbEgal = false;
