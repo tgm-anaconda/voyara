@@ -5344,7 +5344,8 @@ const Kern = {
       const bis = ende ? m.index + m[0].length + ende.index : teil.length;
       const feld = teil.slice(start, bis);
       for (const z of (typeof ZIELE !== "undefined" ? ZIELE : [])) {
-        const woerter = [z.name, z.id, z.region].filter(Boolean)
+        // Laender und Kontinente zaehlen mit ("nicht nach Spanien", 22.11.2026)
+        const woerter = [z.name, z.id, z.region, ...(Werkzeugkasten.REGION_SPITZNAMEN?.[z.id] || []), ...(Werkzeugkasten.gebietWoerter ? Werkzeugkasten.gebietWoerter(z.id) : [])].filter(Boolean)
           .map((x) => String(x).toLowerCase()).filter((x) => x.length >= 3);
         const drin = woerter.some((w) => {
           const sicher = w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");

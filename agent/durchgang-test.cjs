@@ -3717,6 +3717,29 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     const n = await spiel("Mallorca bitte nicht", { zieleAus: ["mallorca"] }, { naechte: 9 }, null, "ziel");
     pruefe("'Mallorca bitte nicht': der Ausschluss gilt", (n.zieleAus || []).includes("mallorca"), true);
   }
+  // Laender und Kontinente (22.11.2026). Gegenprobe: --alt=_backup/gp-gebiete
+  {
+    const ZL = vm.runInContext("ZIELE", ctx);
+    const genannt = (satz) => ZL.filter((z) => WK.regionGenannt({ gespraech: [{ role: "user", content: satz }] }, z.id)).map((z) => z.id).sort().join(",");
+    const liest = (satz) => (WK.zieleAusText ? WK.zieleAusText(satz) : []).slice().sort().join(",");
+    pruefe("Land: 'nach Spanien' erlaubt Mallorca, Teneriffa, Barcelona", genannt("wir wollen nach Spanien"), "barcelona,mallorca,teneriffa");
+    pruefe("Land: der Kern liest 'nach Spanien' selbst", liest("wir wollen nach Spanien"), "barcelona,mallorca,teneriffa");
+    pruefe("Land: 'nach Griechenland' -> Kreta", liest("gerne nach Griechenland"), "kreta");
+    pruefe("Kontinent: 'nach Asien' -> Krabi, Kyoto", liest("wir wollen nach Asien"), "krabi,kyoto");
+    pruefe("Kontinent: 'nach Afrika' -> Marrakesch, Kapstadt", liest("am liebsten nach Afrika"), "kapstadt,marrakesch");
+    pruefe("Grossregion: 'nach Skandinavien' -> Lappland, Island", liest("nach Skandinavien"), "island,lappland");
+    pruefe("Deutschland: erlaubt die Ostsee, wird aber nicht selbst gelesen", [genannt("in Deutschland"), liest("wir wohnen in Deutschland")], ["ostsee", ""]);
+    pruefe("Jedes Gebiet zeigt nur auf Regionen, die es gibt", (WK.GEBIETE || []).every((g) => g.ziele.every((id) => ZL.some((z) => z.id === id))) && (WK.GEBIETE || []).length > 0, true);
+    // Ausschluss: "nicht nach Spanien"
+    if (KN.regionenLesen) {
+      const alt = KN.lauf; KN.lauf = { profil: {} }; const n = KN.notieren, sa = KN.standAnzeigen, si = KN.sichern;
+      KN.notieren = () => {}; KN.standAnzeigen = () => {}; KN.sichern = () => {};
+      try { KN.regionenLesen("bitte nicht nach Spanien"); } catch { /* egal */ }
+      const aus = (KN.lauf.profil.zieleAus || []).slice().sort().join(",");
+      KN.lauf = alt; KN.notieren = n; KN.standAnzeigen = sa; KN.sichern = si;
+      pruefe("Ausschluss: 'nicht nach Spanien' schliesst alle drei aus", aus, "barcelona,mallorca,teneriffa");
+    }
+  }
   // 3. Preisbezug: ein Knopf des Kerns fragt nicht noch einmal
   if (KN && KN.budgetPruefen) {
     const frage = (text, extra = {}) => {

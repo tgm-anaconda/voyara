@@ -3703,7 +3703,7 @@ const Werkzeugkasten = {
 
            Fuer ein Land mit MEHREREN Regionen im Katalog gibt es
            zieleAuswahl - dort entscheidet weiter die Person. */
-        else if (id && (Werkzeugkasten.regionGenannt(kern.lauf, id) || p.zielId === id
+        else if (id && (Werkzeugkasten.regionGenannt(kern.lauf, id, { einzeln: true }) || p.zielId === id
           || klarBeantwortet("ziel"))) {
           /* Widerspricht die Region der genannten Richtung, wird sie
              NICHT gesetzt, sondern vorgemerkt - der Kern fragt dann im
@@ -3724,7 +3724,7 @@ const Werkzeugkasten = {
             p.zielVorgemerkt = id;
             kern.notieren("ziel_vorgemerkt", { ziel: id, richtung: p.richtung });
           } else {
-            const ausModell = !Werkzeugkasten.regionGenannt(kern.lauf, id) && p.zielId !== id;
+            const ausModell = !Werkzeugkasten.regionGenannt(kern.lauf, id, { einzeln: true }) && p.zielId !== id;
             setze("zielId", id); p.zielOffen = false; delete p.zielVorgemerkt;
             if (ausModell && !kern.lauf.zielAngesagt) {
               kern.lauf.zielAngesagt = true;
@@ -5171,7 +5171,7 @@ const Werkzeugkasten = {
       // gesagt hat. Der Aufruf bringt hoechstens Ziel und Sortierung.
       if (a.ziel && typeof ZIEL_NACH_ID !== "undefined" && ZIEL_NACH_ID[String(a.ziel).toLowerCase()]) {
         const id = String(a.ziel).toLowerCase();
-        if (Werkzeugkasten.regionGenannt(kern.lauf, id) || p.zielId === id) { p.zielId = id; p.zielOffen = false; }
+        if (Werkzeugkasten.regionGenannt(kern.lauf, id, { einzeln: true }) || p.zielId === id) { p.zielId = id; p.zielOffen = false; }
         else kern.notieren("ziel_verworfen", { ziel: id, wo: "suchen" });
       }
       if (a.sortierung) p.sortierung = a.sortierung;
@@ -8343,6 +8343,54 @@ const Werkzeugkasten = {
     barcelona: ["barca", "spanische festland", "spanisches festland", "festland spanien", "katalonien", "costa brava"],
   },
 
+  /* Laender, Kontinente und Grossregionen (22.11.2026).
+     ------------------------------------------------------------------
+     Ben: "Hast du zu den Staedten die Laender hinterlegt, damit das
+     Modell, wenn ich das Land sage, weiss, welche Staedte gemeint sind?
+     Vielleicht auch fuer Kontinente." Bisher nicht: "nach Spanien" galt
+     fuer keine Region als genannt, und eine richtige Auswahl des Modells
+     (Mallorca, Teneriffa, Barcelona) fiel durch die Sperre.
+     Jeder Eintrag: Woerter -> Regionen des Katalogs. `kernLiest: false`
+     heisst, der Kern liest das Wort nicht von sich aus als Ziel ("wir
+     wohnen in Deutschland"), es erlaubt nur die Angabe des Modells. */
+  GEBIETE: [
+    { woerter: ["spanien"], ziele: ["mallorca", "teneriffa", "barcelona"] },
+    { woerter: ["griechenland"], ziele: ["kreta"] },
+    { woerter: ["portugal"], ziele: ["algarve", "lissabon"] },
+    { woerter: ["italien"], ziele: ["sardinien", "suedtirol"] },
+    { woerter: ["österreich", "oesterreich"], ziele: ["wien", "tirol"] },
+    { woerter: ["finnland"], ziele: ["lappland"] },
+    { woerter: ["deutschland"], ziele: ["ostsee"], kernLiest: false },
+    { woerter: ["marokko"], ziele: ["marrakesch"] },
+    { woerter: ["südafrika", "suedafrika"], ziele: ["kapstadt"] },
+    { woerter: ["thailand"], ziele: ["krabi"] },
+    { woerter: ["japan"], ziele: ["kyoto"] },
+    { woerter: ["usa", "amerika", "vereinigte staaten", "nordamerika"], ziele: ["newyork"] },
+    // Kontinente
+    { woerter: ["europa"], ziele: ["mallorca", "kreta", "algarve", "sardinien", "teneriffa", "barcelona", "wien", "lissabon", "tirol", "suedtirol", "lappland", "ostsee", "island"] },
+    { woerter: ["asien", "fernost"], ziele: ["krabi", "kyoto"] },
+    { woerter: ["afrika"], ziele: ["marrakesch", "kapstadt"] },
+    // Grossregionen
+    { woerter: ["skandinavien", "nordeuropa", "polarkreis"], ziele: ["lappland", "island"] },
+    { woerter: ["südeuropa", "suedeuropa"], ziele: ["mallorca", "kreta", "algarve", "sardinien", "teneriffa", "barcelona", "lissabon"] },
+    { woerter: ["mittelmeer"], ziele: ["mallorca", "kreta", "sardinien", "barcelona"] },
+    { woerter: ["alpen"], ziele: ["tirol", "suedtirol"] },
+    { woerter: ["südostasien", "suedostasien"], ziele: ["krabi"] },
+    { woerter: ["ostasien"], ziele: ["kyoto"] },
+    { woerter: ["nordafrika"], ziele: ["marrakesch"] },
+    { woerter: ["iberische halbinsel", "iberien"], ziele: ["algarve", "lissabon", "barcelona"] },
+  ],
+
+  // Die Gebietswoerter, unter denen eine Region mitgemeint ist
+  // `einzeln`: nur Gebiete mit genau dieser einen Region. Ein Gebiet mit
+  // mehreren ("Spanien", "Mittelmeer") erlaubt die ganze Auswahl, aber kein
+  // einzelnes Ziel - sonst waehlte das Modell das Reiseziel fuer die Person.
+  gebietWoerter(id, nurKernLiest = false, einzeln = false) {
+    return (this.GEBIETE || []).filter((g) => g.ziele.includes(id) && (!nurKernLiest || g.kernLiest !== false)
+      && (!einzeln || g.ziele.length === 1))
+      .flatMap((g) => g.woerter);
+  },
+
   // Regionen, die eine Nachricht als Reiseziel nennt (siehe stand_merken, 22.11.2026)
   zieleAusText(text) {
     const t = String(text || "").toLowerCase();
@@ -8353,7 +8401,7 @@ const Werkzeugkasten = {
     if (/\b(war(en)?|gewesen|letztes jahr|schon mal|schonmal)\b/.test(t)) return [];
     const raus = [];
     for (const z of (typeof ZIELE !== "undefined" ? ZIELE : [])) {
-      const woerter = [z.name, z.id, ...(this.REGION_SPITZNAMEN[z.id] || [])].filter(Boolean)
+      const woerter = [z.name, z.id, ...(this.REGION_SPITZNAMEN[z.id] || []), ...this.gebietWoerter(z.id, true)].filter(Boolean)
         .map((x) => String(x).toLowerCase()).filter((x) => x.length >= 3);
       const treffer = woerter.some((w) => {
         const sicher = w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -8364,12 +8412,12 @@ const Werkzeugkasten = {
     return raus;
   },
 
-  regionGenannt(lauf, id) {
+  regionGenannt(lauf, id, opts = {}) {
     const z = typeof ZIEL_NACH_ID !== "undefined" ? ZIEL_NACH_ID[id] : null;
     if (!z) return false;
     const gesagt = (lauf.gespraech || []).filter((n) => n.role === "user")
       .map((n) => String(n.content).toLowerCase()).join(" ");
-    const woerter = [z.name, z.id, z.region, z.flughafen, ...(this.REGION_SPITZNAMEN[id] || [])].filter(Boolean)
+    const woerter = [z.name, z.id, z.region, z.flughafen, ...(this.REGION_SPITZNAMEN[id] || []), ...this.gebietWoerter(id, false, !!opts.einzeln)].filter(Boolean)
       .map((x) => String(x).toLowerCase()).filter((x) => x.length >= 3);
     /* Auf ganze Woerter, nicht auf Teilstuecke.
        ------------------------------------------------------------------
