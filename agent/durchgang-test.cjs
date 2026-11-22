@@ -2434,8 +2434,13 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     /* Grenzfall: Enthaelt die Frage ein FAQ-Thema ("Flughafen"), wird im
        FAQ nachgeschlagen - echte Daten der Seite, in beiden Armen gleich
        (Arm B verdeckt, Arm A sieht zu). */
-    pruefe("Mit FAQ-Thema wird nachgeschlagen, in beiden Armen gleich",
-      fall("frage", "Welcher Flughafen liegt am nächsten an Lüneburg?"), "faq_nachschlagen");
+    // Seit dem 22.11.2026 (Ben): der naechste Flughafen ist Allgemeinwissen, kein FAQ
+    pruefe("Naechster Flughafen: kein FAQ, keine Suche - das Modell antwortet",
+      fall("frage", "Welcher Flughafen liegt am nächsten an Lüneburg?") ?? "nichts", "nichts");
+    pruefe("... auch ohne Fragezeichen ('der naechste von Bullenhausen aus')",
+      fall("antwort", "der nächste von bullenhausen aus") ?? "nichts", "nichts");
+    pruefe("... aber 'ich wohne in Hamburg' haelt keine Suche auf",
+      fall("antwort", "ich wohne in Hamburg, also ab Hamburg"), "suchen");
     pruefe("Eine Frage mit FAQ-Eintrag fuehrt weiter ins FAQ",
       fall("frage", "Fliegt ihr auch an Feiertagen?"), "faq_nachschlagen");
     const aq = fs.readFileSync(B + "api/agent.js", "utf8");
@@ -3800,6 +3805,58 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     const wz = fs.readFileSync(alt && fs.existsSync(quelle + "werkzeuge.js") ? quelle + "werkzeuge.js" : B + "agent/werkzeuge.js", "utf8");
     pruefe("Tempo: hoechstens 7500 px/s, Ziel 17 s", /Math\.min\(7500, Math\.max\(3000, \(bis - von\) \/ 17\)\)/.test(wz), true);
     pruefe("Nach dem Filtern kein Klick auf Suchen mehr", /async trefferZahlZeigen\(\)[\s\S]{0,900}const knopf = null;/.test(wz), true);
+  }
+  // Bens zweiter Lauf vom 22.11.2026. Gegenprobe: --alt=_backup/gp-lauf22b
+  if (WK && WK.werkzeuge && WK.werkzeuge.stand_merken) {
+    const versuch = (f) => { try { return f(); } catch (e) { return "fehler " + e.message; } };
+    const spiel = async (satz, args, p0, lauf0 = {}) => {
+      const p = { ...p0 };
+      const kern = { lauf: { profil: p, gespraech: [{ role: "assistant", content: "Frage" }, { role: "user", content: satz }], protokoll: [],
+          annahmeOffen: [], gefragtWie: {}, verlauf: [], nachrichtArt: "antwort", runde: 1, ...lauf0 },
+        notieren(e, d) { this.lauf.protokoll.push({ ereignis: e, ...d }); },
+        freigabe: () => "suchen", darf: () => false, logZeile() {}, sagen() {}, standAnzeigen() {}, sichern() {}, standKurz: () => "", antwortWerten() {} };
+      try { await WK.werkzeuge.stand_merken.call(WK, { nachricht_art: "antwort", frage_beantwortet: "ja", ...args }, kern); } catch (e) { return { p, fehler: e.message, kern }; }
+      return { p, kern };
+    };
+    // Reformationstag
+    pruefe("Fester Feiertag: 'am Reformationstag' ist der 31.10.", JSON.stringify(versuch(() => WK.tagAusText("am Reformationstag"))), JSON.stringify({ tag: 31, monat: 10 }));
+    const r1 = await spiel("ich würde gerne am Reformationstag fliegen", { monat: 10 }, {}, { gefragt: "zeit" });
+    pruefe("'am Reformationstag': Monat Oktober und Anreise 31.10.", [r1.p.monat, r1.p.anreise], [10, "2027-10-31"]);
+    pruefe("... und der Kern sagt es an", (WK.annahmeSaetze(r1.kern.lauf, r1.p).find((x) => /Reformationstag/.test(x)) || "kein Satz"),
+      "Reformationstag ist am 31. Oktober - ich rechne mit Anreise an dem Tag. Wenn du anders planst, sag Bescheid.");
+    const r2 = await spiel("ja am reformationstag", { anreise: "2026-10-31" }, { monat: 10, vonPerson: { monat: true } }, { gefragt: "anreise", datumFrage: 1 });
+    pruefe("Antwort 'am reformationstag' auf die Tagesfrage: 31.10. im richtigen Jahr", r2.p.anreise, "2027-10-31");
+    // Freundin ist 17
+    const f1 = await spiel("meine freundin ist 17", { kinder: 1, kinderAlter: [17] }, { erwachsene: 2, kinder: 0, personen: 2, vonPerson: { erwachsene: true } }, { gefragt: "art" });
+    pruefe("'meine Freundin ist 17': 1 Erwachsener + 1 Kind, nicht 3 Personen", [f1.p.erwachsene, f1.p.kinder, f1.p.personen ?? null], [1, 1, 2]);
+    const f2 = await spiel("sorry einer meiner freunde ist noch 17", { kinder: 1, kinderAlter: [17] }, { erwachsene: 3, kinder: 0, personen: 3 }, { gefragt: "art" });
+    pruefe("'einer meiner Freunde ist noch 17': 2 Erwachsene + 1 Kind", [f2.p.erwachsene, f2.p.kinder], [2, 1]);
+    const f3 = await spiel("mein sohn kommt auch mit, er ist 5", { kinder: 1, kinderAlter: [5] }, { erwachsene: 2, kinder: 0, personen: 2 }, { gefragt: "art" });
+    pruefe("'mein Sohn kommt auch mit, er ist 5': jemand kommt dazu, 2 Erwachsene bleiben", [f3.p.erwachsene, f3.p.kinder], [2, 1]);
+    // Hotel + Malle + Asien
+    const satzK = "ich möchte gerne in ein hotel nach malle oder asien";
+    const k1 = await spiel(satzK, { ziel: "mallorca", zieleAuswahl: ["mallorca", "krabi"] }, { erwachsene: 1, kinder: 1, kinderAlter: [17] }, { gefragt: "art" });
+    pruefe("Kombiniert: Hotel wird als Art gesetzt", [k1.p.typ, k1.p.artGenannt, k1.p.artErwaehnt ?? null], ["hotel", true, null]);
+    pruefe("Kombiniert: Auswahl Mallorca, Krabi, Kyoto - kein festes Ziel Mallorca", [k1.p.zielId ?? null, (k1.p.zieleAuswahl || []).slice().sort().join(",")], [null, "krabi,kyoto,mallorca"]);
+    const k2 = await spiel(satzK, {}, { erwachsene: 1, kinder: 1, kinderAlter: [17] }, { gefragt: "art" });
+    pruefe("Kombiniert, Modell schickt nichts: der Kern liest Hotel und alle drei Ziele", [k2.p.typ, (k2.p.zieleAuswahl || []).slice().sort().join(",")], ["hotel", "krabi,kyoto,mallorca"]);
+    const k3 = await spiel("ein hotel auf malle, auch gern asien", {}, {}, { gefragt: "art" });
+    pruefe("'auch gern Asien' heisst nicht 'beide Unterkunftsarten'", [k3.p.typ, k3.p.artEgal === true], ["hotel", false]);
+    // Preis nach angenommener Warnung nicht noch einmal
+    const pE = { zielId: "mallorca", typ: "hotel", artGenannt: true, monat: 10, naechte: 9, erwachsene: 2, kinder: 1, kinderAlter: [17], verpflegung: "ai", maxPreis: 330,
+      flug: true, flugAb: "Hamburg", anreise: "2027-10-31", von: "2027-10-31", bis: "2027-11-09", vonPerson: { maxPreis: true } };
+    console.log("   Treffer im nachgebauten Stand:", WK.katalogTreffer(pE, WK.filterAusStand(pE)).length);
+    const lE = { preisGewarnt: { 210: true }, engstelleGefragt: { preis: true } };
+    versuch(() => WK.engstelle(WK.katalogTreffer(pE, WK.filterAusStand(pE)), pE, lE));
+    const eE = versuch(() => WK.engstelleRueckfrage(pE, lE));
+    console.log("   Engstelle nach angenommener Preiswarnung:", eE?.satz || eE);
+    pruefe("Nach angenommener Preiswarnung: kein Anheben des Preises mehr angeboten", eE && eE.kandidaten ? eE.kandidaten.some((k) => /^(preis|gesamt)/.test(k.feld)) : "keine Frage", false);
+  }
+  // Fortsetzung nach dem Anhalten zaehlt nicht als Antwort
+  {
+    const kt = fs.readFileSync(alt && fs.existsSync(quelle + "kern.js") ? quelle + "kern.js" : B + "agent/kern.js", "utf8");
+    pruefe("'Weitermachen' nach dem Anhalten loest kein 'nicht verstanden' aus",
+      [/this\.lauf\.fortsetzungText = String\(t\)/.test(kt), /\|\| istFortsetzung/.test(kt)], [true, true]);
   }
   // 3. Preisbezug: ein Knopf des Kerns fragt nicht noch einmal
   if (KN && KN.budgetPruefen) {

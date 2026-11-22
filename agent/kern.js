@@ -2894,8 +2894,17 @@ const Kern = {
              Die Folge war schlimmer als eine ueberfluessige
              Entschuldigung: Mit `kernFragt` ERSETZT der Kern den Text
              des Modells. Eine richtige Antwort ging damit verloren. */
+          /* Nach dem Anhalten: "Weitermachen" ist keine Antwort (22.11.2026).
+             Gemeldet: Angehalten, weitergemacht - und im Chat stand
+             "Entschuldige, das habe ich nicht verstanden". Der Kern hatte
+             das Wort als Antwort auf die offene Frage (Reisezeit) gewertet.
+             Der Zug setzt die Arbeit fort; die Frage kommt danach wieder. */
+          const istFortsetzung = !!this.lauf.fortsetzungText
+            && String(letzteNachricht || "").trim().toLowerCase() === this.lauf.fortsetzungText;
+          if (istFortsetzung) { this.lauf.fortsetzungText = null; this.notieren("fortsetzung_keine_antwort", {}); }
           const fragtZurueck = this.lauf.nachrichtArt === "frage"
             || this.lauf.nachrichtArt === "unklar"
+            || istFortsetzung
             || /\?\s*$/.test(String(letzteNachricht || "").trim());
           if (!freierZug && !tippGestellt && offen && fpJetzt.satz && !fragtZurueck
             && this.lauf.nachrichtArt === "antwort") {
@@ -6216,6 +6225,8 @@ const Kern = {
 
     if (weiter && !selbst) {
       this.notieren("anhalt_weiter", { werkzeug: h?.werkzeug || null });
+      // "Weitermachen" ist keine Antwort auf die offene Frage (22.11.2026)
+      this.lauf.fortsetzungText = String(t).trim().toLowerCase();
       this.lauf.fortsetzenMit = h?.werkzeug && h.werkzeug !== "stand_merken" ? h.werkzeug : null;
       this.lauf.fortsetzenHinweis = this.ANHALT_TAETIGKEIT[h?.werkzeug] ? `zuletzt: ${h.werkzeug}` : "zuletzt: deine Arbeit auf der Seite";
       return false;   // normaler Weg: Nachricht zeigen, Zug starten

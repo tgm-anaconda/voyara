@@ -2246,6 +2246,7 @@ const Werkzeugkasten = {
     { name: "Oktoberfest", muster: /oktoberfest|wiesn/, monate: () => [9] },
     { name: "Tag der Deutschen Einheit", muster: /tag der deutschen einheit/, monate: () => [10] },
     { name: "Halloween", muster: /halloween/, monate: () => [10] },
+    { name: "Reformationstag", muster: /reformationstag/, monate: () => [10] },
     { name: "Allerheiligen", muster: /allerheiligen|allerseelen/, monate: () => [11] },
     { name: "1. Advent", muster: /(1\.|erste[rn]?|1)\s*advent/,
       monate: (h, wk) => [wk.naechstes(h, (j) => wk.ersterAdvent(j)).getMonth() + 1] },
@@ -2568,7 +2569,29 @@ const Werkzeugkasten = {
       const d = this.osterDatum(osterTag[1]);
       return { tag: d.getDate(), monat: d.getMonth() + 1 };
     }
+    const fest = this.festerTag(t);
+    if (fest) return { tag: fest.tag, monat: fest.monat };
     return null;
+  },
+
+  /* Feiertage mit festem Datum (22.11.2026). Gemeldet: "am Reformationstag"
+     - der Kern kannte den Tag nicht, fragte "Meinst du Oktober?" und
+     verwarf danach den Anreisetag, weil keine Zahl in der Nachricht stand.
+     Nur Tage, die EIN Tag sind; Silvester, Weihnachten und Neujahr meinen
+     meist einen Zeitraum und bleiben beim Monat (ZEITANKER). */
+  FESTE_TAGE: [
+    { name: "Reformationstag", muster: /reformationstag/, tag: 31, monat: 10 },
+    { name: "Halloween", muster: /halloween/, tag: 31, monat: 10 },
+    { name: "Tag der Deutschen Einheit", muster: /tag der deutschen einheit|einheitstag/, tag: 3, monat: 10 },
+    { name: "Allerheiligen", muster: /allerheiligen/, tag: 1, monat: 11 },
+    { name: "Valentinstag", muster: /valentinstag/, tag: 14, monat: 2 },
+    { name: "Tag der Arbeit", muster: /tag der arbeit|maifeiertag/, tag: 1, monat: 5 },
+    { name: "Nikolaus", muster: /nikolaus(tag)?\b/, tag: 6, monat: 12 },
+  ],
+
+  festerTag(text) {
+    const t = String(text || "").toLowerCase();
+    return this.FESTE_TAGE.find((f) => f.muster.test(t)) || null;
   },
 
   // Ein Tag im Abstand zum naechsten Ostersonntag, von heute aus gesehen
@@ -3831,6 +3854,28 @@ const Werkzeugkasten = {
           setze(feld, neu);
         }
       }
+      /* Auswahl vor festem Ziel, Gebiete vollstaendig (22.11.2026).
+         ----------------------------------------------------------------
+         Gemeldet: "Hotel, Malle oder Asien" - das Modell schickte Mallorca
+         als festes Ziel UND die Auswahl Mallorca/Krabi. Das feste Ziel
+         gewann, gesucht wurde nur Mallorca, und von "Asien" fehlte Kyoto.
+         Nennt die Nachricht mehrere Regionen, gilt die Auswahl; und was
+         die Nachricht nennt (Namen, Laender, Kontinente), kommt dazu. */
+      if (a.zieleAuswahl !== undefined && (p.zieleAuswahl || []).length) {
+        const letzteZA = String((kern.lauf.gespraech || []).filter((n) => n.role === "user").slice(-1)[0]?.content || "");
+        const imText = Werkzeugkasten.zieleAusText(letzteZA, { locker: true }).filter((id) => !(p.zieleAus || []).includes(id));
+        const fehlt = imText.filter((id) => !p.zieleAuswahl.includes(id));
+        if (fehlt.length && imText.some((id) => p.zieleAuswahl.includes(id))) {
+          p.zieleAuswahl = [...p.zieleAuswahl, ...fehlt];
+          geaendert.push("zieleAuswahl");
+          kern.notieren("ziele_ergaenzt_aus_text", { ziele: fehlt });
+        }
+        if (p.zielId && p.zieleAuswahl.length >= 2 && p.zieleAuswahl.includes(p.zielId) && a.ziel !== undefined) {
+          kern.notieren("ziel_zugunsten_auswahl", { ziel: p.zielId, auswahl: p.zieleAuswahl.slice() });
+          p.zielId = null; p.zielOffen = false;
+          geaendert.push("zielId");
+        }
+      }
       /* Eine Region kann nicht gleichzeitig gewuenscht und abgelehnt sein.
          Die Ablehnung gewinnt: Sie ist die spaetere und deutlichere
          Aussage ("gerne Mallorca oder Kreta" ... "Kreta aber nicht"). */
@@ -4011,6 +4056,14 @@ const Werkzeugkasten = {
         kern.notieren("zeitanker", { name: ank.name, monate: ank.monate, sicher: ank.sicher });
         if (ank.sicher) {
           a.monat = ank.monat;
+          /* "Am Reformationstag" ist ein Tag, nicht nur ein Monat (22.11.2026) */
+          const letzteF = String((kern.lauf.gespraech || []).filter((n) => n.role === "user").slice(-1)[0]?.content || "");
+          const festT = Werkzeugkasten.festerTag(letzteF);
+          const festAnreise = festT && festT.monat === ank.monat && !a.anreise && /\b(am|an|zum|ab)\b/i.test(letzteF);
+          if (festAnreise) {
+            a.anreise = `2000-${String(festT.monat).padStart(2, "0")}-${String(festT.tag).padStart(2, "0")}`;
+            kern.notieren("anreise_aus_feiertag", { name: festT.name });
+          }
           if (!kern.lauf.relativAngesagt) {
             kern.lauf.relativAngesagt = true;
             const name = typeof MONATSNAMEN !== "undefined" ? MONATSNAMEN[ank.monat - 1] : String(ank.monat);
@@ -4031,6 +4084,9 @@ const Werkzeugkasten = {
                 karfreitag: `${fr.getDate()}.${fr.getMonth() + 1}.`, ostersonntag: `${so.getDate()}.${so.getMonth() + 1}.` };
               text = `Ostern ist ${so.getFullYear()} schon ${lage} ${name}: Karfreitag ist der ${fr.getDate()}.${fr.getMonth() !== so.getMonth() && typeof MONATSNAMEN !== "undefined" ? ` ${MONATSNAMEN[fr.getMonth()]}` : ""}, Ostersonntag der ${so.getDate()}. ${name}. `
                 + `Ich suche deshalb im ${name}${lage === "Ende" && folge ? ` - je nach Dauer reicht die Reise dann in den ${folge}` : ""}. Wenn du einen anderen Monat im Kopf hast, sag Bescheid.`;
+            }
+            if (festAnreise) {
+              text = `${festT.name} ist am ${festT.tag}. ${name} - ich rechne mit Anreise an dem Tag. Wenn du anders planst, sag Bescheid.`;
             }
             (kern.lauf.annahmeOffen ||= []).push({
               thema: "zeit",
@@ -4342,6 +4398,27 @@ const Werkzeugkasten = {
         kern.notieren("menge_unklar", { wert: a.personenGesamt });
         delete a.personenGesamt;
       }
+      /* Ein Alter fuer jemanden, der schon gezaehlt ist (22.11.2026).
+         ----------------------------------------------------------------
+         Gemeldet: "ich und meine Freundin" -> 2 Erwachsene, dann "meine
+         Freundin ist 17" - und das Modell machte daraus 2 Erwachsene und
+         ein Kind, also drei Personen. Gemeint war: eine der beiden ist
+         minderjaehrig. Nennt die Nachricht das Alter einer schon
+         genannten Person ("meine Freundin ist 17", "einer davon ist noch
+         16") und kommt niemand dazu, wird aus einem Erwachsenen ein Kind -
+         die Gruppe bleibt gleich gross. */
+      const neuDazu = /\b(zus(ä|ae)tzlich|dazu|au(ß|ss)erdem|plus|kommt (auch )?mit|kommen (auch )?mit|noch (ein|eine|einen|zwei|drei) (kind|kinder|person|freund|freundin|sohn|tochter))\b/i;
+      const altersNachtrag = /\b(mein|meine|meiner|meinem|meinen|der|die|das|einer|eine|eins|davon|er|sie)\b[^.!?]{0,40}\b(ist|sind|wird)\b[^.!?]{0,12}?\b(\d{1,2})\b/i;
+      if (a.kinder != null && a.kinder > (p.kinder || 0) && (p.erwachsene || 0) >= 2
+        && (a.erwachsene == null || a.erwachsene === p.erwachsene)
+        && gesagt(altersNachtrag, 1) && !gesagt(neuDazu, 1)) {
+        const mehr = a.kinder - (p.kinder || 0);
+        if (p.erwachsene - mehr >= 1) {
+          a.erwachsene = p.erwachsene - mehr;
+          if (p.personen != null) a.personenGesamt = p.personen;
+          kern.notieren("erwachsener_wird_kind", { anzahl: mehr, erwachsene: a.erwachsene, kinder: a.kinder });
+        }
+      }
       setze("personen", a.personenGesamt);
       setze("erwachsene", a.erwachsene); setze("kinder", a.kinder);
       // Das Alter der Kinder weiss nur die Person. Aus "mein suesser Bengel"
@@ -4510,7 +4587,9 @@ const Werkzeugkasten = {
          beliebiger Satz nicht. Steht das Modell aber dafuer ein, dass
          die Person gerade DIESE Frage beantwortet hat ("gleich am
          Monatsanfang", "an einem Samstag"), gilt der Tag. */
-      if (a.anreise && !gesagt(Werkzeugkasten.TAG) && !beantwortet("anreise")) {
+      // Ein Feiertag mit festem Datum ist ein genannter Tag (22.11.2026)
+      const festGesagt = Werkzeugkasten.festerTag((kern.lauf.gespraech || []).filter((n) => n.role === "user").slice(-1)[0]?.content || "");
+      if (a.anreise && !gesagt(Werkzeugkasten.TAG) && !beantwortet("anreise") && !festGesagt) {
         kern.notieren("anreise_verworfen", { anreise: a.anreise });
         Werkzeugkasten.merkeVerworfen(kern, "anreise", a.anreise);
         delete a.anreise;
@@ -4868,7 +4947,7 @@ const Werkzeugkasten = {
            Ist die Art gerade gefragt worden, ist "Hotel" natuerlich eine
            Antwort und keine Nebenbemerkung. */
         if (!a.typ && !p.artGenannt) {
-          const antwortAufArt = kern.lauf.gefragt === "art";
+          const antwortAufArt = kern.lauf.gefragt === "art" || kern.lauf.zuletztGefragt === "art";
           /* "Auch Ferienwohnungen" heisst beides, nicht nur Ferienwohnungen.
              --------------------------------------------------------------
              Gemeldet am 02.10.2026, dreimal hintereinander im selben
@@ -4888,7 +4967,12 @@ const Werkzeugkasten = {
 
              Jetzt zuerst auf "beides" pruefen, dann auf "nur", und in
              jedem Fall festhalten, dass entschieden wurde. */
-          const beides = /\b(auch|beide[sn]?|sowohl|egal|alles)\b/i.test(letzteNachricht);
+          /* "auch" nur direkt vor dem Wort (22.11.2026): In "ein Hotel auf
+             Malle, auch gern Asien" meint "auch" das Ziel, nicht die Art. */
+          const beides = /\b(beide[sn]?|sowohl)\b/i.test(letzteNachricht)
+            || /\bauch\s+(gern(e)?\s+)?(ein(e|en)?\s+)?(hotels?|ferienwohn\w*|fewo|apartments?|ferienh(a|ä)us\w*)/i.test(letzteNachricht)
+            || /(hotels?|ferienwohn\w*)\s+(oder|und|bzw\.?)\s+(ferienwohn\w*|hotels?)/i.test(letzteNachricht)
+            || (antwortAufArt && /^\s*(egal|alles|beides|ist (mir )?egal)\b/i.test(letzteNachricht));
           /* Eine Frage nach dem Angebot ist keine Erwaehnung (21.11.2026).
              Gemeldet: "Erstmal wuerde ich gerne wissen, wie viele Hotels
              ihr anbietet?" - und spaeter "Du hattest Hotel erwaehnt, soll
@@ -8440,7 +8524,17 @@ const Werkzeugkasten = {
   },
 
   // Regionen, die eine Nachricht als Reiseziel nennt (siehe stand_merken, 22.11.2026)
-  zieleAusText(text) {
+  zieleAusText(text, opts = {}) {
+    /* Steht ein Ziel klar hinter "nach/auf/in", gelten auch die anderen
+       Regionen und Gebiete derselben Nachricht ("nach Malle oder Asien")
+       - sonst kam nur Mallorca an (22.11.2026). `locker` liest ohne
+       Praeposition (fuer die Ergaenzung einer Auswahl des Modells). */
+    if (!opts.locker && !opts.innen) {
+      const streng = this.zieleAusText(text, { innen: true });
+      if (!streng.length) return [];
+      const alle = this.zieleAusText(text, { locker: true });
+      return [...new Set([...streng, ...alle])];
+    }
     const t = String(text || "").toLowerCase();
     if (!t || /\?/.test(t)) return [];
     const verneint = typeof Kern !== "undefined" && Kern.AUSSCHLUSS_WORT ? Kern.AUSSCHLUSS_WORT
@@ -8453,7 +8547,9 @@ const Werkzeugkasten = {
         .map((x) => String(x).toLowerCase()).filter((x) => x.length >= 3);
       const treffer = woerter.some((w) => {
         const sicher = w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-        return new RegExp(`\\b(nach|auf|aufs|in|ins|an|an die|an den|richtung)\\s+(die\\s+|den\\s+|das\\s+)?${sicher}([^a-zäöüß]|$)`, "i").test(t);
+        return opts.locker
+          ? new RegExp(`(^|[^a-zäöüß])${sicher}([^a-zäöüß]|$)`, "i").test(t)
+          : new RegExp(`\\b(nach|auf|aufs|in|ins|an|an die|an den|richtung)\\s+(die\\s+|den\\s+|das\\s+)?${sicher}([^a-zäöüß]|$)`, "i").test(t);
       });
       if (treffer && !raus.includes(z.id)) raus.push(z.id);
     }
@@ -10359,6 +10455,18 @@ const Werkzeugkasten = {
        Das Modell sagt, die Nachricht sei eine Frage (Bedeutung - sein
        Teil), und das FAQ hat dazu einen Eintrag (Wissen - der Teil des
        Kerns). Je Nachricht der Person hoechstens einmal. */
+    /* Die Frage nach dem naechsten Flughafen ist Allgemeinwissen, kein FAQ
+       (22.11.2026). Gemeldet: "der naechste von Bullenhausen" - der Agent
+       schlug im FAQ nach, weil "Flughafen" dort einen Eintrag trifft. */
+    const letzteFrageText = String([...(lauf.gespraech || [])].reverse().find((n) => n.role === "user")?.content || "");
+    // Nur die Frage nach dem naechsten - "ich wohne in Hamburg" ist eine Antwort
+    const naeheFrage = /n(ä|ae)chste[nrs]?\b|am n(ä|ae)chsten|in der n(ä|ae)he/i.test(letzteFrageText)
+      && /flughafen|flughäfen|flughaefen|abflug|fliegen|starten|\bvon\b|\bzu\b/i.test(letzteFrageText);
+    if (naeheFrage) {
+      const schluesselN = (lauf.gespraech || []).filter((n) => n.role === "user").length;
+      if (lauf.naeheOhneFaq !== schluesselN) { lauf.naeheOhneFaq = schluesselN; lauf.keinZwangFuer = schluesselN; }
+      return null;
+    }
     if (lauf.nachrichtArt === "frage" && typeof faqSuchen === "function") {
       const nutzer = (lauf.gespraech || []).filter((n) => n.role === "user");
       const schluessel = nutzer.length;
@@ -11309,7 +11417,14 @@ const Werkzeugkasten = {
       try { return this.katalogTreffer(probe, this.filterAusStand(probe)).length; } catch { return null; }
     };
     let kandidaten = [];
+    /* Hat die Person auf die Preiswarnung schon geantwortet, ist der Preis
+       ihre Grenze (22.11.2026). Gemeldet: 210 EUR, Warnung, "Bis 330 EUR" -
+       und danach bot die Engstelle wieder an, die Grenze anzuheben. Ben:
+       "Er kann gerne anbieten, eine andere Region hinzuzufuegen, aber bitte
+       nicht, dass er den Preis nochmal hochgeht." */
+    const preisBesprochen = Object.keys(lauf.preisGewarnt || {}).length > 0;
     for (const r of (e.rang && e.rang.length ? e.rang : [{ feld: e.feld, ohne: e.ohne }])) {
+      if (preisBesprochen && (r.feld === "preis" || r.feld === "gesamt")) continue;
       if (r.feld === "ausstattung") {
         /* Jeder Wunsch einzeln - aber nur die, die wirklich etwas
            kosten. Ein Merkmal, das keinen einzigen Treffer mehr bringt,
