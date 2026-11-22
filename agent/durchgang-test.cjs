@@ -3852,6 +3852,38 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     console.log("   Engstelle nach angenommener Preiswarnung:", eE?.satz || eE);
     pruefe("Nach angenommener Preiswarnung: kein Anheben des Preises mehr angeboten", eE && eE.kandidaten ? eE.kandidaten.some((k) => /^(preis|gesamt)/.test(k.feld)) : "keine Frage", false);
   }
+  const versuchZ = (f) => { try { return f(); } catch (e) { return "fehler " + e.message; } };
+  // Bens Lauf mit Wortlaut (22.11.2026): genau die Texte und Modellwerte aus dem Protokoll
+  if (WK && WK.werkzeuge && WK.werkzeuge.stand_merken) {
+    const lauf = { profil: {}, gespraech: [], protokoll: [], annahmeOffen: [], gefragtWie: {}, verlauf: [], nachrichtArt: "antwort", runde: 1 };
+    const kern = { lauf, notieren(e, d) { this.lauf.protokoll.push({ ereignis: e, ...d }); },
+      freigabe: () => "suchen", darf: () => false, logZeile() {}, sagen() {}, standAnzeigen() {}, sichern() {}, standKurz: () => "", antwortWerten() {} };
+    const zug = async (frage, thema, antwort, args) => {
+      lauf.gespraech.push({ role: "assistant", content: frage }, { role: "user", content: antwort });
+      lauf.gefragt = thema; lauf.zuletztGefragt = thema; lauf.annahmeOffen = []; lauf.abgeleitet = [];
+      try { await WK.werkzeuge.stand_merken.call(WK, { nachricht_art: "antwort", ...args }, kern); } catch (e) { lauf.fehler = e.message; }
+      return { ...lauf.profil };
+    };
+    const s1 = await zug("Hast du schon eine Vorstellung, wann es losgehen soll?", "zeit", "ich würde gerne am reformationstag fliegen", { frage_beantwortet: "ja", von: "2026-10-31", monat: 10 });
+    pruefe("Wortlaut: 'am reformationstag fliegen' -> Oktober, Anreise 31.10.2027", [s1.monat, s1.anreise], [10, "2027-10-31"]);
+    pruefe("Wortlaut: '31 wie gesagt' ist der 31.", JSON.stringify(WK.tagAusText("31 wie gesagt")), JSON.stringify({ tag: 31, monat: null }));
+    await zug("Wie lange soll die Reise werden?", "dauer", "9", { frage_beantwortet: "ja", naechte: 9 });
+    await zug("Wer reist mit?", "reisende", "ich und eine freundin", { frage_beantwortet: "ja", personenGesamt: 2, erwachsene: 2, kinder: 0 });
+    const s4 = await zug("Soll es ein Hotel werden, eine Ferienwohnung, oder darf ich dir beides zusammen zeigen?", "art", "meine freundin ist 17", { kinder: 1, kinderAlter: [17] });
+    pruefe("Wortlaut: 'meine freundin ist 17' -> 1 Erwachsener + 1 Kind (17)", [s4.erwachsene, s4.kinder, (s4.kinderAlter || []).join(","), s4.personen], [1, 1, "17", 2]);
+    const s5 = await zug("Möchtest du lieber ein Hotel, eine Ferienwohnung oder soll ich dir beide Optionen zeigen?", "art", "ich will gerne in ein Hotel auf Malle oder nach Asien", { artEgal: true, zieleAuswahl: ["mallorca", "krabi"] });
+    pruefe("Wortlaut: 'in ein Hotel auf Malle oder nach Asien' -> Hotel", [s5.typ, s5.artEgal === true], ["hotel", false]);
+    pruefe("Wortlaut: ... und Mallorca, Krabi, Kyoto als Auswahl", (s5.zieleAuswahl || []).slice().sort().join(","), "krabi,kyoto,mallorca");
+    // Danach rief das Modell suchen mit ziel "mallorca" - das darf die Auswahl nicht ueberschreiben
+    const vorher = lauf.profil.zielId ?? null;
+    const zielTeil = (args) => { const p = lauf.profil; const id = args.ziel; if ((p.zieleAuswahl || []).length >= 2 && p.zieleAuswahl.includes(id) && !p.zielId) return "ignoriert"; return "gesetzt"; };
+    pruefe("Wortlaut: suchen(ziel mallorca) laesst die Auswahl stehen (Regel im Code)", [vorher, zielTeil({ ziel: "mallorca" })], [null, "ignoriert"]);
+    const wkq = fs.readFileSync(alt && fs.existsSync(quelle + "werkzeugkasten.js") ? quelle + "werkzeugkasten.js" : B + "agent/werkzeugkasten.js", "utf8");
+    pruefe("Code: suchen ignoriert ein Ziel aus der Auswahl", /ziel_im_suchaufruf_ignoriert/.test(wkq), true);
+    // Bullenhausen ohne das Wort Flughafen
+    const zw = versuchZ(() => WK.zwang({ ...lauf.profil, flug: true }, { ...lauf, gespraech: [...lauf.gespraech, { role: "assistant", content: "Von welchem Flughafen soll es losgehen?" }, { role: "user", content: "Ich wohne in Bullenhausen welcher ist da der nächste?" }], gefragt: "flugAb", zuletztGefragt: "flugAb", nachrichtArt: "antwort", gesuchtMit: "x" }));
+    pruefe("Wortlaut: 'Ich wohne in Bullenhausen welcher ist da der naechste?' -> kein FAQ, keine Suche", zw ?? "nichts", "nichts");
+  }
   // Fortsetzung nach dem Anhalten zaehlt nicht als Antwort
   {
     const kt = fs.readFileSync(alt && fs.existsSync(quelle + "kern.js") ? quelle + "kern.js" : B + "agent/kern.js", "utf8");

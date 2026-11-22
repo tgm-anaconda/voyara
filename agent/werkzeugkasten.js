@@ -2550,6 +2550,9 @@ const Werkzeugkasten = {
     // Nur ein Tag: "14", "14.", "am 14.", "den 14."
     m = t.match(/^\s*(?:am\s+|ab\s+dem\s+|ab\s+|den\s+|der\s+)?(0?[1-9]|[12]\d|3[01])\.?\s*$/);
     if (m) return { tag: +m[1], monat: null };
+    // "31 wie gesagt", "der 31. bitte" (22.11.2026): Zahl vorn, nur Fuellwoerter danach
+    m = t.match(/^\s*(?:ja[,\s]+)?(?:am\s+|den\s+|der\s+)?(0?[1-9]|[12]\d|3[01])\.?[,\s]+(wie gesagt|bitte|gern(e)?|genau|ok(ay)?|danke)[\s.!]*$/);
+    if (m) return { tag: +m[1], monat: null };
     /* Ein Tag mitten im Satz (21.11.2026). Gemeldet: "nein wir wollen am
        8ten reisen" - kein Tag gelesen, und weil "nein" darin stand, galt
        die Antwort als "flexibel". Gelesen wird nur, was eindeutig ein Tag
@@ -5263,7 +5266,14 @@ const Werkzeugkasten = {
       // gesagt hat. Der Aufruf bringt hoechstens Ziel und Sortierung.
       if (a.ziel && typeof ZIEL_NACH_ID !== "undefined" && ZIEL_NACH_ID[String(a.ziel).toLowerCase()]) {
         const id = String(a.ziel).toLowerCase();
-        if (Werkzeugkasten.regionGenannt(kern.lauf, id, { einzeln: true }) || p.zielId === id) { p.zielId = id; p.zielOffen = false; }
+        /* Eine Auswahl aus mehreren Regionen schlaegt das Ziel im Suchaufruf
+           (22.11.2026). Im Protokoll: Auswahl Mallorca/Krabi, dann rief das
+           Modell suchen mit ziel "mallorca" - und gesucht wurde nur noch auf
+           Mallorca. Das Ziel im Aufruf ist eine Abkuerzung des Modells, keine
+           neue Angabe der Person. */
+        if ((p.zieleAuswahl || []).length >= 2 && p.zieleAuswahl.includes(id) && !p.zielId) {
+          kern.notieren("ziel_im_suchaufruf_ignoriert", { ziel: id, auswahl: p.zieleAuswahl.slice() });
+        } else if (Werkzeugkasten.regionGenannt(kern.lauf, id, { einzeln: true }) || p.zielId === id) { p.zielId = id; p.zielOffen = false; }
         else kern.notieren("ziel_verworfen", { ziel: id, wo: "suchen" });
       }
       if (a.sortierung) p.sortierung = a.sortierung;
@@ -9021,7 +9031,7 @@ const Werkzeugkasten = {
 
      Jetzt: fuehrende Null erlaubt, Punkt hinter dem Monat optional, und
      Fristwoerter ("bis", "vor dem", "nach dem") zaehlen wie "am". */
-  TAG: /\b(0?[1-9]|[12]\d|3[01])\.\s*(jan|feb|mär|maer|apr|mai|jun|jul|aug|sep|okt|nov|dez|(0?[1-9]|1[0-2])\.?)|\b(am|ab dem|ab|vom|den|bis|bis zum|vor dem|nach dem)\s+(0?[1-9]|[12]\d|3[01])\b|\d{4}-\d{2}-\d{2}|^\s*(0?[1-9]|[12]\d|3[01])\.?\s*$/i,
+  TAG: /\b(0?[1-9]|[12]\d|3[01])\.\s*(jan|feb|mär|maer|apr|mai|jun|jul|aug|sep|okt|nov|dez|(0?[1-9]|1[0-2])\.?)|\b(am|ab dem|ab|vom|den|bis|bis zum|vor dem|nach dem)\s+(0?[1-9]|[12]\d|3[01])\b|\d{4}-\d{2}-\d{2}|^\s*(0?[1-9]|[12]\d|3[01])\.?\s*$|^\s*(ja[,\s]+)?(0?[1-9]|[12]\d|3[01])\.?[,\s]+(wie gesagt|bitte|gern(e)?|genau|ok(ay)?|danke)[\s.!]*$/i,
 
   // Schluessel der Eckdaten - aendert er sich, muss neu gesucht werden
   eckdatenSchluessel(p) {
@@ -10460,8 +10470,11 @@ const Werkzeugkasten = {
        schlug im FAQ nach, weil "Flughafen" dort einen Eintrag trifft. */
     const letzteFrageText = String([...(lauf.gespraech || [])].reverse().find((n) => n.role === "user")?.content || "");
     // Nur die Frage nach dem naechsten - "ich wohne in Hamburg" ist eine Antwort
+    // "Ich wohne in Bullenhausen, welcher ist da der naechste?" - ohne das
+    // Wort Flughafen, aber gerade nach dem Flughafen gefragt (22.11.2026)
+    const flugAbGefragt = lauf.gefragt === "flugAb" || lauf.zuletztGefragt === "flugAb";
     const naeheFrage = /n(ä|ae)chste[nrs]?\b|am n(ä|ae)chsten|in der n(ä|ae)he/i.test(letzteFrageText)
-      && /flughafen|flughäfen|flughaefen|abflug|fliegen|starten|\bvon\b|\bzu\b/i.test(letzteFrageText);
+      && (flugAbGefragt || /flughafen|flughäfen|flughaefen|abflug|fliegen|starten|\bvon\b|\bzu\b/i.test(letzteFrageText));
     if (naeheFrage) {
       const schluesselN = (lauf.gespraech || []).filter((n) => n.role === "user").length;
       if (lauf.naeheOhneFaq !== schluesselN) { lauf.naeheOhneFaq = schluesselN; lauf.keinZwangFuer = schluesselN; }
