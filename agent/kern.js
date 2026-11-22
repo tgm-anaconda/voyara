@@ -1514,7 +1514,7 @@ const Kern = {
     else if (p.artEgal) teile.push("Art nicht festgelegt (Hotels zuerst)");
     if (p.vorgehen) teile.push(p.vorgehen === "top3" ? "Vorgehen: drei Favoriten" : "Vorgehen: schaut selbst");
     if (p.zimmer) teile.push(`${p.zimmer} Zimmer`);
-    if (p.budgetGesamt) teile.push(`Budget ${p.budgetGesamt} € gesamt (${p.maxPreis ? `bis ${p.maxPreis} €/Nacht` : ""})`);
+    if (p.budgetGesamt) teile.push(`Budget ${p.budgetGesamt} € gesamt${p.flug ? " fuer die Unterkunft (der Flug kommt in der Kasse dazu, er zaehlt nicht zum Budget)" : ""} (${p.maxPreis ? `bis ${p.maxPreis} €/Nacht` : ""})`);
     else if (p.maxPreis) teile.push(`bis ${p.maxPreis} €/Nacht`);
     if (p.maxStrand != null) teile.push(`Strand bis ${Math.round(p.maxStrand * 1000)} m`);
     if (p.mindestbewertung) teile.push(`Note ab ${p.mindestbewertung}`);
@@ -1554,6 +1554,9 @@ const Kern = {
     }
     if (this.lauf.letzteVorlage?.length) zeilen.push(`Zuletzt vorgelegt: ${this.lauf.letzteVorlage.map((id, i) => `${i + 1}. ${getItemById?.(id)?.name || id} (${id})`).join(", ")}.`);
     else if (this.lauf.letzteTreffer?.length) zeilen.push(`Letztes Suchergebnis (ids): ${this.lauf.letzteTreffer.join(", ")}.`);
+    // Die Fluege im offenen Fenster (22.11.2026), sonst raet das Modell
+    const flugText = typeof Fluege !== "undefined" && Fluege.fuerModell ? Fluege.fuerModell() : "";
+    if (flugText) zeilen.push(flugText);
     if (this.lauf.gewaehlt) zeilen.push(`Geoeffnetes Haus: ${getItemById?.(this.lauf.gewaehlt)?.name || this.lauf.gewaehlt} (${this.lauf.gewaehlt}).`);
     zeilen.push(this.fahrplanText());
     // Was die Seite nicht kann - damit das Modell eine Grenze nennen kann,
@@ -1821,6 +1824,9 @@ const Kern = {
     this.lauf.stumm = false;
     if (this.lauf.anhalt?.gesagt && this.anhaltAntwort(t, opts)) return;
     if (this.lauf.budgetHalt && this.budgetAntwort(t, opts)) return;
+    // Antwort auf eine der vier Flugfragen (22.11.2026) - vor der Kasse,
+    // damit "Mit Koffer" nicht als Kassenwunsch gelesen wird
+    this.flugFrageLesen(t);
     if (await this.kasseBedienen(t, opts)) return;
     if (this.welchesHaus(t, opts)) return;
     if (this.kommaPruefen(t, opts)) return;
@@ -1830,7 +1836,6 @@ const Kern = {
     this.zimmerAntwort(t);
     this.abschlussAntwort(t);
     this.flugAntwort(t);
-    this.flugAnzahlLesen(t);
     /* Jede neue Nachricht beendet das Anhalten - die Person spricht wieder
        mit dem Agenten. Ohne das liefe ein Zug, der ueber einen Sonderweg
        startet (Filter neu, Vorschlaege zeigen), sofort in den Halt. */
@@ -4272,7 +4277,9 @@ const Kern = {
           return wb - wa || b.anteilPositiv - a.anteilPositiv;
         }).slice(0, 4);
       const preisInfo = Politik.aufenthaltspreis(item, p, k.preis);
-      const paket = p.flug && typeof Flug !== "undefined" ? Flug.paket(item, personen || 1, p.flugKlasse || null) : null;
+      // Ohne Flug (22.11.2026, Variante A): Die Karten zeigen die Unterkunft,
+      // der Flug kommt in der Kasse dazu - wie auf der Trefferliste
+      const paket = null;
       const gesamt = preisInfo.gesamt + (paket?.gesamt || 0);
       // "der beste Wert der Auswahl" nur bei dem Haus, das ihn wirklich hat
       const istBest = einordnung && wunsch && bilanz.some((a) => a.id === wunsch.aspekt && Math.abs(a.anteilPositiv - einordnung.best) < 0.005);
@@ -4416,8 +4423,8 @@ const Kern = {
     const personen = (p.erwachsene || 0) + (p.kinder || 0);
     const preis = Werkzeugkasten.preis(item, p.monat, p);
     const aufenthalt = Politik.aufenthaltspreis(item, p, preis).gesamt;
-    const paket = p.flug && typeof Flug !== "undefined" ? Flug.paket(item, personen || 1, p.flugKlasse || null) : null;
-    return aufenthalt + (paket?.gesamt || 0);
+    // Nur die Unterkunft (22.11.2026, Variante A) - das Budget gilt nur fuer sie
+    return aufenthalt;
   },
 
   /* Erst fragen, dann laufen.
@@ -4683,7 +4690,7 @@ const Kern = {
     if (ueber.length === preise.length && this.lauf.budgetBestaetigt !== budget) {
       const billig = Math.min(...preise.map((x) => x.gesamt));
       const satz = `Bevor ich dir die Vorschläge zeige: Keine der passenden ${Werkzeugkasten.artWort(p, true)} liegt in deinem Budget von ${euro(budget)}. `
-        + `Das günstigste kostet ${euro(billig)} für ${p.naechte} Nächte${p.flug ? " mit Flug" : ""}. `
+        + `Das günstigste kostet ${euro(billig)} für ${p.naechte} Nächte${p.flug ? " (ohne Flug)" : ""}. `
         + "Soll ich sie dir trotzdem zeigen, oder ändern wir etwas am Budget oder an den Vorgaben?";
       this.sagen(satz);
       this.gespraechPush({ role: "assistant", content: satz });
@@ -4775,8 +4782,8 @@ const Kern = {
      buchung_vorbereiten das Fenster neu oeffnen. */
   flugWunsch(t, opts = {}) {
     if (!this.lauf.flugWartet || (this.lauf.profil || {}).flugId) return false;
-    // Erst die Anzahl (21.11.2026): Ein "passt" gilt dann der Anzahlfrage
-    if (this.lauf.flugAnzahlOffen) return false;
+    // Erst die offene Flugfrage (22.11.2026): Ein "egal" gilt dann ihr
+    if (this.lauf.flugFrageOffen) return false;
     const p = this.lauf.profil;
     const satz = String(t).toLowerCase();
     const ORDNUNG = ["frueh", "mittag", "abend"];
@@ -4798,17 +4805,86 @@ const Kern = {
       this.lauf.chips = []; AgentPanel.setSuggestions([]);
       return true;
     }
-    if (!zeit && !ort) return false;
-    if (zeit && zeit === info.zeit && !ort) return false;
-    if (zeit) p.flugZeit = zeit;
-    if (ort) { p.flugAbWahl = ort; delete p.flugZeit; }
+    /* Mehr Empfehlungen, nur direkt oder auch mit Umstieg (22.11.2026) -
+       dieselben Wuensche, die die Filterspalte kennt. */
+    const mehr = /mehr (fl(ü|ue)ge|verbindungen|zeigen|vergleichen)|weitere fl(ü|ue)ge/.test(satz) && !satz.includes("?");
+    let stopps = null;
+    if (/ohne umstieg|nur direkt|direktfl(ü|ue)ge?\b|nonstop/.test(satz)) stopps = "direkt";
+    else if (/(auch )?mit umstieg|umstieg (ist )?(ok|okay|egal)/.test(satz)) stopps = "egal";
+    if (stopps === p.flugStopps) stopps = null;
+    if (!zeit && !ort && !mehr && !stopps) return false;
+    if (zeit && zeit === info.zeit && !ort && !mehr && !stopps) return false;
+    if (zeit) { p.flugZeit = zeit; delete p.flugZeitEgal; }
+    if (ort) p.flugAbWahl = ort;
+    if (stopps) p.flugStopps = stopps;
+    if (mehr) p.flugAnzahl = 6;
     this.lauf.flugGefragt = false;
     // Die alte Vorauswahl gehoert zur alten Gruppe
     try { Flug.set({ flugId: null }); } catch { /* ohne Flugmodul */ }
     if (typeof Fluege !== "undefined") Fluege.schliessen?.(false, "andere");
-    this.notieren("flug_andere", { zeit: zeit || null, ort: ort || null });
+    this.notieren("flug_andere", { zeit: zeit || null, ort: ort || null, stopps: stopps || null, mehr: !!mehr });
     this.lauf.fortsetzenMit = "buchung_vorbereiten";
     return false;   // normaler Zug: buchung_vorbereiten oeffnet das Fenster neu
+  },
+
+  /* Die Antwort auf eine der vier Flugfragen (22.11.2026, siehe
+     Werkzeugkasten.kasseFlug). Gelesen vom Kern, nicht vom Modell - eine
+     Frage, eine Antwort. Unklar und eine Frage ("was kostet Business?"):
+     Das Modell antwortet, die Flugfrage bleibt offen. Unklar ohne Frage:
+     einmal neu fragen, beim zweiten Mal gilt der Normalfall (Economy, nur
+     Handgepaeck, Tageszeit und Stopps egal), und der Kern sagt es. */
+  FLUG_NORMAL: { klasse: ["flugKlasse", "economy"], koffer: ["flugKoffer", false], zeit: ["flugZeitEgal", true], stopps: ["flugStopps", "egal"] },
+  flugFrageDeuten(name, roh) {
+    const t = String(roh || "").toLowerCase();
+    if (name === "klasse") {
+      if (/business/.test(t)) return { flugKlasse: "business" };
+      if (/premium/.test(t)) return { flugKlasse: "premium" };
+      if (/economy|eco\b|normal|standard|g(ü|ue)nstig|egal/.test(t)) return { flugKlasse: "economy" };
+    }
+    if (name === "koffer") {
+      if (/ohne koffer|kein(en)? koffer|nur hand|handgep(ä|ae)ck reicht|^\s*nein\b|brauche? (ich )?kein/.test(t)) return { flugKoffer: false };
+      if (/koffer|^\s*ja\b|gep(ä|ae)ck dazu/.test(t)) return { flugKoffer: true };
+    }
+    if (name === "zeit") {
+      if (/egal|flexibel|beliebig|ist mir gleich|wie du willst/.test(t)) return { flugZeitEgal: true };
+      if (/morgen|fr(ü|ue)h|vormittag/.test(t)) return { flugZeit: "frueh" };
+      if (/abend|nachmittag|sp(ä|ae)t/.test(t)) return { flugZeit: "abend" };
+      if (/mittag/.test(t)) return { flugZeit: "mittag" };
+    }
+    if (name === "stopps") {
+      if (/ohne umstieg|nur direkt|direktfl|nonstop|^\s*direkt/.test(t)) return { flugStopps: "direkt" };
+      if (/umstieg|egal|beides|ist mir gleich|g(ü|ue)nstig/.test(t)) return { flugStopps: "egal" };
+    }
+    return null;
+  },
+  flugFrageLesen(t) {
+    const name = this.lauf.flugFrageOffen;
+    if (!name) return;
+    const p = (this.lauf.profil ||= {});
+    // "Was kostet denn Business?" ist eine Rueckfrage, keine Antwort
+    if (String(t).includes("?") && String(t).trim().split(/\s+/).length > 2) return;
+    const werte = this.flugFrageDeuten(name, t);
+    if (werte) {
+      Object.assign(p, werte);
+      for (const k of Object.keys(werte)) (p.vonPerson ||= {})[k] = true;
+      this.lauf.flugFrageOffen = null;
+      this.lauf.fortsetzenMit = "buchung_vorbereiten";
+      this.notieren("flug_antwort", { frage: name, ...werte });
+      return;
+    }
+    if (String(t).includes("?")) return;   // eine Rueckfrage: das Modell antwortet, die Frage bleibt offen
+    const versuche = (this.lauf.flugFrageVersuche ||= {});
+    versuche[name] = (versuche[name] || 0) + 1;
+    this.lauf.flugFrageOffen = null;
+    if (versuche[name] >= 2) {
+      const [feld, wert] = this.FLUG_NORMAL[name];
+      p[feld] = wert;
+      this.lauf.flugNormalGesagt = { klasse: "Economy", koffer: "nur Handgepäck", zeit: "jede Tageszeit", stopps: "auch mit Umstieg" }[name];
+      this.notieren("flug_antwort_normal", { frage: name });
+    } else {
+      this.notieren("flug_antwort_unklar", { frage: name, text: String(t).slice(0, 60) });
+    }
+    this.lauf.fortsetzenMit = "buchung_vorbereiten";
   },
 
   /* Die Antwort auf "Wie viele Fluege?" (21.11.2026, siehe
@@ -5133,7 +5209,7 @@ const Kern = {
        das pro Nacht fuer alle oder pro Person gilt. Die Lesart "pro Nacht"
        stand stillschweigend da; diese Stelle haette sagen sollen, dass 70 €
        fuer die ganze Reise nicht reichen, und nachfragen. */
-    const gesamtGefragt = /ganze reise|insgesamt|gesamt|mit flug|inklusive flug|inkl\.? flug|flug (und [a-zäöüß]+ )?(sind |ist )?(schon )?mit drin/i.test(letzteBot) && this.lauf.gefragt === "preis";
+    const gesamtGefragt = /ganze reise|insgesamt|gesamt|mit flug|inklusive flug|inkl\.? flug|flug (und [a-zäöüß]+ )?(sind |ist )?(schon )?mit drin|gemeint ist die unterkunft/i.test(letzteBot) && this.lauf.gefragt === "preis";
     const gesamtGesagt = Werkzeugkasten.GESAMT_WORT.test(satz) && !Werkzeugkasten.FUER_ALLE_WORT.test(satz);
     const nachtGesagt = Werkzeugkasten.PRO_NACHT_WORT.test(satz);
     const personGesagt = Werkzeugkasten.PRO_PERSON_WORT.test(satz);
@@ -5147,7 +5223,7 @@ const Kern = {
         this.lauf.preisFrage = { betrag, art: "unter_minimum", min };
         const wer = personen > 1 ? `für ${personen} Personen` : "";
         return zeigenUndFragen(
-          `${euro(betrag)} für die ganze Reise reichen ${wer}${p.flug ? " mit Flug" : ""} leider nicht, die günstigste kostet ab ${euro(min)}. Meinst du ${euro(betrag)} pro Nacht?`.replace(/\s+/g, " "),
+          `${euro(betrag)} für die ganze Reise reichen ${wer} leider nicht, die günstigste Unterkunft kostet ab ${euro(min)}. Meinst du ${euro(betrag)} pro Nacht?`.replace(/\s+/g, " "),
           personen > 1 ? [`${euro(betrag)} pro Nacht für alle`, `${euro(betrag)} pro Nacht pro Person`, "Anderer Betrag"] : [`${euro(betrag)} pro Nacht`, "Anderer Betrag"],
           "unter_minimum");
       }

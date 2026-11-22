@@ -369,7 +369,8 @@ const Kernpruefung = {
         // Der Flug bei jeder Art - seit 21.11.2026 auch zur Wohnung (Block F2)
         mussKommen.push("flug");
         // Der Flughafen nur mit Flug
-        if (f.flug === "mitFlug") mussKommen.push("flugAb", "flugKlasse");
+        // Die Klasse fragt seit dem 22.11.2026 die Kasse (kasseFlug), nicht der Fahrplan
+        if (f.flug === "mitFlug") mussKommen.push("flugAb");
         /* Der Anreisetag kommt immer, auch mit Flug (seit 19.11.2026).
            Bis dahin stand er mit Flug erst in der Buchungsstrecke, mit der
            Begruendung, er haenge an den Flugtagen. Geflogen wird aber
@@ -2594,8 +2595,11 @@ const Kernpruefung = {
     /* Und die zweite Haelfte derselben Regel: Die Verbindungen zu einem
        Ziel muessen sich im Preis aehneln. Unterscheiden sie sich stark,
        entscheidet der Preis und nicht die Kennzeichnung. */
+    /* Je Filterzelle statt je Paar (22.11.2026): Verglichen wird seit
+       dem Flugfilter nur innerhalb einer Tageszeit und Stoppart -
+       Umstiegsfluege sind mit Absicht 18 % guenstiger als direkte. */
     const paare = {};
-    for (const f of fluege) (paare[`${f.fromCode}|${f.ziel}`] ||= []).push(f);
+    for (const f of fluege) (paare[`${f.fromCode}|${f.ziel}|${f.zeitfenster || ""}|${f.stops ? "umstieg" : "direkt"}`] ||= []).push(f);
     let groesste = 0, wo = null;
     for (const [k, liste] of Object.entries(paare)) {
       if (liste.length < 2) continue;

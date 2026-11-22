@@ -175,17 +175,39 @@ const Kasse = {
   flugFenster({ kern = null, profil = null, kennzeichnung = null, nachWahl = null } = {}) {
     if (!flugMoeglich() || typeof Fluege === "undefined" || typeof Werkzeugkasten === "undefined") return null;
     const b = Belegung.get();
-    const p = profil || { flugAb: null, flugKlasse: Flug.get().klasse || null, erwachsene: b.erwachsene, kinder: b.kinder };
+    const fs = Flug.get();
+    const p = profil || { flugAb: null, flugKlasse: fs.klasse || null, flugKoffer: !!fs.koffer, erwachsene: b.erwachsene, kinder: b.kinder };
     let auswahl = [];
     try { auswahl = Werkzeugkasten.flugAuswahl(entry, { ...p, flug: true }); } catch { auswahl = []; }
     if (auswahl.length < 2 || !auswahl.alle?.length) return null;
-    const partnerId = typeof Studie !== "undefined" && Studie.partnerflug ? Studie.partnerflug(auswahl.map((k) => k.id)) : null;
     const stufe = kennzeichnung || flugKennzeichnung();
-    const alle = auswahl.alle.map((k) => ({ ...k, partner: k.id === partnerId }));
+    /* Der Partner haengt an der Rangfolge der aktuellen Filter - aendert
+       die Person einen Filter, wird er neu bestimmt (und protokolliert). */
+    const partnerFuer = (a) => (typeof Studie !== "undefined" && Studie.partnerflug ? Studie.partnerflug(a.map((k) => k.id)) : null);
+    let partnerId = partnerFuer(auswahl);
+    const mitPartner = (a) => { const pid = partnerFuer(a); return a.alle.map((k) => ({ ...k, partner: k.id === pid })); };
+    const alle = mitPartner(auswahl);
     const erster = alle[0].flug;
+    const info = auswahl.info || {};
+    const kontextFuer = (n, f) => `${n} Verbindungen ab ${f.from} nach ${f.to} · Hin- und Rückflug`;
+    // Filter der Spalte: Tageszeit und Stopps filtern, Klasse und Koffer aendern den Preis
+    const filter = { zeit: info.zeit || null, stopps: info.stopps || "egal", klasse: p.flugKlasse || fs.klasse || "economy",
+      koffer: p.flugKoffer ?? !!fs.koffer, zahlen: info.zahlen || null };
+    const neuFiltern = (f) => {
+      const q = { ...p, flug: true, flugZeit: f.zeit, flugStopps: f.stopps, flugKlasse: f.klasse, flugKoffer: !!f.koffer };
+      let a = [];
+      try { a = Werkzeugkasten.flugAuswahl(entry, q); } catch { a = []; }
+      if (!a.alle?.length) return null;
+      Object.assign(p, { flugZeit: f.zeit, flugStopps: f.stopps, flugKlasse: f.klasse, flugKoffer: !!f.koffer });
+      partnerId = partnerFuer(a);
+      return { kandidaten: mitPartner(a), filter: { zahlen: a.info?.zahlen || null, zeit: a.info?.zeit || f.zeit },
+        kontext: kontextFuer(a.alle.length, a.alle[0].flug) };
+    };
+    const zeit = typeof Reisedaten !== "undefined" ? Reisedaten.roh() : { von: "", bis: "" };
+    const reise = { hin: zeit.von || null, rueck: zeit.bis || null, haus: entry.name, naechte: nights };
     Fluege.zeigen(alle, kern, {
       kennzeichnung: stufe, titel: "Flug auswählen", marke: "Flüge",
-      kontext: `${alle.length} Verbindungen ab ${erster.from} nach ${erster.to} · Hin- und Rückflug`,
+      kontext: kontextFuer(alle.length, erster), filter, neuFiltern, reise,
       nachWahl: (id, gewaehlt) => {
         if (!kern && typeof Studie !== "undefined" && Studie.notieren) {
           Studie.notieren("flug_gewaehlt_selbst", { id, partner: id === partnerId,
@@ -306,14 +328,14 @@ function flugAbschnitt() {
     let info = {};
     let alle = [];
     try {
-      const a = Werkzeugkasten.flugAuswahl(entry, { flug: true, flugAb: null, flugKlasse: fs.klasse || null, erwachsene: b.erwachsene, kinder: b.kinder });
+      const a = Werkzeugkasten.flugAuswahl(entry, { flug: true, flugAb: null, flugKlasse: fs.klasse || null, flugKoffer: !!fs.koffer, erwachsene: b.erwachsene, kinder: b.kinder });
       info = a.info || {}; alle = a.alle || [];
     } catch { /* ohne Werkzeugkasten */ }
     const ort = info.ort || (f && f.flug.fromCode) || "";
     const ab = Flug.flughaefen().map((h) => `<option value="${h.code}" ${h.code === ort ? "selected" : ""}>${h.name}</option>`).join("");
     const text = f && f.gewaehlt
       ? `<strong>${f.flug.airline} · ${f.flug.depart}–${f.flug.arrive}</strong>
-         <small>ab ${f.flug.from} · ${f.flug.stops === 0 ? "direkt" : `${f.flug.stops} Stopp`} · ${f.flug.baggage || ""} · ${formatPrice(f.gesamt)} für ${f.personen} ${f.personen === 1 ? "Person" : "Personen"}</small>`
+         <small>ab ${f.flug.from} · ${f.flug.stops === 0 ? "direkt" : `${f.flug.stops} Stopp`} · ${Flug.KLASSEN[fs.klasse].label} · ${fs.koffer ? "mit Koffer" : "Handgepäck"}${f.flug.rueckAb ? ` · Rückflug ${f.flug.rueckAb}` : ""} · ${formatPrice(f.gesamt)} für ${f.personen} ${f.personen === 1 ? "Person" : "Personen"}</small>`
       : `<strong>Noch keine Verbindung gewählt</strong>
          <small>${alle.length ? `${alle.length} Verbindungen ab ${alle[0].flug.from}, ` : ""}${f ? `ab ${formatPrice(f.proPerson)} pro Person` : "kein Flug ab diesem Flughafen"}</small>`;
     zeile = `

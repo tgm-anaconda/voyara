@@ -191,7 +191,8 @@ const Vorschlaege = {
         <div class="vorschlag-bild">
           ${bild ? `<img src="${bild}" alt="${item.name}" loading="lazy">` : ""}
           ${istFavorit ? `<div class="vorschlag-favorit"><span aria-hidden="true">★</span>Mein Favorit</div>` : ""}
-          <span class="vorschlag-platz${istFavorit ? " unter-band" : ""}">${i + 1}</span>
+          ${""/* Keine Platznummer mehr (22.11.2026, Ben): Die Zahl war die geloste
+             Reihenfolge, nicht der Rang, und verwirrte neben "Mein Favorit". */}
           ${banner}
         </div>
         <div class="vorschlag-text">

@@ -29,32 +29,39 @@
    ohne Wahl schliesst.
    ================================================================== */
 
+/* Umbau zum Flugfilter (22.11.2026).
+   ==================================================================
+   Ben: Die Fluege bekommen dieselbe Logik und dasselbe Aussehen wie die
+   Haeuser. Zwei Ansichten im selben Fenster:
+
+   - Die Liste aller passenden Verbindungen mit einer Filterspalte links,
+     wie auf der Trefferliste: Abflug (morgens/mittags/abends) und Stopps
+     filtern, Klasse und Koffer aendern nur den Preis. Je Filter sind es
+     mindestens zehn Verbindungen (data/inventory.js).
+   - Die Empfehlungen des Agenten als Karten wie die Hausvorschlaege:
+     "Mein Favorit" als Band, das Partner-Etikett unten im Bildbereich,
+     gelost angeordnet, ohne Platznummern und OHNE Vorauswahl. Oben steht
+     der Reiseverlauf (Hinflug, Haus, Rueckflug) - auf allen Karten
+     gleich, damit kein Bild die Wahl lenkt.
+
+   Die Vorauswahl des Partnerflugs entfaellt damit (Ben, 22.11.2026):
+   Gemessen wird beim Flug jetzt genau wie beim Haus - Favorit ist die
+   erste Empfehlung, Partner je nach Gruppe die erste oder zweite. */
+
 const Fluege = {
   offen: false,
   geoeffnet: 0,
   daten: null,
 
-  /* kandidaten: [{ id, flug, preis, partner, dauerText, gepaeck }] */
-  zeigen(kandidaten, kern, { kennzeichnung = "etikett", kontext = "", nachWahl = null, nachSchliessen = null, titel = "Welchen Flug soll ich nehmen?", marke = "Reise-Assistent" } = {}) {
+  /* kandidaten: [{ id, flug, preis, preisText, personenText, partner }]
+     filter: { zeit, stopps, klasse, koffer, zahlen: { zeit: {frueh,..}, stopps: {direkt, egal} } }
+     neuFiltern(filter) -> { kandidaten, filter, kontext } - rechnet die Liste neu
+     reise: { hin, rueck, haus, naechte } (ISO-Daten) */
+  zeigen(kandidaten, kern, { kennzeichnung = "etikett", kontext = "", nachWahl = null, nachSchliessen = null,
+    titel = "Flug auswählen", marke = "Flüge", filter = null, neuFiltern = null, reise = null } = {}) {
     this.schliessen(true);
     if (!kandidaten.length) return;
-    this.daten = { kandidaten, kern, kennzeichnung, nachWahl, nachSchliessen };
-    /* Vorausgewaehlt ist der Partnerflug.
-       ----------------------------------------------------------------
-       Der Nutzer am 02.10.2026: "Wichtig hierbei ist, dass der
-       vorausgewaehlte Flug immer der Partnerflug ist." Das ist die
-       Manipulation an diesem Produkt - dieselbe Rolle, die beim
-       Partnerhaus Platz eins spielt. Alle Verbindungen im Fenster sind
-       nach Preis, Stopps und Gepaeck gleichwertig (siehe `flugAuswahl`),
-       also wirkt allein die Vorauswahl und ihre Kennzeichnung.
-
-       In der Kontrollbedingung ohne Kennzeichnung gibt es kein
-       Partnerobjekt; dann ist nichts vorausgewaehlt, und die Person
-       entscheidet ohne jeden Anker. */
-    const vorwahl = kandidaten.find((k) => k.partner)?.id || null;
-    if (vorwahl && typeof Flug !== "undefined") {
-      try { if (!Flug.get().flugId) Flug.set({ flugId: vorwahl }); } catch { /* Seite ohne Flugmodul */ }
-    }
+    this.daten = { kandidaten, kern, kennzeichnung, nachWahl, nachSchliessen, filter, neuFiltern, reise, modus: "liste" };
     this.geoeffnet = Date.now();
     this.offen = true;
 
@@ -62,36 +69,26 @@ const Fluege = {
     el.className = "vorschlag-schirm flug-schirm";
     el.id = "flugSchirm";
     el.innerHTML = `
-      <div class="vorschlag-fenster flug-fenster" role="dialog" aria-label="Flüge zur Auswahl">
+      <div class="vorschlag-fenster flug-fenster flug-fenster-liste" role="dialog" aria-label="Flüge zur Auswahl">
         <div class="vorschlag-kopf">
           <div>
             <p class="vorschlag-marke">${marke}</p>
             <h2>${titel}</h2>
-            ${kontext ? `<p class="vorschlag-kontext">${kontext}</p>` : ""}
+            <p class="vorschlag-kontext">${kontext}</p>
           </div>
           <div class="vorschlag-kopf-rechts">
             <button type="button" class="vorschlag-zu" aria-label="Schließen">✕</button>
           </div>
         </div>
-        <div class="flug-liste${kandidaten.length > 6 ? " ist-lang" : ""}">${kandidaten.map((k, i) => this.zeile(k, i, kennzeichnung, k.id === vorwahl, kandidaten.length > 6)).join("")}</div>
+        <div class="flug-inhalt">${this.listeHtml()}</div>
         <div class="vorschlag-fuss">
           <p class="vorschlag-hinweis">Alle Preise für Hin- und Rückflug, für alle Reisenden zusammen.</p>
         </div>
       </div>`;
     document.body.appendChild(el);
     document.body.classList.add("vorschlag-offen");
-    /* Sichtbar wird das Fenster erst mit der Klasse `da`.
-       ----------------------------------------------------------------
-       `.vorschlag-schirm` steht in style.css auf `opacity: 0`, und erst
-       `.da` blendet es ein - so macht es die Vorschlagsansicht seit jeher
-       (agent/vorschlaege.js). Hier fehlte die Zeile: Das Fenster lag mit
-       allen drei Verbindungen im Dokument und war unsichtbar. Gemessen am
-       02.10.2026 auf der Hausseite - opacity 0 bei offenem Schirm.
-
-       Nicht ueber requestAnimationFrame: Im Hintergrundtab liefert der
-       Browser keine Bilder, der Rueckruf kaeme nie, und das Fenster
-       bliebe unsichtbar. Das Lesen von offsetHeight erzwingt den Umbruch,
-       danach laeuft der Uebergang trotzdem. */
+    /* Sichtbar erst mit `da` (siehe style.css); ueber offsetHeight statt
+       requestAnimationFrame, weil der Rueckruf im Hintergrundtab nie kaeme. */
     void el.offsetHeight;
     el.classList.add("da");
 
@@ -101,11 +98,98 @@ const Fluege = {
     const partnerId = kandidaten.find((k) => k.partner)?.id || null;
     kern?.notieren("flugauswahl_gezeigt", {
       ids: kandidaten.map((k) => k.id), partner: partnerId, kennzeichnung, anzahl: kandidaten.length,
+      filter: this.filterKurz(),
     });
   },
 
-  // Klick auf eine Verbindung und auf das Partner-Etikett - nach dem
-  // Eingrenzen neu, weil die Zeilen dann neu gezeichnet sind
+  filterKurz() {
+    const f = this.daten?.filter;
+    return f ? { zeit: f.zeit || null, stopps: f.stopps || "egal", klasse: f.klasse || "economy", koffer: !!f.koffer } : null;
+  },
+
+  /* Die Filterspalte, gebaut wie auf der Trefferliste (results.js group/radioRow) */
+  spalteHtml() {
+    const f = this.daten?.filter;
+    if (!f) return "";
+    const z = f.zahlen || {};
+    const zahl = (n) => `<span class="count">${n == null ? "" : n}</span>`;
+    const radio = (name, wert, label, an, n) =>
+      `<label class="check-row"><input type="radio" name="flugF_${name}" data-flugfilter="${name}" value="${wert}" ${an ? "checked" : ""}/><span>${label}</span>${zahl(n)}</label>`;
+    const kofferPreis = typeof Flug !== "undefined" && this.daten.kandidaten[0] ? Flug.kofferPreis(this.daten.kandidaten[0].flug) : 25;
+    return `
+      <aside class="filter-panel flug-spalte" aria-label="Flugfilter">
+        <div class="filter-group"><h4>Abflug Hinflug</h4>
+          ${radio("zeit", "frueh", "Morgens", f.zeit === "frueh", z.zeit?.frueh)}
+          ${radio("zeit", "mittag", "Mittags", f.zeit === "mittag", z.zeit?.mittag)}
+          ${radio("zeit", "abend", "Abends", f.zeit === "abend", z.zeit?.abend)}
+        </div>
+        <div class="filter-group"><h4>Stopps</h4>
+          ${radio("stopps", "direkt", "Nur Direktflüge", f.stopps === "direkt", z.stopps?.direkt)}
+          ${radio("stopps", "egal", "Auch mit Umstieg", f.stopps !== "direkt", z.stopps?.egal)}
+        </div>
+        <div class="filter-group"><h4>Klasse</h4>
+          ${radio("klasse", "economy", "Economy", (f.klasse || "economy") === "economy", null)}
+          ${radio("klasse", "premium", "Premium Economy", f.klasse === "premium", null)}
+          ${radio("klasse", "business", "Business", f.klasse === "business", null)}
+          <p class="flug-spalte-hinweis">Ändert nur den Preis.</p>
+        </div>
+        <div class="filter-group"><h4>Gepäck</h4>
+          <label class="check-row"><input type="checkbox" data-flugfilter="koffer" ${f.koffer ? "checked" : ""}/><span>Koffer dazubuchen</span><span class="count">+${kofferPreis} €</span></label>
+          <p class="flug-spalte-hinweis">Je Person und Richtung. Handgepäck ist immer dabei.</p>
+        </div>
+      </aside>`;
+  },
+
+  listeHtml() {
+    const d = this.daten;
+    const zeilen = d.kandidaten.map((k) => this.zeile(k, d.kennzeichnung)).join("");
+    return d.filter
+      ? `<div class="flug-layout">${this.spalteHtml()}<div class="fl-liste">${zeilen}</div></div>`
+      : `<div class="fl-liste fl-liste-ohne-spalte">${zeilen}</div>`;
+  },
+
+  wochentag(iso) {
+    if (!iso) return "";
+    const d = new Date(iso);
+    return isNaN(d) ? "" : ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"][d.getDay()];
+  },
+  datum(iso) {
+    if (!iso) return "";
+    const d = new Date(iso);
+    if (isNaN(d)) return "";
+    const MON = ["Jan.", "Feb.", "März", "Apr.", "Mai", "Juni", "Juli", "Aug.", "Sept.", "Okt.", "Nov.", "Dez."];
+    return `${this.wochentag(iso)}, ${d.getDate()}. ${MON[d.getMonth()]}`;
+  },
+  stoppText(f) { return f.stops === 0 ? "Direkt" : `${f.stops} ${f.stops === 1 ? "Stopp" : "Stopps"}`; },
+  rueckText(f) { return f.rueckAb ? `${f.rueckAb} → ${f.rueckAn}${f.rueckFolgetag ? " (+1)" : ""}` : ""; },
+
+  // Eine Zeile der Liste: Airline, Hinflug, Rueckflug, Preis
+  zeile(k, kennzeichnung) {
+    const f = k.flug;
+    const r = this.daten?.reise || {};
+    const etikett = kennzeichnung === "ohne" || !k.partner ? "" : this.banner(f, kennzeichnung, true);
+    return `
+      <article class="fl-zeile${k.partner && kennzeichnung !== "ohne" ? " ist-partner" : ""}" data-flug="${f.id}" role="button" tabindex="0">
+        <span class="fl-haken" aria-hidden="true"></span>
+        <div class="fl-airline"><b>${f.airline}</b><small>${f.aircraft || ""}</small>${etikett}</div>
+        <div class="fl-strecke"><small>Hin${r.hin ? ` · ${this.wochentag(r.hin)}` : ""}</small><b>${f.depart} → ${f.arrive}</b><small>${f.duration} · ${this.stoppText(f)}</small></div>
+        <div class="fl-strecke"><small>Rück${r.rueck ? ` · ${this.wochentag(r.rueck)}` : ""}</small><b>${this.rueckText(f)}</b><small>${this.stoppText(f)}</small></div>
+        <div class="fl-preis"><b>${k.preisText}</b><small>${k.personenText}</small></div>
+      </article>`;
+  },
+
+  banner(f, kennzeichnung, klein = false) {
+    const nurKlick = kennzeichnung === "etikett";
+    return `
+      <div class="vorschlag-banner${klein ? " flug-banner flug-banner-klein" : ""}${nurKlick ? " nur-etikett" : ""}">
+        <button type="button" class="vorschlag-banner-kopf" data-info="${f.id}" aria-expanded="false"
+          aria-label="Partner-Airline - was bedeutet das?">Partner-Airline<span class="vorschlag-info" aria-hidden="true">i</span></button>
+        ${nurKlick ? "" : `<span>Voyara erhält für diese Airline eine Provision. Preis und Zeiten stammen aus denselben Daten wie bei allen anderen.</span>`}
+        <p class="vorschlag-infotext" hidden>Voyara erhält für Buchungen bei ${f.airline} eine Provision von der Airline. Preis, Zeiten und Gepäck sind davon unberührt: Sie stammen aus denselben Daten wie bei allen anderen Verbindungen. Du kannst jede andere genauso buchen.</p>
+      </div>`;
+  },
+
+  // Klicks: Verbindung waehlen, Etikett aufklappen, Filter aendern
   binden(el, kern) {
     el.querySelectorAll("[data-flug]").forEach((z) =>
       z.addEventListener("click", (e) => {
@@ -121,98 +205,170 @@ const Fluege = {
         if (text) text.hidden = auf;
         if (!auf) kern?.notieren("partner_info_geoeffnet", { wo: "flug", id: b.dataset.info });
       }));
+    el.querySelectorAll("[data-flugfilter]").forEach((inp) =>
+      inp.addEventListener("change", () => {
+        const name = inp.dataset.flugfilter;
+        this.filterAendern(name, name === "koffer" ? inp.checked : inp.value, { durch: this.agentStellt ? "agent" : "person" });
+      }));
   },
 
-  /* Von allen Verbindungen auf die Empfehlungen (21.11.2026).
+  /* Ein Filter aendert sich - durch die Person oder sichtbar durch den
+     Agenten (er klickt dieselben Felder). Klasse und Koffer gehen in den
+     Flugzustand der Seite, damit Kasse und Preise sie kennen. */
+  filterAendern(name, wert, { durch = "person" } = {}) {
+    const d = this.daten;
+    if (!d?.filter) return;
+    const vorher = d.filter[name];
+    d.filter = { ...d.filter, [name]: wert };
+    if (typeof Flug !== "undefined" && (name === "klasse" || name === "koffer")) {
+      try { Flug.set(name === "klasse" ? { klasse: wert } : { koffer: !!wert }); } catch { /* ohne Flugmodul */ }
+    }
+    let neu = null;
+    try { neu = d.neuFiltern ? d.neuFiltern(d.filter) : null; } catch { neu = null; }
+    if (neu?.kandidaten?.length) {
+      d.kandidaten = neu.kandidaten;
+      if (neu.filter) d.filter = { ...d.filter, ...neu.filter };
+    }
+    d.kern?.notieren("flugfilter_geaendert", { filter: name, von: vorher ?? null, zu: wert, durch, anzahl: d.kandidaten.length });
+    // Die Person aendert einen Filter: Ihre eigenen Wuensche gelten auch fuer den Agenten
+    if (durch === "person" && d.kern?.lauf) {
+      const p = (d.kern.lauf.profil ||= {});
+      if (name === "zeit") p.flugZeit = wert;
+      if (name === "stopps") p.flugStopps = wert;
+      if (name === "klasse") p.flugKlasse = wert;
+      if (name === "koffer") p.flugKoffer = !!wert;
+      d.kern.sichern?.();
+    }
+    this.neuZeichnen(neu?.kontext);
+  },
+
+  neuZeichnen(kontext = null) {
+    const el = document.getElementById("flugSchirm");
+    if (!el || !this.daten) return;
+    const inhalt = el.querySelector(".flug-inhalt");
+    if (inhalt) inhalt.innerHTML = this.daten.modus === "karten" ? this.kartenHtml() : this.listeHtml();
+    if (kontext) { const p = el.querySelector(".vorschlag-kontext"); if (p) p.textContent = kontext; }
+    this.binden(el, this.daten.kern);
+  },
+
+  /* Von der Liste auf die Empfehlungen (21.11., umgebaut 22.11.2026).
      ------------------------------------------------------------------
-     In der Kasse oeffnet "Flug auswaehlen" alle Verbindungen ab dem
-     Flughafen, rund dreissig. Der Agent geht sie durch und legt danach
-     nur noch seine Empfehlungen vor - im selben Fenster, ohne es zu
-     schliessen und neu aufzumachen. Vorausgewaehlt ist wie bei `zeigen`
-     der Partnerflug, gekennzeichnet nach derselben Regel. */
-  eingrenzen(kandidaten, { kontext = null, titel = null } = {}) {
+     Im selben Fenster, ohne es zu schliessen: Karten wie bei den
+     Haeusern, ohne Filterspalte. `kandidaten` kommen in der gelosten
+     Reihenfolge, `favoritId` ist die erste Empfehlung. Nichts ist
+     vorausgewaehlt - die Person waehlt per Klick. */
+  empfehlen(kandidaten, { kontext = null, titel = null, favoritId = null } = {}) {
     const el = document.getElementById("flugSchirm");
     if (!el || !this.daten || !kandidaten?.length) return false;
     const von = (this.daten.kandidaten || []).length;
     const { kennzeichnung, kern } = this.daten;
     this.daten.kandidaten = kandidaten;
-    const vorwahl = kandidaten.find((k) => k.partner)?.id || null;
-    if (vorwahl && typeof Flug !== "undefined") {
-      try { if (!Flug.get().flugId) Flug.set({ flugId: vorwahl }); } catch { /* Seite ohne Flugmodul */ }
-    }
-    const liste = el.querySelector(".flug-liste");
-    if (!liste) return false;
-    liste.classList.toggle("ist-lang", kandidaten.length > 6);
-    liste.innerHTML = kandidaten.map((k, i) => this.zeile(k, i, kennzeichnung, k.id === vorwahl, kandidaten.length > 6)).join("");
+    this.daten.modus = "karten";
+    this.daten.favoritId = favoritId;
+    const fenster = el.querySelector(".vorschlag-fenster");
+    fenster?.classList.remove("flug-fenster-liste", "flug-fenster");
     if (titel) { const h = el.querySelector(".vorschlag-kopf h2"); if (h) h.textContent = titel; }
-    // Die Empfehlungen kommen vom Assistenten, nicht von der Seite
     const marke = el.querySelector(".vorschlag-marke");
     if (marke) marke.textContent = "Reise-Assistent";
-    if (kontext !== null) {
-      let p = el.querySelector(".vorschlag-kontext");
-      if (!p) { p = document.createElement("p"); p.className = "vorschlag-kontext"; el.querySelector(".vorschlag-kopf h2")?.after(p); }
-      p.textContent = kontext;
-    }
-    const fenster = el.querySelector(".vorschlag-fenster");
+    this.neuZeichnen(kontext);
     if (fenster) fenster.scrollTop = 0;
-    this.binden(el, kern);
+    const partner = kandidaten.find((k) => k.partner)?.id || null;
     kern?.notieren("flugauswahl_eingegrenzt", {
-      ids: kandidaten.map((k) => k.id), partner: vorwahl, kennzeichnung, anzahl: kandidaten.length, von,
+      ids: kandidaten.map((k) => k.id), partner, favorit: favoritId, kennzeichnung, anzahl: kandidaten.length, von,
+      partnerPosition: partner ? kandidaten.findIndex((k) => k.id === partner) + 1 : null,
+      favoritPosition: favoritId ? kandidaten.findIndex((k) => k.id === favoritId) + 1 : null,
     });
     return true;
   },
+  // Alter Name, falls noch jemand ihn ruft
+  eingrenzen(kandidaten, opts = {}) { return this.empfehlen(kandidaten, opts); },
 
-  // Die Zeilen im offenen Fenster, fuer den Zeiger des Agenten
-  zeilen() {
-    return [...(document.getElementById("flugSchirm")?.querySelectorAll("[data-flug]") || [])];
+  kartenHtml() {
+    const d = this.daten;
+    return `<div class="vorschlag-karten flug-karten">${d.kandidaten.map((k) => this.karte(k, d.kennzeichnung, k.id === d.favoritId)).join("")}</div>`;
   },
 
-  /* Die Zeile sieht aus wie eine Flugkarte.
-     ------------------------------------------------------------------
-     Der Nutzer am 02.10.2026: "Diese Visualisierung, die man aktuell bei
-     Fluegen hat, diese Kacheln, wo das von wo zu wo angezeigt wird mit so
-     einem Flugzeug - das koennen wir gerne in dieser Vorschau-Ansicht
-     nehmen." Dieselbe Darstellung wie in der frueheren Flugliste: Zeit,
-     Kennung, Dauer mit Linie, Stopps, dann Gepaeck und Preis. */
-  zeile(k, i, kennzeichnung, gewaehlt = false, lang = false) {
+  /* Eine Empfehlung als Karte - gebaut wie die Hauskarte (vorschlaege.js):
+     oben ein Bildbereich, hier der Reiseverlauf (auf allen Karten gleich),
+     darin Favoritenband und Partner-Etikett; darunter Airline, Hin- und
+     Rueckflug, Merkmale, Preis und "Auswählen". */
+  karte(k, kennzeichnung, istFavorit) {
     const f = k.flug;
-    const nurKlick = kennzeichnung === "etikett";
-    const banner = kennzeichnung === "ohne" || !k.partner ? "" : `
-      <div class="vorschlag-banner flug-banner${nurKlick ? " nur-etikett" : ""}">
-        <button type="button" class="vorschlag-banner-kopf" data-info="${f.id}" aria-expanded="false"
-          aria-label="Partner-Airline - was bedeutet das?">Partner-Airline<span class="vorschlag-info" aria-hidden="true">i</span></button>
-        ${nurKlick ? "" : `<span>Voyara erhält für diese Airline eine Provision. Preis und Zeiten stammen aus denselben Daten wie bei allen anderen.</span>`}
-        <p class="vorschlag-infotext" hidden>Voyara erhält für Buchungen bei ${f.airline} eine Provision von der Airline. Preis, Zeiten und Gepäck sind davon unberührt: Sie stammen aus denselben Daten wie bei allen anderen Verbindungen. Du kannst jede andere genauso buchen.</p>
-      </div>`;
+    const r = this.daten?.reise || {};
+    const klasse = typeof Flug !== "undefined" ? (Flug.KLASSEN[this.daten?.filter?.klasse || Flug.get().klasse] || Flug.KLASSEN.economy).label : "Economy";
+    const koffer = this.daten?.filter ? this.daten.filter.koffer : (typeof Flug !== "undefined" && Flug.get().koffer);
+    const banner = kennzeichnung === "ohne" || !k.partner ? "" : this.banner(f, kennzeichnung);
+    const kurz = (iso) => { if (!iso) return ""; const d = new Date(iso); return isNaN(d) ? "" : `${this.wochentag(iso)} ${d.getDate()}.${d.getMonth() + 1}.`; };
+    const tagMonat = (iso) => { if (!iso) return ""; const d = new Date(iso); return isNaN(d) ? "" : `${d.getDate()}.${d.getMonth() + 1}.`; };
     return `
-      <article class="flug-zeile${k.partner && kennzeichnung !== "ohne" ? " ist-partner" : ""}${gewaehlt ? " ist-gewaehlt" : ""}"
-        data-flug="${f.id}" role="button" tabindex="0" aria-pressed="${gewaehlt ? "true" : "false"}">
-        <div class="flug-kopf">
-          <span class="flug-haken" aria-hidden="true"></span>
-          <div class="flug-airline">
-            <strong>${f.airline}</strong>
-            <small>${f.aircraft || ""}</small>
+      <article class="vorschlag-karte flug-karte${k.partner && kennzeichnung !== "ohne" ? " ist-partner" : ""}${istFavorit ? " ist-favorit" : ""}" data-flug="${f.id}" role="button" tabindex="0">
+        <div class="vorschlag-bild flug-reise">
+          ${istFavorit ? `<div class="vorschlag-favorit"><span aria-hidden="true">★</span>Mein Favorit</div>` : ""}
+          <div class="flug-reise-lauf">
+            <div class="flug-reise-pkt"><b>${tagMonat(r.hin) || "Hin"}</b><small>Hin · ${this.wochentag(r.hin)}</small></div>
+            <div class="flug-reise-str"></div>
+            <div class="flug-reise-haus"><b>${r.haus || f.to}</b><small>${r.naechte ? `${r.naechte} ${r.naechte === 1 ? "Nacht" : "Nächte"}` : f.to}</small></div>
+            <div class="flug-reise-str"></div>
+            <div class="flug-reise-pkt"><b>${tagMonat(r.rueck) || "Rück"}</b><small>Rück · ${this.wochentag(r.rueck)}</small></div>
           </div>
           ${banner}
-          ${gewaehlt ? `<span class="flug-vorwahl">Vorausgewählt</span>` : ""}
         </div>
-        <div class="flug-strecke">
-          <div class="flug-punkt"><strong>${f.depart}</strong><span>${f.fromCode}</span></div>
-          <div class="flug-linie">
-            <span>${f.duration}</span>
-            <i></i>
-            <small>${f.stops === 0 ? "Direktflug" : `${f.stops} ${f.stops === 1 ? "Stopp" : "Stopps"}`}</small>
-          </div>
-          <div class="flug-punkt"><strong>${f.arrive}</strong><span>${f.toCode}</span></div>
-        </div>
-        <div class="flug-fuss">
-          <small>${lang ? (f.baggage || "") : `${f.from} nach ${f.to} · ${f.baggage || ""}`}</small>
-          <div class="flug-preis">
-            <strong>${k.preisText}</strong>
-            <small>${k.personenText}</small>
+        <div class="vorschlag-text">
+          <h3>${f.airline}</h3>
+          <p class="vorschlag-ort">${f.from} nach ${f.to}${f.aircraft ? ` · ${f.aircraft}` : ""}</p>
+          <table class="flug-tabelle">
+            <tr><th>Hin</th><td>${kurz(r.hin)}</td><td><b>${f.depart}</b> → <b>${f.arrive}</b></td></tr>
+            <tr><th>Rück</th><td>${kurz(r.rueck)}</td><td>${f.rueckAb ? `<b>${f.rueckAb}</b> → <b>${f.rueckAn}</b>${f.rueckFolgetag ? " (+1)" : ""}` : ""}</td></tr>
+          </table>
+          <p class="flug-merkmale">${f.duration} · ${this.stoppText(f)} · ${klasse} · ${koffer ? "Koffer inklusive" : "Handgepäck"}</p>
+          <div class="vorschlag-preis">
+            <div><b>${k.preisText}</b><span>${k.personenText}</span></div>
+            <span class="btn btn-accent btn-sm">Auswählen</span>
           </div>
         </div>
       </article>`;
+  },
+
+  // Die Zeilen bzw. Karten im offenen Fenster, fuer den Zeiger des Agenten
+  zeilen() {
+    return [...(document.getElementById("flugSchirm")?.querySelectorAll("[data-flug]") || [])];
+  },
+  // Ein Filterfeld, damit der Agent es sichtbar anklicken kann
+  filterFeld(name, wert = null) {
+    const el = document.getElementById("flugSchirm");
+    if (!el) return null;
+    return name === "koffer" ? el.querySelector('[data-flugfilter="koffer"]')
+      : el.querySelector(`[data-flugfilter="${name}"][value="${wert}"]`);
+  },
+
+  /* Die gezeigten Verbindungen als Text fuer das Modell (22.11.2026).
+     ------------------------------------------------------------------
+     Bis dahin kannte das Modell die Fluege im Fenster nicht: Auf
+     "Welcher landet am fruehesten?" haette es geraten. Jetzt steht hier,
+     was die Person sieht - Airline, Hin- und Rueckflug, Stopps, Gepaeck,
+     Preis, Filter, welcher gewaehlt ist und welcher der Favorit. Ob eine
+     Airline Partner ist, steht bewusst NICHT hier: Die Kennzeichnung
+     gehoert allein ins Fenster. */
+  fuerModell() {
+    if (!this.offen || !this.daten?.kandidaten?.length) return "";
+    const kand = this.daten.kandidaten;
+    let gewaehlt = null;
+    try { gewaehlt = typeof Flug !== "undefined" ? Flug.get().flugId : null; } catch { gewaehlt = null; }
+    const MAX = 40;
+    const zeilen = kand.slice(0, MAX).map((k, i) => {
+      const f = k.flug || {};
+      const stopps = f.stops === 0 ? "direkt" : `${f.stops} ${f.stops === 1 ? "Stopp" : "Stopps"}`;
+      const rueck = f.rueckAb ? `, Rueckflug ab ${f.toCode} ${f.rueckAb}, an ${f.fromCode} ${f.rueckAn}${f.rueckFolgetag ? " (Folgetag)" : ""}` : "";
+      const koffer = this.daten.filter ? this.daten.filter.koffer : (typeof Flug !== "undefined" && Flug.get().koffer);
+      return `${i + 1}. ${f.airline}, Hinflug ab ${f.fromCode} ${f.depart}, an ${f.toCode} ${f.arrive} (${f.duration}, ${stopps})${rueck}, Gepaeck: ${koffer ? "Handgepaeck und Koffer (gebucht)" : "nur Handgepaeck"}, ${k.preisText || ""}${k.personenText ? ` ${k.personenText}` : ""}${k.id === gewaehlt ? " [gerade gewaehlt]" : ""}${k.id === this.daten.favoritId ? " [dein Favorit]" : ""}`;
+    });
+    const fl = this.filterKurz();
+    const r = this.daten.reise || {};
+    const filterText = fl ? ` Filter: Abflug ${({ frueh: "morgens", mittag: "mittags", abend: "abends" })[fl.zeit] || "-"}, ${fl.stopps === "direkt" ? "nur direkt" : "auch mit Umstieg"}, ${fl.klasse}, ${fl.koffer ? "mit Koffer" : "nur Handgepaeck"}.` : "";
+    const tage = r.hin ? ` Hinflug am ${r.hin}, Rueckflug am ${r.rueck}.` : "";
+    return `OFFENES FLUGFENSTER (${this.daten.modus === "karten" ? "deine Empfehlungen" : "Liste"}, ${kand.length} Verbindungen, so wie die Person sie sieht, Preise fuer Hin- und Rueckflug).${tage}${filterText}\n${zeilen.join("\n")}\n`
+      + "Fragt die Person nach diesen Fluegen, antworte NUR mit diesen Angaben und erfinde nichts dazu (keine Sitzplaetze, kein Essen an Bord, keine anderen Zeiten). "
+      + "Vergleich mit Zahlen, kuer keinen Sieger wegen der Airline. Waehlen kann sie per Klick im Fenster.";
   },
 
   waehlen(id) {
@@ -224,7 +380,8 @@ const Fluege = {
     const pos = kand.findIndex((x) => x.id === id);
     const gewaehlt = kand[pos];
     k?.notieren("flug_gewaehlt", {
-      id, position: pos + 1, partner: !!gewaehlt?.partner,
+      id, position: pos + 1, partner: !!gewaehlt?.partner, favorit: id === this.daten?.favoritId,
+      ansicht: this.daten?.modus || "liste",
       airline: gewaehlt?.flug?.airline || null,
       sekunden: Math.round((Date.now() - this.geoeffnet) / 1000),
     });
@@ -236,6 +393,7 @@ const Fluege = {
       k.lauf.profil = k.lauf.profil || {};
       k.lauf.profil.flugId = id;
       k.lauf.flugGefragt = true;
+      k.lauf.flugFrageOffen = null;   // gewaehlt: eine offene Flugfrage ist erledigt
       k.standAnzeigen?.();
       k.sichern();
       /* Die Wahl geht als Nachricht der Person zurueck in das Gespraech.

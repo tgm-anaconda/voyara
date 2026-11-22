@@ -6262,6 +6262,122 @@ FLIGHTS.push(
     for (let f100 = 80; f100 <= 95 && neu[neu.length - 1] / neu[0] - 1 >= 0.15; f100++) neu = abbilden(f100 / 100);
     reihe.forEach((o, i) => { o.f.price = neu[i]; });
   }
+
+  /* Flugfilter: je Tageszeit zehn Direktfluege und zehn mit Umstieg
+     (22.11.2026).
+     ------------------------------------------------------------------
+     Ben: Die Fluege bekommen dieselbe Filterlogik wie die Haeuser.
+     Filtern duerfen nur Merkmale des Flugs selbst - Abflugzeit (morgens,
+     mittags, abends) und Stopps (nur direkt / auch mit Umstieg). Klasse
+     und Koffer sind Merkmale der Buchung und aendern nur den Preis. Und:
+     Nach jedem Filter sollen mindestens zehn Verbindungen uebrig sein,
+     sonst gibt es nichts zu vergleichen und keinen Partnerflug.
+
+     Je Paar aus Ziel und Flughafen gab es 30 Verbindungen, je Tageszeit
+     meist neun direkte und eine mit Umstieg (oder umgekehrt). Hier wird
+     jede der sechs Zellen (3 Tageszeiten x direkt/Umstieg) auf zehn
+     aufgefuellt, also 60 je Paar. Was es gab, bleibt mit Kennung, Zeit
+     und Preis stehen; nur:
+     - Gepaeck ist ueberall gleich (Handgepaeck). Ein Koffer ist ein
+       Aufpreis der Buchung (Flug.KOFFER), kein Unterschied zwischen
+       Fluegen - sonst waere er ein Grund zur Wahl neben der Kennzeichnung.
+     - Umstieg ist 18 % guenstiger als direkt (Ben: 15 bis 20 %), sonst
+       nimmt ihn niemand. Wo die Umstiegsfluege die Ausnahme waren, werden
+       sie auf diesen Preis gesetzt.
+     - Direktfluege gibt es auch zu Fernzielen (Ben: "das faellt nicht
+       auf"), etwas kuerzer als mit Umstieg.
+     - Jede Verbindung hat einen Rueckflug am letzten Reisetag zwischen
+       16:30 und 18:00 Uhr, mit denselben Stopps und derselben Dauer. Ben:
+       Der Rueckflug soll bei allen Empfehlungen und Zielen aehnlich sein,
+       damit er die Wahl nicht beeinflusst und niemand fragen muss.
+
+     Innerhalb einer Zelle liegen die Preise eng (die neuen hoechstens
+     knapp 8 % ueber der guenstigsten), die Kernpruefung misst die
+     Spanne jetzt je Zelle statt je Paar. */
+  {
+    const streu = (text) => { let h = 0; for (const c of text) h = (h * 31 + c.charCodeAt(0)) >>> 0; return h; };
+    const UMSTIEG = 0.82;
+    const PREISSTUFEN = [0, 0.004, 0.009, 0.015, 0.022, 0.03, 0.038, 0.047, 0.056, 0.066, 0.076];
+    // Neue Zellen: die guenstigsten nahe der Mitte, damit drei bis sechs
+    // Empfehlungen innerhalb von 80 Minuten liegen
+    // Eng genug, dass die sechs guenstigsten innerhalb von 80 Minuten liegen
+    // (die Regel der Empfehlung, Werkzeugkasten.flugAuswahl)
+    const VERSATZ = [0, 12, 26, -14, 40, -28, 54, -42, 68, -56];
+    const MITTE = { frueh: 7 * 60 + 15, mittag: 12 * 60 + 30, abend: 18 * 60 };
+    const zellen = new Map();
+    for (const f of FLIGHTS) {
+      f.baggage = "Handgepäck inkl.";
+      const k = `${f.ziel}|${f.fromCode}|${f.zeitfenster || "mittag"}`;
+      if (!zellen.has(k)) zellen.set(k, { D: [], U: [] });
+      zellen.get(k)[f.stops ? "U" : "D"].push(f);
+    }
+    const dazu = [];
+    let nr = 7000;
+    for (const [k, z] of zellen) {
+      const [, , fenster] = k.split("|");
+      const basisDirekt = z.D.length >= z.U.length;
+      const basis = (basisDirekt ? z.D : z.U).slice().sort((a, b) => a.price - b.price);
+      const muster = basis[0];
+      const h = streu(k);
+      const dauerBasis = minuten(muster.duration);
+      const dauerD = basisDirekt ? dauerBasis : Math.max(60, dauerBasis - 110 - (h % 20));
+      const dauerU = basisDirekt ? dauerBasis + 100 + (h % 50) : dauerBasis;
+      const preisD = basisDirekt ? muster.price : Math.round(muster.price / UMSTIEG);
+      const preisU = basisDirekt ? Math.round(muster.price * UMSTIEG) : muster.price;
+      // Die Minderheit wird auf den neuen Preis gesetzt (z. B. die eine
+      // Umstiegsverbindung, die bisher teurer war als die direkten)
+      const minder = (basisDirekt ? z.U : z.D).slice().sort((a, b) => a.price - b.price);
+      const ref = basisDirekt ? preisU : preisD;
+      let vorher = 0;
+      minder.forEach((f, i) => {
+        // streng steigend: kein Gleichstand an der Spitze der Empfehlung
+        f.price = Math.max(29, Math.round(ref * (1 + PREISSTUFEN[i])), i === 1 ? vorher + 1 : 0);
+        vorher = f.price;
+        f.stops = basisDirekt ? Math.max(1, f.stops || 1) : 0;
+        f.duration = dauerText(basisDirekt ? dauerU : dauerD);
+        f.arrive = uhrText(alsMinuten(f.depart) + (basisDirekt ? dauerU : dauerD));
+      });
+      for (const art of ["D", "U"]) {
+        const liste = art === "D" ? z.D : z.U;
+        const istBasis = (art === "D") === basisDirekt;
+        const start = liste.length;
+        const mitte = istBasis || start ? alsMinuten((liste.slice().sort((a, b) => a.price - b.price)[0]).depart) : MITTE[fenster] + ((h % 4) * 5);
+        const p0 = art === "D" ? preisD : preisU;
+        const dauer = art === "D" ? dauerD : dauerU;
+        /* Neue Verbindungen liegen ueber den drei guenstigsten vorhandenen
+           (dann bleibt die bisherige Dreier-Empfehlung) und steigen streng,
+           damit es an der Spitze keinen Gleichstand gibt. */
+        const vorhandenSort = liste.map((f) => f.price).sort((x, y) => x - y);
+        // Nur die Spitze muss eindeutig sein: alles Neue liegt ueber der
+        // dritten vorhandenen (bzw. ueber der ersten neuen in einer neuen Zelle)
+        let untergrenze = vorhandenSort.length ? vorhandenSort[Math.min(2, vorhandenSort.length - 1)] + 1 : 0;
+        for (let i = start; i < 10; i++) {
+          nr += 1;
+          const a = AIRLINES[(h + i * 5 + (art === "D" ? 0 : 3)) % AIRLINES.length];
+          // In vorhandenen Zellen teurer als alles Vorhandene, damit die
+          // bisherigen Empfehlungen bleiben; in neuen Zellen von unten
+          const stufe = istBasis || start ? PREISSTUFEN[Math.min(PREISSTUFEN.length - 1, i - start + 3)] : PREISSTUFEN[i - start];
+          const ab = mitte + VERSATZ[(i - start + (istBasis || start ? 1 : 0)) % VERSATZ.length];
+          dazu.push({
+            id: `f${nr}`, type: "flight", airline: a.name,
+            from: muster.from, fromCode: muster.fromCode, to: muster.to, toCode: muster.toCode, ziel: muster.ziel,
+            depart: uhrText(ab), arrive: uhrText(ab + dauer), duration: dauerText(dauer),
+            stops: art === "D" ? 0 : 1, price: (() => { const pr = Math.max(29, Math.round(p0 * (1 + stufe)), untergrenze); if (!untergrenze) untergrenze = pr + 1; return pr; })(),
+            baggage: "Handgepäck inkl.", aircraft: muster.aircraft, zeitfenster: fenster, zusatz: true, filterBau: true,
+          });
+        }
+      }
+    }
+    FLIGHTS.push(...dazu);
+    // Rueckflug am letzten Reisetag, 16:30 bis 18:00, gleiche Dauer und Stopps
+    for (const f of FLIGHTS) {
+      const r = 16 * 60 + 30 + (streu(String(f.id)) % 7) * 15;
+      const an = r + minuten(f.duration);
+      f.rueckAb = uhrText(r);
+      f.rueckAn = uhrText(an);
+      f.rueckFolgetag = an >= 1440;
+    }
+  }
 })();
 
 

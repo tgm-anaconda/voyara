@@ -1536,18 +1536,20 @@ const liesReisende = async (text, felder, urteil = "ja") => {
      danach nahm der Agent Economy an. Die Annahme gibt es fuer Schweigen,
      nicht fuer Beteiligung. */
   if (WK && WK.fahrplan) {
+    /* Seit dem 22.11.2026 fragt der Fahrplan die Klasse nicht mehr (das tut
+       die Kasse). Dieselbe Regel wird deshalb am Flughafen geprueft. */
     const stand = () => ({ zielId: "mallorca", typ: "hotel", monat: 7, naechte: 7, erwachsene: 2,
-      kinder: 0, kinderAlter: [], zimmer: 1, artGenannt: true, flug: true, flugAb: "CGN" });
+      kinder: 0, kinderAlter: [], zimmer: 1, artGenannt: true, flug: true });
     const zaehlen = (faelle) => {
       const lauf = { gefragtWie: {}, verlauf: [], chips: null, annahmeOffen: [],
-        gefragtVorher: "flugKlasse", zugSeit: 0 };
+        gefragtVorher: "flugAb", zugSeit: 0 };
       for (const [satz, art, urteil] of faelle) {
         lauf.gespraech = [{ role: "user", content: satz }];
         lauf.nachrichtArt = art; lauf.frageBeantwortet = urteil;
         lauf.zugSeit += 1;
         WK.fahrplan(stand(), lauf);
       }
-      return (lauf.ohneAntwort || {}).flugKlasse || 0;
+      return (lauf.ohneAntwort || {}).flugAb || 0;
     };
     // Das Modell urteilt hier bewusst falsch ("nein") - der Kern sieht das Fragezeichen selbst
     pruefe("Drei Sachfragen zaehlen nicht", zaehlen([
@@ -3199,36 +3201,42 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     const FLUEGE = vm.runInContext("FLIGHTS", ctx);
     const paare = {};
     for (const f of FLUEGE) (paare[f.ziel + "|" + f.fromCode] ||= []).push(f);
+    /* Seit dem Flugfilter (22.11.2026): 60 je Paar, je Zelle aus Tageszeit
+       und Stoppart mindestens zehn; Spanne je Zelle unter 15 %; Umstieg
+       rund 18 % guenstiger; einheitliches Gepaeck; Rueckflug 16:30-18:00.
+       Gegenprobe: --alt=_backup/gp-flugfilter. */
     const groessen = [...new Set(Object.values(paare).map((l) => l.length))];
-    pruefe("Fluege: je Flughafen und Ziel 30 Verbindungen", groessen, [30]);
-    const billigerAlsVorher = Object.values(paare).filter((l) => {
-      const alte = l.filter((f) => !f.zusatz).map((f) => f.price);
-      return l.some((f) => f.zusatz && f.price < Math.min(...alte));
-    }).length;
-    pruefe("Fluege: keine neue Verbindung ist guenstiger als die guenstigste alte", billigerAlsVorher, 0);
-    const spanne = Math.max(...Object.values(paare).map((l) => Math.max(...l.map((f) => f.price)) / Math.min(...l.map((f) => f.price)) - 1));
-    /* Auch nach der Senkung der Europafluege (21.11.2026) unter 15 %:
-       dichte Strecken werden dafuer etwas weniger gesenkt (inventory.js). */
-    pruefe("Fluege: Preisspanne je Paar unter 15 Prozent", spanne < 0.15, true);
-    // Unter den bis zu sechs empfohlenen Fluegen bleibt sie eng
+    pruefe("Fluege: je Flughafen und Ziel 60 Verbindungen", groessen, [60]);
+    const zellen = {};
+    for (const f of FLUEGE) (zellen[`${f.ziel}|${f.fromCode}|${f.zeitfenster}|${f.stops ? "U" : "D"}`] ||= []).push(f);
+    pruefe("Fluege: jede Filterzelle hat mindestens 10", Math.min(...Object.values(zellen).map((l) => l.length)) >= 10 && Object.keys(zellen).length === 162 * 6, true);
+    const spanne = Math.max(...Object.values(zellen).map((l) => Math.max(...l.map((f) => f.price)) / Math.min(...l.map((f) => f.price)) - 1));
+    pruefe("Fluege: Preisspanne je Filterzelle unter 15 Prozent", spanne < 0.15, true);
+    const verh = Object.keys(zellen).filter((k) => k.endsWith("|D")).map((k) => Math.min(...zellen[k.slice(0, -1) + "U"].map((f) => f.price)) / Math.min(...zellen[k].map((f) => f.price)));
+    pruefe("Fluege: Umstieg 15 bis 20 Prozent guenstiger als direkt", verh.every((x) => x >= 0.8 && x <= 0.85), true);
+    pruefe("Fluege: Gepaeck ueberall gleich", [...new Set(FLUEGE.map((f) => f.baggage))], ["Handgepäck inkl."]);
+    pruefe("Fluege: Rueckflug immer zwischen 16:30 und 18:00", FLUEGE.every((f) => f.rueckAb >= "16:30" && f.rueckAb <= "18:00" && !!f.rueckAn), true);
+    pruefe("Fluege: an der Spitze jeder Zelle kein Gleichstand", Object.values(zellen).every((l) => { const pz = l.map((f) => f.price).sort((x, y) => x - y); return pz[0] < pz[1]; }), true);
+    // Unter den bis zu sechs empfohlenen Fluegen bleibt sie eng, in jeder Filterlage
     const engSechs = vm.runInContext("[...new Set(FLIGHTS.map((f) => f.ziel))]", ctx).every((z) => {
       const hz = vm.runInContext(`HOTELS.find((h) => h.ziel === "${z}")`, ctx);
-      return ["Frankfurt", "München", "Hamburg", "Hannover", "Stuttgart"].every((ab) => {
-        let k = []; try { k = WK.flugAuswahl(hz, { flug: true, flugAb: ab, erwachsene: 2, kinder: 0 }, { anzahl: 6 }) || []; } catch { k = []; }
+      return ["Frankfurt", "München", "Hamburg"].every((ab) => ["frueh", "mittag", "abend"].every((zeit) => ["direkt", "egal"].every((stopps) => {
+        let k = []; try { k = WK.flugAuswahl(hz, { flug: true, flugAb: ab, erwachsene: 2, kinder: 0, flugZeit: zeit, flugStopps: stopps }, { anzahl: 6 }) || []; } catch { k = []; }
         const pz = k.map((x) => x.flug.price);
-        return !pz.length || Math.max(...pz) / Math.min(...pz) - 1 <= 0.1;
-      });
+        /* Mindestens fuenf: In Zellen, die schon vor dem Filter voll waren
+           (Fernziele mit Umstieg), liegen nur fuenf innerhalb von 80 Minuten -
+           die Abflugzeiten dort sind seit dem 21.11. unveraendert. */
+        return k.length >= 5 && Math.max(...pz) / Math.min(...pz) - 1 <= 0.1;
+      })));
     });
-    pruefe("Fluege: unter den empfohlenen hoechstens 10 Prozent Spanne", engSechs, true);
-    // Europafluege 20 % guenstiger, Fernflug unveraendert (Stichprobe)
-    const minProStrecke = (z, ab) => Math.min(...FLUEGE.filter((f) => f.ziel === z && f.fromCode === ab).map((f) => f.price));
-    pruefe("Fluege: Mallorca ab Frankfurt guenstiger, Kyoto unveraendert", [minProStrecke("mallorca", "FRA"), minProStrecke("kyoto", "FRA")], [90, 758]);
+    pruefe("Fluege: in jeder Filterlage mindestens 5 Empfehlungen mit hoechstens 10 Prozent Spanne", engSechs, true);
 
     const it = vm.runInContext('HOTELS.find((h) => h.ziel === "mallorca")', ctx);
     const pr = { flug: true, flugAb: "Frankfurt", erwachsene: 2, kinder: 0 };
-    const auswahl = (n) => { try { return FL ? WK.flugAuswahl(it, pr, { anzahl: n }) : []; } catch { return []; } };
+    const auswahl = (n, extra = {}) => { try { return FL ? WK.flugAuswahl(it, { ...pr, ...extra }, { anzahl: n }) : []; } catch { return []; } };
     const drei = auswahl(3);
-    pruefe("Flugwahl: die Liste in der Kasse hat alle 30 ab Frankfurt", (drei.alle || []).length, 30);
+    pruefe("Flugwahl: die Liste zeigt die gefilterte Zelle (eine Tageszeit, alle Stopps: 20)", (drei.alle || []).length, 20);
+    pruefe("Flugwahl: nur direkt -> 10 in der Liste, alle direkt", [(auswahl(3, { flugStopps: "direkt" }).alle || []).length, (auswahl(3, { flugStopps: "direkt" }).alle || []).every((k) => !k.flug.stops)], [10, true]);
     const minuten = (u) => { const [h, m] = String(u).split(":").map(Number); return h * 60 + m; };
     const gut46 = [2, 4, 5, 6].map((n) => {
       const k = auswahl(n);
@@ -3237,26 +3245,49 @@ const liesReisende = async (text, felder, urteil = "ja") => {
         && Math.max(...ab) - Math.min(...ab) <= 80 && !k.slice(1).some((x) => x.preis <= k[0].preis);
     });
     pruefe("Flugwahl: 2, 4, 5, 6 Empfehlungen - gleicher Anfang, enge Zeiten, die erste am guenstigsten", gut46, [true, true, true, true]);
-    pruefe("Flugwahl: bei drei die drei bisherigen", drei.map((k) => !!k.flug.zusatz), [false, false, false]);
+    pruefe("Flugwahl: Zahlen fuer die Filterspalte", [drei.info?.zahlen?.zeit?.frueh, drei.info?.zahlen?.stopps?.direkt, drei.info?.zahlen?.stopps?.egal], [20, 10, 20]);
+    // Klasse und Koffer aendern nur den Preis, nicht die Rangfolge
+    const biz = auswahl(3, { flugKlasse: "business", flugKoffer: true });
+    pruefe("Flugwahl: Business mit Koffer - dieselben drei, teurer um Faktor 1,8 plus Koffer",
+      [biz.map((k) => k.id).join(), biz[0] ? biz[0].preis === (Math.round(biz[0].flug.price * 2 * 1.8) + 50) * 2 : false], [drei.map((k) => k.id).join(), true]);
 
-    // Die Antwort auf "Wie viele Fluege?"
-    const lies = (text, vorher = {}) => {
-      KN.lauf = { profil: { ...vorher }, flugAnzahlOffen: "erste" };
+    // Die Antworten auf die vier Flugfragen (kern.flugFrageLesen)
+    const frage = (name, text, vorher = {}) => {
+      KN.lauf = { profil: { ...vorher }, flugFrageOffen: name };
       KN.notieren = () => {};
-      try { KN.flugAnzahlLesen?.(text); } catch { /* alter Kern */ }
-      return [KN.lauf.profil.flugAnzahl ?? null, KN.lauf.flugAnzahlMehr ?? null, KN.lauf.fortsetzenMit ?? null];
+      try { KN.flugFrageLesen?.(text); } catch { return "fehler"; }
+      const p = KN.lauf.profil;
+      return [p.flugKlasse ?? null, p.flugKoffer ?? null, p.flugZeit ?? (p.flugZeitEgal ? "egal" : null), p.flugStopps ?? null, KN.lauf.fortsetzenMit ?? null];
     };
-    pruefe("Flug-Anzahl: '4' gilt", lies("4"), [4, null, "buchung_vorbereiten"]);
-    pruefe("Flug-Anzahl: 'fünf' gilt", lies("lieber fünf"), [5, null, "buchung_vorbereiten"]);
-    pruefe("Flug-Anzahl: Knopf 'Ja, such sie raus' heisst drei", lies("Ja, such sie raus"), [3, null, "buchung_vorbereiten"]);
-    pruefe("Flug-Anzahl: 'Lieber mehr vergleichen' fragt nach", lies("Lieber mehr vergleichen"), [null, true, "buchung_vorbereiten"]);
-    pruefe("Flug-Anzahl: eine Frage geht ans Modell", lies("Welche hat mehr Gepäck?"), [null, null, null]);
-    pruefe("Flug-Anzahl: schon im Fenster gewaehlt -> erledigt", lies("4", { flugId: "f1" }), [null, null, null]);
-    KN.lauf = { profil: { flug: true }, flugWartet: "h01", flugAnzahlOffen: "erste" };
+    pruefe("Flugfrage Klasse: 'Business'", frage("klasse", "Business"), ["business", null, null, null, "buchung_vorbereiten"]);
+    pruefe("Flugfrage Klasse: 'Premium Economy'", frage("klasse", "Premium Economy"), ["premium", null, null, null, "buchung_vorbereiten"]);
+    pruefe("Flugfrage Koffer: 'Nur Handgepäck'", frage("koffer", "Nur Handgepäck"), [null, false, null, null, "buchung_vorbereiten"]);
+    pruefe("Flugfrage Koffer: 'Mit Koffer'", frage("koffer", "Mit Koffer"), [null, true, null, null, "buchung_vorbereiten"]);
+    pruefe("Flugfrage Koffer: 'nein, brauche keinen'", frage("koffer", "nein, brauche keinen"), [null, false, null, null, "buchung_vorbereiten"]);
+    pruefe("Flugfrage Zeit: 'lieber abends'", frage("zeit", "lieber abends"), [null, null, "abend", null, "buchung_vorbereiten"]);
+    pruefe("Flugfrage Zeit: 'Egal'", frage("zeit", "Egal"), [null, null, "egal", null, "buchung_vorbereiten"]);
+    pruefe("Flugfrage Stopps: 'Nur direkt'", frage("stopps", "Nur direkt"), [null, null, null, "direkt", "buchung_vorbereiten"]);
+    pruefe("Flugfrage Stopps: 'Auch mit Umstieg'", frage("stopps", "Auch mit Umstieg"), [null, null, null, "egal", "buchung_vorbereiten"]);
+    pruefe("Flugfrage Stopps: 'ohne Umstieg bitte' heisst direkt", frage("stopps", "ohne Umstieg bitte"), [null, null, null, "direkt", "buchung_vorbereiten"]);
+    pruefe("Flugfrage: eine Rueckfrage geht ans Modell, die Frage bleibt offen",
+      [frage("klasse", "Was kostet denn Business?")[4], KN.lauf.flugFrageOffen], [null, "klasse"]);
+    // Gegenprobe zur Deutung: Unklares wird einmal neu gefragt, beim zweiten Mal gilt der Normalfall
+    KN.lauf = { profil: {}, flugFrageOffen: "klasse" }; KN.notieren = () => {};
+    try { KN.flugFrageLesen?.("hm weiss nicht"); } catch { /* alt */ }
+    const ersterVersuch = [KN.lauf.profil.flugKlasse ?? null, KN.lauf.fortsetzenMit ?? null];
+    KN.lauf.flugFrageOffen = "klasse"; KN.lauf.fortsetzenMit = null;
+    try { KN.flugFrageLesen?.("keine ahnung"); } catch { /* alt */ }
+    pruefe("Flugfrage: unklar -> einmal neu fragen, dann Economy", [ersterVersuch, KN.lauf.profil.flugKlasse ?? null], [[null, "buchung_vorbereiten"], "economy"]);
+    // Was noch offen ist, wird in dieser Reihenfolge gefragt
+    pruefe("Flugfragen: Reihenfolge Klasse, Koffer, Zeit, Stopps",
+      [WK.flugFrageOffen?.({}), WK.flugFrageOffen?.({ flugKlasse: "economy" }), WK.flugFrageOffen?.({ flugKlasse: "economy", flugKoffer: false }),
+       WK.flugFrageOffen?.({ flugKlasse: "economy", flugKoffer: false, flugZeitEgal: true }), WK.flugFrageOffen?.({ flugKlasse: "economy", flugKoffer: false, flugZeit: "frueh", flugStopps: "egal" })],
+      ["klasse", "koffer", "zeit", "stopps", null]);
+    KN.lauf = { profil: { flug: true }, flugWartet: "h01", flugFrageOffen: "zeit" };
     KN.sagen = () => {}; KN.gespraechPush = () => {}; KN.sichern = () => {};
     let passt = null;
     try { passt = KN.flugWunsch("passt", { gezeigt: true }); } catch { passt = "fehler"; }
-    pruefe("Flug: 'passt' auf die Anzahlfrage ist keine Tageszeit-Antwort", passt, false);
+    pruefe("Flug: 'passt' bei offener Flugfrage ist kein Flugwunsch", passt, false);
 
     // Gewaehlt wird in der Kasse, nicht mehr auf der Hausseite
     const quelltext = fs.readFileSync(alt && fs.existsSync(quelle + "werkzeugkasten.js") ? quelle + "werkzeugkasten.js" : B + "agent/werkzeugkasten.js", "utf8");
@@ -3273,8 +3304,9 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     const prW = { typ: "apartment", flug: true, flugAb: "Frankfurt", erwachsene: 2, kinder: 0, naechte: 7, monat: 6 };
     const versuch = (f) => { try { return f(); } catch { return "fehler"; } };
     pruefe("F2: Flugpaket zur Ferienwohnung", versuch(() => !!FL.paket(wohnung, 2)), true);
-    pruefe("F2: Flugwahl in der Kasse auch zur Ferienwohnung (3 Empfehlungen, 30 in der Liste)",
-      versuch(() => { const k = WK.flugAuswahl(wohnung, prW); return [k.length, (k.alle || []).length]; }), [3, 30]);
+    // Seit dem Flugfilter (22.11.2026) 20 in der Liste: eine Tageszeit, alle Stopps
+    pruefe("F2: Flugwahl in der Kasse auch zur Ferienwohnung (3 Empfehlungen, 20 in der Liste)",
+      versuch(() => { const k = WK.flugAuswahl(wohnung, prW); return [k.length, (k.alle || []).length]; }), [3, 20]);
     /* Am Quelltext, nicht am Aufruf: `Auswahl.reisepreis` lief in diesem
        Test schon, bevor components.js geladen war, und Node haelt `Flug`
        danach dort fuer undefiniert (eine frische Kopie derselben Funktion
@@ -3330,19 +3362,20 @@ const liesReisende = async (text, felder, urteil = "ja") => {
       }
       return null;
     });
-    pruefe("Block C: Budget mit dem teuersten empfehlbaren Flug - knappes Haus faellt heraus, mit Luft bleibt es",
+    /* Seit dem 22.11.2026 (Variante A) gilt das Budget nur fuer die
+       Unterkunft: Das knappe Haus bleibt also auch mit dem teuersten Flug
+       drin, und Agent wie Seite rechnen ohne Flug. Gegenprobe gegen
+       _backup/gp-flugfilter: dort faellt es heraus. */
+    pruefe("A-Trennung: Budget nur fuer die Unterkunft - das knappe Haus bleibt, Vorgaben ohne Flug",
       versuch(() => {
         if (!kandidat || !WK.budgetMitFlugPuffer) return "fehlt";
-        // Ein zweites Haus, das sicher passt - sonst bliebe nichts uebrig, und
-        // dann gilt absichtlich die alte Liste
         const v = WK.vorgaben(pB);
         const andere = H.filter((x) => x.id !== kandidat.h.id && x.ziel === "mallorca")
           .map((x) => ({ x, r: AW.reisepreis(x, v) })).filter((o) => o.r)
           .sort((a, b) => a.r.unterkunft - b.r.unterkunft)[0].x;
         const knapp = WK.budgetMitFlugPuffer([kandidat.h, andere], { ...pB, budgetGesamt: kandidat.billig }).map((h) => h.id).includes(kandidat.h.id);
-        const luft = WK.budgetMitFlugPuffer([kandidat.h, andere], { ...pB, budgetGesamt: kandidat.teuer }).map((h) => h.id).includes(kandidat.h.id);
-        return [knapp, luft];
-      }), [false, true]);
+        return [knapp, v.flug, AW.reisepreis(kandidat.h, v).gesamt === AW.reisepreis(kandidat.h, v).unterkunft];
+      }), [true, false, true]);
     pruefe("Block C: ohne Flug oder ohne Budget bleibt die Liste unveraendert",
       versuch(() => {
         const l = H.slice(0, 20);
@@ -3410,6 +3443,26 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     pruefe("C15: neue Vorschlaege -> bleibt", fall("such mir was raus", null, { vorlage: true }), [false, null]);
     pruefe("C15: Buchung -> bleibt", fall("buch das", "buchung_vorbereiten"), [false, null]);
     pruefe("C15: Bewertungen lesen und Details sind kein Grund zu bleiben", versuch(() => ["bewertungen_lesen", "haus_details", "haus_oeffnen", "faq_nachschlagen"].some((w) => WK.RAHMEN_BLEIBT.includes(w))), false);
+  }
+
+  /* A (22.11.2026): Das Modell kennt die Fluege im offenen Fenster.
+     Gegenprobe: --alt=_backup/vor-flugfilter-2026-11-22. */
+  {
+    const FL = vm.runInContext("typeof Fluege !== 'undefined' ? Fluege : null", ctx);
+    const text = (() => { try {
+      if (!FL || !FL.fuerModell) return "fehlt";
+      const f1 = { id: "fx1", airline: "Marenta", fromCode: "HAM", depart: "07:00", toCode: "PMI", arrive: "09:33", duration: "2h 33m", stops: 0, baggage: "Handgepäck inkl.", rueckAb: "17:15", rueckAn: "19:48" };
+      const f2 = { id: "fx2", airline: "Solbrixa", fromCode: "HAM", depart: "17:30", toCode: "PMI", arrive: "21:36", duration: "4h 06m", stops: 1, baggage: "Handgepäck inkl." };
+      FL.offen = true; FL.daten = { kandidaten: [
+        { id: "fx1", flug: f1, preisText: "228 €", personenText: "2 Personen, hin und zurück", partner: true },
+        { id: "fx2", flug: f2, preisText: "214 €", personenText: "2 Personen, hin und zurück" }] };
+      const t = FL.fuerModell(); FL.offen = false; FL.daten = null; return t;
+    } catch (e) { return "fehler " + e.message; } })();
+    pruefe("A: Flugfenster steht mit Airline, Zeiten, Stopps, Gepaeck und Preis im Kontext",
+      typeof text === "string" && ["Marenta", "07:00", "09:33", "direkt", "1 Stopp", "Handgepaeck", "214 €", "Rueckflug ab PMI 17:15"].every((w) => text.includes(w)), true);
+    pruefe("A: Partner wird dem Modell nicht verraten", typeof text === "string" && !/partner/i.test(text), true);
+    pruefe("A: Fenster zu -> kein Flugtext", (() => { try { return FL.fuerModell(); } catch { return "fehler"; } })(), "");
+    pruefe("A: kern haengt den Flugtext in den Modellstand", /Fluege\.fuerModell\(\)/.test(fs.readFileSync(quelle + (alt && fs.existsSync(quelle + "kern.js") ? "kern.js" : "agent/kern.js"), "utf8")), true);
   }
 
   console.log(`\n${gut} richtig, ${schlecht} falsch`);

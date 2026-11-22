@@ -328,8 +328,18 @@ const Flug = {
   SCHLUESSEL: "voyara_flug",
   KLASSEN: {
     economy: { label: "Economy", faktor: 1 },
-    premium: { label: "Premium Economy", faktor: 1.5 },
-    business: { label: "Business", faktor: 2.6 },
+    /* Moderat seit dem 22.11.2026 (vorher 1,5 und 2,6). Ben: nicht so
+       immens hoch, sonst wirkt der Gesamtpreis abschreckend. */
+    premium: { label: "Premium Economy", faktor: 1.3 },
+    business: { label: "Business", faktor: 1.8 },
+  },
+  /* Koffer als Aufpreis der Buchung (22.11.2026): je Person und Richtung,
+     fuer alle Airlines gleich. Grundgepaeck ist ueberall Handgepaeck. */
+  KOFFER: { europa: 25, fern: 40 },
+  FERNZIELE: ["kapstadt", "krabi", "kyoto", "newyork"],
+  kofferPreis(flug) {
+    if (!flug) return 0;
+    return this.FERNZIELE.includes(flug.ziel) ? this.KOFFER.fern : this.KOFFER.europa;
   },
   urlGelesen: false,
   lesen() {
@@ -339,11 +349,12 @@ const Flug = {
     // der Seite geaendert wurde (Klasse, Verbindung)
     const p = new URLSearchParams(window.location.search);
     if (!this.urlGelesen && p.has("flight")) {
-      s = { mit: p.get("flight") === "1", ab: p.get("ab") ?? s.ab ?? "", klasse: p.get("klasse") || s.klasse || "economy", flugId: p.get("flug") || s.flugId || null };
+      s = { mit: p.get("flight") === "1", ab: p.get("ab") ?? s.ab ?? "", klasse: p.get("klasse") || s.klasse || "economy", flugId: p.get("flug") || s.flugId || null,
+        koffer: p.has("koffer") ? p.get("koffer") === "1" : !!s.koffer };
       this.speichern(s);
     }
     this.urlGelesen = true;
-    return { mit: !!s.mit, ab: s.ab || "", klasse: this.KLASSEN[s.klasse] ? s.klasse : "economy", flugId: s.flugId || null };
+    return { mit: !!s.mit, ab: s.ab || "", klasse: this.KLASSEN[s.klasse] ? s.klasse : "economy", flugId: s.flugId || null, koffer: !!s.koffer };
   },
   get() { return this.lesen(); },
   speichern(s) { try { sessionStorage.setItem(this.SCHLUESSEL, JSON.stringify(s)); } catch { /* egal */ } },
@@ -437,10 +448,12 @@ const Flug = {
     // in der Karte, obwohl Frankfurt gewaehlt war
     return this.optionen(zielId, s.ab)[0] || null;
   },
-  preisProPerson(flug, klasse = null) {
+  preisProPerson(flug, klasse = null, koffer = null) {
     if (!flug) return 0;
     const k = this.KLASSEN[klasse || this.lesen().klasse] || this.KLASSEN.economy;
-    return Math.round(flug.price * 2 * k.faktor);   // Hin- und Rueckflug
+    const mitKoffer = koffer === null ? this.lesen().koffer : !!koffer;
+    // Hin- und Rueckflug, der Koffer fuer beide Richtungen
+    return Math.round(flug.price * 2 * k.faktor) + (mitKoffer ? this.kofferPreis(flug) * 2 : 0);
   },
   // Paket fuer eine Unterkunft: Flug fuer alle Reisenden (seit 21.11.2026
   // auch zur Ferienwohnung)
@@ -454,7 +467,7 @@ const Flug = {
   text(flug, klasse = null) {
     if (!flug) return "";
     const k = this.KLASSEN[klasse || this.lesen().klasse] || this.KLASSEN.economy;
-    return `${flug.airline} ab ${flug.from}, ${k.label}, Hin- und Rückflug`;
+    return `${flug.airline} ab ${flug.from}, ${k.label}${this.lesen().koffer ? ", mit Koffer" : ""}, Hin- und Rückflug`;
   },
 
   /* Flugtage
@@ -551,7 +564,7 @@ const Flug = {
     const s = this.lesen();
     if (!s.mit) return href;
     const trenner = href.includes("?") ? "&" : "?";
-    return `${href}${trenner}flight=1&ab=${encodeURIComponent(s.ab)}&klasse=${s.klasse}${s.flugId ? `&flug=${s.flugId}` : ""}`;
+    return `${href}${trenner}flight=1&ab=${encodeURIComponent(s.ab)}&klasse=${s.klasse}${s.koffer ? "&koffer=1" : ""}${s.flugId ? `&flug=${s.flugId}` : ""}`;
   },
 };
 

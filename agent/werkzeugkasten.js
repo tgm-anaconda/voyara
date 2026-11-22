@@ -259,7 +259,7 @@ const Werkzeugkasten = {
           typ: { type: "string", enum: ["hotel", "apartment"], description: "Hotel oder Ferienwohnung" },
           zimmer: zahl("Zahl der Zimmer (Hotel)"),
           maxPreis: zahl("Hoechstpreis pro Nacht in Euro, fuer alle zusammen. Ob der Betrag pro Person, fuer alle oder fuer die ganze Reise gilt, klaert der Kern selbst mit einer Rueckfrage - rechne nicht um."),
-          budgetGesamt: zahl("Budget fuer die ganze Reise in Euro"),
+          budgetGesamt: zahl("Budget fuer die ganze Reise in Euro (seit dem 22.11.2026 nur die Unterkunft - der Flug kommt in der Kasse dazu)"),
           maxStrandMeter: zahl("Hoechstens so viele Meter zum Strand"),
           mindestbewertung: { type: "number", description: "Mindest-Gaestenote, z.B. 4.5 (nur wenn die Person das sagt)" },
           mindestSterne: zahl("Mindestens so viele Hotelsterne (nur wenn die Person das sagt)"),
@@ -1497,7 +1497,7 @@ const Werkzeugkasten = {
     if (nachOrt.size > 1) {
       let bester = null;
       for (const [code, l] of nachOrt) {
-        const preis = Math.min(...l.map((f) => Flug.preisProPerson(f, p.flugKlasse || null)));
+        const preis = Math.min(...l.map((f) => Flug.preisProPerson(f, p.flugKlasse || null, p.flugKoffer ?? null)));
         if (!bester || preis < bester.preis) bester = { code, preis, liste: l };
       }
       // Auf Wunsch ein anderer der genannten Flughaefen (04.10.2026)
@@ -1506,11 +1506,18 @@ const Werkzeugkasten = {
       ortCode = wahl ? wahl.code : ortCode;
     }
     const guenstigsterOrt = nachOrt.size > 1
-      ? alleOrte.map((c) => ({ c, pr: Math.min(...nachOrt.get(c).map((f) => Flug.preisProPerson(f, p.flugKlasse || null))) })).sort((a, b) => a.pr - b.pr)[0].c
+      ? alleOrte.map((c) => ({ c, pr: Math.min(...nachOrt.get(c).map((f) => Flug.preisProPerson(f, p.flugKlasse || null, p.flugKoffer ?? null))) })).sort((a, b) => a.pr - b.pr)[0].c
       : ortCode;
 
     const personen = Math.max(1, (p.erwachsene || 0) + (p.kinder || 0));
-    const proPers = (f) => Flug.preisProPerson(f, p.flugKlasse || null);
+    const proPers = (f) => Flug.preisProPerson(f, p.flugKlasse || null, p.flugKoffer ?? null);
+
+    /* Stopps als Filter (22.11.2026): "direkt" laesst nur Direktfluege
+       zu, sonst ("egal" oder offen) alle. Danach die Tageszeit. Je Zelle
+       gibt es mindestens zehn Verbindungen (data/inventory.js). */
+    const ganzAmOrt = liste.slice();
+    const nurDirekt = p.flugStopps === "direkt";
+    if (nurDirekt && liste.some((f) => !f.stops)) liste = liste.filter((f) => !f.stops);
 
     /* Eine Tageszeit im Fenster (04.10.2026): die gewuenschte, sonst die
        mit der guenstigsten Verbindung. Auf Wunsch zeigt der Agent danach
@@ -1524,7 +1531,15 @@ const Werkzeugkasten = {
       zeit = gewuenscht || billigste;
       liste = liste.filter((f) => f.zeitfenster === zeit);
     }
-    const info = { ort: ortCode, guenstigsterOrt, andereOrte: alleOrte.filter((c) => c !== ortCode), zeit, andereZeiten: zeiten.filter((z) => z !== zeit) };
+    const info = { ort: ortCode, guenstigsterOrt, andereOrte: alleOrte.filter((c) => c !== ortCode), zeit, andereZeiten: zeiten.filter((z) => z !== zeit),
+      stopps: nurDirekt ? "direkt" : "egal" };
+    // Zahlen fuer die Filterspalte: je Tageszeit (bei den gewaehlten Stopps)
+    // und je Stoppart (bei der gewaehlten Tageszeit)
+    const zahlen = { zeit: {}, stopps: {} };
+    for (const z of ["frueh", "mittag", "abend"]) zahlen.zeit[z] = alleAmOrt.filter((f) => f.zeitfenster === z).length;
+    const inZeit = ganzAmOrt.filter((f) => !zeit || f.zeitfenster === zeit);
+    zahlen.stopps = { direkt: inZeit.filter((f) => !f.stops).length, egal: inZeit.length };
+    info.zahlen = zahlen;
 
     /* Dieselbe Vergleichsregel wie bei den Haeusern.
        ----------------------------------------------------------------
@@ -1583,7 +1598,9 @@ const Werkzeugkasten = {
     raus.info = info;
     /* Alle Verbindungen ab diesem Flughafen, nach Abflug - das ist die
        Liste, die "Flug auswaehlen" in der Kasse oeffnet. */
-    raus.alle = alleAmOrt.slice().sort((a, b) => minuten(a) - minuten(b) || proPers(a) - proPers(b)).map(alsKandidat);
+    /* Seit dem Flugfilter (22.11.2026) ist das die Liste NACH Tageszeit und
+       Stopps - so wie sie das Fenster neben der Filterspalte zeigt. */
+    raus.alle = liste.slice().sort((a, b) => minuten(a) - minuten(b) || proPers(a) - proPers(b)).map(alsKandidat);
     return raus;
   },
 
@@ -1619,6 +1636,50 @@ const Werkzeugkasten = {
 
      Liefert ein Werkzeugergebnis, solange die Flugwahl offen ist, sonst
      null - dann fuellt buchung_vorbereiten das Formular aus. */
+  /* Die vier Flugfragen (22.11.2026).
+     ------------------------------------------------------------------
+     Ben: Der Agent fragt jeden Filter einzeln ab, bevor er ihn einstellt
+     und Fluege vorlegt - eine Frage je Zug, weil das Modell mehrere
+     Antworten auf einmal schlecht auswertet. Gelesen wird die Antwort
+     vom Kern (kern.flugFrageLesen), nicht vom Modell. Was die Person im
+     Gespraech schon gesagt hat, wird nicht noch einmal gefragt. */
+  FLUG_FRAGEN: ["klasse", "koffer", "zeit", "stopps"],
+  flugFrageText(name, item) {
+    const koffer = typeof Flug !== "undefined" ? Flug.kofferPreis({ ziel: item?.ziel }) : 25;
+    return ({
+      klasse: { satz: "In welcher Klasse möchtest du fliegen: Economy, Premium Economy oder Business?",
+        chips: ["Economy", "Premium Economy", "Business"] },
+      koffer: { satz: `Brauchst du einen Koffer? Handgepäck ist immer dabei, ein Koffer kostet ${koffer} € pro Person und Strecke.`,
+        chips: ["Nur Handgepäck", "Mit Koffer"] },
+      zeit: { satz: "Wann möchtest du am liebsten hinfliegen: morgens, mittags oder abends?",
+        chips: ["Morgens", "Mittags", "Abends", "Egal"] },
+      stopps: { satz: "Sollen es nur Direktflüge sein, oder auch mit Umstieg? Mit Umstieg ist es meist knapp ein Fünftel günstiger.",
+        chips: ["Nur direkt", "Auch mit Umstieg"] },
+    })[name];
+  },
+  flugFrageOffen(p) {
+    if (!p.flugKlasse) return "klasse";
+    if (p.flugKoffer == null) return "koffer";
+    if (!p.flugZeit && !p.flugZeitEgal) return "zeit";
+    if (!p.flugStopps) return "stopps";
+    return null;
+  },
+
+  /* Die Flugwahl in der Kasse (21.11.2026, umgebaut 22.11.2026).
+     ------------------------------------------------------------------
+     Der Ablauf, analog zu den Haeusern:
+     1. Der Kern fragt Klasse, Koffer, Abflugzeit und Stopps ab - je eine
+        Frage, nur was noch offen ist.
+     2. Der Agent klickt "Flug auswaehlen". Das Fenster zeigt die Liste
+        mit der Filterspalte; er stellt die vier Filter sichtbar ein.
+     3. Er geht die gefilterte Liste durch (Arm A: Zeiger, Arm B: Vollbild).
+     4. Das Fenster zeigt die Empfehlungen als Karten wie die Haeuser:
+        Favorit ist die erste (guenstigste), Partner je nach Gruppe die
+        erste oder zweite, die Anordnung gelost, nichts vorausgewaehlt.
+        Der Kern nennt den Favoriten. Die Wahl trifft die Person.
+
+     Liefert ein Werkzeugergebnis, solange die Flugwahl offen ist, sonst
+     null - dann fuellt buchung_vorbereiten das Formular aus. */
   async kasseFlug(a, kern, item) {
     if (typeof Kasse === "undefined" || !Kasse.flugFenster || typeof Fluege === "undefined" || typeof Flug === "undefined") return null;
     if (!item || (item.type !== "hotel" && item.type !== "apartment")) return null;
@@ -1633,16 +1694,36 @@ const Werkzeugkasten = {
       kern.notieren("flug_aus_kasse", { id: fs.flugId });
       return null;
     }
-    const p = { ...pf, flug: true };
+
+    // 1. Die vier Fragen, eine je Zug
+    const offen = this.flugFrageOffen(pf);
+    const normal = kern.lauf.flugNormalGesagt;
+    if (normal) { kern.lauf.flugNormalGesagt = null; kern.sagen(`Dann rechne ich erst mal mit ${normal}; im Flugfenster kannst du das links jederzeit ändern.`); }
+    if (offen) {
+      const f = this.flugFrageText(offen, item);
+      const nochmal = (kern.lauf.flugFrageVersuche || {})[offen] === 1;
+      kern.lauf.flugWartet = a.id;
+      kern.lauf.flugFrageOffen = offen;
+      kern.sagenUndMerken(`${nochmal ? "Das habe ich nicht ganz verstanden. " : ""}${f.satz}`);
+      kern.lauf.chips = f.chips;
+      AgentPanel.setSuggestions(f.chips);
+      kern.lauf.kernWartet = true;
+      kern.notieren("flug_frage", { frage: offen });
+      kern.sichern();
+      return { ergebnis: { wartet: true, grund: `wartet auf die Antwort zur Flugfrage (${offen})`,
+        hinweis: "Der Chat hat eine Frage zum Flug gestellt. Ruf KEIN Werkzeug und schreib nichts dazu." } };
+    }
+
+    const p = { ...pf, flug: true, flugZeit: pf.flugZeitEgal ? null : pf.flugZeit };
     const auswahl = this.flugAuswahl(item, p);
     if (auswahl.length < 2) return null;
     const info = auswahl.info || {};
     const alle = auswahl.alle || [];
-    const ab = alle[0]?.flug?.from || "";
-    const nach = alle[0]?.flug?.to || item.name;
     const id = (sel) => document.getElementById(sel);
 
     kern.sperreAn();
+    // Klasse und Koffer gelten fuer die ganze Buchung
+    try { Flug.set({ klasse: pf.flugKlasse || "economy", koffer: !!pf.flugKoffer }); } catch { /* ohne Flugmodul */ }
     // Flug dazubuchen und der Flughafen aus dem Gespraech, sichtbar
     if (!Flug.get().mit && id("cFlugMit")) {
       await Zeiger.klicke(id("cFlugMit"), { hinweis: "Flug dazubuchen" });
@@ -1653,62 +1734,47 @@ const Werkzeugkasten = {
       await Zeiger.setzeWert(id("cFlugAb"), info.ort, { hinweis: "Abflughafen" });
       await Zeiger.warte(200);
     }
-    // "Flug auswaehlen" - das Fenster mit allen Verbindungen
+    // 2. "Flug auswaehlen" - erst ungefiltert (guenstigste Tageszeit, alle Stopps),
+    //    dann stellt der Agent die Filter sichtbar ein
     if (!Fluege.offen) {
       const knopf = id("cFlugWahl");
       if (!knopf) { kern.sperreAus(); return null; }
-      Kasse.agentOeffnet = { kern, profil: p, kennzeichnung: kern.kennzeichnung ? kern.kennzeichnung() : null };
+      Kasse.agentOeffnet = { kern, profil: { ...pf, flug: true, flugZeit: null, flugStopps: null }, kennzeichnung: kern.kennzeichnung ? kern.kennzeichnung() : null };
       await Zeiger.klicke(knopf, { hinweis: "Flug auswählen" });
       await Zeiger.warte(350);
     }
     if (!Fluege.offen) { kern.sperreAus(); return null; }
-    const ids = auswahl.map((k) => k.id);
+    const ziel = { zeit: p.flugZeit || Fluege.daten?.filter?.zeit || info.zeit, stopps: pf.flugStopps === "direkt" ? "direkt" : "egal",
+      klasse: pf.flugKlasse || "economy", koffer: !!pf.flugKoffer };
+    const HINWEIS = { zeit: "Abflugzeit", stopps: "Stopps", klasse: "Klasse", koffer: "Koffer" };
+    Fluege.agentStellt = true;
+    try {
+      for (const name of ["zeit", "stopps", "klasse", "koffer"]) {
+        if (Zeiger.abbruch || !Fluege.offen) break;
+        const jetzt = Fluege.daten?.filter?.[name];
+        if (name === "koffer" ? !!jetzt === ziel.koffer : jetzt === ziel[name]) continue;
+        const feld = Fluege.filterFeld(name, ziel[name]);
+        if (!feld) continue;
+        await Zeiger.klicke(feld, { hinweis: HINWEIS[name] });
+        await Zeiger.warte(250);
+      }
+    } finally { Fluege.agentStellt = false; }
+    /* Gerechnet wird mit genau den Filtern, die jetzt im Fenster stehen -
+       bei "egal" ist das die Tageszeit, die das Fenster zuerst zeigte. */
+    p.flugZeit = Fluege.daten?.filter?.zeit || ziel.zeit;
+    p.flugStopps = ziel.stopps;
+    const gefiltert = this.flugAuswahl(item, p);
+    const gezeigt = (Fluege.daten?.kandidaten || []).length || (gefiltert.alle || alle).length;
+    const ids = (gefiltert.length >= 2 ? gefiltert : auswahl).map((k) => k.id);
     const partnerId = typeof Studie !== "undefined" && Studie.partnerflug ? Studie.partnerflug(ids) : null;
     kern.lauf.partnerFlugId = partnerId;
     kern.lauf.flugWartet = a.id;
 
-    // "Lieber mehr vergleichen" - dann: wie viele?
-    if (kern.lauf.flugAnzahlMehr && !pf.flugAnzahl) {
-      kern.lauf.flugAnzahlMehr = false;
-      kern.sagenUndMerken("Gern. Wie viele Verbindungen möchtest du vergleichen - 4, 5 oder 6?");
-      kern.lauf.chips = ["4 vergleichen", "5 vergleichen", "6 vergleichen"];
-      AgentPanel.setSuggestions(kern.lauf.chips);
-      kern.lauf.flugAnzahlOffen = "zahl";
-      kern.lauf.kernWartet = true;
-      kern.notieren("flug_anzahl_nachgefragt", {});
-      kern.sichern();
-      kern.sperreAus();
-      return { ergebnis: { wartet: true, grund: "wartet auf die Anzahl der Fluege",
-        hinweis: "Der Chat hat gefragt, wie viele Fluege verglichen werden sollen. Ruf KEIN Werkzeug und schreib nichts dazu." } };
-    }
-    // Wie viele? Einmal je Gespraech, wie vor dem Rundgang
-    if (!pf.flugAnzahl && !kern.lauf.flugAnzahlGefragt) {
-      kern.lauf.flugAnzahlGefragt = true;
-      const ja = "Ja, such sie raus";
-      const mehr = "Lieber mehr vergleichen";
-      kern.sagenUndMerken(`Hier sind alle ${alle.length} Verbindungen ab ${ab} nach ${nach}. Ich gehe sie für dich durch `
-        + "und lege dir die 3 passendsten nebeneinander - passt das, oder möchtest du mehr vergleichen?");
-      kern.lauf.chips = [ja, mehr];
-      AgentPanel.setSuggestions(kern.lauf.chips);
-      kern.lauf.flugAnzahlOffen = "erste";
-      kern.lauf.kernWartet = true;
-      kern.notieren("flug_anzahl_frage", { verbindungen: alle.length, ab: info.ort || null });
-      kern.sichern();
-      kern.sperreAus();
-      return { ergebnis: { wartet: true, grund: "wartet auf die Anzahl der Fluege",
-        hinweis: "Der Chat hat gefragt, wie viele Fluege verglichen werden sollen. Ruf KEIN Werkzeug und schreib nichts dazu." } };
-    }
-
-    // Durchgehen: jede Verbindung kurz, die empfohlenen etwas laenger
+    // 3. Durchgehen: jede Verbindung kurz, die empfohlenen etwas laenger
     const n = Math.max(2, Math.min(6, Number(pf.flugAnzahl) || 3));
     const empfehlung = this.flugAuswahl(item, p, { anzahl: n });
     const empfohlen = new Set(empfehlung.map((k) => k.id));
-    kern.sagen(`Ich vergleiche die ${alle.length} Verbindungen.`);
-    /* Zeile fuer Zeile, aber zuegig: `Zeiger.lies` braucht je Zeile gut
-       eine halbe Sekunde (Anfahrt, Scrollen bis zur Mitte, Verweilen) -
-       gemessen 21 Sekunden fuer dreissig Verbindungen. Hier faehrt der
-       Zeiger die Spalte hinunter, das Fenster rollt mit, und nur bei den
-       Empfehlungen haelt er kurz an. Gemessen rund acht Sekunden. */
+    kern.sagen(`Ich vergleiche die ${gezeigt} Verbindungen.`);
     const fensterEl = document.querySelector("#flugSchirm .vorschlag-fenster");
     Zeiger.beschrifte("vergleicht Verbindungen");
     /* Der Zeiger faehrt sonst mit Tempo 0,6 (gut 0,3 Sekunden je kurzer
@@ -1739,37 +1805,38 @@ const Werkzeugkasten = {
       kern.sperreAus();
       return { ergebnis: { abgebrochen: true, hinweis: "Der Vergleich der Fluege wurde unterbrochen. Frag kurz, wie es weitergehen soll." } };
     }
-    const kandidaten = empfehlung.map((k) => ({ ...k, partner: k.id === partnerId }));
-    Fluege.eingrenzen(kandidaten, { titel: "Welchen Flug soll ich nehmen?",
-      kontext: `${item.name} · ${kandidaten.length} von ${alle.length} Verbindungen` });
+    // 4. Die Empfehlungen als Karten, gelost angeordnet; Favorit ist die erste
+    const rang = empfehlung.map((k) => ({ ...k, partner: k.id === partnerId }));
+    const favorit = rang[0];
+    const losSchluessel = rang.map((k) => k.id).join("|");
+    if (kern.lauf.flugLos?.schluessel !== losSchluessel) {
+      const vorne = rang.slice(0, 3).map((k) => k.id);
+      for (let i = vorne.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [vorne[i], vorne[j]] = [vorne[j], vorne[i]]; }
+      kern.lauf.flugLos = { schluessel: losSchluessel, ids: [...vorne, ...rang.slice(3).map((k) => k.id)] };
+    }
+    const kandidaten = kern.lauf.flugLos.ids.map((x) => rang.find((k) => k.id === x)).filter(Boolean);
     kern.lauf.flugGefragt = true;
-    kern.notieren("flug_verglichen", { von: alle.length, anzahl: kandidaten.length, ids: kandidaten.map((k) => k.id), partner: partnerId });
+    kern.notieren("flug_verglichen", { von: gezeigt, anzahl: kandidaten.length, ids: rang.map((k) => k.id), partner: partnerId, favorit: favorit?.id || null });
 
-    /* Offen sagen, wonach ausgewaehlt ist, und anbieten, was es noch gibt
-       (andere Tageszeit, bei mehreren genannten Flughaefen der andere) -
-       dieselben Saetze und Knoepfe wie vorher auf der Hausseite. */
-    const fl = kandidaten.map((k) => k.flug);
+    /* Offen sagen, wonach ausgewaehlt ist, und den Favoriten nennen -
+       wortgleich in jeder Bedingung, wie beim Haus (kern.favoritenSatz). */
+    const fl = rang.map((k) => k.flug);
     const zeitenSort = fl.map((f) => f.depart).sort();
     const ZEITNAME = { frueh: "morgens", mittag: "mittags", abend: "abends" };
-    const ORDNUNG = ["frueh", "mittag", "abend"];
-    const idx = ORDNUNG.indexOf(info.zeit);
-    const chips = ["Passt so"];
-    if (idx > 0 && (info.andereZeiten || []).includes(ORDNUNG[idx - 1])) chips.push("Früher am Tag");
-    if (idx >= 0 && idx < 2 && (info.andereZeiten || []).includes(ORDNUNG[idx + 1])) chips.push("Später am Tag");
-    const ortName = (c) => (Flug.flughaefen ? (Flug.flughaefen().find((h) => h.code === c)?.name || c) : c);
-    const anderer = (info.andereOrte || [])[0];
-    if (anderer) chips.push(`Ab ${ortName(anderer)} zeigen`);
-    const ortSatz = anderer && info.ort === info.guenstigsterOrt && !kern.lauf.flugOrtGesagt ? `Ab ${ab} ist es günstiger als ab ${ortName(anderer)}, deshalb habe ich dort gesucht. ` : "";
-    if (ortSatz) kern.lauf.flugOrtGesagt = true;
-    const zeitSatz = chips.length > 2 || (chips.length === 2 && !anderer)
-      ? "Passt dir die Uhrzeit, oder soll ich dir Verbindungen zu einer anderen Tageszeit zeigen?"
-      : (anderer ? `Passt das, oder soll ich dir auch Verbindungen ab ${ortName(anderer)} zeigen?` : "Wähl einfach eine aus, dann mache ich mit der Buchung weiter.");
     const direkt = fl.every((f) => !f.stops);
-    kern.sagenUndMerken(`${ortSatz}Ich habe dir aus den ${alle.length} Verbindungen die ${fl.length} günstigsten herausgesucht, die sich sonst gleichen: `
-      + `${direkt ? "alle direkt" : "alle mit derselben Zahl an Stopps"}, Gepäck ${fl[0]?.baggage || "gleich"}, `
-      + `Abflug ${ZEITNAME[info.zeit] || ""} zwischen ${zeitenSort[0]} und ${zeitenSort.at(-1)}. ${zeitSatz}`.replace(/\s+/g, " "));
-    if (chips.length > 1) { kern.lauf.chips = chips; AgentPanel.setSuggestions(chips); }
-    kern.notieren("flug_angesagt", { ort: info.ort, zeit: info.zeit, andereZeiten: info.andereZeiten || [], andereOrte: info.andereOrte || [] });
+    const reise = Fluege.daten?.reise || {};
+    const rueckTag = reise.rueck ? `am ${Fluege.datum(reise.rueck)}` : "am letzten Tag";
+    const favSatz = favorit ? `Mein Favorit ist der Flug mit ${favorit.flug.airline} um ${favorit.flug.depart} Uhr.` : "";
+    kern.sagenUndMerken(`Ich habe dir aus den ${gezeigt} Verbindungen die ${fl.length} günstigsten herausgesucht: `
+      + `${direkt ? "alle direkt" : "alle mit Umstieg"}, Abflug ${ZEITNAME[p.flugZeit] || ""} zwischen ${zeitenSort[0]} und ${zeitenSort.at(-1)}, `
+      + `zurück geht es bei allen ${rueckTag} zwischen 16:30 und 18:00 Uhr. ${favSatz}`.replace(/\s+/g, " ").trim());
+    if (favorit) kern.notieren("favorit_genannt", { wo: "flug", id: favorit.id, name: favorit.flug.airline, partner: !!favorit.partner, satz: favSatz });
+    Fluege.empfehlen(kandidaten, { titel: "Meine Flugvorschläge", favoritId: favorit?.id || null,
+      kontext: `${item.name} · ${kandidaten.length} von ${gezeigt} passenden Verbindungen` });
+    const chips = ["Passt so"];
+    if (n < 6) chips.push("Mehr Flüge zeigen");
+    kern.lauf.chips = chips; AgentPanel.setSuggestions(chips);
+    kern.notieren("flug_angesagt", { ort: info.ort, zeit: p.flugZeit, stopps: ziel.stopps, klasse: ziel.klasse, koffer: ziel.koffer });
     kern.lauf.kernWartet = true;
     kern.sichern();
     kern.sperreAus();
@@ -4833,7 +4900,8 @@ const Werkzeugkasten = {
             kern.notieren("preis_gezaehlt", { feld: preisFeld, wert: p[preisFeld], treffer: n });
             Werkzeugkasten.ableiten(kern, preisFeld, preisFeld === "maxPreis"
               ? `Bis ${wert} pro Nacht ${n === 1 ? "kommt" : "kommen"} ${Werkzeugkasten.artZahl(n, p)} in Frage.`
-              : `Mit ${wert} für die ganze Reise ${n === 1 ? "kommt" : "kommen"} ${Werkzeugkasten.artZahl(n, p)} in Frage.`);
+              : `Mit ${wert} für ${p.flug ? "die Unterkunft" : "die ganze Reise"} ${n === 1 ? "kommt" : "kommen"} ${Werkzeugkasten.artZahl(n, p)} in Frage.${p.flug && !kern.lauf.budgetOhneFlugGesagt ? " Den Flug schauen wir uns danach in der Kasse an." : ""}`);
+            if (preisFeld === "budgetGesamt" && p.flug) kern.lauf.budgetOhneFlugGesagt = true;
           }
         }
       }
@@ -5509,17 +5577,18 @@ const Werkzeugkasten = {
                    : (q.get("flex") === "1" && q.get("monat") === flex.monat && +q.get("nights") === +flex.naechte))
           && +(q.get("adults") || 2) === +p.erwachsene && +(q.get("children") || 0) === +p.kinder
           && (!p.kinder || (q.get("ages") || "") === alter)
-          && (p.flug == null || (q.get("flight") || "0") === (p.flug ? "1" : "0"))
+          // Seit dem 22.11.2026 immer ohne Flug in der Suche (siehe unten)
+          && (p.flug == null || (q.get("flight") || "0") === "0")
           /* Verglichen wird mit derselben Uebersetzung, die auch schreibt
              (`Flug.codeText`). Stand hier `Flug.code`, war der Vergleich
              bei zwei Flughaefen nie gleich - und der Agent fuellte die
              Maske in jedem Zug neu aus. */
-          && (!p.flug || !p.flugAb || (q.get("ab") || "") === (typeof Flug !== "undefined" ? Flug.codeText(p.flugAb) : ""));
+          && true;
       };
       const maskeText = () => [zielName, Werkzeugkasten.artWort(p, false).replace(/^eine? /, ""),
         fest ? `${zeitraum.von} bis ${zeitraum.bis}` : `${flex.monat}, ${flex.naechte} Nächte, Datum offen`,
         `${p.erwachsene} Erw.`, p.kinder ? `${p.kinder} ${p.kinder === 1 ? "Kind" : "Kinder"} (${(p.kinderAlter || []).join(", ")} J.)` : null,
-        p.flug ? `mit Flug${p.flugAb ? ` ab ${p.flugAb}` : ""}` : null].filter(Boolean).join(", ");
+        null].filter(Boolean).join(", ");
 
       if (stufe === 1) {
         const seite = Werkzeuge.seite();
@@ -5550,7 +5619,11 @@ const Werkzeugkasten = {
           // Mehrere Abflughaefen kommen als "Hamburg, Muenchen" - codeText
           // macht daraus "HAM,MUC". Dieselbe Funktion prueft oben nach.
           const abFuerMaske = typeof Flug === "undefined" ? "" : Flug.codeText(p.flugAb);
-          const flug = p.flug != null ? { mit: !!p.flug, ab: abFuerMaske, klasse: p.flugKlasse || "economy" } : null;
+          /* Gesucht wird ohne Flug (22.11.2026, Ben: Variante A). Unterkunft
+             und Flug sind getrennt: Karten, Budget und Vorschlaege zeigen die
+             Unterkunft, der Flug kommt erst in der Kasse dazu - dort klickt
+             kasseFlug "Flug dazubuchen". Der Flughafen wird schon gemerkt. */
+          const flug = p.flug != null ? { mit: false, ab: abFuerMaske, klasse: p.flugKlasse || "economy" } : null;
           if (flug && typeof Flug !== "undefined") Flug.set(flug);
           const e = await Werkzeuge.suchen({ typ: Werkzeugkasten.seitenTyp(p), ziel: zielName || "", von: zeitraum.von, bis: zeitraum.bis,
             erwachsene: p.erwachsene, kinder: p.kinder, kinderAlter: p.kinderAlter || null, flug, flex });
@@ -6066,7 +6139,8 @@ const Werkzeugkasten = {
       }
       const k = aufenthaltKosten(item, monat, probe, naechte);
       const personen = Math.max(1, (p.erwachsene || 0) + (p.kinder || 0));
-      const flug = p.flug && typeof Flug !== "undefined" ? Flug.paket(item, personen, p.flugKlasse || null) : null;
+      // Nur die Unterkunft (22.11.2026, Variante A); der Flug kommt in der Kasse dazu
+      const flug = null;
       const gesamt = k.gesamt + (flug ? flug.gesamt : 0);
       const vorher = p.monat && p.monat !== monat ? aufenthaltKosten(item, p.monat, p, p.naechte || 7).gesamt + (flug ? flug.gesamt : 0) : null;
       const euro = (n) => `${Math.round(n).toLocaleString("de-DE")} €`;
@@ -7501,7 +7575,7 @@ const Werkzeugkasten = {
       frage: "Von welchem Flughafen.", chips: null },
 
     flugKlasse: {
-      erklaerung: "Die Klasse macht beim Flugpreis den groessten Unterschied - Premium liegt etwa beim Anderthalbfachen, Business beim Zweieinhalbfachen.",
+      erklaerung: "Die Klasse macht beim Flugpreis den groessten Unterschied - Premium liegt etwa beim 1,3-fachen, Business beim 1,8-fachen.",
       satz: ["In welcher Klasse wollt ihr fliegen - Economy, Premium Economy oder Business?",
         "Und die Klasse: Economy, Premium oder Business?"],
       frage: "In welcher Klasse geflogen werden soll.", chips: "Economy | Premium Economy | Business" },
@@ -7577,8 +7651,11 @@ const Werkzeugkasten = {
         // Einzeln mit Artikel ("der Flug"), zu zweit ohne - sonst stuende
         // da "Da sind der Flug und Halbpension drin".
         let zusatz = "";
-        if (p?.flug && v) zusatz = ` Da sind Flug und ${v} schon mit drin.`;
-        else if (p?.flug) zusatz = " Da ist der Flug schon mit drin.";
+        /* Seit dem 22.11.2026 (Variante A) gilt die Grenze nur fuer die
+           Unterkunft - der Flug kommt in der Kasse dazu, und das sagt der
+           Satz, damit niemand den Flug mit einrechnet. */
+        if (p?.flug && v) zusatz = ` Gemeint ist die Unterkunft mit ${v}; den Flug schauen wir uns danach extra an.`;
+        else if (p?.flug) zusatz = " Gemeint ist die Unterkunft; den Flug schauen wir uns danach extra an.";
         else if (v) zusatz = ` Da ist ${v} schon mit drin.`;
         return `Hast du beim Preis eine feste Grenze, oder bist du da offen?${zusatz}`;
       },
@@ -8821,7 +8898,10 @@ const Werkzeugkasten = {
          offen laesst (Wunsch des Nutzers, 30.09.2026). */
       flugAb: !p.flug || !!p.flugAb
         || (!!p.flugAbEgal && (p.flugAbAuswahl || []).length < 2),
-      flugKlasse: !p.flug || !!p.flugKlasse,
+      /* Die Klasse fragt seit dem 22.11.2026 erst die Kasse (kasseFlug,
+         eine der vier Flugfragen). Ben: erst ueber die Unterkunft reden,
+         dann ueber den Flug - das Budget gilt nur fuer die Unterkunft. */
+      flugKlasse: true,
       vorgehen: !!p.vorgehen,
       /* Die Anzahl wird nicht mehr gefragt (16.11.2026).
          --------------------------------------------------------------
@@ -12192,11 +12272,14 @@ const Werkzeugkasten = {
       mindestbewertung: p.mindestbewertung || null,
       mindestSterne: p.mindestSterne || null,
       wlanInklusive: !!p.wlanInklusive,
-      flug: !!p.flug,
+      /* Ohne Flug (22.11.2026, Variante A): Die Seite sucht ohne Flug, also
+         rechnet auch der Agent Budget und Preise nur fuer die Unterkunft.
+         Der Flug kommt in der Kasse dazu. */
+      flug: false,
       flugKlasse: p.flugKlasse || null,
       /* Der Anreisetag zaehlt nur mit Flug - ohne festen Tag sucht der
          Agent spaeter selbst einen Flugtag aus. */
-      flugAnreise: p.flug ? (p.von || p.anreise || null) : null,
+      flugAnreise: null,
     };
   },
 
@@ -12296,7 +12379,12 @@ const Werkzeugkasten = {
      beim guenstigsten Flug ("ab"). Bleibt nichts uebrig, gilt die Liste
      wie vorher - eine leere Vorlage waere schlechter als keine Regel. */
   FLUG_PUFFER_ANZAHL: 6,
+  /* Seit dem 22.11.2026 ohne Wirkung: Das Budget gilt nur fuer die
+     Unterkunft (Ben: Variante A), der Flug kann also kein Haus mehr aus
+     dem Budget druecken. Die Funktion bleibt, damit die Aufrufer und das
+     Protokoll unveraendert bleiben; sie gibt die Liste zurueck. */
   budgetMitFlugPuffer(liste, p) {
+    if (Array.isArray(liste)) return liste;
     if (!Array.isArray(liste) || !p?.flug || !p.budgetGesamt || typeof Flug === "undefined" || typeof Auswahl === "undefined") return liste;
     const v = this.vorgaben(p);
     const personen = Math.max(1, (p.erwachsene || 0) + (p.kinder || 0));

@@ -278,7 +278,8 @@ const Seitenpruefung = {
       state.minBedrooms = 0;
       state.priceMax = f.maxPreis || 99999;
       state.gesamtMax = f.budgetGesamt !== undefined ? f.budgetGesamt : null;
-      state.withFlight = !!p.flug;
+      // Seit dem 22.11.2026 (Variante A) sucht der Agent ohne Flug - die Seite also auch
+      state.withFlight = false;
     };
 
     /* Die Vorgaben der Seite kommen aus Belegung und Reisedaten, und die
