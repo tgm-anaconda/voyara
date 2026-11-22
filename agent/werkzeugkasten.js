@@ -175,6 +175,9 @@ const Werkzeugkasten = {
              zugestimmt hat, der Kern setzt die Werte. */
           ausweiten: { type: "string",
             description: "NUR ausfuellen, wenn im Auftrag unter \"Offene Frage des Chats\" steht, welche Vorgabe gelockert werden soll. Trag die Kennung der Vorgabe ein, die die Person aussucht - genau so, wie sie dort steht (zum Beispiel preis oder ausstattung:pets). Sagt sie nur \"ja\" oder \"mach das\", ohne eine auszusuchen, trag ja ein: dann nimmt der Kern die, die am meisten wegnimmt. Will sie keine lockern, trag nein ein. Steht die Frage nicht im Auftrag, lass das Feld weg." },
+          /* Das Beleg-Prinzip (22.11.2026, siehe Werkzeugkasten.belegPruefen). */
+          belege: { type: "object", additionalProperties: { type: "string" },
+            description: "Fuer JEDEN Wert zu Ziel, Reisenden, Zeit und Unterkunftsart, den du in diesem Aufruf eintraegst (ziel, zieleAuswahl, zieleAus, personenGesamt, erwachsene, kinder, kinderAlter, monat, anreise, typ, artEgal): die WOERTLICHE Stelle aus der LETZTEN Nachricht der Person, aus der er folgt - Feldname als Schluessel, Zitat als Wert, z. B. {\"zieleAuswahl\": \"auf Malle oder nach Asien\", \"typ\": \"in ein Hotel\"}. Kein Zitat, kein Wert. Pruef vorher, ob der Wert zusammen mit dem Stand Sinn ergibt: 'meine Freundin ist 17' bei 2 Erwachsenen heisst erwachsene 1, kinder 1, kinderAlter [17] (dieselbe Person, keine dritte); 'Asien' heisst krabi UND kyoto; ein Ausschluss (zieleAus) braucht eine Ablehnung im Zitat. Der Kern prueft jedes Zitat - passt es nicht, wird der Wert nicht uebernommen." },
           frage_beantwortet: { type: "string", enum: ["ja", "teilweise", "nein_klaert_noch", "nein", "keine_frage_offen"],
             description: "Was die letzte Nachricht der Person fuer die zuletzt von dir gestellte Frage bedeutet. ja = sie hat sie beantwortet. teilweise = ein Teil steht, ein Teil fehlt. nein_klaert_noch = sie hat NICHT geantwortet, ist aber beim Thema: sie fragt zurueck, korrigiert eine fruehere Angabe, ueberlegt laut oder braucht erst eine Auskunft von dir ('wann zaehlt man als Kind?', 'dann sind wir doch zwei Erwachsene'). nein = sie geht nicht darauf ein und auch nicht auf das Thema. keine_frage_offen = du hattest gar nichts gefragt. Immer angeben und ehrlich: Bei nein_klaert_noch fragt der Assistent weiter, bei nein nimmt er irgendwann das Naheliegende an." },
           ziel: text("Region aus dem Katalog, als id: mallorca, kreta, algarve, sardinien, teneriffa, barcelona, wien, lissabon, tirol, suedtirol, lappland, ostsee, marrakesch, kapstadt, krabi, island, newyork, kyoto. NUR, wenn die Person die Region selbst genannt hat - sonst leer lassen. Eine Region, die du fuer passend haeltst, gehoert nicht hierher: Dafuer gibt es regionen_vergleichen, und die Person entscheidet. Ein anderer Name fuer dieselbe Region zaehlt als genannt ('Malle' = mallorca, 'die Balearen' = mallorca, weil keine andere Balearen-Region im Katalog ist, 'Kanaren' = teneriffa). Nennt sie dagegen ein Land oder eine Gegend, zu der MEHRERE Regionen des Katalogs gehoeren ('Spanien' = mallorca, teneriffa, barcelona), gehoert das in zieleAuswahl, nicht hierher - sonst waehlst du das Reiseziel fuer sie aus."),
@@ -3730,7 +3733,7 @@ const Werkzeugkasten = {
            Fuer ein Land mit MEHREREN Regionen im Katalog gibt es
            zieleAuswahl - dort entscheidet weiter die Person. */
         else if (id && (Werkzeugkasten.regionGenannt(kern.lauf, id, { einzeln: true }) || p.zielId === id
-          || klarBeantwortet("ziel"))) {
+          || klarBeantwortet("ziel") || Werkzeugkasten.belegGilt(kern, "ziel", id, a.belege))) {
           /* Widerspricht die Region der genannten Richtung, wird sie
              NICHT gesetzt, sondern vorgemerkt - der Kern fragt dann im
              selben Zug nach (01.11.2026, Wunsch des Nutzers: "da halt
@@ -3775,6 +3778,9 @@ const Werkzeugkasten = {
         const roh = Array.isArray(a[feld]) ? a[feld] : [a[feld]];
         const ids = [];
         const weg = [];
+        // Ein passender Beleg fuer die ganze Liste (22.11.2026, belegPruefen)
+        const alleIds = roh.map((x) => String(x).toLowerCase().trim()).filter((k) => typeof ZIEL_NACH_ID !== "undefined" && ZIEL_NACH_ID[k]);
+        const listeBelegt = alleIds.length === roh.length && alleIds.length > 0 && Werkzeugkasten.belegGilt(kern, feld, alleIds, a.belege);
         for (const x of roh) {
           const k = String(x).toLowerCase().trim();
           const id = (typeof ZIEL_NACH_ID !== "undefined" && ZIEL_NACH_ID[k]) ? k
@@ -3790,11 +3796,11 @@ const Werkzeugkasten = {
             const letzteNachricht = { gespraech: (kern.lauf.gespraech || []).filter((n) => n.role === "user").slice(-1) };
             const verneint = (typeof Kern !== "undefined" && Kern.AUSSCHLUSS_WORT ? Kern.AUSSCHLUSS_WORT
               : /\b(nicht|kein|keine|keinen|ohne|au(ß|ss)er|raus|weglassen|streich)\b/i).test(String(letzteNachricht.gespraech[0]?.content || ""));
-            if (id && verneint && Werkzeugkasten.regionGenannt(letzteNachricht, id)) ids.push(id);
+            if (id && ((verneint && Werkzeugkasten.regionGenannt(letzteNachricht, id)) || listeBelegt)) ids.push(id);
             else if (id) weg.push(id);
             continue;
           }
-          if (id && (Werkzeugkasten.regionGenannt(kern.lauf, id) || klarBeantwortet("ziel"))) ids.push(id);
+          if (id && (Werkzeugkasten.regionGenannt(kern.lauf, id) || klarBeantwortet("ziel") || listeBelegt)) ids.push(id);
           else if (id) weg.push(id);
         }
         if (weg.length) kern.notieren("ziel_verworfen", { ziele: weg, wo: feld });
@@ -3897,7 +3903,7 @@ const Werkzeugkasten = {
       const offenGesagt = gesagt(OFFEN);
       const verworfen = [];
       for (const f of ["zielOffen", "artEgal", "preisEgal", "ausstattungEgal", "bewertungEgal", "strandEgal", "verpflegungEgal"]) {
-        if (a[f] === true && !offenGesagt) { delete a[f]; verworfen.push(f); }
+        if (a[f] === true && !offenGesagt && !(f === "artEgal" && Werkzeugkasten.belegGilt(kern, "artEgal", true, a.belege))) { delete a[f]; verworfen.push(f); }
       }
       // Antworten auf die Frage "schauen oder klaeren" und "selbst oder drei"
       // zaehlen nur, wenn die letzte Nachricht so etwas sagt - auf "Hotel"
@@ -4001,7 +4007,8 @@ const Werkzeugkasten = {
          zwischen beiden - Bedeutung gehoert dem Modell, Rechnen dem
          Kern. */
       if (a.monat && !p.monat && !klarBeantwortet("zeit")
-        && !gesagt(/januar|februar|märz|maerz|april|\bmai\b|juni|juli|august|september|oktober|november|dezember|\bjan\b|\bfeb\b|\bokt\b|\bnov\b|\bdez\b|ostern|pfingsten|weihnachten|silvester|nächsten monat|naechsten monat|\d{1,2}\.\s*\d{1,2}\.|\d{4}-\d{2}|egal|gleich|such du|du entscheid|dein vorschlag|nimm/i)) {
+        && !gesagt(/januar|februar|märz|maerz|april|\bmai\b|juni|juli|august|september|oktober|november|dezember|\bjan\b|\bfeb\b|\bokt\b|\bnov\b|\bdez\b|ostern|pfingsten|weihnachten|silvester|nächsten monat|naechsten monat|\d{1,2}\.\s*\d{1,2}\.|\d{4}-\d{2}|egal|gleich|such du|du entscheid|dein vorschlag|nimm/i)
+        && !Werkzeugkasten.belegGilt(kern, "monat", a.monat, a.belege)) {
         kern.notieren("monat_verworfen", { monat: a.monat });
         Werkzeugkasten.merkeVerworfen(kern, "monat", a.monat);
         delete a.monat;
@@ -4362,7 +4369,8 @@ const Werkzeugkasten = {
       const ZAHL = /\d|\b(ein|eine|einem|einen|zwei|drei|vier|fünf|fuenf|sechs|sieben|acht|zweit|dritt|viert|fünft|fuenft|sechst|kein|keine|ohne|allein|alleine|beide|zwilling|sohn|tochter|frau|mann|freundin|freund|partner|eltern|paar|erwachsene)\b/i;
       for (const f of ["personenGesamt", "erwachsene", "kinder"]) {
         if (a[f] != null && p[f === "personenGesamt" ? "personen" : f] == null
-          && !gesagt(ZAHL, 1) && !beantwortet("reisende", "kinderAlter")) {
+          && !gesagt(ZAHL, 1) && !beantwortet("reisende", "kinderAlter")
+          && !Werkzeugkasten.belegGilt(kern, f, a[f], a.belege)) {
           kern.notieren("reisende_verworfen", { feld: f, wert: a[f] });
           Werkzeugkasten.merkeVerworfen(kern, f === "personenGesamt" ? "erwachsene" : f, a[f]);
           delete a[f];
@@ -4469,7 +4477,8 @@ const Werkzeugkasten = {
          Modell. Nur das Alter wird gefragt. */
       if (Array.isArray(a.kinderAlter) && !(p.kinderAlter || []).length
         && !beantwortet("kinderAlter")
-        && !gesagt(/\d|\bjahr|jährig|jaehrig|baby|säugling|saeugling|kleinkind|schulkind|teenager|monate/i, 2)) {
+        && !gesagt(/\d|\bjahr|jährig|jaehrig|baby|säugling|saeugling|kleinkind|schulkind|teenager|monate/i, 2)
+        && !Werkzeugkasten.belegGilt(kern, "kinderAlter", a.kinderAlter, a.belege)) {
         kern.notieren("alter_verworfen", { alter: a.kinderAlter });
         Werkzeugkasten.merkeVerworfen(kern, "kinderAlter", a.kinderAlter);
         delete a.kinderAlter;
@@ -4592,7 +4601,8 @@ const Werkzeugkasten = {
          Monatsanfang", "an einem Samstag"), gilt der Tag. */
       // Ein Feiertag mit festem Datum ist ein genannter Tag (22.11.2026)
       const festGesagt = Werkzeugkasten.festerTag((kern.lauf.gespraech || []).filter((n) => n.role === "user").slice(-1)[0]?.content || "");
-      if (a.anreise && !gesagt(Werkzeugkasten.TAG) && !beantwortet("anreise") && !festGesagt) {
+      if (a.anreise && !gesagt(Werkzeugkasten.TAG) && !beantwortet("anreise") && !festGesagt
+        && !Werkzeugkasten.belegGilt(kern, "anreise", a.anreise, a.belege)) {
         kern.notieren("anreise_verworfen", { anreise: a.anreise });
         Werkzeugkasten.merkeVerworfen(kern, "anreise", a.anreise);
         delete a.anreise;
@@ -8531,6 +8541,128 @@ const Werkzeugkasten = {
       if (namen.some((n) => new RegExp(`(^|[^a-zäöüß])${n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?=[^a-zäöüß]|$)`).test(t))) return true;
     }
     return false;
+  },
+
+  /* Das Beleg-Prinzip (22.11.2026).
+     ==================================================================
+     Ben: "Wir koennen uns nicht so stark vom Wortlaut abhaengig machen.
+     Das Modell soll helfen, die Aspekte fuer den Kern zu verstehen, es
+     darf es aber nicht kaputt machen." Bisher prueften Wortlisten, ob ein
+     Wert des Modells sein durfte - jede Luecke in einer Liste war ein
+     Fehler ("31 wie gesagt", "welcher ist da der naechste").
+
+     Jetzt liefert das Modell zu jedem Wert das Zitat, aus dem er folgt
+     (`belege`). Der Kern versteht nichts selbst, er prueft nur nach
+     festen, reproduzierbaren Regeln:
+       1. Das Zitat steht woertlich in der LETZTEN Nachricht der Person.
+       2. Das Zitat traegt den Wert (je Feld eine Regel, unten).
+       3. Der Wert ist in sich moeglich (Logikregeln, unten).
+     Nur dann gilt der Wert, auch wenn eine Wortliste ihn verworfen
+     haette. Fehlt das Zitat oder passt es nicht, gilt alles wie bisher -
+     der Beleg oeffnet nur, er schliesst nichts, was vorher galt. Jede
+     Entscheidung steht im Protokoll (beleg_angenommen/beleg_abgelehnt). */
+  belegNorm(x) {
+    return String(x || "").toLowerCase().replace(/[„“"'´`]/g, "").replace(/\s+/g, " ").trim();
+  },
+
+  belegPruefen(feld, wert, belege, letzteNachricht, p = {}) {
+    const beleg = belege && typeof belege === "object" ? belege[feld] : null;
+    if (!beleg || typeof beleg !== "string") return { ok: false, grund: "kein_beleg" };
+    const b = this.belegNorm(beleg), n = this.belegNorm(letzteNachricht);
+    // Regel 1: woertlich in der letzten Nachricht, mindestens zwei Zeichen
+    if (b.length < 2) return { ok: false, grund: "zu_kurz" };
+    if (!n.includes(b)) return { ok: false, grund: "nicht_in_nachricht" };
+    const zahlen = (b.match(/\d+/g) || []).map(Number);
+    const ZAHLWORT = { ein: 1, eine: 1, einer: 1, zwei: 2, drei: 3, vier: 4, "fünf": 5, fuenf: 5, sechs: 6, sieben: 7, acht: 8 };
+    const zahlwoerter = Object.entries(ZAHLWORT).filter(([w]) => new RegExp(`(^|[^a-zäöüß])${w}([^a-zäöüß]|$)`).test(b)).map(([, z]) => z);
+    const PERSON = /(^|[^a-zäöüß])(ich|wir|mein|meine|meiner|meinem|meinen|freund\w*|partner\w*|frau|mann|sohn|tochter|kind\w*|baby|eltern|mutter|vater|oma|opa|bruder|schwester|cousin\w*|kolleg\w*|familie|allein|alleine|zu zweit|zu dritt|zu viert|erwachsene?|person\w*|leute|jahre?|j\.)([^a-zäöüß]|$)/;
+    const regionTraegt = (id, einzeln) => {
+      const z = typeof ZIEL_NACH_ID !== "undefined" ? ZIEL_NACH_ID[id] : null;
+      if (!z) return false;
+      const woerter = [z.name, z.id, ...(this.REGION_SPITZNAMEN[id] || []), ...this.gebietWoerter(id, false, einzeln)]
+        .map((x) => String(x).toLowerCase()).filter((x) => x.length >= 3);
+      return woerter.some((w) => new RegExp(`(^|[^a-zäöüß])${w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}([^a-zäöüß]|$)`).test(b));
+    };
+    const verneint = (typeof Kern !== "undefined" && Kern.AUSSCHLUSS_WORT ? Kern.AUSSCHLUSS_WORT
+      : /\b(nicht|kein|keine|keinen|ohne|au(ß|ss)er|raus|weglassen|streich)\b/i);
+    switch (feld) {
+      // Regel 2+3 je Feld
+      case "ziel": {
+        if (!wert) return { ok: false, grund: "leer" };
+        if (!regionTraegt(String(wert), true)) return { ok: false, grund: "region_nicht_im_zitat" };
+        if (verneint.test(b)) return { ok: false, grund: "zitat_verneint" };
+        return { ok: true };
+      }
+      case "zieleAuswahl": {
+        const ids = Array.isArray(wert) ? wert : [];
+        if (!ids.length) return { ok: false, grund: "leer" };
+        if (!ids.every((id) => regionTraegt(id, false))) return { ok: false, grund: "region_nicht_im_zitat" };
+        if (verneint.test(b)) return { ok: false, grund: "zitat_verneint" };
+        return { ok: true };
+      }
+      case "zieleAus": {
+        const ids = Array.isArray(wert) ? wert : [];
+        if (!ids.length) return { ok: false, grund: "leer" };
+        if (!verneint.test(b)) return { ok: false, grund: "keine_ablehnung" };
+        if (!ids.every((id) => regionTraegt(id, false))) return { ok: false, grund: "region_nicht_im_zitat" };
+        return { ok: true };
+      }
+      case "personenGesamt": case "erwachsene": case "kinder": {
+        const z = Number(wert);
+        if (!Number.isInteger(z) || z < 0 || z > 12) return { ok: false, grund: "unmoeglich" };
+        if (feld !== "kinder" && z < 1) return { ok: false, grund: "unmoeglich" };
+        if (!zahlen.length && !zahlwoerter.length && !PERSON.test(b)) return { ok: false, grund: "keine_person_im_zitat" };
+        // Eine genannte Zahl ueber 12 ist kein Personenzaehler ("9 Naechte")
+        if (/n(ä|ae)cht|tage?\b|woche|euro|€|grad/.test(b) && !PERSON.test(b)) return { ok: false, grund: "zitat_meint_anderes" };
+        return { ok: true };
+      }
+      case "kinderAlter": {
+        const alter = Array.isArray(wert) ? wert.map(Number) : [];
+        if (!alter.length || alter.some((x) => !Number.isInteger(x) || x < 0 || x > 17)) return { ok: false, grund: "unmoeglich" };
+        if (!alter.every((x) => zahlen.includes(x) || (x === 0 && /baby|s(ä|ae)ugling/.test(b)))) return { ok: false, grund: "alter_nicht_im_zitat" };
+        return { ok: true };
+      }
+      case "monat": {
+        const m = Number(wert);
+        if (!Number.isInteger(m) || m < 1 || m > 12) return { ok: false, grund: "unmoeglich" };
+        const name = typeof MONATSNAMEN !== "undefined" ? String(MONATSNAMEN[m - 1]).toLowerCase() : "";
+        const kurz = name.slice(0, 3);
+        const ausDatum = this.tagAusText(b);
+        const anker = this.zeitanker(b);
+        const rel = this.relativeAngabe(b);
+        if ((name && (b.includes(name) || new RegExp(`(^|[^a-zäöüß])${kurz}([^a-zäöüß]|$)`).test(b)))
+          || (ausDatum && ausDatum.monat === m) || (anker && anker.sicher && anker.monat === m) || (rel && rel.monat === m)) return { ok: true };
+        return { ok: false, grund: "monat_nicht_im_zitat" };
+      }
+      case "anreise": {
+        const roh = String(wert || "");
+        const mm = roh.match(/^\d{4}-(\d{2})-(\d{2})$/);
+        if (!mm) return { ok: false, grund: "unmoeglich" };
+        const d = this.tagAusText(b);
+        if (!d || d.tag !== Number(mm[2])) return { ok: false, grund: "tag_nicht_im_zitat" };
+        if (d.monat && d.monat !== Number(mm[1])) return { ok: false, grund: "monat_widerspricht" };
+        return { ok: true };
+      }
+      case "typ": {
+        if (wert === "hotel" && /hotels?\b/.test(b) && !/ferienwohn|fewo|apartment|ferienh/.test(b)) return { ok: true };
+        if (wert === "apartment" && /ferienwohn|fewo|apartment|ferienh/.test(b) && !/hotels?\b/.test(b)) return { ok: true };
+        return { ok: false, grund: "art_nicht_im_zitat" };
+      }
+      case "artEgal": {
+        if (wert === true && /(^|[^a-zäöüß])(beide[sn]?|sowohl|egal|alles|beides|ist mir gleich)([^a-zäöüß]|$)/.test(b)) return { ok: true };
+        return { ok: false, grund: "kein_beides_im_zitat" };
+      }
+      default: return { ok: false, grund: "feld_ohne_regel" };
+    }
+  },
+
+  // Kurzform fuer stand_merken: prueft und protokolliert
+  belegGilt(kern, feld, wert, belege) {
+    if (!belege || !belege[feld]) return false;
+    const letzte = String((kern?.lauf?.gespraech || []).filter((n) => n.role === "user").slice(-1)[0]?.content || "");
+    const r = this.belegPruefen(feld, wert, belege, letzte, kern?.lauf?.profil || {});
+    kern?.notieren?.(r.ok ? "beleg_angenommen" : "beleg_abgelehnt", { feld, wert, beleg: String(belege[feld]).slice(0, 80), ...(r.ok ? {} : { grund: r.grund }) });
+    return r.ok;
   },
 
   // Regionen, die eine Nachricht als Reiseziel nennt (siehe stand_merken, 22.11.2026)

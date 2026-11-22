@@ -3884,6 +3884,55 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     const zw = versuchZ(() => WK.zwang({ ...lauf.profil, flug: true }, { ...lauf, gespraech: [...lauf.gespraech, { role: "assistant", content: "Von welchem Flughafen soll es losgehen?" }, { role: "user", content: "Ich wohne in Bullenhausen welcher ist da der nächste?" }], gefragt: "flugAb", zuletztGefragt: "flugAb", nachrichtArt: "antwort", gesuchtMit: "x" }));
     pruefe("Wortlaut: 'Ich wohne in Bullenhausen welcher ist da der naechste?' -> kein FAQ, keine Suche", zw ?? "nichts", "nichts");
   }
+  // Das Beleg-Prinzip (22.11.2026). Gegenprobe: --alt=_backup/gp-beleg
+  {
+    const bp = (feld, wert, beleg, nachricht) => {
+      if (!WK.belegPruefen) return "fehlt";
+      const r = WK.belegPruefen(feld, wert, { [feld]: beleg }, nachricht, {});
+      return r.ok ? "ok" : r.grund;
+    };
+    const N1 = "ich will gerne in ein Hotel auf Malle oder nach Asien";
+    pruefe("Beleg: Auswahl Mallorca/Krabi/Kyoto aus 'auf Malle oder nach Asien'", bp("zieleAuswahl", ["mallorca", "krabi", "kyoto"], "auf Malle oder nach Asien", N1), "ok");
+    pruefe("Beleg: Hotel aus 'in ein Hotel'", bp("typ", "hotel", "in ein Hotel", N1), "ok");
+    pruefe("Beleg: ein Zitat, das nicht in der Nachricht steht, zaehlt nicht", bp("typ", "hotel", "ein schoenes Hotel", N1), "nicht_in_nachricht");
+    pruefe("Beleg: Kreta aus 'nach Asien' passt nicht", bp("zieleAuswahl", ["kreta"], "nach Asien", N1), "region_nicht_im_zitat");
+    pruefe("Beleg: einzelnes Ziel aus einem Gebiet mit mehreren Regionen nicht ('Asien' -> nur Krabi)", bp("ziel", "krabi", "nach Asien", N1), "region_nicht_im_zitat");
+    pruefe("Beleg: Ausschluss braucht eine Ablehnung", bp("zieleAus", ["mallorca"], "auf Malle", N1), "keine_ablehnung");
+    pruefe("Beleg: 'bitte nicht nach Mallorca' traegt den Ausschluss", bp("zieleAus", ["mallorca"], "bitte nicht nach Mallorca", "bitte nicht nach Mallorca"), "ok");
+    pruefe("Beleg: Reisende aus 'ich und meine Oma'", bp("erwachsene", 2, "ich und meine Oma", "ich und meine Oma"), "ok");
+    pruefe("Beleg: 9 Personen aus '9 nächte' passt nicht", bp("personenGesamt", 9, "9 nächte", "9 nächte"), "zitat_meint_anderes");
+    pruefe("Logik: 0 Erwachsene ist unmoeglich", bp("erwachsene", 0, "ich und meine Oma", "ich und meine Oma"), "unmoeglich");
+    pruefe("Beleg: Alter 17 aus 'meine freundin ist 17'", bp("kinderAlter", [17], "meine freundin ist 17", "meine freundin ist 17"), "ok");
+    pruefe("Beleg: Alter, das nicht im Zitat steht", bp("kinderAlter", [12], "meine freundin ist 17", "meine freundin ist 17"), "alter_nicht_im_zitat");
+    pruefe("Logik: Alter 18 ist kein Kind", bp("kinderAlter", [18], "sie ist 18", "sie ist 18"), "unmoeglich");
+    pruefe("Beleg: Monat Oktober aus 'am reformationstag'", bp("monat", 10, "am reformationstag", "ich würde gerne am reformationstag fliegen"), "ok");
+    pruefe("Beleg: Monat aus einem Wort ohne Datum ('zum Erntedankfest')", bp("monat", 10, "zum Erntedankfest", "zum Erntedankfest"), "monat_nicht_im_zitat");
+    pruefe("Beleg: Anreise 31.10. aus '31 wie gesagt'", bp("anreise", "2026-10-31", "31 wie gesagt", "31 wie gesagt"), "ok");
+    pruefe("Beleg: Anreise 30.10. aus 'am 31.' passt nicht", bp("anreise", "2027-10-30", "am 31.", "am 31."), "tag_nicht_im_zitat");
+    pruefe("Beleg: 'beides' traegt artEgal, 'in ein Hotel' nicht", [bp("artEgal", true, "beides", "beides bitte"), bp("artEgal", true, "in ein Hotel", N1)], ["ok", "kein_beides_im_zitat"]);
+  }
+  // Integration: ein Beleg oeffnet, was eine Wortliste verworfen haette
+  if (WK && WK.werkzeuge && WK.werkzeuge.stand_merken) {
+    const spiel = async (satz, args, p0 = {}, lauf0 = {}) => {
+      const p = { ...p0 };
+      const kern = { lauf: { profil: p, gespraech: [{ role: "assistant", content: "Wer reist mit?" }, { role: "user", content: satz }], protokoll: [],
+          annahmeOffen: [], gefragtWie: {}, verlauf: [], nachrichtArt: "antwort", runde: 1, ...lauf0 },
+        notieren(e, d) { this.lauf.protokoll.push({ ereignis: e, ...d }); },
+        freigabe: () => "suchen", darf: () => false, logZeile() {}, sagen() {}, standAnzeigen() {}, sichern() {}, standKurz: () => "", antwortWerten() {} };
+      try { await WK.werkzeuge.stand_merken.call(WK, { nachricht_art: "antwort", ...args }, kern); } catch (e) { return { p, fehler: e.message, kern }; }
+      return { p, kern };
+    };
+    const o1 = await spiel("ich und meine Oma", { erwachsene: 2, kinder: 0 }, {}, { gefragt: "reisende" });
+    const o2 = await spiel("ich und meine Oma", { erwachsene: 2, kinder: 0, belege: { erwachsene: "ich und meine Oma", kinder: "ich und meine Oma" } }, {}, { gefragt: "reisende" });
+    pruefe("Integration: 'ich und meine Oma' ohne Beleg wird verworfen (Wortliste)", o1.p.erwachsene ?? null, null);
+    pruefe("Integration: ... mit Beleg kommt es an", [o2.p.erwachsene, o2.p.kinder], [2, 0]);
+    pruefe("Integration: die Entscheidung steht im Protokoll", o2.kern.lauf.protokoll.some((e) => e.ereignis === "beleg_angenommen" && e.feld === "erwachsene"), true);
+    const o3 = await spiel("ich und meine Oma", { erwachsene: 2, kinder: 0, belege: { erwachsene: "wir sind zwei" } }, {}, { gefragt: "reisende" });
+    pruefe("Integration: ein Beleg, der nicht in der Nachricht steht, oeffnet nichts", o3.p.erwachsene ?? null, null);
+    const o4 = await spiel("ich will gerne in ein Hotel auf Malle oder nach Asien",
+      { typ: "hotel", zieleAuswahl: ["mallorca", "krabi", "kyoto"], belege: { typ: "in ein Hotel", zieleAuswahl: "auf Malle oder nach Asien" } }, {}, { gefragt: "art" });
+    pruefe("Integration: kombinierte Nachricht mit Belegen -> Hotel und drei Ziele", [o4.p.typ, (o4.p.zieleAuswahl || []).slice().sort().join(",")], ["hotel", "krabi,kyoto,mallorca"]);
+  }
   // Fortsetzung nach dem Anhalten zaehlt nicht als Antwort
   {
     const kt = fs.readFileSync(alt && fs.existsSync(quelle + "kern.js") ? quelle + "kern.js" : B + "agent/kern.js", "utf8");
