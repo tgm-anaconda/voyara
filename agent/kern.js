@@ -5206,6 +5206,9 @@ const Kern = {
       if (feld) {
         this.lauf.preisDirekt = { feld, wert, proPerson };
         this.notieren("budget_geklaert", { feld, wert, proPerson });
+        // Der Bezug gilt fuer das ganze Gespraech (22.11.2026, Ben: "das
+        // sollte eine Variable sein, die gespeichert wird")
+        if (feld === "maxPreis") this.lauf.preisBezug = proPerson ? "person" : "alle";
       }
       return false;   // weiter im normalen Zug, die Werte kommen gleich
     }
@@ -5247,6 +5250,22 @@ const Kern = {
     }
     // Fall 2: pro Nacht, mehrere Reisende, Bezug offen
     const proNacht = nachtGesagt || (!gesamtGesagt && Werkzeugkasten.preisDeutung(betrag, satz, p)?.feld === "maxPreis");
+    /* Ein Knopf des Kerns ist keine neue Angabe (22.11.2026). Gemeldet:
+       Auf "Bis 270 €" aus der Preiswarnung kam noch einmal "Gelten die
+       270 € fuer euch alle zusammen oder pro Person?". Der Betrag stammt
+       vom Kern und gilt fuer die Gruppe - wie alles, was er rechnet. */
+    const chipDesKerns = Object.keys(this.lauf.chipWirkung || {}).some((c) => c.trim().toLowerCase() === satz.trim().toLowerCase());
+    if (chipDesKerns) return false;
+    /* Und ein einmal geklaerter Bezug gilt weiter (22.11.2026). */
+    if (proNacht && personen > 1 && !personGesagt && !alleGesagt && this.lauf.preisBezug === "person") {
+      this.lauf.preisDirekt = { feld: "maxPreis", wert: betrag * personen, proPerson: betrag };
+      this.notieren("budget_bezug_gemerkt", { bezug: "person", betrag });
+      return false;
+    }
+    if (proNacht && personen > 1 && !personGesagt && !alleGesagt && this.lauf.preisBezug === "alle") {
+      this.notieren("budget_bezug_gemerkt", { bezug: "alle", betrag });
+      return false;
+    }
     if (proNacht && personen > 1 && !personGesagt && !alleGesagt) {
       this.lauf.preisFrage = { betrag, art: "bezug" };
       return zeigenUndFragen(`Gelten die ${euro(betrag)} pro Nacht für euch alle zusammen oder pro Person?`,
@@ -5255,7 +5274,9 @@ const Kern = {
     // Pro Person gesagt: gleich umrechnen
     if (proNacht && personGesagt && personen > 0) {
       this.lauf.preisDirekt = { feld: "maxPreis", wert: betrag * personen, proPerson: betrag };
+      this.lauf.preisBezug = "person";
     }
+    if (proNacht && alleGesagt && !personGesagt) this.lauf.preisBezug = "alle";
     return false;
   },
 

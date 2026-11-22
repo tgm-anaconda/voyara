@@ -3644,6 +3644,24 @@ const Werkzeugkasten = {
           kern.lauf.spanneNeu = Math.round(Number(a.mindestGrad));
         }
       }
+      /* Ein klar genanntes Reiseziel liest der Kern mit (22.11.2026).
+         ----------------------------------------------------------------
+         Gemeldet: Auf "Wie lange soll die Reise werden?" kam "Ich will
+         gerne 9 naechte nach malle oder aufs spanische festland". Das
+         Modell trug nur die 9 Naechte ein, Mallorca ging verloren, und
+         spaeter fragte der Agent "eher warm oder kalt?". Wie bei den
+         Ausschluessen (Kern.regionenLesen) liest der Kern deshalb selbst -
+         aber nur, wenn das Modell gar kein Ziel geschickt hat, noch keines
+         feststeht, die Region hinter "nach/auf/aufs/in/an" steht, nichts
+         verneint und die Nachricht keine Frage ist. Was dann im Stand
+         landet, laeuft durch dieselben Pruefungen wie die Angabe des
+         Modells (Richtung, Widerspruch). */
+      if (a.ziel === undefined && a.zieleAuswahl === undefined && !p.zielId && !(p.zieleAuswahl || []).length) {
+        const letzteZ = String((kern.lauf.gespraech || []).filter((n) => n.role === "user").slice(-1)[0]?.content || "");
+        const ids = Werkzeugkasten.zieleAusText(letzteZ);
+        if (ids.length === 1) { a.ziel = ids[0]; kern.notieren("ziel_vom_kern", { ziele: ids }); }
+        else if (ids.length > 1) { a.zieleAuswahl = ids; kern.notieren("ziel_vom_kern", { ziele: ids }); }
+      }
       if (a.ziel !== undefined) {
         const roh = String(a.ziel).toLowerCase().trim();
         let id = null;
@@ -3735,6 +3753,21 @@ const Werkzeugkasten = {
           const k = String(x).toLowerCase().trim();
           const id = (typeof ZIEL_NACH_ID !== "undefined" && ZIEL_NACH_ID[k]) ? k
             : ((typeof ZIELE !== "undefined" ? ZIELE : []).find((z) => z.name.toLowerCase() === k) || {}).id || null;
+          /* Ein Ausschluss braucht eine Ablehnung, nicht nur eine Nennung
+             (22.11.2026). Gemeldet: "9 naechte nach malle" - und nach
+             "Eher kalt" stand "Nicht Mallorca" im Kasten. Das Modell hatte
+             Mallorca als warmes Ziel ausgeschlossen; die Sperre liess es
+             durch, weil "malle" irgendwann im Gespraech stand (und die
+             Zielfrage gerade beantwortet war). Abgelehnt ist eine Region
+             erst, wenn die letzte Nachricht sie nennt UND verneint. */
+          if (feld === "zieleAus") {
+            const letzteNachricht = { gespraech: (kern.lauf.gespraech || []).filter((n) => n.role === "user").slice(-1) };
+            const verneint = (typeof Kern !== "undefined" && Kern.AUSSCHLUSS_WORT ? Kern.AUSSCHLUSS_WORT
+              : /\b(nicht|kein|keine|keinen|ohne|au(ß|ss)er|raus|weglassen|streich)\b/i).test(String(letzteNachricht.gespraech[0]?.content || ""));
+            if (id && verneint && Werkzeugkasten.regionGenannt(letzteNachricht, id)) ids.push(id);
+            else if (id) weg.push(id);
+            continue;
+          }
           if (id && (Werkzeugkasten.regionGenannt(kern.lauf, id) || klarBeantwortet("ziel"))) ids.push(id);
           else if (id) weg.push(id);
         }
@@ -8198,10 +8231,12 @@ const Werkzeugkasten = {
     for (const id of ids) {
       const zz = typeof ZIEL_NACH_ID !== "undefined" ? ZIEL_NACH_ID[id] : null;
       const temp = zz && typeof grad === "function" && p.monat ? grad(zz, p.monat) : null;
-      teile.push(`${zz?.name || id} nehme ich wie gewünscht mit${temp != null && monatW ? ` - dort sind es im ${monatW} etwa ${temp} Grad, also nicht mehr ${label}` : ""}`);
+      // "also nicht mehr eher kalt" las sich holprig (22.11.2026)
+      const keinZiel = p.richtung === "kalt" ? "also kein kaltes Ziel" : p.richtung === "warm" ? "also kein warmes Ziel" : `also nicht mehr ${label}`;
+      teile.push(`${zz?.name || id} nehme ich wie gewünscht mit${temp != null && monatW ? ` - dort sind es im ${monatW} etwa ${temp} Grad, ${keinZiel}` : ""}`);
     }
     (kern.lauf.annahmeOffen ||= []).push({ thema: "ziel", eigenesTun: true,
-      text: `${teile.join(". ")}.`, felder: { zieleAuswahl: p.zieleAuswahl.slice() } });
+      text: `${teile.join(". ")}.`, felder: { zieleAuswahl: ids.slice() } });
     kern.lauf.richtungRegionen = p.zieleAuswahl.slice();
     return true;
   },
@@ -8304,7 +8339,29 @@ const Werkzeugkasten = {
     lappland: ["lapland", "finnisch lappland"],
     marrakesch: ["marrakech", "marrakesh"],
     lissabon: ["lisboa", "lisbon"],
-    barcelona: ["barca"],
+    // "aufs spanische Festland" (22.11.2026): im Katalog ist das Barcelona
+    barcelona: ["barca", "spanische festland", "spanisches festland", "festland spanien", "katalonien", "costa brava"],
+  },
+
+  // Regionen, die eine Nachricht als Reiseziel nennt (siehe stand_merken, 22.11.2026)
+  zieleAusText(text) {
+    const t = String(text || "").toLowerCase();
+    if (!t || /\?/.test(t)) return [];
+    const verneint = typeof Kern !== "undefined" && Kern.AUSSCHLUSS_WORT ? Kern.AUSSCHLUSS_WORT
+      : /\b(nicht|kein|keine|keinen|ohne|au(ß|ss)er|raus|weglassen|streich)\b/i;
+    if (verneint.test(t)) return [];
+    if (/\b(war(en)?|gewesen|letztes jahr|schon mal|schonmal)\b/.test(t)) return [];
+    const raus = [];
+    for (const z of (typeof ZIELE !== "undefined" ? ZIELE : [])) {
+      const woerter = [z.name, z.id, ...(this.REGION_SPITZNAMEN[z.id] || [])].filter(Boolean)
+        .map((x) => String(x).toLowerCase()).filter((x) => x.length >= 3);
+      const treffer = woerter.some((w) => {
+        const sicher = w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        return new RegExp(`\\b(nach|auf|aufs|in|ins|an|an die|an den|richtung)\\s+(die\\s+|den\\s+|das\\s+)?${sicher}([^a-zäöüß]|$)`, "i").test(t);
+      });
+      if (treffer && !raus.includes(z.id)) raus.push(z.id);
+    }
+    return raus;
   },
 
   regionGenannt(lauf, id) {
@@ -9456,6 +9513,19 @@ const Werkzeugkasten = {
          ("Der naechste zu Lueneburg ist Hamburg"), wird der vorgeschlagen
          und nicht der guenstigste. */
       if (this.VORSCHLAG_THEMEN.includes(t)) {
+        /* Fragt die Person nach dem naechsten Flughafen, ist das eine Frage,
+           keine ausbleibende Antwort (22.11.2026). Gemeldet: "der naechste
+           von bullenhausen aus" - statt "Von Bullenhausen ist Hamburg am
+           naechsten, soll ich Hamburg nehmen?" kam der Vorschlag des Kerns,
+           ohne ein Wort zu Bullenhausen. Dann antwortet das Modell (aus
+           allgemeinem Wissen) und fragt nach dem einen Flughafen. */
+        // Nur, solange die Frage noch unbeantwortet ist (die letzte Nachricht ist ihre)
+        const letzteN = (lauf.gespraech || []).slice(-1)[0];
+        const letzteP = letzteN?.role === "user" ? String(letzteN.content || "") : "";
+        if (t === "flugAb" && letzteP && /n(ä|ae)chste|n(ä|ae)he|nah\b|am n(ä|ae)chsten|wohne|von .{2,40} aus\b|heimat|zuhause|zu hause/i.test(letzteP)) {
+          lauf.flugAbNaehe = lauf.zugSeit || true;
+          continue;
+        }
         if (lauf.vorschlag?.thema !== t) {
           const probe = JSON.parse(JSON.stringify(p));
           /* Nur durchrechnen, nichts hinterlassen (20.11.2026, abends).
@@ -9469,8 +9539,12 @@ const Werkzeugkasten = {
           for (const f of a.schreibt || []) if (JSON.stringify(probe[f] ?? null) !== JSON.stringify(p[f] ?? null)) werte[f] = probe[f];
           if (t === "flugAb") {
             const zuletzt = [...(lauf.gespraech || [])].reverse().find((n) => n.role === "assistant" && n.content)?.content || "";
-            const genannt = this.ABFLUG_NAMEN.find((n) => new RegExp(`\\b${n}\\b`, "i").test(zuletzt));
-            if (genannt) werte.flugAb = genannt;
+            /* Nur ein einzeln genannter Flughafen zaehlt (22.11.2026): In der
+               Aufzaehlung "Hamburg, Stuttgart, Duesseldorf ..." fand die Suche
+               bisher den ersten - und schlug ihn vor, als haette der Agent
+               ihn empfohlen. */
+            const genannte = this.ABFLUG_NAMEN.filter((n) => new RegExp(`\\b${n}\\b`, "i").test(zuletzt));
+            if (genannte.length === 1) werte.flugAb = genannte[0];
           }
           if (Object.keys(werte).length) {
             lauf.vorschlag = { thema: t, werte, text: this.vorschlagText(t, { ...p, ...werte }) };
@@ -11063,8 +11137,20 @@ const Werkzeugkasten = {
 
   engstelleRueckfrage(p, lauf) {
     if (!p || !lauf) return null;
-    const e = lauf.letzteEngstelle;
+    let e = lauf.letzteEngstelle;
     if (!e || e.jetzt >= this.ENGSTELLE_FRAGE_GRENZE) return null;
+    /* Die Engstelle ist eine Momentaufnahme - vor der Frage neu zaehlen
+       (22.11.2026). Gemeldet: Nach "Bis 270 €" stand "Bis 270 € pro Nacht
+       bleiben 25 Hotels" und direkt danach "Mit deinen Vorgaben bleibt
+       gerade nichts uebrig". Die Engstelle stammte noch von den 40 €. */
+    let frisch = null;
+    try { frisch = this.katalogTreffer(p, this.filterAusStand(p)); } catch { frisch = null; }
+    if (frisch && frisch.length !== e.jetzt) {
+      if (frisch.length >= this.ENGSTELLE_FRAGE_GRENZE) { lauf.letzteEngstelle = null; return null; }
+      try { this.engstelle(frisch, p, lauf); } catch { /* alte Zahlen bleiben */ }
+      e = lauf.letzteEngstelle;
+      if (!e || e.jetzt >= this.ENGSTELLE_FRAGE_GRENZE) return null;
+    }
     /* Bei einer leeren Liste einmal mehr (21.11.2026): War die Vorgabe
        schon gefragt (etwa der Preis bei der Preiswarnung) und faellt die
        Liste danach durch etwas anderes auf null, kaeme sonst keine Frage
@@ -12536,6 +12622,17 @@ const Werkzeugkasten = {
          Die Wertpruefung darunter bleibt: Hat sich die Region inzwischen
          geaendert, ist der Satz hinfaellig. */
       if (p?.vonPerson?.[feld] && !eintrag.eigenesTun) return false;
+      /* Listen werden nach Inhalt verglichen (22.11.2026). Mit !== war eine
+         Liste nie gleich ihrer Kopie - der Satz "Kapstadt nehme ich wie
+         gewuenscht mit - dort sind es im Maerz etwa 26 Grad" fiel deshalb
+         immer weg, und im Chat stand nur die Behauptung des Modells
+         ("passt zu den kaelteren Zielen"). Er gilt, solange alles, wovon
+         er spricht, noch dabei ist. */
+      if (Array.isArray(wert)) {
+        const jetzt = Array.isArray(p?.[feld]) ? p[feld] : [];
+        if (!wert.every((x) => jetzt.includes(x))) return false;
+        continue;
+      }
       if ((p?.[feld] ?? null) !== wert) return false;
     }
     return true;

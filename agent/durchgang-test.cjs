@@ -138,8 +138,11 @@ const laufMit = (jetzt, ohne, feld) => ({ letzteEngstelle: { feld, ohne, jetzt }
    ueberhaupt etwas zu teilen hat. */
 const pHotel = { typ: "hotel", ausstattung: ["pool", "spa"], maxPreis: 150,
   zielId: "mallorca", artGenannt: true, monat: 7, naechte: 7, erwachsene: 2, kinder: 0 };
-const ef = WK.engstelleRueckfrage?.(pHotel, laufMit(3, 27, "ausstattung"));
-pruefe("Rueckfrage nennt die passenden (3)", !!ef && /nur 3 Hotels/.test(ef.satz), true);
+// Seit dem 22.11.2026 zaehlt die Rueckfrage selbst nach - die Zahl im
+// Lauf muss also die echte sein (vorher stand hier eine ausgedachte 3)
+const echtH = WK.katalogTreffer(pHotel, WK.filterAusStand(pHotel)).length;
+const ef = WK.engstelleRueckfrage?.(pHotel, laufMit(echtH, 27, "ausstattung"));
+pruefe("Rueckfrage nennt die passenden (echte Zahl)", !!ef && (echtH === 1 ? /nur ein Hotel/ : new RegExp(`nur ${echtH} Hotels`)).test(ef.satz), true);
 pruefe("Rueckfrage nennt die Art, nicht Haeuser", !!ef && !/Häuser/.test(ef.satz), true);
 /* Der Satz nennt jetzt je Vorgabe die Zahl ohne sie (19.11.2026).
    Vorher stand da "ohne diese Vorgabe wären es 27", weil nur EINE
@@ -154,8 +157,10 @@ pruefe("Rueckfrage nennt je Moeglichkeit eine Zahl",
   !!ef && (ef.satz.match(/: \d+ Hotels?\./g) || []).length === ef.kandidaten.length, true);
 pruefe("Rueckfrage fragt, was geaendert werden soll", !!ef && /Was soll ich ändern\?/.test(ef.satz), true);
 pruefe("Und bietet das Behalten an", !!ef && ef.chips.some((c) => /Keine, so ist es richtig/.test(c)), true);
-const efW = WK.engstelleRueckfrage?.({ typ: "apartment", kriterien: [{ id: "pool" }] }, laufMit(2, 20, "ausstattung"));
-pruefe("Rueckfrage Wohnungen", !!efW && /nur 2 Ferienwohnungen/.test(efW.satz), true);
+const pWohn = { typ: "apartment", ausstattung: ["pool", "spa"], zielId: "mallorca", artGenannt: true, monat: 7, naechte: 7, erwachsene: 2, kinder: 0 };
+const echtW = WK.katalogTreffer(pWohn, WK.filterAusStand(pWohn)).length;
+const efW = WK.engstelleRueckfrage?.(pWohn, laufMit(echtW, 20, "ausstattung"));
+pruefe("Rueckfrage Wohnungen", echtW >= WK.ENGSTELLE_FRAGE_GRENZE ? `zu viele (${echtW})` : !!efW && /Ferienwohnung/.test(efW.satz) && !/Hotel/.test(efW.satz), true);
 // Oberhalb der Grenze wird nicht gefragt
 pruefe("Keine Rueckfrage ab der Grenze",
   WK.engstelleRueckfrage?.(pHotel, laufMit(WK.ENGSTELLE_FRAGE_GRENZE, 27, "ausstattung")) ?? null, null);
@@ -3637,6 +3642,98 @@ const liesReisende = async (text, felder, urteil = "ja") => {
       return "keine Warnung";
     }), true);
     pruefe("Die Vollformen fuer Preis und Budget sind weg", versuch(() => [!!WK.ENGSTELLE_OFFEN.preis, !!WK.ENGSTELLE_OFFEN.gesamt]), [false, false]);
+  }
+
+  /* Bens Lauf vom 22.11.2026 (Lappland/Kapstadt, 40 EUR, 270 EUR).
+     Gegenprobe: --alt=_backup/gp-lauf22 */
+  {
+    const versuch = (f) => { try { return f(); } catch (e) { return "fehler " + e.message; } };
+    // 1. Veraltete Engstelle: 40 EUR -> 0, dann 270 EUR -> 25
+    const p40 = { monat: 3, naechte: 9, erwachsene: 3, kinder: 0, typ: "hotel", artGenannt: true, verpflegung: "halb", flug: true, flugAb: "Hamburg",
+      zieleAuswahl: ["lappland", "island", "ostsee", "kapstadt"], maxPreis: 40, vonPerson: { maxPreis: true } };
+    const lauf = { engstelleGefragt: { preis: true } };
+    WK.engstelle(WK.katalogTreffer(p40, WK.filterAusStand(p40)), p40, lauf);
+    const p270 = { ...p40, maxPreis: 270 };
+    const n270 = WK.katalogTreffer(p270, WK.filterAusStand(p270)).length;
+    pruefe("Nach 'Bis 270 €' mit genug Hotels: keine Engstellen-Frage mehr", n270 >= WK.ENGSTELLE_FRAGE_GRENZE ? versuch(() => WK.engstelleRueckfrage(p270, lauf)) : `nur ${n270}`, null);
+    // 2. Annahmen mit Listen
+    pruefe("Annahme mit Liste gilt, solange die Eintraege dabei sind",
+      versuch(() => WK.annahmeGilt({ thema: "ziel", eigenesTun: true, text: "x", felder: { zieleAuswahl: ["kapstadt"] } }, { zieleAuswahl: ["lappland", "kapstadt"] })), true);
+    pruefe("... und faellt weg, wenn einer fehlt",
+      versuch(() => WK.annahmeGilt({ thema: "ziel", eigenesTun: true, text: "x", felder: { zieleAuswahl: ["kapstadt"] } }, { zieleAuswahl: ["lappland"] })), false);
+  }
+  if (WK && WK.werkzeuge && WK.werkzeuge.stand_merken) {
+    const satz = "ich würde gerne sogar auf 9 grad gehen aber trotzdem kappstadt ergänzen";
+    const th = vm.runInContext("Politik", ctx).THEMEN.find((t) => t.id === "kalt");
+    const p = { monat: 3, naechte: 9, erwachsene: 3, kinder: 0, artEgal: true, artGenannt: true, richtung: "kalt", zielOffen: true, vonPerson: { monat: true, richtung: true } };
+    p.zieleErlaubt = WK.regionenFuerRichtung(th, p);
+    const kern = { lauf: { profil: p, gespraech: [{ role: "user", content: satz }], protokoll: [], annahmeOffen: [], gefragtWie: {},
+        verlauf: [{ rolle: "user", text: satz }], nachrichtArt: "antwort", runde: 1, richtungRegionen: p.zieleErlaubt.slice(), spanneFrage: { grenze: 12, weiter: 16 } },
+      notieren(e, d) { this.lauf.protokoll.push({ ereignis: e, ...d }); },
+      freigabe: () => "suchen", darf: () => false, logZeile() {}, sagen() {}, standAnzeigen() {}, sichern() {}, standKurz: () => "", antwortWerten() {} };
+    try { await WK.werkzeuge.stand_merken.call(WK, { nachricht_art: "antwort", frage_beantwortet: "ja", mindestGrad: 9, zieleAuswahl: ["kapstadt"] }, kern); } catch { /* nur der Stand */ }
+    const saetze = WK.annahmeSaetze(kern.lauf, kern.lauf.profil);
+    pruefe("Kapstadt dazu: der Kern sagt die Temperatur (Satz faellt nicht weg)", saetze.find((x) => /Kapstadt/.test(x)) || "kein Satz",
+      "Kapstadt nehme ich wie gewünscht mit - dort sind es im März etwa 26 Grad, also kein kaltes Ziel.");
+  }
+  // Flughafen: "der naechste von bullenhausen aus" - kein Vorschlag des Kerns, das Modell antwortet
+  {
+    const versuch = (f) => { try { return f(); } catch (e) { return "fehler " + e.message; } };
+    const pF = { monat: 3, naechte: 9, erwachsene: 3, kinder: 0, kinderAlter: [], zimmer: 1, typ: "hotel", artGenannt: true, flug: true,
+      richtung: "kalt", zieleAuswahl: ["lappland", "island"], vonPerson: { monat: true } };
+    const lF = { gefragtWie: { flugAb: 2 }, gespraech: [
+      { role: "assistant", content: "Kannst du mir sagen, ob es einer dieser Flughäfen ist: Hamburg, Stuttgart, Düsseldorf, Hannover, München, Köln, Frankfurt, Berlin oder Zürich?" },
+      { role: "user", content: "der nächste von bullenhausen aus" }] };
+    lF.gesuchtMit = versuch(() => WK.fahrplan({ ...pF }, { ...lF }).schluessel);
+    const fpF = versuch(() => WK.fahrplan(pF, lF));
+    pruefe("Nach dem naechsten Flughafen gefragt: kein Vorschlag des Kerns", lF.vorschlag?.thema === "flugAb" ? `Vorschlag ${lF.vorschlag.werte.flugAb}` : "kein Vorschlag", "kein Vorschlag");
+    pruefe("... und nichts gesetzt", pF.flugAb ?? null, null);
+    // In einer Aufzaehlung zaehlt kein Flughafen als genannt
+    const pG = { ...pF }; const lG = { ...lF, gespraech: [lF.gespraech[0], { role: "user", content: "keine ahnung" }] };
+    versuch(() => WK.fahrplan(pG, lG));
+    pruefe("Aufzaehlung der Flughaefen: nicht der erste vorgeschlagen, sondern begruendet", lG.vorschlag?.werte?.flugAb === "Hamburg" && WK.guenstigsterFlughafen && (WK.guenstigsterFlughafen([], null)?.ab !== "Hamburg") ? "erster der Liste" : "ok", "ok");
+  }
+  // Malle: Ziel vom Kern gelesen, Ausschluss nur mit Ablehnung
+  if (WK && WK.werkzeuge && WK.werkzeuge.stand_merken) {
+    const zat = (x) => (WK.zieleAusText ? WK.zieleAusText(x) : ["fehlt"]);
+    pruefe("Ziel aus Text: 'nach malle oder aufs spanische festland'", zat("Ich will gerne 9 nächte nach malle oder aufs spanische festland").join(","), "mallorca,barcelona");
+    pruefe("Ziel aus Text: Frage zaehlt nicht", zat("habt ihr was auf Mallorca?").length, 0);
+    pruefe("Ziel aus Text: Verneinung zaehlt nicht", zat("bitte nicht nach Mallorca").length, 0);
+    pruefe("Ziel aus Text: 'waren letztes Jahr auf Malle' zaehlt nicht", zat("wir waren letztes jahr auf malle").length, 0);
+    const spiel = async (satz, args, p0 = {}, gesp = null, gefragt = "dauer") => {
+      const p = { monat: 3, anreise: "2027-03-26", flexibel: true, vonPerson: { monat: true, anreise: true }, ...p0 };
+      const kern = { lauf: { profil: p, gespraech: gesp || [{ role: "assistant", content: "Frage" }, { role: "user", content: satz }], protokoll: [],
+          annahmeOffen: [], gefragtWie: {}, gefragt, verlauf: [], nachrichtArt: "antwort", runde: 1 },
+        notieren(e, d) { this.lauf.protokoll.push({ ereignis: e, ...d }); },
+        freigabe: () => "suchen", darf: () => false, logZeile() {}, sagen() {}, standAnzeigen() {}, sichern() {}, standKurz: () => "", antwortWerten() {} };
+      try { await WK.werkzeuge.stand_merken.call(WK, { nachricht_art: "antwort", frage_beantwortet: "ja", ...args }, kern); } catch (e) { return { fehler: e.message }; }
+      return p;
+    };
+    const m = await spiel("Ich will gerne 9 nächte nach malle oder aufs spanische festland", { naechte: 9 });
+    pruefe("Modell schickt nur die Naechte: Mallorca und Barcelona kommen trotzdem an", [m.naechte, (m.zieleAuswahl || []).join(",") || m.zielId], [9, "mallorca,barcelona"]);
+    const gesp = [{ role: "user", content: "Ich will gerne 9 nächte nach malle" }, { role: "assistant", content: "Warm oder kalt?" }, { role: "user", content: "Eher kalt" }];
+    const k = await spiel("Eher kalt", { richtung: "kalt", zieleAus: ["mallorca"] }, { naechte: 9, erwachsene: 3, kinder: 0 }, gesp, "ziel");
+    pruefe("'Eher kalt' + Ausschluss vom Modell: Mallorca wird NICHT abgelehnt", (k.zieleAus || []).includes("mallorca"), false);
+    const n = await spiel("Mallorca bitte nicht", { zieleAus: ["mallorca"] }, { naechte: 9 }, null, "ziel");
+    pruefe("'Mallorca bitte nicht': der Ausschluss gilt", (n.zieleAus || []).includes("mallorca"), true);
+  }
+  // 3. Preisbezug: ein Knopf des Kerns fragt nicht noch einmal
+  if (KN && KN.budgetPruefen) {
+    const frage = (text, extra = {}) => {
+      KN.lauf = { profil: { erwachsene: 3, kinder: 0, monat: 3 }, gefragt: "preis", ...extra };
+      let gefragt = false;
+      const alt = { sagen: KN.sagen, gp: KN.gespraechPush, sm: KN.sagenUndMerken, n: KN.notieren, s: KN.sichern };
+      KN.sagen = () => {}; KN.gespraechPush = () => {}; KN.sagenUndMerken = () => { gefragt = true; }; KN.notieren = () => {}; KN.sichern = () => {};
+      const AP = vm.runInContext("typeof AgentPanel !== 'undefined' ? AgentPanel : null", ctx);
+      const altAP = AP?.setSuggestions; if (AP) AP.setSuggestions = () => {};
+      try { KN.budgetPruefen(text, { gezeigt: true }); } catch { /* nur ob gefragt */ }
+      if (AP) AP.setSuggestions = altAP;
+      Object.assign(KN, { sagen: alt.sagen, gespraechPush: alt.gp, sagenUndMerken: alt.sm, notieren: alt.n, sichern: alt.s });
+      return gefragt;
+    };
+    pruefe("Preisbezug: '40 euro' bei 3 Personen fragt nach dem Bezug", frage("40 euro pro nacht"), true);
+    pruefe("Preisbezug: Knopf 'Bis 270 €' des Kerns fragt nicht", frage("Bis 270 €", { chipWirkung: { "Bis 270 €": { maxPreis: 270 } } }), false);
+    pruefe("Preisbezug: einmal 'fuer alle' geklaert, gilt weiter", frage("300 euro pro nacht", { preisBezug: "alle" }), false);
   }
 
   console.log(`\n${gut} richtig, ${schlecht} falsch`);
