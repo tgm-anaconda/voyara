@@ -8408,6 +8408,37 @@ const Werkzeugkasten = {
       .flatMap((g) => g.woerter);
   },
 
+  /* Spricht der Kern in diesem Zug selbst ueber Regionen? (22.11.2026)
+     ------------------------------------------------------------------
+     Nur dann fallen Saetze des Modells zu Regionen weg (siehe kern.js,
+     region_nur_kern). Ben: "Es darf nur passieren, wenn der Kern auch
+     wirklich was sagt - die Saetze vom Modell sind oft eine gute
+     Ergaenzung." Deshalb zaehlt nur, was wirklich in der Nachricht steht:
+       - ein Richtungssatz dieses Zuges (`abgeleitet`, feld "richtung";
+         die Liste wird am Zugende geleert), oder
+       - eine Annahme zum Ziel, deren Text in `annahmenText` steht - also
+         unter den hoechstens zwei, die der Kern wirklich anhaengt. */
+  regionSpricht(lauf, annahmenText) {
+    if (!lauf) return false;
+    if ((lauf.abgeleitet || []).some((x) => x && x.feld === "richtung" && x.satz)) return true;
+    const text = String(annahmenText || "");
+    if (!text) return false;
+    return (lauf.annahmeOffen || []).some((x) => x && typeof x === "object" && x.thema === "ziel" && x.text && text.includes(x.text));
+  },
+
+  // Redet ein Satz ueber Regionen, Klima oder die Gradgrenze? Nur ganze Woerter.
+  regionRede(satz) {
+    const t = String(satz || "").toLowerCase();
+    if (!t) return false;
+    const woerter = /(^|[^a-zäöüß])(regionen?|reiseziele?|ziele?|zielen|warm(e|en|er|es)?|w(ä|ae)rmer(e|en)?|kalt(e|en|er|es)?|k(ä|ae)lter(e|en)?|grad|klima|temperaturen?)(?=[^a-zäöüß]|$)/;
+    if (woerter.test(t)) return true;
+    for (const z of (typeof ZIELE !== "undefined" ? ZIELE : [])) {
+      const namen = [z.name, ...(this.REGION_SPITZNAMEN[z.id] || [])].map((x) => String(x).toLowerCase()).filter((x) => x.length >= 3);
+      if (namen.some((n) => new RegExp(`(^|[^a-zäöüß])${n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?=[^a-zäöüß]|$)`).test(t))) return true;
+    }
+    return false;
+  },
+
   // Regionen, die eine Nachricht als Reiseziel nennt (siehe stand_merken, 22.11.2026)
   zieleAusText(text) {
     const t = String(text || "").toLowerCase();

@@ -1463,7 +1463,17 @@ const Kern = {
     const teile = [];
     const regionsname = (id) => (typeof ZIEL_NACH_ID !== "undefined" ? ZIEL_NACH_ID[id]?.name : null) || id;
     if (p.zielId && typeof ZIEL_NACH_ID !== "undefined") teile.push(`Ziel ${ZIEL_NACH_ID[p.zielId]?.name}`);
-    else if ((p.zieleAuswahl || []).length) teile.push(`Ziel nur ${p.zieleAuswahl.map(regionsname).join(", ")}`);
+    else if ((p.zieleAuswahl || []).length) {
+      /* Dazugenommene Ziele mit Temperatur (22.11.2026): Das Modell schrieb
+         "Kapstadt passt zu den kaelteren Zielen" - es kannte die 26 Grad
+         nicht. Jetzt stehen sie im Stand. */
+      const dazu = (p.zieleDazu || []).filter((id) => p.zieleAuswahl.includes(id)).map((id) => {
+        const z = typeof ZIEL_NACH_ID !== "undefined" ? ZIEL_NACH_ID[id] : null;
+        const g = z && typeof grad === "function" && p.monat ? grad(z, p.monat) : null;
+        return `${regionsname(id)}${g != null ? ` (${g} Grad im Monat - ausdruecklich dazugenommen, passt NICHT zur Richtung ${p.richtung || ""})` : " (ausdruecklich dazugenommen)"}`;
+      });
+      teile.push(`Ziel nur ${p.zieleAuswahl.map(regionsname).join(", ")}${dazu.length ? `; davon ${dazu.join(", ")}` : ""}`);
+    }
     else if (p.richtung && typeof Politik !== "undefined") {
       /* Genannt werden nur Regionen, in denen im gemerkten Monat etwas
          buchbar ist (06.10.2026). Stand hier die ganze Temperaturspanne,
@@ -3277,7 +3287,19 @@ const Kern = {
                diese Sperre waere die Rueckfrage still verschwunden,
                sobald die Nachricht des Modells den Vertrag zufaellig
                erfuellt. */
-            if (!fpJetzt.nurKern && !fpJetzt.kernFragt && !annahmen && planThema) {
+            /* Ueber Regionen spricht in diesem Zug nur der Kern (22.11.2026).
+               ----------------------------------------------------------
+               Gemeldet: "Kapstadt habe ich ergaenzt, das passt dann zu den
+               kaelteren Zielen" - Kapstadt hat im Maerz 26 Grad. Das Modell
+               kannte die Zahl nicht und schrieb einen Satz, der zur Bitte
+               passte. Ben entschied: Sagt der Kern selbst etwas zu Zielen,
+               Regionen oder der Gradgrenze, faellt alles weg, was das Modell
+               dazu schreibt - und seine ganze Nachricht wird nicht
+               uebernommen, sondern der Kern setzt sie zusammen. */
+            // Nur, wenn ein Regionssatz des Kerns WIRKLICH in dieser Nachricht steht
+            const regionKernImZug = Werkzeugkasten.regionSpricht(this.lauf, annahmen);
+            if (regionKernImZug) this.notieren("region_nur_kern", {});
+            if (!fpJetzt.nurKern && !fpJetzt.kernFragt && !annahmen && !regionKernImZug && planThema) {
               const pr = Werkzeugkasten.nachrichtPruefen(text, {
                 profil: this.lauf.profil || {},
                 thema: planThema,
@@ -3390,6 +3412,7 @@ const Kern = {
               .filter((x) => { if (istGruss(x)) { gruessteJetzt = true; return true; } const n = norm(x); return n.length > 8 && !frageNorm.includes(n); })
               .filter((x) => !sagtDasselbe(x))
               .filter((x) => !schonGesagt(x))
+              .filter((x) => !(regionKernImZug && Werkzeugkasten.regionRede(x)))
               .slice(0, 2).join(" ").trim();
             /* Zweimal dasselbe Quittieren.
                ----------------------------------------------------------

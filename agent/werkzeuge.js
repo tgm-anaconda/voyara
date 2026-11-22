@@ -816,7 +816,12 @@ const Werkzeuge = {
        laenger - Bens Entscheidung: "Zur Not dauert das halt einfach ein
        bisschen laenger." Im Hintergrundtab gibt es keine Bilder; dort
        springt die Seite ans Ende, statt stehenzubleiben. */
-    const geschwindigkeit = Math.min(6000, Math.max(3000, (bis - von) / 20));
+    /* Schneller, aber weiter fliessend (22.11.2026). Ben: "30 Sekunden ist
+       echt schon sehr lang ... im besten Fall maximal 25." Ziel 17 statt 20
+       Sekunden fuer die Strecke, hoechstens 7500 statt 6000 Pixel pro
+       Sekunde - weiterhin Bild fuer Bild (rund 125 Pixel je Bild bei 60
+       Bildern pro Sekunde), also ohne die Spruenge von damals. */
+    const geschwindigkeit = Math.min(7500, Math.max(3000, (bis - von) / 17));
     const naechstesBild = () => new Promise((f) => (document.hidden
       ? setTimeout(() => f(performance.now()), 16)
       : requestAnimationFrame(f)));
@@ -965,11 +970,10 @@ const Werkzeuge = {
      hat. Der Suchknopf ist derselbe, den auch die Person drueckt. */
   async trefferZahlZeigen() {
     if (this.seite() !== "results") return this.fehlt("Die Trefferliste");
-    const knopf = this.finde('#sbForm button[type="submit"]');
-    if (knopf) {
-      await Zeiger.klicke(knopf, { hinweis: "suchen" });
-      await Zeiger.warte(250);
-    }
+    /* Ohne Klick auf "Suchen" (22.11.2026). Ben: Die Filter wirken sofort,
+       der Klick aenderte nichts und wirkte verwirrend. Der Zeiger faehrt
+       direkt zur Trefferzahl - woher die Zahl kommt, sieht man weiter. */
+    const knopf = null;
     const zahl = this.finde("#resultsCount");
     const treffer = this.zustand().trefferGesamt;
     if (zahl) await Zeiger.lies(zahl, { dauer: 900, hinweis: "liest die Trefferzahl" });

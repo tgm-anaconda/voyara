@@ -3776,6 +3776,31 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     console.log("   Protokoll 9 Grad, Satz des Kerns:", kSatz);
     pruefe("... der Kern sagt beides: was wegfaellt und Kapstadt mit Temperatur", [/Bis 9 Grad fallen Tirol, New York und Wien weg/.test(kSatz), /Kapstadt nehme ich wie gewünscht mit/.test(kSatz)], [true, true]);
   }
+  // Saetze des Modells zu Regionen fallen NUR weg, wenn der Kern selbst dazu spricht (22.11.2026)
+  // Gegenprobe: --alt=_backup/gp-tempo
+  {
+    const versuch = (f) => { try { return f(); } catch (e) { return "fehler " + e.message; } };
+    const sp = (lauf, text) => versuch(() => (WK.regionSpricht ? WK.regionSpricht(lauf, text) : "fehlt"));
+    const kap = { thema: "ziel", eigenesTun: true, text: "Kapstadt nehme ich wie gewünscht mit - dort sind es im März etwa 26 Grad, also kein kaltes Ziel.", felder: { zieleAuswahl: ["kapstadt"] } };
+    pruefe("Regel: ohne Kernsatz greift sie nicht", sp({ abgeleitet: [], annahmeOffen: [] }, ""), false);
+    pruefe("Regel: andere Kernsaetze (Monat, Preis) loesen sie nicht aus", sp({ abgeleitet: [{ feld: "monat", satz: "Ich nehme Juli." }, { feld: "maxPreis", satz: "Bis 100 € bleiben 20." }], annahmeOffen: [] }, ""), false);
+    pruefe("Regel: Richtungssatz des Kerns in diesem Zug loest sie aus", sp({ abgeleitet: [{ feld: "richtung", satz: "Alles klar, bis 9 Grad." }] }, ""), true);
+    pruefe("Regel: Ziel-Annahme, die wirklich gesagt wird, loest sie aus", sp({ annahmeOffen: [kap] }, kap.text), true);
+    pruefe("Regel: Ziel-Annahme, die NICHT gesagt wird (nicht im Text), loest sie nicht aus", sp({ annahmeOffen: [kap] }, "Ich rechne mit einer Woche."), false);
+    pruefe("Regel: Annahme zu einem anderen Thema loest sie nicht aus", sp({ annahmeOffen: [{ thema: "dauer", text: "Ich rechne mit einer Woche." }] }, "Ich rechne mit einer Woche."), false);
+    const rr = (x) => versuch(() => (WK.regionRede ? WK.regionRede(x) : "fehlt"));
+    pruefe("Regionsrede: 'passt zu den kälteren Zielen'", rr("Kapstadt habe ich ergänzt, das passt dann zu den kälteren Zielen."), true);
+    pruefe("Regionsrede: 'Island ist im März wunderschön'", rr("Island ist im März wunderschön."), true);
+    pruefe("Regionsrede: 'ich schau grade nach' ist keine", rr("Ich schau grade nach, einen Moment."), false);
+    pruefe("Regionsrede: 'Klingt nach einem tollen Plan' ist keine", rr("Klingt nach einem tollen Plan!"), false);
+    pruefe("Regionsrede: 'Mit Flug, gerne' ist keine", rr("Mit Flug, gerne."), false);
+    const kt = fs.readFileSync(alt && fs.existsSync(quelle + "kern.js") ? quelle + "kern.js" : B + "agent/kern.js", "utf8");
+    pruefe("Kern: der Modellweg ist nur bei Regionssatz gesperrt, der Filter haengt an derselben Bedingung",
+      [/!annahmen && !regionKernImZug && planThema/.test(kt), /!\(regionKernImZug && Werkzeugkasten\.regionRede\(x\)\)/.test(kt)], [true, true]);
+    const wz = fs.readFileSync(alt && fs.existsSync(quelle + "werkzeuge.js") ? quelle + "werkzeuge.js" : B + "agent/werkzeuge.js", "utf8");
+    pruefe("Tempo: hoechstens 7500 px/s, Ziel 17 s", /Math\.min\(7500, Math\.max\(3000, \(bis - von\) \/ 17\)\)/.test(wz), true);
+    pruefe("Nach dem Filtern kein Klick auf Suchen mehr", /async trefferZahlZeigen\(\)[\s\S]{0,900}const knopf = null;/.test(wz), true);
+  }
   // 3. Preisbezug: ein Knopf des Kerns fragt nicht noch einmal
   if (KN && KN.budgetPruefen) {
     const frage = (text, extra = {}) => {
