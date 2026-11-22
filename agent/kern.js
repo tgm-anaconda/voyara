@@ -1499,7 +1499,8 @@ const Kern = {
       if (name) {
         teile.push(vorlaeufig
           ? `Monat ${name} (NUR VORLAEUFIG, damit gesucht werden kann - der Monatsvergleich entscheidet noch. Nenn ihn nicht als gewaehlt; sag hoechstens, dass du vorlaeufig damit rechnest.)`
-          : `Monat ${name}`);
+          : `Monat ${name}${this.lauf.zeitankerDatum?.name === "Ostern"
+            ? ` (Ostern ${this.lauf.zeitankerDatum.jahr}: Karfreitag ${this.lauf.zeitankerDatum.karfreitag}, Ostersonntag ${this.lauf.zeitankerDatum.ostersonntag} - die Reise beginnt im ${name}; nenn keinen anderen Monat)` : ""}`);
       }
     }
     if (p.von && p.bis) teile.push(`${p.von} bis ${p.bis}`);
@@ -3434,7 +3435,9 @@ const Kern = {
                gestrichen. Uebrig blieb die Zahl im Stand, von der niemand
                mehr etwas sagte. Was weggestrichen wird, darf nichts
                verdraengen. */
-            const nachtrag = Werkzeugkasten.aufnahmeSatz(this, vorspann);
+            // Was eine Annahme gleich ausfuehrlich sagt, wird nicht noch knapp
+            // quittiert ("Maerz merke ich mir." vor dem Oster-Satz, 22.11.2026)
+            const nachtrag = Werkzeugkasten.aufnahmeSatz(this, `${vorspann} ${annahmen || ""}`);
             if (behauptet.length && !nachtrag && !ausDemModell) {
               this.notieren("quittung_ohne_stand", { satz: behauptet.join(" ").slice(0, 160),
                 gemerkt: this.lauf.zuletztGemerkt || [] });

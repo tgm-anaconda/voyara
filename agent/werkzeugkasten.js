@@ -2557,7 +2557,24 @@ const Werkzeugkasten = {
     m = t.match(/\b(?:am|zum|ab dem)\s+(0?[1-9]|[12]\d|3[01])(?:\.|ten|ter|sten|ster|te)?(?![\d.,])(?!\s*(?:n(?:ä|ae)cht|tag(?:e|en)?\b|woche|person|erwachsen|kind|leute|uhr|€|euro))/)
       || t.match(/\b(0?[1-9]|[12]\d|3[01])(?:ten|ter|sten|ster|te)\b/);
     if (m) return { tag: +m[1], monat: null };
+    /* Benannte Ostertage (22.11.2026). Gemeldet: Auf "An welchem Tag im
+       Maerz wollt ihr anreisen?" kam "an Ostern gerne", und kein Tag kam
+       an. Die einzelnen Tage sind eindeutig und werden gerechnet; das
+       blosse "Ostern" ist es nicht (Karfreitag oder Sonntag?) - danach
+       fragt datumRueckfrage. */
+    const osterTag = [[/gr(?:ü|ue)ndonnerstag/, -3], [/karfreitag/, -2], [/karsamstag|ostersamstag/, -1],
+      [/ostersonntag/, 0], [/ostermontag/, 1]].find(([r]) => r.test(t));
+    if (osterTag) {
+      const d = this.osterDatum(osterTag[1]);
+      return { tag: d.getDate(), monat: d.getMonth() + 1 };
+    }
     return null;
+  },
+
+  // Ein Tag im Abstand zum naechsten Ostersonntag, von heute aus gesehen
+  osterDatum(abstand, heute = new Date()) {
+    const o = this.naechstes(heute, (j) => this.ostersonntag(j));
+    return new Date(o.getFullYear(), o.getMonth(), o.getDate() + abstand);
   },
 
   /* Ein Tag in einem anderen Monat als dem gesuchten.
@@ -3070,7 +3087,7 @@ const Werkzeugkasten = {
     return raus;
   },
 
-  QUITTUNG: /\b(?:merke?|merk) ich mir\b|\bich (?:merke?|merk) (?:mir|es|das)\b|\bnotiere ich\b|\bich notiere\b|\bhabe ich (?:mir )?(?:gemerkt|notiert)\b|\bnehme ich (?:so )?auf\b|\b(?:ist|sind|hab ich|habe ich) (?:schon )?(?:notiert|gemerkt|vermerkt|aufgenommen)\b|\bhalte ich fest\b|\bich halte\b[^.!?]*\bfest\b|\bspeichere ich\b|\bich speichere\b|\btrage ich\b[^.!?]*\bein\b|\bich trage\b[^.!?]*\bein\b|\bvermerke ich\b|\bich vermerke\b/i,
+  QUITTUNG: /\b(?:merke?|merk) ich mir\b|\bich (?:merke?|merk) (?:mir|es|das)\b|\bnotiere ich\b|\bich notiere\b|\bhabe ich (?:mir )?(?:gemerkt|notiert)\b|\bnehme ich (?:so )?auf\b|\b(?:ist|sind|hab ich|habe ich) (?:schon )?(?:notiert|gemerkt|vermerkt|aufgenommen)\b|\bhalte ich fest\b|\bich halte\b[^.!?]*\bfest\b|\bspeichere ich\b|\bich speichere\b|\btrage ich\b[^.!?]*\bein\b|\bich trage\b[^.!?]*\bein\b|\bvermerke ich\b|\bich vermerke\b|\bich hab(?:e)? (?:mir )?(?:das |es )?(?:schon |jetzt |mal )?(?:notiert|gemerkt|vermerkt|aufgenommen|festgehalten)\b/i,
 
   /* Hat das Modell selbst gesagt, worum es geht?
      ------------------------------------------------------------------
@@ -3231,7 +3248,23 @@ const Werkzeugkasten = {
         .filter((t) => t >= 1 && t <= letzterTag && String(t) !== z).slice(0, 2);
       if (kandidaten.length === 2) {
         return { stufe, satz: `Meinst du den ${kandidaten[0]}. oder den ${kandidaten[1]}. ${monat}?`,
-          chips: [`${kandidaten[0]}. ${monat}`, `${kandidaten[1]}. ${monat}`, "Ich bin flexibel"] };
+          // Ohne "Ich bin flexibel": Wer eine Zahl nennt, meint einen Tag (Ben, 22.11.2026)
+          chips: [`${kandidaten[0]}. ${monat}`, `${kandidaten[1]}. ${monat}`] };
+      }
+    }
+    /* "An Ostern" ohne Tag (22.11.2026). Ostern ist ein Wochenende, kein
+       Tag. Gefragt wird einmal, mit den beiden ueblichen Anreisetagen, und
+       ohne "Ich bin flexibel" - die Person hat sich schon festgelegt. Die
+       Frage verbraucht keinen Anlauf. Liegen die Tage nicht im gesuchten
+       Monat, greift das nicht; dann laeuft die Frage wie bisher. */
+    if (!lauf.osternGefragt && /\bostern\b|osterwochenende|osterfeiertage/i.test(String(letzte || ""))
+      && !this.tagAusText(letzte)) {
+      const fr = this.osterDatum(-2), so = this.osterDatum(0);
+      if (fr.getMonth() + 1 === p.monat && so.getMonth() + 1 === p.monat) {
+        lauf.osternGefragt = true;
+        return { stufe: Math.max(stufe, 1),
+          satz: `Ostern ist am ${so.getDate()}. ${monat}. Wollt ihr am Karfreitag (${fr.getDate()}. ${monat}) oder am Ostersonntag (${so.getDate()}. ${monat}) anreisen?`,
+          chips: [`Karfreitag, ${fr.getDate()}. ${monat}`, `Ostersonntag, ${so.getDate()}. ${monat}`] };
       }
     }
     // Ein lesbarer Tag ist eine Antwort, auch wenn "nein" darin steht
@@ -3940,9 +3973,28 @@ const Werkzeugkasten = {
           if (!kern.lauf.relativAngesagt) {
             kern.lauf.relativAngesagt = true;
             const name = typeof MONATSNAMEN !== "undefined" ? MONATSNAMEN[ank.monat - 1] : String(ank.monat);
+            /* Ostern mit Datum (22.11.2026). Gemeldet: "an Ostern" ergab
+               im Chat "Maerz merke ich mir" und vom Modell "Mallorca im
+               April". Zwei Ursachen: Dieser Satz fiel weg, weil der Monat
+               aus der Nachricht der Person stammt (annahmeGilt sperrt
+               dann) - gerechnet hat ihn aber der Kern, also eigenesTun.
+               Und ohne Datum wirkt "Maerz" wie ein Irrtum, weil Ostern
+               meist im April liegt. Deshalb sagt der Satz, wann genau
+               Ostern ist, und dass die Reise in den April reichen kann. */
+            let text = `${ank.name} fällt dann auf ${name} - damit rechne ich erst mal. Wenn du einen anderen Monat im Kopf hast, sag Bescheid.`;
+            if (ank.name === "Ostern") {
+              const so = Werkzeugkasten.osterDatum(0), fr = Werkzeugkasten.osterDatum(-2);
+              const lage = so.getDate() <= 10 ? "Anfang" : so.getDate() <= 20 ? "Mitte" : "Ende";
+              const folge = typeof MONATSNAMEN !== "undefined" ? MONATSNAMEN[(so.getMonth() + 1) % 12] : "";
+              kern.lauf.zeitankerDatum = { name: "Ostern", jahr: so.getFullYear(),
+                karfreitag: `${fr.getDate()}.${fr.getMonth() + 1}.`, ostersonntag: `${so.getDate()}.${so.getMonth() + 1}.` };
+              text = `Ostern ist ${so.getFullYear()} schon ${lage} ${name}: Karfreitag ist der ${fr.getDate()}.${fr.getMonth() !== so.getMonth() && typeof MONATSNAMEN !== "undefined" ? ` ${MONATSNAMEN[fr.getMonth()]}` : ""}, Ostersonntag der ${so.getDate()}. ${name}. `
+                + `Ich suche deshalb im ${name}${lage === "Ende" && folge ? ` - je nach Dauer reicht die Reise dann in den ${folge}` : ""}. Wenn du einen anderen Monat im Kopf hast, sag Bescheid.`;
+            }
             (kern.lauf.annahmeOffen ||= []).push({
               thema: "zeit",
-              text: `${ank.name} fällt dann auf ${name} - damit rechne ich erst mal. Wenn du einen anderen Monat im Kopf hast, sag Bescheid.`,
+              eigenesTun: true,
+              text,
               felder: { monat: ank.monat },
             });
           }

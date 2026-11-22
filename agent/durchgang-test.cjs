@@ -3491,6 +3491,50 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     pruefe("Nach den Empfehlungen: dieselbe Klasse aendert nichts", aendern("Economy passt", { flugKlasse: "economy", flugKoffer: false }), ["economy", false, null]);
   }
 
+  /* Ostern (22.11.2026). Gemeldet: "an Ostern 9 naechte nach malle" ergab
+     "Maerz merke ich mir. Ich habe notiert: Mallorca im April", und "an
+     ostern gerne" auf die Tagesfrage kam nicht an. Ostern 2027 = 28.03.
+     Gegenprobe: --alt=_backup/gp-ostern */
+  {
+    const tag = (t) => JSON.stringify(WK.tagAusText(t));
+    pruefe("Ostern: 'Karfreitag' ist der 26. Maerz", tag("am Karfreitag"), JSON.stringify({ tag: 26, monat: 3 }));
+    pruefe("Ostern: 'Ostersonntag' ist der 28. Maerz", tag("Ostersonntag"), JSON.stringify({ tag: 28, monat: 3 }));
+    pruefe("Ostern: 'Ostermontag' ist der 29. Maerz", tag("ostermontag bitte"), JSON.stringify({ tag: 29, monat: 3 }));
+    pruefe("Ostern: blosses 'an ostern gerne' ist kein Tag", tag("an ostern gerne"), "null");
+    const marz = { monat: 3, vonPerson: { monat: true } };
+    const l1 = { datumFrage: 1 };
+    const r = WK.datumRueckfrage(marz, l1, "an ostern gerne");
+    pruefe("Ostern auf die Tagesfrage: fragt Karfreitag oder Ostersonntag", r?.satz,
+      "Ostern ist am 28. März. Wollt ihr am Karfreitag (26. März) oder am Ostersonntag (28. März) anreisen?");
+    pruefe("... nur die beiden Tage als Chips, kein 'Ich bin flexibel'", (r?.chips || []).join(" | "), "Karfreitag, 26. März | Ostersonntag, 28. März");
+    pruefe("... und die Chips sind als Tag lesbar", (r?.chips || []).map((c) => WK.tagAusText(c)?.tag).join(","), "26,28");
+    pruefe("... verbraucht keinen Anlauf", r?.stufe, 1);
+    pruefe("Ostern ein zweites Mal: normale Tagesfrage", WK.datumRueckfrage(marz, l1, "an ostern")?.stufe, 2);
+    pruefe("Ostern schon im ersten Satz: gleich die Osterfrage", /Karfreitag/.test(WK.datumRueckfrage(marz, { datumFrage: 0 }, "an Ostern 9 nächte nach malle")?.satz || ""), true);
+    pruefe("Ostern im April gesucht: keine Osterfrage", /Karfreitag/.test(WK.datumRueckfrage({ monat: 4, vonPerson: { monat: true } }, { datumFrage: 1 }, "an ostern")?.satz || ""), false);
+    const r89 = WK.datumRueckfrage(marz, { datumFrage: 1, tagUnklar: "89" }, "89");
+    pruefe("'89': kein 'Ich bin flexibel' mehr", (r89?.chips || []).join(" | "), "8. März | 9. März");
+    // Quittung des Modells
+    pruefe("Quittung: 'Ich habe notiert: Mallorca im April.' faellt weg", WK.QUITTUNG.test("Ich habe notiert: Mallorca im April."), true);
+    pruefe("Quittung: 'ich hab mir das gemerkt'", WK.QUITTUNG.test("ich hab mir das gemerkt"), true);
+    pruefe("Quittung: 'Ich habe eine Idee' ist keine", WK.QUITTUNG.test("Ich habe eine Idee für euch."), false);
+  }
+  if (WK && WK.werkzeuge && WK.werkzeuge.stand_merken) {
+    const satz = "Alles klar dann würde ich gerne an Ostern 9 nächte nach malle fliegen";
+    const kern = { lauf: { gespraech: [{ role: "user", content: satz }], profil: {}, protokoll: [], annahmeOffen: [], gefragtWie: {},
+        verlauf: [{ rolle: "user", text: satz }], nachrichtArt: "antwort", runde: 1, gefragt: "zeit" },
+      notieren(e, d) { this.lauf.protokoll.push({ ereignis: e, ...d }); },
+      freigabe: () => "suchen", darf: () => false, logZeile() {}, sagen() {}, standAnzeigen() {}, sichern() {}, standKurz: () => "" };
+    let fehler = null;
+    try { await WK.werkzeuge.stand_merken.call(WK, { nachricht_art: "antwort", frage_beantwortet: "ja", monat: 4, naechte: 9, ziel: "mallorca" }, kern); } catch (e) { fehler = e.message; }
+    const p = kern.lauf.profil;
+    pruefe("Ostern im Stand: Monat Maerz, nicht der geratene April", fehler || p.monat, 3);
+    const saetze = WK.annahmeSaetze(kern.lauf, p);
+    pruefe("Ostern: der Kern sagt an, wann Ostern ist (Satz wird nicht verworfen)", saetze.find((x) => /Ostern/.test(x)) || "kein Satz",
+      "Ostern ist 2027 schon Ende März: Karfreitag ist der 26., Ostersonntag der 28. März. Ich suche deshalb im März - je nach Dauer reicht die Reise dann in den April. Wenn du einen anderen Monat im Kopf hast, sag Bescheid.");
+    pruefe("Ostern: Datum fuer den Stand des Modells gemerkt", kern.lauf.zeitankerDatum?.ostersonntag, "28.3.");
+  }
+
   console.log(`\n${gut} richtig, ${schlecht} falsch`);
   process.exit(schlecht ? 1 : 0);
 })();
