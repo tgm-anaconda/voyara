@@ -1987,8 +1987,10 @@ const liesReisende = async (text, felder, urteil = "ja") => {
        genau darum geht es hier. Mit petsAllowed und spa blieb nach dem
        Sieb nur eine, weil die anderen zu wenig brachten (19.11.2026). */
     const pv = { zielId: "mallorca", typ: "hotel", monat: 7, naechte: 7, erwachsene: 2, kinder: 0,
-      kinderAlter: [], zimmer: 1, artGenannt: true, flug: false, maxPreis: 170,
+      kinderAlter: [], zimmer: 1, artGenannt: true, flug: false, maxPreis: 145,
       verpflegung: "halb" };
+    // 145 statt 170: Seit die Hotelpreise am 22.11.2026 um 15 % sanken,
+    // war die Szene bei 170 EUR nicht mehr eng (12 Hotels, keine Frage)
     const kat = WK.katalog(pv);
     const vg = WK.vorgaben(pv, WK.filterAusStand(pv));
     const AW = vm.runInContext("typeof Auswahl !== 'undefined' ? Auswahl : null", ctx);
@@ -2003,7 +2005,7 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     pruefe("Der Preis steht gestuft zur Wahl, nicht als Streichung",
       r && (r.kandidaten || []).some((k) => k.feld.startsWith("preis:")) ? "ja" : "nein", "ja");
     pruefe("Die Stufe hebt die Grenze an",
-      r && (r.kandidaten || []).filter((k) => k.feld.startsWith("preis:")).every((k) => k.werte.maxPreis > 170) ? "ja" : "nein", "ja");
+      r && (r.kandidaten || []).filter((k) => k.feld.startsWith("preis:")).every((k) => k.werte.maxPreis > 145) ? "ja" : "nein", "ja");
     /* Seit dem 19.11.2026 steht die Zahl hinter der HANDLUNG ("Die
        Region offen lassen: 51 Hotels") statt hinter der Vorgabe ("ohne
        sie 51") - mit gestuften Vorschlaegen passte die alte Form nicht
@@ -2242,9 +2244,10 @@ const liesReisende = async (text, felder, urteil = "ja") => {
         return n === k.ohne;
       }) ? "ja" : "nein", "ja");
     /* Und die Vollform draengelt sich nicht vor, wo die Stufen reichen:
-       Mallorca, Juli, 170 € - da bringen 190 € und 210 € genug. */
+       Mallorca, Juli, 145 € (bis 22.11.2026: 170 €, vor den gesenkten
+       Hotelpreisen) - da bringen die Stufen genug. */
     const mild = { zielId: "mallorca", typ: "hotel", artGenannt: true, monat: 7, naechte: 7,
-      erwachsene: 2, kinder: 0, kinderAlter: [], zimmer: 1, flug: false, maxPreis: 170, verpflegung: "halb" };
+      erwachsene: 2, kinder: 0, kinderAlter: [], zimmer: 1, flug: false, maxPreis: 145, verpflegung: "halb" };
     const tr2 = AW2 ? AW2.treffer(WK.katalog(mild), WK.vorgaben(mild, WK.filterAusStand(mild))) : [];
     const lf2 = { protokoll: [] };
     WK.engstelle(tr2, mild, lf2);
@@ -3843,9 +3846,12 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     const k3 = await spiel("ein hotel auf malle, auch gern asien", {}, {}, { gefragt: "art" });
     pruefe("'auch gern Asien' heisst nicht 'beide Unterkunftsarten'", [k3.p.typ, k3.p.artEgal === true], ["hotel", false]);
     // Preis nach angenommener Warnung nicht noch einmal
-    const pE = { zielId: "mallorca", typ: "hotel", artGenannt: true, monat: 10, naechte: 9, erwachsene: 2, kinder: 1, kinderAlter: [17], verpflegung: "ai", maxPreis: 330,
+    const pE = { zielId: "mallorca", typ: "hotel", artGenannt: true, monat: 10, naechte: 9, erwachsene: 2, kinder: 1, kinderAlter: [17], verpflegung: "ai", maxPreis: 260,
       flug: true, flugAb: "Hamburg", anreise: "2027-10-31", von: "2027-10-31", bis: "2027-11-09", vonPerson: { maxPreis: true } };
     console.log("   Treffer im nachgebauten Stand:", WK.katalogTreffer(pE, WK.filterAusStand(pE)).length);
+    // 260 statt 330 seit den gesenkten Hotelpreisen (22.11.2026); bei 330
+    // blieben 15 Hotels und es kam gar keine Frage. Gegenprobe: Ohne die
+    // angenommene Warnung bietet die Frage bei 260 EUR den Preis an.
     const lE = { preisGewarnt: { 210: true }, engstelleGefragt: { preis: true } };
     versuch(() => WK.engstelle(WK.katalogTreffer(pE, WK.filterAusStand(pE)), pE, lE));
     const eE = versuch(() => WK.engstelleRueckfrage(pE, lE));

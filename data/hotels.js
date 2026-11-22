@@ -17083,9 +17083,11 @@ function formatPrice(value) {
     h.boards = [
       { key: "ohne", priceDelta: 0 },
       { key: "fruehstueck", priceDelta: fr },
-      { key: "halb", priceDelta: Math.round(fr * 2.2) },
-      { key: "voll", priceDelta: Math.round(fr * 3.2) },
-      { key: "ai", priceDelta: Math.round(fr * 4.2) },
+      // Faktoren am 22.11.2026 gesenkt (vorher 2,2 / 3,2 / 4,2), siehe
+      // "Preise nachjustiert" am Ende der Datei
+      { key: "halb", priceDelta: Math.round(fr * 1.6) },
+      { key: "voll", priceDelta: Math.round(fr * 2.3) },
+      { key: "ai", priceDelta: Math.round(fr * 3.0) },
     ];
   }
 })();
@@ -17149,6 +17151,36 @@ function formatPrice(value) {
   const alleZiele = [...new Set(HOTELS.map((h) => h.ziel))];
   ergaenzen(alleZiele, "spa", ZIEL_SPA, satzSpa);
   ergaenzen(POOL_DAZU, "pool", ZIEL_POOL, satzPool);
+})();
+
+/* ==================================================================
+   Preise nachjustiert (22.11.2026)
+   ------------------------------------------------------------------
+   Ben: Das Budget der Person bleibt, wie sie es nennt - realistisch
+   soll der Katalog sein. Gemessen ueber alle Regionen und Monate in der
+   Saison, zwei Personen: Mit Halbpension bis 150 EUR pro Nacht blieben
+   in 74 % der Faelle weniger als fuenf Hotels, mit All Inclusive bis
+   200 EUR in 77 %. Zwei Gruende:
+   - Die Verpflegung war zu teuer (Halbpension im Mittel 35 EUR pro
+     Person und Nacht, All Inclusive 67 EUR). Jetzt rund 26 und 48 EUR,
+     Faktoren oben in verpflegungVereinheitlichen.
+   - Das Doppelzimmer kostete im Mittel 168 EUR. Alle Hotelzimmer
+     werden deshalb um 15 % guenstiger (Grundpreis und Zimmeraufschlag).
+   Ferienwohnungen und Fluege bleiben. Die Kuerzung gilt fuer jedes
+   Haus gleich, die Reihenfolge der Preise bleibt also erhalten. Sie
+   laeuft NACH hotelsAusstattung, damit dessen Sortierung nach Preis
+   (und damit die Wahl der Haeuser mit Wellness und Pool) unveraendert
+   bleibt.
+   Danach: Halbpension bis 150 EUR in 39 % knapp, bis 200 EUR in 1 %;
+   All Inclusive bis 250 EUR in 1 %.
+   ================================================================== */
+(function preiseNachjustieren() {
+  const FAKTOR = 0.85;
+  for (const h of HOTELS) {
+    if (h.type === "apartment") continue;
+    h.pricePerNight = Math.round(h.pricePerNight * FAKTOR);
+    for (const r of h.rooms || []) r.priceDelta = Math.round((r.priceDelta || 0) * FAKTOR);
+  }
 })();
 
 function ratingLabel(rating) {
