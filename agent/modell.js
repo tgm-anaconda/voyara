@@ -136,6 +136,13 @@ const Modell = {
                     Werkzeug (der Fahrplan erzwingt Ueberblick und Suche)
      Liefert { text, chips, tool_calls, verbrauch } oder null. */
   async agent(nachrichten, werkzeuge, stand, werkzeugPflicht = false) {
+    /* Testweiche (22.11.2026): Nur wenn ein Testlauf ein Drehbuch setzt
+       (window.__voyaraDrehbuch, per Playwright vor dem Laden), antwortet
+       statt des Modells das Drehbuch. Im normalen Betrieb gibt es das
+       Objekt nicht, und diese Zeile tut nichts. */
+    if (typeof window !== "undefined" && window.__voyaraDrehbuch?.agent) {
+      return window.__voyaraDrehbuch.agent(nachrichten, werkzeuge, stand, werkzeugPflicht);
+    }
     const d = await this.ruf({ aufgabe: "agent", nachrichten, werkzeuge, stand, werkzeugPflicht });
     if (!d) return null;
     return { text: d.text || "", chips: d.chips || [], tool_calls: d.tool_calls || [], verbrauch: d.verbrauch || null, dauer: d.dauer || null };
@@ -144,6 +151,7 @@ const Modell = {
   // Nur Text, ohne Werkzeuge - fuer "Warum dieses Haus?" und aehnliche
   // Einzelantworten, die keine Seitenbedienung brauchen.
   async text(nachrichten, stand) {
+    if (typeof window !== "undefined" && window.__voyaraDrehbuch?.text) return window.__voyaraDrehbuch.text(nachrichten, stand);
     const d = await this.ruf({ aufgabe: "text", nachrichten, stand });
     if (!d) return null;
     return { text: d.text || "", chips: d.chips || [], verbrauch: d.verbrauch || null };

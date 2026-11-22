@@ -1330,6 +1330,9 @@ const Werkzeugkasten = {
        Erklaerung, welche Regionen "kalt" waeren (21.11.2026). Mit
        dazugenommenen Regionen (zieleDazu) gilt die Richtung weiter. */
     if (p.zieleAuswahl?.length && !p.zieleDazu?.length) return;
+    /* Hat zielDazunehmen in diesem Zug schon gesagt, was weg- und dazukommt,
+       kommt die ganze Liste nicht noch einmal (22.11.2026, Drehbuch-Lauf). */
+    if ((kern.lauf.annahmeOffen || []).some((x) => x && x.thema === "ziel" && x.eigenesTun && /nehme ich wie gewünscht mit/.test(x.text || ""))) return;
     /* Folgt gleich die Frage nach der Grenze, endet dieser Satz ohne
        "Sag Bescheid ..." - sonst stand die Einladung da und direkt danach
        die Frage zur selben Sache (03.10.2026, "sehr doppelt"). */
@@ -4069,8 +4072,10 @@ const Werkzeugkasten = {
           /* "Am Reformationstag" ist ein Tag, nicht nur ein Monat (22.11.2026) */
           const letzteF = String((kern.lauf.gespraech || []).filter((n) => n.role === "user").slice(-1)[0]?.content || "");
           const festT = Werkzeugkasten.festerTag(letzteF);
-          const festAnreise = festT && festT.monat === ank.monat && !a.anreise && /\b(am|an|zum|ab)\b/i.test(letzteF);
-          if (festAnreise) {
+          const festTagISO = festT ? `-${String(festT.monat).padStart(2, "0")}-${String(festT.tag).padStart(2, "0")}` : null;
+          const festAnreise = festT && festT.monat === ank.monat && /\b(am|an|zum|ab)\b/i.test(letzteF)
+            && (!a.anreise || String(a.anreise).endsWith(festTagISO));
+          if (festAnreise && !a.anreise) {
             a.anreise = `2000-${String(festT.monat).padStart(2, "0")}-${String(festT.tag).padStart(2, "0")}`;
             kern.notieren("anreise_aus_feiertag", { name: festT.name });
           }
@@ -4418,6 +4423,7 @@ const Werkzeugkasten = {
          genannten Person ("meine Freundin ist 17", "einer davon ist noch
          16") und kommt niemand dazu, wird aus einem Erwachsenen ein Kind -
          die Gruppe bleibt gleich gross. */
+      const vorErw = p.erwachsene, vorKind = p.kinder || 0;
       const neuDazu = /\b(zus(ä|ae)tzlich|dazu|au(ß|ss)erdem|plus|kommt (auch )?mit|kommen (auch )?mit|noch (ein|eine|einen|zwei|drei) (kind|kinder|person|freund|freundin|sohn|tochter))\b/i;
       const altersNachtrag = /\b(mein|meine|meiner|meinem|meinen|der|die|das|einer|eine|eins|davon|er|sie)\b[^.!?]{0,40}\b(ist|sind|wird)\b[^.!?]{0,12}?\b(\d{1,2})\b/i;
       if (a.kinder != null && a.kinder > (p.kinder || 0) && (p.erwachsene || 0) >= 2
@@ -4432,6 +4438,16 @@ const Werkzeugkasten = {
       }
       setze("personen", a.personenGesamt);
       setze("erwachsene", a.erwachsene); setze("kinder", a.kinder);
+      /* Aus einem Erwachsenen wurde ein Kind - das wird gesagt (22.11.2026,
+         Drehbuch-Lauf): sonst fragte der Agent einfach weiter, und niemand
+         sah, dass die Gruppe jetzt anders aussieht. */
+      if (vorErw != null && p.erwachsene != null && p.erwachsene < vorErw && (p.kinder || 0) > vorKind
+        && p.erwachsene + (p.kinder || 0) === vorErw + vorKind) {
+        const alter = (Array.isArray(a.kinderAlter) ? a.kinderAlter : []).filter(Number.isInteger);
+        const e = p.erwachsene, k = p.kinder;
+        (kern.lauf.annahmeOffen ||= []).push({ thema: "reisende", eigenesTun: true, felder: {},
+          text: `Dann rechne ich mit ${e} ${e === 1 ? "Erwachsenem" : "Erwachsenen"} und ${k} ${k === 1 ? "Kind" : "Kindern"}${alter.length ? ` (${alter.join(", ")} Jahre)` : ""}.` });
+      }
       // Das Alter der Kinder weiss nur die Person. Aus "mein suesser Bengel"
       // machte das Modell sonst ein einjaehriges Kind.
       /* Das Alter: Ausweg ueber das Modell (17.11.2026).
@@ -5070,6 +5086,20 @@ const Werkzeugkasten = {
       kern.antwortWerten?.();
       p.vonPerson = p.vonPerson || {};
       for (const f of geaendert) p.vonPerson[f] = true;
+      /* Eine Annahme aus derselben Runde faellt weg, wenn die Person das
+         Thema gerade selbst beantwortet hat (22.11.2026, Drehbuch-Lauf).
+         Nach zwei Fragen nach der Art nahm der Kern zu Beginn der Runde
+         "beides" an; die Antwort "in ein Hotel" kam in derselben Runde.
+         Die Annahme war damit hinfaellig, ihre Sperre der ersten Suche
+         (annahmeFrisch) blieb aber stehen - es kam nur "Alles klar." */
+      const THEMA_FELDER = { art: ["typ", "artEgal", "artGenannt"], zeit: ["monat", "von", "anreise"], reisende: ["erwachsene", "kinder", "personen"], kinderAlter: ["kinderAlter"] };
+      for (const [thema, felder] of Object.entries(THEMA_FELDER)) {
+        if ((kern.lauf.uebersprungen || {})[thema] && felder.some((f) => geaendert.includes(f))) {
+          Werkzeugkasten.annahmeZuruecknehmen(kern, thema);
+          if (kern.lauf.annahmeFrisch && kern.lauf.annahmeFrisch === kern.lauf.zugSeit) kern.lauf.annahmeFrisch = null;
+          kern.notieren("annahme_durch_antwort_ersetzt", { thema });
+        }
+      }
       /* Nach der Preisangabe die Zahl (C11, 21.11.2026).
          ----------------------------------------------------------------
          Der Kern zaehlt, einmal je genanntem Wert, sobald die Zeit steht.
@@ -10349,8 +10379,9 @@ const Werkzeugkasten = {
          Nacht angeben in Geld." Bis dahin stand "fuer die gesamte Reise"
          in der Frage - das legt die Antwort auf eine Lesart fest, obwohl
          `preisDeutung` beide auswerten kann. */
+      // Variante A (22.11.2026): das Budget gilt der Unterkunft, der Flug kommt in der Kasse
       satz = p.flug
-        ? "Wie viel ist dein Budget für die Reise, mit Flug?"
+        ? "Wie viel möchtest du für die Unterkunft höchstens ausgeben? Den Flug schauen wir uns danach extra an."
         : "Wie viel ist dein Budget für die Reise?";
       frage = "Sie hat gesagt, dass sie eine feste Grenze hat, aber noch keinen Betrag genannt. Frag nur nach der Zahl - sag NICHT 'fuer die ganze Reise', 'gesamt' oder 'pro Nacht'. Ob der Betrag gesamt oder pro Nacht gemeint ist, klaert der Kern danach selbst.";
       chips = null;

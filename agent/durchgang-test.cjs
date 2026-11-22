@@ -3933,6 +3933,25 @@ const liesReisende = async (text, felder, urteil = "ja") => {
       { typ: "hotel", zieleAuswahl: ["mallorca", "krabi", "kyoto"], belege: { typ: "in ein Hotel", zieleAuswahl: "auf Malle oder nach Asien" } }, {}, { gefragt: "art" });
     pruefe("Integration: kombinierte Nachricht mit Belegen -> Hotel und drei Ziele", [o4.p.typ, (o4.p.zieleAuswahl || []).slice().sort().join(",")], ["hotel", "krabi,kyoto,mallorca"]);
   }
+  // Funde aus dem Drehbuch-Lauf (22.11.2026). Gegenprobe: --alt=_backup/gp-drehbuch
+  if (WK && WK.werkzeuge && WK.werkzeuge.stand_merken) {
+    const spiel = async (satz, args, p0, lauf0 = {}) => {
+      const p = { ...p0 };
+      const kern = { lauf: { profil: p, gespraech: [{ role: "assistant", content: "Frage" }, { role: "user", content: satz }], protokoll: [],
+          annahmeOffen: [], gefragtWie: {}, verlauf: [], nachrichtArt: "antwort", runde: 1, zugSeit: 4711, ...lauf0 },
+        notieren(e, d) { this.lauf.protokoll.push({ ereignis: e, ...d }); },
+        freigabe: () => "suchen", darf: () => false, logZeile() {}, sagen() {}, standAnzeigen() {}, sichern() {}, standKurz: () => "", antwortWerten() {} };
+      try { await WK.werkzeuge.stand_merken.call(WK, { nachricht_art: "antwort", frage_beantwortet: "ja", ...args }, kern); } catch (e) { return { p, kern, fehler: e.message }; }
+      return { p, kern };
+    };
+    const a1 = await spiel("ich will gerne in ein Hotel auf Malle oder nach Asien", { typ: "hotel" }, { erwachsene: 1, kinder: 1, kinderAlter: [17], artEgal: true },
+      { gefragt: "art", uebersprungen: { art: true }, annahmeFrisch: 4711 });
+    pruefe("Drehbuch: Antwort auf die Art in derselben Runde ersetzt die Annahme (Suche nicht gesperrt)", [a1.kern.lauf.annahmeFrisch ?? null, !!(a1.kern.lauf.uebersprungen || {}).art], [null, false]);
+    const a2 = await spiel("meine freundin ist 17", { kinder: 1, kinderAlter: [17] }, { erwachsene: 2, kinder: 0, personen: 2 }, { gefragt: "art" });
+    pruefe("Drehbuch: Erwachsener -> Kind wird angesagt", (WK.annahmeSaetze(a2.kern.lauf, a2.p).find((x) => /rechne ich mit/.test(x)) || "kein Satz"), "Dann rechne ich mit 1 Erwachsenem und 1 Kind (17 Jahre).");
+    pruefe("Drehbuch: Budgetfrage mit Flug nennt die Unterkunft, nicht 'mit Flug'",
+      /Wie viel möchtest du für die Unterkunft höchstens ausgeben/.test(fs.readFileSync(alt && fs.existsSync(quelle + "werkzeugkasten.js") ? quelle + "werkzeugkasten.js" : B + "agent/werkzeugkasten.js", "utf8")), true);
+  }
   // Fortsetzung nach dem Anhalten zaehlt nicht als Antwort
   {
     const kt = fs.readFileSync(alt && fs.existsSync(quelle + "kern.js") ? quelle + "kern.js" : B + "agent/kern.js", "utf8");
