@@ -3871,7 +3871,15 @@ const Werkzeugkasten = {
       if (a.richtung && typeof Politik !== "undefined") {
         const th = (Politik.THEMEN || []).find((t) => t.id === a.richtung);
         const woerter = th ? [...(th.woerter || []), th.id] : [];
-        if (th && gesagt(new RegExp(woerter.map((x) => x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|"), "i"), 99)) {
+        /* Dieselbe Richtung noch einmal ist keine Aenderung (22.11.2026).
+           Im Protokoll von Bens Lauf: Auf "9 Grad, aber Kapstadt ergaenzen"
+           schickte das Modell "kalt" erneut mit. Der Kern rechnete die
+           Regionen dann mit der alten Grenze neu ("Damit kommen Tirol, New
+           York und Wien dazu - 7 statt 4") und gleich danach mit der neuen
+           ("fallen weg - 4 statt 7"). Steht die Richtung schon, bleibt alles. */
+        if (th && p.richtung === th.id && p.zieleErlaubt?.length) {
+          kern.notieren("richtung_unveraendert", { richtung: th.id });
+        } else if (th && gesagt(new RegExp(woerter.map((x) => x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|"), "i"), 99)) {
           setze("richtung", th.id);
           p.zieleErlaubt = Werkzeugkasten.regionenFuerRichtung(th, p);
           if (!p.zielId) p.zielOffen = true;
@@ -8227,6 +8235,15 @@ const Werkzeugkasten = {
       const l = this.regionenListe(durchGrenze);
       const g = p.mindestGrad ?? kern.lauf.spanneNeu ?? null;
       if (l) teile.push(`${g != null ? `Bis ${g} Grad ` : "Damit "}${l.mehrzahl ? "kommen" : "kommt"} ${l.text} dazu`);
+    }
+    /* Und was durch eine engere Grenze im selben Satz wegfaellt (22.11.2026).
+       "Auf 9 Grad gehen, aber Kapstadt ergaenzen": Tirol, New York und Wien
+       fallen weg - das muss genauso gesagt werden wie das Dazukommen. */
+    const wegDurchGrenze = vorher.filter((x) => !erlaubt.includes(x) && !ids.includes(x) && !(p.zieleDazu || []).includes(x));
+    if (vorher.length && wegDurchGrenze.length) {
+      const l = this.regionenListe(wegDurchGrenze);
+      const g = p.mindestGrad ?? kern.lauf.spanneNeu ?? null;
+      if (l) teile.push(`${g != null ? `Bis ${g} Grad ` : "Damit "}${l.mehrzahl ? "fallen" : "fällt"} ${l.text} weg`);
     }
     for (const id of ids) {
       const zz = typeof ZIEL_NACH_ID !== "undefined" ? ZIEL_NACH_ID[id] : null;

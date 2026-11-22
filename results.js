@@ -590,8 +590,26 @@ function renderFilters() {
     });
   }
 
+  /* Der Preisregler bleibt am Anschlag, wenn er dort stand (22.11.2026).
+     Gemeldet ueber Bens Protokoll: Kern 100 Hotels, Liste 91. Mit
+     "Halbpension" stiegen die Nachtpreise, der Regler blieb auf dem alten
+     Hoechstwert (524 €) - und wirkte als Preisgrenze, die niemand gesetzt
+     hatte. Dieselbe Regel wie bei der Suche ueber die Maske (unten). */
+  const preisAmAnschlag = (aendern) => {
+    const vorher = priceBounds();
+    const amAnschlag = state.priceMax >= vorher.max;
+    aendern();
+    const nachher = priceBounds();
+    if (amAnschlag || !(state.priceMax >= nachher.min && state.priceMax <= nachher.max)) {
+      state.priceMax = nachher.max;
+      const r = panel.querySelector("#fPrice");
+      if (r) { r.min = nachher.min; r.max = nachher.max; r.value = state.priceMax; }
+      const out = panel.querySelector("#fPriceOut");
+      if (out) out.textContent = formatPrice(state.priceMax);
+    }
+  };
   const bindSet = (cls, target) => panel.querySelectorAll(cls).forEach((el) =>
-    el.addEventListener("change", () => { el.checked ? target.add(el.value) : target.delete(el.value); filterMerken(); renderResults(); }));
+    el.addEventListener("change", () => { preisAmAnschlag(() => { el.checked ? target.add(el.value) : target.delete(el.value); }); filterMerken(); renderResults(); }));
 
   bindSet(".js-ziel", state.ziele);
   bindSet(".js-star", state.stars);

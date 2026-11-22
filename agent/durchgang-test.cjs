@@ -3740,6 +3740,42 @@ const liesReisende = async (text, felder, urteil = "ja") => {
       pruefe("Ausschluss: 'nicht nach Spanien' schliesst alle drei aus", aus, "barcelona,mallorca,teneriffa");
     }
   }
+  // Nachgespielt mit den Werten aus Bens Protokoll (22.11.2026). Gegenprobe: --alt=_backup/gp-protokoll
+  if (WK && WK.werkzeuge && WK.werkzeuge.stand_merken) {
+    const spiel = async (satz, args, p0, lauf0 = {}) => {
+      const p = { ...p0 };
+      const saetze = [];
+      const kern = { lauf: { profil: p, gespraech: [{ role: "assistant", content: "Frage" }, { role: "user", content: satz }], protokoll: [],
+          annahmeOffen: [], gefragtWie: {}, verlauf: [], nachrichtArt: "antwort", runde: 1, ...lauf0 },
+        notieren(e, d) { this.lauf.protokoll.push({ ereignis: e, ...d }); },
+        freigabe: () => "suchen", darf: () => false, logZeile() {}, sagen(x) { saetze.push(x); }, standAnzeigen() {}, sichern() {}, standKurz: () => "", antwortWerten() {} };
+      try { await WK.werkzeuge.stand_merken.call(WK, { nachricht_art: "antwort", frage_beantwortet: "ja", ...args }, kern); } catch (e) { saetze.push("FEHLER " + e.message); }
+      return { p, saetze, kern };
+    };
+    // Malle: das Modell schickte zieleAus [mallorca, barcelona]
+    const m = await spiel("Ich will gerne 9 nächte nach malle oder aufs spanische festland", { naechte: 9, zieleAus: ["mallorca", "barcelona"] },
+      { monat: 3, anreise: "2027-03-26", vonPerson: { monat: true, anreise: true } }, { gefragt: "dauer" });
+    pruefe("Protokoll Malle: kein 'Nicht Mallorca'", (m.p.zieleAus || []).length, 0);
+    pruefe("Protokoll Malle: Mallorca und Barcelona als Auswahl", (m.p.zieleAuswahl || []).slice().sort().join(","), "barcelona,mallorca");
+    // 9 Grad + Kapstadt: das Modell schickte richtung, mindestGrad und alle kalten Regionen + Kapstadt
+    const th = vm.runInContext("Politik", ctx).THEMEN.find((t) => t.id === "kalt");
+    const pK = { monat: 3, naechte: 9, erwachsene: 3, kinder: 0, artEgal: true, artGenannt: true, richtung: "kalt", zielOffen: true, vonPerson: { monat: true, richtung: true } };
+    pK.zieleErlaubt = WK.regionenFuerRichtung(th, pK);
+    const k = await spiel("ich würde gerne sogar auf 9 grad gehen aber trotzdem kappstadt ergänzen",
+      // Laut Protokoll las der Kern die 9 Grad selbst (spanne_vom_kern) - das Modell schickte keine
+      { richtung: "kalt", zieleAuswahl: ["lappland", "island", "ostsee", "tirol", "newyork", "wien", "kapstadt"] }, pK,
+      { gefragt: "ziel", richtungRegionen: pK.zieleErlaubt.slice(), spanneOffen: { grenze: 12, weiter: 16 },
+        gespraech: [{ role: "user", content: "Eher kalt" }, { role: "assistant", content: "Bei 12 Grad bleiben oder auf 16 gehen?" },
+          { role: "user", content: "ich würde gerne sogar auf 9 grad gehen aber trotzdem kappstadt ergänzen" }] });
+    const regionSaetze = k.saetze.filter((x) => /Regionen? statt/.test(x));
+    console.log("   Protokoll 9 Grad:", regionSaetze.join(" | "));
+    pruefe("Protokoll 9 Grad + Kapstadt: hoechstens ein Regionssatz", regionSaetze.length <= 1, true);
+    pruefe("... kein 'kommen Tirol, New York und Wien dazu'", regionSaetze.some((x) => /kommen .*dazu/.test(x)), false);
+    pruefe("... am Ende Lappland, Island, Ostsee, Kapstadt", (k.p.zieleAuswahl || []).slice().sort().join(","), "island,kapstadt,lappland,ostsee");
+    const kSatz = WK.annahmeSaetze(k.kern.lauf, k.p).find((x) => /Kapstadt/.test(x)) || "kein Satz";
+    console.log("   Protokoll 9 Grad, Satz des Kerns:", kSatz);
+    pruefe("... der Kern sagt beides: was wegfaellt und Kapstadt mit Temperatur", [/Bis 9 Grad fallen Tirol, New York und Wien weg/.test(kSatz), /Kapstadt nehme ich wie gewünscht mit/.test(kSatz)], [true, true]);
+  }
   // 3. Preisbezug: ein Knopf des Kerns fragt nicht noch einmal
   if (KN && KN.budgetPruefen) {
     const frage = (text, extra = {}) => {
