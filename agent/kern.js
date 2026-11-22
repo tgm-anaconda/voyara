@@ -2979,6 +2979,15 @@ const Kern = {
               this.notieren("kinder_erwachsen_rueckfrage", { alter: this.lauf.alterZuHoch });
               kernFrage = { ...kf, thema: "reisende" };
             }
+            /* Nachfragen statt still verwerfen (22.11.2026, siehe
+               Werkzeugkasten.bestaetigungRueckfrage) - gleich nach der
+               Kinder-Frage, weil auch sie die Gruppe betrifft. */
+            const bf = kernFrage ? null : Werkzeugkasten.bestaetigungRueckfrage(this.lauf.profil || {}, this.lauf);
+            if (bf) {
+              (this.lauf.bestaetigtGefragt ||= {})[bf.schluessel] = true;
+              this.notieren("bestaetigung_gefragt", { schluessel: bf.schluessel });
+              kernFrage = { ...bf };
+            }
             const wf = kernFrage ? null : Werkzeugkasten.widerspruchRueckfrage(this.lauf.profil || {}, this.lauf);
             if (wf) {
               (this.lauf.widerspruchGefragt ||= {})[wf.ziel] = true;

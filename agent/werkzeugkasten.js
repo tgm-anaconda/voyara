@@ -3771,7 +3771,7 @@ const Werkzeugkasten = {
             }
           }
         }
-        else if (id) kern.notieren("ziel_verworfen", { ziel: id, wo: "stand_merken" });
+        else if (id) { kern.notieren("ziel_verworfen", { ziel: id, wo: "stand_merken" }); Werkzeugkasten.merkeVerworfen(kern, "ziel", id); }
       }
       /* Mehrere Regionen und Ausschluesse - mit derselben Sperre wie beim
          einzelnen Ziel: Was die Person nicht gesagt hat, wird nicht
@@ -3806,7 +3806,7 @@ const Werkzeugkasten = {
           if (id && (Werkzeugkasten.regionGenannt(kern.lauf, id) || klarBeantwortet("ziel") || listeBelegt)) ids.push(id);
           else if (id) weg.push(id);
         }
-        if (weg.length) kern.notieren("ziel_verworfen", { ziele: weg, wo: feld });
+        if (weg.length) { kern.notieren("ziel_verworfen", { ziele: weg, wo: feld }); Werkzeugkasten.merkeVerworfen(kern, feld, weg); }
         /* Dieselbe Regel wie beim einzelnen Ziel: Was der Richtung
            widerspricht, wird vorgemerkt statt gesetzt. Nur bei der
            Auswahl, nicht beim Ausschluss - wer eine Region ablehnt,
@@ -9178,6 +9178,101 @@ const Werkzeugkasten = {
   merkeVerworfen(kern, feld, wert) {
     if (wert == null) return;
     (kern.lauf.verworfenWert ||= {})[feld] = wert;
+    // In welchem Zug - die Bestaetigungsfrage gilt nur fuer diesen (22.11.2026)
+    (kern.lauf.verworfenZug ||= {})[feld] = kern.lauf.zugSeit || kern.lauf.runde || true;
+  },
+
+  /* Nachfragen statt still verwerfen (22.11.2026).
+     ------------------------------------------------------------------
+     Ben: "Wenn der Kern nicht sicher pruefen kann, ob das stimmt, was vom
+     Modell kommt, dann soll nochmal die Nachfrage kommen." Bisher fiel ein
+     Wert ohne Beleg still weg, und die Frage kam noch einmal - obwohl das
+     Modell oft richtig verstanden hatte. Jetzt fragt der Kern nach, mit
+     dem Wert: "Habe ich dich richtig verstanden: ...?", Knopf "Ja, genau"
+     setzt ihn, "Nein, anders" setzt nichts. Regeln:
+       - nur fuer Ziel, Auswahl, Ausschluss, Reisende, Kinderalter, Anreise
+       - nur, was in DIESEM Zug verworfen wurde
+       - nur, was in sich moeglich ist (Region im Katalog, mind. ein
+         Erwachsener, Alter 0-17, Tag 1-31)
+       - je Wert hoechstens einmal. */
+  bestaetigungRueckfrage(p, lauf) {
+    if (!p || !lauf || !lauf.verworfenWert) return null;
+    const jetzt = lauf.zugSeit || lauf.runde || true;
+    const frisch = (f) => lauf.verworfenWert[f] != null && (lauf.verworfenZug || {})[f] === jetzt;
+    const schonGefragt = (schl) => !!(lauf.bestaetigtGefragt || {})[schl];
+    const name = (id) => (typeof ZIEL_NACH_ID !== "undefined" ? ZIEL_NACH_ID[id]?.name : null);
+    const liste = (xs) => (xs.length > 1 ? `${xs.slice(0, -1).join(", ")} oder ${xs[xs.length - 1]}` : xs[0]);
+    const JA = "Ja, genau", NEIN = "Nein, anders";
+    /* Nur, was die Nachricht wenigstens anspricht - sonst fragt der Kern
+       nach Werten, die das Modell sich selbst erschlossen hat (z. B. die
+       kalten Regionen, die eine neue Gradgrenze gerade ausgeschlossen hat). */
+    const letzte = String((lauf.gespraech || []).filter((n) => n.role === "user").slice(-1)[0]?.content || "");
+    const genannt = (id) => this.regionGenannt({ gespraech: [{ role: "user", content: letzte }] }, id);
+    // Logik: ein Wunsch ohne Ablehnung, ein Ausschluss nur mit Ablehnung
+    const verneint = (typeof Kern !== "undefined" && Kern.AUSSCHLUSS_WORT ? Kern.AUSSCHLUSS_WORT
+      : /\b(nicht|kein|keine|keinen|ohne|au(ß|ss)er|raus|weglassen|streich)\b/i).test(letzte);
+    const hatZahl = /\d|\b(ein|eine|zwei|drei|vier|fünf|fuenf|sechs)\b/i.test(letzte);
+    const PERSONWORT = /\b(ich|wir|mein\w*|freund\w*|partner\w*|frau|mann|sohn|tochter|kind\w*|baby|eltern|mutter|vater|oma|opa|bruder|schwester|familie|allein\w*|zu zweit|zu dritt|erwachsen\w*|person\w*)\b/i;
+    const bau = (schl, frage, werte, thema) => {
+      if (schonGefragt(schl)) return null;
+      return { grund: "bestaetigen", schluessel: schl, thema, satz: `Habe ich dich richtig verstanden: ${frage}?`,
+        chips: [JA, NEIN], wirkung: { [JA]: werte, [NEIN]: {} } };
+    };
+    // Auswahl / einzelnes Ziel
+    for (const f of ["zieleAuswahl", "ziel"]) {
+      if (!frisch(f) || verneint) continue;
+      const ids = (Array.isArray(lauf.verworfenWert[f]) ? lauf.verworfenWert[f] : [lauf.verworfenWert[f]]).filter((id) => name(id) && genannt(id));
+      if (!ids.length) continue;
+      const neu = ids.filter((id) => !(p.zieleAuswahl || []).includes(id) && p.zielId !== id);
+      if (!neu.length) continue;
+      const alle = [...new Set([...(p.zieleAuswahl || []), ...ids])];
+      const werte = alle.length > 1 ? { zieleAuswahl: alle, zielId: null, zielOffen: false } : { zielId: alle[0], zielOffen: false };
+      const r = bau(`ziel:${alle.join(",")}`, `Du möchtest nach ${liste(alle.map(name))}`, werte, "ziel");
+      if (r) return r;
+    }
+    if (frisch("zieleAus") && verneint) {
+      const ids = (Array.isArray(lauf.verworfenWert.zieleAus) ? lauf.verworfenWert.zieleAus : []).filter((id) => name(id) && !(p.zieleAus || []).includes(id) && genannt(id)
+        && !(p.zieleAuswahl || []).includes(id) && p.zielId !== id);
+      if (ids.length) {
+        const r = bau(`aus:${ids.join(",")}`, `${liste(ids.map(name))} soll${ids.length > 1 ? "en" : ""} nicht in die Suche`,
+          { zieleAus: [...new Set([...(p.zieleAus || []), ...ids])] }, "ziel");
+        if (r) return r;
+      }
+    }
+    // Reisende
+    if (["erwachsene", "kinder", "personenGesamt"].some(frisch) && (hatZahl || PERSONWORT.test(letzte))) {
+      const v = lauf.verworfenWert;
+      const e = frisch("erwachsene") ? Number(v.erwachsene) : (p.erwachsene ?? null);
+      const k = frisch("kinder") ? Number(v.kinder) : (p.kinder ?? 0);
+      if (Number.isInteger(e) && e >= 1 && e <= 12 && Number.isInteger(k) && k >= 0 && k <= 12
+        && !(e === p.erwachsene && k === (p.kinder ?? 0))) {
+        const r = bau(`reisende:${e}+${k}`, `Ihr seid ${e} ${e === 1 ? "Erwachsener" : "Erwachsene"} und ${k === 0 ? "keine Kinder" : k === 1 ? "ein Kind" : `${k} Kinder`}`,
+          { erwachsene: e, kinder: k, personen: e + k }, "reisende");
+        if (r) return r;
+      }
+    }
+    if (frisch("kinderAlter") && /\d/.test(letzte)) {
+      const alter = (Array.isArray(lauf.verworfenWert.kinderAlter) ? lauf.verworfenWert.kinderAlter : []).map(Number);
+      if (alter.length && alter.every((x) => Number.isInteger(x) && x >= 0 && x <= 17) && !(p.kinderAlter || []).length) {
+        const r = bau(`alter:${alter.join(",")}`, alter.length === 1 ? `Das Kind ist ${alter[0]} Jahre alt` : `Die Kinder sind ${liste(alter.map(String)).replace(" oder ", " und ")} Jahre alt`,
+          { kinderAlter: alter }, "kinderAlter");
+        if (r) return r;
+      }
+    }
+    if (frisch("anreise") && !p.anreise && (hatZahl || this.festerTag(letzte))) {
+      const m = String(lauf.verworfenWert.anreise).match(/^\d{4}-(\d{2})-(\d{2})$/);
+      const fw = this.flexWahl(p);
+      if (m && fw && Number(m[1]) === p.monat) {
+        const tag = Number(m[2]);
+        const letzter = new Date(fw.jahr, p.monat, 0).getDate();
+        if (tag >= 1 && tag <= letzter) {
+          const iso = `${fw.monat}-${String(tag).padStart(2, "0")}`;
+          const r = bau(`anreise:${iso}`, `Ihr wollt am ${tag}. ${typeof MONATSNAMEN !== "undefined" ? MONATSNAMEN[p.monat - 1] : ""} anreisen`, { anreise: iso }, "anreise");
+          if (r) return r;
+        }
+      }
+    }
+    return null;
   },
 
   // Hat die Person einen Tag genannt? "am 5.", "5. Nov.", "5. November",

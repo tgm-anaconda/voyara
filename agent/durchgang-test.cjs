@@ -3952,6 +3952,40 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     pruefe("Drehbuch: Budgetfrage mit Flug nennt die Unterkunft, nicht 'mit Flug'",
       /Wie viel möchtest du für die Unterkunft höchstens ausgeben/.test(fs.readFileSync(alt && fs.existsSync(quelle + "werkzeugkasten.js") ? quelle + "werkzeugkasten.js" : B + "agent/werkzeugkasten.js", "utf8")), true);
   }
+  // Nachfragen statt still verwerfen (22.11.2026). Gegenprobe: --alt=_backup/gp-bestaetigen
+  {
+    const bf = (p, verworfen, letzte) => {
+      if (!WK.bestaetigungRueckfrage) return "fehlt";
+      const zug = 99;
+      const lauf = { zugSeit: zug, gespraech: [{ role: "user", content: letzte }], verworfenWert: verworfen,
+        verworfenZug: Object.fromEntries(Object.keys(verworfen).map((k) => [k, zug])) };
+      const r = WK.bestaetigungRueckfrage(p, lauf);
+      return r ? r.satz : null;
+    };
+    pruefe("Bestaetigen: 'ich und meine Oma' ohne Beleg -> Nachfrage mit Wert",
+      bf({}, { erwachsene: 2, kinder: 0 }, "ich und meine Oma"), "Habe ich dich richtig verstanden: Ihr seid 2 Erwachsene und keine Kinder?");
+    pruefe("Bestaetigen: verworfene Region aus der Nachricht -> Nachfrage",
+      bf({}, { zieleAuswahl: ["mallorca", "kyoto"] }, "irgendwas auf malle oder in japan"), "Habe ich dich richtig verstanden: Du möchtest nach Mallorca oder Kyoto?");
+    pruefe("Bestaetigen: Regionen, die die Nachricht nicht nennt (Gradgrenze), -> keine Nachfrage",
+      bf({ zieleAuswahl: ["lappland", "island", "ostsee", "kapstadt"] }, { zieleAuswahl: ["tirol", "newyork", "wien"] }, "ich würde gerne sogar auf 9 grad gehen aber trotzdem kappstadt ergänzen"), null);
+    pruefe("Bestaetigen: Ausschluss 'mallorca lieber nicht' -> Nachfrage",
+      bf({}, { zieleAus: ["mallorca"] }, "mallorca lieber nicht so"), "Habe ich dich richtig verstanden: Mallorca soll nicht in die Suche?");
+    pruefe("Bestaetigen: falscher Ausschluss ohne Ablehnung ('nach malle oder aufs spanische festland') -> keine Nachfrage",
+      bf({ zieleAuswahl: ["mallorca", "barcelona"] }, { zieleAus: ["mallorca", "barcelona"] }, "Ich will gerne 9 nächte nach malle oder aufs spanische festland"), null);
+    pruefe("Bestaetigen: Wunschziel bei Ablehnung im Satz -> keine Nachfrage",
+      bf({}, { zieleAuswahl: ["mallorca"] }, "bloss nicht nach mallorca"), null);
+    pruefe("Bestaetigen: Unmoegliches (0 Erwachsene) -> keine Nachfrage", bf({}, { erwachsene: 0 }, "ich und meine Oma"), null);
+    pruefe("Bestaetigen: Anreisetag aus 'den einunddreissigsten' -> keine Zahl, keine Nachfrage",
+      bf({ monat: 10, vonPerson: { monat: true } }, { anreise: "2027-10-31" }, "den einunddreissigsten"), null);
+    pruefe("Bestaetigen: Anreisetag '31 passt' -> Nachfrage mit Tag",
+      bf({ monat: 10, vonPerson: { monat: true } }, { anreise: "2026-10-31" }, "31 passt"), "Habe ich dich richtig verstanden: Ihr wollt am 31. Oktober anreisen?");
+    pruefe("Bestaetigen: nur fuer Werte aus diesem Zug", versuchZ(() => WK.bestaetigungRueckfrage({}, { zugSeit: 2, gespraech: [{ role: "user", content: "ich und meine Oma" }],
+      verworfenWert: { erwachsene: 2 }, verworfenZug: { erwachsene: 1 } })), null);
+    pruefe("Bestaetigen: je Wert nur einmal", versuchZ(() => WK.bestaetigungRueckfrage({}, { zugSeit: 2, gespraech: [{ role: "user", content: "ich und meine Oma" }],
+      verworfenWert: { erwachsene: 2, kinder: 0 }, verworfenZug: { erwachsene: 2, kinder: 2 }, bestaetigtGefragt: { "reisende:2+0": true } })), null);
+    const kt = fs.readFileSync(alt && fs.existsSync(quelle + "kern.js") ? quelle + "kern.js" : B + "agent/kern.js", "utf8");
+    pruefe("Kern: die Nachfrage steht in der Kette der Rueckfragen", /bestaetigungRueckfrage\(this\.lauf\.profil/.test(kt), true);
+  }
   // Fortsetzung nach dem Anhalten zaehlt nicht als Antwort
   {
     const kt = fs.readFileSync(alt && fs.existsSync(quelle + "kern.js") ? quelle + "kern.js" : B + "agent/kern.js", "utf8");
