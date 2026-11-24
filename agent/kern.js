@@ -1961,6 +1961,7 @@ const Kern = {
     this.haustierLesen(t);
     this.flugWuenscheLesen(t);
     this.lauf.selbstGelesen = [];
+    this.lauf.chipFest = null;
     this.budgetUebernehmen();
     this.regionenLesen(t);
     if (this.lauf.filterStandSchon) {
@@ -2071,6 +2072,8 @@ const Kern = {
          Zweigs - siehe dort. Hier bleibt er, weil die Reihenfolge
          stimmen muss: erst der Chip, dann der freie Text. */
       Werkzeugkasten.chipAntwortLesen(this, t);
+      // Die festen Chips der Fahrplan-Frage (24.11.2026, siehe RANGFOLGE)
+      Werkzeugkasten.fahrplanChipLesen(this, this.lauf.gefragt, t);
       Werkzeugkasten.antwortSelbstLesen(this, this.lauf.gefragt, t);
       this.lauf.gefragt = null;
       // Die Wirkung gilt genau fuer den Zug nach der Frage. Steht die Frage
@@ -5360,7 +5363,16 @@ const Kern = {
   AUSSCHLUSS_WORT: /\b(nicht|nichts|kein|keine|keinen|keinesfalls|ohne|au(ß|ss)er|ausser|ausschlie(ß|ss)en|rausnehmen|raus|rauslassen|weglassen|streich|vermeiden|bitte nicht|auf keinen fall|will ich nicht|moechte ich nicht|möchte ich nicht)\b/i,
   AUSSCHLUSS_ENDE: /\b(lieber|sondern|stattdessen|statt ?dessen|aber|daf(ü|ue)r|am liebsten|gerne|gern)\b/i,
 
-  regionenLesen(t) {
+  /* Verneinungswoerter, die nichts verneinen (24.11.2026, Bens Malle-Fall).
+     "Warum nicht Malle" und "nichts geht ueber Malle" sind Wuensche; der
+     Kern strich Mallorca, obwohl das Modell es richtig meldete. */
+  SCHEIN_VERNEINUNG: /\b(warum|wieso)\s+(eigentlich\s+)?nicht\b|\bnichts\s+(geht\s+(ü|ue)ber|lieber\s+als|schlägt|schlaegt|besser(es)?\s+als)\b|\b(keine|ohne)\s+(frage|zweifel|diskussion)\b|\bkein\s+(problem|ding|thema)\b|\bnicht\s+(nur|zuletzt)\b|\bwenn\s+nicht\b|\bauf\s+nichts\b/gi,
+  ohneSchein(t) { return String(t || "").replace(this.SCHEIN_VERNEINUNG, " "); },
+
+  // Welche Regionen die Nachricht wirklich ablehnt - fuer den Kern und fuer
+  // die Pruefung dessen, was das Modell als Ausschluss schickt
+  ausschlussLesen(roh) {
+    const t = this.ohneSchein(roh);
     /* Getrennt wird an Satzzeichen und an einem "und", hinter dem eine
        Verneinung folgt ("am liebsten Kreta UND auf keinen Fall Mallorca").
        Frueher stand hier nur "nicht" statt aller Verneinungswoerter, also
@@ -5368,7 +5380,6 @@ const Kern = {
     const verneinung = this.AUSSCHLUSS_WORT.source;
     const trenner = new RegExp(`[.!?;]+|\\bund\\b(?=[^,]*${verneinung})`, "i");
     const satzTeile = String(t).split(trenner).filter((x) => typeof x === "string");
-    const p = this.lauf.profil || (this.lauf.profil = {});
     const raus = [];
     for (const teil of satzTeile) {
       const m = teil.match(this.AUSSCHLUSS_WORT);
@@ -5399,7 +5410,27 @@ const Kern = {
       const nach = teil.slice(m.index + m[0].length);
       const ende = nach.match(this.AUSSCHLUSS_ENDE);
       const bis = ende ? m.index + m[0].length + ende.index : teil.length;
-      const feld = teil.slice(start, bis);
+      /* "Kreta lieber nicht": Ein Umkehrwort direkt vor der Verneinung
+         gehoert zu ihr und trennt nur, wenn die Region DAHINTER steht
+         ("Kreta, lieber nicht Wien"). Steht hinten keine, zaehlt das, was
+         davor steht, bis zum Umkehrwort davor (24.11.2026). */
+      let von = start;
+      if (/^[\s,]*(bitte\s+|doch\s+)?$/.test(vor.slice(start)) && start > 0 && !this.regionenIm(teil.slice(m.index, bis)).length) {
+        const stamm = vor.slice(0, start).replace(new RegExp(`${this.AUSSCHLUSS_ENDE.source}[\\s,]*$`, "i"), "");
+        von = 0;
+        for (const treffer of stamm.matchAll(new RegExp(this.AUSSCHLUSS_ENDE.source, "gi"))) von = treffer.index + treffer[0].length;
+        const k2 = stamm.replace(/[\s,]+$/, "").lastIndexOf(",");
+        if (k2 + 1 > von) von = k2 + 1;
+      }
+      for (const id of this.regionenIm(teil.slice(von, bis))) if (!raus.includes(id)) raus.push(id);
+    }
+    return raus;
+  },
+
+  // Welche Regionen ein Textstueck nennt (Namen, Spitznamen, Laender)
+  regionenIm(feld) {
+    const raus = [];
+    {
       for (const z of (typeof ZIELE !== "undefined" ? ZIELE : [])) {
         // Laender und Kontinente zaehlen mit ("nicht nach Spanien", 22.11.2026)
         const woerter = [z.name, z.id, z.region, ...(Werkzeugkasten.REGION_SPITZNAMEN?.[z.id] || []), ...(Werkzeugkasten.gebietWoerter ? Werkzeugkasten.gebietWoerter(z.id) : [])].filter(Boolean)
@@ -5411,6 +5442,13 @@ const Kern = {
         if (drin && !raus.includes(z.id)) raus.push(z.id);
       }
     }
+    return raus;
+  },
+
+  regionenLesen(t) {
+    const p = this.lauf.profil || (this.lauf.profil = {});
+    const raus = this.ausschlussLesen(t);
+    this.lauf.ausschlussJetzt = raus;
     if (!raus.length) return;
     const vorher = [...(p.zieleAus || [])];
     const neu = raus.filter((id) => !vorher.includes(id));

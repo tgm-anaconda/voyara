@@ -372,10 +372,14 @@ const Flug = {
   },
   // Flughafencode aus Name oder Code ("Frankfurt", "FRA", "frankfurt (fra)")
   code(text) {
-    const t = String(text || "").trim().toLowerCase();
+    /* Umlaute zaehlen in beiden Schreibweisen (24.11.2026): Das Modell
+       schickte "Duesseldorf", und der Flughafen galt als unbekannt. */
+    const glatt = (x) => String(x || "").trim().toLowerCase().replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue").replace(/ß/g, "ss");
+    const t = glatt(text);
     if (!t) return "";
     for (const h of this.flughaefen()) {
-      if (h.code.toLowerCase() === t || h.name.toLowerCase() === t || t.includes(h.name.toLowerCase()) || t.includes(h.code.toLowerCase())) return h.code;
+      const n = glatt(h.name), c = h.code.toLowerCase();
+      if (c === t || n === t || t.includes(n) || t.includes(c)) return h.code;
     }
     return "";
   },

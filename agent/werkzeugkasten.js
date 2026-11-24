@@ -2508,7 +2508,7 @@ const Werkzeugkasten = {
     flugAb(t, p, wk) {
       if (p.flugAb || !p.flug) return null;
       if (/n(ä|ae)chste|n(ä|ae)he|\?/.test(t)) return null;
-      const namen = (wk.ABFLUG_NAMEN || []).filter((n) => new RegExp(`(^|[^a-zäöüß])${n.toLowerCase()}([^a-zäöüß]|$)`).test(t));
+      const namen = wk.flughaefenIm(t);
       return namen.length === 1 ? { flugAb: namen[0], flugAbEgal: false } : null;
     },
     flug(t, p) {
@@ -2622,6 +2622,17 @@ const Werkzeugkasten = {
 
   festerTag(text) {
     const t = String(text || "").toLowerCase();
+    /* "einen Tag nach Ostern" (24.11.2026). Gemeldet: Der Kern bot nur
+       Karfreitag und Ostersonntag an. Gerechnet wird ab dem Ostersonntag;
+       der Kern sagt den Tag an, damit man ihn korrigieren kann. */
+    const ZW = { ein: 1, einen: 1, eine: 1, "1": 1, zwei: 2, "2": 2, drei: 3, "3": 3, vier: 4, "4": 4 };
+    const m = t.match(/\b(?:(ein|einen|eine|zwei|drei|vier|[1-4])\s+)?tage?n?\s+(nach|vor)\s+(?:dem\s+)?oster(?:n|sonntag)\b/);
+    if (m) {
+      const n = (ZW[m[1]] || 1) * (m[2] === "vor" ? -1 : 1);
+      const d = this.osterDatum(n);
+      const wort = Math.abs(n) === 1 ? "Ein Tag" : `${["", "", "Zwei", "Drei", "Vier"][Math.abs(n)]} Tage`;
+      return { name: `${wort} ${m[2]} Ostersonntag`, tag: d.getDate(), monat: d.getMonth() + 1, gerechnet: true };
+    }
     return this.FESTE_TAGE.find((f) => f.muster.test(t)) || null;
   },
 
@@ -2992,6 +3003,7 @@ const Werkzeugkasten = {
     const t = String(text == null ? "" : text).toLowerCase().trim();
     if (!t) return null;
     const p = kern.lauf.profil || (kern.lauf.profil = {});
+    if (kern.lauf.chipFest) return null;   // der Chip hat die Frage schon beantwortet
     /* Über eine eigene Annahme hinweg lesen, aber auf einer Kopie: Hat
        der Leser nichts zu bieten, bleibt der Stand unberührt und das
        Thema abgehakt - sonst würde eine unverständliche Antwort die
@@ -3089,7 +3101,224 @@ const Werkzeugkasten = {
     if (!t) return null;
     const treffer = Object.keys(wirkung).find((c) => c.trim().toLowerCase() === t);
     if (!treffer) return null;
+    const felder = Object.fromEntries(Object.entries(wirkung[treffer] || {}).filter(([f]) => !f.startsWith("_")));
+    if (Object.keys(felder).length) this.chipMerken(kern, kern.lauf.chipThema || null, felder, null, t);
     return this.werteUebernehmen(kern, kern.lauf.chipThema || null, wirkung[treffer], t, "chip_gelesen");
+  },
+
+  /* RANGFOLGE - wer Recht hat, wenn Kern und Modell sich unterscheiden
+     (24.11.2026)
+     ==================================================================
+     Ben: "Das Modell hat in der Regel die richtigen Sachen zurueckgemeldet,
+     der Kern hat ihm nicht genug vertraut." Und: "Bei den Chip-Antworten
+     muss der Kern immer eine sinnvolle Aktion parat haben." Im Lauf vom
+     24.11.2026 war jeder der drei Fehler einer des Kerns: "Duesseldorf"
+     ohne Umlaut, [19, 17] und artEgal neben typ.
+
+     1. Der Chip. Er ist der Wortlaut des Kerns selbst - was er bedeutet,
+        steht fest, und das Modell aendert daran nichts (chipFest,
+        chipVorrang).
+     2. Was der Kern in diesem Zug eindeutig gelesen oder gerechnet hat.
+        Es kann im selben Zug weder ueberschrieben noch geloescht werden
+        (kernWerteSichern).
+     3. Das Modell. Sein Wert zaehlt nach der BEDEUTUNG: andere
+        Schreibweise, Gross- und Kleinschreibung, Datumsform werden
+        angeglichen, nicht verworfen (formAngleichen). Widersprechen sich
+        zwei Felder, entscheidet die Nachricht (widerspruchAufloesen).
+     4. Unbekanntes faellt weg, loescht aber nie einen gueltigen Wert. */
+  CHIP_FELDER: {
+    art: ["typ", "artEgal"], flug: ["flug"], flugKlasse: ["flugKlasse"],
+    verpflegung: ["verpflegung", "verpflegungEgal"], preis: ["maxPreis", "budgetGesamt", "preisEgal"],
+    ziel: ["ziel", "zieleAuswahl", "zieleAus", "richtung", "zielOffen"],
+    reisende: ["personenGesamt", "erwachsene", "kinder", "kinderAlter"],
+    anzahl: ["anzahlVorschlaege"], ausstattung: ["ausstattung", "ausstattungEgal"],
+    vorgehen: ["vorgehen"], weiter: ["weiter"], beratung: ["beratung"], zeit: ["monat", "monate", "jahreszeit", "monatUeberlassen"],
+    flugAb: ["flugAb", "flugAbEgal", "flugAbAuswahl"], gewichtung: ["wuensche"],
+  },
+
+  /* Was ein fester Fahrplan-Chip bedeutet. `werte` gehen direkt in den
+     Stand, `args` laufen wie eine Angabe des Modells durch stand_merken
+     (dort haengen Folgen daran, etwa die Regionen zur Richtung). Leere
+     werte: Der Chip traegt keinen Wert ("Feste Grenze") - dann darf das
+     Modell auch keinen erfinden. null: kein Chip dieses Themas. */
+  chipBedeutung(thema, text, p = {}) {
+    const t = String(text || "").trim().toLowerCase();
+    const T = {
+      art: { "hotel": { werte: { typ: "hotel", artGenannt: true, artEgal: false } },
+        "ferienwohnung": { werte: { typ: "apartment", artGenannt: true, artEgal: false } },
+        "beides zeigen": { werte: { typ: null, artEgal: true, artGenannt: true } } },
+      flug: { "mit flug": { werte: { flug: true } }, "nur die unterkunft": { werte: { flug: false } } },
+      flugKlasse: { "economy": { werte: { flugKlasse: "economy" } }, "premium economy": { werte: { flugKlasse: "premium" } }, "business": { werte: { flugKlasse: "business" } } },
+      verpflegung: { "all inclusive": { werte: { verpflegung: "ai", verpflegungEgal: false } },
+        "halbpension": { werte: { verpflegung: "halb", verpflegungEgal: false } },
+        "nur frühstück": { werte: { verpflegung: "fruehstueck", verpflegungEgal: false } },
+        "egal": { werte: { verpflegung: null, verpflegungEgal: true } } },
+      preis: { "offen": { werte: { preisEgal: true, maxPreis: null, budgetGesamt: null } }, "feste grenze": { werte: {} } },
+      ziel: { "eher warm": { args: { richtung: "warm" } }, "eher kalt": { args: { richtung: "kalt" } }, "ich habe ein ziel": { werte: {} } },
+      reisende: { "keine kinder": { args: { kinder: 0 } }, "1 kind": { args: { kinder: 1 } }, "2 kinder": { args: { kinder: 2 } }, "mehr": { werte: {} } },
+      anzahl: { "drei": { werte: { anzahlVorschlaege: 3 } }, "vier": { werte: { anzahlVorschlaege: 4 } }, "sechs": { werte: { anzahlVorschlaege: 6 } } },
+      vorgehen: { "ich schaue selbst": { args: { vorgehen: "selbst" } }, "such du für mich raus": { args: { vorgehen: "top3" } },
+        "nenn mir drei": { args: { vorgehen: "top3", anzahlVorschlaege: 3 } } },
+      weiter: { "filter setzen, ich schaue": { args: { weiter: "schauen" } }, "noch ein paar eckdaten": { args: { weiter: "klaeren" } } },
+      beratung: { "noch ein paar eckdaten": { args: { beratung: "klaeren" } }, "erstmal eine auswahl": { args: { beratung: "auswahl" } } },
+      ausstattung: { "nein, nichts davon": { args: { ausstattungEgal: true } } },
+      zeit: { "such du aus": { args: { monatUeberlassen: true } } },
+    };
+    const fest = T[thema]?.[t];
+    if (fest) return fest;
+    if (thema === "reisende" && /^[1-4]$/.test(t) && p.personen == null && p.erwachsene == null) return { args: { personenGesamt: +t } };
+    if (thema === "ausstattung" && typeof AMENITY_LABELS !== "undefined") {
+      const id = Object.keys(AMENITY_LABELS).find((k) => String(AMENITY_LABELS[k]).toLowerCase() === t);
+      if (id) return { args: { ausstattung: [id] } };
+    }
+    return null;
+  },
+
+  chipMerken(kern, thema, werte, args, text) {
+    kern.lauf.chipFest = { thema, werte: werte || {}, args: args || {}, text: String(text || "").trim().toLowerCase() };
+  },
+
+  // Am Anfang des Zugs: Ist die Nachricht der Chip der gestellten Frage?
+  fahrplanChipLesen(kern, thema, text) {
+    if (!thema || kern.lauf.chipFest) return null;
+    const b = this.chipBedeutung(thema, text, kern.lauf.profil || {});
+    if (!b) return null;
+    this.chipMerken(kern, thema, b.werte, b.args, text);
+    kern.notieren?.("chip_fest", { thema, text: String(text).slice(0, 40) });
+    if (b.werte && Object.keys(b.werte).length) return this.werteUebernehmen(kern, thema, b.werte, text, "chip_gelesen");
+    return null;
+  },
+
+  chipAktiv(kern) {
+    const c = kern?.lauf?.chipFest;
+    if (!c) return null;
+    const du = [...(kern.lauf.gespraech || [])].reverse().find((n) => n.role === "user");
+    return String(du?.content || "").trim().toLowerCase() === c.text ? c : null;
+  },
+  ausChip(kern, feld) { const c = this.chipAktiv(kern); return !!c && feld in (c.args || {}); },
+
+  // Was der Chip bedeutet, ersetzt alles, was das Modell zu diesem Thema schickt
+  chipVorrang(a, kern) {
+    const c = this.chipAktiv(kern);
+    if (!c) return;
+    const weg = new Set([...(this.CHIP_FELDER[c.thema] || []), ...Object.keys(c.werte), ...Object.keys(c.args)]);
+    const gestrichen = [];
+    for (const f of weg) {
+      if (a[f] === undefined) continue;
+      const soll = f in c.args ? c.args[f] : c.werte[f];
+      if (JSON.stringify(a[f]) !== JSON.stringify(soll)) gestrichen.push(f);
+      delete a[f];
+    }
+    Object.assign(a, JSON.parse(JSON.stringify(c.args)));
+    if (Object.keys(c.args).length || Object.keys(c.werte).length) { a.frage_beantwortet = "ja"; a.nachricht_art = "antwort"; }
+    if (gestrichen.length) kern.notieren("chip_vor_modell", { thema: c.thema, felder: gestrichen });
+  },
+
+  // Zwei Felder, die sich ausschliessen: die Nachricht entscheidet
+  widerspruchAufloesen(a, kern) {
+    const du = String([...(kern.lauf.gespraech || [])].reverse().find((n) => n.role === "user")?.content || "");
+    const paar = (wert, egal, nennt) => {
+      if (a[egal] !== true || a[wert] == null) return;
+      const bleibt = nennt(du) ? wert : egal;
+      delete a[bleibt === wert ? egal : wert];
+      kern.notieren("widerspruch_aufgeloest", { felder: [wert, egal], bleibt });
+    };
+    paar("typ", "artEgal", (x) => {
+      const h = /\bhotels?\b/i.test(x), f = /ferienwohn|ferienhaus|fewo|apartment|appartement/i.test(x);
+      return h !== f && !/\b(beide[sn]?|sowohl|egal|auch)\b/i.test(x);
+    });
+    paar("verpflegung", "verpflegungEgal", (x) => /inclusive|pension|fr(ü|ue)hst|verpfleg|\bai\b|\bhp\b|\bvp\b/i.test(x) && !/egal/i.test(x));
+    for (const f of ["maxPreis", "budgetGesamt"]) paar(f, "preisEgal", (x) => /\d/.test(x) && !/egal/i.test(x));
+    paar("flugAb", "flugAbEgal", (x) => this.flughaefenIm(x).length === 1 && !/egal|g(ü|ue)nstig|billig/i.test(x));
+  },
+
+  /* Die Umlaute in beiden Schreibweisen: verglichen wird ohne sie. */
+  glatt(x) {
+    return String(x == null ? "" : x).toLowerCase().replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue").replace(/ß/g, "ss");
+  },
+  flughaefenIm(text) {
+    const t = this.glatt(text);
+    return (this.ABFLUG_NAMEN || []).filter((n) => new RegExp(`(^|[^a-z])${this.glatt(n)}([^a-z]|$)`).test(t));
+  },
+
+  /* Der Wert des Modells zaehlt nach der Bedeutung, nicht nach der
+     Schreibweise. Was gar nicht zu erkennen ist, faellt weg - mit Vermerk
+     und ohne den Stand anzuruehren. */
+  formAngleichen(a, kern) {
+    const g = (x) => this.glatt(x).trim().replace(/[_-]+/g, " ").replace(/\s+/g, " ");
+    const melde = (feld, vorher, nachher) => kern.notieren(nachher == null ? "form_unbekannt" : "form_angeglichen", { feld, wert: vorher, ...(nachher == null ? {} : { zu: nachher }) });
+    const aus = (feld, finde) => {
+      if (a[feld] == null || typeof a[feld] !== "string") return;
+      const neu = finde(g(a[feld]));
+      if (neu === a[feld]) return;
+      melde(feld, a[feld], neu);
+      if (neu == null) delete a[feld]; else a[feld] = neu;
+    };
+    aus("typ", (x) => (/^hotels?$/.test(x) ? "hotel" : /^(apartments?|appartements?|ferienwohnung(en)?|ferienhaus|fewo)$/.test(x) ? "apartment" : null));
+    aus("verpflegung", (x) => ({ ohne: "ohne", "ohne verpflegung": "ohne", "selbstversorgung": "ohne", fruehstueck: "fruehstueck", "nur fruehstueck": "fruehstueck", halb: "halb", halbpension: "halb", hp: "halb",
+      voll: "voll", vollpension: "voll", vp: "voll", ai: "ai", "all inclusive": "ai", "all inklusive": "ai", allinclusive: "ai" })[x] ?? null);
+    aus("flugKlasse", (x) => (/business/.test(x) ? "business" : /premium/.test(x) ? "premium" : /economy|eco/.test(x) ? "economy" : null));
+    aus("richtung", (x) => { const k = x.replace(/^(eher|lieber|gern|gerne)\s+/, "");
+      return ["warm", "kalt", "strand", "berge", "ski", "norden", "stadt", "wintersonne", "fern"].find((r) => r === k) ?? (/^warm/.test(k) ? "warm" : /^kalt|^kuehl/.test(k) ? "kalt" : a.richtung); });
+    if (typeof a.monat === "string" && !/^\d{1,2}$/.test(a.monat.trim())) {
+      const i = ["januar", "februar", "maerz", "april", "mai", "juni", "juli", "august", "september", "oktober", "november", "dezember"].indexOf(g(a.monat).replace(/^(im|in)\s+/, ""));
+      const e = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"].indexOf(g(a.monat));
+      const n = i >= 0 ? i + 1 : e >= 0 ? e + 1 : null;
+      if (n) { melde("monat", a.monat, n); a.monat = n; }
+    }
+    // Deutsche Datumsform: "28.03.2027" wurde bisher zum 27. (die letzten zwei Ziffern)
+    for (const f of ["anreise", "von", "bis", "anreiseAb", "anreiseBis"]) {
+      const m = typeof a[f] === "string" && a[f].trim().match(/^(\d{1,2})\.\s*(\d{1,2})\.?\s*(\d{4}|\d{2})?$/);
+      if (!m) continue;
+      const tag = +m[1], mon = +m[2];
+      if (tag < 1 || tag > 31 || mon < 1 || mon > 12) { melde(f, a[f], null); delete a[f]; continue; }
+      const heute = new Date();
+      let jahr = m[3] ? (m[3].length === 2 ? 2000 + +m[3] : +m[3]) : heute.getFullYear();
+      if (!m[3] && new Date(jahr, mon - 1, tag) < heute) jahr++;
+      const neu = `${jahr}-${String(mon).padStart(2, "0")}-${String(tag).padStart(2, "0")}`;
+      melde(f, a[f], neu); a[f] = neu;
+    }
+    if (Array.isArray(a.kinderAlter)) a.kinderAlter = a.kinderAlter.map((x) => (typeof x === "string" && /^\s*\d{1,2}\b/.test(x) ? parseInt(x, 10) : x));
+    // Ziele: "new_york", "New York", "NYC", "Südtirol"
+    const zielNorm = (z) => {
+      if (typeof z !== "string" || typeof ZIEL_NACH_ID === "undefined" || ZIEL_NACH_ID[z]) return z;
+      const k = g(z).replace(/\s+/g, "");
+      return { nyc: "newyork", malle: "mallorca", capetown: "kapstadt", lisbon: "lissabon", vienna: "wien" }[k] || (ZIEL_NACH_ID[k] ? k : z);
+    };
+    if (typeof a.ziel === "string") a.ziel = zielNorm(a.ziel);
+    for (const f of ["zieleAuswahl", "zieleAus"]) if (Array.isArray(a[f])) a[f] = a[f].map(zielNorm);
+    // Flughafen: immer der Name, wie ihn die Seite fuehrt
+    if (typeof Flug !== "undefined") {
+      const name = (x) => { const c = Flug.code(x); return c ? (Flug.flughaefen().find((h) => h.code === c)?.name || x) : null; };
+      if (typeof a.flugAb === "string" && a.flugAb.trim()) {
+        const liste = [...new Set(a.flugAb.split(/\s*(?:,|\/|\boder\b|\bund\b)\s*/i).map(name).filter(Boolean))];
+        const neu = liste.length ? liste.join(", ") : null;
+        if (neu !== a.flugAb) { melde("flugAb", a.flugAb, neu); if (neu) a.flugAb = neu; else delete a.flugAb; }
+      }
+      if (Array.isArray(a.flugAbAuswahl)) a.flugAbAuswahl = [...new Set(a.flugAbAuswahl.map((x) => name(x) || x))];
+    }
+  },
+
+  // Was der Kern in diesem Zug selbst gelesen hat, geht im selben Zug nicht verloren
+  kernWerteMerken(kern) {
+    const p = kern.lauf.profil || {};
+    const werte = {};
+    for (const f of kern.lauf.selbstGelesen || []) if (p[f] != null) werte[f] = JSON.parse(JSON.stringify(p[f]));
+    return werte;
+  },
+  kernWerteSichern(kern, gemerkt) {
+    const p = kern.lauf.profil || {};
+    const c = this.chipAktiv(kern);
+    const zurueck = [];
+    for (const [f, w] of Object.entries(c?.werte || {})) {
+      if (w === null) { if (p[f] != null) { delete p[f]; zurueck.push(f); } }
+      else if (JSON.stringify(p[f] ?? null) !== JSON.stringify(w)) { p[f] = w; zurueck.push(f); }
+    }
+    for (const [f, w] of Object.entries(gemerkt || {})) {
+      if (p[f] != null || (c && f in c.werte)) continue;
+      p[f] = w; zurueck.push(f);
+    }
+    if (zurueck.length) kern.notieren("kern_wert_geschuetzt", { felder: zurueck });
   },
 
   /* Eine Quittung des Modells - an einer Stelle, damit die Pruefung
@@ -3550,6 +3779,17 @@ const Werkzeugkasten = {
   werkzeuge: {
     async stand_merken(a, kern) {
       const p = kern.lauf.profil;
+      /* Rangfolge (24.11.2026), siehe RANGFOLGE weiter unten: erst die
+         Schreibweise angleichen, dann dem Chip den Vorrang geben. */
+      Werkzeugkasten.formAngleichen(a, kern);
+      Werkzeugkasten.chipVorrang(a, kern);
+      Werkzeugkasten.widerspruchAufloesen(a, kern);
+      const kernWerte = Werkzeugkasten.kernWerteMerken(kern);
+      {
+        const will = [a.ziel, ...(Array.isArray(a.zieleAuswahl) ? a.zieleAuswahl : [])].filter(Boolean).map((x) => String(x).toLowerCase());
+        const streit = (kern.lauf.ausschlussJetzt || []).find((id) => will.includes(id));
+        if (streit) { kern.lauf.zielKonflikt = { id: streit, zug: kern.lauf.zugSeit }; kern.notieren("ziel_konflikt", { ziel: streit }); }
+      }
       /* Der Stand vor der Aenderung - fuer den Satz, der sagt, was sie
          bewirkt (`aenderungsSatz`). Eine flache Kopie reicht: Verglichen
          werden Werte, nicht Objekte. */
@@ -3870,9 +4110,11 @@ const Werkzeugkasten = {
              erst, wenn die letzte Nachricht sie nennt UND verneint. */
           if (feld === "zieleAus") {
             const letzteNachricht = { gespraech: (kern.lauf.gespraech || []).filter((n) => n.role === "user").slice(-1) };
-            const verneint = (typeof Kern !== "undefined" && Kern.AUSSCHLUSS_WORT ? Kern.AUSSCHLUSS_WORT
-              : /\b(nicht|kein|keine|keinen|ohne|au(ß|ss)er|raus|weglassen|streich)\b/i).test(String(letzteNachricht.gespraech[0]?.content || ""));
-            if (id && ((verneint && Werkzeugkasten.regionGenannt(letzteNachricht, id)) || listeBelegt)) ids.push(id);
+            /* Die Ablehnung muss DIESE Region treffen (24.11.2026): Bei "nicht
+               lange fliegen, am liebsten Malle" stand eine Verneinung da und
+               Malle auch, nur nicht zusammen. Sonst fragt der Kern nach. */
+            const abgelehnt = Kern.ausschlussLesen(String(letzteNachricht.gespraech[0]?.content || "")).includes(id);
+            if (id && (abgelehnt || listeBelegt)) ids.push(id);
             else if (id) weg.push(id);
             continue;
           }
@@ -3992,7 +4234,7 @@ const Werkzeugkasten = {
       const offenGesagt = gesagt(OFFEN);
       const verworfen = [];
       for (const f of ["zielOffen", "artEgal", "preisEgal", "ausstattungEgal", "bewertungEgal", "strandEgal", "verpflegungEgal"]) {
-        if (a[f] === true && !offenGesagt && !(f === "artEgal" && Werkzeugkasten.belegGilt(kern, "artEgal", true, a.belege))) { delete a[f]; verworfen.push(f); }
+        if (a[f] === true && !offenGesagt && !Werkzeugkasten.ausChip(kern, f) && !(f === "artEgal" && Werkzeugkasten.belegGilt(kern, "artEgal", true, a.belege))) { delete a[f]; verworfen.push(f); }
       }
       // Antworten auf die Frage "schauen oder klaeren" und "selbst oder drei"
       // zaehlen nur, wenn die letzte Nachricht so etwas sagt - auf "Hotel"
@@ -4159,7 +4401,9 @@ const Werkzeugkasten = {
           const letzteF = String((kern.lauf.gespraech || []).filter((n) => n.role === "user").slice(-1)[0]?.content || "");
           const festT = Werkzeugkasten.festerTag(letzteF);
           const festTagISO = festT ? `-${String(festT.monat).padStart(2, "0")}-${String(festT.tag).padStart(2, "0")}` : null;
-          const festAnreise = festT && festT.monat === ank.monat && /\b(am|an|zum|ab)\b/i.test(letzteF)
+          // Rechnen tut der Kern: ein relativer Tag schlaegt den des Modells
+          if (festT?.gerechnet && a.anreise && !String(a.anreise).endsWith(festTagISO)) delete a.anreise;
+          const festAnreise = festT && festT.monat === ank.monat && (festT.gerechnet || /\b(am|an|zum|ab)\b/i.test(letzteF))
             && (!a.anreise || String(a.anreise).endsWith(festTagISO));
           if (festAnreise && !a.anreise) {
             a.anreise = `2000-${String(festT.monat).padStart(2, "0")}-${String(festT.tag).padStart(2, "0")}`;
@@ -4511,6 +4755,31 @@ const Werkzeugkasten = {
          16") und kommt niemand dazu, wird aus einem Erwachsenen ein Kind -
          die Gruppe bleibt gleich gross. */
       const vorErw = p.erwachsene, vorKind = p.kinder || 0;
+      /* Gemischte Alter (24.11.2026).
+         ----------------------------------------------------------------
+         Gemeldet: "ich und meine zwei Maedels", "19 und 17" - das Modell
+         schickte [19, 17], und der Kern warf die ganze Liste weg, weil eine
+         Zahl ueber 18 dabei war. Steht zu jeder der gezaehlten Personen ein
+         Alter da, ist nichts zu deuten: ab 18 erwachsen, darunter Kind. Nur
+         wenn ALLE ab 18 sind, bleibt die Rueckfrage (Ben, 18.11.2026). */
+      let gemischt = null;
+      if (Array.isArray(a.kinderAlter) && a.kinderAlter.length) {
+        const gross = a.kinderAlter.filter((x) => Number.isInteger(x) && x >= 18);
+        const klein = a.kinderAlter.filter((x) => Number.isInteger(x) && x >= 0 && x < 18);
+        const kinderzahl = a.kinder ?? p.kinder ?? null;
+        if (gross.length && klein.length) {
+          if (kinderzahl === klein.length) a.kinderAlter = klein;          // die Grossen sind schon als Erwachsene gezaehlt
+          else if (kinderzahl === gross.length + klein.length) {
+            const erw = a.kinder != null && a.erwachsene != null ? a.erwachsene : (p.erwachsene || 0);
+            a.kinderAlter = klein;
+            a.kinder = klein.length;
+            a.erwachsene = erw + gross.length;
+            a.personenGesamt = a.erwachsene + a.kinder;
+            gemischt = { gross, klein };
+            kern.notieren("alter_gemischt", { erwachsene: a.erwachsene, kinder: a.kinder, alter: klein });
+          }
+        }
+      }
       /* Erwachsene genannt, kein Wort von Kindern: keine Kinder (Modell-
          Satzbank: "ich und zwei freunde" kam als erwachsene 3 ohne kinder,
          und danach fragte der Agent noch, ob Kinder dabei sind). */
@@ -4553,8 +4822,8 @@ const Werkzeugkasten = {
       /* Aus einem Erwachsenen wurde ein Kind - das wird gesagt (22.11.2026,
          Drehbuch-Lauf): sonst fragte der Agent einfach weiter, und niemand
          sah, dass die Gruppe jetzt anders aussieht. */
-      if (vorErw != null && p.erwachsene != null && p.erwachsene < vorErw && (p.kinder || 0) > vorKind
-        && p.erwachsene + (p.kinder || 0) === vorErw + vorKind) {
+      if (gemischt || (vorErw != null && p.erwachsene != null && p.erwachsene < vorErw && (p.kinder || 0) > vorKind
+        && p.erwachsene + (p.kinder || 0) === vorErw + vorKind)) {
         const alter = (Array.isArray(a.kinderAlter) ? a.kinderAlter : []).filter(Number.isInteger);
         const e = p.erwachsene, k = p.kinder;
         (kern.lauf.annahmeOffen ||= []).push({ thema: "reisende", eigenesTun: true, felder: {},
@@ -5053,7 +5322,7 @@ const Werkzeugkasten = {
       if (a.flugAb) {
         const letzteFA = String((kern.lauf.gespraech || []).filter((n) => n.role === "user").slice(-1)[0]?.content || "");
         const fragtNaechsten = /n(ä|ae)chste[nrs]?\b|am n(ä|ae)chsten|in der n(ä|ae)he/i.test(letzteFA);
-        const nenntFlughafen = (Werkzeugkasten.ABFLUG_NAMEN || []).some((n) => new RegExp(`\\b${n}\\b`, "i").test(letzteFA));
+        const nenntFlughafen = Werkzeugkasten.flughaefenIm(letzteFA).length > 0;
         if (fragtNaechsten && !nenntFlughafen) {
           kern.notieren("flughafen_aus_frage_verworfen", { flugAb: a.flugAb });
           delete a.flugAb;
@@ -5061,7 +5330,10 @@ const Werkzeugkasten = {
       }
       setze("flugAb", a.flugAb); setze("flugKlasse", a.flugKlasse);
       if (a.flugAb) p.flugAbEgal = false;
-      if (a.flugAb && typeof Flug !== "undefined" && !Flug.code(a.flugAb)) { p.flugAb = null; geaendert.push("flugAb unbekannt"); }
+      /* Ein unbekannter Name loescht nichts mehr (24.11.2026): Vorher wurde
+         hier die Schreibweise des MODELLS geprueft und der schon richtig
+         gelesene Wert des KERNS geloescht ("Duesseldorf"). Unbekanntes faellt
+         jetzt schon in formAngleichen weg. */
       if ((a.flug !== undefined || a.flugAb || a.flugKlasse) && typeof Flug !== "undefined") {
         Flug.set({ mit: !!p.flug, ab: Flug.code(p.flugAb), klasse: p.flugKlasse || "economy" });
       }
@@ -5183,6 +5455,7 @@ const Werkzeugkasten = {
          eine Liste, die weder zur Aussage noch zur Zaehlung passte. Seit
          es den Gesamtregler gibt, geht die Grenze dorthin, wo sie
          hingehoert. */
+      Werkzeugkasten.kernWerteSichern(kern, kernWerte);
       kern.standAnzeigen();
       // Was gerade neu hereinkam - der Kern prueft danach, ob das Modell
       // es auch aufgenommen hat
@@ -5312,6 +5585,7 @@ const Werkzeugkasten = {
         kern.lauf.aenderungSatz = aend;
         kern.notieren("aenderung_erklaert", { felder: geaendert, satz: aend.slice(0, 120) });
       }
+      Werkzeugkasten.kernWerteSichern(kern, kernWerte);
       kern.notieren("stand", { felder: geaendert });
       const fp = Werkzeugkasten.fahrplan(p, kern.lauf);
       // Eine Frage der Person geht vor: erst antworten, dann das Thema. Fragt
@@ -8763,6 +9037,7 @@ const Werkzeugkasten = {
         if (!ids.length) return { ok: false, grund: "leer" };
         if (!verneint.test(b)) return { ok: false, grund: "keine_ablehnung" };
         if (!ids.every((id) => regionTraegt(id, false))) return { ok: false, grund: "region_nicht_im_zitat" };
+        { const weg = Kern.ausschlussLesen(b); if (!ids.every((id) => weg.includes(id))) return { ok: false, grund: "ablehnung_gilt_anderem" }; }
         return { ok: true };
       }
       case "personenGesamt": case "erwachsene": case "kinder": {
@@ -8840,7 +9115,7 @@ const Werkzeugkasten = {
     if (!t || /\?/.test(t)) return [];
     const verneint = typeof Kern !== "undefined" && Kern.AUSSCHLUSS_WORT ? Kern.AUSSCHLUSS_WORT
       : /\b(nicht|kein|keine|keinen|ohne|au(ß|ss)er|raus|weglassen|streich)\b/i;
-    if (verneint.test(t)) return [];
+    if (verneint.test(typeof Kern !== "undefined" && Kern.ohneSchein ? Kern.ohneSchein(t) : t)) return [];
     if (/\b(war(en)?|gewesen|letztes jahr|schon mal|schonmal)\b/.test(t)) return [];
     const raus = [];
     for (const z of (typeof ZIELE !== "undefined" ? ZIELE : [])) {
@@ -9367,9 +9642,9 @@ const Werkzeugkasten = {
   },
 
   bestaetigungRueckfrage(p, lauf) {
-    if (!p || !lauf || !lauf.verworfenWert) return null;
+    if (!p || !lauf || !(lauf.verworfenWert || lauf.zielKonflikt)) return null;
     const jetzt = lauf.zugSeit || lauf.runde || true;
-    const frisch = (f) => lauf.verworfenWert[f] != null && (lauf.verworfenZug || {})[f] === jetzt;
+    const frisch = (f) => lauf.verworfenWert?.[f] != null && (lauf.verworfenZug || {})[f] === jetzt;
     const schonGefragt = (schl) => !!(lauf.bestaetigtGefragt || {})[schl];
     const name = (id) => (typeof ZIEL_NACH_ID !== "undefined" ? ZIEL_NACH_ID[id]?.name : null);
     const liste = (xs) => (xs.length > 1 ? `${xs.slice(0, -1).join(", ")} oder ${xs[xs.length - 1]}` : xs[0]);
@@ -9400,6 +9675,18 @@ const Werkzeugkasten = {
       const werte = alle.length > 1 ? { zieleAuswahl: alle, zielId: null, zielOffen: false } : { zielId: alle[0], zielOffen: false };
       const r = bau(`ziel:${alle.join(",")}`, `Du möchtest nach ${liste(alle.map(name))}`, werte, "ziel");
       if (r) return r;
+    }
+    /* Kern und Modell lesen dieselbe Region gegenteilig (24.11.2026): nicht
+       einer gewinnt, sondern die Person entscheidet. */
+    const zk = lauf.zielKonflikt;
+    if (zk && zk.zug === lauf.zugSeit && name(zk.id) && !schonGefragt(`konflikt:${zk.id}`)) {
+      const n = name(zk.id), dabei = `${n} dabei`, ohne = `Ohne ${n}`;
+      const aus = (p.zieleAus || []).filter((id) => id !== zk.id);
+      const alle = [...new Set([...(p.zieleAuswahl || []), zk.id])];
+      return { grund: "bestaetigen", schluessel: `konflikt:${zk.id}`, thema: "ziel",
+        satz: `Kurz zur Sicherheit: Soll ${n} in deiner Suche dabei sein oder nicht?`, chips: [dabei, ohne],
+        wirkung: { [dabei]: { zieleAus: aus, ...(alle.length > 1 ? { zieleAuswahl: alle, zielId: null } : { zielId: zk.id }), zielOffen: false },
+          [ohne]: { zieleAus: [...new Set([...aus, zk.id])] } } };
     }
     if (frisch("zieleAus") && verneint) {
       const ids = (Array.isArray(lauf.verworfenWert.zieleAus) ? lauf.verworfenWert.zieleAus : []).filter((id) => name(id) && !(p.zieleAus || []).includes(id) && genannt(id)
@@ -10150,7 +10437,12 @@ const Werkzeugkasten = {
            ohne ein Wort zu Bullenhausen. Dann antwortet das Modell (aus
            allgemeinem Wissen) und fragt nach dem einen Flughafen. */
         // Nur, solange die Frage noch unbeantwortet ist (die letzte Nachricht ist ihre)
-        const letzteN = (lauf.gespraech || []).slice(-1)[0];
+        /* Werkzeugzeilen zaehlen nicht (24.11.2026): Ruft das Modell sein
+           Werkzeug, steht dessen Aufruf als letzte Zeile im Verlauf - die
+           Nachricht der Person war dann nicht mehr die letzte, und die
+           Sperre griff nie. So kam zu "Ich wohne in Hoffenheim" der Vorschlag
+           Duesseldorf (der guenstigste, nicht der naechste). */
+        const letzteN = [...(lauf.gespraech || [])].reverse().find((n) => n.role === "user" || (n.role === "assistant" && n.content && !n.tool_calls));
         const letzteP = letzteN?.role === "user" ? String(letzteN.content || "") : "";
         if (t === "flugAb" && letzteP && /n(ä|ae)chste|n(ä|ae)he|nah\b|am n(ä|ae)chsten|wohne|von .{2,40} aus\b|heimat|zuhause|zu hause/i.test(letzteP)) {
           lauf.flugAbNaehe = lauf.zugSeit || true;
@@ -10173,7 +10465,7 @@ const Werkzeugkasten = {
                Aufzaehlung "Hamburg, Stuttgart, Duesseldorf ..." fand die Suche
                bisher den ersten - und schlug ihn vor, als haette der Agent
                ihn empfohlen. */
-            const genannte = this.ABFLUG_NAMEN.filter((n) => new RegExp(`\\b${n}\\b`, "i").test(zuletzt));
+            const genannte = this.flughaefenIm(zuletzt);
             if (genannte.length === 1) werte.flugAb = genannte[0];
           }
           if (Object.keys(werte).length) {

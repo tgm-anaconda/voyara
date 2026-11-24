@@ -76,6 +76,8 @@ const kernMit = (profil, gespraech = []) => ({
   lauf: { profil, gespraech, zuletztGemerkt: [], selbstGelesen: [] },
   notieren() {}, sichern() {}, standAnzeigen() {},
   regionenLesen: KN.regionenLesen, AUSSCHLUSS_WORT: KN.AUSSCHLUSS_WORT, AUSSCHLUSS_ENDE: KN.AUSSCHLUSS_ENDE,
+  // seit dem 24.11.2026 getrennt, damit auch der Modellwert daran geprueft wird
+  ausschlussLesen: KN.ausschlussLesen, regionenIm: KN.regionenIm, ohneSchein: KN.ohneSchein, SCHEIN_VERNEINUNG: KN.SCHEIN_VERNEINUNG,
 });
 const liest = (satz, profil = {}) => {
   const k = kernMit(profil);

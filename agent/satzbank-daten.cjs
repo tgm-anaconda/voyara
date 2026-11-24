@@ -2,8 +2,9 @@
    (echtes Modell): das Laden des Codes und die Satzbank selbst. */
 function laden() {
 const fs = require("fs"), vm = require("vm");
-const B = "/Users/tom-gabrielmielicki/Desktop/Bachelor Arbeit/Website/";
-const ctx = { console, window: {},
+// VOYARA_QUELLE=_backup/<ordner>/ prueft gegen eine Sicherung (Gegenprobe)
+const B = "/Users/tom-gabrielmielicki/Desktop/Bachelor Arbeit/Website/" + (process.env.VOYARA_QUELLE || "");
+const ctx = { console, window: { location: { search: "", href: "" } },
   document: { querySelectorAll: () => [], querySelector: () => null, getElementById: () => null,
     createElement: () => ({ setAttribute() {}, append() {}, appendChild() {}, querySelector: () => null, classList: { add() {}, remove() {} }, style: {} }),
     head: { appendChild() {} }, body: { classList: { contains: () => false, add() {}, remove() {}, toggle() {} } },
@@ -20,6 +21,12 @@ for (const f of ["data/ziele.js", "data/hotels.js", "data/inventory.js", "data/a
   "data/faq.js", "agent/fluege.js", "agent/politik.js", "agent/werkzeugkasten.js", "agent/kern.js"]) {
   try { vm.runInContext(fs.readFileSync(B + f, "utf8"), ctx, { filename: f }); }
   catch (e) { console.log("LADEFEHLER", f, e.message.slice(0, 160)); process.exit(2); }
+}
+/* Das Flugmodul steht in components.js (24.11.2026). Ohne es liefen alle
+   Pruefungen an `typeof Flug` vorbei - deshalb blieb "Duesseldorf" unentdeckt. */
+{
+  const c = fs.readFileSync(B + "components.js", "utf8"), i = c.indexOf("const Flug = {");
+  vm.runInContext(c.slice(i, c.indexOf("\n};", i) + 3).replace("const Flug", "var Flug"), ctx, { filename: "components.js#Flug" });
 }
 vm.runInContext("this.WK=Werkzeugkasten; this.KN=Kern;", ctx);
 return { WK: ctx.WK, KN: ctx.KN, ctx };
