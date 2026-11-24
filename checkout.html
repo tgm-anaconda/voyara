@@ -4,16 +4,20 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Buchung — Voyara</title>
-<link rel="stylesheet" href="style.css?v=517" />
+<link rel="stylesheet" href="style.css?v=518" />
 <style>
 /* Kein Aufblitzen der Seite vor dem Studienbildschirm.
    ------------------------------------------------------------------
    Die Studienblaetter entstehen erst, wenn alle Skripte geladen sind -
    bis dahin stand die fertige Seite kurz sichtbar da. Der Inhalt bleibt
    deshalb verborgen, bis der Kern entschieden hat, ob ein Blatt
-   darueberliegt. Der Notausstieg unten loest die Sperre auf jeden Fall
-   nach anderthalb Sekunden: Lieber ein kurzes Blitzen als eine Seite,
-   die nach einem Skriptfehler leer bleibt. */
+   darueberliegt. Solange steht der Ladebildschirm (#ladeschirm).
+
+   Der Notausstieg unten zaehlt erst ab dem Moment, in dem alle Skripte
+   durch sind (24.11.2026). Vorher lief er ab dem Anfang der Seite: Bei
+   langsamer Verbindung fiel der Vorhang nach anderthalb Sekunden, obwohl
+   noch Megabytes fehlten, und man sah sekundenlang ein Geruest ohne Kopf
+   und Chat. Nach einem Skriptfehler faellt er weiterhin von selbst. */
 html.studie-wartet .app-shell { visibility: hidden; }
 /* Arm B der Beobachtbarkeits-Erhebung (25.10.2026).
    ------------------------------------------------------------------
@@ -38,11 +42,19 @@ try {
   if (g && (g.zugang === "fensterDauer" || (g.zugang === "fenster" && arbeitet))) {
     document.documentElement.classList.add("arm-fenster");
   }
+  /* Arbeitet der Agent, wechselt er selbst die Seiten. Dann kein
+     Ladebildschirm, in beiden Armen gleich: Er verriete jeden Wechsel. */
+  if (arbeitet) document.documentElement.classList.add("lade-still");
 } catch (e) { /* egal */ }
-setTimeout(function () { document.documentElement.classList.remove("studie-wartet"); }, 1500);
+(function () {
+  function auf() { document.documentElement.classList.remove("studie-wartet"); }
+  document.addEventListener("DOMContentLoaded", function () { setTimeout(auf, 1500); });
+  setTimeout(auf, 30000); // haengt eine Datei ganz, bleibt die Seite trotzdem nicht leer
+})();
 </script>
 </head>
 <body class="agent-lautlos">
+<div id="ladeschirm" role="status" aria-label="Voyara wird geladen"><div class="brand"><span class="brand-mark">V</span><span class="brand-name">Voyara</span></div><div class="lade-balken"><i></i></div></div>
 <div class="app-shell">
   <aside class="agent-rail" id="agentRail"></aside>
 
@@ -62,35 +74,35 @@ setTimeout(function () { document.documentElement.classList.remove("studie-warte
   </div>
 </div>
 
-<script src="data/bildpfade.js?v=517"></script>
-<script src="data/ziele.js?v=517"></script>
-<script src="data/hotels.js?v=517"></script>
-<script src="data/inventory.js?v=517"></script>
-<script src="data/bewertungen.js?v=517"></script>
-<script src="data/teilnoten.js?v=517"></script>
-<script src="data/auswahl.js?v=517"></script>
+<script src="data/bildpfade.js?v=518"></script>
+<script src="data/ziele.js?v=518"></script>
+<script src="data/hotels.js?v=518"></script>
+<script src="data/inventory.js?v=518"></script>
+<script src="data/bewertungen.js?v=518"></script>
+<script src="data/teilnoten.js?v=518"></script>
+<script src="data/auswahl.js?v=518"></script>
 <!-- Das FAQ lag bis zum 17.11.2026 nur auf faq.html. Damit lief
      `faq_nachschlagen` des Agenten auf JEDER Seite ins Leere, auf der er
      ueberhaupt arbeitet - er bekam "Das FAQ steht hier nicht bereit"
      zurueck. Gefunden im Testlauf, nachdem das Modell endlich danach
      griff und eine Fehlermeldung bekam. -->
-<script src="data/faq.js?v=517"></script>
-<script src="agent/zeiger.js?v=517"></script>
-<script src="agent/werkzeuge.js?v=517"></script>
-<script src="agent/modell.js?v=517"></script>
-<script src="agent/politik.js?v=517"></script>
-<script src="agent/aufgaben.js?v=517"></script>
-<script src="agent/fragebogen.js?v=517"></script>
-<script src="agent/start.js?v=517"></script>
-<script src="agent/studie.js?v=517"></script>
-<script src="agent/zugang.js?v=517"></script>
-<script src="agent/log.js?v=517"></script>
-<script src="agent/werkzeugkasten.js?v=517"></script>
-  <script src="agent/vorschlaege.js?v=517"></script>
-  <script src="agent/fluege.js?v=517"></script>
-  <script src="agent/mietwagen.js?v=517"></script>
-<script src="agent/kern.js?v=517"></script>
-<script src="components.js?v=517"></script>
-<script src="checkout.js?v=517"></script>
+<script src="data/faq.js?v=518"></script>
+<script src="agent/zeiger.js?v=518"></script>
+<script src="agent/werkzeuge.js?v=518"></script>
+<script src="agent/modell.js?v=518"></script>
+<script src="agent/politik.js?v=518"></script>
+<script src="agent/aufgaben.js?v=518"></script>
+<script src="agent/fragebogen.js?v=518"></script>
+<script src="agent/start.js?v=518"></script>
+<script src="agent/studie.js?v=518"></script>
+<script src="agent/zugang.js?v=518"></script>
+<script src="agent/log.js?v=518"></script>
+<script src="agent/werkzeugkasten.js?v=518"></script>
+  <script src="agent/vorschlaege.js?v=518"></script>
+  <script src="agent/fluege.js?v=518"></script>
+  <script src="agent/mietwagen.js?v=518"></script>
+<script src="agent/kern.js?v=518"></script>
+<script src="components.js?v=518"></script>
+<script src="checkout.js?v=518"></script>
 </body>
 </html>

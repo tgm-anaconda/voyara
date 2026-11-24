@@ -3286,3 +3286,30 @@ body.vorschlag-offen { overflow: hidden; }
 .flug-tabelle td:last-child { text-align: right; }
 .flug-tabelle tr + tr td, .flug-tabelle tr + tr th { border-top: 1px solid #eef2f3; }
 .flug-merkmale { font-size: .78rem; color: var(--ink-500); margin: 0 0 10px; }
+
+/* Ladebildschirm (24.11.2026)
+   ------------------------------------------------------------------
+   Steht nur, solange der Vorhang (studie-wartet) zu ist. Er erscheint
+   erst nach einer Viertelsekunde: Ein Seitenwechsel aus dem Cache ist
+   schneller, dort soll nichts aufblitzen. */
+#ladeschirm { display: none; }
+html.studie-wartet:not(.arm-fenster):not(.lade-still) #ladeschirm {
+  position: fixed; inset: 0; z-index: 2000; background: #fff;
+  display: grid; place-content: center; justify-items: center; gap: 22px;
+  opacity: 0; animation: lade-ein .2s ease-out .25s forwards;
+}
+#ladeschirm .brand-mark { width: 56px; height: 56px; font-size: 1.7rem; border-radius: 14px; }
+#ladeschirm .brand-name { font-size: 1.5rem; }
+#ladeschirm .lade-balken { width: 160px; height: 3px; border-radius: 3px; background: var(--brand-100); overflow: hidden; }
+#ladeschirm .lade-balken i { display: block; width: 40%; height: 100%; border-radius: 3px; background: var(--brand-700); animation: lade-lauf 1.1s ease-in-out infinite; }
+@keyframes lade-ein { to { opacity: 1; } }
+@keyframes lade-lauf { from { transform: translateX(-100%); } to { transform: translateX(350%); } }
+@media (prefers-reduced-motion: reduce) {
+  #ladeschirm .lade-balken i { animation: none; width: 100%; opacity: .5; }
+}
+
+/* Das Fenster "Deine Aufgabe" im Stil der uebrigen Fenster (24.11.2026) */
+.aufgabe-fenster .modal { max-width: 480px; margin: auto; }
+.aufgabe-fenster .modal-foot { justify-content: space-between; align-items: center; flex-wrap: wrap; }
+.aufgabe-fenster .modal-foot[hidden] { display: none; }
+.aufgabe-fenster .aufgabe-frage { margin: 0; font-size: .88rem; color: var(--ink-700); flex: 1 1 100%; }

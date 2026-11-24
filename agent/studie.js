@@ -747,21 +747,41 @@ const Studie = {
   reiterOeffnen() {
     const a = this.aufgabe();
     this.notieren("aufgabe_erneut_geoeffnet");
+    /* Seit dem 24.11.2026 im Stil der uebrigen Fenster und knapper: Bei der
+       freien Aufgabe stand dieselbe Aussage dreimal da (Vorspann und zwei
+       Punkte). Das Blatt am Anfang (aufgabeZeigen) bleibt unveraendert. */
+    const frei = this.daten?.reihenfolge?.[this.daten.aktuelle] === "frei" && !this.daten?.eckpunkte;
+    const inhalt = frei
+      ? `<p>Such dir eine Reise aus, die du wirklich machen würdest, und buche sie.</p>
+         <p>Ziel, Zeitraum und Mitreisende wählst du selbst.</p>`
+      : this.aufgabeHtml(a, this.daten.aktuelle + 1);
     const el = document.createElement("div");
     el.className = "aufgabe-fenster";
     el.innerHTML = `
-      <div class="aufgabe-fenster-karte" role="dialog" aria-modal="true">
-        ${this.aufgabeHtml(a, this.daten.aktuelle + 1)}
-        <div class="aufgabe-fenster-fuss">
-          <button type="button" class="startschirm-knopf" data-schliessen>Zurück zur Seite</button>
-          <button type="button" class="aufgabe-abschliessen" data-abschliessen>Aufgabe ohne Buchung beenden</button>
+      <div class="modal" role="dialog" aria-modal="true" aria-label="Deine Aufgabe">
+        <div class="modal-head">
+          <h3>Deine Aufgabe</h3>
+          <button type="button" class="icon-btn" data-schliessen aria-label="Schließen">${ICONS.close}</button>
+        </div>
+        <div class="modal-body">${inhalt}</div>
+        <div class="modal-foot" data-fuss>
+          <button type="button" class="aufgabe-abschliessen" data-abschliessen>Ohne Buchung beenden</button>
+          <button type="button" class="btn btn-primary" data-schliessen>Zurück zur Seite</button>
+        </div>
+        <div class="modal-foot" data-nachfrage hidden>
+          <p class="aufgabe-frage">Wirklich ohne Buchung beenden? Das ist in Ordnung, wenn du nichts Passendes gefunden hast oder nicht buchen möchtest.</p>
+          <button type="button" class="aufgabe-abschliessen" data-ja>Ja, beenden</button>
+          <button type="button" class="btn btn-primary" data-nein>Weitersuchen</button>
         </div>
       </div>`;
     document.body.appendChild(el);
-    el.querySelector("[data-schliessen]").addEventListener("click", () => el.remove());
+    const fuss = el.querySelector("[data-fuss]"), nachfrage = el.querySelector("[data-nachfrage]");
+    const umschalten = (fragen) => { fuss.hidden = fragen; nachfrage.hidden = !fragen; };
+    el.querySelectorAll("[data-schliessen]").forEach((k) => k.addEventListener("click", () => el.remove()));
     el.addEventListener("click", (e) => { if (e.target === el) el.remove(); });
-    el.querySelector("[data-abschliessen]").addEventListener("click", () => {
-      if (!confirm("Die Aufgabe ohne Buchung beenden? Das ist in Ordnung, wenn du nichts Passendes gefunden hast oder nicht buchen möchtest.")) return;
+    el.querySelector("[data-abschliessen]").addEventListener("click", () => umschalten(true));
+    el.querySelector("[data-nein]").addEventListener("click", () => umschalten(false));
+    el.querySelector("[data-ja]").addEventListener("click", () => {
       el.remove();
       this.aufgabeAbschliessen("abgebrochen");
     });

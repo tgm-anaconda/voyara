@@ -1963,20 +1963,15 @@ function mountChrome(activeNav) {
     help.addEventListener("click", () =>
       openModal(
         "Hilfe & Kontakt",
-        `<p>Voyara ist ein Prototyp für eine wissenschaftliche Studie. Es sind keine echten Buchungen möglich.</p>
-         <!-- Ortsangabe und Empfehlung entfernt (25.10.2026): Der Satz nannte den
-              Assistenten "am rechten Rand" - er steht links, und in Arm B ueber der
-              ganzen Seite. Dazu war er eine Empfehlung, ihn zu benutzen. Beides ist
-              in einer Erhebung, die genau das messen will, eine Beeinflussung. -->
-         <p><strong>Fragen zur Bedienung?</strong> Du kannst selbst suchen und filtern oder den Reise-Assistenten fragen.</p>
-         <p><strong>Fragen zur Reise?</strong> Gepäck, Stornierung, Anzahlung, Haustiere: das steht in den <a href="faq.html">häufigen Fragen</a>.</p>
-         <p><strong>Fragen zur Studie?</strong> Schreib an <a href="mailto:studie@voyara.example">studie@voyara.example</a>.</p>`,
-        /* Hier stand der Verweis auf info.html?p=faq - das sind die Fragen
-           ZUR STUDIE. Die 50 Reisefragen liegen auf faq.html und waren damit
-           nur ueber die Fusszeile erreichbar. Gemeldet am 02.10.2026: "Dazu
-           sehe ich das FAQ noch nicht." */
-        `<a class="btn btn-ghost" href="faq.html">Zu den häufigen Fragen</a>
-         <button type="button" class="btn btn-primary" data-close>Verstanden</button>`
+        /* Verknappt am 24.11.2026 (Wunsch Ben): Die Zeile zur Bedienung ist
+           weg, weil sie nichts sagte und den Assistenten ins Spiel brachte -
+           in einer Erhebung, die genau das misst. Die Reisefragen stehen nur
+           noch einmal da, als Link. Der fuehrt auf faq.html, nicht auf
+           info.html?p=faq (das sind die Fragen ZUR STUDIE). */
+        `<p>Voyara ist ein Prototyp für eine Studie. Echte Buchungen sind nicht möglich.</p>
+         <p><strong>Zur Reise:</strong> <a href="faq.html">häufige Fragen</a><br>
+         <strong>Zur Studie:</strong> <a href="mailto:tomg.m@icloud.com">tomg.m@icloud.com</a></p>`,
+        `<button type="button" class="btn btn-primary" data-close>Verstanden</button>`
       )
     );
   }
