@@ -4646,7 +4646,16 @@ const Werkzeugkasten = {
       // Ohne feste Daten wird flexibel im Monat gesucht - keine Entscheidung
       // des Modells, sondern die einzige Lesart von "im Oktober"
       p.flexibel = !(p.von && p.bis);
-      if (a.naechte && !p.naechte && !beantwortet("dauer") && !gesagt(/\d|woche|tage|nächte|naechte|übernacht|uebernacht|wochenende|lang|kurz|eine|zwei|drei|vier|fünf|fuenf|sechs|sieben|acht|neun|zehn|zwölf|zwoelf|vierzehn/i)) {
+      /* Auch hier genuegte irgendeine Zahl in den letzten drei Nachrichten
+         (24.11.2026): "am 8. Juli" oder "zwei Freunde" oeffnete das Feld fuer
+         erfundene 7 Naechte. Jetzt ein Wort fuer eine Dauer, genau diese Zahl
+         in der letzten Nachricht oder eine Spanne ("vom 3. bis 10."). */
+      const NACHTWORT = { zwei: 2, drei: 3, vier: 4, "fünf": 5, fuenf: 5, sechs: 6, sieben: 7, acht: 8, neun: 9, zehn: 10, elf: 11, "zwölf": 12, zwoelf: 12, vierzehn: 14 };
+      const nachtText = String(kern.lauf.gespraech.filter((n) => n.role === "user").slice(-1)[0]?.content || "").toLowerCase();
+      const nachtZahl = [...(nachtText.match(/\d+/g) || []).map(Number), ...(nachtText.match(/[a-zäöüß]+/g) || []).map((w) => NACHTWORT[w]).filter(Boolean)].includes(Number(a.naechte));
+      const nachtSpanne = /\d/.test(nachtText) && /\bbis\b|\d\.?\s*[-–]\s*\d/.test(nachtText);
+      if (a.naechte && !p.naechte && !beantwortet("dauer") && !nachtZahl && !nachtSpanne
+        && !gesagt(/woche|\btage?n?\b|nächte|naechte|übernacht|uebernacht|wochenende|lang|kurz/i)) {
         kern.notieren("naechte_verworfen", { naechte: a.naechte });
         Werkzeugkasten.merkeVerworfen(kern, "naechte", a.naechte);
         delete a.naechte;
@@ -4703,6 +4712,17 @@ const Werkzeugkasten = {
          zweiter Weg - dann hat niemand die Verantwortung uebernommen. */
       // "ich und mein(e) ..." sind zwei - wer auch immer (22.11.2026, Satzbank: "ich und meine Oma")
       const ZAHL = /\d|\bich und (mein|meine|meinem|meinen|meiner)\b|\b(ein|eine|einem|einen|zwei|drei|vier|fünf|fuenf|sechs|sieben|acht|zweit|dritt|viert|fünft|fuenft|sechst|kein|keine|ohne|allein|alleine|beide|zwilling|sohn|tochter|frau|mann|freundin|freund|partner|eltern|paar|erwachsene)\b/i;
+      /* Eine sehr grosse Gruppe wird bestaetigt, nicht still uebernommen
+         (24.11.2026): "55" ist meist ein Vertipper. Nur bei der Nachricht,
+         in der die Zahl steht - das Ja danach gilt. */
+      const letzteGr = String(kern.lauf.gespraech.filter((n) => n.role === "user").slice(-1)[0]?.content || "");
+      for (const f of ["personenGesamt", "erwachsene", "kinder"]) {
+        if (Number(a[f]) > 12 && new RegExp(`(^|\\D)${Number(a[f])}(\\D|$)`).test(letzteGr)) {
+          kern.notieren("reisende_verworfen", { feld: f, wert: a[f], grund: "sehr_gross" });
+          Werkzeugkasten.merkeVerworfen(kern, f === "personenGesamt" ? "erwachsene" : f, Number(a[f]));
+          delete a[f];
+        }
+      }
       for (const f of ["personenGesamt", "erwachsene", "kinder"]) {
         if (a[f] != null && p[f === "personenGesamt" ? "personen" : f] == null
           && !gesagt(ZAHL, 1) && !beantwortet("reisende", "kinderAlter")
@@ -4872,9 +4892,19 @@ const Werkzeugkasten = {
          Die Zahl der Kinder ist davon unberuehrt: "meine zwei kleinen"
          ergibt weiterhin zwei Kinder, das ist Bedeutung und gehoert dem
          Modell. Nur das Alter wird gefragt. */
+      /* Eine Ziffer allein ist kein Alter (24.11.2026). Beim Nachspielen der
+         alten Fehler gefunden: Geprueft wurden die letzten ZWEI Nachrichten
+         auf irgendeine Ziffer - "10 Naechte" davor genuegte, und aus "meine
+         zwei kleinen" wurden wieder 3 und 5 Jahre. Jetzt muessen genau die
+         Alter dastehen, die das Modell meldet (oder ein Alterswort). */
+      const altText = kern.lauf.gespraech.filter((n) => n.role === "user").slice(-2).map((n) => String(n.content)).join(" ; ")
+        .replace(/\b(n(ä|ae)chste|diese|letzte|kommende)[smnr]?\s+jahr\w*/gi, " ")
+        .replace(/\b\d+\s*(?=(kleine|kinder|kids|jungs|m(ä|ae)d|s(ö|oe)hne|t(ö|oe)chter|erwachsene|personen|leute|n(ä|ae)cht|tage|woche|euro|€|grad))/gi, " ");
+      const altZahlen = (altText.match(/\d+/g) || []).map(Number);
       if (Array.isArray(a.kinderAlter) && !(p.kinderAlter || []).length
         && !beantwortet("kinderAlter")
-        && !gesagt(/\d|\bjahr|jährig|jaehrig|baby|säugling|saeugling|kleinkind|schulkind|teenager|monate/i, 2)
+        && !(a.kinderAlter.length && a.kinderAlter.every((x) => altZahlen.includes(Number(x))))
+        && !/\bjahr|jährig|jaehrig|geboren|baby|säugling|saeugling|kleinkind|schulkind|teenager|monate/i.test(altText)
         && !Werkzeugkasten.belegGilt(kern, "kinderAlter", a.kinderAlter, a.belege)) {
         kern.notieren("alter_verworfen", { alter: a.kinderAlter });
         Werkzeugkasten.merkeVerworfen(kern, "kinderAlter", a.kinderAlter);
@@ -4946,6 +4976,14 @@ const Werkzeugkasten = {
       if (p.erwachsene != null && p.kinder != null) p.personen = p.erwachsene + p.kinder;
       if (p.kinder === 0) p.kinderAlter = [];
       if (p.kinder > 0 && (p.kinderAlter || []).length > p.kinder) p.kinderAlter = p.kinderAlter.slice(0, p.kinder);
+      /* Eine Frage nach dem Angebot ist keine Wahl (24.11.2026): "Wie viele
+         Hotels bietet ihr an?" - sagt das Modell selbst, dass es eine Frage
+         ist und die offene nicht beantwortet, gilt seine Art nicht. */
+      if (a.typ && !p.artGenannt && a.nachricht_art === "frage" && !["ja", "teilweise"].includes(a.frage_beantwortet)
+        && gesagt(/\b(wie\s*viele|wieviele|anzahl|anbiet\w*|bietet|im angebot)\b/i, 1)) {
+        kern.notieren("art_verworfen", { typ: a.typ, grund: "frage_nach_angebot" });
+        delete a.typ;
+      }
       if (a.typ) { setze("typ", a.typ); p.artGenannt = true; p.artEgal = false; }
       /* "Ist mir egal" hiess bisher "dann Hotels".
          ----------------------------------------------------------------
@@ -5406,7 +5444,8 @@ const Werkzeugkasten = {
              ich nur nach Hotels suchen?". Gefragt war nach der Groesse des
              Katalogs, nicht nach der eigenen Reise. Nur diese Fragen sind
              ausgenommen; "ein Hotel am Strand waere schoen" zaehlt weiter. */
-          const frageNachAngebot = !antwortAufArt && /\b(wie\s*viele|wieviele|anzahl|anbiet\w*|bietet|im angebot)\b/i.test(letzteNachricht);
+          // Auch direkt nach der Artfrage, wenn das Modell selbst "Frage" meldet (24.11.2026)
+          const frageNachAngebot = (!antwortAufArt || (a.nachricht_art === "frage" && !["ja", "teilweise"].includes(a.frage_beantwortet))) && /\b(wie\s*viele|wieviele|anzahl|anbiet\w*|bietet|im angebot)\b/i.test(letzteNachricht);
           const nennt = frageNachAngebot ? null : /\bhotels?\b/i.test(letzteNachricht) ? "hotel"
             : (/ferienwohnung|ferienhaus|fewo|apartment|appartement/i.test(letzteNachricht) ? "apartment" : null);
           if (nennt && beides) {
@@ -9702,7 +9741,7 @@ const Werkzeugkasten = {
       const v = lauf.verworfenWert;
       const e = frisch("erwachsene") ? Number(v.erwachsene) : (p.erwachsene ?? null);
       const k = frisch("kinder") ? Number(v.kinder) : (p.kinder ?? 0);
-      if (Number.isInteger(e) && e >= 1 && e <= 12 && Number.isInteger(k) && k >= 0 && k <= 12
+      if (Number.isInteger(e) && e >= 1 && e <= 99 && Number.isInteger(k) && k >= 0 && k <= 12
         && !(e === p.erwachsene && k === (p.kinder ?? 0))) {
         const r = bau(`reisende:${e}+${k}`, `Ihr seid ${e} ${e === 1 ? "Erwachsener" : "Erwachsene"} und ${k === 0 ? "keine Kinder" : k === 1 ? "ein Kind" : `${k} Kinder`}`,
           { erwachsene: e, kinder: k, personen: e + k }, "reisende");
@@ -9711,7 +9750,9 @@ const Werkzeugkasten = {
     }
     if (frisch("kinderAlter") && /\d/.test(letzte)) {
       const alter = (Array.isArray(lauf.verworfenWert.kinderAlter) ? lauf.verworfenWert.kinderAlter : []).map(Number);
-      if (alter.length && alter.every((x) => Number.isInteger(x) && x >= 0 && x <= 17) && !(p.kinderAlter || []).length) {
+      // Nur Alter vorschlagen, die wirklich dastehen - sonst offen fragen (24.11.2026)
+      const da = (letzte.match(/\d+/g) || []).map(Number);
+      if (alter.length && alter.every((x) => da.includes(x)) && alter.every((x) => Number.isInteger(x) && x >= 0 && x <= 17) && !(p.kinderAlter || []).length) {
         const r = bau(`alter:${alter.join(",")}`, alter.length === 1 ? `Das Kind ist ${alter[0]} Jahre alt` : `Die Kinder sind ${liste(alter.map(String)).replace(" oder ", " und ")} Jahre alt`,
           { kinderAlter: alter }, "kinderAlter");
         if (r) return r;
