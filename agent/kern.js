@@ -1963,6 +1963,8 @@ const Kern = {
     this.lauf.selbstGelesen = [];
     this.lauf.freiGelesen = null;
     this.lauf.leseKonflikt = null;
+    this.lauf.grundlageFrage = null;
+    this.lauf.zielBedeutung = null;
     this.lauf.chipFest = null;
     this.budgetUebernehmen();
     this.regionenLesen(t);

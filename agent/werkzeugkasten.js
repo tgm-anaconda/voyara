@@ -62,8 +62,35 @@ const Werkzeugkasten = {
 
      `freigabe_aendern` bleibt immer dabei - sonst koennte die Person den
      Agenten nicht mehr weiterlassen. */
+  /* Das Formular des Modells in EINER Sprache (25.11.2026, Durchlauf 2)
+     ==================================================================
+     `selbst_genannt` fuehrte Themennamen (dauer, art, preis), die Werte
+     stehen aber in anders benannten Feldern. gpt-4.1-mini mischte beides:
+     "preis: 180" statt maxPreis, oder es nannte nur das Thema und hielt die
+     Sache fuer erledigt (35 von 211 Meldungen ohne Wert). Gemessen an 14
+     schwierigen Saetzen: altes Formular 5 richtig, dieses 10, erfundene
+     Feldnamen 5 -> 0. Zwei Regeln: erst die Werte, dann die Einordnung;
+     und ueberall dieselben Namen. */
+  FORMULAR_META: ["nachricht_art", "frage_beantwortet", "selbst_genannt", "unsicher", "belege", "ausweiten"],
+  FORMULAR_FELDER: ["monat", "naechte", "personenGesamt", "erwachsene", "kinder", "kinderAlter", "typ", "artEgal", "ziel", "zieleAuswahl", "zieleAus", "richtung",
+    "flug", "flugAb", "flugKlasse", "anreise", "maxPreis", "budgetGesamt", "preisEgal", "verpflegung", "verpflegungEgal", "ausstattung", "wuensche", "anzahlVorschlaege", "zimmer"],
+  formularOrdnen(defs) {
+    const d = defs.find((x) => x.function?.name === "stand_merken");
+    if (!d) return defs;
+    const P = d.function.parameters.properties, neu = {};
+    for (const k of Object.keys(P)) if (!this.FORMULAR_META.includes(k)) neu[k] = P[k];
+    for (const k of this.FORMULAR_META) if (P[k]) neu[k] = P[k];
+    neu.selbst_genannt = { type: "array", items: { type: "string", enum: this.FORMULAR_FELDER },
+      description: "Die Namen der Felder, die du in DIESEM Aufruf mit einem Wert ausgefuellt hast und zu denen die Person in dieser Nachricht etwas Konkretes gesagt hat - auch wenn du nicht danach gefragt hattest. Ein Feld nur hier zu nennen, ohne es auszufuellen, merkt nichts. Im Zweifel weglassen." };
+    d.function.parameters.properties = neu;
+    d.function.description = "Merkt sich, was die Person ueber ihre Reise gesagt hat. Trag JEDEN Wert, den sie in dieser Nachricht nennt, in sein Feld ein "
+      + "(Dauer in naechte, Preis pro Nacht in maxPreis, Budget fuer alles in budgetGesamt, Hotel oder Ferienwohnung in typ, Zahl der Reisenden in personenGesamt oder erwachsene/kinder, Monat in monat) - "
+      + "auch bei einer Korrektur und auch, wenn du nicht danach gefragt hast. Nur diese Feldnamen gelten. Nichts eintragen, was sie nicht gesagt hat, und nichts wiederholen, was schon im Stand steht.";
+    return defs;
+  },
+
   definitionen(freigabe = null) {
-    const alle = this.alleDefinitionen();
+    const alle = this.formularOrdnen(this.alleDefinitionen());
     if (!freigabe) return alle;
     const RANG = { suchen: 1, vorbereiten: 2, buchen: 3 };
     const habe = RANG[freigabe] || 1;
@@ -2507,7 +2534,7 @@ const Werkzeugkasten = {
       if (/^\s*(ist (mir )?)?(egal|offen|gleich|keine (pr(ä|ae)ferenz|vorgabe))\s*[.!]?\s*$/.test(t)) return { verpflegungEgal: true };
       const treffer = [
         [/\ball[\s-]?inclusive?\b|^\s*ai\b/, "ai"], [/halbpension|^\s*hp\b/, "halb"], [/vollpension|^\s*vp\b/, "voll"],
-        [/^(\s*nur)?\s*fr(ü|ue)hst(ü|ue)ck/, "fruehstueck"],
+        ...(/abend|dinner|mittag|mahlzeit|halb/.test(t) ? [] : [[/^(\s*nur)?\s*fr(ü|ue)hst(ü|ue)ck/, "fruehstueck"]]),
       ].filter(([re]) => re.test(t)).map(([, k]) => k);
       return treffer.length === 1 ? { verpflegung: treffer[0], verpflegungEgal: false } : null;
     },
@@ -3030,9 +3057,15 @@ const Werkzeugkasten = {
     // Anhaengsel sind keine Frage: "an Ostern, geht das?"
     const t = roh.replace(/[,\s]+(geht das|ginge das|geht sowas|oder|ok(ay)?|passt das|m(ö|oe)glich|ist das m(ö|oe)glich|in ordnung|ja|ne|gell)\s*\?+\s*$/i, "");
     const ERZAEHLT = /\b(letzte[smnr]?|vorige[smnr]?|vergangene[smnr]?)\s+(jahr|mal|sommer|winter|herbst|fr(ü|ue)hling|urlaub|reise|woche|monat)\b|\b(hatte|hatten|hattest|war|waren|gewesen|gehabt|fr(ü|ue)her|damals|neulich)\b|\b(schw(ä|ae)rm\w*|erz(ä|ae)hl\w*|behaupte\w*)\b|\bsagt(e)?\s+(wohl|immer|er|sie)?\s*(ab\b)?/i;
-    const HYPOTHESE = /\b(wenn|falls|ob|w(ü|ue)rden?\s+wir|vielleicht|eventuell|evtl|m(ö|oe)glicherweise|unsicher|unschl(ü|ue)ssig)\b|\bwei(ß|ss)\s+(noch\s+)?nicht\b|\b(ü|ue)berleg\w*/i;
+    const HYPOTHESE = /\b(wenn|falls|ob|w(ü|ue)rden?\s+wir|vielleicht|eventuell|evtl|m(ö|oe)glicherweise|unsicher|unschl(ü|ue)ssig)\b|\bwei(ß|ss)\s+(noch\s+)?nicht\b|(?<![a-zäöüß])(ü|ue)berleg\w*/i;
     const ABGELEHNT = /\bzu\s+(teuer|viel|hei(ß|ss)|kalt|warm|weit|kurz|lang|wenig|voll|gro(ß|ss)|klein|fr(ü|ue)h|sp(ä|ae)t)\b|\bnicht\s+(egal|leisten|infrage|in frage)\b|\bleisten\b[^,]*\bnicht\b/i;
     const VERNEINT = /\b(nicht|nichts|nie|niemals|kein|keine|keinen|keinem|keiner|keinesfalls|au(ß|ss)er|ohne|statt|anstatt|anstelle)\b|\bauf keinen fall\b/i;
+    /* Bezug auf anderes (25.11.2026, Durchlauf 2): "zwei Jahre jünger",
+       "20 mehr", "doppelt so lang" ergeben nur im Zusammenhang einen Wert.
+       Den kennt das Modell, nicht der Kern - er liest hier gar nichts. */
+    if (["dauer", "preis", "reisende", "kinderAlter", "anreise", "anzahl"].includes(thema)
+      && /(?<![a-zäöüß])(mehr|weniger|j(ü|ue)nger|(ä|ae)lter|doppelt\w*|h(ä|ae)lfte|halb so|sp(ä|ae)ter|fr(ü|ue)her|l(ä|ae)nger|k(ü|ue)rzer|teurer|billiger|g(ü|ue)nstiger|h(ö|oe)her|niedriger|drauf|davon|obendrauf|zus(ä|ae)tzlich|dazu|noch (ein|eine|einen|zwei|drei)\b|anstelle)\b/i.test(roh)
+      && !/nicht mehr als|nicht l(ä|ae)nger als|nicht (teurer|h(ö|oe)her) als|mehr nicht/i.test(roh)) return "";
     const mitVerneinung = ["flug", "preis", "reisende", "anzahl", "kinderAlter", "regionen"].includes(thema);
     const saetze = t.split(/(?<=[!?;\n]|[^\d\s]\.)\s*(?=\S)(?!\d)/).filter((x) => x && x.trim());
     const bleibt = [];
@@ -3045,8 +3078,10 @@ const Werkzeugkasten = {
       if (HYPOTHESE.test(teile[0] || "")) continue;
       for (const teil of teile) {
         if (ERZAEHLT.test(teil) || HYPOTHESE.test(teil) || ABGELEHNT.test(teil)) continue;
-        if (!mitVerneinung && VERNEINT.test(this.ohneScheinVerneinung(teil))) continue;
-        bleibt.push(teil.trim());
+        // "X statt Y" ist eine Wahl: nur Y faellt weg (25.11.2026)
+        const wahl = teil.replace(/\b(statt|anstatt|anstelle von)\s+(im |in |der |die |das |dem |den |des )?[\wäöüß-]+/gi, " ");
+        if (!mitVerneinung && VERNEINT.test(this.ohneScheinVerneinung(wahl))) continue;
+        if (wahl.trim()) bleibt.push(wahl.trim());
       }
     }
     return bleibt.join(", ").trim();
@@ -3193,7 +3228,7 @@ const Werkzeugkasten = {
     const letzte = String([...nachrichten].reverse().find((n) => n.role === "user")?.content || "");
     const frage = String([...nachrichten].reverse().find((n) => n.role === "assistant" && n.content)?.content || "");
     const leer = this.inhaltsleer(letzte);
-    const jaWort = /^\s*(ja|jo|jap|jep|jupp|ok|okay|gern|gerne|genau|passt|klar|stimmt|richtig|einverstanden|mach|super|perfekt|yes)\b/i.test(letzte) && letzte.trim().split(/\s+/).length <= 6;
+    const jaWort = (leer && !/\b(hm+|aha|erz(ä|ae)hl|mehr|danke)/i.test(letzte)) || /^\s*(ja|jo|jap|jep|jupp|ok|okay|gern|gerne|genau|passt|klar|stimmt|richtig|einverstanden|mach|super|perfekt|yes)\b/i.test(letzte) && letzte.trim().split(/\s+/).length <= 6;
     const THEMA = { monat: ["zeit"], anreise: ["anreise", "zeit"], von: ["anreise", "zeit"], bis: ["anreise", "zeit"], naechte: ["dauer"], personenGesamt: ["reisende"], erwachsene: ["reisende", "kinderAlter"], kinder: ["reisende", "kinderAlter"],
       flug: ["flug", "flugAb"], flugKlasse: ["flugKlasse"], verpflegung: ["verpflegung"], maxPreis: ["preis"], budgetGesamt: ["preis"], zimmer: ["zimmer"], anzahlVorschlaege: ["anzahl", "vorgehen"], flugAb: ["flugAb"], flugAbEgal: ["flugAb"] };
     const gefragt = [kern.lauf.gefragtVorher, kern.lauf.zuletztGefragt, kern.lauf.gefragt].filter(Boolean);
@@ -3221,8 +3256,17 @@ const Werkzeugkasten = {
       const zahlFeld = ["naechte", "personenGesamt", "erwachsene", "kinder"].includes(f);
       const trifft = !leer && ((re && re.test(letzte)) || (zahlFeld && this.ZAHLWORT_RE.test(letzte)));
       const antwortet = !leer && (THEMA[f] || []).some((t) => gefragt.includes(t)) && !["maxPreis", "budgetGesamt"].includes(f);
-      if (trifft || antwortet || vorschlagTraegt(f) || this.belegGilt(kern, f, a[f], a.belege)) continue;
-      raus(f, leer ? "nachricht_ohne_inhalt" : "thema_nicht_genannt");
+      const FRAGBAR = { monat: "zeit", naechte: "dauer", flug: "flug", flugKlasse: "flugKlasse", verpflegung: "verpflegung", maxPreis: "preis", budgetGesamt: "preis" };
+      const fragen = (grund) => { if (FRAGBAR[f] && !leer) kern.lauf.grundlageFrage = { feld: f, wert: a[f], thema: FRAGBAR[f], zug: kern.lauf.zugSeit }; raus(f, grund); };
+      /* Der Anhalt steht nur in einem Teil, der keine Zusage ist ("letztes
+         Jahr hatten wir Halbpension"): fragen statt annehmen. */
+      if (trifft && !antwortet && re && FRAGBAR[f] && !["maxPreis", "budgetGesamt", "naechte"].includes(f)) {
+        const zusage = this.zusageTeil(letzte, f === "flug" ? "flug" : FRAGBAR[f]);
+        if (!re.test(zusage) && !(f === "flug" && a.flug === false) && !/\?/.test(letzte)) { fragen("nur_erzaehlt_oder_abgelehnt"); continue; }
+      }
+      const meldet = !leer && Array.isArray(a.selbst_genannt) && a.selbst_genannt.includes(f) && !this.istSachfrage(letzte) && a.nachricht_art !== "frage";
+      if (trifft || antwortet || meldet || vorschlagTraegt(f) || this.belegGilt(kern, f, a[f], a.belege)) continue;
+      fragen(leer ? "nachricht_ohne_inhalt" : "thema_nicht_genannt");
     }
     // Ziel, Flughafen, Art, Wuensche: Bedeutung - hier zaehlt nur, dass ueberhaupt etwas dasteht
     if (leer) for (const f of ["ziel", "zieleAuswahl", "zieleAus", "richtung", "mindestGrad", "typ", "artEgal", "flugAb", "flugAbAuswahl", "kinderAlter", "ausstattung", "ausstattungEgal", "verpflegungEgal", "preisEgal", "maxStrandMeter", "wuensche", "vorgehen"]) {
@@ -3237,6 +3281,9 @@ const Werkzeugkasten = {
       raus(f, "nachricht_ohne_inhalt");
     }
   },
+
+  THEMA_ZU_FELD: { monat: "zeit", naechte: "dauer", personenGesamt: "reisende", erwachsene: "reisende", kinder: "reisende", typ: "art", artEgal: "art", zieleAuswahl: "ziel", zieleAus: "ziel",
+    maxPreis: "preis", budgetGesamt: "preis", preisEgal: "preis", verpflegungEgal: "verpflegung", ausstattung: "wuensche", anzahlVorschlaege: "anzahl" },
 
   // Wie ein Wert in der Rueckfrage heisst
   wertWort(feld, w) {
@@ -4045,6 +4092,16 @@ const Werkzeugkasten = {
       Werkzeugkasten.widerspruchAufloesen(a, kern);
       Werkzeugkasten.absprache(a, kern);
       Werkzeugkasten.grundlagePruefen(a, kern);
+      /* Das Letzte zaehlt (25.11.2026): "ach doch, Mallorca kann rein" hebt
+         einen frueheren Ausschluss auf - wenn die Nachricht die Region nennt
+         und sie gerade nicht ablehnt. */
+      {
+        const du = String([...(kern.lauf.gespraech || [])].reverse().find((n) => n.role === "user")?.content || "");
+        const will = [a.ziel, ...(Array.isArray(a.zieleAuswahl) ? a.zieleAuswahl : [])].filter(Boolean);
+        const frei = (p.zieleAus || []).filter((id) => will.includes(id) && !(a.zieleAus || []).includes(id) && !(kern.lauf.ausschlussJetzt || []).includes(id)
+          && Werkzeugkasten.regionGenannt({ gespraech: [{ role: "user", content: du }] }, id) && !Kern.ausschlussLesen(du).includes(id));
+        if (frei.length) { p.zieleAus = p.zieleAus.filter((id) => !frei.includes(id)); kern.notieren("ausschluss_aufgehoben", { ziele: frei }); }
+      }
       const kernWerte = Werkzeugkasten.kernWerteMerken(kern);
       {
         const will = [a.ziel, ...(Array.isArray(a.zieleAuswahl) ? a.zieleAuswahl : [])].filter(Boolean).map((x) => String(x).toLowerCase());
@@ -4096,7 +4153,7 @@ const Werkzeugkasten = {
          Danach waere die Frage nach der Art nie gekommen. */
       if (a.typ && !p.typ && kern.lauf.gefragtVorher !== "art" && kern.lauf.zuletztGefragt !== "art" && kern.lauf.gefragt !== "art"
         && !Werkzeugkasten.ausChip(kern, "typ") && !p.artErwaehnt
-        && !gesagt(/hotel|ferien(wohn|haus|h(ä|ae)us)|fewo|apart|appart|wohnung|resort|pension\b|airbnb|all[\s-]?in|halbpension|vollpension|zimmer|häuschen|haeuschen|finca|villa/i, 99)) {
+        && !gesagt(/hotel|ferien(wohn|haus|h(ä|ae)us)|fewo|apart|appart|wohnung|resort|pension\b|airbnb|all[\s-]?in|halbpension|vollpension|zimmer|häuschen|haeuschen|finca|villa|k(ü|ue)che|bude|\bhaus\b|rezeption|zimmerservice/i, 99)) {
         kern.notieren("art_verworfen", { typ: a.typ, grund: "nicht_genannt" });
         delete a.typ;
       }
@@ -4179,7 +4236,28 @@ const Werkzeugkasten = {
         }
       }
       delete a.wunsch_unbekannt;
-      const genannt = Array.isArray(a.selbst_genannt) ? a.selbst_genannt : [];
+      const gemeldet = Array.isArray(a.selbst_genannt) ? a.selbst_genannt : [];
+      // Das Formular meldet Feldnamen, die Regeln unten denken in Themen
+      const genannt = [...new Set([...gemeldet, ...gemeldet.map((x) => Werkzeugkasten.THEMA_ZU_FELD[x]).filter(Boolean)])];
+      /* DAFUER EINSTEHEN - die eine Regel statt vieler Wortlisten (25.11.2026)
+         Ben: "Wo liefert das Modell richtige Ergebnisse, aber der Kern nimmt
+         sie nicht an?" Gemessen (annahme-test.cjs): bei 10 %, immer weil eine
+         Wortliste ueber Bedeutung entschied ("Sonne satt", "mein Schatz und
+         ich"). Ein Wert gilt, wenn die Nachricht etwas aussagt UND das Modell
+         dafuer einsteht: Es ist die Antwort auf die gestellte Frage, oder es
+         meldet genau dieses Feld. Die Wortlisten sind nur noch der zweite Weg. */
+      const letzteRoh = String(kern.lauf.gespraech.filter((n) => n.role === "user").slice(-1)[0]?.content || "");
+      const brauchbar = !Werkzeugkasten.inhaltsleer(letzteRoh) && !Werkzeugkasten.istSachfrage(letzteRoh) && a.nachricht_art !== "frage"
+        && !/(?<![a-zäöüß])(keine ahnung|wei(ß|ss) (ich )?(noch )?nicht|(ü|ue)berrasch|keinen plan)/i.test(letzteRoh);
+      const steht = (feld, ...themen) => brauchbar && ((["ja", "teilweise"].includes(a.frage_beantwortet) && themen.includes(kern.lauf.gefragtVorher)) || gemeldet.includes(feld));
+      /* Zuruecknehmen (25.11.2026, Durchlauf 2): "nimm das wieder raus". Das
+         Modell meldet das Feld und laesst es ausdruecklich leer (null) -
+         bisher gab es dafuer keine Wirkung, die alte Vorgabe blieb stehen. */
+      const LOESCHBAR = { verpflegung: ["verpflegung"], maxPreis: ["maxPreis"], budgetGesamt: ["budgetGesamt"], flugAb: ["flugAb"], flugKlasse: ["flugKlasse"], ziel: ["zielId"], anreise: ["anreise", "von", "bis"], richtung: ["richtung"], mindestGrad: ["mindestGrad"] };
+      for (const x of gemeldet) if (brauchbar && a[x] === null && LOESCHBAR[x] && !(x === "ziel" && (a.zieleAuswahl || []).length)) {
+        for (const z of LOESCHBAR[x]) if (p[z] != null) { delete p[z]; if (p.vonPerson) delete p.vonPerson[z]; geaendert.push(z); }
+        kern.notieren("zurueckgenommen", { feld: x });
+      }
       /* Thema gemeldet, Wert vergessen (25.11.2026): Auf "mach aus den 7
          Naechten bitte 10" meldete das Modell nur selbst_genannt: naechte.
          Dann liest der Kern selbst. */
@@ -4384,7 +4462,11 @@ const Werkzeugkasten = {
             }
           }
         }
-        else if (id) { kern.notieren("ziel_verworfen", { ziel: id, wo: "stand_merken" }); Werkzeugkasten.merkeVerworfen(kern, "ziel", id); }
+        else if (id) {
+          kern.notieren("ziel_verworfen", { ziel: id, wo: "stand_merken" }); Werkzeugkasten.merkeVerworfen(kern, "ziel", id);
+          // Umschrieben ("die Stadt, die niemals schläft"): nicht still verwerfen, fragen
+          if (brauchbar && ["ja", "teilweise", "nein_klaert_noch", "keine_frage_offen"].includes(a.frage_beantwortet) && !Werkzeugkasten.zieleAusText(letzteRoh, { locker: true }).length) kern.lauf.zielBedeutung = { id, zug: kern.lauf.zugSeit };
+        }
       }
       /* Mehrere Regionen und Ausschluesse - mit derselben Sperre wie beim
          einzelnen Ziel: Was die Person nicht gesagt hat, wird nicht
@@ -4415,7 +4497,11 @@ const Werkzeugkasten = {
                Malle auch, nur nicht zusammen. Sonst fragt der Kern nach. */
             const abgelehnt = Kern.ausschlussLesen(String(letzteNachricht.gespraech[0]?.content || "")).includes(id);
             if (id && (abgelehnt || listeBelegt)) ids.push(id);
-            else if (id) weg.push(id);
+            else if (id) {
+              weg.push(id);
+              // Genannt ist sie, nur ob abgelehnt, ist unklar: fragen (25.11.2026, "Malle scheidet aus")
+              if (brauchbar && Werkzeugkasten.regionGenannt(letzteNachricht, id) && !(kern.lauf.ausschlussJetzt || []).includes(id)) kern.lauf.zielKonflikt = { id, zug: kern.lauf.zugSeit };
+            }
             continue;
           }
           if (id && (Werkzeugkasten.regionGenannt(kern.lauf, id) || klarBeantwortet("ziel") || listeBelegt)) ids.push(id);
@@ -4534,7 +4620,8 @@ const Werkzeugkasten = {
       const offenGesagt = gesagt(OFFEN);
       const verworfen = [];
       for (const f of ["zielOffen", "artEgal", "preisEgal", "ausstattungEgal", "bewertungEgal", "strandEgal", "verpflegungEgal"]) {
-        if (a[f] === true && !offenGesagt && !Werkzeugkasten.ausChip(kern, f) && !(f === "artEgal" && Werkzeugkasten.belegGilt(kern, "artEgal", true, a.belege))) { delete a[f]; verworfen.push(f); }
+        const EGAL_THEMA = { zielOffen: ["ziel"], artEgal: ["art"], preisEgal: ["preis"], ausstattungEgal: ["ausstattung", "gewichtung"], verpflegungEgal: ["verpflegung"], bewertungEgal: [], strandEgal: [] };
+        if (a[f] === true && !offenGesagt && !steht(f, ...EGAL_THEMA[f]) && !Werkzeugkasten.ausChip(kern, f) && !(f === "artEgal" && Werkzeugkasten.belegGilt(kern, "artEgal", true, a.belege))) { delete a[f]; verworfen.push(f); }
       }
       // Antworten auf die Frage "schauen oder klaeren" und "selbst oder drei"
       // zaehlen nur, wenn die letzte Nachricht so etwas sagt - auf "Hotel"
@@ -4564,7 +4651,7 @@ const Werkzeugkasten = {
            ("fallen weg - 4 statt 7"). Steht die Richtung schon, bleibt alles. */
         if (th && p.richtung === th.id && p.zieleErlaubt?.length) {
           kern.notieren("richtung_unveraendert", { richtung: th.id });
-        } else if (th && gesagt(new RegExp(woerter.map((x) => x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|"), "i"), 99)) {
+        } else if (th && gesagt(new RegExp(woerter.map((x) => x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|"), "i"), 99) || (th && steht("richtung", "ziel"))) {
           setze("richtung", th.id);
           p.zieleErlaubt = Werkzeugkasten.regionenFuerRichtung(th, p);
           if (!p.zielId) p.zielOffen = true;
@@ -4692,7 +4779,11 @@ const Werkzeugkasten = {
          Januar oder Februar heissen -, wird NICHT geraten, sondern der
          Fahrplan fragt danach (monateAnsetzen). Lieber eine Frage zu
          viel als ein stillschweigend falscher Monat. */
-      const ank = !p.monat && !rel?.monat ? Werkzeugkasten.zeitanker(zeitText) : null;
+      /* Das Genauere gewinnt (25.11.2026): "Sommerferien, erste Augustwoche"
+         nennt den Monat - dann rechnet der Kern keinen anderen daraus. */
+      const namensMonate = [...new Set((zeitText.toLowerCase().match(/[a-zäöüß]+/g) || []).map((w) => Object.keys(Werkzeugkasten.MONATSWORT).filter((x) => x.length >= 4 || x === "mai").find((x) => w === x || (x.length >= 5 && w.startsWith(x)))).filter(Boolean).map((x) => Werkzeugkasten.MONATSWORT[x]))];
+      const monatGenauer = namensMonate.length === 1 && Number(a.monat) === namensMonate[0];
+      const ank = !p.monat && !rel?.monat && !monatGenauer ? Werkzeugkasten.zeitanker(zeitText) : null;
       if (ank && !p.monat) {
         kern.notieren("zeitanker", { name: ank.name, monate: ank.monate, sicher: ank.sicher });
         if (ank.sicher) {
@@ -4959,7 +5050,8 @@ const Werkzeugkasten = {
       const nachtText = String(kern.lauf.gespraech.filter((n) => n.role === "user").slice(-1)[0]?.content || "").toLowerCase();
       const nachtZahl = [...(nachtText.match(/\d+/g) || []).map(Number), ...(nachtText.match(/[a-zäöüß]+/g) || []).map((w) => NACHTWORT[w]).filter(Boolean)].includes(Number(a.naechte));
       const nachtSpanne = /\d/.test(nachtText) && /\bbis\b|\d\.?\s*[-–]\s*\d/.test(nachtText);
-      if (a.naechte && !p.naechte && !beantwortet("dauer") && !nachtZahl && !nachtSpanne
+      const nachtGelesen = (() => { try { return Werkzeugkasten.SELBST_LESEN.dauer(Werkzeugkasten.zusageTeil(letzteRoh, "dauer").toLowerCase(), {}, Werkzeugkasten)?.naechte === Number(a.naechte); } catch { return false; } })();
+      if (a.naechte && !p.naechte && !beantwortet("dauer") && !nachtZahl && !nachtSpanne && !nachtGelesen
         && !gesagt(/woche|\btage?n?\b|nächte|naechte|übernacht|uebernacht|wochenende|lang|kurz/i)) {
         kern.notieren("naechte_verworfen", { naechte: a.naechte });
         Werkzeugkasten.merkeVerworfen(kern, "naechte", a.naechte);
@@ -5040,7 +5132,7 @@ const Werkzeugkasten = {
       }
       for (const f of ["personenGesamt", "erwachsene", "kinder"]) {
         if (a[f] != null && p[f === "personenGesamt" ? "personen" : f] == null
-          && !gesagt(ZAHL, 1) && !beantwortet("reisende", "kinderAlter")
+          && !gesagt(ZAHL, 1) && !gesagt(Werkzeugkasten.GRUNDLAGE.personen, 1) && !beantwortet("reisende", "kinderAlter")
           && !Werkzeugkasten.belegGilt(kern, f, a[f], a.belege)) {
           kern.notieren("reisende_verworfen", { feld: f, wert: a[f] });
           Werkzeugkasten.merkeVerworfen(kern, f === "personenGesamt" ? "erwachsene" : f, a[f]);
@@ -5216,9 +5308,12 @@ const Werkzeugkasten = {
         .replace(/\b(n(ä|ae)chste|diese|letzte|kommende)[smnr]?\s+jahr\w*/gi, " ")
         .replace(/\b\d+\s*(?=(kleine|kinder|kids|jungs|m(ä|ae)d|s(ö|oe)hne|t(ö|oe)chter|erwachsene|personen|leute|n(ä|ae)cht|tage|woche|euro|€|grad))/gi, " ");
       const altZahlen = (altText.match(/\d+/g) || []).map(Number);
+      // Zahlwoerter zaehlen, wenn sie nicht direkt vor den Kindern stehen ("zwei Kinder")
+      const altWoerter = (altText.toLowerCase().replace(/\b[a-zäöüß]+\s+(?=(kleine|kinder|kids|jungs|m(ä|ae)d|s(ö|oe)hne|t(ö|oe)chter|erwachsene|personen|leute|n(ä|ae)cht|tage|woche))/g, " ").match(/[a-zäöüß]{3,}/g) || [])
+        .map((w) => Werkzeugkasten.selbstZahl(w)).filter((x) => x != null && x > 1);
       if (Array.isArray(a.kinderAlter) && !(p.kinderAlter || []).length
         && !beantwortet("kinderAlter")
-        && !(a.kinderAlter.length && a.kinderAlter.every((x) => altZahlen.includes(Number(x))))
+        && !(a.kinderAlter.length && a.kinderAlter.every((x) => altZahlen.includes(Number(x)) || altWoerter.includes(Number(x))))
         && !/\bjahr|jährig|jaehrig|geboren|baby|säugling|saeugling|kleinkind|schulkind|teenager|monate/i.test(altText)
         && !Werkzeugkasten.belegGilt(kern, "kinderAlter", a.kinderAlter, a.belege)) {
         kern.notieren("alter_verworfen", { alter: a.kinderAlter });
@@ -5323,8 +5418,9 @@ const Werkzeugkasten = {
          machte daraus 5.000 Euro pro Nacht - gemeldet am 02.10.2026.
          Jetzt entscheidet bei fehlendem Wort die Hoehe gegen die Daten. */
       if (a.maxPreis || a.budgetGesamt) {
-        const letzteTexte = (kern.lauf.gespraech || []).filter((n) => n.role === "user").slice(-1).map((n) => String(n.content)).join(" ");
-        const wert = Werkzeugkasten.betragAusText(letzteTexte);
+        // Nur aus der Zusage (ABSPRACHE): "20 mehr" ist kein Betrag, das rechnet das Modell
+        const letzteTexte = Werkzeugkasten.zusageTeil((kern.lauf.gespraech || []).filter((n) => n.role === "user").slice(-1).map((n) => String(n.content)).join(" "), "preis");
+        const wert = letzteTexte ? Werkzeugkasten.betragAusText(letzteTexte) : null;
         const deutung = wert ? Werkzeugkasten.preisDeutung(wert, letzteTexte, p) : null;
         if (wert && deutung) {
           const anders = deutung.feld === "budgetGesamt" ? !!a.maxPreis : !!a.budgetGesamt;
@@ -5351,7 +5447,7 @@ const Werkzeugkasten = {
          Monatsanfang", "an einem Samstag"), gilt der Tag. */
       // Ein Feiertag mit festem Datum ist ein genannter Tag (22.11.2026)
       const festGesagt = Werkzeugkasten.festerTag((kern.lauf.gespraech || []).filter((n) => n.role === "user").slice(-1)[0]?.content || "");
-      if (a.anreise && !gesagt(Werkzeugkasten.TAG) && !beantwortet("anreise") && !festGesagt
+      if (a.anreise && !gesagt(Werkzeugkasten.TAG) && !beantwortet("anreise") && !festGesagt && !Werkzeugkasten.tagAusText(letzteRoh)
         && !Werkzeugkasten.belegGilt(kern, "anreise", a.anreise, a.belege)) {
         kern.notieren("anreise_verworfen", { anreise: a.anreise });
         Werkzeugkasten.merkeVerworfen(kern, "anreise", a.anreise);
@@ -5542,7 +5638,7 @@ const Werkzeugkasten = {
            "strandnah", "fusslaeufig zum Strand", "abends im Haus essen".
            Wortlisten werden nie vollstaendig - deshalb gilt auch hier:
            Steht das Modell fuer die Antwort ein, zaehlt sie. */
-        const deckt = beantwortet("wuensche", "ausstattung");   // die Themen im Schema, nicht die des Fahrplans
+        const deckt = beantwortet("wuensche", "ausstattung") || steht("ausstattung", "ausstattung", "gewichtung");   // die Themen im Schema, nicht die des Fahrplans
         const ohneBeleg = deckt ? [] : gewollt.filter((x) => !gesagt(WORT[x], 99));
         if (ohneBeleg.length) kern.notieren("ausstattung_verworfen", { felder: ohneBeleg });
         p.ausstattung = deckt ? gewollt : gewollt.filter((x) => gesagt(WORT[x], 99));
@@ -9998,7 +10094,7 @@ const Werkzeugkasten = {
   },
 
   bestaetigungRueckfrage(p, lauf) {
-    if (!p || !lauf || !(lauf.verworfenWert || lauf.zielKonflikt || lauf.leseKonflikt)) return null;
+    if (!p || !lauf || !(lauf.verworfenWert || lauf.zielKonflikt || lauf.leseKonflikt || lauf.grundlageFrage)) return null;
     const jetzt = lauf.zugSeit || lauf.runde || true;
     const frisch = (f) => lauf.verworfenWert?.[f] != null && (lauf.verworfenZug || {})[f] === jetzt;
     const schonGefragt = (schl) => !!(lauf.bestaetigtGefragt || {})[schl];
@@ -10020,6 +10116,17 @@ const Werkzeugkasten = {
       return { grund: "bestaetigen", schluessel: schl, thema, satz: `Habe ich dich richtig verstanden: ${frage}?`,
         chips: [JA, NEIN], wirkung: { [JA]: werte, [NEIN]: {} } };
     };
+    const zb = lauf.zielBedeutung;
+    if (zb && zb.zug === lauf.zugSeit && name(zb.id) && !verneint && frisch("ziel") && p.zielId !== zb.id) {
+      const r = bau(`ziel:${zb.id}`, `Du möchtest nach ${name(zb.id)}`, { zielId: zb.id, zielOffen: false, zieleAuswahl: [] }, "ziel");
+      if (r) return r;
+    }
+    // Ein Wert, dessen Anhalt unklar ist (GRUNDLAGE)
+    const gf = lauf.grundlageFrage;
+    if (gf && gf.zug === lauf.zugSeit) {
+      const r = bau(`grundlage:${gf.feld}:${gf.wert}`, `${this.wertWort(gf.feld, gf.wert).replace(/^(Ab|Bis|Mit|Ohne) /, (x) => x.toLowerCase())}`, { [gf.feld]: gf.wert }, gf.thema);
+      if (r) return r;
+    }
     // Auswahl / einzelnes Ziel
     for (const f of ["zieleAuswahl", "ziel"]) {
       if (!frisch(f) || verneint) continue;

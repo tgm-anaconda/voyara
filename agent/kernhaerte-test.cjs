@@ -118,6 +118,17 @@ async function lauf(thema, vor, du, args, zusatz = {}) {
     const r = await lauf("ziel", GR, du, JA, { spanneOffen: { grenze: 22, weiter: 19 } });
     werte("grad", (r.p.mindestGrad ?? null) === soll, `"${du}" -> ${r.p.mindestGrad}`);
   }
+  // --- Teil 4c: Bezug auf anderes - nur das Modell kennt den Zusammenhang ---
+  const BEZUG = [];
+  for (const w of ["20 mehr", "30 € mehr gehen", "zehn mehr", "noch 50 drauf", "ruhig 40 teurer"]) BEZUG.push(["preis", HF, w, { maxPreis: 170 }, "maxPreis"]);
+  for (const w of ["doppelt so lang", "zwei mehr", "drei Tage länger", "eine Woche mehr", "einen Tag kürzer"]) BEZUG.push(["dauer", ohne("naechte"), w, { naechte: 12 }, "naechte"]);
+  for (const w of ["zwei Jahre jünger", "drei Jahre älter", "ein Jahr jünger als der andere"]) BEZUG.push(["kinderAlter", { ...G, kinder: 2, personen: 4, erwachsene: 2 }, w, { kinderAlter: [10, 8] }, "kinderAlter"]);
+  for (const w of ["noch zwei dazu", "einer mehr", "zwei weniger"]) BEZUG.push(["reisende", ohne("erwachsene", "kinder", "personen"), w, { erwachsene: 4, kinder: 0 }, "erwachsene"]);
+  for (const w of ["zwei Tage später", "einen Tag früher", "3 Tage später"]) BEZUG.push(["anreise", G, w, { anreise: "2027-10-16" }, "anreise"]);
+  for (const [t, vor, du, m, feld] of BEZUG) for (const v of [true, false]) {
+    const r = await lauf(t, vor, du, { ...JA, ...(v ? m : {}), ...(v ? { selbst_genannt: Object.keys(m) } : {}) });
+    werte("bezug", v ? text(r.p[feld]) === text(m[feld]) || (leer(r.p[feld]) && !!r.nach) : leer(r.p[feld]), `"${du}" Modell ${v ? text(m) : "schweigt"} -> ${feld}=${text(r.p[feld])} ${r.nach ? "| fragt" : ""}`);
+  }
   // --- Teil 5: Das Modell behauptet etwas, wovon die Nachricht nicht handelt ---
   const BEHAUPTET = { monat: 7, anreise: "2027-10-14", naechte: 9, personenGesamt: 4, erwachsene: 3, kinder: 2, kinderAlter: [4, 6], typ: "hotel", artEgal: true, ziel: "kreta", zieleAuswahl: ["kreta", "wien"], zieleAus: ["mallorca"], richtung: "warm", mindestGrad: 25,
     flug: true, flugAb: "Hamburg", flugAbEgal: true, flugKlasse: "business", verpflegung: "ai", verpflegungEgal: true, maxPreis: 120, budgetGesamt: 1500, preisEgal: true, ausstattung: ["pool"], mindestbewertung: 4.5, mindestSterne: 4, anzahlVorschlaege: 5, zimmer: 3, wlanInklusive: true };

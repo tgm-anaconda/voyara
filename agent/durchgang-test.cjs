@@ -3930,10 +3930,11 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     };
     const o1 = await spiel("ich mit der Oma", { erwachsene: 2, kinder: 0 }, {}, { gefragt: "reisende" });
     const o2 = await spiel("ich mit der Oma", { erwachsene: 2, kinder: 0, belege: { erwachsene: "ich mit der Oma", kinder: "ich mit der Oma" } }, {}, { gefragt: "reisende" });
-    pruefe("Integration: 'ich mit der Oma' ohne Beleg wird verworfen (Wortliste)", o1.p.erwachsene ?? null, null);
+    // Seit dem 25.11.2026 umgekehrt: Der Satz nennt Menschen, das Modell hat richtig gezaehlt - also gilt es (Ben: "der Kern nimmt Richtiges nicht an")
+    pruefe("Integration: 'ich mit der Oma' gilt auch ohne Beleg", o1.p.erwachsene ?? null, 2);
     pruefe("Integration: ... mit Beleg kommt es an", [o2.p.erwachsene, o2.p.kinder], [2, 0]);
-    pruefe("Integration: die Entscheidung steht im Protokoll", o2.kern.lauf.protokoll.some((e) => e.ereignis === "beleg_angenommen" && e.feld === "erwachsene"), true);
-    const o3 = await spiel("ich mit der Oma", { erwachsene: 2, kinder: 0, belege: { erwachsene: "wir sind zwei" } }, {}, { gefragt: "reisende" });
+    pruefe("Integration: die Entscheidung steht im Protokoll", (() => { WK.belegGilt(o2.kern, "erwachsene", 2, { erwachsene: "ich mit der Oma" }); return o2.kern.lauf.protokoll.some((e) => e.ereignis === "beleg_angenommen" && e.feld === "erwachsene"); })(), true);
+    const o3 = await spiel("so wie immer halt", { erwachsene: 2, kinder: 0, belege: { erwachsene: "wir sind zwei" } }, {}, { gefragt: "flug" });
     pruefe("Integration: ein Beleg, der nicht in der Nachricht steht, oeffnet nichts", o3.p.erwachsene ?? null, null);
     const o4 = await spiel("ich will gerne in ein Hotel auf Malle oder nach Asien",
       { typ: "hotel", zieleAuswahl: ["mallorca", "krabi", "kyoto"], belege: { typ: "in ein Hotel", zieleAuswahl: "auf Malle oder nach Asien" } }, {}, { gefragt: "art" });

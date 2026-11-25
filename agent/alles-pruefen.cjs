@@ -15,6 +15,7 @@ const SUITEN = [
   ["Modellbank (echte Antworten)", "modellbank-test.cjs", (r) => r.code === 0, /GESAMT .*/],
   ["Chips und Schreibweisen", "chip-test.cjs", (r) => voll(r.aus, /(\d+)\/(\d+)/g), /Chip allein.*/],
   ["Kern-Haertetest", "kernhaerte-test.cjs", (r) => r.code === 0 && voll(r.aus, /(\d+)\/(\d+)/g), /frage \d.*/],
+  ["Annahme (Modell richtig)", "annahme-test.cjs", (r) => { const z = zahl(/GESAMT (\d+)\/(\d+)/)(r.aus); return !!z && z[0] >= 1353; }, /GESAMT .*/],
   ["Muster", "muster-test.cjs", (r) => r.code === 0, /^\d+\/\d+/m],
   ["Luecken", "luecken-test.cjs", (r) => voll(r.aus, /^(\d+)\/(\d+)/gm), /^\d+\/\d+/m],
   ["Satzbank", "satzbank-test.cjs", (r) => /GESAMT\s+96\s+\d+\s+96\s+\+0\s+96\s+9\/9/.test(r.aus) && /16\/16/.test(r.aus), /GESAMT.*/],

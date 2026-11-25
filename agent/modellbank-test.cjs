@@ -20,14 +20,16 @@ const vm = require("vm"), fs = require("fs"), path = require("path");
 const { laden } = require("./satzbank-daten.cjs");
 const { B: B1, leer } = require("./modellbank-daten.cjs");
 const { B: B2 } = require("./modellbank2-daten.cjs");
-const B = [...B1, ...B2.map((c, i) => ({ ...c, nr: B1.length + 1 + i }))];
+const { B: B3 } = require("./modellbank3-daten.cjs");
+const B = [...B1, ...[...B2, ...B3].map((c, i) => ({ ...c, nr: B1.length + 1 + i }))];
+const schl = (c) => (c.h ? `${c.h.join(" / ")} >> ${c.du}` : c.du);
 const { WK, KN, ctx } = laden();
 vm.runInContext("var Werkzeuge = new Proxy({ seite: () => 'index', zustand: () => ({}) }, { get: (o, k) => (k in o ? o[k] : () => null) });"
   + "var AgentPanel = new Proxy({}, { get: () => () => null });", ctx);
 const ECHT = process.argv.includes("--echt"), ALLE = process.argv.includes("--alle");
 const ABLAGE = path.join(__dirname, "modellantworten.json");
 const URL_API = "https://voyara-virid.vercel.app/api/agent";
-const DECKEL = 0.115;   // USD, danach wird nicht weiter gerufen
+const DECKEL = 0.06;    // USD, danach wird nicht weiter gerufen
 const PREIS = { eingabe: 0.4, zwischengespeichert: 0.1, ausgabe: 1.6 };
 const vp = (...k) => Object.fromEntries(k.map((x) => [x, true]));
 const ZWEI = { erwachsene: 2, kinder: 0, personen: 2, kinderAlter: [] };
@@ -73,13 +75,13 @@ const PHASE = (c, lauf, p) => {
   if (c.t === "grad") { lauf.spanneOffen = { grenze: 22, weiter: 19 }; p.zieleErlaubt = ["mallorca", "kreta", "algarve", "sardinien", "teneriffa", "barcelona", "marrakesch", "krabi", "newyork"]; }
   if (["anzahl", "ausstattung", "gewichtung"].includes(c.t)) lauf.gesuchtMit = "x";
   if (["vorlage", "flugwahl", "kasse"].includes(c.t)) { lauf.gesuchtMit = "x"; lauf.letzteVorlage = ["h1", "h2", "h3"]; lauf.vorlageFuer = "x"; lauf.besprochen = { preis: true, gewichtung: true, ausstattung: true }; }
-  const g = lauf.gespraech[0]; if (g) g.content = FRAGE[c.t];
+  const g = lauf.gespraech[0]; if (g && !c.h) g.content = FRAGE[c.t];
 };
 const text = (x) => JSON.stringify(x ?? null);
 const kernFuer = (c) => {
   const thema = c.t in GEFRAGT ? GEFRAGT[c.t] : c.t;
   const b = VOR[c.t] || {}, p = JSON.parse(JSON.stringify({ ...b, ...(c.vor || {}), vonPerson: { ...(b.vonPerson || {}), ...((c.vor || {}).vonPerson || {}) } }));
-  const kern = { lauf: { profil: p, gespraech: [{ role: "assistant", content: FRAGE[c.t] }, { role: "user", content: c.du }], protokoll: [], annahmeOffen: [], gefragtWie: {}, verlauf: [],
+  const kern = { lauf: { profil: p, gespraech: [...(c.h ? c.h.map((x, i) => ({ role: i % 2 ? "user" : "assistant", content: x })) : [{ role: "assistant", content: FRAGE[c.t] }]), { role: "user", content: c.du }], protokoll: [], annahmeOffen: [], gefragtWie: {}, verlauf: [],
       nachrichtArt: "antwort", runde: 1, zugSeit: 77, gefragt: thema, zuletztGefragt: thema, gefragtVorher: thema },
     notieren(e, d) { this.lauf.protokoll.push({ ereignis: e, ...d }); }, freigabe: () => "suchen", darf: () => false, logZeile() {}, sagen() {}, standAnzeigen() {}, sichern() {},
     standKurz: () => "", antwortWerten() {}, gespraechPush() {}, sagenUndMerken() {} };
@@ -127,20 +129,20 @@ async function nachspielen(c, args) {
 (async () => {
   let ablage = {}; try { ablage = JSON.parse(fs.readFileSync(ABLAGE, "utf8")); } catch { ablage = {}; }
   if (ECHT) {
-    let usd = 0; const offen = B.filter((c) => !ablage[c.du]);
+    let usd = 0; const offen = B.filter((c) => !ablage[schl(c)]);
     for (let i = 0; i < offen.length; i += 3) {
       if (usd > DECKEL) { console.log(`Deckel erreicht nach ${i} Saetzen`); break; }
-      await Promise.all(offen.slice(i, i + 3).map(async (c) => { const r = await fragen(c); if (r) { ablage[c.du] = r.args; usd += r.usd; } else console.log("keine Antwort:", c.du); }));
+      await Promise.all(offen.slice(i, i + 3).map(async (c) => { const r = await fragen(c); if (r) { ablage[schl(c)] = r.args; usd += r.usd; } else console.log("keine Antwort:", c.du); }));
       fs.writeFileSync(ABLAGE, JSON.stringify(ablage, null, 1));
     }
     console.log(`Kosten dieses Laufs: ${usd.toFixed(4)} USD`);
   }
   let fragen_ = 0; const z = {}, zeilen = [], halb = { arbeit: [0, 0, 0, 0], kontrolle: [0, 0, 0, 0] };
   for (const c of B) {
-    if (!ablage[c.du]) { (z.ohneAntwort ||= 0); z.ohneAntwort++; continue; }
-    const r = await nachspielen(c, ablage[c.du]); if (r.nachfrage) { fragen_++; if (ALLE) console.log("fragt:", c.du, "->", r.nachfrage); } const i = ["richtig", "offen", "leicht", "DRASTISCH"].indexOf(r.urteil);
+    if (!ablage[schl(c)]) { (z.ohneAntwort ||= 0); z.ohneAntwort++; continue; }
+    const r = await nachspielen(c, ablage[schl(c)]); if (r.nachfrage) { fragen_++; if (ALLE) console.log("fragt:", c.du, "->", r.nachfrage); } const i = ["richtig", "offen", "leicht", "DRASTISCH"].indexOf(r.urteil);
     ((z[c.k] ||= [0, 0, 0, 0]))[i]++; halb[c.nr % 2 ? "arbeit" : "kontrolle"][i]++;
-    if (r.urteil !== "richtig" || ALLE) zeilen.push(`${r.urteil.padEnd(9)} ${String(c.nr).padStart(2)}${c.nr % 2 ? " " : "K"} [${c.k}/${c.t}] "${c.du}" -> ${[...r.falsch, ...r.offen.map((x) => x + " fehlt")].join("; ")}${r.nachfrage ? " | fragt: " + r.nachfrage : ""} | Modell ${JSON.stringify(Object.fromEntries(Object.entries(ablage[c.du]).filter(([k]) => !["belege"].includes(k)))).slice(0, 230)} ${r.verworfen.join(",")}`);
+    if (r.urteil !== "richtig" || ALLE) zeilen.push(`${r.urteil.padEnd(9)} ${String(c.nr).padStart(2)}${c.nr % 2 ? " " : "K"} [${c.k}/${c.t}] "${c.du}" -> ${[...r.falsch, ...r.offen.map((x) => x + " fehlt")].join("; ")}${r.nachfrage ? " | fragt: " + r.nachfrage : ""} | Modell ${JSON.stringify(Object.fromEntries(Object.entries(ablage[schl(c)]).filter(([k]) => !["belege"].includes(k)))).slice(0, 230)} ${r.verworfen.join(",")}`);
   }
   console.log("Bereich      richtig  offen leicht DRASTISCH"); for (const [k, v] of Object.entries(z)) if (Array.isArray(v)) console.log(k.padEnd(12), v.map((x) => String(x).padStart(6)).join(" "));
   console.log(`Bestaetigungsfragen: ${fragen_} von ${B.length}`);
@@ -150,5 +152,6 @@ async function nachspielen(c, args) {
   // Torwaechter: kein falscher Wert, nicht weniger richtig als erreicht
   const richtig = halb.arbeit[0] + halb.kontrolle[0], falsch = halb.arbeit[2] + halb.kontrolle[2] + halb.arbeit[3] + halb.kontrolle[3], drastisch = halb.arbeit[3] + halb.kontrolle[3];
   console.log(`GESAMT ${richtig}/${B.length} richtig, ${falsch} falsch, davon ${drastisch} DRASTISCH`);
-  if (falsch || richtig < 170) process.exitCode = 1;
+  // Bekannt und leicht: "dann das, was drin ist" - das Modell selbst liest Halbpension (Durchlauf 2)
+  if (drastisch || falsch > 1 || richtig < 210) process.exitCode = 1;
 })();
