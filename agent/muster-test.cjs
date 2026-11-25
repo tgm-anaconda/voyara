@@ -43,6 +43,11 @@ const A = [
   ["Ordnungszahl, anderes gemeint", { ...G }, "anreise", "am ersten tag wollen wir an den strand", {}, (p) => !p.anreise],
   ["Korrektur der Naechte", { ...F }, "verpflegung", "nicht 7, sondern 12 bitte", { selbst_genannt: ["dauer"] }, (p) => p.naechte === 12],
   ["Korrektur ohne Wert", { ...F }, "verpflegung", "die naechte stimmen nicht", { selbst_genannt: ["dauer"] }, (p) => p.naechte === 7],
+  ["Beide 8", { ...G, kinder: 2, personen: 4, kinderAlter: [] }, "kinderAlter", "beide 8", { kinderAlter: [8, 8] }, (p) => JSON.stringify(p.kinderAlter) === "[8,8]"],
+  ["Beide 8, Modell schweigt", { ...G, kinder: 2, personen: 4, kinderAlter: [] }, "kinderAlter", "beide sind 8", {}, (p) => JSON.stringify(p.kinderAlter) === "[8,8]"],
+  ["Teilangabe: das Modell weiss mehr", { ...G, kinder: 2, personen: 4, kinderAlter: [] }, "kinderAlter", "8, der andere auch", { kinderAlter: [8, 8] }, (p) => JSON.stringify(p.kinderAlter) === "[8,8]"],
+  ["Zwei Alter", { ...G, kinder: 2, personen: 4, kinderAlter: [] }, "kinderAlter", "6 und 9", {}, (p) => JSON.stringify(p.kinderAlter) === "[6,9]"],
+  ["Zweites Alter nachgereicht", { ...G, kinder: 2, personen: 4, kinderAlter: [6] }, "kinderAlter", "9", {}, (p) => JSON.stringify(p.kinderAlter) === "[6,9]"],
   ["Gruppe waechst", { ...F }, "verpflegung", "wir sind jetzt doch zu viert", { personenGesamt: 4 }, (p) => p.erwachsene === 4 && p.personen === 4],
   ["Gruppe waechst um ein Kind", { ...F }, "verpflegung", "meine tochter kommt noch mit, sie ist 6", { personenGesamt: 3, erwachsene: 2, kinder: 1, kinderAlter: [6] }, (p) => p.erwachsene === 2 && p.kinder === 1],
 ];

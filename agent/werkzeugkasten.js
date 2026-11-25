@@ -2518,7 +2518,13 @@ const Werkzeugkasten = {
       } else if (alter.length !== ziffern.length) return null;
       if (alter.length > n) return null;
       if (alter.some((x) => !Number.isFinite(x) || x < 0 || x > 17)) return null;
-      return { kinderAlter: alter };
+      /* Nur eine VOLLSTAENDIGE Lesung zaehlt (25.11.2026, echtes Gespraech):
+         Aus "beide 8" las der Kern eine 8, sperrte damit das richtige 8 und 8
+         des Modells und fragte noch einmal. "Beide/alle N" gilt fuer jedes
+         Kind; eine Teilangabe gehoert dem Modell. */
+      if (alter.length === 1 && n > 1 && /\b(beide|beiden|alle|jeweils|je|zwillinge|drillinge)\b/.test(t)) return { kinderAlter: Array(n).fill(alter[0]) };
+      if (alter.length < n - (p.kinderAlter || []).length) return null;
+      return { kinderAlter: alter.length === n ? alter : [...(p.kinderAlter || []), ...alter] };
     },
     /* Kein "ja" und kein "nein": Die zweite Fassung der Frage lautet
        "Bucht ihr den Flug selbst, oder soll ich ihn mitsuchen?" - dort
@@ -3176,7 +3182,7 @@ const Werkzeugkasten = {
     if (m == null || Array.isArray(m) || typeof m === "boolean" || Array.isArray(kernWert)) return;                 // das Modell hat das Thema anders gefasst - es kennt den Zusammenhang
     const tagGleich = haupt === "anreise" && String(m).slice(5) === String(kernWert).slice(5);
     const flugGleich = haupt === "flugAb" && typeof Flug !== "undefined" && Flug.code(String(m)) === Flug.code(String(kernWert));
-    if (String(m).toLowerCase() === String(kernWert).toLowerCase() || tagGleich || flugGleich) return;
+    if (String(m).toLowerCase() === String(kernWert).toLowerCase() || tagGleich || flugGleich) { kern.lauf.gleichGelesen = [haupt]; return; }   // zwei Leser, ein Ergebnis
     // Beide lesen verschieden: keiner gewinnt, die Person wird gefragt
     kern.lauf.leseKonflikt = { feld: haupt, thema: g.thema, kern: kernWert, modell: m, zug: kern.lauf.zugSeit };
     kern.notieren("absprache_widerspruch", { feld: haupt, modell: m, kern: kernWert });
@@ -3247,7 +3253,10 @@ const Werkzeugkasten = {
     const wFrage = /\?\s*$/.test(letzte) && /^(und\s+|aber\s+|ach\s+)?(was|wie|wo|wann|wer|welche\w*|warum|wieso|weshalb|wozu|woran|inwiefern)\b/i.test(letzte.trim());
     if (wFrage) for (const f of ["monat", "anreise", "von", "bis", "naechte", "personenGesamt", "erwachsene", "kinder", "kinderAlter", "ziel", "zieleAuswahl", "zieleAus", "richtung", "typ", "artEgal", "flug", "flugAb", "flugKlasse", "verpflegung", "maxPreis", "budgetGesamt", "ausstattung", "mindestGrad"]) {
       if (a[f] == null || JSON.stringify(a[f]) === JSON.stringify(p[STAND[f] || f] ?? null)) continue;
-      kern.notieren("ohne_grundlage", { feld: f, wert: a[f], grund: "w_frage" }); delete a[f];
+      kern.notieren("ohne_grundlage", { feld: f, wert: a[f], grund: "w_frage" });
+      // Nach wem nur gefragt wurde, der kommt auch ueber den Suchaufruf nicht hinein
+      if (f === "ziel" || f === "zieleAuswahl") kern.lauf.nurGefragt = { ids: [].concat(a[f]), zug: kern.lauf.zugSeit };
+      delete a[f];
     }
     for (const f of ["monat", "anreise", "von", "bis", "naechte", "personenGesamt", "erwachsene", "kinder", "flug", "flugKlasse", "verpflegung", "maxPreis", "budgetGesamt", "mindestbewertung", "mindestSterne", "zimmer", "wlanInklusive", "anzahlVorschlaege", "flugAbEgal"]) {
       if (a[f] == null) continue;
@@ -4121,7 +4130,9 @@ const Werkzeugkasten = {
            Wert. Sonst koennte das Modell die Zahl, die die Person gerade
            genannt hat, mit einer anderen ueberschreiben - und zwar
            unbemerkt, weil beide Werte aus demselben Zug stammen. */
-        if ((kern.lauf.selbstGelesen || []).includes(feld) && p[feld] !== wert) {
+        // Die vollstaendigere Liste gewinnt (25.11.2026): Der Kern las einen Teil, das Modell alles
+        const mehr = !kern.lauf.chipFest && Array.isArray(wert) && Array.isArray(p[feld]) && wert.length > p[feld].length && p[feld].every((x) => wert.includes(x));
+        if ((kern.lauf.selbstGelesen || []).includes(feld) && p[feld] !== wert && !mehr) {
           kern.notieren("modell_ueberschreibt_nicht", { feld, modell: wert, kern: p[feld] });
           return;
         }
@@ -6172,6 +6183,13 @@ const Werkzeugkasten = {
            neue Angabe der Person. */
         if ((p.zieleAuswahl || []).length >= 2 && p.zieleAuswahl.includes(id) && !p.zielId) {
           kern.notieren("ziel_im_suchaufruf_ignoriert", { ziel: id, auswahl: p.zieleAuswahl.slice() });
+        } else if (kern.lauf.nurGefragt && kern.lauf.nurGefragt.zug === kern.lauf.zugSeit && kern.lauf.nurGefragt.ids.includes(id) && p.zielId !== id) {
+          /* "Was waere denn mit Kreta?" (25.11.2026, echtes Gespraech): In
+             stand_merken abgewiesen, kam Kreta ueber den Suchaufruf doch
+             hinein. Jetzt fragt der Kern, ob die Person das will. */
+          kern.notieren("ziel_nur_gefragt", { ziel: id });
+          Werkzeugkasten.merkeVerworfen(kern, "ziel", id);
+          kern.lauf.zielBedeutung = { id, zug: kern.lauf.zugSeit };
         } else if (Werkzeugkasten.regionGenannt(kern.lauf, id, { einzeln: true }) || p.zielId === id) { p.zielId = id; p.zielOffen = false; }
         else kern.notieren("ziel_verworfen", { ziel: id, wo: "suchen" });
       }

@@ -1968,6 +1968,7 @@ const Kern = {
     this.lauf.leseKonflikt = null;
     this.lauf.grundlageFrage = null;
     this.lauf.zielBedeutung = null;
+    this.lauf.nurGefragt = null;
     this.lauf.chipFest = null;
     if (typeof Absicherung !== "undefined") Absicherung.nachrichtLesen(this, t);
     this.budgetUebernehmen();

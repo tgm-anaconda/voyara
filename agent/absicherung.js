@@ -72,11 +72,14 @@ const Absicherung = {
     if (typeof Politik === "undefined") return;
     const als = (p) => { const o = {}; for (const e of Politik.eckdaten(p || {})) (o[e.feld] ||= []).push(e.wert); return o; };
     const a = als(vorher), b = als(kern.lauf.profil), h = (kern.lauf.herkunft ||= {});
-    const gelesen = kern.lauf.selbstGelesen || [];
+    // Vom Kern gelesen oder von Kern und Modell gleich gelesen
+    const gelesen = [...(kern.lauf.selbstGelesen || []), ...(kern.lauf.gleichGelesen || [])];
+    kern.lauf.gleichGelesen = null;
     for (const f of Object.keys(b)) {
       if (JSON.stringify(a[f]) === JSON.stringify(b[f])) continue;
       const z = this.ZEILEN[f];
-      h[f] = kern.lauf.chipFest || (z && z.felder.some((x) => gelesen.includes(x))) ? "sicher" : "modell";
+      // Die Reisetage rechnet der Kern aus Anreise und Dauer - die stehen einzeln da
+      h[f] = f === "Daten" || kern.lauf.chipFest || (z && z.felder.some((x) => gelesen.includes(x))) ? "sicher" : "modell";
     }
   },
 
