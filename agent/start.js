@@ -232,7 +232,50 @@ const Startbildschirm = {
      wird. Fuer die Pruefungen (?kernpruefung, ?seitenpruefung) und mit
      STELLSCHRAUBEN.nurAmRechner = false bleibt er aus. Gibt true zurueck,
      wenn er steht. */
-  MINDESTBREITE: 1040,
+  // Die Telefonansicht gilt bis einschliesslich 1040 (max-width: 1040px)
+  MINDESTBREITE: 1041,
+
+  /* Dasselbe waehrend der Studie (25.11.2026). Ben: "Wenn ich die
+     Untersuchen klicke, dann wird die Seite zu dieser Handy-Ansicht, aber da
+     muesste genau das stehen." Liegt ueber der Seite, aendert nichts an ihr
+     und verschwindet beim Vergroessern; der Agent wartet so lange
+     (Zeiger.warte). Vor dem Start gilt weiter nurAmRechner. */
+  fensterWaechter() {
+    try {
+      if (typeof STELLSCHRAUBEN !== "undefined" && STELLSCHRAUBEN.nurAmRechner === false) return;
+      if (/[?&](kernpruefung|seitenpruefung|pruefstand)=/.test(location.search)) return;
+      if (typeof matchMedia !== "function") return;
+      const breit = matchMedia(`(min-width: ${this.MINDESTBREITE}px)`);
+      let el = null, seit = 0;
+      const pruefen = () => {
+        const schmal = window.innerWidth < this.MINDESTBREITE;
+        // Steht der Hinweis am Anfang schon, kein zweiter
+        if (schmal && !el && !document.querySelector("[data-nur-am-rechner]")) {
+          el = document.createElement("div");
+          el.className = "einstieg fenster-schmal";
+          el.innerHTML = `
+            <div class="einstieg-blatt" role="alertdialog" aria-modal="true" tabindex="-1">
+              <div class="einstieg-hero" style="margin-bottom:6px">
+                <span class="einstieg-siegel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></span>
+                <h1>Bitte das Fenster vergrößern</h1>
+                <p class="einstieg-vorspann">Das Browserfenster ist gerade zu schmal für die Seite mit dem Assistenten. Zieh es bitte breiter oder stell es auf Vollbild, dann geht es genau dort weiter.</p>
+              </div>
+            </div>`;
+          document.body.appendChild(el);
+          document.body.classList.add("fenster-zu-schmal");
+          seit = Date.now();
+          try { if (typeof Studie !== "undefined" && Studie.daten) Studie.notieren("fenster_schmal", { breite: window.innerWidth }); } catch { /* ohne Studie */ }
+        } else if (!schmal && el) {
+          el.remove(); el = null;
+          document.body.classList.remove("fenster-zu-schmal");
+          try { if (typeof Studie !== "undefined" && Studie.daten) Studie.notieren("fenster_wieder_breit", { sekunden: Math.round((Date.now() - seit) / 1000) }); } catch { /* ohne Studie */ }
+        }
+      };
+      window.addEventListener("resize", pruefen);
+      breit.addEventListener?.("change", pruefen);
+      pruefen();
+    } catch { /* dann ohne Hinweis */ }
+  },
 
   nurAmRechner(weiter) {
     try {
@@ -245,6 +288,7 @@ const Startbildschirm = {
 
       const el = document.createElement("div");
       el.className = "einstieg";
+      el.dataset.nurAmRechner = "1";
       el.innerHTML = `
         <div class="einstieg-blatt" role="dialog" aria-modal="true" tabindex="-1">
           <div class="einstieg-hero">
@@ -258,6 +302,7 @@ const Startbildschirm = {
             </p>
           </div>
         </div>`;
+      document.querySelector(".fenster-schmal")?.remove();   // nur ein Hinweis
       document.body.appendChild(el);
       document.body.classList.add("startschirm-offen");
       if (!ohneMaus) {
@@ -410,3 +455,5 @@ const Startbildschirm = {
     buchen:      "Er sucht, vergleicht und schließt die Buchung im Rahmen deiner Vorgaben selbst ab. Du siehst danach das Ergebnis.",
   },
 };
+
+document.addEventListener("DOMContentLoaded", () => Startbildschirm.fensterWaechter());

@@ -176,6 +176,16 @@ const kern = (p, text, frage) => ({ lauf: { profil: p, gespraech: [{ role: "assi
       pruefe("Nie über Flug gesprochen: nichts verändert", F.get().mit, false);
     } else console.log("   (Flugmodul nicht geladen)");
   } else pruefe("Kasse übernimmt den Flug", false);
+  /* 6. Kleinigkeiten */
+  if (WK.reisendeSchonGesagt) {
+    const satz3 = "Dann rechne ich mit 3 Erwachsenen und 1 Kind (17 Jahre).";
+    pruefe("Doppelte Reisende: schon gesagt", WK.reisendeSchonGesagt(satz3, "Danke, dann seid ihr also drei Erwachsene und ein Kind von 17 Jahren."));
+    pruefe("Andere Zahl: nicht gesagt", WK.reisendeSchonGesagt(satz3, "Dann seid ihr vier Erwachsene."), false);
+    pruefe("Anderer Satz bleibt", WK.reisendeSchonGesagt("Dann rechne ich mit März.", "drei Erwachsene und ein Kind"), false);
+  } else pruefe("Doppelte Reisende", false);
+  pruefe("Die Frage nach der ersten Antwort hakt nach", /noch etwas/.test(String(WK.themenSatz("gewichtung", { ...offen, kriterien: [{ id: "essen", gewicht: 1 }] }, { gefragtWie: { gewichtung: 1 }, gespraech: [] }))));
+  pruefe("Auftrag in der Kasse erkannt", ["such einen flug für mich", "mach du das", "kannst du mir einen Flug raussuchen?", "übernimm das bitte", "füll das Formular für mich aus"].map((x) => !!KN.KASSE_AUFTRAG?.test(x)), [true, true, true, true, true]);
+  pruefe("Kein Auftrag in der Kasse", ["ich suche mir den flug selbst", "warum ist der Flug so teuer?", "nimm die Versicherung raus", "mach den Koffer weg", "was kostet der Flug?", "ich buche das jetzt nicht", "mit Koffer"].map((x) => !!KN.KASSE_AUFTRAG?.test(x)), [false, false, false, false, false, false, false]);
   console.log(`${gut} richtig, ${schlecht} falsch`);
   process.exitCode = schlecht ? 1 : 0;
 })();

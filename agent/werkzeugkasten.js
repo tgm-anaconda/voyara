@@ -3344,12 +3344,15 @@ const Werkzeugkasten = {
   werteUebernehmen(kern, thema, werte, text = "", grund = "antwort_selbst_gelesen") {
     const p = kern.lauf.profil || (kern.lauf.profil = {});
     const gesetzt = [];
+    let zielGeklickt = false;
     if (werte && werte._regionVergleich) {
       werte = { ...werte }; delete werte._regionVergleich;
       Werkzeugkasten.regionVergleichStarten(kern, p);
     } else if (kern.lauf.regionVergleich?.gefragt && werte && ("zieleAuswahl" in werte || "zielId" in werte)) {
-      // Ein Knopf der Regionsfrage beantwortet sie
+      // Ein Knopf der Regionsfrage beantwortet sie - und muss in der
+      // Sammelfrage nicht noch einmal bestaetigt werden
       kern.lauf.regionVergleich = null;
+      zielGeklickt = true;
     }
     for (const f of Object.keys(werte || {})) {
       const w = werte[f];
@@ -3384,6 +3387,10 @@ const Werkzeugkasten = {
     if (thema && kern.lauf.uebersprungen) delete kern.lauf.uebersprungen[thema];
     if (thema && kern.lauf.nichtVerstanden) delete kern.lauf.nichtVerstanden[thema];
     kern.notieren?.(grund, { thema, felder: gesetzt, text: String(text).slice(0, 60) });
+    if (zielGeklickt && kern.lauf.sammelBestaetigt && typeof Absicherung !== "undefined") {
+      const z = Absicherung.punkte(p, kern.lauf).find((x) => x.feld === "Ziel");
+      if (z) { kern.lauf.sammelBestaetigt.Ziel = z.wert; (kern.lauf.herkunft ||= {}).Ziel = "bestaetigt"; }
+    }
     kern.standAnzeigen?.();
     kern.sichern?.();
     return { thema, felder: gesetzt };
@@ -6083,7 +6090,8 @@ const Werkzeugkasten = {
           kern.notieren("wunsch_ist_bedingung", { entfernt: vorher - p.kriterien.length });
         }
       }
-      const aend = kern.lauf.lageFuer ? Werkzeugkasten.aenderungsSatz(p, vorStand, geaendert) : null;
+      const aendRoh = kern.lauf.lageFuer ? Werkzeugkasten.aenderungsSatz(p, vorStand, geaendert) : null;
+      const aend = aendRoh ? aendRoh.charAt(0).toUpperCase() + aendRoh.slice(1) : null;
       if (aend) {
         kern.lauf.aenderungSatz = aend;
         kern.notieren("aenderung_erklaert", { felder: geaendert, satz: aend.slice(0, 120) });
@@ -6885,9 +6893,19 @@ const Werkzeugkasten = {
       return { ergebnis: e, log: `Trefferliste: ${gesamt} Treffer (${Werkzeugkasten.filterText(p)})${darfEmpfehlen || selbst ? "" : " - erst die Beratung, dann Vorschläge"}` };
     },
 
-    async haus_details(a, kern) {
+    async haus_details(a, kern, stufe = 1) {
       const item = typeof getItemById === "function" ? getItemById(a.id) : null;
       if (!item) return { ergebnis: { fehler: `${a.id} kenne ich nicht.` } };
+      /* Erst nachsehen, dann sagen (25.11.2026, Bens Durchgang).
+         --------------------------------------------------------------
+         "Worin unterscheiden sie sich?" beantwortete der Agent aus dem
+         Katalog, waehrend im Chat "Sieht sich einzelne Hotels an" stand.
+         Jetzt geht er hin: bei einem Vergleich auf alle Haeuser der Auswahl
+         (in Kartenreihenfolge), sonst auf das eine - und umrandet die
+         Zahlen, ueber die er spricht. Zurueck bringt ihn der Rahmen (C15,
+         Kern.rahmenZurueck), auch in die Kasse. */
+      const nach = await Werkzeugkasten.nachsehen(a.id, kern, stufe);
+      if (nach?.navigiert || nach?.fertig) return nach.fertig || nach;
       kern.logZeile(`Haus angesehen: ${item.name}`, "schritt");
       const p = kern.lauf.profil;
       await kern.denkpause(700, "liest nach…");
@@ -6933,6 +6951,7 @@ const Werkzeugkasten = {
           bewertungen: kurz ? { anzahl: item.reviewCount, gesamtnote: item.rating,
             hinweis: "Fuer Teilnoten, Lob und Kritik ruf bewertungen_lesen - erst dann darfst du dazu etwas sagen." } : null,
           haeltGemerkteVorgabenEin: typeof Politik !== "undefined" ? Politik.erfuellt(item, proNacht, p) : null,
+          ...(nach?.ohneSeite ? { nichtNachgesehen: nach.ohneSeite } : {}),
         },
         log: `${item.name} nachgeschlagen`,
       };
@@ -9111,6 +9130,137 @@ const Werkzeugkasten = {
   KERNTHEMEN: ["lage", "sauberkeit", "service", "essen", "ausstattung", "preis", "ruhe"],
 
   BEWERTUNGEN_GELESEN: 100,
+  /* Eine allgemeine Vergleichsfrage ("worin unterscheiden sie sich?").
+     Ob es ueberhaupt um die Haeuser geht, hat das Modell entschieden - es
+     hat haus_details gerufen. */
+  VERGLEICH_FRAGE: /unterscheid|unterschied|vergleich|gegen(ü|ue)ber|vor-? ?und ?nachteil|was ist (da )?anders/i,
+  VERGLEICH_PUNKT: /strand|meer|preis|kost|teuer|g(ü|ue)nstig|billig|essen|verpfleg|zimmer|pool|spa|wellness|sauna|whirlpool|park|lage|zentrum|flughafen|bewert|note|sauber|ruh|service|hund/i,
+  // Was auf der Seite umrandet wird - nur Gefragtes, sonst das Uebliche
+  /* "Dann seid ihr also drei Erwachsene und ein Kind von 17 Jahren. Dann
+     rechne ich mit 3 Erwachsenen und 1 Kind (17 Jahre)." - einmal reicht
+     (25.11.2026). Nur, wenn das Modell dieselben Zahlen schon nennt. */
+  reisendeSchonGesagt(satz, text) {
+    const m = String(satz).match(/^Dann rechne ich mit (\d+) Erwachsene[mn] und (\d+) Kind/);
+    if (!m) return false;
+    const WORT = ["null", "ein(e[mnrs]?)?", "zwei", "drei", "vier", "fünf", "sechs", "sieben", "acht"];
+    const nennt = (n, was) => new RegExp(`(?<![a-zäöüß0-9])(${n}|${WORT[+n] || n})\\s+${was}`, "i").test(String(text || ""));
+    return nennt(m[1], "erwachsen") && nennt(m[2], "kind");
+  },
+
+  nachsehPunkte(text, p) {
+    const t = String(text || "").toLowerCase();
+    const wort = { strand: /strand|meer/, zentrum: /zentrum|lage|stadt|ortskern/, flughafen: /flughafen/, preis: /preis|kost|teuer|g(ü|ue)nstig|billig|euro|€/,
+      verpflegung: /verpfleg|fr(ü|ue)hst|halbpension|all.?in|mahlzeit/, zimmer: /zimmer|bett/, note: /note|bewert|gut bewertet/ };
+    const raus = Object.keys(wort).filter((k) => wort[k].test(t));
+    const merkmale = (typeof AMENITY_LABELS !== "undefined" ? Object.keys(AMENITY_LABELS) : [])
+      .filter((m) => { const l = AMENITY_LABELS[m].toLowerCase().split(/[ &]+/)[0]; return l.length > 2 && t.includes(l); });
+    const aspekte = (typeof ASPEKT_LABELS !== "undefined" ? Object.entries(ASPEKT_LABELS) : [])
+      .filter(([, l]) => t.includes(String(l).toLowerCase().split(/[ &]+/)[0])).map(([id]) => id);
+    if (raus.length || merkmale.length || aspekte.length) return { fakten: raus, merkmale, aspekte };
+    const kr = (p.kriterien || []).map((k) => (typeof Politik !== "undefined" ? Politik.kriterium(k.id) : null)).filter(Boolean);
+    return { fakten: ["note", "strand", "zentrum", "preis"], merkmale: [...(p.ausstattung || []), ...kr.map((k) => k.merkmal).filter(Boolean)],
+      aspekte: kr.map((k) => k.aspekt).filter(Boolean).slice(0, 3) };
+  },
+
+  async nachsehen(id, kern, stufe) {
+    const l = kern.lauf;
+    if (typeof Werkzeuge === "undefined" || typeof Werkzeuge.hausNachsehen !== "function") return null;
+    const vorlage = l.letzteVorlage || [];
+    const zug = l.zugSeit || 0;
+    const frage = String([...(l.gespraech || [])].reverse().find((n) => n.role === "user")?.content || "");
+    if (stufe === 1) {
+      if (!vorlage.includes(id) && l.gewaehlt !== id) return null;         // nur Haeuser, um die es gerade geht
+      if (!kern.darf("suchen") || STELLSCHRAUBEN.nachsehen === false || Zeiger.abbruch) return null;
+      if (l.nachgesehen?.zug === zug && l.nachgesehen.ids.includes(id)) return null;   // in diesem Zug schon da gewesen
+      if ((typeof Fluege !== "undefined" && Fluege.offen)) {
+        return { ohneSeite: "Du hast gerade NICHT auf der Seite nachgesehen (das Flugfenster ist offen). Sag in einem Halbsatz, dass das aus deinem Rundgang stammt." };
+      }
+      const vergleich = vorlage.includes(id) && vorlage.length > 1 && this.VERGLEICH_FRAGE.test(frage);
+      const karten = (l.kartenReihenfolge || []).filter((x) => vorlage.includes(x));
+      const ids = vergleich ? (karten.length === vorlage.length ? karten : vorlage.slice()) : [id];
+      l.nachsehen = { zug, ids, i: 0, vergleich, punkte: this.nachsehPunkte(vergleich && !this.VERGLEICH_PUNKT.test(frage) ? "" : frage, l.profil || {}) };
+      if (vergleich && l.rahmen && l.rahmen.bleibt === "hingehen") l.rahmen.bleibt = null;   // "zeig mir die Unterschiede"
+      kern.notieren("nachsehen_start", { ids, vergleich, von: Werkzeuge.seite() });
+      if (vergleich) kern.sagen(`Ich sehe mir dafür ${ids.length === 2 ? "beide" : `alle ${ids.length}`} noch einmal an.`);
+    }
+    const r = l.nachsehen;
+    if (!r) return null;
+    const hier = () => Werkzeuge.seite() === "stay" && new URLSearchParams(location.search).get("id") === r.ids[r.i];
+    const hin = () => {
+      kern.sperreAn();
+      if (l.ausstehend) l.ausstehend.stufe = 2;
+      kern.sichern();
+      location.href = kern.linkZu(r.ids[r.i], getItemById(r.ids[r.i])?.name || "").href;
+      return { navigiert: true, stufe: 2 };
+    };
+    const ende = () => { l.nachsehen = null; kern.sperreAus(); };
+    if (Zeiger.abbruch) { ende(); return { fertig: { ergebnis: { angehalten: true, hinweis: "Die Person hat dich angehalten. Schreib nichts dazu - der Kern hat sich schon gemeldet." } } }; }
+    if (!hier()) {
+      if (stufe !== 1 && r.hingeklickt === r.ids[r.i]) { ende(); return null; }   // Seite kam nicht: aus dem Katalog antworten
+      r.hingeklickt = r.ids[r.i];
+      return hin();
+    }
+    kern.sperreAn();
+    const e = await Werkzeuge.hausNachsehen(r.ids[r.i], r.punkte);
+    if (e.text) kern.logZeile(e.text, "ergebnis");
+    (l.gelesen ||= {})[r.ids[r.i]] = "hausseite";
+    r.i += 1;
+    if (r.i < r.ids.length && !Zeiger.abbruch) { r.hingeklickt = r.ids[r.i]; return hin(); }
+    const ids = r.ids, allgemein = r.vergleich && !this.VERGLEICH_PUNKT.test(frage);
+    l.nachgesehen = { zug, ids };
+    ende();
+    if (Zeiger.abbruch) return { fertig: { ergebnis: { angehalten: true, hinweis: "Die Person hat dich angehalten. Schreib nichts dazu." } } };
+    kern.notieren("nachsehen_fertig", { ids, vergleich: r.vergleich, allgemein });
+    if (!allgemein) return null;                                  // gezielte Frage: das Modell antwortet mit den Angaben
+    const satz = this.vergleichsText(ids, l.profil || {}, kern);
+    if (!satz) return null;
+    kern.sagen(satz);
+    kern.gespraechPush({ role: "assistant", content: satz });
+    l.chips = []; AgentPanel.setSuggestions([]);
+    l.kernWartet = true;
+    return { fertig: { ergebnis: { gesagt: true, hinweis: "Der Vergleich steht schon im Chat, fuer alle Haeuser nach demselben Schema. Ruf KEIN Werkzeug und schreib nichts dazu." },
+      log: `${ids.length} Häuser verglichen` } };
+  },
+
+  /* Der Vergleich nach festem Schema: dieselben Punkte fuer alle Haeuser,
+     kein Sieger. Der Flug steht nicht drin - er ist fuer alle gleich. */
+  vergleichsText(ids, p, kern = null) {
+    const haeuser = ids.map((id) => (typeof getItemById === "function" ? getItemById(id) : null)).filter(Boolean);
+    if (haeuser.length < 2) return null;
+    const zeilen = [];
+    const zeile = (label, wert) => {
+      const w = haeuser.map(wert);
+      if (w.some((x) => x == null || x === "")) return;
+      zeilen.push(w.every((x) => x === w[0]) ? `${label}: bei ${haeuser.length === 2 ? "beiden" : "allen"} ${w[0]}`
+        : `${label}: ${haeuser.map((h, i) => `${w[i]} (${h.name})`).join(", ")}`);
+    };
+    const km = (x) => (x == null ? null : x === 0 ? "direkt dort" : x < 1 ? `${Math.round(x * 1000)} m` : `${String(x).replace(".", ",")} km`);
+    zeile("Art", (h) => (typeof CATEGORY_LABELS !== "undefined" && CATEGORY_LABELS[h.category]) || null);
+    zeile("Strand", (h) => km(h.distanceToBeach));
+    zeile("Zentrum", (h) => km(h.distanceToCenter));
+    const board = p.verpflegung && typeof BOARD_LABELS !== "undefined" ? BOARD_LABELS[p.verpflegung] : null;
+    if (p.naechte && kern?.kartenGesamt) zeile(`Preis für ${p.naechte} Nächte${board ? ` mit ${board}` : ""}`, (h) => { const g = kern.kartenGesamt(h, p); return Number.isFinite(g) ? Politik.euro(Math.round(g)) : null; });
+    zeile("Gästenote", (h) => (h.rating ? `${h.rating.toFixed(1).replace(".", ",")} von 5` : null));
+    const kr = (p.kriterien || []).map((k) => Politik.kriterium(k.id)).filter(Boolean);
+    const merkmale = [...new Set([...(p.ausstattung || []), ...kr.map((k) => k.merkmal).filter(Boolean)])];
+    for (const m of merkmale) {
+      const l = (typeof AMENITY_LABELS !== "undefined" && AMENITY_LABELS[m]) || m;
+      const hat = haeuser.filter((h) => (h.amenities || []).includes(m));
+      zeilen.push(`${l}: ${hat.length === haeuser.length ? `haben ${haeuser.length === 2 ? "beide" : "alle"}` : hat.length ? `nur ${hat.map((h) => h.name).join(" und ")}` : "hat keins davon"}`);
+    }
+    const aspekte = kr.map((k) => k.aspekt).filter(Boolean);
+    for (const id of [...new Set(aspekte.length ? aspekte : ["essen", "lage", "service"])].slice(0, 4)) {
+      const b = haeuser.map((h) => (typeof aspektbilanz === "function" ? (aspektbilanz(h) || []).find((x) => x.id === id) : null));
+      if (b.some((x) => !x)) continue;
+      zeile(b[0].label, (h) => Politik.teilnoteText(b[haeuser.indexOf(h)].anteilPositiv));
+    }
+    // Was nur eines hat, hoechstens drei je Haus
+    const nur = haeuser.map((h) => (h.amenities || []).filter((m) => !merkmale.includes(m) && typeof AMENITY_LABELS !== "undefined" && AMENITY_LABELS[m]
+      && haeuser.every((x) => x === h || !(x.amenities || []).includes(m))).slice(0, 3).map((m) => AMENITY_LABELS[m]));
+    haeuser.forEach((h, i) => { if (nur[i].length) zeilen.push(`Nur ${h.name}: ${nur[i].join(", ")}`); });
+    return `Das sind die Unterschiede:\n${zeilen.map((x) => `- ${x}`).join("\n")}\nWas davon ist dir am wichtigsten?`;
+  },
+
   hausSchema(item, p, platz = 0) {
     if (!item || typeof aspektbilanz !== "function" || typeof Politik === "undefined") return null;
     const bilanz = aspektbilanz(item) || [];
@@ -10192,10 +10342,14 @@ const Werkzeugkasten = {
     // Erst nach der Suche ueber alle Regionen
     if (!sofort && (!lauf.gesuchtMit || lauf.gesuchtMit !== this.eckdatenSchluessel(p))) return null;
     const name = (id) => (typeof ZIEL_NACH_ID !== "undefined" ? ZIEL_NACH_ID[id]?.name : null) || id;
+    const typ = (id) => (typeof ZIEL_NACH_ID !== "undefined" ? ZIEL_NACH_ID[id]?.typ : null);
     const zahl = (id) => { try { return this.katalogTreffer({ ...p, zielId: id, zieleAuswahl: [] }, this.filterAusStand({ ...p, zielId: id, zieleAuswahl: [] })).length; } catch { return 0; } };
     const kandidaten = (typeof ZIELE !== "undefined" ? ZIELE : []).map((z) => z.id)
       .filter((id) => !rv.vorher.includes(id) && !(p.zieleAus || []).includes(id))
-      .map((id) => ({ id, n: zahl(id) })).filter((x) => x.n > 0).sort((a, b) => b.n - a.n).slice(0, 3);
+      /* Erst Aehnliches (25.11.2026): Wer Mallorca will, bekam Island und
+         Suedtirol angeboten, weil es dort mehr Hotels gibt. */
+      .map((id) => ({ id, n: zahl(id), gleich: rv.vorher.some((v) => typ(v) && typ(v) === typ(id)) ? 1 : 0 }))
+      .filter((x) => x.n > 0).sort((a, b) => b.gleich - a.gleich || b.n - a.n).slice(0, 3);
     if (!kandidaten.length) return null;
     rv.gefragt = true;
     const art = (n) => this.artZahl(n, p);
@@ -11812,6 +11966,9 @@ const Werkzeugkasten = {
       if (lauf.naeheOhneFaq !== schluesselN) { lauf.naeheOhneFaq = schluesselN; lauf.keinZwangFuer = schluesselN; }
       return null;
     }
+    // Eine Vergleichsfrage zur Auswahl: nachsehen statt aus dem Kopf (25.11.2026)
+    if ((lauf.letzteVorlage || []).length > 1 && this.VERGLEICH_FRAGE.test(letzteFrageText) && lauf.nachgesehen?.zug !== (lauf.zugSeit || 0)
+      && !/region|monat|termin|flug|airline|verbindung|mietwagen/i.test(letzteFrageText)) return "haus_details";
     if (lauf.nachrichtArt === "frage" && typeof faqSuchen === "function") {
       const nutzer = (lauf.gespraech || []).filter((n) => n.role === "user");
       const schluessel = nutzer.length;

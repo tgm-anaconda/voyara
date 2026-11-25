@@ -1419,6 +1419,40 @@ const Werkzeuge = {
      Agent hier sieht, darf er danach sagen - vor dem Rundgang hat er
      dazu nichts in der Hand. Bewertungen bleiben aussen vor; die sind
      Sache des Rundgangs und dauern zehnmal so lange. */
+  /* Auf der Hausseite gezielt nachsehen (25.11.2026): umrandet genau die
+     Zahlen, ueber die der Agent gleich spricht. Klickt und waehlt nichts. */
+  async hausNachsehen(id, { fakten = [], merkmale = [], aspekte = [] } = {}) {
+    const item = typeof getItemById === "function" ? getItemById(id) : null;
+    if (!item) return { ok: false, text: "" };
+    const fakt = (re) => [...document.querySelectorAll(".fact")].find((f) => re.test(f.textContent || ""));
+    const WO = {
+      note: () => document.querySelector(".detail-head .rating-chip"),
+      strand: () => fakt(/strand/i), zentrum: () => fakt(/zentrum/i), flughafen: () => fakt(/flughafen/i),
+      preis: () => document.querySelector("#bookingWidget .bw-total") || document.querySelector("#bookingWidget .bw-price"),
+      zimmer: () => document.querySelector(".room-row.selected") || document.querySelector(".room-row"),
+      verpflegung: () => document.querySelector(".board-chip.active") || document.querySelector(".board-options"),
+    };
+    const NAME = { note: "Gästenote", strand: "Strand", zentrum: "Zentrum", flughafen: "Flughafen", preis: "Preis", zimmer: "Zimmer", verpflegung: "Verpflegung" };
+    const liste = fakten.filter((x) => x !== "note" || !aspekte.length).map((x) => ({ el: WO[x]?.(), was: NAME[x] }));
+    for (const m of merkmale) {
+      const l = (typeof AMENITY_LABELS !== "undefined" && AMENITY_LABELS[m]) || m;
+      const el = [...document.querySelectorAll("#amenityPanel .amenity")].find((x) => (x.textContent || "").trim() === l)
+        || document.querySelector("#amenityPanel .amenity-grid");
+      liste.push({ el, was: l });
+    }
+    for (const x of aspekte) {
+      const l = (typeof ASPEKT_LABELS !== "undefined" && ASPEKT_LABELS[x]) || x;
+      liste.push({ el: [...document.querySelectorAll("#reviewPanel .aspekt-zeile")].find((z) => (z.querySelector(".aspekt-name")?.textContent || "").trim() === l), was: l });
+    }
+    const gesehen = [];
+    for (const { el, was } of liste) {
+      if (!el || Zeiger.abbruch) continue;
+      await Zeiger.lies(el, { dauer: 650, hinweis: was });
+      if (!gesehen.includes(was)) gesehen.push(was);
+    }
+    return { ok: true, text: `${item.name}: ${gesehen.join(", ") || "angesehen"}.`, daten: { id, gesehen } };
+  },
+
   async hausUeberfliegen(id) {
     const item = typeof getItemById === "function" ? getItemById(id) : null;
     if (!item) return { ok: false, text: `${id} kenne ich nicht.` };

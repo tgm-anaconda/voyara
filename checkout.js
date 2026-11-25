@@ -159,6 +159,19 @@ const Kasse = {
   },
   zeichnen() { render(); },
 
+  // Der Agent sieht auf den Hausseiten nach und kommt zurueck (Kern.rahmenEinstellen)
+  merken() { return { id: entry?.id || null, schritt: step, haken: !!document.getElementById("gTerms")?.checked }; },
+  zurueckAuf(m) {
+    if (!m || !entry || m.id !== entry.id) return;
+    if (m.schritt === 2 && step === 1 && reisende.every((r) => (r.name || "").trim())) {
+      guest = { name: reisende[0]?.name?.trim() || "", mail: guest.mail };
+      step = 2; render();
+    } else if (step === 1 && m.haken) {
+      const h = document.getElementById("gTerms");
+      if (h) h.checked = true;
+    }
+  },
+
   /* "Flug auswaehlen" in der Kasse (21.11.2026).
      ------------------------------------------------------------------
      Entscheidung des Nutzers: Die Flugwahl gehoert in die Kasse, nicht
@@ -334,35 +347,40 @@ function flugAbschnitt() {
     const ort = info.ort || (f && f.flug.fromCode) || "";
     const ab = Flug.flughaefen().map((h) => `<option value="${h.code}" ${h.code === ort ? "selected" : ""}>${h.name}</option>`).join("");
     const text = f && f.gewaehlt
-      ? `<strong>${f.flug.airline} · ${f.flug.depart}–${f.flug.arrive}</strong>
-         <small>ab ${f.flug.from} · ${f.flug.stops === 0 ? "direkt" : `${f.flug.stops} Stopp`} · ${Flug.KLASSEN[fs.klasse].label} · ${fs.koffer ? "mit Koffer" : "Handgepäck"}${f.flug.rueckAb ? ` · Rückflug ${f.flug.rueckAb}` : ""} · ${formatPrice(f.gesamt)} für ${f.personen} ${f.personen === 1 ? "Person" : "Personen"}</small>`
-      : `<strong>Noch keine Verbindung gewählt</strong>
-         <small>${alle.length ? `${alle.length} Verbindungen ab ${alle[0].flug.from}, ` : ""}${f ? `ab ${formatPrice(f.proPerson)} pro Person` : "kein Flug ab diesem Flughafen"}</small>`;
+      ? `<strong>${f.flug.airline} · ${f.flug.depart}-${f.flug.arrive} · ${formatPrice(f.gesamt)}</strong>
+         <small>${f.flug.stops === 0 ? "Direkt" : `${f.flug.stops} Stopp`} · ${Flug.KLASSEN[fs.klasse].label} · ${fs.koffer ? "mit Koffer" : "Handgepäck"}${f.flug.rueckAb ? ` · Rückflug ${f.flug.rueckAb}` : ""}</small>`
+      : `<strong>Noch kein Flug gewählt</strong>
+         <small>${f ? `${alle.length ? `${alle.length} Flüge, ` : ""}ab ${formatPrice(f.proPerson)} pro Person` : "Kein Flug ab diesem Flughafen"}</small>`;
     zeile = `
-        <div class="kasse-flug">
-          <div class="kasse-flug-text">${text}</div>
-          ${alle.length > 1 ? `<button type="button" class="btn btn-ghost" id="cFlugWahl">${f && f.gewaehlt ? "Andere Verbindung" : "Flug auswählen"}</button>` : ""}
-        </div>
-        <div class="kasse-flug-ab"><label for="cFlugAb">Abflughafen</label><select class="select" id="cFlugAb">${ab}</select></div>`;
+          <div class="kf-inhalt">
+            <div class="kf-feld"><label for="cFlugAb">Abflughafen</label><select class="kf-select" id="cFlugAb">${ab}</select></div>
+            <div class="kf-text">${text}</div>
+            ${alle.length > 1 ? `<button type="button" class="btn ${f && f.gewaehlt ? "btn-ghost" : "btn-primary"}" id="cFlugWahl">${f && f.gewaehlt ? "Andere Verbindung" : "Flug auswählen"}</button>` : ""}
+          </div>`;
   }
+  // Schalter statt Haken, eine Karte statt doppelter Ueberschrift (25.11.2026, Bens Vorschau)
+  const n = Belegung.get().personen;
+  const wer = n === 1 ? "für 1 Person" : `für alle ${n} Reisenden`;
   return `
-        <h3 class="formular-titel">Flug</h3>
-        <label class="check-row">
-          <input type="checkbox" id="cFlugMit" ${fs.mit ? "checked" : ""} />
-          <span>Flug dazubuchen <small style="color:var(--ink-500)">— Hin- und Rückflug für alle Reisenden</small></span>
-        </label>${zeile}`;
+        <div class="kf">
+          <label class="kf-kopf">
+            <span class="kf-symbol"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg></span>
+            <span><strong>Hin- und Rückflug</strong><small>${fs.mit ? wer : `${wer} dazubuchen`}</small></span>
+            <input type="checkbox" class="kf-schalter" id="cFlugMit" ${fs.mit ? "checked" : ""} />
+          </label>${zeile}
+        </div>`;
 }
 
 function subtitle() {
   if (entry.type === "car") return `${entry.category} · ${entry.supplier} · Abholung: ${entry.pickup} · ${nights} Miettage`;
   if (entry.type === "flight") {
     const personen = Belegung.get().personen;
-    return `${entry.from} → ${entry.to} · ${entry.depart}–${entry.arrive} · ${entry.stops === 0 ? "Direktflug" : entry.stops + " Stopp"} · ${personen} ${personen === 1 ? "Person" : "Personen"}`;
+    return `${entry.from} → ${entry.to} · ${entry.depart}-${entry.arrive} · ${entry.stops === 0 ? "Direktflug" : entry.stops + " Stopp"} · ${personen} ${personen === 1 ? "Person" : "Personen"}`;
   }
   const zeit = typeof Reisedaten !== "undefined" && Reisedaten.text() ? `${Reisedaten.text()} · ` : "";
   if (entry.type === "apartment") return `${zeit}Gesamte Wohnung · ${Belegung.text()}`;
   const f = flugDazu();
-  return `${zeit}${entry.rooms[roomIdx].name} · ${BOARD_LABELS[entry.boards[boardIdx].key]} · ${Belegung.text()}${f ? ` · mit Flug: ${f.text}` : ""}`;
+  return `${zeit}${entry.rooms[roomIdx].name} · ${BOARD_LABELS[entry.boards[boardIdx].key]} · ${Belegung.text()}${f ? (f.gewaehlt ? ` · mit Flug: ${f.text}` : ` · mit Flug ab ${f.flug.from}`) : ""}`;
 }
 
 function renderSteps() {
@@ -396,7 +414,6 @@ function renderStep1() {
   document.getElementById("checkoutMain").innerHTML = `
     <section class="panel">
       <h2>Deine Daten</h2>
-      <p class="hint" style="margin-bottom:16px">Reine Demo-Eingabe. Es werden keine Daten an einen Server gesendet und keine Zahlungsdaten abgefragt. Die Namen dürfen erfunden sein.</p>
       <form id="guestForm" class="form-stack">
 ${flugAbschnitt()}
         <h3 class="formular-titel">Reisende</h3>
@@ -417,18 +434,22 @@ ${flugAbschnitt()}
         <h3 class="formular-titel">Extras</h3>
         <label class="check-row">
           <input type="checkbox" id="cVersicherung" ${versicherung ? "checked" : ""} />
-          <span>Reiserücktrittsversicherung <small style="color:var(--ink-500)">— erstattet den Reisepreis bei Krankheit, Unfall oder Jobverlust</small></span>
+          <span>Reiserücktrittsversicherung <small style="color:var(--ink-500)">- erstattet den Reisepreis bei Krankheit, Unfall oder Jobverlust</small></span>
           <span class="count">${VERSICHERUNG_PREIS} €</span>
         </label>
 
         <h3 class="formular-titel">Zahlungsart</h3>
-        <label class="check-row"><input type="radio" name="zahlung" class="js-zahlung" value="karte" ${zahlung === "karte" ? "checked" : ""} /><span>Kreditkarte <small style="color:var(--ink-500)">— sofortige Bestätigung</small></span><span class="count">+2 %</span></label>
-        <label class="check-row"><input type="radio" name="zahlung" class="js-zahlung" value="lastschrift" ${zahlung === "lastschrift" ? "checked" : ""} /><span>Lastschrift <small style="color:var(--ink-500)">— Bestätigung nach einem Werktag</small></span><span class="count">0 €</span></label>
+        <label class="check-row"><input type="radio" name="zahlung" class="js-zahlung" value="karte" ${zahlung === "karte" ? "checked" : ""} /><span>Kreditkarte <small style="color:var(--ink-500)">- sofortige Bestätigung</small></span><span class="count">+2 %</span></label>
+        <label class="check-row"><input type="radio" name="zahlung" class="js-zahlung" value="lastschrift" ${zahlung === "lastschrift" ? "checked" : ""} /><span>Lastschrift <small style="color:var(--ink-500)">- Bestätigung nach einem Werktag</small></span><span class="count">0 €</span></label>
 
-        <label class="check-row" style="margin-top:12px">
-          <input type="checkbox" id="gTerms" required />
-          <span>Ich habe die <a href="info.html?p=agb">Hinweise zur Studie</a> gelesen und weiß, dass keine echte Buchung erfolgt.</span>
-        </label>
+        <div class="studienhinweis">
+          <div class="studienhinweis-kopf"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>Hinweis zur Studie</div>
+          <p>Keine echte Buchung, keine Zahlung. Die Namen dürfen erfunden sein.</p>
+          <label class="check-row">
+            <input type="checkbox" id="gTerms" required />
+            <span>Ich habe die <a href="info.html?p=agb">Hinweise zur Studie</a> gelesen und weiß, dass keine echte Buchung erfolgt.</span>
+          </label>
+        </div>
         <div style="display:flex;gap:10px;justify-content:flex-end">
           <a class="btn btn-ghost" href="${isStay() ? hausLink() : listeLink()}">Zurück</a>
           <button type="submit" class="btn btn-primary">Weiter zur Prüfung</button>
@@ -461,10 +482,12 @@ ${flugAbschnitt()}
 
   document.getElementById("cFlugMit")?.addEventListener("change", (e) => {
     Flug.set(e.target.checked ? { mit: true } : { mit: false, flugId: null });
+    if (typeof Kern !== "undefined" && Kern.flugSelbst) Kern.flugSelbst({ mit: e.target.checked });
     render();
   });
   document.getElementById("cFlugAb")?.addEventListener("change", (e) => {
     Flug.set({ ab: e.target.value, flugId: null });
+    if (typeof Kern !== "undefined" && Kern.flugSelbst) Kern.flugSelbst({ ab: e.target.value });
     render();
   });
   /* Der Agent klickt denselben Knopf; was er dabei braucht (sein Stand,
@@ -472,7 +495,8 @@ ${flugAbschnitt()}
   document.getElementById("cFlugWahl")?.addEventListener("click", () => {
     const ag = Kasse.agentOeffnet || {};
     Kasse.agentOeffnet = null;
-    Kasse.flugFenster(ag);
+    const auf = Kasse.flugFenster(ag);
+    if (auf && !ag.kern && typeof Kern !== "undefined") Kern.flugUebernahmeFragen?.();
   });
 
   document.getElementById("guestForm").addEventListener("submit", (e) => {
@@ -482,7 +506,10 @@ ${flugAbschnitt()}
        Weiter ohne zweites Absenden: Die Kasse zeichnet nach der Wahl neu,
        und das Formular war beim ersten Klick schon vollstaendig. */
     const f = flugDazu();
-    if (f && !f.gewaehlt && Kasse.flugFenster({ nachWahl: weiterZurPruefung })) return;
+    if (f && !f.gewaehlt && Kasse.flugFenster({ nachWahl: weiterZurPruefung })) {
+      if (typeof Kern !== "undefined") Kern.flugUebernahmeFragen?.();
+      return;
+    }
     weiterZurPruefung();
   });
 }
@@ -522,11 +549,11 @@ function renderStep2() {
       </div>
       <div class="review-block">
         <h3>Reisende</h3>
-        ${reisende.map((r, i) => `<div class="kv"><span>${i + 1}${r.kind ? " · Kind" : ""}</span><strong>${r.name || "—"}</strong></div>`).join("")}
+        ${reisende.map((r, i) => `<div class="kv"><span>${i + 1}${r.kind ? " · Kind" : ""}</span><strong>${r.name || "-"}</strong></div>`).join("")}
       </div>
       <div class="review-block">
         <h3>Kontakt und Ankunft</h3>
-        <div class="kv"><span>E-Mail</span><strong>${guest.mail || "—"}</strong></div>
+        <div class="kv"><span>E-Mail</span><strong>${guest.mail || "-"}</strong></div>
         <div class="kv"><span>Ankunft am Haus</span><strong>${ankunft || "keine Angabe"}</strong></div>
       </div>
       <div class="review-block">
@@ -586,7 +613,7 @@ function renderStep3() {
         <h3>${itemTitle(entry)}</h3>
         <p style="margin:0 0 10px;color:var(--ink-500)">${subtitle()}</p>
         <div class="kv"><span>Gesamtpreis</span><strong>${formatPrice(p.total + kartengebuehr(p.total))}</strong></div>
-        <div class="kv"><span>Bestätigung an</span><strong>${guest.mail || "—"}</strong></div>
+        <div class="kv"><span>Bestätigung an</span><strong>${guest.mail || "-"}</strong></div>
       </div>
       <div style="display:flex;gap:10px;justify-content:center;margin-top:20px">
         ${typeof Studie !== "undefined" && Studie.laeuft()
@@ -623,13 +650,13 @@ function renderSummary() {
       ${p.verpflegung ? `<div class="bw-line"><span>${p.verpflegungText}</span><span>${formatPrice(p.verpflegung)}</span></div>` : ""}
       <div class="bw-line"><span>${p.extraLabel}</span><span>${formatPrice(p.extra)}</span></div>
       <div class="bw-line" style="color:var(--ok)"><span>Servicegebühr</span><span>0 €</span></div>
-      ${p.flug ? `<div class="bw-line"><span>Flug ${formatPrice(p.flug.proPerson)} × ${p.flug.personen} (Hin und zurück)</span><span>${formatPrice(p.flug.gesamt)}</span></div>` : ""}
+      ${p.flug ? `<div class="bw-line"><span>Flug ${p.flug.gewaehlt === false ? "ab " : ""}${formatPrice(p.flug.proPerson)} × ${p.flug.personen} (Hin und zurück)</span><span>${formatPrice(p.flug.gesamt)}</span></div>` : ""}
       ${p.gepaeck ? `<div class="bw-line"><span>Gepäck</span><span>${formatPrice(p.gepaeck)}</span></div>` : ""}
       ${p.versicherung ? `<div class="bw-line"><span>Reiserücktrittsversicherung</span><span>${formatPrice(p.versicherung)}</span></div>` : ""}
       ${kartengebuehr(p.total) ? `<div class="bw-line"><span>Kartengebühr 2 %</span><span>${formatPrice(kartengebuehr(p.total))}</span></div>` : ""}
     </div>
     <div class="bw-total"><span>Gesamt${p.flug ? " mit Flug" : ""}</span><strong>${formatPrice(p.total + kartengebuehr(p.total))}</strong></div>
-    <p class="bw-hint">${ICONS.shield} Simulierte Buchung — keine Zahlung, keine Weitergabe von Daten</p>`;
+    <p class="bw-hint">${ICONS.shield} Simulierte Buchung, keine Zahlung</p>`;
 
   applyScenes(document.getElementById("checkoutSummary"));
 }

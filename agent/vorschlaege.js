@@ -138,6 +138,7 @@ const Vorschlaege = {
        `partnerPosition` ist 1, 2 oder 3 - und null, wenn gar kein
        Partnerhaus vorgesehen war. */
     const reihenfolge = kandidaten.map((k) => k.id);
+    if (kern?.lauf) kern.lauf.kartenReihenfolge = reihenfolge;
     const partnerPosition = partnerId ? reihenfolge.indexOf(partnerId) + 1 : null;
     const favPosition = favoritId ? reihenfolge.indexOf(favoritId) + 1 : null;
     kern.notieren("vorschlagsansicht", { ids: reihenfolge, partner: partnerId, offenlegung, kennzeichnung,

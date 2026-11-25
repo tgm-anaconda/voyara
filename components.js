@@ -1622,6 +1622,12 @@ const AgentPanel = {
     // Fehler und riss die restliche Antwort mit - die Nachricht stand
     // dann zwar da, aber Status und Oeffnen des Fensters blieben aus.
     box.innerHTML = (list || []).map((s) => `<button type="button" class="chip">${s}</button>`).join("");
+    // Die Knoepfe nehmen dem Verlauf Hoehe - die letzte Zeile bleibt lesbar,
+    // wenn der Verlauf unten stand (25.11.2026)
+    const verlauf = document.getElementById("agentMessages");
+    if (verlauf && list?.length && verlauf.scrollHeight - verlauf.scrollTop - verlauf.clientHeight < 130) {
+      requestAnimationFrame(() => { verlauf.scrollTop = verlauf.scrollHeight; });
+    }
     box.querySelectorAll(".chip").forEach((chip) =>
       chip.addEventListener("click", () => {
         /* "Nein: ..." schickt nichts ab, sondern beginnt die Antwort

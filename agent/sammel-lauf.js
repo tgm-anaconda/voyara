@@ -8,7 +8,7 @@ async (page) => {
   const ALLES = (anders = {}) => [{ du: "im Juli", stand: V({ monat: 7 }) }, { du: "flexibel", stand: V({}) }, { du: "10 Nächte", stand: V({ naechte: 10 }) },
     { du: anders.wer || "wir sind 2 erwachsene", stand: V(anders.werStand || { erwachsene: 2, kinder: 0, personenGesamt: 2 }) }, { du: "Hotel", stand: V({ typ: "hotel" }) }, { du: "nach Mallorca", stand: V({ ziel: "mallorca" }) },
     { du: "Nur die Unterkunft", stand: V({ flug: false }) }, { du: "Halbpension", stand: V({ verpflegung: "halb" }) }, { du: "bis 220 euro pro nacht", stand: V({ maxPreis: 220 }) }, { du: "Für alle zusammen", stand: V({ maxPreis: 220 }) },
-    { du: "Nein, nichts davon", stand: V({ ausstattungEgal: true }) }, { du: "am 7. Juli", stand: V({ anreise: "2027-07-07" }) }, { du: "ist mir alles gleich wichtig", stand: V({}) }];
+    { du: "am 7. Juli", stand: V({ anreise: "2027-07-07" }) }, { du: "ist mir alles gleich wichtig", stand: V({}) }];
   const hak = (nicht) => `(() => { document.querySelectorAll("#agentMessages .sammel:not(.fertig) input").forEach((k) => { if (!${JSON.stringify(nicht)}.includes(k.value)) k.click(); }); document.querySelector("#agentMessages .sammel:not(.fertig) button").click(); })()`;
   const WEITER = `document.querySelector("#agentMessages .sammel:not(.fertig) button").click()`;
   const NACHLADEN = "location.reload()";

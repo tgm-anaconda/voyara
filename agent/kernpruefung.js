@@ -363,7 +363,7 @@ const Kernpruefung = {
            Dass beide hier fehlen, ist also eine Aussage und kein
            Versehen. Kommt eines der beiden Themen wieder im Ablauf vor,
            ist das eine Aenderung, die jemand bewusst treffen muss. */
-        const mussKommen = ["zeit", "reisende", "art", "ziel", "dauer", "preis", "ausstattung", "gewichtung"];
+        const mussKommen = ["zeit", "reisende", "art", "ziel", "dauer", "preis", "gewichtung"];   // ohne Ausstattung seit 25.11.2026
         // Verpflegung nur, wo es sie gibt - eine Ferienwohnung hat keine
         if (f.art !== "apartment") mussKommen.push("verpflegung");
         // Der Flug bei jeder Art - seit 21.11.2026 auch zur Wohnung (Block F2)
@@ -380,7 +380,7 @@ const Kernpruefung = {
         /* Die Gegenrichtung, sonst waere das Streichen oben wertlos:
            Eine Liste, die nur sagt was kommen muss, merkt nicht, wenn
            etwas Gestrichenes zurueckkehrt. */
-        for (const t of ["vorgehen", "anzahl"]) {
+        for (const t of ["vorgehen", "anzahl", ...(Werkzeugkasten.ausstattungFragen() ? [] : ["ausstattung"])]) {
           if (schritte.includes(t)) melde("thema_zurueck", `${t} wird wieder gefragt (am 16.11.2026 gestrichen)`);
         }
         for (const t of mussKommen) {

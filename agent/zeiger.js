@@ -110,7 +110,12 @@ const Zeiger = {
     // Pause weiterarbeiten: sehen kann die Bewegung dort ohnehin niemand,
     // und der Lauf kommt sauber zu Ende.
     if (document.hidden) return Promise.resolve();
-    return new Promise((fertig) => setTimeout(fertig, this.ms(dauer)));
+    return new Promise((fertig) => {
+      // Fenster zu schmal (start.js, fensterWaechter): weiter erst, wenn es wieder breit ist
+      const weiter = () => (document.body?.classList.contains("fenster-zu-schmal") && !this.abbruch && !document.hidden
+        ? setTimeout(weiter, 250) : fertig());
+      setTimeout(weiter, this.ms(dauer));
+    });
   },
 
   // Streuung um einen Wert, damit nichts im exakten Takt passiert

@@ -56,6 +56,10 @@ const STELLSCHRAUBEN = {
   nachlesen: ["reisende", "zeit", "dauer", "preis"],
   // Fragt der Agent nach einer Muss-Ausstattung? (25.11.2026: nein)
   ausstattungFragen: false,
+  // Sieht der Agent bei Nachfragen auf der Hausseite nach? (25.11.2026)
+  nachsehen: true,
+  // Bietet er beim Oeffnen der Flugliste die Uebernahme an? (25.11.2026)
+  flugUebernahme: true,
   // Vorbelegung des Reglers. "zufall" teilt die Teilnehmenden in zwei
   // Haelften: die eine startet auf der niedrigsten Stufe, die andere auf
   // der hoechsten. Damit laesst sich messen, wie viele die Voreinstellung
@@ -1361,6 +1365,8 @@ const Kern = {
       this.notieren("nach_anhalt_verschluckt", { text: String(text).slice(0, 80) });
       return;
     }
+    // Ein Satz des Agenten beginnt gross ("höchstens 400 € ..." stand am 25.11.2026 klein da)
+    if (rolle === "bot" && /^[a-zäöü]/.test(String(text))) text = String(text).charAt(0).toUpperCase() + String(text).slice(1);
     /* Kein Platzhalter im Chat (04.10.2026: "undefined € insgesamt").
        Letzte Sicherung fuer jeden Satz: Teilsaetze mit undefined, NaN
        oder null fallen weg, und es wird notiert, damit die Quelle
@@ -1683,6 +1689,12 @@ const Kern = {
       bloecke.push(`BEWERTUNGEN: Was Gaeste loben oder kritisieren, Teilnoten und einzelne Aspekte (Essen, Lage, Sauberkeit, Service, Ruhe) sagst du erst, nachdem du bewertungen_lesen fuer genau dieses Haus gerufen hast - auch wenn du die Zahlen aus einem frueheren Ergebnis zu kennen glaubst. Das Lesen ist auf der Seite sichtbar und dauert einen Moment; kuendige es in einem halben Satz an ("ich schau mir die Bewertungen an"). Alle Noten dieser Seite gehen von 1 bis 5, die Gesamtnote genauso wie die Teilnoten. Nenn sie als "x von 5", nie als Prozent und nie auf einer Zehnerskala. ${gelesen.length ? `Gelesen hast du bisher: ${gelesen.join(", ")}.` : "Gelesen hast du bisher noch keines."}`);
     }
     // Buchung: sobald die Freigabe es hergibt
+    // Wo die Person steht, gehoert in den Auftrag (25.11.2026): In der Kasse
+    // vertroestete das Modell sie "auf die Kasse"
+    if (seite === "checkout" && typeof Kasse !== "undefined") {
+      const st = Kasse.stand?.();
+      bloecke.push(`KASSE: Die Person IST im Buchungsformular${st?.id ? ` von ${getItemById?.(st.id)?.name || st.id}` : ""} (Schritt ${st?.schritt || 1}). Schick sie nicht in die Kasse und frag nicht, welches Haus. Der Flug wird genau hier gewaehlt. Bittet sie dich, den Flug herauszusuchen oder das Formular zu uebernehmen, ruf ${this.darf("vorbereiten") ? "" : "freigabe_aendern (vorbereiten) und dann "}buchung_vorbereiten.`);
+    }
     if (this.darf("vorbereiten")) {
       const autonom = this.darf("buchen");
       bloecke.push(`BUCHEN: In die Buchungsstrecke gehst du nur, wenn die Person ausdruecklich buchen will ("buch das", "nehmen wir"). Vorher braucht es einen Anreisetag von ihr (bei flexibler Suche; mit Flug einen Flugtag) - such ihn nicht selbst aus. ${autonom ? "Du darfst abschliessen: buchung_vorbereiten und dann buchung_abschliessen; die Ansage uebernimmt die Seite." : "Du darfst vorbereiten, nicht abschliessen: leg vor, was gebucht wuerde (Haus, Zeitraum, Gesamtpreis, Name), und frag, ob du abschliessen sollst. Erst nach einem klaren Ja buchung_abschliessen."} Liegt ein Preis ueber dem gemerkten Budget, sagst du das.`);
@@ -2417,7 +2429,11 @@ const Kern = {
         // einmal pro Zug, damit ein Fehlschlag keine Schleife wird.
         const letzte = this.lauf.gespraech[this.lauf.gespraech.length - 1];
         if (this.istAngehalten()) break;   // angehalten: kein Modellaufruf mehr, der Kern meldet sich
-        if (this.lauf.kernWartet) { this.lauf.kernWartet = false; break; }   // der Kern hat selbst gefragt
+        if (this.lauf.kernWartet) {   // der Kern hat selbst gefragt oder geantwortet
+          this.lauf.kernWartet = false;
+          this.lauf.kernFertigBei = (this.lauf.gespraech || []).length;   // siehe zugUnterbrochen
+          break;
+        }
         let pflicht = i === 0 && letzte?.role === "user" ? "stand_merken" : false;
         if (i === 0 && this.lauf.fortsetzenMit) {
           const w = this.lauf.fortsetzenMit;
@@ -3343,7 +3359,7 @@ const Kern = {
                gerade gesagt hat. */
             const annahmen = [this.lauf.aenderungSatz, this.lauf.uebernahmeSatz,
               ...Werkzeugkasten.annahmeSaetze(this.lauf, this.lauf.profil)]
-              .filter(Boolean).join(" ");
+              .filter((x) => x && !Werkzeugkasten.reisendeSchonGesagt(x, text)).join(" ");
             /* Ein Autor je Nachricht.
                ----------------------------------------------------------
                Bis v=394 schrieben beide in dieselbe Nachricht: Das Modell
@@ -4631,7 +4647,10 @@ const Kern = {
     const n = [...(this.lauf.gespraech || [])].reverse().find((x) => x.role !== "system");
     if (!n) return false;
     if (n.role === "user") return true;
-    if (n.role === "tool") return true;
+    /* Hat der Kern in diesem Zug schon geantwortet, ist nichts offen - das
+       Werkzeugergebnis steht nur hinter seinem Satz (25.11.2026: Nach der
+       Rueckkehr in die Kasse lief der Vergleich ein zweites Mal). */
+    if (n.role === "tool") return this.lauf.kernFertigBei !== (this.lauf.gespraech || []).length;
     return false;
   },
 
@@ -5142,11 +5161,72 @@ const Kern = {
      an der Hausseite haengt (Zimmer, Flug), schickt er durch
      buchung_vorbereiten, das die Kasse mit allem Eingetragenen wieder
      aufbaut. Liefert true, wenn er die Nachricht ganz erledigt hat. */
+  /* Das Angebot beim Flugfenster (25.11.2026). Ben: "Wenn der Agent merkt,
+     es wurde aktiv auf Flug auswaehlen geklickt, dass er dann nochmal fragt,
+     ob er die Buchung uebernehmen soll." Dort waehlt die Person die
+     Partner-Airline - ab da ist der Agent wieder im Spiel. Einmal je
+     Gespraech, nur nach einem Klick der Person, in beiden Armen gleich.
+     Ein Ja gilt fuers Vorbereiten; vor dem Abschluss fragt er wie immer. */
+  flugUebernahmeFragen() {
+    const l = this.lauf;
+    if (!l || this.laeuft || l.ausstehend || l.flugUebernahme || l.flugWartet || this.istAngehalten?.()) return false;
+    if (STELLSCHRAUBEN.flugUebernahme === false) return false;
+    l.flugUebernahme = "offen";
+    this.sagenUndMerken("Soll ich den Flug für dich heraussuchen und die Buchung vorbereiten?");
+    l.chips = ["Ja, übernimm das", "Nein, ich mache das selbst"];
+    l.chipWirkung = null; l.chipThema = null;
+    AgentPanel.setSuggestions(l.chips);
+    AgentPanel.oeffnen?.();
+    this.notieren("flug_uebernahme_gefragt", { haus: Kasse.stand()?.id || null, freigabe: this.freigabe() });
+    this.sichern();
+    return true;
+  },
+  // Ein klarer Auftrag in der Kasse ("such einen Flug fuer mich", "mach du das")
+  KASSE_AUFTRAG: /^(?!.*\b(nicht|kein\w*|selbst|selber|ohne|weg|raus|l(ö|oe)sch\w*|storn\w*|warum|wieso)\b)(?=.*(?<![a-zäöüß])((r?aus)?such\w*|find\w*|w(ä|ae)hl\w*|aussuch\w*|raussuch\w*|heraussuch\w*|nimm|buch(e|st|en)?|(ü|ue)bernimm\w*|(ü|ue)bernehm\w*|k(ü|ue)mmer\w*|mach\w*|erledig\w*|f(ü|ue)ll\w*)(?![a-zäöüß]))(?=.*(\bflug\b|\bfl(ü|ue)ge\b|verbindung|formular|buchung|\bdu (das|es)\b|\b(das|es) (bitte )?(du|f(ü|ue)r mich)\b|f(ü|ue)r mich|(ü|ue)bernimm)).{3,90}$/i,
+  kasseUebernehmen(ausloeser) {
+    const l = this.lauf, p = (l.profil ||= {});
+    l.flugUebernahme = "ja";
+    if (!this.darf("vorbereiten")) this.freigabeSetzen("vorbereiten", ausloeser);
+    try {
+      const f = Flug.get();
+      if (Kasse.stand()?.flugMoeglich !== false && f.mit) {
+        p.flug = true; (p.vonPerson ||= {}).flug = true;
+        if (f.ab && !Flug.codeListe(p.flugAb).length) p.flugAb = Flug.abText(f.ab);
+      }
+    } catch { /* ohne Flugmodul */ }
+    if (typeof Fluege !== "undefined" && Fluege.offen) Fluege.schliessen(true, "uebernahme");
+    l.gewaehlt = Kasse.stand()?.id || l.gewaehlt;
+    l.fortsetzenMit = "buchung_vorbereiten";
+    this.notieren("kasse_uebernommen", { ausloeser, flug: !!p.flug, ab: p.flugAb || null });
+  },
+
   async kasseBedienen(t, opts = {}) {
     if (typeof Werkzeuge === "undefined" || Werkzeuge.seite() !== "checkout" || typeof Kasse === "undefined") return false;
     if (this.laeuft) return false;
     const p = (this.lauf.profil ||= {});
     const id = Kasse.stand()?.id || this.lauf.gewaehlt;
+    const roh = String(t || "").trim();
+    if (this.lauf.flugUebernahme === "offen") {
+      this.lauf.flugUebernahme = "beantwortet";
+      if (/^(ja|gern|jo|jep|klar|ok|okay)\b.*(ü|ue)bernimm|^(ü|ue)bernimm|^mach (du )?(das|es)/i.test(roh) || Werkzeugkasten.abschlussJa(roh)) {
+        this.notieren("flug_uebernahme_antwort", { ja: true });
+        this.kasseUebernehmen("flug_uebernahme");
+        return false;
+      }
+      if (/^(nein|ne+|nee|nö+)\b|selbst|selber/i.test(roh) && roh.split(/\s+/).length <= 8) {
+        this.notieren("flug_uebernahme_antwort", { ja: false });
+        if (!opts.gezeigt) this.sagen(t, "user");
+        this.gespraechPush({ role: "user", content: t });
+        this.sagenUndMerken("Alles klar. Sag einfach Bescheid, wenn ich doch übernehmen soll.");
+        this.lauf.chips = []; AgentPanel.setSuggestions([]);
+        this.sichern();
+        return true;
+      }
+    } else if (this.KASSE_AUFTRAG.test(roh) && Kasse.stand()?.schritt === 1
+      && !this.lauf.flugWartet && !this.lauf.flugFrageOffen && !this.lauf.abschlussFrage && !this.lauf.abschlussFaellig && !this.lauf.zimmerFrage) {
+      this.kasseUebernehmen("auftrag_kasse");
+      return false;
+    }
     const ab = this.kasseAbsicht(t, !!this.lauf.zahlungFrage);
     // Zimmer oder Flug: ueber die Hausseite, mit allem, was schon dasteht
     if (ab.zimmer) {
@@ -5789,6 +5869,9 @@ const Kern = {
       y: Math.round(window.scrollY || 0),
       vorschlaege: typeof Vorschlaege !== "undefined" && !!Vorschlaege.offen,
       bleibt: this.RAHMEN_HINGEHEN.test(String(text || "")) ? "hingehen" : null,
+      // In der Kasse auch der Schritt und der Haken - sonst stuende die
+      // Person nach dem Nachsehen wieder am Anfang (25.11.2026)
+      kasse: Werkzeuge.seite?.() === "checkout" && typeof Kasse !== "undefined" && Kasse.merken ? Kasse.merken() : null,
     };
   },
   rahmenZurueck() {
@@ -5799,7 +5882,7 @@ const Kern = {
     const offen = typeof Vorschlaege !== "undefined" && !!Vorschlaege.offen;
     if (hier === r.pfad && Math.abs((window.scrollY || 0) - r.y) < 40 && offen === r.vorschlaege) return false;
     this.notieren("rahmen_zurueck", { von: hier, nach: r.pfad, y: r.y, vorschlaege: r.vorschlaege });
-    this.lauf.rahmenEinstellen = { y: r.y, vorschlaege: r.vorschlaege };
+    this.lauf.rahmenEinstellen = { y: r.y, vorschlaege: r.vorschlaege, kasse: r.kasse || null };
     if (hier !== r.pfad) {
       this.sichern();
       location.href = r.pfad;
@@ -5815,6 +5898,7 @@ const Kern = {
     const offen = typeof Vorschlaege !== "undefined" && !!Vorschlaege.offen;
     if (e.vorschlaege && !offen) { try { this.vorschlaegeNochmal("rahmen"); } catch { /* ohne Vorlage nichts zu zeigen */ } }
     else if (!e.vorschlaege && offen) { try { Vorschlaege.schliessen(true, "rahmen"); } catch { /* egal */ } }
+    if (e.kasse && typeof Kasse !== "undefined" && Kasse.zurueckAuf) setTimeout(() => { try { Kasse.zurueckAuf(e.kasse); } catch { /* Kasse im ersten Schritt */ } }, 0);
     // Erst nach dem Aufbau der Liste scrollen, sonst ist die Seite noch zu kurz
     const ziel = e.y;
     let n = 0;
@@ -5845,15 +5929,10 @@ const Kern = {
 
   // Der Knopf, der die Auswahl erreichbar haelt. Steht im Verlauf, damit er
   // einen Seitenwechsel ueberlebt.
+  // Seit dem 25.11.2026 ohne Knopf im Chat: Die Leiste ueber dem
+  // Eingabefeld ("Deine Auswahl (N)") tut dasselbe
   vorschlaegeMerken() {
     this.auswahlLeisteZeigen();
-    const text = "Deine Auswahl bleibt hier stehen, bis du dich entschieden hast.";
-    const aktion = { text: "Die Vorschläge ansehen", vorschlaegeZeigen: true };
-    // Nur einmal im ganzen Gespraech - der Knopf bleibt ja stehen
-    if (this.lauf.verlauf.some((n) => n.aktionen?.some((a) => a.vorschlaegeZeigen))) return;
-    this.lauf.verlauf.push({ rolle: "bot", text, zeit: Date.now(), aktionen: [aktion] });
-    AgentPanel.say(text, "bot", { aktionen: [{ text: aktion.text, tun: () => this.vorschlaegeNochmal("knopf") }] });
-    this.sichern();
   },
 
   // "Warum dieses Haus?" - klappt in der Nachricht auf, ein Modellaufruf ohne Werkzeuge
