@@ -52,7 +52,7 @@ f("reisende", "reisende", "zu viert, zwei davon sind Kinder", { erwachsene: 2, k
 f("reisende", "reisende", "ich, mein Mann und unsere Zwillinge, die werden im Sommer 8", { erwachsene: 2, kinder: 2 }, { zusatz: ["reisende"] });
 f("reisende", "reisende", "meine Mama (72) und ich (45)", { erwachsene: 2, kinder: 0, kinderAlter: leer });
 f("reisende", "reisende", "ich bin 16 und reise mit meinem Vater", { erwachsene: 1, kinder: 1 });
-f("reisende", "reisende", "mit der ganzen Familie", { erwachsene: leer, kinder: leer });
+f("reisende", "reisende", "mit der ganzen Familie", { erwachsene: leer, kinder: leer, personen: leer });
 f("reisende", "reisende", "drei Mädels", { personen: 3 }, { nie: { kinderAlter: 1 }, zusatz: ["reisende"] });
 f("reisende", "reisende", "mein Hund und ich", { erwachsene: 1, kinder: (x) => !x }, { zusatz: ["ausstattung"] });
 f("reisende", "kinderAlter", "der große ist 11, die kleine grad 5 geworden", { kinderAlter: hat(11, 5) });
@@ -74,7 +74,7 @@ f("zeit", "dauer", "nicht länger als 5 Tage", { naechte: (x) => x === 5 || x ==
 // F - Rueckfragen und Nebensaechliches: nichts darf gespeichert werden
 f("frage", "reisende", "bist du eigentlich ein echter Mensch?", {});
 f("frage", "art", "was ist denn der Unterschied zwischen Hotel und Ferienwohnung bei euch?", { typ: leer, artEgal: leer });
-f("frage", "ziel", "wie warm ist es auf Kreta im Oktober?", {}, { zusatz: ["ziel"], nie: { zieleAus: 1 } });
+f("frage", "ziel", "wie warm ist es auf Kreta im Oktober?", { zielId: leer, zieleAuswahl: leer }, { nie: { zieleAus: 1 } });
 f("frage", "flug", "muss ich den Flug jetzt schon buchen?", { flug: leer });
 f("frage", "verpflegung", "was ist bei All Inclusive alles dabei?", { verpflegung: leer });
 f("frage", "preis", "was kostet das denn so ungefähr?", { maxPreis: leer, budgetGesamt: leer });

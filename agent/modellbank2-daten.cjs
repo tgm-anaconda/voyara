@@ -15,7 +15,7 @@ f("warnung", "warum ist das so teuer bei euch?", { maxPreis: 90 });
 f("warnung", "egal, dann ohne Limit", { preisEgal: true }, { zusatz: ["preis"] });
 f("warnung", "ok mach das", { maxPreis: 140 }, { zusatz: ["preis"] });
 f("warnung", "dann lieber nur Frühstück statt Halbpension", { verpflegung: "fruehstueck", maxPreis: 90 });
-f("warnung", "was wäre denn mit Kreta?", { maxPreis: 90 }, { zusatz: ["ziel"], nie: { zieleAus: 1 } });
+f("warnung", "was wäre denn mit Kreta?", { maxPreis: 90, zielId: "mallorca" }, { nie: { zieleAus: 1 } });
 f("warnung", "keine Ahnung, was empfiehlst du?", { maxPreis: (x) => x === 90 || x === 140 });
 // Engstelle: All Inclusive, 120 EUR, Mallorca - nur wenige Hotels
 f("engstelle", "dann nehm ich auch Halbpension", { verpflegung: "halb", maxPreis: 120 });

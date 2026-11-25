@@ -3127,14 +3127,13 @@ const Werkzeugkasten = {
     let werte = null;
     try { werte = leser(t, sicht, this); } catch { werte = null; }
     if (!werte) return null;
-    const vorher = JSON.parse(JSON.stringify(p));
-    const erg = this.werteUebernehmen(kern, thema, werte, t, "antwort_selbst_gelesen");
-    /* Fuer den Abgleich mit dem Modell (ABSPRACHE): Was ganz eindeutig war
-       ("9", "Halbpension bitte"), steht fest. Alles andere gilt nur, wenn
-       das Modell nicht widerspricht. */
-    if (erg) kern.lauf.freiGelesen = { thema, eindeutig: this.eindeutigeAntwort(text),
-      felder: Object.fromEntries(erg.felder.map((f) => [f, vorher[f] === undefined ? null : vorher[f]])) };
-    return erg;
+    /* MODELL ZUERST (25.11.2026, Ben: "dass der Kern nur noch eindeutige
+       Aspekte selbst liest und bei allem anderen das Modell es liefert").
+       Eindeutiges ("9", "Halbpension bitte") gilt sofort. Alles andere ist
+       nur ein Kandidat: Er zaehlt, wenn das Modell sagt, die Frage sei
+       beantwortet, aber keinen Wert liefert (siehe absprache). */
+    if (!this.eindeutigeAntwort(text)) { kern.lauf.kandidat = { thema, werte, text: t }; return null; }
+    return this.werteUebernehmen(kern, thema, werte, t, "antwort_selbst_gelesen");
   },
 
   // Kurz und ohne Wenn und Aber - dann braucht es kein zweites Urteil
@@ -3158,36 +3157,29 @@ const Werkzeugkasten = {
         if (m && a[f] != null && Number(a[f]) !== +m[1]) { kern.notieren("abgelesen", { feld: f, modell: a[f], text: +m[1] }); a[f] = +m[1]; }
       }
     }
-    const g = kern.lauf.freiGelesen;
-    kern.lauf.freiGelesen = null;
-    if (!g || g.eindeutig || kern.lauf.chipFest) return;
-    const p = kern.lauf.profil || {};
-    const MF = { personen: "personenGesamt" };
-    const gleich = (x, y) => String(x).toLowerCase() === String(y).toLowerCase();
-    const raeumen = (grund) => {
-      for (const [f, v] of Object.entries(g.felder)) { if (v == null) delete p[f]; else p[f] = v; if (p.vonPerson) delete p.vonPerson[f]; }
-      kern.lauf.selbstGelesen = (kern.lauf.selbstGelesen || []).filter((f) => !(f in g.felder));
-      kern.lauf.zuletztGemerkt = (kern.lauf.zuletztGemerkt || []).filter((f) => !(f in g.felder));
-      kern.notieren("absprache_geraeumt", { thema: g.thema, grund });
-    };
-    const haupt = Object.keys(g.felder).find((f) => ["naechte", "monat", "personen", "erwachsene", "flug", "flugAb", "flugKlasse", "verpflegung", "maxPreis", "budgetGesamt", "anreise"].includes(f));
+    const g = kern.lauf.kandidat;
+    kern.lauf.kandidat = null;
+    if (!g || kern.lauf.chipFest) return;
+    const FELDER = ["naechte", "monat", "personen", "erwachsene", "flug", "flugAb", "flugKlasse", "verpflegung", "maxPreis", "budgetGesamt", "anreise", "kinderAlter", "anzahlVorschlaege", "preisEgal", "verpflegungEgal"];
+    const haupt = Object.keys(g.werte).find((f) => FELDER.includes(f));
     if (!haupt) return;
-    const kernWert = p[haupt], mf = MF[haupt] || haupt, m = a[mf];
-    const anderes = { maxPreis: "budgetGesamt", budgetGesamt: "maxPreis" }[haupt];
-    if (m != null && m !== "") {
-      const tagGleich = haupt === "anreise" && String(m).slice(5) === String(kernWert).slice(5);
-      const flugGleich = haupt === "flugAb" && typeof Flug !== "undefined" && Flug.code(String(m)) === Flug.code(String(kernWert));
-      if (gleich(m, kernWert) || tagGleich || flugGleich) return;
-      raeumen("widerspruch");
-      kern.lauf.leseKonflikt = { feld: haupt, thema: g.thema, kern: kernWert, modell: m, zug: kern.lauf.zugSeit };
-      delete a[mf];
+    const gruppe = { personen: ["personenGesamt", "erwachsene", "kinder"], erwachsene: ["personenGesamt", "erwachsene", "kinder"], maxPreis: ["maxPreis", "budgetGesamt", "preisEgal"], budgetGesamt: ["maxPreis", "budgetGesamt", "preisEgal"], preisEgal: ["maxPreis", "budgetGesamt", "preisEgal"],
+      verpflegung: ["verpflegung", "verpflegungEgal"], verpflegungEgal: ["verpflegung", "verpflegungEgal"], flugAb: ["flugAb", "flugAbAuswahl", "flugAbEgal"], monat: ["monat", "monate", "von", "anreise", "monatUeberlassen", "jahreszeit"], anreise: ["anreise", "von", "anreiseBis", "anreiseAb"], naechte: ["naechte", ...(/\d/.test(du) ? ["von"] : [])] }[haupt] || [haupt];
+    const kernWert = g.werte[haupt], mf = haupt === "personen" ? "personenGesamt" : haupt, m = a[mf];
+    const geliefert = gruppe.some((f) => a[f] != null && a[f] !== "" && !(Array.isArray(a[f]) && !a[f].length));
+    if (!geliefert) {
+      // Notnagel: Das Modell sagt "beantwortet", liefert aber nichts
+      if (["ja", "teilweise"].includes(a.frage_beantwortet) && a.nachricht_art !== "frage") this.werteUebernehmen(kern, g.thema, g.werte, g.text, "antwort_nachgelesen");
       return;
     }
-    if (anderes && a[anderes] != null) return;                       // die Preisdeutung klaert der Kern selbst
-    // Das Modell hat nichts gelesen und sagt selbst, es war keine Antwort
-    if (a.nachricht_art === "frage" || ["nein", "nein_klaert_noch", "keine_frage_offen"].includes(a.frage_beantwortet)) {
-      if (!["reisende", "kinderAlter", "anzahl"].includes(g.thema)) raeumen("modell_sieht_keine_antwort");
-    }
+    if (m == null || Array.isArray(m) || typeof m === "boolean" || Array.isArray(kernWert)) return;                 // das Modell hat das Thema anders gefasst - es kennt den Zusammenhang
+    const tagGleich = haupt === "anreise" && String(m).slice(5) === String(kernWert).slice(5);
+    const flugGleich = haupt === "flugAb" && typeof Flug !== "undefined" && Flug.code(String(m)) === Flug.code(String(kernWert));
+    if (String(m).toLowerCase() === String(kernWert).toLowerCase() || tagGleich || flugGleich) return;
+    // Beide lesen verschieden: keiner gewinnt, die Person wird gefragt
+    kern.lauf.leseKonflikt = { feld: haupt, thema: g.thema, kern: kernWert, modell: m, zug: kern.lauf.zugSeit };
+    kern.notieren("absprache_widerspruch", { feld: haupt, modell: m, kern: kernWert });
+    delete a[mf];
   },
 
   /* GRUNDLAGE - kein Wert ohne Anhalt im Text (25.11.2026)
@@ -3248,6 +3240,14 @@ const Werkzeugkasten = {
       const re = this.GRUNDLAGE[MUSTER[f] || f];
       return !!re && re.test(frage);
     };
+    /* Eine W-Frage legt nichts fest (25.11.2026): "Wie warm ist es auf Kreta
+       im Oktober?" trug das Modell als Ziel ein. Bitten in Frageform
+       ("koennen wir auch 10 Naechte?") sind davon nicht betroffen. */
+    const wFrage = /\?\s*$/.test(letzte) && /^(und\s+|aber\s+|ach\s+)?(was|wie|wo|wann|wer|welche\w*|warum|wieso|weshalb|wozu|woran|inwiefern)\b/i.test(letzte.trim());
+    if (wFrage) for (const f of ["monat", "anreise", "von", "bis", "naechte", "personenGesamt", "erwachsene", "kinder", "kinderAlter", "ziel", "zieleAuswahl", "zieleAus", "richtung", "typ", "artEgal", "flug", "flugAb", "flugKlasse", "verpflegung", "maxPreis", "budgetGesamt", "ausstattung", "mindestGrad"]) {
+      if (a[f] == null || JSON.stringify(a[f]) === JSON.stringify(p[STAND[f] || f] ?? null)) continue;
+      kern.notieren("ohne_grundlage", { feld: f, wert: a[f], grund: "w_frage" }); delete a[f];
+    }
     for (const f of ["monat", "anreise", "von", "bis", "naechte", "personenGesamt", "erwachsene", "kinder", "flug", "flugKlasse", "verpflegung", "maxPreis", "budgetGesamt", "mindestbewertung", "mindestSterne", "zimmer", "wlanInklusive", "anzahlVorschlaege", "flugAbEgal"]) {
       if (a[f] == null) continue;
       if (JSON.stringify(a[f]) === JSON.stringify(p[STAND[f] || f] ?? null)) continue;      // nichts Neues
@@ -5159,6 +5159,8 @@ const Werkzeugkasten = {
         kern.notieren("menge_unbestimmt", { feld: "kinder", wert: a.kinder });
         delete a.kinder;
         if (a.erwachsene != null && !gesagt(/\d|zwei|drei|vier|fünf|fuenf|erwachsene/i, 1)) delete a.erwachsene;
+        // Auch die Gesamtzahl ist dann erfunden (25.11.2026, "mit der ganzen Familie" -> 4)
+        if (a.personenGesamt != null && !gesagt(Werkzeugkasten.ZAHLWORT_RE, 1)) { kern.notieren("reisende_verworfen", { feld: "personenGesamt", wert: a.personenGesamt, grund: "unbestimmte_mehrzahl" }); delete a.personenGesamt; }
       }
       /* "4 oder mehr" ist keine Vier.
          ----------------------------------------------------------------
@@ -5376,6 +5378,8 @@ const Werkzeugkasten = {
         // Person - beide Zahlen bleiben offen, der Fahrplan fragt nach
         if (a.kinder === 0) delete a.kinder;
         if (a.erwachsene != null && !gesagt(/\d|zwei|drei|vier|fünf|fuenf|erwachsene/i, 1)) delete a.erwachsene;
+        // Auch die Gesamtzahl ist dann erfunden (25.11.2026, "mit der ganzen Familie" -> 4)
+        if (a.personenGesamt != null && !gesagt(Werkzeugkasten.ZAHLWORT_RE, 1)) { kern.notieren("reisende_verworfen", { feld: "personenGesamt", wert: a.personenGesamt, grund: "unbestimmte_mehrzahl" }); delete a.personenGesamt; }
         p.kinder = null;
         kern.notieren("kind_erkannt", {});
       }

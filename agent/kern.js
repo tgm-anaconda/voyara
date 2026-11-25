@@ -1961,7 +1961,7 @@ const Kern = {
     this.haustierLesen(t);
     this.flugWuenscheLesen(t);
     this.lauf.selbstGelesen = [];
-    this.lauf.freiGelesen = null;
+    this.lauf.kandidat = null;
     this.lauf.leseKonflikt = null;
     this.lauf.grundlageFrage = null;
     this.lauf.zielBedeutung = null;
