@@ -3013,6 +3013,58 @@ const Werkzeugkasten = {
     return { ok: true, grund: null };
   },
 
+  /* ABSPRACHE - was der Kern aus freiem Text lesen darf (25.11.2026)
+     ==================================================================
+     Ben: "Der Kern darf keine Fehler machen; es muss immer durch eine
+     Rueckfrage abgefangen werden." Der Haertetest (kernhaerte-test.cjs)
+     zeigte, wo er sie machte: Er suchte Woerter und uebersah die Satzform.
+     "Letztes Jahr hatten wir All Inclusive, das war furchtbar" war fuer ihn
+     eine Wahl. Verstehen bleibt beim Modell - der Kern liest nur den Teil
+     der Nachricht, der eine Zusage ist. Was wegfaellt, ist nicht verloren:
+     Das Modell sieht immer die ganze Nachricht.
+       weg: Fragen, Erzaehltes (Vergangenes, Dritte), Hypothesen;
+       dazu je Nebensatz Ablehnungen ("zu teuer", und ausser beim Flug, beim
+       Preis und bei den Reisenden auch "nicht/kein/ausser"). */
+  zusageTeil(text, thema = null) {
+    const roh = String(text == null ? "" : text);
+    // Anhaengsel sind keine Frage: "an Ostern, geht das?"
+    const t = roh.replace(/[,\s]+(geht das|ginge das|geht sowas|oder|ok(ay)?|passt das|m(ö|oe)glich|ist das m(ö|oe)glich|in ordnung|ja|ne|gell)\s*\?+\s*$/i, "");
+    const ERZAEHLT = /\b(letzte[smnr]?|vorige[smnr]?|vergangene[smnr]?)\s+(jahr|mal|sommer|winter|herbst|fr(ü|ue)hling|urlaub|reise|woche|monat)\b|\b(hatte|hatten|hattest|war|waren|gewesen|gehabt|fr(ü|ue)her|damals|neulich)\b|\b(schw(ä|ae)rm\w*|erz(ä|ae)hl\w*|behaupte\w*)\b|\bsagt(e)?\s+(wohl|immer|er|sie)?\s*(ab\b)?/i;
+    const HYPOTHESE = /\b(wenn|falls|ob|w(ü|ue)rden?\s+wir|vielleicht|eventuell|evtl|m(ö|oe)glicherweise|unsicher|unschl(ü|ue)ssig)\b|\bwei(ß|ss)\s+(noch\s+)?nicht\b|\b(ü|ue)berleg\w*/i;
+    const ABGELEHNT = /\bzu\s+(teuer|viel|hei(ß|ss)|kalt|warm|weit|kurz|lang|wenig|voll|gro(ß|ss)|klein|fr(ü|ue)h|sp(ä|ae)t)\b|\bnicht\s+(egal|leisten|infrage|in frage)\b|\bleisten\b[^,]*\bnicht\b/i;
+    const VERNEINT = /\b(nicht|nichts|nie|niemals|kein|keine|keinen|keinem|keiner|keinesfalls|au(ß|ss)er|ohne|statt|anstatt|anstelle)\b|\bauf keinen fall\b/i;
+    const mitVerneinung = ["flug", "preis", "reisende", "anzahl", "kinderAlter", "regionen"].includes(thema);
+    const saetze = t.split(/(?<=[!?;\n]|[^\d\s]\.)\s*(?=\S)(?!\d)/).filter((x) => x && x.trim());
+    const bleibt = [];
+    for (const satz of saetze) {
+      if (/\?\s*$/.test(satz)) continue;
+      /* Teilsaetze: an Komma und Gegenwort. Nicht zwischen zwei Ziffern
+         ("3,5") und nicht vor einem Relativsatz des gleichen Gedankens. */
+      const teile = satz.split(/,(?!\d)\s*|\s+(?=aber\b|sondern\b|daf(ü|ue)r\b|stattdessen\b)/i).filter((x) => x && x.trim());
+      // Haengt der Satz an "wenn/ob/vielleicht", faellt er ganz weg
+      if (HYPOTHESE.test(teile[0] || "")) continue;
+      for (const teil of teile) {
+        if (ERZAEHLT.test(teil) || HYPOTHESE.test(teil) || ABGELEHNT.test(teil)) continue;
+        if (!mitVerneinung && VERNEINT.test(this.ohneScheinVerneinung(teil))) continue;
+        bleibt.push(teil.trim());
+      }
+    }
+    return bleibt.join(", ").trim();
+  },
+  ohneScheinVerneinung(t) { return typeof Kern !== "undefined" && Kern.ohneSchein ? Kern.ohneSchein(t) : t; },
+
+  /* Wie viele Vorschlaege (2 bis 6) - nur aus einer kurzen Antwort
+     (25.11.2026). Vorher zaehlte jede Ziffer: "wir haben 2 Kinder" oder
+     "ich habe noch zwei Fragen" wurde zur Anzahl. */
+  anzahlAusText(text) {
+    const t = this.zusageTeil(text, "art").toLowerCase();
+    if (!t || t.split(/\s+/).length > 6) return null;
+    if (/€|euro|eur\b|nacht|nächt|naecht|person|grad|tage?\b|tagen\b|woche|stern|meter|km\b|kind|erwachsen|frage|minute|stunde|mal\b|uhr|prozent|zimmer|davon|bett|zu (zweit|dritt|viert)/.test(t)) return null;
+    const WORT = { zwei: 2, drei: 3, vier: 4, "fünf": 5, fuenf: 5, sechs: 6 };
+    const alle = [...(t.match(/\d+/g) || []).map(Number), ...(t.match(/[a-zäöüß]+/g) || []).map((w) => WORT[w]).filter(Boolean)];
+    return alle.length === 1 && alle[0] >= 2 && alle[0] <= 6 ? alle[0] : null;
+  },
+
   // "Was ist ...?", "Gibt es ...?" - fragt etwas, statt zu antworten
   istSachfrage(text) {
     const t = String(text || "").toLowerCase().trim();
@@ -3022,12 +3074,10 @@ const Werkzeugkasten = {
   antwortSelbstLesen(kern, thema, text) {
     const leser = thema ? this.SELBST_LESEN[thema] : null;
     if (!leser) return null;
-    const t = String(text == null ? "" : text).toLowerCase().trim();
+    const t = this.zusageTeil(text, thema).toLowerCase().trim();   // ABSPRACHE (25.11.2026)
     if (!t) return null;
     const p = kern.lauf.profil || (kern.lauf.profil = {});
     if (kern.lauf.chipFest) return null;   // der Chip hat die Frage schon beantwortet
-    // Eine Frage ist keine Wahl (25.11.2026): "Was ist bei All Inclusive dabei?"
-    if (["verpflegung", "flug", "flugAb", "flugKlasse", "art"].includes(thema) && this.istSachfrage(t)) return null;
     /* Über eine eigene Annahme hinweg lesen, aber auf einer Kopie: Hat
        der Leser nichts zu bieten, bleibt der Stand unberührt und das
        Thema abgehakt - sonst würde eine unverständliche Antwort die
@@ -3042,8 +3092,170 @@ const Werkzeugkasten = {
     let werte = null;
     try { werte = leser(t, sicht, this); } catch { werte = null; }
     if (!werte) return null;
-    return this.werteUebernehmen(kern, thema, werte, t, "antwort_selbst_gelesen");
+    const vorher = JSON.parse(JSON.stringify(p));
+    const erg = this.werteUebernehmen(kern, thema, werte, t, "antwort_selbst_gelesen");
+    /* Fuer den Abgleich mit dem Modell (ABSPRACHE): Was ganz eindeutig war
+       ("9", "Halbpension bitte"), steht fest. Alles andere gilt nur, wenn
+       das Modell nicht widerspricht. */
+    if (erg) kern.lauf.freiGelesen = { thema, eindeutig: this.eindeutigeAntwort(text),
+      felder: Object.fromEntries(erg.felder.map((f) => [f, vorher[f] === undefined ? null : vorher[f]])) };
+    return erg;
   },
+
+  // Kurz und ohne Wenn und Aber - dann braucht es kein zweites Urteil
+  eindeutigeAntwort(text) {
+    const t = String(text || "").toLowerCase().replace(/[.!]+\s*$/, "").trim();
+    if (!t || /[?,;]/.test(t)) return /^(ja|ok|okay|gut|gern|gerne|bitte)[,!]?\s+[^?,;]+$/.test(t) && t.split(/\s+/).length <= 4;
+    if (/\b(nicht|kein\w*|ohne|statt|sondern|doch|oder|bis|vielleicht|eigentlich|eher|aber|ungef(ä|ae)hr|circa|ca|wohl|denke|glaube|wenn|ob|au(ß|ss)er|zu)\b/.test(t)) return false;
+    return t.split(/\s+/).length <= 4;
+  },
+
+  /* Kern und Modell haben dieselbe Nachricht verschieden gelesen: Keiner
+     gewinnt, der Stand bleibt wie vorher, und die Person wird gefragt. */
+  absprache(a, kern) {
+    /* Die Zahl steht woertlich da, das Modell traegt eine andere ein
+       (25.11.2026): "10 Nächte" -> naechte 9. Eine Zahl mit Einheit in einer
+       kurzen Nachricht ist kein Verstehen, sondern Ablesen. */
+    const du = String([...(kern.lauf.gespraech || [])].reverse().find((n) => n.role === "user")?.content || "");
+    if (this.eindeutigeAntwort(du)) {
+      for (const [f, re] of [["naechte", /^\D*?(\d{1,2})\s*(?:n(?:ä|ae)chte?|(?:ü|ue)bernachtung(?:en)?)\b\D*$/i], ["erwachsene", /^\D*?(\d{1,2})\s*erwachsene\w?\b\D*$/i], ["kinder", /^\D*?(\d{1,2})\s*kinder\b\D*$/i]]) {
+        const m = du.match(re);
+        if (m && a[f] != null && Number(a[f]) !== +m[1]) { kern.notieren("abgelesen", { feld: f, modell: a[f], text: +m[1] }); a[f] = +m[1]; }
+      }
+    }
+    const g = kern.lauf.freiGelesen;
+    kern.lauf.freiGelesen = null;
+    if (!g || g.eindeutig || kern.lauf.chipFest) return;
+    const p = kern.lauf.profil || {};
+    const MF = { personen: "personenGesamt" };
+    const gleich = (x, y) => String(x).toLowerCase() === String(y).toLowerCase();
+    const raeumen = (grund) => {
+      for (const [f, v] of Object.entries(g.felder)) { if (v == null) delete p[f]; else p[f] = v; if (p.vonPerson) delete p.vonPerson[f]; }
+      kern.lauf.selbstGelesen = (kern.lauf.selbstGelesen || []).filter((f) => !(f in g.felder));
+      kern.lauf.zuletztGemerkt = (kern.lauf.zuletztGemerkt || []).filter((f) => !(f in g.felder));
+      kern.notieren("absprache_geraeumt", { thema: g.thema, grund });
+    };
+    const haupt = Object.keys(g.felder).find((f) => ["naechte", "monat", "personen", "erwachsene", "flug", "flugAb", "flugKlasse", "verpflegung", "maxPreis", "budgetGesamt", "anreise"].includes(f));
+    if (!haupt) return;
+    const kernWert = p[haupt], mf = MF[haupt] || haupt, m = a[mf];
+    const anderes = { maxPreis: "budgetGesamt", budgetGesamt: "maxPreis" }[haupt];
+    if (m != null && m !== "") {
+      const tagGleich = haupt === "anreise" && String(m).slice(5) === String(kernWert).slice(5);
+      const flugGleich = haupt === "flugAb" && typeof Flug !== "undefined" && Flug.code(String(m)) === Flug.code(String(kernWert));
+      if (gleich(m, kernWert) || tagGleich || flugGleich) return;
+      raeumen("widerspruch");
+      kern.lauf.leseKonflikt = { feld: haupt, thema: g.thema, kern: kernWert, modell: m, zug: kern.lauf.zugSeit };
+      delete a[mf];
+      return;
+    }
+    if (anderes && a[anderes] != null) return;                       // die Preisdeutung klaert der Kern selbst
+    // Das Modell hat nichts gelesen und sagt selbst, es war keine Antwort
+    if (a.nachricht_art === "frage" || ["nein", "nein_klaert_noch", "keine_frage_offen"].includes(a.frage_beantwortet)) {
+      if (!["reisende", "kinderAlter", "anzahl"].includes(g.thema)) raeumen("modell_sieht_keine_antwort");
+    }
+  },
+
+  /* GRUNDLAGE - kein Wert ohne Anhalt im Text (25.11.2026)
+     ==================================================================
+     Gemessen: Nach "hm okay" oder "danke dir" nahm der Kern in 20 Feldern
+     jeden Wert an, den das Modell behauptete - auch als Ueberschreibung
+     mitten im Gespraech. Hier wird nicht geprueft, ob der Wert STIMMT (das
+     ist Verstehen und gehoert dem Modell), nur ob die Nachricht ueberhaupt
+     vom Thema handelt. Bei einem kurzen Ja zaehlt, was der Agent gerade
+     vorgeschlagen hat. Was faellt, wird gefragt, nicht geraten. */
+  ZAHLWORT_RE: /\d|\b(ein|eine|einen|einer|zwei|drei|vier|f(ü|ue)nf|sechs|sieben|acht|neun|zehn|elf|zw(ö|oe)lf|dreizehn|vierzehn|f(ü|ue)nfzehn|zwanzig|drei(ß|ss)ig|halbe?|anderthalb|eineinhalb|dutzend|paar|beide)\b|hundert|tausend|\bzu (zweit|dritt|viert|f(ü|ue)nft|sechst|siebt|acht)/i,
+  GRUNDLAGE: {
+    monat: /januar|februar|m(ä|ae)rz|april|\bmai\b|juni|juli|august|september|oktober|november|dezember|\b(jan|feb|apr|jun|jul|aug|sep|sept|okt|nov|dez)\b|monat|sommer|winter|herbst|fr(ü|ue)hling|fr(ü|ue)hjahr|ferien|ostern|pfingst|weihnacht|silvester|feiertag|woche|jahr|bald|sofort|egal|such|entscheid|\d|january|february|march|may|june|july|october|december/i,
+    anreise: /\d|montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonnabend|sonntag|anfang|mitte|ende|wochenende|ostern|pfingst|weihnacht|silvester|feiertag|himmelfahrt|erste|zweite|dritte|te[nr]?\b|tag/i,
+    naechte: /n(ä|ae)cht|nacht|woche|tage?\b|tagen|lang|kurz|l(ä|ae)nger|k(ü|ue)rzer|montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag|bis/i,
+    personen: /\b(ich|wir|mein\w*|unser\w*|freund\w*|partner\w*|frau|mann|sohn|tochter|kind\w*|baby|eltern|mama|papa|mutter|vater|oma|opa|bruder|schwester|familie|allein\w*|erwachsen\w*|person\w*|leute|m(ä|ae)dels?|jungs|kleine\w*|gro(ß|ss)e\w*|clique|gruppe|paar|me|my|we|just|icke|solo|single|zwilling\w*|enkel\w*|cousin\w*|kollege\w*|hund)\b/i,
+    flug: /flug|flieg|fl(ü|ue)ge|auto|bahn|\bzug\b|\bbus\b|f(ä|ae)hre|anreis|unterkunft|fahren|selbst|wohnmobil|camper/i,
+    flugKlasse: /econ|business|premium|first|klasse|g(ü|ue)nstig|billig|bequem|komfort|beinfreiheit|normal|standard|einfach|teuer|luxus|beste/i,
+    verpflegung: /ess|fr(ü|ue)h|pension|panse|inclusiv|inklusiv|verpfleg|koch|selbst|b(ü|ue)f+et|mahlzeit|abend|morgen|\bhp\b|\bvp\b|\bai\b|\bac\b|alles drin|satt|restaurant|breakfast|food/i,
+    maxPreis: /\d|hundert|tausend|zwanzig|drei(ß|ss)ig|vierzig|f(ü|ue)nfzig|sechzig|siebzig|achtzig|neunzig/i,
+    mindestbewertung: /\d|bewert|note|gut|beste|punkt|rezension/i,
+    mindestSterne: /\d|stern/i,
+    zimmer: /zimmer|\d|getrennt|eigene/i,
+    wlanInklusive: /wlan|w-lan|wifi|internet/i,
+    anzahlVorschlaege: /\d|\b(zwei|drei|vier|f(ü|ue)nf|sechs|mehr|weniger|paar)\b/i,
+    flugAbEgal: /egal|g(ü|ue)nstig|billig|oder|flexib|offen|beliebig|hauptsache|wurs(t|cht)|schnuppe|gleich|ist mir/i,
+  },
+  // Nachrichten, in denen gar nichts steht - dort kann auch kein Ziel stehen
+  FUELLWORT: /^(ja|jo|jap|jep|jupp|ok|okay|okey|gut|super|toll|prima|klasse|danke|dankesch(ö|oe)n|dir|euch|bitte|hm+|aha|ah|oh|also|na|nun|so|klar|alles|das|es|klingt|h(ö|oe)rt|sich|an|passt|genau|stimmt|richtig|sch(ö|oe)n|gern|gerne|weiter|mach|erz(ä|ae)hl|mir|mehr|mal|los|cool|nice|top|perfekt|einverstanden|verstanden|alright|yes|thanks|und|dann|doch|sehr|ganz|ist|gute|idee|hallo|hi|hey|moin)$/i,
+  inhaltsleer(text) {
+    const w = String(text || "").toLowerCase().replace(/[^a-zäöüß\s]/g, (c) => (/\d/.test(c) ? c : " ")).split(/\s+/).filter(Boolean);
+    return !/\d/.test(String(text || "")) && w.every((x) => this.FUELLWORT.test(x));
+  },
+  grundlagePruefen(a, kern) {
+    if (kern.lauf.chipFest) return;
+    const p = kern.lauf.profil || {};
+    const nachrichten = kern.lauf.gespraech || [];
+    const letzte = String([...nachrichten].reverse().find((n) => n.role === "user")?.content || "");
+    const frage = String([...nachrichten].reverse().find((n) => n.role === "assistant" && n.content)?.content || "");
+    const leer = this.inhaltsleer(letzte);
+    const jaWort = /^\s*(ja|jo|jap|jep|jupp|ok|okay|gern|gerne|genau|passt|klar|stimmt|richtig|einverstanden|mach|super|perfekt|yes)\b/i.test(letzte) && letzte.trim().split(/\s+/).length <= 6;
+    const THEMA = { monat: ["zeit"], anreise: ["anreise", "zeit"], von: ["anreise", "zeit"], bis: ["anreise", "zeit"], naechte: ["dauer"], personenGesamt: ["reisende"], erwachsene: ["reisende", "kinderAlter"], kinder: ["reisende", "kinderAlter"],
+      flug: ["flug", "flugAb"], flugKlasse: ["flugKlasse"], verpflegung: ["verpflegung"], maxPreis: ["preis"], budgetGesamt: ["preis"], zimmer: ["zimmer"], anzahlVorschlaege: ["anzahl", "vorgehen"], flugAb: ["flugAb"], flugAbEgal: ["flugAb"] };
+    const gefragt = [kern.lauf.gefragtVorher, kern.lauf.zuletztGefragt, kern.lauf.gefragt].filter(Boolean);
+    const MUSTER = { personenGesamt: "personen", erwachsene: "personen", kinder: "personen", budgetGesamt: "maxPreis", von: "anreise", bis: "anreise" };
+    const STAND = { personenGesamt: "personen", ziel: "zielId" };
+    const raus = (f, grund) => {
+      kern.notieren("ohne_grundlage", { feld: f, wert: a[f], grund });
+      if (["erwachsene", "kinder", "personenGesamt"].includes(f) && !leer) this.merkeVerworfen(kern, f === "personenGesamt" ? "erwachsene" : f, a[f]);
+      delete a[f];
+    };
+    // Bei einem Ja gilt der Vorschlag - aber nur, wenn es EINER war
+    const WAHL = { verpflegung: [/all[\s-]?in/i, /halbpension/i, /vollpension/i, /fr(ü|ue)hst(ü|ue)ck/i], flugKlasse: [/economy/i, /premium/i, /business/i], flugAb: (this.ABFLUG_NAMEN || []).map((n) => new RegExp(n.replace(/ü/g, "(ü|ue)"), "i")) };
+    const vorschlagTraegt = (f) => {
+      if (!jaWort) return false;
+      if (WAHL[f]) return WAHL[f].filter((re) => re.test(frage)).length === 1;
+      if (["maxPreis", "budgetGesamt"].includes(f)) return new RegExp(`(^|\\D)${String(a[f])}(\\D|$)`).test(frage.replace(/(\d)\.(\d{3})/g, "$1$2"));
+      const re = this.GRUNDLAGE[MUSTER[f] || f];
+      return !!re && re.test(frage);
+    };
+    for (const f of ["monat", "anreise", "von", "bis", "naechte", "personenGesamt", "erwachsene", "kinder", "flug", "flugKlasse", "verpflegung", "maxPreis", "budgetGesamt", "mindestbewertung", "mindestSterne", "zimmer", "wlanInklusive", "anzahlVorschlaege", "flugAbEgal"]) {
+      if (a[f] == null) continue;
+      if (JSON.stringify(a[f]) === JSON.stringify(p[STAND[f] || f] ?? null)) continue;      // nichts Neues
+      if ((kern.lauf.selbstGelesen || []).includes(STAND[f] || f) || this.ausChip(kern, f)) continue;
+      const re = this.GRUNDLAGE[MUSTER[f] || f];
+      const zahlFeld = ["naechte", "personenGesamt", "erwachsene", "kinder"].includes(f);
+      const trifft = !leer && ((re && re.test(letzte)) || (zahlFeld && this.ZAHLWORT_RE.test(letzte)));
+      const antwortet = !leer && (THEMA[f] || []).some((t) => gefragt.includes(t)) && !["maxPreis", "budgetGesamt"].includes(f);
+      if (trifft || antwortet || vorschlagTraegt(f) || this.belegGilt(kern, f, a[f], a.belege)) continue;
+      raus(f, leer ? "nachricht_ohne_inhalt" : "thema_nicht_genannt");
+    }
+    // Ziel, Flughafen, Art, Wuensche: Bedeutung - hier zaehlt nur, dass ueberhaupt etwas dasteht
+    if (leer) for (const f of ["ziel", "zieleAuswahl", "zieleAus", "richtung", "mindestGrad", "typ", "artEgal", "flugAb", "flugAbAuswahl", "kinderAlter", "ausstattung", "ausstattungEgal", "verpflegungEgal", "preisEgal", "maxStrandMeter", "wuensche", "vorgehen"]) {
+      if (a[f] == null || (Array.isArray(a[f]) && !a[f].length)) continue;
+      if (JSON.stringify(a[f]) === JSON.stringify(p[STAND[f] || f] ?? null) || this.ausChip(kern, f)) continue;
+      if (jaWort && frage) {
+        if (f === "ziel" || f === "zieleAuswahl") { if (this.zieleAusText(frage.replace(/\?/g, "."), { locker: true }).length) continue; }
+        else if (WAHL[f]) { if (vorschlagTraegt(f)) continue; }
+        else if (f === "ausstattung" || f === "wuensche") { if (/pool|spa\b|wellness|sauna|hund|haustier|kinder|club|strand|meer|park|fitness|familie|restaurant|ruh|essen|sauber|lage|service|garten|whirlpool/i.test(frage)) continue; }
+        else if (!["zieleAus", "kinderAlter"].includes(f)) continue;                        // Ja auf eine Frage des Agenten: das Modell weiss, worauf
+      }
+      raus(f, "nachricht_ohne_inhalt");
+    }
+  },
+
+  // Wie ein Wert in der Rueckfrage heisst
+  wertWort(feld, w) {
+    switch (feld) {
+      case "naechte": return `${w} ${Number(w) === 1 ? "Nacht" : "Nächte"}`;
+      case "monat": return typeof MONATSNAMEN !== "undefined" ? MONATSNAMEN[w - 1] : `Monat ${w}`;
+      case "personen": return `${w} ${Number(w) === 1 ? "Person" : "Personen"}`;
+      case "erwachsene": return `${w} ${Number(w) === 1 ? "Erwachsener" : "Erwachsene"}`;
+      case "flug": return w ? "Mit Flug" : "Ohne Flug";
+      case "flugAb": return `Ab ${w}`;
+      case "flugKlasse": return { economy: "Economy", premium: "Premium Economy", business: "Business" }[w] || String(w);
+      case "verpflegung": return { ohne: "Ohne Verpflegung", fruehstueck: "Frühstück", halb: "Halbpension", voll: "Vollpension", ai: "All Inclusive" }[w] || String(w);
+      case "maxPreis": return `Bis ${w} € pro Nacht`;
+      case "budgetGesamt": return `Bis ${w} € insgesamt`;
+      case "anreise": { const d = String(w).match(/-(\d{2})-(\d{2})$/); return d ? `${+d[2]}. ${typeof MONATSNAMEN !== "undefined" ? MONATSNAMEN[+d[1] - 1] : d[1]}` : String(w); }
+      default: return String(w);
+    }
+  },
+
 
   /* Die Buchfuehrung einer eigenen Lesung - an einer Stelle.
      ------------------------------------------------------------------
@@ -3831,6 +4043,8 @@ const Werkzeugkasten = {
       Werkzeugkasten.formAngleichen(a, kern);
       Werkzeugkasten.chipVorrang(a, kern);
       Werkzeugkasten.widerspruchAufloesen(a, kern);
+      Werkzeugkasten.absprache(a, kern);
+      Werkzeugkasten.grundlagePruefen(a, kern);
       const kernWerte = Werkzeugkasten.kernWerteMerken(kern);
       {
         const will = [a.ziel, ...(Array.isArray(a.zieleAuswahl) ? a.zieleAuswahl : [])].filter(Boolean).map((x) => String(x).toLowerCase());
@@ -4059,7 +4273,7 @@ const Werkzeugkasten = {
       }
       if (a.ziel && a.zieleAuswahl === undefined) {
         const idZ = String(a.ziel).toLowerCase().trim();
-        const letzteG = String((kern.lauf.gespraech || []).filter((n) => n.role === "user").slice(-1)[0]?.content || "");
+        const letzteG = Werkzeugkasten.zusageTeil((kern.lauf.gespraech || []).filter((n) => n.role === "user").slice(-1)[0]?.content || "", "ziel");   // ABSPRACHE
         if (!Werkzeugkasten.regionGenannt(kern.lauf, idZ, { einzeln: true })) {
           const gebiet = Werkzeugkasten.zieleAusText(letzteG, { locker: true });
           if (gebiet.length >= 2 && gebiet.includes(idZ)) {
@@ -4069,7 +4283,7 @@ const Werkzeugkasten = {
         }
       }
       if (a.ziel === undefined && a.zieleAuswahl === undefined && !p.zielId && !(p.zieleAuswahl || []).length) {
-        const letzteZ = String((kern.lauf.gespraech || []).filter((n) => n.role === "user").slice(-1)[0]?.content || "");
+        const letzteZ = Werkzeugkasten.zusageTeil((kern.lauf.gespraech || []).filter((n) => n.role === "user").slice(-1)[0]?.content || "", "ziel");   // ABSPRACHE
         let ids = Werkzeugkasten.zieleAusText(letzteZ);
         /* Eine kurze Antwort auf die Zielfrage ("Skandinavien", "Portugal")
            braucht kein "nach" davor (zweiter Modell-Lauf). */
@@ -4274,7 +4488,7 @@ const Werkzeugkasten = {
          Nennt die Nachricht mehrere Regionen, gilt die Auswahl; und was
          die Nachricht nennt (Namen, Laender, Kontinente), kommt dazu. */
       if (a.zieleAuswahl !== undefined && (p.zieleAuswahl || []).length) {
-        const letzteZA = String((kern.lauf.gespraech || []).filter((n) => n.role === "user").slice(-1)[0]?.content || "");
+        const letzteZA = Werkzeugkasten.zusageTeil((kern.lauf.gespraech || []).filter((n) => n.role === "user").slice(-1)[0]?.content || "", "ziel");   // ABSPRACHE
         const imText = Werkzeugkasten.zieleAusText(letzteZA, { locker: true }).filter((id) => !(p.zieleAus || []).includes(id));
         const fehlt = imText.filter((id) => !p.zieleAuswahl.includes(id));
         if (fehlt.length && imText.some((id) => p.zieleAuswahl.includes(id))) {
@@ -4420,8 +4634,9 @@ const Werkzeugkasten = {
          relativerMonat. Das steht hinter der Pruefung oben, weil es
          keine Aufnahme aus dem Modell ist, sondern eine eigene: Die
          Angabe kommt von der Person, nur eben ohne Monatsnamen. */
-      const rel = Werkzeugkasten.relativeAngabe(
-        kern.lauf.gespraech.filter((n) => n.role === "user").slice(-1)[0]?.content || "");
+      // Nur aus der Zusage lesen (ABSPRACHE)
+      const zeitText = Werkzeugkasten.zusageTeil(kern.lauf.gespraech.filter((n) => n.role === "user").slice(-1)[0]?.content || "", "zeit");
+      const rel = Werkzeugkasten.relativeAngabe(zeitText);
       if (rel?.monat && !p.monat) {
         a.monat = rel.monat;
         /* Der genaue Anreisetag faellt nur bei runden Angaben weg.
@@ -4463,14 +4678,13 @@ const Werkzeugkasten = {
          Januar oder Februar heissen -, wird NICHT geraten, sondern der
          Fahrplan fragt danach (monateAnsetzen). Lieber eine Frage zu
          viel als ein stillschweigend falscher Monat. */
-      const ank = !p.monat && !rel?.monat ? Werkzeugkasten.zeitanker(
-        kern.lauf.gespraech.filter((n) => n.role === "user").slice(-1)[0]?.content || "") : null;
+      const ank = !p.monat && !rel?.monat ? Werkzeugkasten.zeitanker(zeitText) : null;
       if (ank && !p.monat) {
         kern.notieren("zeitanker", { name: ank.name, monate: ank.monate, sicher: ank.sicher });
         if (ank.sicher) {
           a.monat = ank.monat;
           /* "Am Reformationstag" ist ein Tag, nicht nur ein Monat (22.11.2026) */
-          const letzteF = String((kern.lauf.gespraech || []).filter((n) => n.role === "user").slice(-1)[0]?.content || "");
+          const letzteF = zeitText;
           const festT = Werkzeugkasten.festerTag(letzteF);
           const festTagISO = festT ? `-${String(festT.monat).padStart(2, "0")}-${String(festT.tag).padStart(2, "0")}` : null;
           // Rechnen tut der Kern: ein relativer Tag schlaegt den des Modells
@@ -5386,8 +5600,8 @@ const Werkzeugkasten = {
          "hotel" und "wohnung" an der Wortgrenze: "nur Ferienwohnungen"
          oder "nur Hotels" sagt etwas ueber die Art, nichts ueber den Flug. */
       if (a.flug === undefined && p.flug == null) {
-        const letzte = (kern.lauf.gespraech || []).filter((n) => n.role === "user").slice(-1)
-          .map((n) => String(n.content || "")).join(" ");
+        const letzte = Werkzeugkasten.zusageTeil((kern.lauf.gespraech || []).filter((n) => n.role === "user").slice(-1)
+          .map((n) => String(n.content || "")).join(" "), "flug");   // ABSPRACHE
         const ohne = /\bohne\s+(den\s+)?flug|\bkein(en)?\s+flug|nur\s+(die\s+)?(unterkunft|uebernachtung|übernachtung)|nur\s+(das\s+)?hotel\b|nur\s+(die\s+)?(ferienwohnung|wohnung)\b|flug\s+brauch(e|en)?\s+(ich|wir)\s+(nicht|keinen)|selbst\s+anreisen|mit\s+dem\s+auto/i.test(letzte);
         const mit = /\bmit\s+flug|flug\s+(dazu|mit\s+dazu|dabei)|flug\s+(soll|bitte)\s+dazu|inklusive\s+flug|\bflug\s+inklusive/i.test(letzte);
         if (ohne !== mit) {
@@ -5470,7 +5684,9 @@ const Werkzeugkasten = {
          vor. Beides steht so klar im Satz, dass es nicht vom Modell
          abhaengen muss. */
       {
-        const letzteNachricht = (kern.lauf.gespraech || []).filter((n) => n.role === "user").slice(-1).map((n) => String(n.content)).join(" ");
+        const rohNachricht = (kern.lauf.gespraech || []).filter((n) => n.role === "user").slice(-1).map((n) => String(n.content)).join(" ");
+        const letzteNachricht = Werkzeugkasten.zusageTeil(rohNachricht, "art");   // ABSPRACHE: nur aus der Zusage
+        const flugNachricht = Werkzeugkasten.zusageTeil(rohNachricht, "flug");
         const WORTZAHL = { zwei: 2, drei: 3, vier: 4, "fünf": 5, fuenf: 5, sechs: 6 };
         // Die Zahl muss zum Vorschlag gehoeren, nicht zu Naechten oder
         // Reisenden ("4 Naechte, zeig mir mal die Hotels" sind keine vier
@@ -5556,8 +5772,8 @@ const Werkzeugkasten = {
         // "ohne Flug" stand im Satz, kam aber nicht im Stand an - der Agent
         // fragte danach noch einmal nach dem Flug.
         if (a.flug === undefined && p.flug == null) {
-          if (/ohne flug|kein flug|nicht fliegen|mit dem auto|fahren wir|selbst anreisen|eigene anreise/i.test(letzteNachricht)) a.flug = false;
-          else if (/mit flug|flug dazu|fliegen wir|wir fliegen|flug mitbuchen/i.test(letzteNachricht)) a.flug = true;
+          if (/ohne flug|kein flug|nicht fliegen|mit dem auto|fahren wir|selbst anreisen|eigene anreise/i.test(flugNachricht)) a.flug = false;
+          else if (/mit flug|flug dazu|fliegen wir|wir fliegen|flug mitbuchen/i.test(flugNachricht)) a.flug = true;
         }
       }
       // Hat der Kern eine unklare Zahl erkannt ("55"), fragt er nach -
@@ -9768,7 +9984,7 @@ const Werkzeugkasten = {
   },
 
   bestaetigungRueckfrage(p, lauf) {
-    if (!p || !lauf || !(lauf.verworfenWert || lauf.zielKonflikt)) return null;
+    if (!p || !lauf || !(lauf.verworfenWert || lauf.zielKonflikt || lauf.leseKonflikt)) return null;
     const jetzt = lauf.zugSeit || lauf.runde || true;
     const frisch = (f) => lauf.verworfenWert?.[f] != null && (lauf.verworfenZug || {})[f] === jetzt;
     const schonGefragt = (schl) => !!(lauf.bestaetigtGefragt || {})[schl];
@@ -9801,6 +10017,15 @@ const Werkzeugkasten = {
       const werte = alle.length > 1 ? { zieleAuswahl: alle, zielId: null, zielOffen: false } : { zielId: alle[0], zielOffen: false };
       const r = bau(`ziel:${alle.join(",")}`, `Du möchtest nach ${liste(alle.map(name))}`, werte, "ziel");
       if (r) return r;
+    }
+    // Kern und Modell lesen dieselbe Antwort verschieden (ABSPRACHE, 25.11.2026)
+    const lk = lauf.leseKonflikt;
+    if (lk && lk.zug === lauf.zugSeit) {
+      const schl = `lesen:${lk.feld}:${lk.kern}:${lk.modell}`, A = this.wertWort(lk.feld, lk.modell), B = this.wertWort(lk.feld, lk.kern);
+      if (!schonGefragt(schl) && A !== B) {
+        return { grund: "bestaetigen", schluessel: schl, thema: lk.thema, satz: `Kurz zur Sicherheit: ${A} oder ${B.replace(/^(Ab|Bis|Mit|Ohne) /, (x) => x.toLowerCase())}?`,
+          chips: [A, B], wirkung: { [A]: { [lk.feld]: lk.modell }, [B]: { [lk.feld]: lk.kern } } };
+      }
     }
     /* Kern und Modell lesen dieselbe Region gegenteilig (24.11.2026): nicht
        einer gewinnt, sondern die Person entscheidet. */
@@ -13800,6 +14025,8 @@ const Werkzeugkasten = {
       "direkt", "einfach", "und", "dann"]);
     const ZUSTIMMUNG = /^(ja|jap|jo|jep|jawohl|yes|ok|okay|gern|gerne|bitte|klar|passt|genau|los|mach|machs|mach's|abschlie(ß|ss)en|schlie(ß|ss)|buchen|buche|buch)$/;
     const woerter = satz.split(" ");
+    // "ja gleich", "ok, gleich" heisst spaeter (25.11.2026)
+    if (woerter.includes("gleich") && !woerter.includes("jetzt")) return false;
     return woerter.every((w) => ERLAUBT.has(w)) && woerter.some((w) => ZUSTIMMUNG.test(w));
   },
 

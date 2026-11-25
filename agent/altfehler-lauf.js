@@ -61,6 +61,13 @@ async (page) => {
       ok: (p, c) => [(p.zieleAuswahl || []).includes("krabi") && (p.zieleAuswahl || []).includes("mallorca") || "Auswahl " + JSON.stringify(p.zieleAuswahl) + " " + p.zielId, (p.zieleAuswahl || []).length < 8 || "alle Regionen geoeffnet"] },
     kleine_mit_ziffer: { am: "17.11.", s: [...JULI, { du: "ich, meine frau und 2 kleine", stand: V({ erwachsene: 2, kinder: 2, personenGesamt: 4, kinderAlter: [3, 5] }) }, { du: "2 und 4", stand: V({ kinderAlter: [2, 4] }) }],
       ok: (p, c) => [JSON.stringify(p.kinderAlter) === "[2,4]" || "Alter " + JSON.stringify(p.kinderAlter), /wie alt/i.test(c) || "Alter nicht gefragt"] },
+    // Absprache Kern/Modell (25.11.): Streit wird gefragt, der Knopf wirkt
+    absprache_streit: { am: "25.11.", s: [{ du: "im Juli", stand: V({ monat: 7 }) }, { du: "flexibel", stand: V({}) }, { du: "so ungefähr 10 Tage, denke ich", stand: V({ naechte: 9 }) }, { du: "10 Nächte", stand: V({ naechte: 9 }) }],
+      ok: (p, c) => [/9 Nächte oder 10 Nächte/.test(c) || "fragt nicht nach", p.naechte === 10 || "Naechte " + p.naechte] },
+    ohne_grundlage: { am: "25.11.", s: [...JULI, ZWEI, { du: "hm okay", stand: V({ monat: 9, maxPreis: 100, erwachsene: 4, ziel: "wien" }) }, { du: "Hotel", stand: V({ typ: "hotel" }) }],
+      ok: (p, c) => [p.monat === 7 || "Monat " + p.monat, !p.maxPreis || "Preis erfunden", p.erwachsene === 2 || "Reisende " + p.erwachsene, !p.zielId || "Ziel erfunden"] },
+    frage_ist_keine_wahl: { am: "25.11.", s: [...JULI, ZWEI, { du: "Hotel", stand: V({ typ: "hotel" }) }, { du: "nach Mallorca", stand: V({ ziel: "mallorca" }) }, { du: "Nur die Unterkunft", stand: V({ flug: false }) }, { du: "was ist bei All Inclusive alles dabei?", stand: { nachricht_art: "frage", frage_beantwortet: "nein" }, text: "Essen und Getränke." }, { du: "letztes Jahr hatten wir Halbpension, das war furchtbar", stand: { nachricht_art: "sonstiges", frage_beantwortet: "nein" } }],
+      ok: (p, c) => [!p.verpflegung || "Verpflegung " + p.verpflegung] },
     preis_70_flug: { am: "20.11.", s: [...JULI, ZWEI, { du: "Hotel", stand: V({ typ: "hotel" }) }, { du: "nach Mallorca", stand: V({ ziel: "mallorca" }) }, { du: "Nur die Unterkunft", stand: V({ flug: false }) }, { du: "Halbpension", stand: V({ verpflegung: "halb" }) }, { du: "40 euro", stand: V({ maxPreis: 40 }) }, { du: "Für alle zusammen", stand: V({ maxPreis: 40 }) }],
       ok: (p, c) => [!/undefined|NaN/.test(c) || "undefined", /40/.test(c) || "40 fehlt"] },
   };

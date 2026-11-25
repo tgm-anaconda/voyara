@@ -1961,6 +1961,8 @@ const Kern = {
     this.haustierLesen(t);
     this.flugWuenscheLesen(t);
     this.lauf.selbstGelesen = [];
+    this.lauf.freiGelesen = null;
+    this.lauf.leseKonflikt = null;
     this.lauf.chipFest = null;
     this.budgetUebernehmen();
     this.regionenLesen(t);
@@ -2121,10 +2123,7 @@ const Kern = {
     this.rueckfrageJaLesen(t);
     if (this.lauf.anzahlFrageOffen || this.lauf.anzahlZahlOffen) {
       const roh = String(t || "").toLowerCase();
-      const WORT = { zwei: 2, drei: 3, vier: 4, "fünf": 5, fuenf: 5, sechs: 6 };
-      const ziffer = roh.match(/(^|[^0-9])([2-6])([^0-9]|$)/);
-      const wort = Object.keys(WORT).find((w) => new RegExp(`\\b${w}\\b`).test(roh));
-      let zahl = ziffer ? Number(ziffer[2]) : wort ? WORT[wort] : null;
+      let zahl = Werkzeugkasten.anzahlAusText(roh);   // nur aus einer kurzen Antwort (25.11.2026)
       // Ein Ja auf "Meinst du 5?" (siehe unten)
       if (!zahl && this.lauf.anzahlMeinst && /^\s*(ja|jap|jo|jep|genau|richtig|stimmt|ok|okay)\b/.test(roh)) zahl = this.lauf.anzahlMeinst;
       this.lauf.anzahlMeinst = null;
@@ -2150,7 +2149,7 @@ const Kern = {
         (this.lauf.profil.vonPerson ||= {}).anzahlVorschlaege = true;
         this.lauf.vorgehenFuer = null;
         this.notieren("anzahl_gewaehlt", { anzahl: zahl });
-      } else if (this.lauf.anzahlFrageOffen && /mehr|weitere|noch ein paar|gr(ö|oe)(ß|ss)er|zus(ä|ae)tzlich/.test(roh)) {
+      } else if (this.lauf.anzahlFrageOffen && /mehr|weitere|noch ein paar|gr(ö|oe)(ß|ss)er|zus(ä|ae)tzlich/.test(Werkzeugkasten.zusageTeil(roh, "art").toLowerCase())) {
         this.lauf.anzahlMehrOffen = true;
         this.lauf.vorgehenFuer = null;
         this.notieren("anzahl_mehr", {});
@@ -5447,7 +5446,8 @@ const Kern = {
 
   regionenLesen(t) {
     const p = this.lauf.profil || (this.lauf.profil = {});
-    const raus = this.ausschlussLesen(t);
+    // Nur aus der Zusage (ABSPRACHE, 25.11.2026): "ich weiss nicht, ob Kreta ..." lehnt nichts ab
+    const raus = this.ausschlussLesen(Werkzeugkasten.zusageTeil(t, "regionen"));
     this.lauf.ausschlussJetzt = raus;
     if (!raus.length) return;
     const vorher = [...(p.zieleAus || [])];
@@ -5528,8 +5528,8 @@ const Kern = {
   flugWuenscheLesen(t) {
     const p = (this.lauf.profil ||= {});
     if (!p.flug || this.lauf.flugFrageOffen) return;
-    const satz = String(t).toLowerCase();
-    if (satz.includes("?")) return;   // "Ist ein Koffer dabei?" ist eine Frage, kein Wunsch
+    if (String(t).includes("?")) return;   // "Ist ein Koffer dabei?" ist eine Frage, kein Wunsch
+    const satz = Werkzeugkasten.zusageTeil(t, "flug").toLowerCase();
     const neu = {};
     if (!p.flugStopps && /nur direkt|direktfl(ü|ue)ge?|ohne umsteig|ohne umstieg|nonstop/.test(satz) && !/egal|nicht (nur )?direkt/.test(satz)) neu.flugStopps = "direkt";
     if (p.flugKoffer == null) {
@@ -5544,7 +5544,12 @@ const Kern = {
 
   haustierLesen(t) {
     const satz = String(t).toLowerCase();
-    if (!/hund|haustier|katze|vierbeiner/.test(satz)) return;
+    if (!/hund(?!ert)|haustier|katze|vierbeiner/.test(satz)) return;
+    /* ABSPRACHE (25.11.2026): nur als Zusage oder vom eigenen Tier die Rede.
+       "Ich habe Angst vor Hunden", "unser Hund bleibt zu Hause" und
+       "haben die da eine Hotelkatze?" sind keine Bedingung. */
+    if (/angst|allerg|bleibt|zu ?hause|daheim|st(ö|oe)r|bell|laut|hotelkatze|hundewetter|auf den hund|keinen? (hund|katze)|nicht mit/.test(satz)) return;
+    if (!/\b(mein|unser|der|die|einen|zwei)\w*\s+(klein\w+\s+|gro(ß|ss)\w+\s+)?(hund|katze|haustier|vierbeiner)/.test(satz) && !/hund|haustier|katze|vierbeiner/.test(Werkzeugkasten.zusageTeil(satz, "art"))) return;
     if (/\b(kein|keine|keinen|ohne)\s+(hund|haustier|katze|tier)/.test(satz)) return;
     const p = (this.lauf.profil ||= {});
     const liste = new Set(p.ausstattung || []);
