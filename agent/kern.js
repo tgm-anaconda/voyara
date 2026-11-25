@@ -1060,6 +1060,7 @@ const Kern = {
       // Der Schritte-Block ist keine Nachricht, sondern ein eigener
       // Eintrag. Seit dem 18.11.2026 kommt er in beiden Armen vor.
       if (n.rolle === "schritte") { AgentPanel.schritteZeigen?.(n, { still: true }); continue; }
+      if (n.rolle === "sammel") { AgentPanel.sammelZeigen?.(n, { offen: !n.fertig && !!this.lauf.sammelOffen, still: true }); continue; }
       const aktionen = this.aktionenBinden(n.aktionen || []);
       AgentPanel.say(n.text, n.rolle, { still: true, links: n.links, aktionen, etikett: n.etikett || null });
     }
@@ -1567,6 +1568,7 @@ const Kern = {
         + "Will sie keine lockern, ausweiten=\"nein\". "
         + "Setz die gelockerte Vorgabe NICHT selbst - das macht der Kern, er kennt die Zahlen.");
     }
+    if (typeof Absicherung !== "undefined") { const ab = Absicherung.fuerModell(this.lauf); if (ab) zeilen.push(ab); }
     if (this.lauf.letzteVorlage?.length) zeilen.push(`Zuletzt vorgelegt: ${this.lauf.letzteVorlage.map((id, i) => `${i + 1}. ${getItemById?.(id)?.name || id} (${id})`).join(", ")}.`);
     else if (this.lauf.letzteTreffer?.length) zeilen.push(`Letztes Suchergebnis (ids): ${this.lauf.letzteTreffer.join(", ")}.`);
     // Die Fluege im offenen Fenster (22.11.2026), sonst raet das Modell
@@ -1774,6 +1776,7 @@ const Kern = {
     const zurueck = [];
     for (const [f, wert] of Object.entries(fest || {})) {
       if (p[f] != null) continue;                                   // da, vielleicht geaendert - erlaubt
+      if (this.lauf.gesperrt?.felder?.includes(f)) continue;         // in der Sammelfrage als falsch markiert
       if (this.lauf.festeWerteErlaubt && ["anreise", "von", "bis"].includes(f)) continue;   // reisedaten_aendern
       if ((f === "maxPreis" || f === "budgetGesamt") && (p.preisEgal || p.maxPreis != null || p.budgetGesamt != null)) continue;
       if (f === "kinderAlter" && !p.kinder) continue;
@@ -1966,6 +1969,7 @@ const Kern = {
     this.lauf.grundlageFrage = null;
     this.lauf.zielBedeutung = null;
     this.lauf.chipFest = null;
+    if (typeof Absicherung !== "undefined") Absicherung.nachrichtLesen(this, t);
     this.budgetUebernehmen();
     this.regionenLesen(t);
     if (this.lauf.filterStandSchon) {
@@ -3006,6 +3010,7 @@ const Kern = {
             if (bf) {
               (this.lauf.bestaetigtGefragt ||= {})[bf.schluessel] = true;
               this.notieren("bestaetigung_gefragt", { schluessel: bf.schluessel });
+              if (bf.wirkung?.Ja) this.lauf.jaNeinOffen = { werte: bf.wirkung.Ja, satz: bf.satz, thema: bf.thema };
               kernFrage = { ...bf };
             }
             const wf = kernFrage ? null : Werkzeugkasten.widerspruchRueckfrage(this.lauf.profil || {}, this.lauf);

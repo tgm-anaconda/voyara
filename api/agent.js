@@ -207,11 +207,51 @@ function nachrichtenPruefen(liste) {
    Endpunkt
    ================================================================== */
 
+/* Die schlichte zweite Frage (25.11.2026)
+   ------------------------------------------------------------------
+   Ben: "Wenn ich dem Mini den Satz gebe, im Kontext der Frage, dann kann
+   der mir das zu 100 % nennen." Also ohne Rolle, ohne Formular, ohne
+   Werkzeuge: eine Frage zu EINEM Thema, wie man sie einem Menschen stellt.
+   Die Fragen stehen hier und nicht im Browser - der Endpunkt nimmt nur das
+   Thema, die gestellte Frage und die Antwort entgegen. */
+const NACHLESEN = {
+  reisende: 'Wie viele Erwachsene (ab 18) und wie viele Kinder (unter 18) reisen mit? Tiere zaehlen nicht. Steht die Zahl nicht sicher fest, setz unklar auf true. Antworte als JSON: {"erwachsene": Zahl oder null, "kinder": Zahl oder null, "unklar": true/false}',
+  ziel: 'Welche Orte will die Person bereisen, welche will sie NICHT, und nach welchen fragt sie nur oder erwaehnt sie nur? Antworte als JSON: {"will": [Orte], "nicht": [Orte], "nur_gefragt_oder_erwaehnt": [Orte]}',
+  zeit: 'Welchen Reisemonat legt die Person fest (1 bis 12)? Fragt sie nur, oder steht er nicht sicher fest, setz unklar auf true. Antworte als JSON: {"monat": Zahl oder null, "unklar": true/false}',
+  dauer: 'Wie viele Naechte will die Person bleiben? Antworte als JSON: {"naechte": Zahl oder null, "unklar": true/false}',
+  preis: 'Welche Preisgrenze nennt die Person, und wofuer gilt sie? Antworte als JSON: {"betrag": Zahl oder null, "fuer": "nacht" oder "gesamt" oder "person" oder "unklar"}',
+  flug: 'Will die Person einen Flug dazu, und ab welcher Stadt? Antworte als JSON: {"flug": true/false/null, "ab": Stadt oder null}',
+};
+function nachlesenKoerper({ thema, frage, antwort, davor }) {
+  if (!Object.hasOwn(NACHLESEN, thema)) return null;
+  const kurz = (x, n) => String(x ?? "").replace(/\s+/g, " ").trim().slice(0, n);
+  const a = kurz(antwort, 400);
+  if (!a) return null;
+  const vor = Array.isArray(davor) ? davor.slice(-4).map((x) => kurz(x, 200)).filter(Boolean) : [];
+  return {
+    messages: [
+      { role: "system", content: "Du liest einen kurzen Dialog zu einer Reisebuchung genau. Massgeblich ist nur die letzte Antwort; was davor steht, hilft beim Verstehen. Heute ist der " + new Date().toISOString().slice(0, 10) + "." },
+      { role: "user", content: `${vor.length ? `Davor: ${vor.join(" / ")}\n` : ""}Frage: "${kurz(frage, 300)}"\nAntwort der Person: "${a}"\n\n${NACHLESEN[thema]}` },
+    ],
+    max_tokens: 90, temperature: 0, response_format: { type: "json_object" },
+  };
+}
+
 export default async function handler(req, res) {
   if (req.method !== "POST") return fehler(res, 405, "Nur POST.");
   if (!process.env.OPENAI_API_KEY) return fehler(res, 503, "Kein Schlüssel hinterlegt.");
 
   const { aufgabe, nachrichten, werkzeuge, stand, werkzeugPflicht } = req.body || {};
+  if (aufgabe === "nachlesen") {
+    const k = nachlesenKoerper(req.body || {});
+    if (!k) return fehler(res, 400, "Nichts zu lesen.");
+    const n = await openai(k, 6000);
+    if (!n.ok) return fehler(res, 502, "Nachlesen nicht moeglich.");
+    let gelesen = null;
+    try { gelesen = JSON.parse(n.daten.choices?.[0]?.message?.content || "null"); } catch { gelesen = null; }
+    const v = n.daten.usage || {};
+    return res.status(200).json({ ok: true, gelesen, verbrauch: { eingabe: v.prompt_tokens || 0, zwischengespeichert: v.prompt_tokens_details?.cached_tokens || 0, ausgabe: v.completion_tokens || 0 } });
+  }
   if (!["agent", "text"].includes(aufgabe)) return fehler(res, 400, "Unbekannte Aufgabe.");
 
   const verlauf = nachrichtenPruefen(nachrichten);

@@ -1623,8 +1623,61 @@ const AgentPanel = {
     // dann zwar da, aber Status und Oeffnen des Fensters blieben aus.
     box.innerHTML = (list || []).map((s) => `<button type="button" class="chip">${s}</button>`).join("");
     box.querySelectorAll(".chip").forEach((chip) =>
-      chip.addEventListener("click", () => this.handleUserInput(chip.textContent))
+      chip.addEventListener("click", () => {
+        /* "Nein: ..." schickt nichts ab, sondern beginnt die Antwort
+           (25.11.2026): Die Person schreibt gleich, was stattdessen gilt. */
+        const anfang = chip.textContent.match(/^(Nein:) ?(\.\.\.|…)$/);
+        if (!anfang) { this.handleUserInput(chip.textContent); return; }
+        const feld = document.getElementById("agentInput");
+        if (!feld) return;
+        feld.value = `${anfang[1]} `;
+        feld.dispatchEvent(new Event("input"));
+        feld.focus();
+        feld.setSelectionRange(feld.value.length, feld.value.length);
+      })
     );
+  },
+
+  /* Die Sammelfrage vor den Vorschlaegen (25.11.2026, agent/absicherung.js).
+     Kaestchen anfangs leer: Ben wollte, dass jede Zeile gelesen wird. */
+  sammelZeigen(eintrag, { offen = false, still = false } = {}) {
+    const box = document.getElementById("agentMessages");
+    if (!box || !eintrag?.punkte?.length) return null;
+    const el = document.createElement("form");
+    el.className = `msg sammel${still ? "" : " neu"}${offen ? "" : " fertig"}`;
+    const an = new Set(eintrag.markiert || []);
+    for (const p of eintrag.punkte) {
+      const zeile = document.createElement("label");
+      const k = document.createElement("input");
+      k.type = "checkbox"; k.value = p.feld; k.checked = an.has(p.feld); k.disabled = !offen;
+      const l = document.createElement("i"); l.textContent = p.label;
+      const w = document.createElement("span"); w.textContent = p.wert;
+      zeile.append(k, l, w);
+      el.appendChild(zeile);
+    }
+    if (offen) {
+      const b = document.createElement("button");
+      b.type = "submit"; b.textContent = "Weiter";
+      el.appendChild(b);
+      el.addEventListener("submit", (e) => {
+        e.preventDefault();
+        if (typeof Absicherung !== "undefined") Absicherung.sammelAntwort([...el.querySelectorAll("input:checked")].map((x) => x.value));
+      });
+    }
+    box.appendChild(el);
+    // Passt die Liste nicht ganz hinein, steht die Frage oben, nicht der Knopf
+    const frage = el.previousElementSibling;
+    box.scrollTop = box.scrollHeight;
+    if (offen && frage && frage.getBoundingClientRect().top < box.getBoundingClientRect().top) frage.scrollIntoView({ block: "start" });
+    return el;
+  },
+  sammelFertig(eintrag) {
+    const el = [...document.querySelectorAll("#agentMessages .sammel:not(.fertig)")].pop();
+    if (!el) return;
+    const an = new Set(eintrag?.markiert || []);
+    el.classList.add("fertig");
+    el.querySelector("button")?.remove();
+    el.querySelectorAll("input").forEach((k) => { k.checked = an.has(k.value); k.disabled = true; });
   },
   // Die eigentliche Arbeit macht agent/kern.js. Fehlt der Agentencode - etwa
   // weil eine Seite ihn nicht einbindet - bleibt das Panel eine Anzeige.

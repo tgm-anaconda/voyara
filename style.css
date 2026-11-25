@@ -3313,3 +3313,18 @@ html.studie-wartet:not(.arm-fenster):not(.lade-still) #ladeschirm {
 .aufgabe-fenster .modal-foot { justify-content: space-between; align-items: center; flex-wrap: wrap; }
 .aufgabe-fenster .modal-foot[hidden] { display: none; }
 .aufgabe-fenster .aufgabe-frage { margin: 0; font-size: .88rem; color: var(--ink-700); flex: 1 1 100%; }
+
+/* Sammelfrage im Chat (25.11.2026) */
+.msg.sammel { flex: none; align-self: stretch; max-width: none; width: 100%; padding: 0; margin: 0 0 10px; overflow: hidden;
+  border: 1px solid rgba(255,255,255,.14); border-radius: 14px; background: rgba(255,255,255,.04); }
+.msg.sammel label { display: flex; align-items: center; gap: 11px; padding: 8px 13px; border-bottom: 1px solid rgba(255,255,255,.08); font-size: .9rem; cursor: pointer; }
+.msg.sammel label:last-child { border-bottom: 0; }
+.msg.sammel i { font-style: normal; flex: none; width: 84px; font-size: .82rem; color: var(--chat-muted); }
+.msg.sammel input { appearance: none; -webkit-appearance: none; flex: none; width: 18px; height: 18px; margin: 0; border: 1.5px solid rgba(255,255,255,.45); border-radius: 5px; background: transparent; display: grid; place-content: center; cursor: pointer; }
+.msg.sammel input:checked { background: var(--brand-500); border-color: var(--brand-500); }
+.msg.sammel input:checked::after { content: ""; width: 5px; height: 9px; border: solid #fff; border-width: 0 2px 2px 0; transform: translateY(-1px) rotate(45deg); }
+.msg.sammel input:focus-visible, .msg.sammel button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.msg.sammel button { display: block; width: 100%; border: 0; padding: 11px; background: var(--brand-700); color: #fff; font: inherit; font-size: .9rem; font-weight: 600; cursor: pointer; }
+.msg.sammel button:hover { background: var(--brand-500); }
+.msg.sammel.fertig { opacity: .75; }
+.msg.sammel.fertig label, .msg.sammel.fertig input { cursor: default; }

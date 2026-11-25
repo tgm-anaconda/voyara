@@ -18,7 +18,8 @@ const ctx = { console, window: { location: { search: "", href: "" } },
 ctx.globalThis = ctx; ctx.self = ctx;
 vm.createContext(ctx);
 for (const f of ["data/ziele.js", "data/hotels.js", "data/inventory.js", "data/auswahl.js", "data/bildpfade.js",
-  "data/faq.js", "agent/fluege.js", "agent/politik.js", "agent/werkzeugkasten.js", "agent/kern.js"]) {
+  "data/faq.js", "agent/fluege.js", "agent/politik.js", "agent/absicherung.js", "agent/werkzeugkasten.js", "agent/kern.js"]) {
+  if (f === "agent/absicherung.js" && !fs.existsSync(B + f)) continue;   // aeltere Sicherungen
   try { vm.runInContext(fs.readFileSync(B + f, "utf8"), ctx, { filename: f }); }
   catch (e) { console.log("LADEFEHLER", f, e.message.slice(0, 160)); process.exit(2); }
 }

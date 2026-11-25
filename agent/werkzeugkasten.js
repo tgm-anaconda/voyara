@@ -3138,6 +3138,7 @@ const Werkzeugkasten = {
 
   // Kurz und ohne Wenn und Aber - dann braucht es kein zweites Urteil
   eindeutigeAntwort(text) {
+    if (/^\s*nein\b/i.test(String(text || ""))) return false;      // ein Nein wertet das Modell aus
     const t = String(text || "").toLowerCase().replace(/[.!]+\s*$/, "").trim();
     if (!t || /[?,;]/.test(t)) return /^(ja|ok|okay|gut|gern|gerne|bitte)[,!]?\s+[^?,;]+$/.test(t) && t.split(/\s+/).length <= 4;
     if (/\b(nicht|kein\w*|ohne|statt|sondern|doch|oder|bis|vielleicht|eigentlich|eher|aber|ungef(ä|ae)hr|circa|ca|wohl|denke|glaube|wenn|ob|au(ß|ss)er|zu)\b/.test(t)) return false;
@@ -4088,6 +4089,7 @@ const Werkzeugkasten = {
       /* Rangfolge (24.11.2026), siehe RANGFOLGE weiter unten: erst die
          Schreibweise angleichen, dann dem Chip den Vorrang geben. */
       Werkzeugkasten.formAngleichen(a, kern);
+      if (typeof Absicherung !== "undefined") Absicherung.sperreAnwenden(a, kern);
       Werkzeugkasten.chipVorrang(a, kern);
       Werkzeugkasten.widerspruchAufloesen(a, kern);
       Werkzeugkasten.absprache(a, kern);
@@ -5915,6 +5917,7 @@ const Werkzeugkasten = {
       kern.standAnzeigen();
       // Was gerade neu hereinkam - der Kern prueft danach, ob das Modell
       // es auch aufgenommen hat
+      if (typeof Absicherung !== "undefined") Absicherung.herkunftVermerken(kern, vorStand);
       kern.lauf.zuletztGemerkt = [...new Set([...(kern.lauf.selbstGelesen || []), ...geaendert])];
       /* Was von der Person kommt, ist unantastbar.
          ----------------------------------------------------------------
@@ -6198,6 +6201,11 @@ const Werkzeugkasten = {
         }
       }
       const fp = Werkzeugkasten.fahrplan(p, kern.lauf);
+      // Vor den Vorschlaegen einmal alles bestaetigen lassen (25.11.2026, siehe absicherung.js)
+      if ((stufe || 1) === 1 && fp.empfehlungBereit && typeof Absicherung !== "undefined") {
+        const sammel = Absicherung.sammelHalt(kern, p);
+        if (sammel) return sammel;
+      }
       const fest = !!(p.von && p.bis);
       const flex = fest ? null : Werkzeugkasten.flexWahl(p);
       const zeitraum = Werkzeugkasten.zeitraum(p);
@@ -10104,7 +10112,9 @@ const Werkzeugkasten = {
     const schonGefragt = (schl) => !!(lauf.bestaetigtGefragt || {})[schl];
     const name = (id) => (typeof ZIEL_NACH_ID !== "undefined" ? ZIEL_NACH_ID[id]?.name : null);
     const liste = (xs) => (xs.length > 1 ? `${xs.slice(0, -1).join(", ")} oder ${xs[xs.length - 1]}` : xs[0]);
-    const JA = "Ja, genau", NEIN = "Nein, anders";
+    const JA = "Ja", NEIN = "Nein: ...";
+    // Zweimal Nein zum selben Thema: nicht weiter raten, der Fahrplan fragt mit festen Chips
+    const genugNein = (thema) => ((lauf.neinZahl || {})[thema] || 0) >= 2;
     /* Nur, was die Nachricht wenigstens anspricht - sonst fragt der Kern
        nach Werten, die das Modell sich selbst erschlossen hat (z. B. die
        kalten Regionen, die eine neue Gradgrenze gerade ausgeschlossen hat). */
@@ -10116,7 +10126,7 @@ const Werkzeugkasten = {
     const hatZahl = /\d|\b(ein|eine|zwei|drei|vier|fünf|fuenf|sechs)\b/i.test(letzte);
     const PERSONWORT = /\b(ich|wir|mein\w*|freund\w*|partner\w*|frau|mann|sohn|tochter|kind\w*|baby|eltern|mutter|vater|oma|opa|bruder|schwester|familie|allein\w*|zu zweit|zu dritt|erwachsen\w*|person\w*)\b/i;
     const bau = (schl, frage, werte, thema) => {
-      if (schonGefragt(schl)) return null;
+      if (schonGefragt(schl) || genugNein(thema)) return null;
       return { grund: "bestaetigen", schluessel: schl, thema, satz: `Habe ich dich richtig verstanden: ${frage}?`,
         chips: [JA, NEIN], wirkung: { [JA]: werte, [NEIN]: {} } };
     };
@@ -11616,7 +11626,8 @@ const Werkzeugkasten = {
        Worten wiederholt - so wie die Lage nach der Suche. */
     const vorsatz = (lauf.abgeleitet || []).map((x) => x.satz).join(" ") || null;
     const empfehlungBereit = p.vorgehen === "top3" && BERATUNG.every((t) => fertig[t])
-      && fertig.dauer && fertig.flug && fertig.flugAb;
+      && fertig.dauer && fertig.flug && fertig.flugAb
+      && (lauf.sammelNeu || []).every((t) => fertig[t] !== false);   // in der Sammelfrage Abgewaehltes erst klaeren
     if (vorsatz) frage = `Das steht schon im Chat, du hast es gerade gesagt: "${vorsatz}" - nicht wiederholen und nicht umformulieren.${frage ? ` Dann: ${frage}` : ""}`;
     /* Der Vorschlag statt der Annahme (20.11.2026, siehe ANNAHME oben).
        Ist das Thema inzwischen geklaert, faellt der Vorschlag weg; steht
