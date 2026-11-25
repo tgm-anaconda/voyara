@@ -996,5 +996,817 @@
    "verpflegung": "halbpension"
   },
   "frage_beantwortet": "ja"
+ },
+ "nee, 90 ist meine Schmerzgrenze": {
+  "nachricht_art": "antwort",
+  "preis": 90,
+  "frage_beantwortet": "ja"
+ },
+ "110 wären noch drin, mehr nicht": {
+  "nachricht_art": "antwort",
+  "preis": 110,
+  "belege": {
+   "preis": "110 wären noch drin, mehr nicht"
+  },
+  "frage_beantwortet": "ja"
+ },
+ "dann halt bis 140": {
+  "nachricht_art": "antwort",
+  "preis": "bis 140",
+  "belege": {
+   "preis": "dann halt bis 140"
+  },
+  "frage_beantwortet": "ja"
+ },
+ "puh, das ist mir zu teuer": {
+  "nachricht_art": "antwort",
+  "preisEgal": false,
+  "maxPreis": 90,
+  "frage_beantwortet": "ja"
+ },
+ "warum ist das so teuer bei euch?": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "preis"
+  ],
+  "belege": {
+   "preis": "warum ist das so teuer bei euch?"
+  },
+  "frage_beantwortet": "ja"
+ },
+ "egal, dann ohne Limit": {
+  "nachricht_art": "antwort",
+  "preisEgal": true,
+  "belege": {
+   "preisEgal": "egal, dann ohne Limit"
+  }
+ },
+ "ok mach das": {
+  "nachricht_art": "antwort",
+  "preis": "bis 140 €",
+  "belege": {
+   "preis": "ok mach das"
+  },
+  "frage_beantwortet": "ja"
+ },
+ "was wäre denn mit Kreta?": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "ziel"
+  ],
+  "ziel": "kreta",
+  "belege": {
+   "ziel": "was wäre denn mit Kreta?"
+  },
+  "frage_beantwortet": "ja"
+ },
+ "dann lieber nur Frühstück statt Halbpension": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "verpflegung"
+  ],
+  "verpflegung": "fruehstueck",
+  "belege": {
+   "verpflegung": "dann lieber nur Frühstück statt Halbpension"
+  },
+  "frage_beantwortet": "ja"
+ },
+ "ich könnte auch 160 zahlen": {
+  "nachricht_art": "antwort",
+  "preis": 160,
+  "belege": {
+   "preis": "ich könnte auch 160 zahlen"
+  }
+ },
+ "keine Ahnung, was empfiehlst du?": {
+  "nachricht_art": "antwort",
+  "preis": "offen",
+  "belege": {
+   "preisEgal": "keine Ahnung, was empfiehlst du?"
+  },
+  "frage_beantwortet": "teilweise"
+ },
+ "dann nehm ich auch Halbpension": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "verpflegung"
+  ],
+  "verpflegung": "halb",
+  "frage_beantwortet": "ja",
+  "belege": {
+   "verpflegung": "dann nehm ich auch Halbpension"
+  }
+ },
+ "nein, Mallorca muss es sein": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "ziel"
+  ],
+  "ziel": "mallorca",
+  "frage_beantwortet": "ja"
+ },
+ "andere Region wäre ok": {
+  "nachricht_art": "antwort",
+  "zieleAuswahl": [
+   "mallorca",
+   "kreta"
+  ],
+  "frage_beantwortet": "ja"
+ },
+ "Kreta könnte man auch mal anschauen": {
+  "nachricht_art": "antwort",
+  "zieleAuswahl": [
+   "mallorca",
+   "kreta"
+  ],
+  "frage_beantwortet": "ja",
+  "weiter": "schauen"
+ },
+ "zwei Hotels reichen mir": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "anzahlVorschlaege"
+  ],
+  "anzahlVorschlaege": 2,
+  "frage_beantwortet": "ja"
+ },
+ "im Juni vielleicht eher?": {
+  "nachricht_art": "antwort",
+  "monat": 6,
+  "monatUeberlassen": false,
+  "selbst_genannt": [
+   "zeit"
+  ],
+  "frage_beantwortet": "ja",
+  "belege": {
+   "monat": "im Juni vielleicht eher?"
+  }
+ },
+ "lass alles so wie es ist": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "ziel",
+   "monat",
+   "dauer",
+   "erwachsene",
+   "art",
+   "typ",
+   "zimmer",
+   "maxPreis",
+   "verpflegung",
+   "naechte"
+  ],
+  "ziel": "mallorca",
+  "monat": 7,
+  "naechte": 7,
+  "erwachsene": 2,
+  "art": "hotel",
+  "typ": "hotel",
+  "zimmer": 1,
+  "maxPreis": 120,
+  "verpflegung": "ai",
+  "dauer": 7,
+  "frage_beantwortet": "ja"
+ },
+ "und wenn wir eine Ferienwohnung nehmen?": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "art"
+  ],
+  "art": "apartment"
+ },
+ "Verpflegung ist mir dann egal": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "verpflegung"
+  ],
+  "belege": {
+   "verpflegung": "Verpflegung ist mir dann egal"
+  },
+  "frage_beantwortet": "ja"
+ },
+ "19 ist auch ok": {
+  "nachricht_art": "antwort",
+  "richtung": "warm",
+  "monat": 7,
+  "zieleAuswahl": [
+   "mallorca",
+   "kreta",
+   "algarve",
+   "sardinien",
+   "teneriffa",
+   "barcelona",
+   "wien",
+   "lissabon"
+  ],
+  "belege": {
+   "richtung": "19 ist auch ok",
+   "monat": "Im Juli sind das 9 Regionen"
+  }
+ },
+ "bleib bei 22": {
+  "nachricht_art": "antwort",
+  "richtung": "warm",
+  "belege": {
+   "richtung": "bleib bei 22"
+  }
+ },
+ "mindestens 25 bitte": {
+  "nachricht_art": "antwort",
+  "richtung": "warm",
+  "monat": 7,
+  "belege": {
+   "richtung": "mindestens 25 bitte",
+   "monat": "mindestens 25 bitte"
+  },
+  "frage_beantwortet": "ja"
+ },
+ "18 Grad fänd ich auch noch angenehm": {
+  "nachricht_art": "antwort",
+  "richtung": "warm",
+  "zieleAuswahl": [
+   "wien",
+   "lissabon",
+   "mallorca",
+   "kreta",
+   "algarve",
+   "sardinien",
+   "teneriffa",
+   "barcelona",
+   "tirol",
+   "suedtirol",
+   "marrakesch",
+   "kapstadt",
+   "krabi",
+   "island",
+   "newyork",
+   "kyoto"
+  ],
+  "belege": {
+   "richtung": "18 Grad fänd ich auch noch angenehm"
+  }
+ },
+ "nimm Island noch dazu": {
+  "nachricht_art": "antwort",
+  "richtung": "warm",
+  "zieleAuswahl": [
+   "island",
+   "mallorca",
+   "kreta",
+   "algarve",
+   "sardinien",
+   "teneriffa",
+   "barcelona",
+   "wien",
+   "lissabon",
+   "tirol",
+   "suedtirol",
+   "lappland",
+   "ostsee",
+   "marrakesch",
+   "kapstadt",
+   "krabi",
+   "newyork",
+   "kyoto"
+  ],
+  "belege": {
+   "richtung": "nimm Island noch dazu"
+  }
+ },
+ "Kreta klingt super, nur das": {
+  "nachricht_art": "antwort",
+  "ziel": "kreta",
+  "richtung": "warm",
+  "monat": 7,
+  "artEgal": false,
+  "personenGesamt": 2,
+  "erwachsene": 2,
+  "kinder": 0,
+  "typ": "hotel",
+  "belege": {
+   "ziel": "Kreta klingt super, nur das",
+   "richtung": "Kreta klingt super, nur das",
+   "monat": "Warm heißt für mich ab 22 Grad. Im Juli sind das 9 Regionen. Ab 19 Grad kämen Wien und Lissabon dazu. Bei 22 Grad bleiben oder auf 19 gehen?"
+  }
+ },
+ "egal": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "richtung"
+  ],
+  "richtung": "warm",
+  "frage_beantwortet": "ja",
+  "belege": {
+   "richtung": "egal"
+  }
+ },
+ "doch lieber kalt": {
+  "nachricht_art": "antwort",
+  "richtung": "kalt",
+  "monat": 7,
+  "frage_beantwortet": "ja",
+  "belege": {
+   "richtung": "doch lieber kalt",
+   "monat": "im Juli"
+  }
+ },
+ "Krabi ist mir zu weit": {
+  "nachricht_art": "antwort",
+  "richtung": "warm",
+  "monat": 7,
+  "art": "hotel",
+  "personenGesamt": 2,
+  "erwachsene": 2,
+  "zielOffen": true,
+  "selbst_genannt": [
+   "richtung",
+   "monat",
+   "art",
+   "personenGesamt",
+   "zielOffen"
+  ]
+ },
+ "wie warm ist das Meer denn da?": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "richtung"
+  ],
+  "richtung": "warm",
+  "frage_beantwortet": "ja"
+ },
+ "lieber ein paar mehr": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "anzahlVorschlaege"
+  ],
+  "anzahlVorschlaege": 5,
+  "frage_beantwortet": "ja"
+ },
+ "fünf": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "anzahlVorschlaege"
+  ],
+  "anzahlVorschlaege": 5,
+  "frage_beantwortet": "ja"
+ },
+ "drei passt": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "vorgehen"
+  ],
+  "vorgehen": "top3",
+  "frage_beantwortet": "ja"
+ },
+ "zehn": {
+  "nachricht_art": "antwort",
+  "anzahlVorschlaege": 10,
+  "frage_beantwortet": "ja"
+ },
+ "zeig mir einfach das beste": {
+  "nachricht_art": "anweisung",
+  "selbst_genannt": [
+   "vorgehen"
+  ],
+  "vorgehen": "top3",
+  "frage_beantwortet": "ja"
+ },
+ "ich will selber gucken": {
+  "nachricht_art": "antwort",
+  "vorgehen": "selbst",
+  "frage_beantwortet": "ja"
+ },
+ "ja, leg los": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "vorgehen"
+  ],
+  "vorgehen": "top3",
+  "frage_beantwortet": "ja"
+ },
+ "wir sind zu zweit, reicht da ein Zimmer?": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "reisende",
+   "erwachsene",
+   "zimmer"
+  ],
+  "belege": {
+   "reisende": "wir sind zu zweit",
+   "erwachsene": "wir sind zu zweit",
+   "zimmer": "reicht da ein Zimmer?"
+  },
+  "frage_beantwortet": "ja"
+ },
+ "ein Pool wäre schon wichtig": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "wuensche",
+   "ausstattung"
+  ],
+  "wuensche": [
+   "pool"
+  ],
+  "ausstattung": [
+   "pool"
+  ],
+  "frage_beantwortet": "ja"
+ },
+ "nö": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "ausstattungEgal"
+  ],
+  "ausstattungEgal": true,
+  "frage_beantwortet": "ja"
+ },
+ "Parkplatz brauchen wir unbedingt": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "ausstattung"
+  ],
+  "ausstattung": [
+   "parking"
+  ],
+  "frage_beantwortet": "ja",
+  "belege": {
+   "ausstattung": "Parkplatz brauchen wir unbedingt"
+  }
+ },
+ "Hauptsache sauber": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "wuensche"
+  ],
+  "wuensche": [
+   "sauberkeit"
+  ],
+  "frage_beantwortet": "ja"
+ },
+ "kein Pool nötig, aber Fitnessraum": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "ausstattung"
+  ],
+  "ausstattung": [
+   "gym"
+  ],
+  "frage_beantwortet": "ja"
+ },
+ "direkt am Wasser": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "ausstattung"
+  ],
+  "ausstattung": [
+   "beachfront"
+  ],
+  "frage_beantwortet": "ja",
+  "belege": {
+   "ausstattung": [
+    "direkt am Wasser"
+   ]
+  }
+ },
+ "wir bringen unseren Dackel mit": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "ausstattung"
+  ],
+  "ausstattung": [
+   "petsAllowed"
+  ],
+  "frage_beantwortet": "ja",
+  "belege": {
+   "ausstattung": "wir bringen unseren Dackel mit"
+  }
+ },
+ "was habt ihr denn so alles?": {
+  "nachricht_art": "antwort",
+  "frage_beantwortet": "ja",
+  "wuensche": [
+   "pool"
+  ]
+ },
+ "ich hab keine Wünsche mehr, such los": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "wuensche",
+   "ausstattungEgal"
+  ],
+  "ausstattungEgal": true,
+  "wuensche": [],
+  "frage_beantwortet": "ja"
+ },
+ "Whirlpool auf dem Zimmer": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "wuensche"
+  ],
+  "wuensche": [
+   "whirlpool"
+  ],
+  "frage_beantwortet": "ja",
+  "ausweiten": "ausstattung:pool"
+ },
+ "ist mir alles gleich wichtig": {
+  "nachricht_art": "antwort",
+  "belege": {
+   "wuensche": "ist mir alles gleich wichtig"
+  },
+  "frage_beantwortet": "ja",
+  "wuensche": [
+   "bewertung",
+   "lage",
+   "ruhe",
+   "essen"
+  ]
+ },
+ "gutes Essen und Ruhe": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "wuensche"
+  ],
+  "wuensche": [
+   "essen",
+   "ruhe"
+  ],
+  "frage_beantwortet": "ja",
+  "belege": {
+   "wuensche": "gutes Essen und Ruhe"
+  }
+ },
+ "hauptsache kein Partyhotel": {
+  "nachricht_art": "antwort",
+  "wuensche": [
+   "ruhe"
+  ],
+  "frage_beantwortet": "ja"
+ },
+ "nein danke, weiter": {
+  "nachricht_art": "antwort",
+  "frage_beantwortet": "ja"
+ },
+ "der Preis entscheidet": {
+  "nachricht_art": "antwort",
+  "wuensche": [
+   "preis"
+  ],
+  "frage_beantwortet": "ja",
+  "belege": {
+   "wuensche": "der Preis entscheidet"
+  }
+ },
+ "Nähe zum Flughafen wär mir wichtig": {
+  "nachricht_art": "antwort",
+  "wuensche": [
+   "lage"
+  ],
+  "belege": {
+   "wuensche": "Nähe zum Flughafen wär mir wichtig"
+  },
+  "frage_beantwortet": "ja"
+ },
+ "habt ihr was Günstigeres?": {
+  "nachricht_art": "antwort",
+  "preisEgal": false,
+  "maxPreis": 180,
+  "selbst_genannt": [
+   "preis"
+  ],
+  "frage_beantwortet": "ja",
+  "belege": {
+   "maxPreis": "habt ihr was Günstigeres?"
+  }
+ },
+ "das zweite gefällt mir": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "ziel",
+   "monat",
+   "dauer",
+   "reisende",
+   "art",
+   "typ",
+   "zimmer",
+   "maxPreis",
+   "verpflegung",
+   "flugAb",
+   "flugKlasse",
+   "flug",
+   "ziel"
+  ],
+  "ziel": "mallorca",
+  "monat": 7,
+  "naechte": 7,
+  "personenGesamt": 2,
+  "erwachsene": 2,
+  "artEgal": false,
+  "typ": "hotel",
+  "zimmer": 1,
+  "maxPreis": 180,
+  "verpflegung": "halb",
+  "flugAb": "Hamburg",
+  "flugKlasse": "economy",
+  "flug": true
+ },
+ "welches hat die besseren Bewertungen?": {
+  "nachricht_art": "frage",
+  "frage_beantwortet": "ja"
+ },
+ "zeig mir noch drei andere": {
+  "nachricht_art": "anweisung"
+ },
+ "keins davon": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "artEgal"
+  ],
+  "artEgal": true,
+  "frage_beantwortet": "ja"
+ },
+ "doch lieber eine Woche später": {
+  "nachricht_art": "antwort",
+  "monat": 8,
+  "frage_beantwortet": "ja",
+  "belege": {
+   "monat": "doch lieber eine Woche später"
+  }
+ },
+ "ist das Frühstück beim ersten inklusive?": {
+  "nachricht_art": "frage",
+  "frage_beantwortet": "ja"
+ },
+ "können wir auch 10 Nächte?": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "dauer"
+  ],
+  "dauer": 10,
+  "frage_beantwortet": "ja"
+ },
+ "ich nehm das mit dem Meerblick": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "art",
+   "ziel"
+  ],
+  "frage_beantwortet": "ja",
+  "belege": {
+   "art": "ich nehm das mit dem Meerblick"
+  }
+ },
+ "wie weit ist es vom dritten zum Strand?": {
+  "nachricht_art": "frage",
+  "frage_beantwortet": "ja"
+ },
+ "meine Schwester will jetzt auch mit": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "reisende"
+  ],
+  "personenGesamt": 3,
+  "erwachsene": 3,
+  "frage_beantwortet": "ja",
+  "belege": {
+   "personenGesamt": "meine Schwester will jetzt auch mit"
+  }
+ },
+ "bucht das erste": {
+  "nachricht_art": "anweisung",
+  "selbst_genannt": [
+   "art",
+   "ziel",
+   "monat",
+   "personenGesamt",
+   "erwachsene",
+   "typ",
+   "zimmer",
+   "maxPreis",
+   "verpflegung",
+   "flugAb",
+   "flugKlasse",
+   "flug",
+   "naechte"
+  ],
+  "art": "hotel",
+  "ziel": "mallorca",
+  "monat": 7,
+  "personenGesamt": 2,
+  "erwachsene": 2,
+  "typ": "hotel",
+  "zimmer": 1,
+  "maxPreis": 180,
+  "verpflegung": "halb",
+  "flugAb": "Hamburg",
+  "flugKlasse": "economy",
+  "flug": true,
+  "naechte": 7
+ },
+ "Mallorca ist mir doch zu voll, was anderes": {
+  "nachricht_art": "antwort",
+  "zielOffen": true,
+  "selbst_genannt": [
+   "zielOffen"
+  ]
+ },
+ "lieber morgens": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "flugAb"
+  ],
+  "flugAb": "Hamburg",
+  "frage_beantwortet": "ja"
+ },
+ "warum empfiehlst du gerade das?": {
+  "nachricht_art": "frage",
+  "selbst_genannt": [
+   "sonstiges"
+  ],
+  "frage_beantwortet": "keine_frage_offen"
+ },
+ "nur Direktflug": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "flug"
+  ],
+  "flug": true,
+  "frage_beantwortet": "ja"
+ },
+ "geht auch ab Hannover?": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "flugAb"
+  ],
+  "belege": {
+   "flugAb": "geht auch ab Hannover?"
+  },
+  "frage_beantwortet": "ja"
+ },
+ "Business wär mir zu teuer": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "flugKlasse"
+  ],
+  "belege": {
+   "flugKlasse": "Business wär mir zu teuer"
+  },
+  "frage_beantwortet": "ja"
+ },
+ "wir fahren doch lieber mit dem Auto": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "flug"
+  ],
+  "frage_beantwortet": "ja",
+  "flug": false
+ },
+ "ohne Koffer bitte": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "flugKlasse"
+  ],
+  "flugKlasse": "economy",
+  "frage_beantwortet": "ja"
+ },
+ "der erste passt": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "flug"
+  ],
+  "flug": true,
+  "frage_beantwortet": "ja"
+ },
+ "was ist wenn ich krank werde?": {
+  "nachricht_art": "frage",
+  "frage_beantwortet": "keine_frage_offen",
+  "nachricht": "was ist wenn ich krank werde?"
+ },
+ "Versicherung brauch ich nicht": {
+  "nachricht_art": "antwort",
+  "sonstiges": "Versicherung brauch ich nicht",
+  "frage_beantwortet": "keine_frage_offen"
+ },
+ "moment, ich muss noch meine Frau fragen": {
+  "nachricht_art": "sonstiges",
+  "frage_beantwortet": "keine_frage_offen"
+ },
+ "ändere bitte auf 5 Nächte": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "dauer"
+  ],
+  "frage_beantwortet": "ja"
+ },
+ "nee, doch noch nicht": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "sonstiges"
+  ],
+  "frage_beantwortet": "nein"
+ },
+ "ist das jetzt schon gebucht?": {
+  "nachricht_art": "frage",
+  "frage_beantwortet": "ja"
  }
 }

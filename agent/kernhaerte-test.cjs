@@ -39,8 +39,8 @@ const FORM = {
 const FELDER = ["monat", "anreise", "naechte", "erwachsene", "kinder", "personen", "kinderAlter", "typ", "artEgal", "zielId", "zieleAuswahl", "zieleAus", "richtung", "flug", "flugAb", "flugAbAuswahl", "flugKlasse", "verpflegung", "verpflegungEgal", "maxPreis", "budgetGesamt", "preisEgal", "ausstattung", "haustier"];
 const text = (x) => JSON.stringify(x ?? null), leer = (x) => x == null || x === false || (Array.isArray(x) && !x.length);
 let FRAGE_TEXT = null;
-async function lauf(thema, vor, du, args) {
-  const p = JSON.parse(JSON.stringify(vor)), kern = { lauf: { profil: p, gespraech: [{ role: "assistant", content: FRAGE_TEXT || "Möchtest du noch etwas wissen?" }, { role: "user", content: du }], protokoll: [], annahmeOffen: [], gefragtWie: {}, verlauf: [], nachrichtArt: "antwort", runde: 1, zugSeit: 77, gefragt: thema, zuletztGefragt: thema, gefragtVorher: thema, selbstGelesen: [] },
+async function lauf(thema, vor, du, args, zusatz = {}) {
+  const p = JSON.parse(JSON.stringify(vor)), kern = { lauf: { profil: p, gespraech: [{ role: "assistant", content: FRAGE_TEXT || "Möchtest du noch etwas wissen?" }, { role: "user", content: du }], protokoll: [], annahmeOffen: [], gefragtWie: {}, verlauf: [], nachrichtArt: "antwort", runde: 1, zugSeit: 77, gefragt: thema, zuletztGefragt: thema, gefragtVorher: thema, selbstGelesen: [], ...zusatz },
     notieren(e, d) { this.lauf.protokoll.push({ ereignis: e, ...d }); }, freigabe: () => "suchen", darf: () => false, logZeile() {}, sagen() {}, standAnzeigen() {}, sichern() {}, standKurz: () => "", antwortWerten() {}, gespraechPush() {}, sagenUndMerken() {} };
   const L = (fn) => { try { fn(); } catch (e) { kern.fehler ||= e.message; } };
   const alt = [KN.notieren, KN.standAnzeigen, KN.sichern]; KN.lauf = kern.lauf; KN.notieren = kern.notieren; KN.standAnzeigen = () => {}; KN.sichern = () => {};
@@ -112,6 +112,12 @@ async function lauf(thema, vor, du, args) {
     for (const t of ["wir haben 2 Kinder", "ich habe noch zwei Fragen", "die drei sind mir zu teuer", "nicht vier", "unter 1100 Euro", "mit 4 Sternen", "zu dritt", "5 Grad wären gut", "warum drei?", "in 2 Wochen", "wir brauchen 2 Zimmer"]) werte("anzahl", WK.anzahlAusText(t) == null, `"${t}" -> ${WK.anzahlAusText(t)}`);
     for (const [t, n] of [["vier", 4], ["5", 5], ["lieber sechs", 6], ["zeig mir vier", 4], ["drei reichen", 3], ["ja, fünf bitte", 5], ["nicht drei, sondern vier", 4], ["mach 6 draus", 6]]) werte("anzahl", WK.anzahlAusText(t) === n, `"${t}" -> ${WK.anzahlAusText(t)} statt ${n}`);
   } else werte("anzahl", false, "kein Leser");
+  // --- Teil 4b: die Gradfrage ---
+  const GR = { ...H, richtung: "warm", zieleErlaubt: ["mallorca", "kreta", "krabi"] };
+  for (const [du, soll] of [["19 ist mir zu kalt", null], ["wie warm ist es bei 19 Grad?", null], ["nicht bei 19 bitte", null], ["letztes Jahr hatten wir 19 Grad, das war furchtbar", null], ["auf 19 gehen", 19], ["19 Grad reichen", 19], ["mindestens 25", 25], ["10 Nächte", null], ["bis 150 Euro", null]]) {
+    const r = await lauf("ziel", GR, du, JA, { spanneOffen: { grenze: 22, weiter: 19 } });
+    werte("grad", (r.p.mindestGrad ?? null) === soll, `"${du}" -> ${r.p.mindestGrad}`);
+  }
   // --- Teil 5: Das Modell behauptet etwas, wovon die Nachricht nicht handelt ---
   const BEHAUPTET = { monat: 7, anreise: "2027-10-14", naechte: 9, personenGesamt: 4, erwachsene: 3, kinder: 2, kinderAlter: [4, 6], typ: "hotel", artEgal: true, ziel: "kreta", zieleAuswahl: ["kreta", "wien"], zieleAus: ["mallorca"], richtung: "warm", mindestGrad: 25,
     flug: true, flugAb: "Hamburg", flugAbEgal: true, flugKlasse: "business", verpflegung: "ai", verpflegungEgal: true, maxPreis: 120, budgetGesamt: 1500, preisEgal: true, ausstattung: ["pool"], mindestbewertung: 4.5, mindestSterne: 4, anzahlVorschlaege: 5, zimmer: 3, wlanInklusive: true };

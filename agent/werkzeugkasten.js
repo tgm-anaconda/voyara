@@ -3491,7 +3491,7 @@ const Werkzeugkasten = {
       if (!(fremd in a)) continue;
       const w = eins(a[fremd]); delete a[fremd];
       const zahlFeld = ["naechte", "maxPreis", "personenGesamt", "monat"].includes(feld);
-      const n = zahlFeld && feld !== "monat" ? (typeof w === "number" ? w : /^\s*\d+([.,]\d+)?\s*(€|euro|n(ä|ae)chte?|personen|leute)?\s*$/i.test(String(w ?? "")) ? parseFloat(String(w)) : null) : w;
+      const n = zahlFeld && feld !== "monat" ? (typeof w === "number" ? w : /^\D*\d+([.,]\d+)?\D*$/.test(String(w ?? "")) ? parseFloat(String(w).match(/\d+([.,]\d+)?/)[0].replace(/\.(?=\d{3}$)/, "").replace(",", ".")) : null) : w;
       if (a[feld] != null || n == null || typeof n === "boolean" || typeof n === "object") continue;
       a[feld] = n; kern.notieren("feld_umbenannt", { von: fremd, nach: feld, wert: n });
     }
@@ -4188,6 +4188,13 @@ const Werkzeugkasten = {
         const n = [...new Set([...(t.match(/\d{1,2}/g) || []).map(Number), ...(t.match(/[a-zäöüß]{3,}/g) || []).map((w) => Werkzeugkasten.selbstZahl(w)).filter((x) => x != null)])].filter((x) => x !== p.naechte && x >= 1 && x <= 28);
         if (n.length === 1 && !/woche|uhr|euro|€|grad|person|kind|erwachsen/.test(t)) { a.naechte = n[0]; kern.notieren("nachgelesen", { feld: "naechte", wert: n[0] }); }
       }
+      /* "Verpflegung ist mir dann egal" (25.11.2026, Durchlauf 1): Thema
+         gemeldet, aber kein Wert - und die alte Vorgabe blieb stehen. */
+      if (genannt.includes("verpflegung") && a.verpflegung == null && a.verpflegungEgal == null && p.verpflegung
+        && /\b(verpflegung|essen|pension)\b[^.!?]{0,30}\b(egal|offen|gleich|nicht (so )?wichtig)\b|\b(egal|offen)\b[^.!?]{0,20}\b(verpflegung|essen)\b/i.test(Werkzeugkasten.zusageTeil(kern.lauf.gespraech.filter((n) => n.role === "user").slice(-1)[0]?.content || "", "preis"))) {
+        a.verpflegungEgal = true; delete p.verpflegung;
+        kern.notieren("nachgelesen", { feld: "verpflegungEgal", wert: true });
+      }
       const beantwortet = (...themen) => (["ja", "teilweise"].includes(a.frage_beantwortet)
         && themen.includes(kern.lauf.gefragtVorher))
         || themen.some((t) => genannt.includes(t));
@@ -4204,10 +4211,12 @@ const Werkzeugkasten = {
          nimmt es zu den Regionen bis 20 Grad dazu, nicht zu denen bis 16.
          Begruendung der Regel steht weiter unten beim Setzen der Grenze. */
       const spanne = kern.lauf.spanneOffen || null;
+      let gradNackt = null;
       if (spanne) {
         kern.lauf.spanneOffen = null;
-        const letzteS = (kern.lauf.gespraech || []).filter((n) => n.role === "user").slice(-1)
-          .map((n) => String(n.content || "")).join(" ");
+        // Nur die Zusage (ABSPRACHE): "19 ist mir zu kalt" ist keine 19
+        const letzteS = Werkzeugkasten.zusageTeil((kern.lauf.gespraech || []).filter((n) => n.role === "user").slice(-1)
+          .map((n) => String(n.content || "")).join(" "), "ziel");
         const nennt = (n) => new RegExp(`(^|[^0-9])${n}([^0-9]|$)`).test(letzteS);
         /* Eine eigene Zahl mit "Grad" (21.11.2026). Ben auf "Bei 19 Grad
            bleiben oder auf 15 gehen?": "lieber erst am 23 grad, aber
@@ -4220,6 +4229,11 @@ const Werkzeugkasten = {
           else {
             const eigen = letzteS.match(/(^|[^0-9])(-?\d{1,2})\s*(grad|°)/i);
             if (eigen) a.mindestGrad = Number(eigen[2]);
+            else {
+              // "mindestens 25 bitte" (25.11.2026): eine nackte Zahl auf die Gradfrage
+              const nackt = letzteS.match(/\d+/g) || [];
+              if (nackt.length === 1 && +nackt[0] >= 5 && +nackt[0] <= 38 && !/€|euro|n(ä|ae)cht|tage?\b|woche|person|uhr|stunde|stern|meter|km\b/i.test(letzteS)) { a.mindestGrad = +nackt[0]; gradNackt = +nackt[0]; }
+            }
           }
           if (a.mindestGrad != null) kern.notieren("spanne_vom_kern", { grad: a.mindestGrad, satz: letzteS.slice(0, 80) });
         }
@@ -4583,7 +4597,7 @@ const Werkzeugkasten = {
       // `spanne` wird weiter oben gelesen, vor dem Ziel - siehe dort.
       const spanneZahl = spanne && a.mindestGrad != null
         && [spanne.weiter, spanne.grenze].includes(Math.round(Number(a.mindestGrad)));
-      if (a.mindestGrad != null && (gesagt(/grad|°/i, 1) || spanneZahl)) {
+      if (a.mindestGrad != null && (gesagt(/grad|°/i, 1) || spanneZahl || gradNackt === a.mindestGrad)) {
         const g = Math.round(Number(a.mindestGrad));
         if (Number.isFinite(g) && g >= -20 && g <= 45) {
           setze("mindestGrad", g);
