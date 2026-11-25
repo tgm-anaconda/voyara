@@ -53,7 +53,7 @@ const FREIGABE_RANG = Object.fromEntries(FREIGABE.map((f) => [f.id, f.rang]));
 
 const STELLSCHRAUBEN = {
   // Themen mit zweiter, schlichter Lesung (26.11.2026, agent/absicherung.js)
-  nachlesen: ["reisende"],
+  nachlesen: ["reisende", "zeit", "dauer", "preis"],
   // Vorbelegung des Reglers. "zufall" teilt die Teilnehmenden in zwei
   // Haelften: die eine startet auf der niedrigsten Stufe, die andere auf
   // der hoechsten. Damit laesst sich messen, wie viele die Voreinstellung
@@ -5283,7 +5283,8 @@ const Kern = {
     }
 
     // Nur, wenn es gerade um den Preis geht oder ein Betrag in Euro dasteht
-    const betrag = Werkzeugkasten.betragAusText(satz);
+    // Nur aus der Zusage (ABSPRACHE): "noch einen Zwanziger drauf" oder "ist 150 realistisch?" ist kein Betrag
+    const betrag = Werkzeugkasten.betragAusText(Werkzeugkasten.zusageTeil(satz, "preis"));
     if (betrag == null) return false;
     const umPreis = this.lauf.gefragt === "preis" || /€|euro|budget|preis|ausgeben|kosten/i.test(satz);
     if (!umPreis || p.preisEgal) return false;

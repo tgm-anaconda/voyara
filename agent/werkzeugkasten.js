@@ -3251,6 +3251,23 @@ const Werkzeugkasten = {
        im Oktober?" trug das Modell als Ziel ein. Bitten in Frageform
        ("koennen wir auch 10 Naechte?") sind davon nicht betroffen. */
     const wFrage = /\?\s*$/.test(letzte) && /^(und\s+|aber\s+|ach\s+)?(was|wie|wo|wann|wer|welche\w*|warum|wieso|weshalb|wozu|woran|inwiefern)\b/i.test(letzte.trim());
+    /* Fragezeichen + Ort: nachfragen (26.11.2026, Vorschlag Ben). "Was waere
+       denn mit Kreta?", "habt ihr auch was in Kapstadt?" - nichts uebernehmen,
+       sondern "Du moechtest nach Kreta?" mit Ja / Nein. Reine Sachfragen
+       ("Wie warm ist es auf Kreta?") beantwortet das Modell nur. Anhaengsel
+       ("nach Kreta, geht das?") sind keine Frage. */
+    const ohneAnhang = letzte.replace(/[,\s]+(geht das|ginge das|oder|ok(ay)?|passt das|m(ö|oe)glich|ja|ne|gell)\s*\?+\s*$/i, "");
+    const ortFrage = /\?\s*$/.test(ohneAnhang) && (!wFrage || /^(und\s+|aber\s+)?was\s+(w(ä|ae)re|ist|haltet|h(ä|ae)ltst)\b/i.test(letzte.trim()));
+    if (ortFrage && !jaWort) {
+      const ids = [...new Set([].concat(a.ziel || [], a.zieleAuswahl || []))].filter((id) => typeof id === "string" && id !== p.zielId && !(p.zieleAuswahl || []).includes(id));
+      if (ids.length) {
+        kern.notieren("ort_in_frage", { ids });
+        kern.lauf.nurGefragt = { ids, zug: kern.lauf.zugSeit };
+        this.merkeVerworfen(kern, "ziel", ids[0]);
+        if (ids.length === 1) kern.lauf.zielBedeutung = { id: ids[0], zug: kern.lauf.zugSeit };
+        delete a.ziel; delete a.zieleAuswahl;
+      }
+    }
     if (wFrage) for (const f of ["monat", "anreise", "von", "bis", "naechte", "personenGesamt", "erwachsene", "kinder", "kinderAlter", "ziel", "zieleAuswahl", "zieleAus", "richtung", "typ", "artEgal", "flug", "flugAb", "flugKlasse", "verpflegung", "maxPreis", "budgetGesamt", "ausstattung", "mindestGrad"]) {
       if (a[f] == null || JSON.stringify(a[f]) === JSON.stringify(p[STAND[f] || f] ?? null)) continue;
       kern.notieren("ohne_grundlage", { feld: f, wert: a[f], grund: "w_frage" });

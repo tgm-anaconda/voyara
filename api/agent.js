@@ -221,7 +221,7 @@ const NACHLESEN = {
     unklar: "Ist die genaue Zahl nicht zu erkennen (die ganze Familie, ein paar Freunde), setz unklar auf true." },
   ziel: { frage: "Welche Orte stehen als Reiseziel fest, welche werden abgelehnt, welche sind nur eine Ueberlegung, eine Frage oder bloss erwaehnt?",
     json: '{"fest": [Orte], "abgelehnt": [Orte], "offen": [Orte]}',
-    regeln: ["Nennt die Person einen Ort als ihren Wunsch oder als Antwort auf die Frage, steht er fest.", "Eine Frage oder ein Vielleicht legt nichts fest, das gehoert zu offen.", "Orte frueherer Reisen sind nur erwaehnt, ausser sie werden abgelehnt.", "Bezieht sich die Antwort auf eine Aufzaehlung davor (die ersten zwei, alle drei), loese das auf."],
+    regeln: ["Nennt die Person einen Ort als ihren Wunsch oder als Antwort auf die Frage, steht er fest.", "Stellt die Person eine Frage (meist mit Fragezeichen) oder sagt sie vielleicht, legt sie nichts fest: Der Ort gehoert zu offen.", "Orte frueherer Reisen sind nur erwaehnt, ausser sie werden abgelehnt.", "Bezieht sich die Antwort auf eine Aufzaehlung davor (die ersten zwei, alle drei), loese das auf."],
     unklar: "" },
   zeit: { frage: "Welchen Reisemonat legt die Person fest (1 bis 12)?", json: '{"monat": Zahl oder null, "unklar": true/false}',
     regeln: ["Wird etwas korrigiert, gilt das Letzte; fruehere Reisen zaehlen nicht.", "Angaben wie eine Woche spaeter rechne vom bisherigen Stand aus."], unklar: "Fragt sie nur, oder passen mehrere Monate, setz unklar auf true." },

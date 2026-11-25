@@ -226,56 +226,136 @@ const Absicherung = {
     }
   },
 
-  /* Zweimal lesen bei den Reisenden (26.11.2026)
+  /* Zweimal lesen (26.11.2026): Reisende, Zeit, Dauer, Preis
      ------------------------------------------------------------------
      Das Modell bekommt dieselbe Nachricht ein zweites Mal, mit einer
-     schlichten Frage zu genau diesem Thema. Der Kern vergleicht nur:
-     gleich -> gilt; verschieden -> "Ja / Nein: ..."; unklar -> nichts
-     merken, der Fahrplan fragt. Laeuft gleichzeitig mit der ersten Lesung
-     los und haelt hoechstens WARTEN_MS auf. */
+     schlichten Frage zu genau einem Thema (api/agent.js, NACHLESEN). Auf 30
+     unabhaengigen Saetzen lag es damit 29-mal richtig. Der Kern vergleicht:
+       gleich      -> gilt (und gilt als sicher)
+       verschieden -> "Ja / Nein: ..."
+       unklar      -> nichts merken, der Fahrplan fragt - je Thema einmal
+       nur die zweite hat einen Wert, und danach war gefragt -> sie gilt
+     Laeuft gleichzeitig mit der ersten Lesung los und haelt hoechstens
+     WARTEN_MS auf. Ziel ist nicht dabei: dort sind Fragezeichen-Regel,
+     Rueckfrage und Sammelfrage besser (gemessen). */
   WARTEN_MS: 2500,
-  MENSCHEN: /(?<![a-zäöüß])(mein\w*|unser\w*|frau|mann|freund\w*|partner\w*|sohn|s(ö|oe)hne|tochter|t(ö|oe)chter|kind\w*|kids|baby|eltern|mutter|vater|mama|papa|oma|opa|bruder|schwester|geschwister|familie|zwilling\w*|drilling\w*|enkel\w*|cousin\w*|kumpel\w*|clique|gruppe|m(ä|ae)dels?|jungs|paar|personen|leute|erwachsene\w*|zu (zweit|dritt|viert|f(ü|ue)nft|sechst)|allein\w*|wir sind)(?![a-zäöüß])/i,
+  ANLASS: {
+    reisende: /(?<![a-zäöüß])(mein\w*|unser\w*|frau|mann|freund\w*|partner\w*|sohn|s(ö|oe)hne|tochter|t(ö|oe)chter|kind\w*|kids|baby|eltern|mutter|vater|mama|papa|oma|opa|bruder|schwester|geschwister|familie|zwilling\w*|drilling\w*|enkel\w*|cousin\w*|kumpel\w*|clique|gruppe|m(ä|ae)dels?|jungs|paar|personen|leute|erwachsene\w*|zu (zweit|dritt|viert|f(ü|ue)nft|sechst)|allein\w*|wir sind)(?![a-zäöüß])/i,
+    zeit: /januar|februar|m(ä|ae)rz|april|(?<![a-zäöüß])mai(?![a-zäöüß])|juni|juli|august|september|oktober|november|dezember|monat/i,
+    dauer: /n(ä|ae)chte?|woche|(?<![a-zäöüß])tage?n?(?![a-zäöüß])|l(ä|ae)nger|k(ü|ue)rzer/i,
+    preis: /€|euro|budget|teurer|billiger|(?<![a-zäöüß])pro (nacht|person|nase|kopf)/i,
+  },
+  GRUPPE: { reisende: ["erwachsene", "kinder", "personenGesamt"], zeit: ["monat", "monate", "von", "anreise"], dauer: ["naechte", "von"], preis: ["maxPreis", "budgetGesamt", "preisEgal"] },
+  standText(thema, p) {
+    switch (thema) {
+      case "reisende": return this.reisendeText(p);
+      case "zeit": return p.monat ? (typeof MONATSNAMEN !== "undefined" ? MONATSNAMEN[p.monat - 1] : `Monat ${p.monat}`) : "";
+      case "dauer": return p.naechte ? `${p.naechte} Nächte` : "";
+      case "preis": return p.maxPreis ? `bis ${p.maxPreis} € pro Nacht` : p.budgetGesamt ? `bis ${p.budgetGesamt} € gesamt` : "";
+      default: return "";
+    }
+  },
   nachlesenStarten(kern, t) {
     this.lesung = null;
     const l = kern.lauf, p = l.profil || {};
-    if (typeof Modell === "undefined" || !Modell.nachlesen || typeof STELLSCHRAUBEN === "undefined" || !(STELLSCHRAUBEN.nachlesen || []).includes("reisende")) return;
+    if (typeof Modell === "undefined" || !Modell.nachlesen || typeof STELLSCHRAUBEN === "undefined") return;
+    const an = STELLSCHRAUBEN.nachlesen || [];
     const roh = String(t || "").trim();
-    if (!roh || l.chipFest || Werkzeugkasten.inhaltsleer(roh)) return;
-    const gefragt = l.gefragt === "reisende";
-    if (!gefragt && !this.MENSCHEN.test(roh)) return;
-    if (/^\d{1,2}$|^\d{1,2} erwachsene$/i.test(roh)) return;                    // eindeutig, liest der Kern
+    if (!an.length || !roh || l.chipFest || Werkzeugkasten.inhaltsleer(roh)) return;
+    const themen = an.filter((th) => {
+      if (l.gefragt !== th && !this.ANLASS[th]?.test(roh)) return false;
+      if (Werkzeugkasten.chipBedeutung?.(th, roh, p)) return false;                 // Chip: der Kern weiss, was er tut
+      // Eindeutig ("9", "im Mai", "wir sind 2 erwachsene"): der Kern liest selbst
+      try { if (Werkzeugkasten.eindeutigeAntwort(roh) && Werkzeugkasten.SELBST_LESEN[th]?.(Werkzeugkasten.zusageTeil(roh, th).toLowerCase(), {}, Werkzeugkasten)) return false; } catch { /* dann eben lesen lassen */ }
+      return true;
+    }).sort((a, b) => (a === l.gefragt ? -1 : b === l.gefragt ? 1 : 0)).slice(0, 2);
+    if (!themen.length) return;
     const g = (l.gespraech || []).filter((n) => typeof n.content === "string" && n.content && ["user", "assistant"].includes(n.role));
     const ohneLetzte = g.length && g[g.length - 1].role === "user" && g[g.length - 1].content === roh ? g.slice(0, -1) : g;
-    const frage = [...ohneLetzte].reverse().find((n) => n.role === "assistant")?.content || "Wer reist mit?";
+    const frage = [...ohneLetzte].reverse().find((n) => n.role === "assistant")?.content || "";
     const davor = ohneLetzte.filter((n) => n.content !== frage).slice(-3).map((n) => n.content);
-    const stand = this.reisendeText(p);
-    this.lesung = { roh, p: Modell.nachlesen({ thema: "reisende", frage, antwort: roh, davor, stand }).catch(() => null) };
+    this.lesung = { roh, gefragt: l.gefragt || null,
+      je: Object.fromEntries(themen.map((th) => [th, Modell.nachlesen({ thema: th, frage, antwort: roh, davor, stand: this.standText(th, p) }).catch(() => null)])) };
   },
   async nachlesenAbwarten(a, kern) {
     const x = this.lesung;
     this.lesung = null;
-    if (!x || ["erwachsene", "kinder", "personenGesamt"].every((f) => a[f] == null)) return;
+    if (!x || kern.lauf.chipFest) return;
+    const uhr = new Promise((f) => setTimeout(() => f(null), this.WARTEN_MS));
+    for (const [th, prom] of Object.entries(x.je)) {
+      const geliefert = this.GRUPPE[th].some((f) => a[f] != null && a[f] !== "" && !(Array.isArray(a[f]) && !a[f].length));
+      const kernHat = this.GRUPPE[th].some((f) => (kern.lauf.selbstGelesen || []).includes(f === "personenGesamt" ? "personen" : f));
+      /* Was der Kern aus freiem Text mitlas, ist keine zweite Stimme: Aus "zwei
+         Wochen, minus zwei Tage" lasen Kern und Modell beide 14. */
+      if (kernHat || (!geliefert && x.gefragt !== th)) continue;
+      const z = await Promise.race([prom, uhr]);
+      if (!z || typeof z !== "object") continue;
+      this.vergleichen(th, a, z, kern, x, geliefert);
+    }
+  },
+  vergleichen(th, a, z, kern, x, geliefert) {
     const l = kern.lauf, p = l.profil || {};
-    if (l.chipFest) return;
-    const z = await Promise.race([x.p, new Promise((f) => setTimeout(() => f(null), this.WARTEN_MS))]);
-    if (!z || typeof z !== "object") return;
-    const e1 = a.erwachsene ?? null, k1 = a.kinder ?? null, g1 = a.personenGesamt ?? null;
-    const e2 = Number.isInteger(z.erwachsene) ? z.erwachsene : null, k2 = Number.isInteger(z.kinder) ? z.kinder : e2 != null ? 0 : null;
-    const raeumen = () => { for (const f of ["erwachsene", "kinder", "personenGesamt", "kinderAlter"]) delete a[f]; };
+    const frage = /\?\s*$/.test(x.roh) || a.nachricht_art === "frage";
+    const ganz = (v, min, max) => (Number.isFinite(v) && v >= min && v <= max ? v : null);
+    const raeumen = (felder) => { for (const f of felder) delete a[f]; };
+    const einig = (felder) => { l.gleichGelesen = [...(l.gleichGelesen || []), ...felder]; };
+    const ersatz = (werte) => {
+      if (frage) return;                                                              // eine Frage legt nichts fest
+      Object.assign(a, werte);
+      a.frage_beantwortet = "ja";
+      a.selbst_genannt = [...new Set([...(Array.isArray(a.selbst_genannt) ? a.selbst_genannt : []), ...Object.keys(werte)])];
+      kern.notieren("nachgelesen_ersatz", { thema: th, werte });
+    };
     if (z.unklar === true) {
-      // Einmal nachfragen lassen; sagt die Person es danach wieder ungenau, gilt die erste Lesung
-      if (l.reisendeUnklar || (e1 === p.erwachsene && (k1 ?? p.kinder) === p.kinder)) return;
-      l.reisendeUnklar = true;
-      kern.notieren("nachgelesen_unklar", { erste: { e: e1, k: k1, g: g1 } });
-      raeumen();
+      if (!geliefert || (l.unklarGefragt || {})[th]) return;                          // einmal je Thema, danach gilt die erste Lesung
+      const neu = this.GRUPPE[th].some((f) => a[f] != null && JSON.stringify(a[f]) !== JSON.stringify(p[f === "personenGesamt" ? "personen" : f] ?? null));
+      if (!neu || Array.isArray(a.monate)) return;
+      (l.unklarGefragt ||= {})[th] = true;
+      kern.notieren("nachgelesen_unklar", { thema: th });
+      raeumen(th === "reisende" ? ["erwachsene", "kinder", "personenGesamt", "kinderAlter"] : th === "zeit" ? ["monat"] : th === "dauer" ? ["naechte"] : []);
       return;
     }
-    if (e2 == null) return;
-    const gleich = (e1 == null || e1 === e2) && (k1 == null || k1 === k2) && (g1 == null || e1 != null || g1 === e2 + k2);
-    kern.notieren("nachgelesen", { gleich, erste: { e: e1, k: k1, g: g1 }, zweite: { e: e2, k: k2 } });
-    if (gleich || e2 < 1 || e2 > 12 || k2 > 12) return;
-    raeumen();
-    l.reisendeFrage = { e: e2, k: k2, zug: l.zugSeit };
+    if (th === "reisende") {
+      const e2 = ganz(z.erwachsene, 1, 12), k2 = z.kinder == null ? 0 : ganz(z.kinder, 0, 12);
+      if (e2 == null || k2 == null) return;
+      if (!geliefert) { ersatz({ erwachsene: e2, kinder: k2 }); return; }
+      const e1 = a.erwachsene ?? null, k1 = a.kinder ?? null, g1 = a.personenGesamt ?? null;
+      const gleich = (e1 == null || e1 === e2) && (k1 == null || k1 === k2) && (g1 == null || e1 != null || g1 === e2 + k2);
+      kern.notieren("nachgelesen", { thema: th, gleich, erste: { e: e1, k: k1, g: g1 }, zweite: { e: e2, k: k2 } });
+      if (gleich) { einig(["erwachsene", "kinder"]); return; }
+      raeumen(["erwachsene", "kinder", "personenGesamt", "kinderAlter"]);
+      l.reisendeFrage = { e: e2, k: k2, zug: l.zugSeit };
+      return;
+    }
+    const FELD = { zeit: "monat", dauer: "naechte" }[th];
+    if (FELD) {
+      const v2 = th === "zeit" ? ganz(z.monat, 1, 12) : ganz(z.naechte, 1, 40);
+      if (v2 == null) return;
+      if (!geliefert) { ersatz({ [FELD]: v2 }); return; }
+      if (a[FELD] == null) return;                                                    // das Modell hat es anders gefasst (Zeitraum, mehrere Monate)
+      const gleich = Number(a[FELD]) === v2;
+      if (!gleich) l.gleichGelesen = (l.gleichGelesen || []).filter((f) => f !== FELD);
+      kern.notieren("nachgelesen", { thema: th, gleich, erste: a[FELD], zweite: v2 });
+      if (gleich) { einig([FELD]); return; }
+      raeumen([FELD]);
+      l.grundlageFrage = { feld: FELD, wert: v2, thema: th, zug: l.zugSeit };
+      return;
+    }
+    if (th === "preis") {
+      const v2 = ganz(Number(z.betrag), 10, 50000);
+      if (v2 == null) return;
+      const feld2 = z.fuer === "gesamt" ? "budgetGesamt" : "maxPreis";
+      if (!geliefert) { if (z.fuer !== "person") ersatz({ [feld2]: v2 }); return; }
+      const v1 = Number(a.maxPreis ?? a.budgetGesamt);
+      if (!Number.isFinite(v1)) return;
+      // Was pro Person, pro Nacht oder gesamt gilt, klaert der Kern selbst - verglichen wird der Betrag
+      const n = (p.erwachsene || 0) + (p.kinder || 0);
+      const gleich = v1 === v2 || (n > 1 && v1 === v2 * n);
+      kern.notieren("nachgelesen", { thema: th, gleich, erste: v1, zweite: v2 });
+      if (gleich) { if (v1 === v2) einig(["maxPreis", "budgetGesamt"]); return; }
+      raeumen(["maxPreis", "budgetGesamt"]);
+      l.grundlageFrage = { feld: feld2, wert: v2, thema: th, zug: l.zugSeit };
+    }
   },
 
   // Zeile fuer den Auftrag ans Modell
