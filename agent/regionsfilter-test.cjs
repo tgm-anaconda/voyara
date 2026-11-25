@@ -99,7 +99,7 @@ pruefe("Schwelle fuer den Hinweis", WK.ENGSTELLE_GRENZE, 15);
 // Am 03.11.2026 von 5 auf 10 angehoben, auf Wunsch des Nutzers: Unter
 // acht Objekten entscheidet die Filterkette statt des Partnerlabels, und
 // die Ausweitungsfrage selbst ist eine Beobachtung wert.
-pruefe("Schwelle fuer die Frage", WK.ENGSTELLE_FRAGE_GRENZE, 10);
+pruefe("Schwelle fuer die Frage", WK.ENGSTELLE_FRAGE_GRENZE, 12);
 const ef=(p,lauf)=>{const r=typeof WK.engstelleRueckfrage==="function"?WK.engstelleRueckfrage(p,lauf):"keine Funktion";
   return r&&r.satz?{grund:r.grund,chips:r.chips.length,istFrage:r.satz.trim().endsWith("?"),lockert:Object.keys(r.wirkung[r.chips[0]])}:r;};
 /* Der Strandabstand wird seit dem 19.11.2026 gestuft angeboten (0,2 /

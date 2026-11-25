@@ -1829,7 +1829,7 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     pruefe("Er steht vor dem Rundgang",
       iHalt >= 0 && iRundgang >= 0 && iHalt < iRundgang ? "davor" : "danach", "davor");
     pruefe("Die Engstelle kommt zuerst, dann die Anzahl",
-      (() => { const e = wq.indexOf("kern.engstelleVorRundgang(auswahl, p)");
+      (() => { const e = wq.indexOf("kern.engstelleVorRundgang(auswahl, p");
         return e >= 0 && iHalt > e ? "ja" : "nein"; })(), "ja");
   }
 
@@ -2094,13 +2094,9 @@ const liesReisende = async (text, felder, urteil = "ja") => {
       else { ablauf.push("UNERWARTET:" + fp.naechstes); break; }
     }
     pruefe("Die Reihenfolge der Beratung", ablauf.join(" "),
-      "SUCHE verpflegung SUCHE preis SUCHE ausstattung anreise gewichtung VORSCHLAEGE");
+      "SUCHE verpflegung SUCHE preis SUCHE anreise gewichtung VORSCHLAEGE");   // 25.11.2026: ohne Ausstattungsfrage
     pruefe("Drei sichtbare Suchen in der Beratung",
       ablauf.filter((x) => x === "SUCHE").length, 3);
-    pruefe("Die harte Frage nennt die Trefferzahl",
-      /Es sind jetzt noch \d+ Hotels/.test(ausstattungsSatz) ? "ja" : ausstattungsSatz.slice(0, 60), "ja");
-    pruefe("Die harte Frage sagt, dass Haeuser rausfallen",
-      /fallen raus/.test(ausstattungsSatz) ? "ja" : "nein", "ja");
     pruefe("Die Gewichtung steht hinter der Ausstattung",
       ablauf.indexOf("gewichtung") > ablauf.indexOf("ausstattung") ? "ja" : "nein", "ja");
     pruefe("Und unmittelbar vor den Vorschlaegen",
@@ -2379,7 +2375,7 @@ const liesReisende = async (text, felder, urteil = "ja") => {
   {
     const lies = (d) => fs.readFileSync(alt && fs.existsSync(quelle + d.split("/").pop()) ? quelle + d.split("/").pop() : B + d, "utf8");
     const kq = lies("agent/kern.js"), sq = lies("agent/studie.js"), wq = lies("agent/werkzeugkasten.js");
-    pruefe("Nach 'mehr vergleichen' wird die Anzahl erfragt", /Wie viele möchtest du vergleichen - 4, 5 oder 6\?/.test(kq) ? "ja" : "nein", "ja");
+    pruefe("Nach 'mehr vergleichen' wird die Anzahl erfragt", /Wie viele möchtest du vergleichen - \$\{zahlen\}\?/.test(kq) ? "ja" : "nein", "ja");
     pruefe("Und die gewaehlte Zahl gesetzt", /profil\.anzahlVorschlaege = zahl;/.test(kq) ? "ja" : "nein", "ja");
     pruefe("Das Konto laesst sich ueberspringen", /data-ueberspringen/.test(sq) ? "ja" : "nein", "ja");
     pruefe("Kein Kontofeld ist Pflicht", /name="(vorname|nachname|mail)"[^>]*required/.test(sq) ? "Pflicht" : "frei", "frei");

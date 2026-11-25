@@ -287,6 +287,13 @@ const Politik = {
       woerter: ["kinderclub", "kids club", "kidsclub", "kinderbetreuung", "miniclub", "kinderanimation", "kinderprogramm"] },
     { id: "meerblick", label: "Meerblick", merkmal: "seaView",
       woerter: ["meerblick", "meeresblick", "blick aufs meer", "blick auf das meer", "blick aufs wasser", "sea view", "seaview"] },
+    /* Dazu (25.11.2026): seit "gerne einen Whirlpool" ein Wunsch ist und
+       kein Filter, braucht jedes Merkmal aus `ausstattung` sein Kriterium. */
+    { id: "whirlpool", label: "Whirlpool", merkmal: "whirlpool", woerter: ["whirlpool", "jacuzzi", "sprudelbad"] },
+    { id: "sauna", label: "Sauna", merkmal: "sauna", woerter: ["sauna", "dampfbad"] },
+    { id: "garten", label: "Garten", merkmal: "garten", woerter: ["garten", "liegewiese"] },
+    { id: "fitness", label: "Fitnessraum", merkmal: "gym", woerter: ["fitness", "kraftraum"] },
+    { id: "parkplatz", label: "Parkplatz", merkmal: "parking", woerter: ["parkplatz", "stellplatz"] },
     { id: "strandnah", label: "Strandnähe", naehe: "strand",
       woerter: ["strand", "am meer", "meernah", "ans wasser", "direkt am wasser", "küste", "kueste"] },
     { id: "bewertung", label: "gute Bewertungen", gesamtnote: true,

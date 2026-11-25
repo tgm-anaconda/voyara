@@ -6,17 +6,18 @@ const enthaelt = (...ids) => (x) => Array.isArray(x) && ids.every((i) => x.inclu
 const leer = (x) => x == null || x === false || (Array.isArray(x) && !x.length);
 const B = [];
 const f = (t, du, soll = {}, o = {}) => B.push({ k: t, t, du, soll, ...o });
-// Preiswarnung: 90 EUR, Vorschlag 140
+// Preiswarnung: 90 EUR, Vorschlag 170 (bis 25.11.2026: 140; die gespeicherte
+// Antwort auf "ok mach das" ist auf den neuen Vorschlag umgeschrieben)
 f("warnung", "dann halt bis 140", { maxPreis: 140 });
 f("warnung", "110 wären noch drin, mehr nicht", { maxPreis: 110 });
 f("warnung", "nee, 90 ist meine Schmerzgrenze", { maxPreis: 90 });
 f("warnung", "puh, das ist mir zu teuer", { maxPreis: 90 });
 f("warnung", "warum ist das so teuer bei euch?", { maxPreis: 90 });
 f("warnung", "egal, dann ohne Limit", { preisEgal: true }, { zusatz: ["preis"] });
-f("warnung", "ok mach das", { maxPreis: 140 }, { zusatz: ["preis"] });
+f("warnung", "ok mach das", { maxPreis: 170 }, { zusatz: ["preis"] });
 f("warnung", "dann lieber nur Frühstück statt Halbpension", { verpflegung: "fruehstueck", maxPreis: 90 });
 f("warnung", "was wäre denn mit Kreta?", { maxPreis: 90, zielId: "mallorca" }, { nie: { zieleAus: 1 } });
-f("warnung", "keine Ahnung, was empfiehlst du?", { maxPreis: (x) => x === 90 || x === 140 });
+f("warnung", "keine Ahnung, was empfiehlst du?", { maxPreis: (x) => x === 90 || x === 170 });
 // Engstelle: All Inclusive, 120 EUR, Mallorca - nur wenige Hotels
 f("engstelle", "dann nehm ich auch Halbpension", { verpflegung: "halb", maxPreis: 120 });
 f("engstelle", "ich könnte auch 160 zahlen", { maxPreis: 160 });

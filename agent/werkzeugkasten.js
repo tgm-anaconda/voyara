@@ -29,7 +29,9 @@ const AUSSTATTUNG_WORT = {
   "meerblick": (h) => (h.amenities || []).includes("seaView"),
   "kinderclub|kids ?club": (h) => (h.amenities || []).includes("kidsClub"),
   "\\bpool\\b": (h) => (h.amenities || []).includes("pool"),
-  "wellness|\\bspa\\b|sauna": (h) => (h.amenities || []).includes("spa"),
+  "wellness|\\bspa\\b": (h) => (h.amenities || []).includes("spa"),
+  "whirlpool|jacuzzi": (h) => (h.amenities || []).includes("whirlpool"),
+  "sauna": (h) => (h.amenities || []).some((x) => x === "sauna" || x === "spa"),
   "all ?inclusive": (h) => (h.boards || []).some((b) => b.key === "ai"),
   "halbpension": (h) => (h.boards || []).some((b) => b.key === "halb"),
   "vollpension": (h) => (h.boards || []).some((b) => b.key === "voll"),
@@ -312,13 +314,13 @@ const Werkzeugkasten = {
              nie etwas zu sehen. */
           wunsch_unbekannt: { type: "array", items: { type: "string" },
             description: "Wuensche oder Ausstattung, die die Person nennt und die in wuensche UND ausstattung nicht vorkommen (z.B. 'Hollywood-Schaukel', 'Weinberg in der Naehe', 'Billardtisch'). Woertlich, so kurz wie moeglich. Sonst leer lassen." },
-          wuensche: { type: "array", items: { type: "string", enum: ["pool", "strand", "strandnah", "meerblick", "kinderclub", "familie", "wellness", "ruhe", "essen", "sauberkeit", "lage", "service", "preis", "bewertung", "getraenke"] }, description: "Was der Person wichtig ist (alle bisher genannten, nicht nur die neuen). getraenke = Alkohol, Drinks, Bar, gute Getraenke; ruhe = auch Entspannung, Erholung." },
+          wuensche: { type: "array", items: { type: "string", enum: ["pool", "strand", "strandnah", "meerblick", "kinderclub", "familie", "wellness", "ruhe", "essen", "sauberkeit", "lage", "service", "preis", "bewertung", "getraenke", "whirlpool", "sauna", "garten", "fitness", "parkplatz"] }, description: "Was der Person wichtig ist (alle bisher genannten, nicht nur die neuen). whirlpool = auch Jacuzzi. getraenke = Alkohol, Drinks, Bar, gute Getraenke; ruhe = auch Entspannung, Erholung." },
           /* "wifi" stand hier bis zum 29.09.2026 und war nicht einstellbar:
              Alle 184 Hotels und alle 160 Ferienwohnungen haben WLAN, also
              gibt es in der Spalte bewusst keinen Haken dafuer. Ein Wert im
              Schema, den die Seite nicht kennt, fuehrt nur dazu, dass der
              Agent einen Filter verspricht, den er nicht setzen kann. */
-          ausstattung: { type: "array", items: { type: "string", enum: ["pool", "spa", "kidsClub", "familyFriendly", "beachfront", "parking", "restaurant", "gym", "seaView", "petsAllowed"] }, description: "petsAllowed = Haustiere erlaubt (Hund, Katze). Nur, wenn die Person etwas als Bedingung nennt ('muss einen Pool haben', 'direkt am Strand' = beachfront). Ein Wunsch gehoert in wuensche, nicht hierher." },
+          ausstattung: { type: "array", items: { type: "string", enum: ["pool", "whirlpool", "sauna", "spa", "garten", "kidsClub", "familyFriendly", "beachfront", "parking", "restaurant", "gym", "seaView", "petsAllowed"] }, description: "whirlpool = auch Jacuzzi; petsAllowed = Haustiere erlaubt (Hund, Katze). Nur, wenn die Person etwas als Bedingung nennt ('muss einen Pool haben', 'direkt am Strand' = beachfront). Ein Wunsch gehoert in wuensche, nicht hierher." },
           verpflegung: { type: "string", enum: ["ohne", "fruehstueck", "halb", "voll", "ai"], description: "Gewuenschte Verpflegung" },
           zimmerTyp: text("Name des Zimmers, das die Person gewaehlt hat (genau so, wie er auf der Hausseite steht). Nur, wenn sie sich entschieden hat - nicht selbst auswaehlen."),
           flug: { type: "boolean", description: "true, wenn ein Flug dazu gewuenscht ist; false, wenn nur die Unterkunft" },
@@ -3458,6 +3460,7 @@ const Werkzeugkasten = {
         "ferienwohnung": { werte: { typ: "apartment", artGenannt: true, artEgal: false } },
         "beides zeigen": { werte: { typ: null, artEgal: true, artGenannt: true } } },
       flug: { "mit flug": { werte: { flug: true } }, "nur die unterkunft": { werte: { flug: false } } },
+      flugAb: { "ohne flug": { werte: { flug: false } } },
       flugKlasse: { "economy": { werte: { flugKlasse: "economy" } }, "premium economy": { werte: { flugKlasse: "premium" } }, "business": { werte: { flugKlasse: "business" } } },
       verpflegung: { "all inclusive": { werte: { verpflegung: "ai", verpflegungEgal: false } },
         "halbpension": { werte: { verpflegung: "halb", verpflegungEgal: false } },
@@ -5604,7 +5607,7 @@ const Werkzeugkasten = {
         const alt = new Set((p.kriterien || []).map((k) => k.id));
         const ids = [...new Set(a.wuensche.map((w) => ALIAS[String(w).toLowerCase()] || String(w).toLowerCase()))]
           .filter((w) => typeof Politik !== "undefined" && Politik.kriterium(w))
-          .filter((w) => alt.has(w) || gesagt(new RegExp((Politik.kriterium(w).woerter || [w]).map((x) => x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|"), "i"), 99));
+          .filter((w) => alt.has(w) || steht("wuensche", "gewichtung") || gesagt(new RegExp((Politik.kriterium(w).woerter || [w]).map((x) => x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|"), "i"), 99));
         /* Was die Seite nicht kann, wird gesagt - nicht verschluckt.
            --------------------------------------------------------------
            Gemeldet am 02.10.2026: "Wir muessen unseren Hund mitnehmen
@@ -5676,8 +5679,18 @@ const Werkzeugkasten = {
         const deckt = beantwortet("wuensche", "ausstattung") || steht("ausstattung", "ausstattung", "gewichtung");   // die Themen im Schema, nicht die des Fahrplans
         const ohneBeleg = deckt ? [] : gewollt.filter((x) => !gesagt(WORT[x], 99));
         if (ohneBeleg.length) kern.notieren("ausstattung_verworfen", { felder: ohneBeleg });
-        p.ausstattung = deckt ? gewollt : gewollt.filter((x) => gesagt(WORT[x], 99));
-        geaendert.push("ausstattung");
+        const belegt = deckt ? gewollt : gewollt.filter((x) => gesagt(WORT[x], 99));
+        const schonMuss = new Set(p.ausstattung || []);
+        const alsWunsch = Werkzeugkasten.ausChip(kern, "ausstattung") ? [] : belegt.filter((x) => !schonMuss.has(x)
+          && Werkzeugkasten.nurWunsch(letzteRoh, x, kern.lauf.gefragtVorher, WORT[x]));
+        if (alsWunsch.length && typeof Politik !== "undefined") {
+          const da = new Set((p.kriterien || []).map((k) => k.id));
+          const neu = alsWunsch.map((x) => Werkzeugkasten.WUNSCH_STATT_MUSS[x]).filter((id) => Politik.kriterium(id) && !da.has(id));
+          if (neu.length) { p.kriterien = [...(p.kriterien || []), ...neu.map((id) => ({ id, gewicht: 1 }))]; geaendert.push("wuensche"); }
+          kern.notieren("ausstattung_als_wunsch", { felder: alsWunsch });
+        }
+        const bedingung = belegt.filter((x) => !alsWunsch.includes(x));
+        if (bedingung.length || !alsWunsch.length) { p.ausstattung = bedingung; geaendert.push("ausstattung"); }
       }
       /* Reisende fuer die Buchungsstrecke - aber nur, wenn die Zahl aufgeht.
          ----------------------------------------------------------------
@@ -5763,6 +5776,16 @@ const Werkzeugkasten = {
          Agenten abgegeben hat. Das Verstehen gehoert dem Modell (Feld
          flugAbEgal), die Entscheidung dem Kern: Er nimmt die guenstigste
          Verbindung und sagt, welche. */
+      /* "gerne bei mir in der Naehe" ist nicht egal (25.11.2026). Das Modell
+         trug flugAbEgal ein, der Kern nahm den guenstigsten - Duesseldorf
+         statt Hamburg. Ohne Ort fragt er, wo die Person wohnt. */
+      const naheText = String((kern.lauf.gespraech || []).filter((n) => n.role === "user").slice(-1)[0]?.content || "");
+      if ((a.flugAbEgal || a.flugAb) && Werkzeugkasten.NAHE_FLUGHAFEN.test(naheText) && !Werkzeugkasten.flughaefenIm(naheText).length) {
+        kern.notieren("flughafen_nahe", { egal: !!a.flugAbEgal, flugAb: a.flugAb || null });
+        delete a.flugAbEgal; delete a.flugAb;
+        kern.lauf.flugNaheOffen = !/wohn|komm\w* aus|\baus [A-ZÄÖÜ]|in der n(ä|ae)he (von|bei)|bei [A-ZÄÖÜ]/.test(naheText);
+      }
+      if (a.flugAb || a.flugAbEgal || a.flug === false) { kern.lauf.flugNaheOffen = false; kern.lauf.flugKorrektur = false; }
       if (a.flugAbEgal) { p.flugAbEgal = true; delete a.flugAb; }
       if (Array.isArray(a.flugAbAuswahl) && a.flugAbAuswahl.length && typeof Flug !== "undefined") {
         // Nur Flughaefen, die es gibt - ein Tippfehler darf die Auswahl
@@ -5803,15 +5826,7 @@ const Werkzeugkasten = {
          schon Hamburg, wurde es uebernommen, obwohl die Person nur gefragt
          hat. Steht in der Nachricht kein Flughafen, faellt der Wert weg; die
          Antwort des Modells ("Soll ich Hamburg nehmen?") bleibt. */
-      if (a.flugAb) {
-        const letzteFA = String((kern.lauf.gespraech || []).filter((n) => n.role === "user").slice(-1)[0]?.content || "");
-        const fragtNaechsten = /n(ä|ae)chste[nrs]?\b|am n(ä|ae)chsten|in der n(ä|ae)he/i.test(letzteFA);
-        const nenntFlughafen = Werkzeugkasten.flughaefenIm(letzteFA).length > 0;
-        if (fragtNaechsten && !nenntFlughafen) {
-          kern.notieren("flughafen_aus_frage_verworfen", { flugAb: a.flugAb });
-          delete a.flugAb;
-        }
-      }
+      // (seit dem 25.11.2026 zusammen mit "egal" oben, NAHE_FLUGHAFEN)
       setze("flugAb", a.flugAb); setze("flugKlasse", a.flugKlasse);
       if (a.flugAb) p.flugAbEgal = false;
       /* Ein unbekannter Name loescht nichts mehr (24.11.2026): Vorher wurde
@@ -6520,19 +6535,28 @@ const Werkzeugkasten = {
            und das Vergleichsfenster wird um dieses Haus herum gebaut
            (`pflichtId`). Damit ist das Partnerhaus immer drin UND alle
            anderen liegen in seiner Preisklasse. */
-        if (typeof Studie !== "undefined" && Studie.partnerhaus && !kern.lauf.partnerId) {
-          const alle = auswahl.map((h) => h.id);
-          const ph = Studie.partnerhaus(alle, alle);
-          if (ph && alle.includes(ph.id)) {
-            kern.lauf.partnerId = ph.id;
-            kern.lauf.partnerRang = ph.rang || null;
-            kern.notieren("partner_bestimmt", { id: ph.id, rang: ph.rang || null,
-              ausWieVielen: alle.length, wo: "vor dem Set" });
-          }
+        const vorgelegt = !!kern.lauf.partnerId && (kern.lauf.letzteVorlage || []).includes(kern.lauf.partnerId);
+        const partnerFuer = typeof Studie !== "undefined" && Studie.partnerhaus ? (ids) => Studie.partnerhaus(ids, ids) : null;
+        const bau = (n) => Werkzeugkasten.partnerUndSet(auswahl, p, n, { fest: vorgelegt ? kern.lauf.partnerId : null, partnerFuer });
+        // Wie viele passen hoechstens zusammen? Mehr bietet der Kern nicht an.
+        kern.lauf.vergleichbarMax = bau(6)?.anzahl || null;
+        const gebaut = bau(wieViele);
+        if (gebaut?.partner && gebaut.partner.id !== kern.lauf.partnerId) {
+          kern.lauf.partnerId = gebaut.partner.id;
+          kern.lauf.partnerRang = gebaut.partner.rang || null;
+          kern.notieren("partner_bestimmt", { id: gebaut.partner.id, rang: gebaut.partner.rang || null, platz: gebaut.platz || null,
+            ausWieVielen: auswahl.length, wo: "mit dem Set" });
         }
-        const set = Werkzeugkasten.vergleichsSet(auswahl, p, wieViele, kern.lauf.partnerId || null);
+        // Passt nichts zusammen, bleibt das engste Set - im Protokoll markiert
+        if (!gebaut && partnerFuer && !kern.lauf.partnerId) {
+          const ph = partnerFuer(auswahl.map((h) => h.id));
+          if (ph) { kern.lauf.partnerId = ph.id; kern.lauf.partnerRang = ph.rang || null; }
+        }
+        const set = gebaut ? gebaut.set : Werkzeugkasten.vergleichsSet(auswahl, p, Math.min(wieViele, 2), kern.lauf.partnerId || null);
+        kern.lauf.setVergleichbar = !!gebaut;
         const engereHaeuser = set.haeuser;
         let engere = engereHaeuser.map((h) => h.id);
+        kern.lauf.setIds = engere.slice();
         kern.notieren("vorschlagsset", {
           anzahl: engere.length,
           spanneProzent: set.spanne == null ? null : Math.round(set.spanne * 1000) / 10,
@@ -6540,6 +6564,7 @@ const Werkzeugkasten = {
           gleichlauf: set.gleichlauf == null ? null : Math.round(set.gleichlauf * 100),
           partner: kern.lauf.partnerId || null,
           noteRegel: Werkzeugkasten.letzteNoteRegel || null,
+          vergleichbar: !!gebaut, hoechstens: kern.lauf.vergleichbarMax, partnerPlatz: gebaut?.platz || null,
         });
         /* Traegt die Konstruktion nicht, steht es in den Daten.
            --------------------------------------------------------------
@@ -6624,7 +6649,11 @@ const Werkzeugkasten = {
            beides ist Arbeit, die sich erledigt hat, wenn die Person die
            Suche ausweiten will. Begruendung und Vorgeschichte stehen bei
            Kern.engstelleVorRundgang. */
-        const halt = kern.engstelleVorRundgang(auswahl, p);
+        // Laeuft gerade ein Regionsvergleich, kommt erst dessen Frage
+        const regionHalt = typeof kern.regionVorRundgang === "function" ? kern.regionVorRundgang(p) : null;
+        if (regionHalt) return { ...basis, ...(regionHalt.ergebnis || {}) };
+        // Passt preislich nichts zusammen, wird auf jeden Fall gefragt
+        const halt = kern.engstelleVorRundgang(auswahl, p, { immer: !gebaut });
         if (halt) return { ...basis, ...(halt.ergebnis || {}) };
         /* Wie viele Haeuser? Erst fragen, dann den Rundgang starten.
            Begruendung steht bei Kern.anzahlVorRundgang. */
@@ -6942,7 +6971,15 @@ const Werkzeugkasten = {
       try { passend = new Set(Werkzeugkasten.katalogTreffer(pj, Werkzeugkasten.filterAusStand(pj)).map((h) => h.id)); } catch { passend = null; }
       const zuletzt = String([...(kern.lauf.gespraech || [])].reverse().find((x) => x.role === "user")?.content || "").toLowerCase();
       const genannt = (id) => { const n = String(getItemById(id)?.name || "").toLowerCase(); return n.length > 3 && zuletzt.includes(n); };
-      const ids = (passend ? bekannt.filter((id) => passend.has(id) || genannt(id)) : bekannt).slice(0, wieViele);
+      let ids = (passend ? bekannt.filter((id) => passend.has(id) || genannt(id)) : bekannt).slice(0, wieViele);
+      /* Das vergleichbare Set gewinnt gegen die freie Wahl des Modells
+         (25.11.2026) - ausser die Person hat selbst Haeuser genannt. */
+      const setIds = kern.lauf.setIds || [];
+      if (kern.lauf.setVergleichbar && setIds.length >= 2 && passend && setIds.every((id) => passend.has(id)) && !bekannt.some(genannt)
+        && !ids.every((id) => setIds.includes(id))) {
+        kern.notieren("vorlage_auf_set", { modell: ids, set: setIds });
+        ids = setIds.slice();
+      }
       const raus = bekannt.filter((id) => !ids.includes(id) && passend && !passend.has(id) && !genannt(id));
       if (raus.length) kern.notieren("vorlage_unpassend_entfernt", { ids: raus });
       if (!ids.length) return { ergebnis: { fehler: "Diese Haeuser passen nicht zu den jetzigen Vorgaben.",
@@ -7852,12 +7889,12 @@ const Werkzeugkasten = {
              ein zweiter Grund und gehoert als solcher dazu - sonst steht
              gleich darunter eine dritte Zahl ohne Erklaerung. */
           if (r.ids.length < passend) {
-            vorne += `Davon lege ich dir ${r.ids.length} vor, die preislich beieinanderliegen. `;
+            vorne += `Davon lege ich dir ${r.ids.length} vor${kern.lauf.setVergleichbar === false ? "" : ", die preislich beieinanderliegen"}. `;
           }
         } else if (r.ids.length < gewuenscht) {
           // Kein Mangel, sondern eine Entscheidung - also auch so gesagt
           vorne = `Von den ${zahl(passend)} lege ich dir ${r.ids.length} vor: `
-            + `Die liegen preislich beieinander und lassen sich wirklich vergleichen. `;
+            + (kern.lauf.setVergleichbar === false ? "Preislich liegen sie allerdings auseinander. " : `Die liegen preislich beieinander und lassen sich wirklich vergleichen. `);
         }
         kern.sagen(vorne + (r.ids.length === 1
           ? `Ich sehe mir ${Werkzeugkasten.artEins(p, true)} jetzt genauer an.`
@@ -8545,6 +8582,34 @@ const Werkzeugkasten = {
      wollte am 03.11.2026 ausdruecklich, dass mindestens zweimal
      nachgefragt wird; das Abwinken ist der Ausweg, und den gibt es jetzt
      ab der ersten Frage. */
+  NAHE_FLUGHAFEN: /n(ä|ae)chste[nrs]?\b|am n(ä|ae)chsten|in (der|meiner|unserer) n(ä|ae)he|(ganz )?nah (bei|von) (mir|uns)|bei (mir|uns) (um die ecke|in der|aus der)|aus meiner (gegend|umgebung)/i,
+
+  ausstattungFragen() {
+    return typeof STELLSCHRAUBEN !== "undefined" && STELLSCHRAUBEN.ausstattungFragen === true;
+  },
+
+  /* Wunsch oder Bedingung? (25.11.2026)
+     ------------------------------------------------------------------
+     "gerne einen Pool" bestimmt die Reihenfolge, "muss einen Pool haben"
+     filtert. Das Modell traegt beides in `ausstattung` ein; ueber das
+     Ausschliessen entscheidet das Wort der Person. Auf die letzte Frage
+     ("das schliesst keine Haeuser aus") ist alles ein Wunsch, ausser sie
+     macht es ausdruecklich zur Bedingung. Haustiere sind immer eine. */
+  WUNSCH_STATT_MUSS: { pool: "pool", spa: "wellness", kidsClub: "kinderclub", familyFriendly: "familie", beachfront: "strandnah",
+    seaView: "meerblick", restaurant: "essen", whirlpool: "whirlpool", sauna: "sauna", garten: "garten", gym: "fitness", parking: "parkplatz" },
+  MUSS_WORT: /\bm(u|ü|ue)(ss|ß)(en|te|ten|t)?\b|unbedingt|zwingend|auf jeden fall|bedingung|voraussetzung|pflicht|\bbrauch(e|en|t)\b|nur (mit|h(ä|ae)user mit|hotels mit)|ohne .{0,25}geht (es )?nicht|kommt .{0,20}nicht in frage/i,
+  WUNSCH_WORT: /\bgern(e)?\b|w(ä|ae)re? .{0,25}(sch(ö|oe)n|toll|super|nett|cool|nice|klasse|gut|ideal)|\bsch(ö|oe)n w(ä|ae)re|wenn (es )?(m(ö|oe)glich|geht|geben)|am liebsten|vielleicht|h(ä|ae)tte(n)? (ich|wir) (auch )?(noch )?(lieber|am liebsten)|kein muss|muss nicht|nice to have|optional|bonus|pluspunkt/i,
+  // muster: das Wort zum Merkmal (WORT in stand_merken); thema: die gestellte Frage
+  nurWunsch(text, merkmal, thema, muster) {
+    if (!this.WUNSCH_STATT_MUSS[merkmal]) return false;
+    const teile = String(text || "").split(/[,.;!?]|\baber\b|\bgerne auch\b/i).map((x) => x.trim()).filter(Boolean);
+    // Ohne Fundstelle ("yaqusi") gilt die ganze Nachricht
+    const stelle = (muster && teile.find((x) => muster.test(x))) || String(text || "");
+    const rest = stelle.replace(/kein muss|muss(en)? (es )?nicht( sein)?|brauch(e|en) (ich|wir) nicht unbedingt/gi, " gerne ");
+    if (this.MUSS_WORT.test(rest)) return false;
+    return thema === "gewichtung" || this.WUNSCH_WORT.test(rest) || rest !== stelle;
+  },
+
   wunschRunde(p, lauf) {
     const gefragt = lauf?.gefragtWie?.gewichtung || 0;
     /* Nur die weichen Wuensche zaehlen, nicht die Ausstattung (19.11.2026).
@@ -8693,13 +8758,19 @@ const Werkzeugkasten = {
          eine Liste, die nicht stimmte. Eine Aufzaehlung, die anderswo
          gepflegt wird, geht irgendwann auseinander; also wird sie
          gerechnet. */
-      satz: [(p, wk) => {
+      satz: [(p, wk, lauf) => {
         const h = typeof Flug !== "undefined" ? Flug.flughaefen().map((x) => x.name) : [];
+        if (lauf?.flugKorrektur) return "Was stimmt beim Flug nicht? Nenn mir den richtigen Flughafen, oder soll es ohne Flug gehen?";
+        if (lauf?.flugNaheOffen) return "Gern - wo wohnst du ungefähr? Dann nehme ich den Flughafen in deiner Nähe.";
         if (!h.length) return "Von welchem Flughafen soll es losgehen?";
         return `Von welchem Flughafen soll es losgehen? ${h.slice(0, -1).join(", ")} oder ${h[h.length - 1]}.`;
       },
-        "Und ab welchem Flughafen?"],
-      frage: "Von welchem Flughafen.", chips: null },
+        (p, wk, lauf) => (lauf?.flugKorrektur ? "Ab welchem Flughafen soll es gehen - oder ohne Flug?"
+          : lauf?.flugNaheOffen ? "In welcher Stadt oder Gegend wohnst du denn?" : "Und ab welchem Flughafen?")],
+      frage: (p, wk, lauf) => (lauf?.flugKorrektur ? "Was am Flug nicht stimmt: welcher Flughafen richtig ist, oder ob es ohne Flug sein soll (flug false)."
+        : lauf?.flugNaheOffen ? "Wo sie ungefaehr wohnt - sie moechte den Flughafen in ihrer Naehe. Setz keinen Flughafen und nicht flugAbEgal."
+          : "Von welchem Flughafen."),
+      chips: (p, wk, lauf) => (lauf?.flugKorrektur ? "Ohne Flug" : null) },
 
     flugKlasse: {
       erklaerung: "Die Klasse macht beim Flugpreis den groessten Unterschied - Premium liegt etwa beim 1,3-fachen, Business beim 1,8-fachen.",
@@ -8869,7 +8940,9 @@ const Werkzeugkasten = {
         if (runde === 1) return `Fällt dir${dazu} noch etwas ein?`;
         return "Zuletzt noch: Bei der Analyse der Bewertungen kann ich auf bestimmte Aspekte besonders achten - Sauberkeit, Ruhe oder das Essen zum Beispiel. Das schließt keine Häuser aus, es entscheidet die Reihenfolge. Gibt es da welche?";
       },
-      frage: "Worauf sie bei den Bewertungen achten soll (wuensche) - offen gefragt, hoechstens drei Beispiele. Sag dazu, dass es nichts ausschliesst. Haengt im Satz ein Nachhaken ('Faellt dir noch etwas ein'), dann stell GENAU diese Frage und spring nicht zum naechsten Thema.",
+      frage: (p, wk, lauf) => (wk.wunschRunde(p, lauf) >= 1
+        ? "Ob ihr noch etwas einfaellt, worauf du in den Bewertungen achten sollst (wuensche). Stell GENAU diese Frage und spring nicht zum naechsten Thema."
+        : "Worauf du in den Bewertungen achten sollst (wuensche) - offen gefragt, hoechstens drei Beispiele: Essen, Ruhe, Sauberkeit. Keine Ausstattung als Beispiel. Sag dazu, dass es nichts ausschliesst."),
       /* Keine Schnipsel fuer das, was schon dasteht (17.11.2026): Ben
          hatte "Sauberkeit" genannt, und im naechsten Zug bot der Agent
          "Sauberkeit" wieder an. Die Liste war fest, unabhaengig vom
@@ -10106,18 +10179,18 @@ const Werkzeugkasten = {
      ermoeglichen, statt einfach auf alle Regionen zu gehen. Der Kern merkt
      sich die Auswahl davor; nach der Suche fragt regionWahlRueckfrage. */
   regionVergleichStarten(kern, p) {
-    if (!kern?.lauf || kern.lauf.regionVergleich) return;
+    if (!kern?.lauf || (kern.lauf.regionVergleich && !kern.lauf.regionVergleich.gefragt)) return;
     const vorher = p.zielId ? [p.zielId] : (p.zieleAuswahl || []).slice();
     if (!vorher.length) return;
     kern.lauf.regionVergleich = { vorher, zielOffen: !!p.zielOffen, gefragt: false };
     kern.notieren("region_vergleich_gestartet", { vorher });
   },
 
-  regionWahlRueckfrage(p, lauf) {
+  regionWahlRueckfrage(p, lauf, { sofort = false } = {}) {
     const rv = lauf?.regionVergleich;
     if (!rv || rv.gefragt) return null;
     // Erst nach der Suche ueber alle Regionen
-    if (!lauf.gesuchtMit || lauf.gesuchtMit !== this.eckdatenSchluessel(p)) return null;
+    if (!sofort && (!lauf.gesuchtMit || lauf.gesuchtMit !== this.eckdatenSchluessel(p))) return null;
     const name = (id) => (typeof ZIEL_NACH_ID !== "undefined" ? ZIEL_NACH_ID[id]?.name : null) || id;
     const zahl = (id) => { try { return this.katalogTreffer({ ...p, zielId: id, zieleAuswahl: [] }, this.filterAusStand({ ...p, zielId: id, zieleAuswahl: [] })).length; } catch { return 0; } };
     const kandidaten = (typeof ZIELE !== "undefined" ? ZIELE : []).map((z) => z.id)
@@ -10529,7 +10602,7 @@ const Werkzeugkasten = {
          die Zahl der Haeuser den Reiz mitbestimmt. Wer schon vorher
          etwas als Bedingung genannt hat, wird trotzdem gefragt
          ("sonst noch etwas?"), und wer nichts will, winkt ab. */
-      ausstattung: !!(p.ausstattungEgal || (lauf?.gefragtWie?.ausstattung || 0) >= 1),
+      ausstattung: !this.ausstattungFragen() || !!(p.ausstattungEgal || (lauf?.gefragtWie?.ausstattung || 0) >= 1),
       /* Die Gewichtung: wie die Wuensche vorher, mit dem Nachhaken.
          `wunschRunde` zaehlt mit, was die Person von sich aus genannt
          hat - sonst fragt der Agent offen nach etwas, das schon
@@ -11140,7 +11213,12 @@ const Werkzeugkasten = {
        `anzahl` steht weiter in der Liste, wird aber nie gefragt
        (fertig.anzahl ist immer true); der Haltepunkt davor ist
        Kern.anzahlVorRundgang. */
-    const BESPRECHEN = (p.typ === "apartment" ? ["preis", "ausstattung"] : ["verpflegung", "preis", "ausstattung"]).concat("anzahl");
+    /* Nach einer Bedingung wird nicht mehr gefragt (25.11.2026). Ben: "Wenn
+       der Agent einen fragt, dann: ein Pool ist mir wichtig, klar" - gemessen
+       blieben danach in 70 % der Faelle unter zehn Hotels. Wer von sich aus
+       "muss einen Pool haben" sagt, bekommt den Filter weiter. */
+    const BESPRECHEN = (p.typ === "apartment" ? ["preis"] : ["verpflegung", "preis"])
+      .concat(this.ausstattungFragen() ? ["ausstattung"] : [], "anzahl");
     // Wer selbst schaut, wird nicht ausgefragt; wer raussuchen laesst, schon
     const BERATUNG = (p.vorgehen === "selbst" ? [] : BESPRECHEN).concat("anreise")
       .concat(p.vorgehen === "selbst" ? [] : ["gewichtung"]);
@@ -11414,6 +11492,7 @@ const Werkzeugkasten = {
       }
     }
     let frage = naechstes ? this.THEMEN[naechstes]?.frage : null;
+    if (typeof frage === "function") frage = frage(p, this, lauf);
     // Chips duerfen wie der Satz vom Stand abhaengen - bei den Wuenschen
     // steht ab der zweiten Runde "Nein, das war's" vorn.
     let chips = naechstes ? this.THEMEN[naechstes]?.chips : null;
@@ -12333,7 +12412,10 @@ const Werkzeugkasten = {
      Dass die Frage selten bleibt, ist gemessen und nicht gehofft: Nach
      dem Katalogausbau liegen 3 von 92 Hotel- und 7 von 72
      Wohnungskombinationen unter zehn, keine einzige unter acht. */
-  ENGSTELLE_FRAGE_GRENZE: 10,
+  // Zwoelf statt zehn (25.11.2026): Ben will immer mindestens zehn, und ab
+  // zwoelf gibt es praktisch immer drei preislich vergleichbare Haeuser
+  ENGSTELLE_FRAGE_GRENZE: 12,
+  ENGSTELLE_ENGER: 0.75,
   /* Was "lockern" fuer das jeweilige Feld bedeutet. Nur Felder, bei
      denen die Lockerung eindeutig ist - Gruppengroesse und Reiseart
      stehen bewusst nicht drin: Wer zu viert reist, reist zu viert. */
@@ -12350,8 +12432,7 @@ const Werkzeugkasten = {
        nichts kosteten. */
     ausstattung: (p) => {
       const e = Werkzeugkasten.ausstattungEngste(p);
-      if (!e) return { ausstattungEgal: true, kriterien: [] };
-      return { ausstattung: (p.ausstattung || []).filter((x) => x !== e.merkmal) };
+      return Werkzeugkasten.mussAlsWunsch(p, e ? [e.merkmal] : (p.ausstattung || []));
     },
     wlan: () => ({ wlanInklusive: null }),
   },
@@ -12365,6 +12446,15 @@ const Werkzeugkasten = {
 
      Null, wenn nur ein Merkmal gewuenscht ist (dann sagt schon die Ebene
      darueber alles) oder wenn kein einzelnes heraussticht. */
+  /* Aus der Bedingung wird ein Wunsch (25.11.2026): Das Haus faellt nicht
+     mehr raus, steht mit dem Merkmal aber weiter vorn. */
+  mussAlsWunsch(p, merkmale) {
+    const ids = merkmale.map((m) => this.WUNSCH_STATT_MUSS[m])
+      .filter((id) => id && typeof Politik !== "undefined" && Politik.kriterium(id) && !(p.kriterien || []).some((k) => k.id === id));
+    return { ausstattung: (p.ausstattung || []).filter((x) => !merkmale.includes(x)),
+      kriterien: [...(p.kriterien || []), ...ids.map((id) => ({ id, gewicht: 1 }))] };
+  },
+
   ausstattungEngste(p) {
     const gewollt = p?.ausstattung || [];
     if (gewollt.length < 2 || typeof Auswahl === "undefined") return null;
@@ -12402,6 +12492,17 @@ const Werkzeugkasten = {
      Empfohlen wird die Grenze, unter der ein Viertel der Haeuser liegt
      (auf 10 € aufgerundet). Seiteneffektfrei - was gefragt wurde, merkt
      sich der Kern. */
+  /* Wie viele Haeuser eine empfohlene Grenze uebrig lassen soll
+     (25.11.2026) - die eine Stelle fuer alle Preisempfehlungen. Bis dahin
+     empfahl der Agent "ein Viertel": bei einer Region rund sieben Hotels,
+     und danach beschwerte er sich, dass es nur sieben sind (97 % der Faelle
+     unter zehn). Mit zwoelf sind drei preislich vergleichbare Haeuser
+     praktisch immer moeglich. Gibt es ohne Grenze kaum mehr als zwoelf,
+     kann der Preis allein es nicht richten. */
+  AUSWAHL_MINDESTENS: 12,
+  genugAuswahl(alle) {
+    return alle >= this.AUSWAHL_MINDESTENS + 4 ? Math.max(Math.ceil(alle * 0.25), this.AUSWAHL_MINDESTENS) : Math.ceil(alle * 0.75);
+  },
   PREIS_WARNUNG_HOECHSTENS: 30,
   PREIS_STUFE: 1.1,
   PREIS_WARNUNG_ANTEIL: 0.2,
@@ -12417,7 +12518,7 @@ const Werkzeugkasten = {
     if (!ohneListe || ohneListe.length < 8) return null;
     const preise = ohneListe.map((h) => nachtpreisGruppe(h, ohne.monat || null, vg)).filter(Number.isFinite).sort((a, b) => a - b);
     if (preise.length < 8) return null;
-    const q = preise[Math.min(preise.length - 1, Math.floor(0.25 * (preise.length - 1)))];
+    const q = preise[this.genugAuswahl(preise.length) - 1];
     return Math.ceil(q / 10) * 10;
   },
 
@@ -12434,7 +12535,7 @@ const Werkzeugkasten = {
     const ohne = { ...p }; delete ohne[feld];
     let alle = 0;
     try { alle = this.katalogTreffer(ohne, this.filterAusStand(ohne)).length; } catch { return null; }
-    const ziel = Math.max(Math.ceil(alle * 0.25), zaehle(a0) + this.ENGSTELLE_MINDESTGEWINN);
+    const ziel = Math.max(this.genugAuswahl(alle), zaehle(a0) + this.ENGSTELLE_MINDESTGEWINN);
     if (ziel > alle) return null;
     let hi = a0, n = 0;
     while (zaehle(hi) < ziel && n++ < 8) hi *= 2;
@@ -12463,7 +12564,7 @@ const Werkzeugkasten = {
     if (preise.length < 8) return null;
     const anteil = (q) => preise[Math.min(preise.length - 1, Math.floor(q * (preise.length - 1)))];
     const haelfte = Math.round(anteil(0.5));
-    const empfohlen = Math.ceil(anteil(0.25) / 10) * 10;
+    const empfohlen = Math.ceil(preise[this.genugAuswahl(preise.length) - 1] / 10) * 10;
     if (!(empfohlen > p.maxPreis)) return null;
     const mitEmpfohlen = this.katalogTreffer({ ...p, maxPreis: empfohlen }, this.filterAusStand({ ...p, maxPreis: empfohlen })).length;
     if (mitEmpfohlen <= mit.length) return null;
@@ -12555,7 +12656,7 @@ const Werkzeugkasten = {
     let alle = 0;
     try { alle = this.katalogTreffer(ohne, this.filterAusStand(ohne)).length; } catch { return null; }
     if (alle < 8) return null;
-    return this.budgetFuer(p, Math.ceil(alle * 0.25));
+    return this.budgetFuer(p, this.genugAuswahl(alle));
   },
 
   budgetWarnung(p, lauf) {
@@ -12581,7 +12682,7 @@ const Werkzeugkasten = {
        Betrag steigt mit dem Betrag, also reicht eine Halbierungssuche. */
     const zaehle = (b) => this.budgetZahl(p, b);
     const betragFuer = (ziel) => this.budgetFuer(p, ziel);
-    const empfohlen = betragFuer(Math.ceil(ohneListe.length * 0.25));
+    const empfohlen = betragFuer(this.genugAuswahl(ohneListe.length));
     if (!empfohlen || !(empfohlen > p.budgetGesamt)) return null;
     const mitEmpfohlen = zaehle(empfohlen);
     if (mitEmpfohlen <= mit.length) return null;
@@ -12627,7 +12728,12 @@ const Werkzeugkasten = {
        mehr - und das Gespraech liefe ueber eine leere Liste weiter. Einmal,
        damit aus der Frage keine Schleife wird. */
     const schonGefragt = (lauf.engstelleGefragt || {})[e.feld];
-    if (schonGefragt && !(e.jetzt === 0 && !(lauf.engstelleGefragt || {}).leer)) return null;
+    /* Wird es nach der Frage noch einmal deutlich enger, wird wieder gefragt
+       (25.11.2026): Ben lockerte von 7 auf 16, danach nahm der Whirlpool
+       alles bis auf 4 - und weil schon gefragt war, kam nichts mehr. */
+    const damals = (lauf.engstelleZahl || {})[e.feld];
+    const enger = damals != null && e.jetzt > 0 && e.jetzt <= damals * this.ENGSTELLE_ENGER;
+    if (schonGefragt && !enger && !(e.jetzt === 0 && !(lauf.engstelleGefragt || {}).leer)) return null;
     const lockern = this.ENGSTELLE_LOCKERN[e.feld];
     if (!lockern) return null;
     let was = null;
@@ -12711,9 +12817,9 @@ const Werkzeugkasten = {
              Sonst steht die Ausstattung als eine Wahl da, wie vorher. */
           if (einzelne.length) {
             for (const x of einzelne) {
-              const w = { ausstattung: (p.ausstattung || []).filter((y) => y !== x.merkmal) };
+              const w = this.mussAlsWunsch(p, [x.merkmal]);
               kandidaten.push({ feld: `ausstattung:${x.merkmal}`, ohne: zaehle(w) ?? x.ohne,
-                was: `auf „${name(x.merkmal)}“ verzichten`, kurz: name(x.merkmal), werte: w });
+                was: `„${name(x.merkmal)}“ nur als Wunsch behandeln`, kurz: name(x.merkmal), werte: w });
             }
             continue;
           }
@@ -13017,7 +13123,7 @@ const Werkzeugkasten = {
     bewertung: () => "die Mindestnote weglassen",
     sterne: () => "die Sternevorgabe weglassen",
     wlan: () => "WLAN nicht voraussetzen",
-    ausstattung: () => "die Ausstattungswünsche lockern",
+    ausstattung: () => "die Ausstattung nur als Wunsch behandeln",
   },
 
   /* Ganz offen - aber nur, wenn die Stufen nichts bringen (19.11.2026).
@@ -13714,6 +13820,62 @@ const Werkzeugkasten = {
       }
     }
     return paare ? gleich / paare : 1;
+  },
+
+  /* Partnerhaus und Vergleichsset gehoeren zusammen (25.11.2026).
+     ------------------------------------------------------------------
+     Bis dahin stand das Partnerhaus zuerst fest (Platz eins der
+     Rangfolge) und das Set wurde darum herum gesucht. Lag es preislich
+     allein, kamen zwei Haeuser mit 22,7 % Abstand heraus - dann
+     entscheidet der Preis und nicht die Kennzeichnung. Gemessen hielten
+     88 % der Sets die Grenze, jetzt 100 % (ohne Vorgaben, eine Region).
+
+     Das Partnerhaus ist das bestplatzierte Haus, zu dem es `wieViele`
+     Haeuser in seiner Preisklasse gibt; gibt es so viele nicht, zaehlt
+     die naechstkleinere Zahl. `fest`: ein schon vorgelegtes Partnerhaus
+     bleibt, solange es traegt. `partnerFuer(ids)`: wer aus diesen Haeusern
+     Partner waere (Studie.partnerhaus); null ohne Partnerhaus.
+     Gibt null, wenn gar nichts zusammenpasst. */
+  VERGLEICHBAR_HOECHSTENS: 0.105,
+  partnerUndSet(liste, p, wieViele, { fest = null, partnerFuer = null } = {}) {
+    if (!Array.isArray(liste) || liste.length < 2) return null;
+    const passt = (id, n) => {
+      const s = this.vergleichsSet(liste, p, n, id);
+      return s.haeuser.length >= n && s.spanne != null && s.spanne <= this.VERGLEICHBAR_HOECHSTENS ? s : null;
+    };
+    const proben = [];
+    if (partnerFuer) {
+      let rest = liste.map((h) => h.id);
+      while (rest.length >= 2 && proben.length < 20) {
+        const ph = partnerFuer(rest);
+        if (!ph || !rest.includes(ph.id)) break;
+        proben.push(ph);
+        rest = rest.filter((id) => id !== ph.id);
+      }
+    }
+    for (let n = Math.min(wieViele, liste.length); n >= 2; n--) {
+      if (fest && liste.some((h) => h.id === fest)) {
+        const s = passt(fest, n);
+        if (s) return { set: s, partner: { id: fest }, anzahl: n };
+        // Ein vorgelegtes Partnerhaus wechselt nicht wegen der Anzahl
+        if (n > 2) continue;
+      }
+      if (!proben.length) {
+        const s = passt(null, n);
+        if (s) return { set: s, partner: null, anzahl: n };
+        continue;
+      }
+      for (let i = 0; i < proben.length; i++) {
+        const s = passt(proben[i].id, n);
+        if (s) return { set: s, partner: proben[i], platz: i + 1, anzahl: n };
+      }
+    }
+    return null;
+  },
+
+  // Laesst sich noch eine Region dazunehmen?
+  regionErweiterbar(p) {
+    return !!(p && (p.zielId || (p.zieleAuswahl || []).length));
   },
 
   vergleichsSet(liste, p, wieViele, pflichtId = null) {

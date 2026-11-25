@@ -182,28 +182,41 @@ const Absicherung = {
     }
   },
 
+  /* "Flug: ab Düsseldorf" abgewaehlt heisst meist: falscher Flughafen
+     (25.11.2026). Der Agent nahm den ganzen Flug raus und fragte alles neu.
+     Jetzt bleibt der Flug, offen ist nur der Flughafen - die Frage bietet
+     "Ohne Flug" mit an. */
+  zeileFuer(x, p) {
+    const z = this.ZEILEN[x.feld];
+    if (x.feld === "Flug" && x.mitFlug) return { ...z, thema: "flugAb", auch: [], felder: ["flugAb", "flugAbAuswahl", "flugAbEgal"] };
+    return z;
+  },
+
   // Angaben loeschen und ihr Thema wieder oeffnen
   herausnehmen(kern, zeilen) {
     const l = kern.lauf, p = l.profil || (l.profil = {}), gesperrt = new Set();
+    zeilen = zeilen.map((x) => (x.feld === "Flug" ? { ...x, mitFlug: !!(p.flug && p.flugAb) } : x));
     for (const x of zeilen) {
-      const z = this.ZEILEN[x.feld];
+      const z = this.zeileFuer(x, p);
       if (!z) continue;
+      if (x.feld === "Flug") l.flugKorrektur = z.thema === "flugAb";
       for (const f of z.felder) { delete p[f]; if (p.vonPerson) delete p.vonPerson[f]; gesperrt.add(f); }
       for (const t of [z.thema, ...(z.auch || [])].filter(Boolean)) {
         for (const merker of ["besprochen", "gefragtWie", "uebersprungen", "nichtVerstanden", "ohneAntwort", "tippfehlerGefragt", "unsicherGefragt"]) if (l[merker] && typeof l[merker] === "object") delete l[merker][t];
       }
       if (x.feld === "Anreise" || x.feld === "Daten" || x.feld === "Zeit") { l.datumFrage = null; if (x.feld === "Zeit") p.flexibel = undefined; }
       if (z.thema === "preis") { l.preisGewarnt = {}; l.preisGesagt = null; }
-      if (z.thema === "flug") l.flughafenGewaehlt = null;
+      if (z.thema === "flug" || z.thema === "flugAb") l.flughafenGewaehlt = null;
       delete (l.herkunft || {})[x.feld]; delete (l.sammelBestaetigt || {})[x.feld];
     }
     l.gesperrt = { felder: [...gesperrt] };
     // Erst fragen, dann suchen: Steht eine Frage aus, gilt der Stand als gesucht
-    const neu = zeilen.flatMap((x) => { const z = this.ZEILEN[x.feld]; return z?.frage ? [z.thema, ...(z.auch || [])] : []; });
+    const neu = zeilen.flatMap((x) => { const z = this.zeileFuer(x, p); return z?.frage ? [z.thema, ...(z.auch || [])] : []; });
     l.sammelNeu = [...new Set([...(l.sammelNeu || []), ...neu])];
     l.gesuchtMit = neu.length && typeof Werkzeugkasten !== "undefined" ? Werkzeugkasten.eckdatenSchluessel(p) : null;
     l.gefiltertMit = null; l.vorgehenFuer = null; l.gefragt = null; l.zuletztGefragt = null;
-    const nenn = zeilen.map((x) => (x.feld === "Nicht" ? `den Ausschluss von ${x.wert}` : x.feld === "Wer" ? "die Reisenden" : x.feld === "Zeit" ? x.wert : x.feld === "Flug" ? "den Flug" : x.feld === "Anreise" || x.feld === "Daten" ? "den Anreisetag" : x.wert));
+    // Beim Flug sagt die Frage danach schon alles
+    const nenn = zeilen.filter((x) => x.feld !== "Flug").map((x) => (x.feld === "Nicht" ? `den Ausschluss von ${x.wert}` : x.feld === "Wer" ? "die Reisenden" : x.feld === "Zeit" ? x.wert : x.feld === "Anreise" || x.feld === "Daten" ? "den Anreisetag" : x.wert));
     if (nenn.length) (l.annahmeOffen ||= []).push({ thema: null, eigenesTun: true, felder: {}, text: `Dann nehme ich ${nenn.length > 1 ? `${nenn.slice(0, -1).join(", ")} und ${nenn[nenn.length - 1]}` : nenn[0]} wieder raus.` });
     kern.notieren("sammel_herausgenommen", { felder: [...gesperrt] });
     kern.standAnzeigen?.();

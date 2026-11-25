@@ -54,6 +54,8 @@ const FREIGABE_RANG = Object.fromEntries(FREIGABE.map((f) => [f.id, f.rang]));
 const STELLSCHRAUBEN = {
   // Themen mit zweiter, schlichter Lesung (26.11.2026, agent/absicherung.js)
   nachlesen: ["reisende", "zeit", "dauer", "preis"],
+  // Fragt der Agent nach einer Muss-Ausstattung? (25.11.2026: nein)
+  ausstattungFragen: false,
   // Vorbelegung des Reglers. "zufall" teilt die Teilnehmenden in zwei
   // Haelften: die eine startet auf der niedrigsten Stufe, die andere auf
   // der hoechsten. Damit laesst sich messen, wie viele die Voreinstellung
@@ -839,7 +841,49 @@ const Kern = {
      Nicht waehrend einer laufenden Werkzeugkette (`ausstehend`): Dort
      laedt die Seite zwischendurch neu, und was dort steht, hat der Agent
      gerade selbst eingestellt. */
+  /* Flug und Flughafen aus dem Gespraech in die Kasse (25.11.2026).
+     ------------------------------------------------------------------
+     Gesucht wird ohne Flug (Variante A), und die Adresse der Trefferliste
+     ("flight=0") ueberschrieb beim Laden, was der Agent wusste: In der
+     Kasse war der Flug abgewaehlt, und beim Anhaken stand Duesseldorf statt
+     Hamburg. Der Wunsch steht deshalb im Lauf und wird in der Kasse
+     angewandt - vor dem ersten Zeichnen (Kern.start laeuft davor). Neu
+     gefasst wird er nur, wenn sich das Gespraech aendert; was die Person
+     in der Kasse umstellt, gilt danach (Kasse ruft flugSelbst). */
+  flugInKasse() {
+    if (typeof Werkzeuge === "undefined" || Werkzeuge.seite() !== "checkout" || typeof Flug === "undefined") return;
+    const p = this.lauf.profil || {};
+    if (p.flug == null) return;
+    const gesagt = JSON.stringify([!!p.flug, p.flugAb || "", p.flugAbWahl || ""]);
+    if (this.lauf.flugGesagt !== gesagt) {
+      this.lauf.flugGesagt = gesagt;
+      this.lauf.flugKasse = { mit: !!p.flug, ab: Flug.codeText(p.flugAb) };
+    }
+    const w = this.lauf.flugKasse, ist = Flug.get();
+    if (!w || (ist.mit === w.mit && (!w.mit || ist.ab === w.ab))) return;
+    Flug.set(w.mit ? { mit: true, ab: w.ab, flugId: ist.ab === w.ab ? ist.flugId : null } : { mit: false, flugId: null });
+    this.notieren("flug_in_kasse", { mit: w.mit, ab: w.ab });
+  },
+
+  // Die Person stellt in der Kasse selbst etwas am Flug um (25.11.2026)
+  flugSelbst(werte) {
+    if (!this.lauf || this.laeuft) return;
+    const p = (this.lauf.profil ||= {});
+    const f = Flug.get();
+    this.lauf.flugKasse = { mit: f.mit, ab: f.ab };
+    if (werte.mit != null) { p.flug = !!werte.mit; (p.vonPerson ||= {}).flug = true; }
+    if (werte.ab) {
+      const name = Flug.flughaefen().find((h) => h.code === werte.ab)?.name;
+      if (name) { p.flugAb = name; p.flugAbEgal = false; p.flugAbAuswahl = []; p.flugId = null; (p.vonPerson ||= {}).flugAb = true; }
+    }
+    this.lauf.flugGesagt = JSON.stringify([!!p.flug, p.flugAb || "", p.flugAbWahl || ""]);
+    this.notieren("flug_selbst_geaendert", werte);
+    this.standAnzeigen?.();
+    this.sichern();
+  },
+
   seitenstandUebernehmen() {
+    try { this.flugInKasse(); } catch { /* Kasse ohne Flug */ }
     if (this.lauf.ausstehend) return;
     if (typeof Werkzeuge === "undefined") return;
     const seite = Werkzeuge.seite();
@@ -3039,6 +3083,7 @@ const Kern = {
               const ef = kernFrage ? null : Werkzeugkasten.engstelleRueckfrage(this.lauf.profil || {}, this.lauf);
               if (ef) {
                 (this.lauf.engstelleGefragt ||= {})[ef.grund] = true;
+                (this.lauf.engstelleZahl ||= {})[ef.grund] = this.lauf.letzteEngstelle?.jetzt;
                 if (this.lauf.letzteEngstelle?.jetzt === 0) this.lauf.engstelleGefragt.leer = true;
                 /* Die Frage bleibt offen, bis sie beantwortet ist - nicht
                    nur fuer den wortgleichen Chip. Begruendung beim
@@ -4526,9 +4571,30 @@ const Kern = {
      Vorgaben passt - nicht das Vergleichsset, das daraus gebaut wird.
      Die beiden auseinanderzuhalten ist der zweite Teil desselben
      Befunds, siehe `haeuser_ansehen`. */
-  engstelleVorRundgang(liste, p) {
+  /* Die Regionsfrage vor dem Rundgang (25.11.2026): Wer "Region
+     dazunehmen" waehlt, soll erst die Regionen sehen und nicht gleich
+     einen Rundgang ueber den ganzen Katalog. */
+  regionVorRundgang(p) {
+    const rw = Werkzeugkasten.regionWahlRueckfrage(p, this.lauf, { sofort: true });
+    if (!rw) return null;
+    this.sagen(rw.satz);
+    this.gespraechPush({ role: "assistant", content: rw.satz });
+    this.lauf.chipWirkung = rw.wirkung;
+    this.lauf.chipThema = rw.thema;
+    this.lauf.chips = rw.chips;
+    AgentPanel.setSuggestions(this.lauf.chips);
+    this.lauf.vorgehenFuer = null;
+    this.lauf.anzahlBestaetigt = false;   // mit mehr Regionen passt eine andere Zahl zusammen
+    this.lauf.kernWartet = true;
+    this.notieren("region_vor_rundgang", { kandidaten: rw.kandidaten });
+    this.sichern();
+    return { ergebnis: { nichtVorgelegt: true, grund: "wartet auf die Regionswahl",
+      hinweis: "Der Chat hat gefragt, welche Region dazukommen soll. Ruf KEIN Werkzeug und schreib nichts dazu." } };
+  },
+
+  engstelleVorRundgang(liste, p, { immer = false } = {}) {
     if (!liste?.length || !this.lauf) return null;
-    if (liste.length >= Werkzeugkasten.ENGSTELLE_FRAGE_GRENZE) return null;
+    if (liste.length >= Werkzeugkasten.ENGSTELLE_FRAGE_GRENZE && !immer) return null;
     /* engstelle() haelt `lauf.letzteEngstelle` fest - ohne diesen Lauf
        weiss die Rueckfrage nicht, woran es liegt. Einmal je Stand, der
        Satz selbst wird hier nicht ausgegeben. */
@@ -4536,6 +4602,7 @@ const Kern = {
     const ef = Werkzeugkasten.engstelleRueckfrage(p, this.lauf);
     if (!ef) return null;
     (this.lauf.engstelleGefragt ||= {})[ef.grund] = true;
+    (this.lauf.engstelleZahl ||= {})[ef.grund] = this.lauf.letzteEngstelle?.jetzt ?? liste.length;
     // Siehe oben: Auch ein getipptes "ja" soll die Ausweitung ausloesen.
     this.lauf.engstelleOffen = { feld: ef.grund, werte: ef.werte || null, kandidaten: ef.kandidaten || [] };
     this.sagen(ef.satz);
@@ -4644,6 +4711,38 @@ const Kern = {
      zweiten Knopf selbst. */
   anzahlVorRundgang(p, wieViele = 3) {
     if (!this.lauf) return null;
+    /* Nur so viele, wie preislich zusammenpassen (25.11.2026). Ben: "Ich
+       wuerde so viele anbieten, wie vergleichbar sind, und dann die
+       Moeglichkeit geben, noch mehr Regionen dazuzunehmen." `max` zaehlt
+       suchen vorher (lauf.vergleichbarMax); ohne Zahl gilt sechs. */
+    const max = Number(this.lauf.vergleichbarMax) || 6;
+    const REGION = "Region dazunehmen";
+    const regionGeht = Werkzeugkasten.regionErweiterbar(this.lauf.profil || p);
+    const regionWirkung = () => ({ ...Werkzeugkasten.ENGSTELLE_LOCKERN.ziel(), _regionVergleich: true });
+    const nurMax = (grund) => {
+      const satz = `Preislich passen gerade ${Werkzeugkasten.artZahl(max, this.lauf.profil || p || {})} gut zusammen. `
+        + (regionGeht ? "Soll ich die zeigen oder eine weitere Region dazunehmen?" : "Soll ich die zeigen?");
+      const ja = `Ja, ${max} zeigen`;
+      this.sagen(satz);
+      this.gespraechPush({ role: "assistant", content: satz });
+      this.lauf.chipWirkung = { [ja]: { anzahlVorschlaege: max }, ...(regionGeht ? { [REGION]: regionWirkung() } : {}) };
+      this.lauf.chipThema = null;
+      this.lauf.chips = [ja, ...(regionGeht ? [REGION] : [])];
+      this.lauf.anzahlZahlOffen = true;
+      this.lauf.anzahlMeinst = max;   // ein getipptes Ja
+      this.lauf.vorgehenFuer = null;
+      AgentPanel.setSuggestions(this.lauf.chips);
+      this.lauf.kernWartet = true;
+      this.notieren("anzahl_begrenzt", { grund, max, gewuenscht: this.lauf.profil?.anzahlVorschlaege || null });
+      this.sichern();
+      return { ergebnis: { nichtVorgelegt: true, grund: "wartet auf die Anzahl",
+        hinweis: "Der Chat hat gesagt, wie viele Haeuser preislich zusammenpassen. Ruf KEIN Werkzeug und schreib nichts dazu." } };
+    };
+    const gewuenscht = Number(this.lauf.profil?.anzahlVorschlaege) || 0;
+    if (gewuenscht > max && !this.lauf.anzahlUnklar && this.lauf.anzahlBegrenzt !== `${gewuenscht}:${max}`) {
+      this.lauf.anzahlBegrenzt = `${gewuenscht}:${max}`;
+      return nurMax("gewuenscht");
+    }
     /* "Lieber mehr vergleichen" - dann: wie viele? (19.11.2026)
        ----------------------------------------------------------------
        Ben im Lauf vom 19.11.2026: "Er hat einfach nur gefragt, bist du
@@ -4686,12 +4785,16 @@ const Kern = {
     if (this.lauf.anzahlMehrOffen) {
       this.lauf.anzahlMehrOffen = false;
       this.lauf.vorgehenFuer = null;   // siehe unten: sonst erzwingt niemand die naechste Suche
-      const optionen = [4, 5, 6];
-      const chips = optionen.map((n) => `${n} vergleichen`);
-      const satz = "Gern. Wie viele möchtest du vergleichen - 4, 5 oder 6?";
+      const optionen = [4, 5, 6].filter((n) => n <= max);
+      if (!optionen.length) return nurMax("mehr");
+      const chips = [...optionen.map((n) => `${n} vergleichen`), ...(regionGeht && max < 6 ? [REGION] : [])];
+      const zahlen = optionen.length > 1 ? `${optionen.slice(0, -1).join(", ")} oder ${optionen[optionen.length - 1]}` : `${optionen[0]}`;
+      const satz = max >= 6 ? `Gern. Wie viele möchtest du vergleichen - ${zahlen}?`
+        : `Gern. Preislich passen bis zu ${max} zusammen. ${optionen.length > 1 ? `Wie viele möchtest du vergleichen - ${zahlen}` : `Soll ich ${zahlen} zeigen`}${regionGeht ? ", oder soll ich eine weitere Region dazunehmen" : ""}?`;
       this.sagen(satz);
       this.gespraechPush({ role: "assistant", content: satz });
-      this.lauf.chipWirkung = Object.fromEntries(optionen.map((n, i) => [chips[i], { anzahlVorschlaege: n }]));
+      this.lauf.chipWirkung = { ...Object.fromEntries(optionen.map((n, i) => [chips[i], { anzahlVorschlaege: n }])),
+        ...(chips.includes(REGION) ? { [REGION]: regionWirkung() } : {}) };
       this.lauf.chipThema = null;
       this.lauf.chips = chips;
       this.lauf.anzahlZahlOffen = true;
@@ -4736,14 +4839,19 @@ const Kern = {
     const n = Math.max(1, Number(wieViele) || 3);
     const art = Werkzeugkasten.artZahl(n, this.lauf.profil || p || {});
     const ja = "Ja, such sie raus";
-    const mehr = "Lieber mehr vergleichen";
-    const satz = `Ich habe jetzt alles beisammen. Für die Entscheidung stelle ich dir ${art} zusammen - `
-      + `passt das, oder möchtest du mehr vergleichen?`;
+    // Passen schon alle moeglichen zusammen, fuehrt "mehr" nur ueber eine Region
+    const voll = !!this.lauf.vergleichbarMax && n >= max && n < 6;
+    const mehr = voll ? (regionGeht ? REGION : null) : "Lieber mehr vergleichen";
+    const satz = voll
+      ? `Ich habe jetzt alles beisammen. Preislich passen ${art} gut zusammen, die stelle ich dir zusammen - `
+        + `passt das${mehr ? ", oder soll ich eine weitere Region dazunehmen" : ""}?`
+      : `Ich habe jetzt alles beisammen. Für die Entscheidung stelle ich dir ${art} zusammen - `
+        + `passt das, oder möchtest du mehr vergleichen?`;
     this.sagen(satz);
     this.gespraechPush({ role: "assistant", content: satz });
-    this.lauf.chipWirkung = { [ja]: {}, [mehr]: {} };
+    this.lauf.chipWirkung = { [ja]: {}, ...(mehr ? { [mehr]: mehr === REGION ? regionWirkung() : {} } : {}) };
     this.lauf.chipThema = null;
-    this.lauf.chips = [ja, mehr];
+    this.lauf.chips = mehr ? [ja, mehr] : [ja];
     this.lauf.anzahlFrageOffen = true;   // gelesen am Anfang des naechsten Zugs (zug)
     AgentPanel.setSuggestions(this.lauf.chips);
     this.lauf.kernWartet = true;
