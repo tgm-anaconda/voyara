@@ -215,23 +215,34 @@ function nachrichtenPruefen(liste) {
    Die Fragen stehen hier und nicht im Browser - der Endpunkt nimmt nur das
    Thema, die gestellte Frage und die Antwort entgegen. */
 const NACHLESEN = {
-  reisende: 'Wie viele Erwachsene (ab 18) und wie viele Kinder (unter 18) reisen mit? Tiere zaehlen nicht. Steht die Zahl nicht sicher fest, setz unklar auf true. Antworte als JSON: {"erwachsene": Zahl oder null, "kinder": Zahl oder null, "unklar": true/false}',
-  ziel: 'Welche Orte will die Person bereisen, welche will sie NICHT, und nach welchen fragt sie nur oder erwaehnt sie nur? Antworte als JSON: {"will": [Orte], "nicht": [Orte], "nur_gefragt_oder_erwaehnt": [Orte]}',
-  zeit: 'Welchen Reisemonat legt die Person fest (1 bis 12)? Fragt sie nur, oder steht er nicht sicher fest, setz unklar auf true. Antworte als JSON: {"monat": Zahl oder null, "unklar": true/false}',
-  dauer: 'Wie viele Naechte will die Person bleiben? Antworte als JSON: {"naechte": Zahl oder null, "unklar": true/false}',
-  preis: 'Welche Preisgrenze nennt die Person, und wofuer gilt sie? Antworte als JSON: {"betrag": Zahl oder null, "fuer": "nacht" oder "gesamt" oder "person" oder "unklar"}',
-  flug: 'Will die Person einen Flug dazu, und ab welcher Stadt? Antworte als JSON: {"flug": true/false/null, "ab": Stadt oder null}',
+  reisende: { frage: "Wie viele Erwachsene (ab 18) und wie viele Kinder (unter 18) reisen mit?",
+    json: '{"erwachsene": Zahl oder null, "kinder": Zahl oder null, "unklar": true/false}',
+    regeln: ["Die schreibende Person zaehlt mit, wenn sie mitreist.", "Zwillinge sind zwei Personen, Tiere zaehlen nicht.", "Wird etwas korrigiert, gilt das Letzte; fruehere Reisen zaehlen nicht.", "Kommt jemand dazu oder faellt weg, rechne vom bisherigen Stand aus."],
+    unklar: "Ist die genaue Zahl nicht zu erkennen (die ganze Familie, ein paar Freunde), setz unklar auf true." },
+  ziel: { frage: "Welche Orte stehen als Reiseziel fest, welche werden abgelehnt, welche sind nur eine Ueberlegung, eine Frage oder bloss erwaehnt?",
+    json: '{"fest": [Orte], "abgelehnt": [Orte], "offen": [Orte]}',
+    regeln: ["Nennt die Person einen Ort als ihren Wunsch oder als Antwort auf die Frage, steht er fest.", "Eine Frage oder ein Vielleicht legt nichts fest, das gehoert zu offen.", "Orte frueherer Reisen sind nur erwaehnt, ausser sie werden abgelehnt.", "Bezieht sich die Antwort auf eine Aufzaehlung davor (die ersten zwei, alle drei), loese das auf."],
+    unklar: "" },
+  zeit: { frage: "Welchen Reisemonat legt die Person fest (1 bis 12)?", json: '{"monat": Zahl oder null, "unklar": true/false}',
+    regeln: ["Wird etwas korrigiert, gilt das Letzte; fruehere Reisen zaehlen nicht.", "Angaben wie eine Woche spaeter rechne vom bisherigen Stand aus."], unklar: "Fragt sie nur, oder passen mehrere Monate, setz unklar auf true." },
+  dauer: { frage: "Wie viele Naechte will die Person bleiben?", json: '{"naechte": Zahl oder null, "unklar": true/false}',
+    regeln: ["Eine Woche sind 7 Naechte; X Tage zaehlen als X Naechte.", "Angaben wie doppelt so lang oder zwei mehr rechne vom bisherigen Stand aus.", "Wird etwas korrigiert, gilt das Letzte."], unklar: "Fragt sie nur, oder steht die Zahl nicht fest, setz unklar auf true." },
+  preis: { frage: "Welche Preisgrenze nennt die Person, und wofuer gilt sie?", json: '{"betrag": Zahl oder null, "fuer": "nacht" oder "gesamt" oder "person" oder "unklar"}',
+    regeln: ["Insgesamt, alles in allem, fuer die ganze Reise bedeutet gesamt.", "Nennt sie eine Spanne, gilt der obere Betrag.", "Angaben wie 20 mehr rechne vom bisherigen Stand aus.", "Sagt sie nichts zum Bezug, setz fuer auf unklar."], unklar: "" },
 };
-function nachlesenKoerper({ thema, frage, antwort, davor }) {
+function nachlesenKoerper({ thema, frage, antwort, davor, stand, ohneRegeln }) {
   if (!Object.hasOwn(NACHLESEN, thema)) return null;
-  const kurz = (x, n) => String(x ?? "").replace(/\s+/g, " ").trim().slice(0, n);
+  const n = NACHLESEN[thema];
+  const kurz = (x, m) => String(x ?? "").replace(/\s+/g, " ").trim().slice(0, m);
   const a = kurz(antwort, 400);
   if (!a) return null;
   const vor = Array.isArray(davor) ? davor.slice(-4).map((x) => kurz(x, 200)).filter(Boolean) : [];
+  const st = kurz(stand, 120);
+  const regeln = ohneRegeln === true ? "" : `\nBeachte: ${n.regeln.join(" ")}`;
   return {
     messages: [
-      { role: "system", content: "Du liest einen kurzen Dialog zu einer Reisebuchung genau. Massgeblich ist nur die letzte Antwort; was davor steht, hilft beim Verstehen. Heute ist der " + new Date().toISOString().slice(0, 10) + "." },
-      { role: "user", content: `${vor.length ? `Davor: ${vor.join(" / ")}\n` : ""}Frage: "${kurz(frage, 300)}"\nAntwort der Person: "${a}"\n\n${NACHLESEN[thema]}` },
+      { role: "system", content: "Du liest einen kurzen Dialog zu einer Reisebuchung genau. Massgeblich ist die letzte Antwort; was davor steht, hilft beim Verstehen. Heute ist der " + new Date().toISOString().slice(0, 10) + "." },
+      { role: "user", content: `${vor.length ? `Davor: ${vor.join(" / ")}\n` : ""}${st && ohneRegeln !== true ? `Bisheriger Stand: ${st}\n` : ""}Frage: "${kurz(frage, 300)}"\nAntwort der Person: "${a}"\n\n${n.frage} ${n.unklar}${regeln}\nAntworte als JSON: ${n.json}` },
     ],
     max_tokens: 90, temperature: 0, response_format: { type: "json_object" },
   };

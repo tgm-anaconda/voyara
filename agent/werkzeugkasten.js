@@ -4103,6 +4103,7 @@ const Werkzeugkasten = {
       Werkzeugkasten.widerspruchAufloesen(a, kern);
       Werkzeugkasten.absprache(a, kern);
       Werkzeugkasten.grundlagePruefen(a, kern);
+      if (typeof Absicherung !== "undefined" && Absicherung.lesung) await Absicherung.nachlesenAbwarten(a, kern);
       /* Das Letzte zaehlt (25.11.2026): "ach doch, Mallorca kann rein" hebt
          einen frueheren Ausschluss auf - wenn die Nachricht die Region nennt
          und sie gerade nicht ablehnt. */
@@ -10124,7 +10125,7 @@ const Werkzeugkasten = {
   },
 
   bestaetigungRueckfrage(p, lauf) {
-    if (!p || !lauf || !(lauf.verworfenWert || lauf.zielKonflikt || lauf.leseKonflikt || lauf.grundlageFrage)) return null;
+    if (!p || !lauf || !(lauf.verworfenWert || lauf.zielKonflikt || lauf.leseKonflikt || lauf.grundlageFrage || lauf.reisendeFrage)) return null;
     const jetzt = lauf.zugSeit || lauf.runde || true;
     const frisch = (f) => lauf.verworfenWert?.[f] != null && (lauf.verworfenZug || {})[f] === jetzt;
     const schonGefragt = (schl) => !!(lauf.bestaetigtGefragt || {})[schl];
@@ -10200,6 +10201,13 @@ const Werkzeugkasten = {
           { zieleAus: [...new Set([...(p.zieleAus || []), ...ids])] }, "ziel");
         if (r) return r;
       }
+    }
+    // Zwei Lesungen, zwei Ergebnisse (26.11.2026, Absicherung.nachlesenAbwarten)
+    const rf = lauf.reisendeFrage;
+    if (rf && rf.zug === lauf.zugSeit) {
+      const r = bau(`reisende:${rf.e}+${rf.k}`, `Ihr seid ${rf.e} ${rf.e === 1 ? "Erwachsener" : "Erwachsene"} und ${rf.k === 0 ? "keine Kinder" : rf.k === 1 ? "ein Kind" : `${rf.k} Kinder`}`,
+        { erwachsene: rf.e, kinder: rf.k, personen: rf.e + rf.k }, "reisende");
+      if (r) return r;
     }
     // Reisende
     if (["erwachsene", "kinder", "personenGesamt"].some(frisch) && (hatZahl || PERSONWORT.test(letzte))) {

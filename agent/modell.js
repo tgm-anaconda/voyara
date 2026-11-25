@@ -148,6 +148,20 @@ const Modell = {
     return { text: d.text || "", chips: d.chips || [], tool_calls: d.tool_calls || [], verbrauch: d.verbrauch || null, dauer: d.dauer || null };
   },
 
+  /* Die schlichte zweite Frage (25.11.2026, api/agent.js NACHLESEN). Eigener
+     Aufruf ohne Wiederholung: Faellt er aus, gilt die erste Lesung - er darf
+     den Agenten nie abschalten oder aufhalten. */
+  async nachlesen(koerper) {
+    if (typeof window !== "undefined" && window.__voyaraDrehbuch) return window.__voyaraDrehbuch.nachlesen ? window.__voyaraDrehbuch.nachlesen(koerper) : null;
+    if (this.aus) return null;
+    try {
+      const r = await fetch(this.PFAD, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ aufgabe: "nachlesen", ...koerper }) });
+      if (!r.ok) return null;
+      const d = await r.json();
+      return d?.ok ? d.gelesen : null;
+    } catch { return null; }
+  },
+
   // Nur Text, ohne Werkzeuge - fuer "Warum dieses Haus?" und aehnliche
   // Einzelantworten, die keine Seitenbedienung brauchen.
   async text(nachrichten, stand) {

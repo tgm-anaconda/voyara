@@ -135,7 +135,7 @@ const Absicherung = {
      reines Ja - alles andere gehoert dem Modell. */
   nachrichtLesen(kern, t) {
     const l = kern.lauf;
-    l.neinWert = null; l.gesperrt = null;
+    l.neinWert = null; l.gesperrt = null; l.reisendeFrage = null;
     const roh = String(t || "").trim();
     // 1. Rueckfrage mit Ja / Nein
     const r = l.jaNeinOffen;
@@ -224,6 +224,58 @@ const Absicherung = {
         kern.notieren("verneint_abgewiesen", { feld: k, wert: w }); delete a[k];
       }
     }
+  },
+
+  /* Zweimal lesen bei den Reisenden (26.11.2026)
+     ------------------------------------------------------------------
+     Das Modell bekommt dieselbe Nachricht ein zweites Mal, mit einer
+     schlichten Frage zu genau diesem Thema. Der Kern vergleicht nur:
+     gleich -> gilt; verschieden -> "Ja / Nein: ..."; unklar -> nichts
+     merken, der Fahrplan fragt. Laeuft gleichzeitig mit der ersten Lesung
+     los und haelt hoechstens WARTEN_MS auf. */
+  WARTEN_MS: 2500,
+  MENSCHEN: /(?<![a-zäöüß])(mein\w*|unser\w*|frau|mann|freund\w*|partner\w*|sohn|s(ö|oe)hne|tochter|t(ö|oe)chter|kind\w*|kids|baby|eltern|mutter|vater|mama|papa|oma|opa|bruder|schwester|geschwister|familie|zwilling\w*|drilling\w*|enkel\w*|cousin\w*|kumpel\w*|clique|gruppe|m(ä|ae)dels?|jungs|paar|personen|leute|erwachsene\w*|zu (zweit|dritt|viert|f(ü|ue)nft|sechst)|allein\w*|wir sind)(?![a-zäöüß])/i,
+  nachlesenStarten(kern, t) {
+    this.lesung = null;
+    const l = kern.lauf, p = l.profil || {};
+    if (typeof Modell === "undefined" || !Modell.nachlesen || typeof STELLSCHRAUBEN === "undefined" || !(STELLSCHRAUBEN.nachlesen || []).includes("reisende")) return;
+    const roh = String(t || "").trim();
+    if (!roh || l.chipFest || Werkzeugkasten.inhaltsleer(roh)) return;
+    const gefragt = l.gefragt === "reisende";
+    if (!gefragt && !this.MENSCHEN.test(roh)) return;
+    if (/^\d{1,2}$|^\d{1,2} erwachsene$/i.test(roh)) return;                    // eindeutig, liest der Kern
+    const g = (l.gespraech || []).filter((n) => typeof n.content === "string" && n.content && ["user", "assistant"].includes(n.role));
+    const ohneLetzte = g.length && g[g.length - 1].role === "user" && g[g.length - 1].content === roh ? g.slice(0, -1) : g;
+    const frage = [...ohneLetzte].reverse().find((n) => n.role === "assistant")?.content || "Wer reist mit?";
+    const davor = ohneLetzte.filter((n) => n.content !== frage).slice(-3).map((n) => n.content);
+    const stand = this.reisendeText(p);
+    this.lesung = { roh, p: Modell.nachlesen({ thema: "reisende", frage, antwort: roh, davor, stand }).catch(() => null) };
+  },
+  async nachlesenAbwarten(a, kern) {
+    const x = this.lesung;
+    this.lesung = null;
+    if (!x || ["erwachsene", "kinder", "personenGesamt"].every((f) => a[f] == null)) return;
+    const l = kern.lauf, p = l.profil || {};
+    if (l.chipFest) return;
+    const z = await Promise.race([x.p, new Promise((f) => setTimeout(() => f(null), this.WARTEN_MS))]);
+    if (!z || typeof z !== "object") return;
+    const e1 = a.erwachsene ?? null, k1 = a.kinder ?? null, g1 = a.personenGesamt ?? null;
+    const e2 = Number.isInteger(z.erwachsene) ? z.erwachsene : null, k2 = Number.isInteger(z.kinder) ? z.kinder : e2 != null ? 0 : null;
+    const raeumen = () => { for (const f of ["erwachsene", "kinder", "personenGesamt", "kinderAlter"]) delete a[f]; };
+    if (z.unklar === true) {
+      // Einmal nachfragen lassen; sagt die Person es danach wieder ungenau, gilt die erste Lesung
+      if (l.reisendeUnklar || (e1 === p.erwachsene && (k1 ?? p.kinder) === p.kinder)) return;
+      l.reisendeUnklar = true;
+      kern.notieren("nachgelesen_unklar", { erste: { e: e1, k: k1, g: g1 } });
+      raeumen();
+      return;
+    }
+    if (e2 == null) return;
+    const gleich = (e1 == null || e1 === e2) && (k1 == null || k1 === k2) && (g1 == null || e1 != null || g1 === e2 + k2);
+    kern.notieren("nachgelesen", { gleich, erste: { e: e1, k: k1, g: g1 }, zweite: { e: e2, k: k2 } });
+    if (gleich || e2 < 1 || e2 > 12 || k2 > 12) return;
+    raeumen();
+    l.reisendeFrage = { e: e2, k: k2, zug: l.zugSeit };
   },
 
   // Zeile fuer den Auftrag ans Modell

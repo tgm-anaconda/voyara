@@ -1,0 +1,36 @@
+/* 30 Saetze fuer die schlichte zweite Frage (26.11.2026), geschrieben NACH
+   den Regeln und fuer sie nicht benutzt. soll = was richtig ist; "unklar"
+   heisst: nachfragen ist richtig. [thema, Frage, Antwort, soll, Stand] */
+const R = "Wer reist mit?", Z = "Soll es warm oder kalt sein, oder hast du ein Ziel im Kopf?", T = "Wann soll es losgehen?", D = "Wie lange soll die Reise werden?", P = "Hast du beim Preis eine feste Grenze?";
+module.exports = [
+  ["reisende", R, "Schwiegereltern, wir zwei und der Nachwuchs, gerade mal 5 Monate", { erwachsene: 4, kinder: 1 }],
+  ["reisende", R, "Ich nehm meine drei Töchter mit, alle erwachsen", { erwachsene: 4, kinder: 0 }],
+  ["reisende", R, "bloß mein Sohn (19) und seine Freundin, ich bleib daheim", { erwachsene: 2, kinder: 0 }],
+  ["reisende", R, "Männerrunde zu sechst", { erwachsene: 6, kinder: 0 }],
+  ["reisende", R, "meine Ex und ich teilen uns das, aber nur ich und die Kleine (4) fahren", { erwachsene: 1, kinder: 1 }],
+  ["reisende", R, "der halbe Kegelverein", "unklar"],
+  ["reisende", R, "wir beide und vielleicht noch meine Schwester", "unklar"],
+  ["reisende", R, "Drillinge im Grundschulalter plus ich", { erwachsene: 1, kinder: 3 }],
+  ["reisende", "Soll ein Flug dazu?", "ach, mein Bruder springt ab", { erwachsene: 2, kinder: 0 }, "3 Erwachsene"],
+  ["reisende", "Soll ein Flug dazu?", "Oma kommt jetzt doch mit", { erwachsene: 3, kinder: 1 }, "2 Erwachsene, 1 Kind (7)"],
+  ["ziel", Z, "Wien reizt mich mehr als Lissabon", { fest: ["wien"] }],
+  ["ziel", Z, "Auf Teneriffa war es uns zu windig, dann eher Sardinien", { fest: ["sardinien"] }],
+  ["ziel", Z, "habt ihr auch was in Kapstadt?", { offen: ["kapstadt"] }],
+  ["ziel", Z, "egal, nur nicht schon wieder an die Ostsee", { abgelehnt: ["ostsee"] }],
+  ["ziel", Z, "Kyoto wär der Hammer, ist aber wohl zu weit", "unklar"],
+  ["ziel", Z, "Marrakesch oder die Algarve, beides fein", { fest: ["marrakesch", "algarve"] }],
+  ["zeit", T, "nicht vor März, aber im April muss ich wieder arbeiten", { monat: 3 }],
+  ["zeit", T, "wie immer im Juni, nein, diesmal im September", { monat: 9 }],
+  ["zeit", T, "irgendwann zwischen Mai und Juli", "unklar"],
+  ["zeit", "Welche Verpflegung?", "schieben wir das Ganze einen Monat nach hinten", { monat: 9 }, "August"],
+  ["zeit", T, "Anfang Februar, zum Geburtstag meiner Frau", { monat: 2 }],
+  ["dauer", D, "Montag bis Freitag derselben Woche", { naechte: 4 }],
+  ["dauer", D, "zwei Wochen, minus die zwei Tage für die Anreise", { naechte: 12 }],
+  ["dauer", "Welche Verpflegung?", "häng noch drei Nächte dran", { naechte: 10 }, "7 Nächte"],
+  ["dauer", D, "kommt drauf an, was es kostet", "unklar"],
+  ["preis", P, "mehr als 130 die Nacht geb ich nicht aus", { betrag: 130, fuer: "nacht" }],
+  ["preis", P, "für die komplette Woche höchstens 900", { betrag: 900, fuer: "gesamt" }],
+  ["preis", P, "pro Nase 70", { betrag: 70, fuer: "person" }],
+  ["preis", P, "zwischen 90 und 140", { betrag: 140 }],
+  ["preis", "Soll ich bis 160 € pro Nacht suchen?", "pack noch einen Zwanziger drauf", { betrag: 180 }, "bis 160 € pro Nacht"],
+];

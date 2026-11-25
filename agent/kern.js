@@ -52,6 +52,8 @@ const FREIGABE = [
 const FREIGABE_RANG = Object.fromEntries(FREIGABE.map((f) => [f.id, f.rang]));
 
 const STELLSCHRAUBEN = {
+  // Themen mit zweiter, schlichter Lesung (26.11.2026, agent/absicherung.js)
+  nachlesen: ["reisende"],
   // Vorbelegung des Reglers. "zufall" teilt die Teilnehmenden in zwei
   // Haelften: die eine startet auf der niedrigsten Stufe, die andere auf
   // der hoechsten. Damit laesst sich messen, wie viele die Voreinstellung
@@ -1970,7 +1972,7 @@ const Kern = {
     this.lauf.zielBedeutung = null;
     this.lauf.nurGefragt = null;
     this.lauf.chipFest = null;
-    if (typeof Absicherung !== "undefined") Absicherung.nachrichtLesen(this, t);
+    if (typeof Absicherung !== "undefined") { Absicherung.nachrichtLesen(this, t); Absicherung.nachlesenStarten(this, t); }
     this.budgetUebernehmen();
     this.regionenLesen(t);
     if (this.lauf.filterStandSchon) {

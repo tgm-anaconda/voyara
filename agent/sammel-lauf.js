@@ -30,6 +30,14 @@ async (page) => {
       ok: (p, c) => [/richtig verstanden: Du möchtest nach Kreta/.test(c) || "fragt nicht nach", p.zielId === "kreta" || "nach Ja: " + p.zielId] },
     nur_gefragt_nein: { s: [{ du: "im Juli", stand: V({ monat: 7 }) }, { du: "flexibel", stand: V({}) }, { du: "10 Nächte", stand: V({ naechte: 10 }) }, { du: "wir sind 2 erwachsene", stand: V({ erwachsene: 2, kinder: 0, personenGesamt: 2 }) }, { du: "Hotel", stand: V({ typ: "hotel" }) }, { du: "was wäre denn mit Kreta?", stand: V({ ziel: "kreta" }), werkzeuge: { suchen: { ziel: "kreta" } } }, { du: "Nein: lieber Sardinien", stand: V({ ziel: "sardinien" }) }],
       ok: (p, c) => [p.zielId === "sardinien" || "Ziel " + p.zielId] },
+    zwei_lesungen_verschieden: { s: [{ du: "im Juli", stand: V({ monat: 7 }) }, { du: "flexibel", stand: V({}) }, { du: "10 Nächte", stand: V({ naechte: 10 }) }, { du: "meine kleinen Süßen sind ja gar nicht mehr 17 und 19, sondern mittlerweile 23 und 25", stand: V({ erwachsene: 2, kinder: 2, kinderAlter: [17, 19] }), zweit: { erwachsene: 2, kinder: 0, unklar: false } }, { du: "Ja", stand: V({ erwachsene: 4 }) }],
+      ok: (p, c) => [/Ihr seid 2 Erwachsene und keine Kinder/.test(c) || "fragt nicht nach", p.erwachsene === 2 && p.kinder === 0 || `Reisende ${p.erwachsene}/${p.kinder}`] },
+    zwei_lesungen_unklar: { s: [{ du: "im Juli", stand: V({ monat: 7 }) }, { du: "flexibel", stand: V({}) }, { du: "10 Nächte", stand: V({ naechte: 10 }) }, { du: "mit unserer Bande", stand: V({ erwachsene: 2, kinder: 2 }), zweit: { erwachsene: null, kinder: null, unklar: true } }, { du: "2 Erwachsene und 1 Kind, sie ist 6", stand: V({ erwachsene: 2, kinder: 1, kinderAlter: [6] }), zweit: { erwachsene: 2, kinder: 1, unklar: false } }],
+      ok: (p, c) => [p.erwachsene === 2 && p.kinder === 1 || `Reisende ${p.erwachsene}/${p.kinder}`, /[Ww]ie viele|[Ww]er reist|insgesamt/.test(c.split("Bande")[1] || "") || "fragt nicht neu"] },
+    zwei_lesungen_gleich: { s: [{ du: "im Juli", stand: V({ monat: 7 }) }, { du: "flexibel", stand: V({}) }, { du: "10 Nächte", stand: V({ naechte: 10 }) }, { du: "ich und meine Mutter", stand: V({ erwachsene: 2, kinder: 0 }), zweit: { erwachsene: 2, kinder: 0, unklar: false } }],
+      ok: (p, c) => [p.erwachsene === 2 && p.kinder === 0 || "Reisende", !/richtig verstanden/.test(c) || "fragt unnoetig"] },
+    zweite_haengt: { s: [{ du: "im Juli", stand: V({ monat: 7 }) }, { du: "flexibel", stand: V({}) }, { du: "10 Nächte", stand: V({ naechte: 10 }) }, { du: "ich und meine Mutter", stand: V({ erwachsene: 2, kinder: 0 }), zweit: "haengt" }],
+      ok: (p) => [p.erwachsene === 2 && p.kinder === 0 || "Reisende"] },
     nein_prefill: { s: [{ du: "im Juli", stand: V({ monat: 7 }) }, { du: "flexibel", stand: V({}) }, { du: "10 Nächte", stand: V({ naechte: 10 }) }, { du: "wir sind 2 erwachsene", stand: V({ erwachsene: 2, kinder: 0, personenGesamt: 2 }) }, { du: "Hotel", stand: V({ typ: "hotel" }) }, { du: "in die Stadt, die niemals schläft", stand: { frage_beantwortet: "nein_klaert_noch", ziel: "newyork" } },
         { tu: `[...document.querySelectorAll("#agentSuggestions .chip")].find((x) => /^Nein/.test(x.textContent)).click()`, du: null, pruef: `document.getElementById("agentInput").value` }, { du: "Nein: Barcelona", stand: V({ ziel: "barcelona" }) }],
       ok: (p, c, l, w) => [/richtig verstanden: Du möchtest nach New York/.test(c) || "fragt nicht nach", w.includes("Nein: ") || "Feld: " + JSON.stringify(w), p.zielId === "barcelona" || "Ziel " + p.zielId, !/DU: Nein: \.\.\./.test(c) || "Chip wurde abgeschickt"] },
@@ -68,6 +76,7 @@ async (page) => {
         }
         return { text, chips: [], tool_calls: [], verbrauch: null, dauer: null };
       },
+      async nachlesen(k) { const s = S.find((x) => x.du === k.antwort); if (s?.zweit === "haengt") return new Promise(() => {}); return s?.zweit || null; },
       async text() { return { text: "", chips: [], verbrauch: null }; },
     };
   };
