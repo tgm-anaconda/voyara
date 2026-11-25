@@ -16,7 +16,7 @@ const INFO_PAGES = {
     body: `
       <p>Die Studie entsteht im Rahmen einer Bachelorarbeit an einer deutschen Hochschule.</p>
       <h3>Kontakt</h3>
-      <p>Bei Fragen zur Studie, zur Teilnahme oder zum Datenschutz erreichst du uns unter <a href="mailto:studie@voyara.example">studie@voyara.example</a>.</p>
+      <p>Bei Fragen zur Studie, zur Teilnahme oder zum Datenschutz erreichst du uns unter <a href="mailto:tomg.m@icloud.com">tomg.m@icloud.com</a>.</p>
       <h3>Betreuung</h3>
       <p>Die Arbeit wird von einem Lehrstuhl für Marketing und digitale Geschäftsmodelle betreut. Die Kontaktdaten der betreuenden Person findest du im Einwilligungsdokument.</p>`,
   },
@@ -63,7 +63,7 @@ const INFO_PAGES = {
       <p>Voyara ist ein nicht-kommerzieller Studienprototyp im Rahmen einer Bachelorarbeit.<br>
       Verantwortlich für den Inhalt: die studierende Person der zugehörigen Hochschule.</p>
       <h3>Kontakt</h3>
-      <p>E-Mail: <a href="mailto:studie@voyara.example">studie@voyara.example</a></p>
+      <p>E-Mail: <a href="mailto:tomg.m@icloud.com">tomg.m@icloud.com</a></p>
       <h3>Haftungshinweis</h3>
       <p>Sämtliche Angebote, Preise, Bewertungen und Unternehmen auf dieser Seite sind frei erfunden. Es besteht keine Verbindung zu real existierenden Reiseanbietern. Über diese Seite können keine Verträge geschlossen werden.</p>`,
   },
@@ -91,7 +91,7 @@ const INFO_PAGES = {
     body: `
       <p>Fragen zur Studie, zur Bedienung oder zum Datenschutz beantworten wir gern.</p>
       <h3>E-Mail</h3>
-      <p><a href="mailto:studie@voyara.example">studie@voyara.example</a></p>
+      <p><a href="mailto:tomg.m@icloud.com">tomg.m@icloud.com</a></p>
       <h3>Während der Nutzung</h3>
       <p>Der Chat links hilft dir bei Fragen zur Suche. Für technische Probleme nutze bitte die E-Mail-Adresse oben.</p>`,
   },

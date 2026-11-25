@@ -2450,6 +2450,10 @@ const Werkzeugkasten = {
       if (m) { const n = wk.selbstZahl(m[1]); if (n >= 1 && n <= 40) return { naechte: n }; }
       m = t.match(/^\s*(\d{1,2}|[a-zäöüß]+)\s*$/);
       if (m) { const n = wk.selbstZahl(m[1]); if (n >= 1 && n <= 40) return { naechte: n }; }
+      // "von Freitag bis Sonntag" (25.11.2026)
+      const TAGE = ["montag", "dienstag", "mittwoch", "donnerstag", "freitag", "samstag", "sonntag"];
+      m = t.replace(/sonnabend/g, "samstag").match(/\b(?:von\s+)?(montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag)\s*(?:bis|-|–)\s*(?:zum\s+)?(montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag)\b/);
+      if (m) return { naechte: ((TAGE.indexOf(m[2]) - TAGE.indexOf(m[1]) + 6) % 7) + 1 };
       return null;
     },
     /* Eine nackte Zahl auf "Wer reist mit?" ist die Gesamtzahl - genau
@@ -2498,6 +2502,8 @@ const Werkzeugkasten = {
        Satzbank: der Kern allein las hier nichts). */
     verpflegung(t, p) {
       if (p.verpflegung || p.verpflegungEgal) return null;
+      // "Hauptsache nicht All Inclusive" ist keine Wahl (25.11.2026)
+      if (/\b(nicht|kein|keine|keinen|keinesfalls|blo(ß|ss) nicht|au(ß|ss)er|ohne)\b/.test(t)) return null;
       if (/^\s*(ist (mir )?)?(egal|offen|gleich|keine (pr(ä|ae)ferenz|vorgabe))\s*[.!]?\s*$/.test(t)) return { verpflegungEgal: true };
       const treffer = [
         [/\ball[\s-]?inclusive?\b|^\s*ai\b/, "ai"], [/halbpension|^\s*hp\b/, "halb"], [/vollpension|^\s*vp\b/, "voll"],
@@ -2575,6 +2581,16 @@ const Werkzeugkasten = {
     // 15. Oktober, 15 Okt, 8ten März (Endungen seit dem 21.11.2026)
     m = t.match(/\b(0?[1-9]|[12]\d|3[01])(?:\.|ten|ter|sten|ster)?\s*(januar|jan|februar|feb|märz|maerz|mär|april|apr|mai|juni|jun|juli|jul|august|aug|september|sept|sep|oktober|okt|november|nov|dezember|dez)\b/);
     if (m) return { tag: +m[1], monat: this.MONATSWORT[m[2]] || null };
+    // "der zwölfte", "am einundzwanzigsten" (25.11.2026)
+    {
+      const E = ["", "ein", "zwei", "drei", "vier", "fünf", "sechs", "sieben", "acht", "neun"];
+      const O = { erste: 1, zweite: 2, dritte: 3, vierte: 4, "fünfte": 5, sechste: 6, siebte: 7, achte: 8, neunte: 9, zehnte: 10, elfte: 11, "zwölfte": 12, dreizehnte: 13, vierzehnte: 14, "fünfzehnte": 15, sechzehnte: 16, siebzehnte: 17, achtzehnte: 18, neunzehnte: 19, zwanzigste: 20, "dreißigste": 30, "einunddreißigste": 31 };
+      for (let i = 1; i <= 9; i++) O[`${E[i]}undzwanzigste`] = 20 + i;
+      // Nur, wenn danach nichts anderes gemeint ist: Satzende, Fuellwort oder Monat
+      const w = t.replace(/fue/g, "fü").replace(/zwoe/g, "zwö").replace(/dreissig/g, "dreißig")
+        .match(/\b(?:am|der|den|zum|ab dem)\s+([a-zäöüß]+?)[nr]?(?:\s+(januar|februar|märz|maerz|april|mai|juni|juli|august|september|oktober|november|dezember)\b|\s*[.,!]*\s*(?:bitte|gern(?:e)?|wie gesagt|wär(?:e)? (?:gut|super|top))?[\s.!]*$)/);
+      if (w && O[w[1]]) return { tag: O[w[1]], monat: w[2] ? this.MONATSWORT[w[2]] : null };
+    }
     // Nur ein Tag: "14", "14.", "am 14.", "den 14."
     m = t.match(/^\s*(?:am\s+|ab\s+dem\s+|ab\s+|den\s+|der\s+)?(0?[1-9]|[12]\d|3[01])\.?\s*$/);
     if (m) return { tag: +m[1], monat: null };
@@ -2997,6 +3013,12 @@ const Werkzeugkasten = {
     return { ok: true, grund: null };
   },
 
+  // "Was ist ...?", "Gibt es ...?" - fragt etwas, statt zu antworten
+  istSachfrage(text) {
+    const t = String(text || "").toLowerCase().trim();
+    return /\?\s*$/.test(t) && /^(und\s+|aber\s+|ach\s+|äh+m?\s+)?(was|wie|wo|wann|wer|welche\w*|warum|wieso|weshalb|wozu|worin|gibt|gäbe|habt|hat|haben|kann|könnt|kannst|muss|müssen|bietet|fliegt|fliegen|ist|sind|wird|lohnt|inwiefern)\b/.test(t);
+  },
+
   antwortSelbstLesen(kern, thema, text) {
     const leser = thema ? this.SELBST_LESEN[thema] : null;
     if (!leser) return null;
@@ -3004,6 +3026,8 @@ const Werkzeugkasten = {
     if (!t) return null;
     const p = kern.lauf.profil || (kern.lauf.profil = {});
     if (kern.lauf.chipFest) return null;   // der Chip hat die Frage schon beantwortet
+    // Eine Frage ist keine Wahl (25.11.2026): "Was ist bei All Inclusive dabei?"
+    if (["verpflegung", "flug", "flugAb", "flugKlasse", "art"].includes(thema) && this.istSachfrage(t)) return null;
     /* Über eine eigene Annahme hinweg lesen, aber auf einer Kopie: Hat
        der Leser nichts zu bieten, bleibt der Stand unberührt und das
        Thema abgehakt - sonst würde eine unverständliche Antwort die
@@ -3246,6 +3270,29 @@ const Werkzeugkasten = {
      und ohne den Stand anzuruehren. */
   formAngleichen(a, kern) {
     const g = (x) => this.glatt(x).trim().replace(/[_-]+/g, " ").replace(/\s+/g, " ");
+    /* Der Wert steht unter dem Namen des Themas (25.11.2026, Modellbank).
+       gpt-4.1-mini versteht richtig, schreibt aber "dauer: 14", "preis: 180"
+       oder "art: ['apartment']" - Felder, die es nicht gibt. Der Kern
+       uebersah sie still, und die Frage kam noch einmal. */
+    const eins = (x) => (Array.isArray(x) ? (x.length === 1 ? x[0] : null) : x);
+    for (const [fremd, feld] of [["dauer", "naechte"], ["preis", "maxPreis"], ["art", "typ"], ["personen", "personenGesamt"], ["flughafen", "flugAb"], ["abflughafen", "flugAb"], ["zeit", "monat"]]) {
+      if (!(fremd in a)) continue;
+      const w = eins(a[fremd]); delete a[fremd];
+      const zahlFeld = ["naechte", "maxPreis", "personenGesamt", "monat"].includes(feld);
+      const n = zahlFeld && feld !== "monat" ? (typeof w === "number" ? w : /^\s*\d+([.,]\d+)?\s*(€|euro|n(ä|ae)chte?|personen|leute)?\s*$/i.test(String(w ?? "")) ? parseFloat(String(w)) : null) : w;
+      if (a[feld] != null || n == null || typeof n === "boolean" || typeof n === "object") continue;
+      a[feld] = n; kern.notieren("feld_umbenannt", { von: fremd, nach: feld, wert: n });
+    }
+    /* `reisende` ist fuer Namen im Ausweis gedacht. "2" oder "meine Frau"
+       sind keine Namen, sondern die Antwort auf "Wer reist mit?". */
+    if (Array.isArray(a.reisende) && a.reisende.length && a.reisende.every((x) => /^\s*(\d{1,2}|ich|(mein|unser)\w*\s.*|partner\w*|freund\w*|ehe\w+|frau|mann)\s*$/i.test(String(x)))) {
+      const zahlen = a.reisende.filter((x) => /^\s*\d+\s*$/.test(String(x))).map(Number);
+      const n = zahlen.length === a.reisende.length ? (zahlen.length === 1 ? zahlen[0] : null) : zahlen.length ? null : a.reisende.length;
+      kern.notieren("reisende_statt_namen", { wert: a.reisende, gesamt: n });
+      delete a.reisende;
+      if (n && a.personenGesamt == null && a.erwachsene == null) a.personenGesamt = n;
+    }
+    for (const f of ["anreise", "von", "bis", "anreiseAb", "anreiseBis"]) if (typeof a[f] === "string" && !/\d/.test(a[f])) { kern.notieren("form_unbekannt", { feld: f, wert: a[f] }); delete a[f]; }
     const melde = (feld, vorher, nachher) => kern.notieren(nachher == null ? "form_unbekannt" : "form_angeglichen", { feld, wert: vorher, ...(nachher == null ? {} : { zu: nachher }) });
     const aus = (feld, finde) => {
       if (a[feld] == null || typeof a[feld] !== "string") return;
@@ -3822,6 +3869,23 @@ const Werkzeugkasten = {
         else a.mindestbewertung = n;
       }
       const gesagt = (muster, letzte = 3) => kern.lauf.gespraech.filter((n) => n.role === "user").slice(-letzte).some((n) => muster.test(String(n.content)));
+      /* Abgelehnt ist nicht gewaehlt (25.11.2026): Auf "Hauptsache nicht All
+         Inclusive" trug das Modell Halbpension ein. Wird eine Verpflegung nur
+         verneint, gilt keine andere, die nicht dasteht. */
+      if (a.verpflegung && a.verpflegung !== "ohne" && !Werkzeugkasten.ausChip(kern, "verpflegung")
+        && gesagt(/\b(nicht|kein|keine|keinen|blo(ß|ss) nicht|au(ß|ss)er)\b[^.!?]{0,25}(all[\s-]?in|halbpension|vollpension|fr(ü|ue)hst(ü|ue)ck)/i, 1)) {
+        const W = { ai: /(?:^|[^a-z])(?<!nicht |kein |keine |keinen )all[\s-]?in/i, halb: /(?<!nicht |kein |keine )halbpension/i, voll: /(?<!nicht |kein |keine )vollpension/i, fruehstueck: /(?<!nicht |kein |keine |keinen )fr(ü|ue)hst(ü|ue)ck/i };
+        if (!W[a.verpflegung] || !gesagt(W[a.verpflegung], 1)) { kern.notieren("verpflegung_verworfen", { wert: a.verpflegung }); delete a.verpflegung; }
+      }
+      /* Die Unterkunftsart nicht erfinden (25.11.2026): "im August zwei Wochen
+         Mallorca" - das Modell trug Hotel ein, niemand hatte davon gesprochen.
+         Danach waere die Frage nach der Art nie gekommen. */
+      if (a.typ && !p.typ && kern.lauf.gefragtVorher !== "art" && kern.lauf.zuletztGefragt !== "art" && kern.lauf.gefragt !== "art"
+        && !Werkzeugkasten.ausChip(kern, "typ") && !p.artErwaehnt
+        && !gesagt(/hotel|ferien(wohn|haus|h(ä|ae)us)|fewo|apart|appart|wohnung|resort|pension\b|airbnb|all[\s-]?in|halbpension|vollpension|zimmer|häuschen|haeuschen|finca|villa/i, 99)) {
+        kern.notieren("art_verworfen", { typ: a.typ, grund: "nicht_genannt" });
+        delete a.typ;
+      }
       /* Wer fuer eine Angabe einsteht (09.11.2026)
          ==================================================================
          An mehreren Stellen hier unten pruefte der Kern die Angabe des
@@ -3902,6 +3966,14 @@ const Werkzeugkasten = {
       }
       delete a.wunsch_unbekannt;
       const genannt = Array.isArray(a.selbst_genannt) ? a.selbst_genannt : [];
+      /* Thema gemeldet, Wert vergessen (25.11.2026): Auf "mach aus den 7
+         Naechten bitte 10" meldete das Modell nur selbst_genannt: naechte.
+         Dann liest der Kern selbst. */
+      if (genannt.some((x) => ["naechte", "dauer"].includes(x)) && a.naechte == null && p.naechte) {
+        const t = String(kern.lauf.gespraech.filter((n) => n.role === "user").slice(-1)[0]?.content || "").toLowerCase();
+        const n = [...new Set([...(t.match(/\d{1,2}/g) || []).map(Number), ...(t.match(/[a-zäöüß]{3,}/g) || []).map((w) => Werkzeugkasten.selbstZahl(w)).filter((x) => x != null)])].filter((x) => x !== p.naechte && x >= 1 && x <= 28);
+        if (n.length === 1 && !/woche|uhr|euro|€|grad|person|kind|erwachsen/.test(t)) { a.naechte = n[0]; kern.notieren("nachgelesen", { feld: "naechte", wert: n[0] }); }
+      }
       const beantwortet = (...themen) => (["ja", "teilweise"].includes(a.frage_beantwortet)
         && themen.includes(kern.lauf.gefragtVorher))
         || themen.some((t) => genannt.includes(t));
@@ -4510,7 +4582,12 @@ const Werkzeugkasten = {
            vom Modell: mit gerechnetem Ergebnis und mit Begruendung. Hat
            die Person selbst einen Monat genannt, bleibt der stehen - dann
            greift die Regel nicht. */
-        const monatGenannt = gesagt(/januar|februar|märz|maerz|april|\bmai\b|juni|juli|august|september|oktober|november|dezember|\bjan\b|\bfeb\b|\bokt\b|\bnov\b|\bdez\b|ostern|pfingsten|weihnachten|silvester/i, 1);
+        const monatGenannt = gesagt(/januar|februar|märz|maerz|april|\bmai\b|juni|juli|august|september|oktober|november|dezember|\bjan\b|\bfeb\b|\bokt\b|\bnov\b|\bdez\b|ostern|pfingsten|weihnachten|silvester/i, 1)
+          // ... und jeder Feiertag, den der Kern selbst rechnet (25.11.2026: Himmelfahrt)
+          || !!Werkzeugkasten.relativeAngabe(kern.lauf.gespraech.filter((n) => n.role === "user").slice(-1)[0]?.content || "")?.monat
+          || !!Werkzeugkasten.zeitanker(kern.lauf.gespraech.filter((n) => n.role === "user").slice(-1)[0]?.content || "")
+          // "irgendwann naechstes Jahr" grenzt ein, gibt aber nichts ab
+          || gesagt(/\b(n(ä|ae)chste[smn]?|kommende[smn]?|dieses)\s+jahr\b|\b20[2-9]\d\b/i, 1);
         // Das Modell urteilt, das Muster faengt auf, was es uebersieht
         // "ne" auf "Hast du einen bestimmten Monat im Kopf?" (03.10.2026)
         const zeitGefragt = [kern.lauf.gefragt, kern.lauf.zuletztGefragt].includes("zeit");
@@ -4712,6 +4789,16 @@ const Werkzeugkasten = {
          zweiter Weg - dann hat niemand die Verantwortung uebernommen. */
       // "ich und mein(e) ..." sind zwei - wer auch immer (22.11.2026, Satzbank: "ich und meine Oma")
       const ZAHL = /\d|\bich und (mein|meine|meinem|meinen|meiner)\b|\b(ein|eine|einem|einen|zwei|drei|vier|fünf|fuenf|sechs|sieben|acht|zweit|dritt|viert|fünft|fuenft|sechst|kein|keine|ohne|allein|alleine|beide|zwilling|sohn|tochter|frau|mann|freundin|freund|partner|eltern|paar|erwachsene)\b/i;
+      /* Korrektur nur ueber die Gesamtzahl (25.11.2026): "wir sind doch zu
+         dritt, mein Bruder kommt mit". Standen Erwachsene und Kinder schon,
+         ging die neue Zahl beim Nachrechnen verloren - still. */
+      if (a.personenGesamt != null && a.erwachsene == null && a.kinder == null && p.erwachsene != null && p.kinder != null
+        && a.personenGesamt !== p.erwachsene + p.kinder && a.personenGesamt - p.kinder >= 1 && a.personenGesamt <= 12
+        && gesagt(/\d|\bzu\s+(zweit|dritt|viert|f(ü|ue)nft|sechst|siebt|acht)|\b(zwei|drei|vier|f(ü|ue)nf|sechs|sieben|acht)\b|kommt\s+(noch|auch|doch)|dazu\b/i, 1)
+        && !gesagt(/kind|kids|sohn|s(ö|oe)hne|tochter|t(ö|oe)chter|baby|enkel|nichte|neffe|klein|\d+\s*(jahre|j\.)/i, 1)) {
+        a.erwachsene = a.personenGesamt - p.kinder;
+        kern.notieren("reisende_korrigiert", { gesamt: a.personenGesamt, erwachsene: a.erwachsene });
+      }
       /* Eine sehr grosse Gruppe wird bestaetigt, nicht still uebernommen
          (24.11.2026): "55" ist meist ein Vertipper. Nur bei der Nachricht,
          in der die Zahl steht - das Ja danach gilt. */
@@ -4807,7 +4894,7 @@ const Werkzeugkasten = {
         && !gesagt(/kind|kids|sohn|s(ö|oe)hne|tochter|t(ö|oe)chter|baby|enkel|nichte|neffe|jahre|j(ä|ae)hrig|familie|klein/i, 1)) {
         a.kinder = 0;
       }
-      const neuDazu = /\b(zus(ä|ae)tzlich|dazu|au(ß|ss)erdem|plus|kommt (auch )?mit|kommen (auch )?mit|noch (ein|eine|einen|zwei|drei) (kind|kinder|person|freund|freundin|sohn|tochter))\b/i;
+      const neuDazu = /\b(zus(ä|ae)tzlich|dazu|au(ß|ss)erdem|plus|komm(t|en) ((auch|noch|doch|jetzt|nun|ebenfalls|doch noch|auch noch) )?mit|f(ä|ae)hrt (auch|noch|doch) mit|ist (auch|noch|doch) dabei|noch (ein|eine|einen|zwei|drei) (kind|kinder|person|freund|freundin|sohn|tochter))\b/i;
       const altersNachtrag = /\b(mein|meine|meiner|meinem|meinen|der|die|das|einer|eine|eins|davon|er|sie)\b[^.!?]{0,40}\b(ist|sind|wird)\b[^.!?]{0,12}?\b(\d{1,2})\b/i;
       /* "unser Sohn kommt auch mit, er ist 5" - das Modell schickte nichts
          (zweiter Modell-Lauf). Ein Kind, das ausdruecklich dazukommt, mit
@@ -5445,7 +5532,7 @@ const Werkzeugkasten = {
              Katalogs, nicht nach der eigenen Reise. Nur diese Fragen sind
              ausgenommen; "ein Hotel am Strand waere schoen" zaehlt weiter. */
           // Auch direkt nach der Artfrage, wenn das Modell selbst "Frage" meldet (24.11.2026)
-          const frageNachAngebot = (!antwortAufArt || (a.nachricht_art === "frage" && !["ja", "teilweise"].includes(a.frage_beantwortet))) && /\b(wie\s*viele|wieviele|anzahl|anbiet\w*|bietet|im angebot)\b/i.test(letzteNachricht);
+          const frageNachAngebot = (!antwortAufArt || (a.nachricht_art === "frage" && !["ja", "teilweise"].includes(a.frage_beantwortet))) && (/\b(wie\s*viele|wieviele|anzahl|anbiet\w*|bietet|im angebot)\b/i.test(letzteNachricht) || Werkzeugkasten.istSachfrage(letzteNachricht));
           const nennt = frageNachAngebot ? null : /\bhotels?\b/i.test(letzteNachricht) ? "hotel"
             : (/ferienwohnung|ferienhaus|fewo|apartment|appartement/i.test(letzteNachricht) ? "apartment" : null);
           if (nennt && beides) {
@@ -5461,7 +5548,7 @@ const Werkzeugkasten = {
                sich gerade entschieden hatte. */
             if (antwortAufArt) { setze("typ", nennt); p.artGenannt = true; p.artEgal = false; delete p.artErwaehnt; }
             else p.artErwaehnt = nennt;
-          } else if (antwortAufArt && beides) {
+          } else if (antwortAufArt && beides && !frageNachAngebot) {
             // "Beides" allein, ohne das Wort - auch das ist eine Antwort
             p.artEgal = true; p.artGenannt = true; delete p.typ; delete p.artErwaehnt;
           }

@@ -1,0 +1,1000 @@
+{
+ "Moin! Wir sind zu zweit, wollen im September für 10 Nächte nach Kreta, Hotel mit Halbpension": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "reisende",
+   "monat",
+   "dauer",
+   "ziel",
+   "typ",
+   "verpflegung"
+  ],
+  "reisende": [
+   "2"
+  ],
+  "monat": 9,
+  "naechte": 10,
+  "ziel": "kreta",
+  "typ": "hotel",
+  "verpflegung": "halb",
+  "frage_beantwortet": "ja"
+ },
+ "Familie, 2 Erwachsene und 2 Kinder (4 und 9), im August zwei Wochen Mallorca": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "zeit",
+   "dauer",
+   "reisende",
+   "kinderAlter",
+   "ziel",
+   "art"
+  ],
+  "monat": 8,
+  "naechte": 14,
+  "personenGesamt": 4,
+  "erwachsene": 2,
+  "kinder": 2,
+  "kinderAlter": [
+   4,
+   9
+  ],
+  "ziel": "mallorca",
+  "typ": "hotel",
+  "frage_beantwortet": "ja"
+ },
+ "mein Freund und ich suchen im Mai ne Ferienwohnung an der Ostsee, 5 Nächte, ohne Flug": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "zeit",
+   "dauer",
+   "reisende",
+   "art",
+   "ziel"
+  ],
+  "monat": 5,
+  "naechte": 5,
+  "personenGesamt": 2,
+  "typ": "apartment",
+  "ziel": "ostsee",
+  "flug": false,
+  "belege": {
+   "monat": "im Mai",
+   "naechte": "5 Nächte",
+   "personenGesamt": "mein Freund und ich",
+   "typ": "Ferienwohnung",
+   "ziel": "an der Ostsee",
+   "flug": "ohne Flug"
+  }
+ },
+ "ich allein, im November, irgendwas warmes, max 100 euro die nacht": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "reisende",
+   "monat",
+   "richtung",
+   "preis"
+  ],
+  "personenGesamt": 1,
+  "monat": 11,
+  "richtung": "warm",
+  "maxPreis": 100,
+  "belege": {
+   "personenGesamt": "ich allein",
+   "monat": "im November",
+   "richtung": "irgendwas warmes",
+   "maxPreis": "max 100 euro die nacht"
+  },
+  "frage_beantwortet": "ja"
+ },
+ "All inclusive, Teneriffa, Februar, 3 Erwachsene, von Köln aus": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "verpflegung",
+   "ziel",
+   "monat",
+   "erwachsene",
+   "flugAb"
+  ],
+  "verpflegung": "ai",
+  "ziel": "teneriffa",
+  "monat": 2,
+  "erwachsene": 3,
+  "flugAb": "Koeln",
+  "frage_beantwortet": "teilweise"
+ },
+ "Städtetrip nach Wien Anfang Dezember, 3 Nächte, ich und meine Schwester, Hotel mit Frühstück": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "zeit",
+   "dauer",
+   "reisende",
+   "art",
+   "ziel",
+   "verpflegung"
+  ],
+  "monat": 12,
+  "naechte": 3,
+  "erwachsene": 2,
+  "typ": "hotel",
+  "ziel": "wien",
+  "verpflegung": "fruehstueck",
+  "belege": {
+   "monat": "Anfang Dezember",
+   "naechte": "3 Nächte",
+   "erwachsene": "ich und meine Schwester",
+   "typ": "Hotel",
+   "verpflegung": "mit Frühstück",
+   "ziel": "Städtetrip nach Wien"
+  }
+ },
+ "halt, doch lieber im Juni statt Juli": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "zeit"
+  ],
+  "monat": 6,
+  "belege": {
+   "monat": "doch lieber im Juni statt Juli"
+  }
+ },
+ "Im Juni mit meinen Eltern nach Südtirol, eine Woche, wir fahren mit dem Auto": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "zeit",
+   "dauer",
+   "reisende",
+   "ziel",
+   "richtung",
+   "anreise"
+  ],
+  "monat": 6,
+  "dauer": 7,
+  "personenGesamt": 3,
+  "erwachsene": 3,
+  "ziel": "suedtirol",
+  "richtung": "berge",
+  "anreise": "auto",
+  "frage_beantwortet": "ja",
+  "belege": {
+   "monat": "Im Juni",
+   "dauer": "eine Woche",
+   "personenGesamt": "mit meinen Eltern",
+   "ziel": "nach Südtirol",
+   "richtung": "Südtirol",
+   "anreise": "wir fahren mit dem Auto"
+  }
+ },
+ "2 Wochen Thailand im Januar mit Flug ab Frankfurt, wir sind ein Paar": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "zeit",
+   "dauer",
+   "ziel",
+   "reisende",
+   "flug",
+   "flugAb",
+   "art"
+  ],
+  "monat": 1,
+  "dauer": 14,
+  "ziel": "krabi",
+  "erwachsene": 2,
+  "flug": true,
+  "flugAb": "frankfurt",
+  "typ": "hotel",
+  "frage_beantwortet": "ja",
+  "belege": {
+   "monat": "2 Wochen Thailand im Januar",
+   "dauer": "2 Wochen",
+   "ziel": "2 Wochen Thailand",
+   "erwachsene": "wir sind ein Paar",
+   "flug": "2 Wochen Thailand im Januar mit Flug",
+   "flugAb": "mit Flug ab Frankfurt",
+   "typ": "wir sind ein Paar"
+  }
+ },
+ "sorry meinte München nicht Hamburg als Abflughafen": {
+  "nachricht_art": "antwort",
+  "flugAb": "München",
+  "belege": {
+   "flugAb": "sorry meinte München nicht Hamburg als Abflughafen"
+  }
+ },
+ "vergiss Kreta, lieber Sardinien": {
+  "nachricht_art": "antwort",
+  "ziel": "sardinien",
+  "selbst_genannt": [
+   "ziel"
+  ]
+ },
+ "ups, wir sind doch zu dritt, mein Bruder kommt noch mit": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "reisende"
+  ],
+  "reisende": [
+   "ich",
+   "meine Frau",
+   "mein Bruder"
+  ],
+  "frage_beantwortet": "ja"
+ },
+ "nee warte, doch ne Ferienwohnung": {
+  "nachricht_art": "antwort",
+  "art": [
+   "apartment"
+  ]
+ },
+ "mach aus den 7 nächten bitte 10": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "naechte"
+  ],
+  "belege": {
+   "naechte": "mach aus den 7 nächten bitte 10"
+  },
+  "frage_beantwortet": "ja"
+ },
+ "ok ich geh auf 180 hoch": {
+  "nachricht_art": "antwort",
+  "preis": 180,
+  "belege": {
+   "preis": "ok ich geh auf 180 hoch"
+  },
+  "frage_beantwortet": "ja"
+ },
+ "eigentlich brauchen wir gar keinen Flug": {
+  "nachricht_art": "antwort",
+  "flug": false,
+  "belege": {
+   "flug": "eigentlich brauchen wir gar keinen Flug"
+  }
+ },
+ "Kreta kann bleiben, aber nimm Algarve noch dazu": {
+  "nachricht_art": "antwort",
+  "zielOffen": false,
+  "zieleAuswahl": [
+   "kreta",
+   "algarve"
+  ],
+  "frage_beantwortet": "ja"
+ },
+ "meine Tochter kommt doch nicht mit, also nur wir zwei Erwachsenen": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "reisende",
+   "kinder"
+  ],
+  "erwachsene": 2,
+  "kinder": 0,
+  "frage_beantwortet": "ja",
+  "belege": {
+   "erwachsene": "nur wir zwei Erwachsenen",
+   "kinder": "meine Tochter kommt doch nicht mit"
+  }
+ },
+ "irgendwo wo man Ski fahren kann": {
+  "nachricht_art": "antwort",
+  "richtung": "ski",
+  "frage_beantwortet": "ja",
+  "belege": {
+   "richtung": "irgendwo wo man Ski fahren kann"
+  }
+ },
+ "bloß nicht wieder Mallorca, da waren wir letztes Jahr": {
+  "nachricht_art": "antwort",
+  "zieleAus": [
+   "mallorca"
+  ],
+  "frage_beantwortet": "ja"
+ },
+ "nichts ist schöner als Kreta": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "ziel"
+  ],
+  "ziel": "kreta",
+  "frage_beantwortet": "ja"
+ },
+ "warum eigentlich nicht Island": {
+  "nachricht_art": "sonstiges",
+  "frage_beantwortet": "nein_klaert_noch"
+ },
+ "Hauptsache Sonne, aber nicht zu heiß": {
+  "nachricht_art": "antwort",
+  "richtung": "warm",
+  "frage_beantwortet": "ja",
+  "belege": {
+   "richtung": "Hauptsache Sonne, aber nicht zu heiß"
+  }
+ },
+ "Kreta oder Sardinien, je nachdem was günstiger ist": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "ziel",
+   "richtung"
+  ],
+  "zieleAuswahl": [
+   "kreta",
+   "sardinien"
+  ],
+  "richtung": "warm",
+  "zielOffen": false,
+  "frage_beantwortet": "ja",
+  "belege": {
+   "zieleAuswahl": [
+    "Kreta oder Sardinien, je nachdem was günstiger ist"
+   ],
+   "richtung": "Kreta oder Sardinien, je nachdem was günstiger ist"
+  }
+ },
+ "überall hin, nur nicht in die Kälte": {
+  "nachricht_art": "antwort",
+  "richtung": "warm",
+  "zielOffen": true,
+  "frage_beantwortet": "ja",
+  "belege": {
+   "richtung": "überall hin, nur nicht in die Kälte"
+  }
+ },
+ "keine Ahnung, überrasch mich": {
+  "nachricht_art": "antwort",
+  "richtung": "warm",
+  "zielOffen": true,
+  "frage_beantwortet": "ja",
+  "selbst_genannt": [
+   "richtung"
+  ]
+ },
+ "Griechenland": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "ziel"
+  ],
+  "ziel": "kreta",
+  "frage_beantwortet": "ja",
+  "belege": {
+   "ziel": "Griechenland"
+  }
+ },
+ "Kanaren wären ein Traum": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "ziel",
+   "richtung"
+  ],
+  "ziel": "teneriffa",
+  "richtung": "warm",
+  "frage_beantwortet": "ja",
+  "belege": {
+   "ziel": "Kanaren wären ein Traum",
+   "richtung": "Kanaren wären ein Traum"
+  }
+ },
+ "Meine Frau will nach Lissabon, ich eher nach Marokko": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "zieleAuswahl"
+  ],
+  "zieleAuswahl": [
+   "lissabon",
+   "marrakesch"
+  ],
+  "frage_beantwortet": "ja"
+ },
+ "ich würde am liebsten nach Dubai": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "ziel"
+  ],
+  "ziel": "dubai",
+  "frage_beantwortet": "ja"
+ },
+ "Oma, Opa, meine Frau, ich und der Kleine (3)": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "reisende",
+   "kinderAlter"
+  ],
+  "personenGesamt": 5,
+  "erwachsene": 4,
+  "kinder": 1,
+  "kinderAlter": [
+   3
+  ],
+  "frage_beantwortet": "ja"
+ },
+ "nur icke": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "reisende"
+  ],
+  "personenGesamt": 1,
+  "erwachsene": 1,
+  "kinder": 0,
+  "frage_beantwortet": "ja",
+  "belege": {
+   "personenGesamt": "nur icke"
+  }
+ },
+ "wir sind ne Clique von 6 Leuten, alle so Mitte 20": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "reisende"
+  ],
+  "personenGesamt": 6,
+  "erwachsene": 6,
+  "kinder": 0,
+  "kinderAlter": [],
+  "frage_beantwortet": "ja",
+  "belege": {
+   "personenGesamt": "wir sind ne Clique von 6 Leuten, alle so Mitte 20"
+  }
+ },
+ "ich, mein Mann und unsere Zwillinge, die werden im Sommer 8": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "reisende",
+   "kinderAlter"
+  ],
+  "personenGesamt": 4,
+  "erwachsene": 2,
+  "kinder": 2,
+  "kinderAlter": [
+   8
+  ],
+  "frage_beantwortet": "ja"
+ },
+ "zu viert, zwei davon sind Kinder": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "personenGesamt",
+   "kinder",
+   "erwachsene",
+   "kinderAlter"
+  ],
+  "personenGesamt": 4,
+  "kinder": 2,
+  "erwachsene": 2,
+  "kinderAlter": [],
+  "frage_beantwortet": "ja"
+ },
+ "2+1": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "reisende",
+   "kinderAlter"
+  ],
+  "personenGesamt": 3,
+  "erwachsene": 2,
+  "kinder": 1,
+  "kinderAlter": [
+   1
+  ],
+  "frage_beantwortet": "ja"
+ },
+ "meine Mama (72) und ich (45)": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "reisende"
+  ],
+  "personenGesamt": 2,
+  "erwachsene": 2,
+  "kinder": 0,
+  "belege": {
+   "personenGesamt": "meine Mama (72) und ich (45)"
+  }
+ },
+ "mit der ganzen Familie": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "reisende"
+  ],
+  "personenGesamt": 4,
+  "kinder": 2,
+  "erwachsene": 2,
+  "frage_beantwortet": "ja",
+  "belege": {
+   "personenGesamt": "mit der ganzen Familie"
+  }
+ },
+ "ich bin 16 und reise mit meinem Vater": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "reisende",
+   "kinderAlter"
+  ],
+  "personenGesamt": 2,
+  "erwachsene": 1,
+  "kinder": 1,
+  "kinderAlter": [
+   16
+  ],
+  "frage_beantwortet": "ja"
+ },
+ "der große ist 11, die kleine grad 5 geworden": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "kinderAlter"
+  ],
+  "kinderAlter": [
+   11,
+   5
+  ],
+  "frage_beantwortet": "ja"
+ },
+ "drei Mädels": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "reisende"
+  ],
+  "personenGesamt": 3,
+  "erwachsene": 3,
+  "frage_beantwortet": "ja"
+ },
+ "mein Hund und ich": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "reisende"
+  ],
+  "personenGesamt": 2,
+  "erwachsene": 1,
+  "kinder": 0,
+  "ausstattung": [
+   "petsAllowed"
+  ],
+  "belege": {
+   "personenGesamt": "mein Hund und ich",
+   "erwachsene": "mein Hund und ich",
+   "ausstattung": "mein Hund und ich"
+  },
+  "frage_beantwortet": "ja"
+ },
+ "so bald wie möglich": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "monatUeberlassen"
+  ],
+  "frage_beantwortet": "ja"
+ },
+ "so Mitte April": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "monat"
+  ],
+  "monat": 4,
+  "belege": {
+   "monat": "so Mitte April"
+  }
+ },
+ "in den Sommerferien NRW": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "zeit",
+   "monat"
+  ],
+  "monat": 7,
+  "jahreszeit": "sommer",
+  "frage_beantwortet": "ja",
+  "belege": {
+   "monat": "in den Sommerferien NRW"
+  }
+ },
+ "vom 12. bis 19. Juni": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "von",
+   "bis"
+  ],
+  "von": "2027-06-12",
+  "bis": "2027-06-19",
+  "frage_beantwortet": "ja"
+ },
+ "übers verlängerte Wochenende an Himmelfahrt": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "zeit"
+  ],
+  "monatUeberlassen": true,
+  "frage_beantwortet": "ja"
+ },
+ "Ende Februar oder Anfang März": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "monate"
+  ],
+  "monate": [
+   2,
+   3
+  ],
+  "frage_beantwortet": "ja",
+  "belege": {
+   "monate": "Ende Februar oder Anfang März"
+  }
+ },
+ "egal wann, hauptsache günstig": {
+  "nachricht_art": "antwort",
+  "monatUeberlassen": true,
+  "preisEgal": false,
+  "belege": {
+   "monatUeberlassen": "egal wann, hauptsache günstig"
+  }
+ },
+ "im Herbst, wenn die Blätter fallen": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "jahreszeit"
+  ],
+  "frage_beantwortet": "teilweise"
+ },
+ "irgendwann nächstes Jahr": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "monatUeberlassen"
+  ],
+  "monatUeberlassen": true,
+  "frage_beantwortet": "ja"
+ },
+ "anderthalb Wochen": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "dauer"
+  ],
+  "naechte": 11,
+  "frage_beantwortet": "ja",
+  "belege": {
+   "naechte": "anderthalb Wochen"
+  }
+ },
+ "am liebsten an einem Samstag": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "zeit"
+  ],
+  "belege": {
+   "monat": "am liebsten an einem Samstag"
+  }
+ },
+ "der zwölfte": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "anreise"
+  ],
+  "frage_beantwortet": "ja",
+  "belege": {
+   "anreise": "der zwölfte"
+  },
+  "ausweiten": "nein"
+ },
+ "bist du eigentlich ein echter Mensch?": {
+  "nachricht_art": "sonstiges",
+  "frage_beantwortet": "nein"
+ },
+ "von Freitag bis Sonntag": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "von",
+   "bis"
+  ],
+  "von": "2026-10-01",
+  "bis": "2026-10-03",
+  "frage_beantwortet": "ja"
+ },
+ "nicht länger als 5 Tage": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "dauer"
+  ],
+  "naechte": 5,
+  "belege": {
+   "naechte": "nicht länger als 5 Tage"
+  },
+  "frage_beantwortet": "ja"
+ },
+ "muss ich den Flug jetzt schon buchen?": {
+  "nachricht_art": "frage",
+  "frage_beantwortet": "keine_frage_offen"
+ },
+ "was ist denn der Unterschied zwischen Hotel und Ferienwohnung bei euch?": {
+  "nachricht_art": "frage",
+  "frage_beantwortet": "nein",
+  "selbst_genannt": [
+   "art"
+  ]
+ },
+ "wie warm ist es auf Kreta im Oktober?": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "ziel",
+   "monat"
+  ],
+  "ziel": "kreta",
+  "monat": 10,
+  "frage_beantwortet": "ja"
+ },
+ "was kostet das denn so ungefähr?": {
+  "nachricht_art": "frage",
+  "frage_beantwortet": "keine_frage_offen"
+ },
+ "warte kurz, mein Telefon klingelt": {
+  "nachricht_art": "sonstiges",
+  "frage_beantwortet": "nein"
+ },
+ "was ist bei All Inclusive alles dabei?": {
+  "nachricht_art": "frage",
+  "frage_beantwortet": "keine_frage_offen"
+ },
+ "hab ich doch grad gesagt": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "monat",
+   "dauer",
+   "reisende",
+   "art"
+  ],
+  "frage_beantwortet": "teilweise"
+ },
+ "fliegt ihr auch ab Bremen?": {
+  "nachricht_art": "antwort",
+  "frage_beantwortet": "teilweise",
+  "flugAb": "Bremen",
+  "selbst_genannt": [
+   "flugAb"
+  ]
+ },
+ "kann man bei euch auch stornieren?": {
+  "nachricht_art": "frage",
+  "frage_beantwortet": "keine_frage_offen"
+ },
+ "insgesamt nicht mehr als 1500 für die Unterkunft": {
+  "nachricht_art": "antwort",
+  "preis": 1500,
+  "belege": {
+   "preis": "insgesamt nicht mehr als 1500 für die Unterkunft"
+  },
+  "frage_beantwortet": "ja"
+ },
+ "80 Euro pro Person und Nacht": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "preis"
+  ],
+  "belege": {
+   "maxPreis": "80 Euro pro Person und Nacht"
+  },
+  "frage_beantwortet": "ja"
+ },
+ "so um die 120 die Nacht": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "preis"
+  ],
+  "maxPreis": 120,
+  "frage_beantwortet": "ja",
+  "belege": {
+   "maxPreis": "so um die 120 die Nacht"
+  }
+ },
+ "Geld spielt keine Rolle": {
+  "nachricht_art": "antwort",
+  "preisEgal": true,
+  "frage_beantwortet": "ja",
+  "belege": {
+   "preisEgal": "Geld spielt keine Rolle"
+  }
+ },
+ "zwischen 100 und 150 euro": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "preis"
+  ],
+  "maxPreis": 150,
+  "belege": {
+   "maxPreis": "zwischen 100 und 150 euro"
+  },
+  "frage_beantwortet": "ja"
+ },
+ "möglichst billig halt": {
+  "nachricht_art": "antwort",
+  "preisEgal": true,
+  "belege": {
+   "preisEgal": "möglichst billig halt"
+  },
+  "frage_beantwortet": "ja"
+ },
+ "hundertzwanzig maximal": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "preis"
+  ],
+  "maxPreis": 120,
+  "frage_beantwortet": "ja",
+  "belege": {
+   "maxPreis": "hundertzwanzig maximal"
+  }
+ },
+ "wir kommen mit dem Zug": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "flug"
+  ],
+  "flug": false,
+  "frage_beantwortet": "ja"
+ },
+ "1.200 € für uns beide zusammen, alles in allem": {
+  "nachricht_art": "antwort",
+  "preis": "1200",
+  "verpflegung": "halb",
+  "reisende": 2,
+  "art": "hotel",
+  "ziel": "kreta",
+  "monat": 10,
+  "naechte": 7,
+  "flug": true,
+  "flugAb": "Hamburg",
+  "flugKlasse": "economy",
+  "belege": {
+   "preis": "1.200 € für uns beide zusammen, alles in allem",
+   "verpflegung": "halb",
+   "reisende": "für uns beide",
+   "art": "Hotel",
+   "ziel": "Kreta",
+   "monat": "Oktober",
+   "naechte": "7 Nächte",
+   "flug": "mit Flug ab Hamburg",
+   "flugKlasse": "economy"
+  }
+ },
+ "Dresden": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "flugAb"
+  ],
+  "belege": {
+   "flugAb": "Dresden"
+  },
+  "frage_beantwortet": "ja"
+ },
+ "Berlin oder Hamburg, mir egal": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "flugAbAuswahl"
+  ],
+  "flugAbAuswahl": [
+   "Berlin",
+   "Hamburg"
+  ],
+  "flugAbEgal": true,
+  "frage_beantwortet": "ja"
+ },
+ "klar, fliegen": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "flug"
+  ],
+  "flug": true,
+  "frage_beantwortet": "ja"
+ },
+ "ich wohne bei Augsburg": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "flugAb"
+  ],
+  "flugAb": "Muenchen",
+  "frage_beantwortet": "ja"
+ },
+ "nur wenns direkt geht, sonst nicht": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "flug"
+  ],
+  "flug": true,
+  "frage_beantwortet": "ja"
+ },
+ "STUTTGART!!": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "flugAb"
+  ],
+  "flugAb": "Stuttgart",
+  "frage_beantwortet": "ja"
+ },
+ "wir kochen selbst": {
+  "nachricht_art": "antwort",
+  "verpflegung": "ohne",
+  "frage_beantwortet": "ja",
+  "belege": {
+   "verpflegung": "wir kochen selbst"
+  }
+ },
+ "Frühstück reicht völlig": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "verpflegung"
+  ],
+  "belege": {
+   "verpflegung": "Frühstück reicht völlig"
+  },
+  "frage_beantwortet": "ja"
+ },
+ "Hauptsache nicht All Inclusive": {
+  "nachricht_art": "antwort",
+  "verpflegung": "halb",
+  "frage_beantwortet": "ja",
+  "belege": {
+   "verpflegung": "Hauptsache nicht All Inclusive"
+  }
+ },
+ "Teneriva": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "ziel"
+  ],
+  "ziel": "teneriffa"
+ },
+ "Hotel, aber bitte mit Pool und der Hund muss mit": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "art",
+   "ausstattung"
+  ],
+  "art": "hotel",
+  "ausstattung": [
+   "pool",
+   "petsAllowed"
+  ],
+  "frage_beantwortet": "ja"
+ },
+ "morgens und abends essen wär top": {
+  "nachricht_art": "antwort",
+  "verpflegung": "halb",
+  "belege": {
+   "verpflegung": "morgens und abends essen wär top"
+  },
+  "frage_beantwortet": "ja"
+ },
+ "in Agust": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "monat"
+  ],
+  "belege": {
+   "monat": "in Agust"
+  },
+  "frage_beantwortet": "ja"
+ },
+ "fewo pls": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "art"
+  ],
+  "typ": "apartment",
+  "artEgal": false,
+  "frage_beantwortet": "ja",
+  "belege": {
+   "typ": "fewo pls"
+  }
+ },
+ "just me and my girlfriend": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "reisende"
+  ],
+  "personenGesamt": 2,
+  "erwachsene": 2,
+  "kinder": 0,
+  "belege": {
+   "personenGesamt": "just me and my girlfriend"
+  }
+ },
+ "halbpansion": {
+  "nachricht_art": "antwort",
+  "selbst_genannt": [
+   "verpflegung"
+  ],
+  "belege": {
+   "verpflegung": "halbpension"
+  },
+  "frage_beantwortet": "ja"
+ }
+}

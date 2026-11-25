@@ -5366,7 +5366,7 @@ const Kern = {
   /* Verneinungswoerter, die nichts verneinen (24.11.2026, Bens Malle-Fall).
      "Warum nicht Malle" und "nichts geht ueber Malle" sind Wuensche; der
      Kern strich Mallorca, obwohl das Modell es richtig meldete. */
-  SCHEIN_VERNEINUNG: /\b(warum|wieso)\s+(eigentlich\s+)?nicht\b|\bnichts\s+(geht\s+(ü|ue)ber|lieber\s+als|schlägt|schlaegt|besser(es)?\s+als)\b|\b(keine|ohne)\s+(frage|zweifel|diskussion)\b|\bkein\s+(problem|ding|thema)\b|\bnicht\s+(nur|zuletzt)\b|\bwenn\s+nicht\b|\bauf\s+nichts\b/gi,
+  SCHEIN_VERNEINUNG: /\b(warum|wieso)\s+(eigentlich\s+)?nicht\b|\b(nichts|niemand|nirgends|nirgendwo|es gibt nichts|es gibt kein\w*)\b[^.!?,]{0,30}\b(sch(ö|oe)ner|besser|toller|lieber|geiler|mehr|traumhafter)\w*\b[^.!?,]{0,15}\bals\b|\bnichts\s+(geht\s+(ü|ue)ber|lieber\s+als|schlägt|schlaegt|besser(es)?\s+als)\b|\b(keine|ohne)\s+(frage|zweifel|diskussion)\b|\bkein\s+(problem|ding|thema)\b|\bnicht\s+(nur|zuletzt)\b|\bwenn\s+nicht\b|\bauf\s+nichts\b/gi,
   ohneSchein(t) { return String(t || "").replace(this.SCHEIN_VERNEINUNG, " "); },
 
   // Welche Regionen die Nachricht wirklich ablehnt - fuer den Kern und fuer
