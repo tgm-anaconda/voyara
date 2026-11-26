@@ -449,7 +449,8 @@ function renderFilters() {
        die Zeile ueberhaupt erscheint - die Zahl daneben kommt weiterhin
        aus der Liste und bleibt bei gesperrten Regionen leer. */
     const alleHaeuser = () => [...(typeof HOTELS !== "undefined" ? HOTELS : []), ...(typeof APARTMENTS !== "undefined" ? APARTMENTS : [])];
-    const ausserSaison = (z) => typeof saisonPassung === "function" && saisonPassung(z, monat) < 0.5;
+    const ausserSaison = (z) => typeof saisonGesperrt === "function" && saisonGesperrt(z, monat);
+    const ausserhalb = (z) => typeof saisonPassung === "function" && monat && saisonPassung(z, monat) < 0.5;
     const bestandOhneSaison = (z) => alleHaeuser().filter((h) => h.ziel === z.id
       && (typeof freiImMonat !== "function" || freiImMonat(h, monat)) && Belegung.passt(h)).length;
     const zieleImBestand = ZIELE.filter((z) => countIn((h) => h.ziel === z.id) || (ausserSaison(z) && bestandOhneSaison(z)));
@@ -480,7 +481,7 @@ function renderFilters() {
              Saison"). Dass "nichts" Nebensaison hiess, konnte niemand
              wissen. Jetzt steht an jeder Zeile, woran sie ist. */
           // Ohne Reisemonat kein Saisonetikett - es gaebe keinen Bezug (21.11.2026)
-          const zusatz = !monat ? "" : aus ? " ·&nbsp;außerhalb der Saison"
+          const zusatz = !monat ? "" : (aus || ausserhalb(z)) ? " ·&nbsp;außerhalb der Saison"
             : (saisonPassung(z, monat) === 1 ? " ·&nbsp;Hauptsaison" : " ·&nbsp;Nebensaison");
           // Immer die Zahl aus der Liste - bei gesperrten Regionen ist das
           // null, und dann steht dort nichts.

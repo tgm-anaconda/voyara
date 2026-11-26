@@ -982,7 +982,7 @@ const Politik = {
           id: z.id, name: z.name, land: z.land, art: z.typ, beschreibung: z.kurz,
           haeuser: hs.length,
           ...(allesErfuellt != null ? { haeuserMitAllenGenanntenPunkten: allesErfuellt } : {}),
-          saison: profil.monat ? (typeof saisonPassung === "function" ? (saisonPassung(z, profil.monat) === 1 ? "Hauptsaison" : "Nebensaison") : null) : null,
+          saison: profil.monat ? (typeof saisonPassung === "function" ? (saisonPassung(z, profil.monat) === 1 ? "Hauptsaison" : saisonPassung(z, profil.monat) === 0.5 ? "Nebensaison" : "außerhalb der Saison (ruhiger, günstiger)") : null) : null,
           direktAmStrand: anteil((h) => h.distanceToBeach != null && h.distanceToBeach <= 0.3),
           strandBis1km: anteil((h) => h.distanceToBeach != null && h.distanceToBeach <= 1),
           gaestenoteImSchnitt: mittel((h) => h.rating),
@@ -1096,7 +1096,7 @@ const Politik = {
       anzahl: bestand.filter((h) => h.ziel === z.id && passt(h)).length,
       saison: passung(z) === 1,
       passung: passung(z),
-    })).filter((r) => r.anzahl > 0 && r.passung >= 0.5);
+    })).filter((r) => r.anzahl > 0 && !(typeof saisonGesperrt === "function" && profil.monat && saisonGesperrt(ZIEL_NACH_ID[r.id], profil.monat)));
   },
 
   /* Ein Haus im Text erkennen, auch mit Tippfehlern.
@@ -1619,7 +1619,13 @@ const Politik = {
          nur "eher kalt" - welche Regionen das gerade sind, sah niemand,
          und eine verlorene Region fiel nicht auf. */
       const label = this.THEMEN.find((t) => t.id === profil.richtung)?.label || profil.richtung;
-      const ids = profil.zieleErlaubt || [];
+      /* Regel 3a (26.11.2026): Eine Temperatur-Richtung hat ohne Monat
+         keine Regionen. Gemeldet: auf "ich wuerde gerne in eine warme
+         Region" stand sofort "Mallorca, Kreta, Algarve, Sardinien ..." da,
+         nach "Januar" schrumpfte die Liste wortlos. Ohne Monat steht nur
+         die Richtung; die Regionen kommen, wenn der Monat feststeht. */
+      const ohneMonat = ["warm", "kalt"].includes(profil.richtung) && !profil.monat;
+      const ids = ohneMonat ? [] : (profil.zieleErlaubt || []);
       raus.push({ feld: "Ziel", wert: ids.length ? `${label}: ${this.aufzaehlen(ids.map(name))}` : label });
     } else if (profil.zielOffen) {
       raus.push({ feld: "Ziel", wert: "alle Regionen" });

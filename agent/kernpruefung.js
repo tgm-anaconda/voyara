@@ -1629,7 +1629,7 @@ const Kernpruefung = {
 
     const buchbar = (id, p) => {
       const z = ZIEL_NACH_ID[id];
-      if (z && typeof saisonPassung === "function" && p.monat && saisonPassung(z, p.monat) < 0.5) return false;
+      if (z && typeof saisonPassung === "function" && p.monat && typeof saisonGesperrt === "function" && saisonGesperrt(z, p.monat)) return false;
       return Werkzeugkasten.katalog(p).some((h) => h.ziel === id);
     };
     // "Tirol" steckt nicht in "Suedtirol" (kleines t), aber sicher ist sicher

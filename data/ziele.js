@@ -203,6 +203,21 @@ function saisonPassung(ziel, monat) {
   return 0.15;
 }
 
+/* Die Saisonsperre ist aus (26.11.2026).
+   ------------------------------------------------------------------
+   Bis hierher waren Haeuser ausserhalb ihrer Saison gar nicht buchbar.
+   Gemessen ueber 2.592 Suchen mit genannter Region: 19 % endeten bei null
+   Treffern (ohne Sperre 0,5 %), 37 % unter zwoelf Haeusern (ohne 20 %).
+   Ben: "Das begünstigt, dass viele Leute am Ende zu wenig Hotels haben."
+   Echte Buchungsseiten zeigen Mallorca im Januar auch - ruhig und
+   guenstiger. Also bleibt das Etikett "Außerhalb der Saison" und der
+   niedrigere Preis (saisonFaktor 0,68), gesperrt wird nichts mehr.
+   Wer die alte Regel zurueck will, setzt SAISON_SPERRE auf true. */
+var SAISON_SPERRE = false;
+function saisonGesperrt(ziel, monat) {
+  return SAISON_SPERRE && !!ziel && !!monat && saisonPassung(ziel, monat) < 0.5;
+}
+
 function saisonLabel(ziel, monat) {
   const p = saisonPassung(ziel, monat);
   if (p === 1) return { text: "Hauptsaison", klasse: "haupt" };

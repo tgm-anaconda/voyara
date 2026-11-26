@@ -35,7 +35,8 @@ const A = [
   ["Das Genauere gewinnt: Feiertag", O("monat", "naechte"), "zeit", "vor Weihnachten, so Ende November", { monat: 11 }, (p) => p.monat === 11],
   ["Statt ist eine Wahl", { ...G }, "flug", "lieber Juni statt Oktober", { monat: 6 }, (p) => p.monat === 6],
   ["Jahr statt Abgabe", O("monat", "naechte"), "zeit", "erst 2028", { monatUeberlassen: true }, (p) => !p.monat],
-  ["Echte Abgabe", O("monat", "naechte"), "zeit", "such du den günstigsten monat aus", { monatUeberlassen: true }, (p) => !!p.monat && !p.vonPerson.monat],
+  // Seit 26.11.2026: ohne Jahreszeit setzt der Kern keinen Monat, sondern fragt nach der Jahreszeit
+  ["Echte Abgabe", O("monat", "naechte"), "zeit", "such du den günstigsten monat aus", { monatUeberlassen: true }, (p) => !p.monat && !p.vonPerson.monat],
   ["Wochentage", O("naechte"), "dauer", "von Donnerstag bis Montag", {}, (p) => p.naechte === 4],
   ["Wochentage eine Woche", O("naechte"), "dauer", "Samstag bis Samstag", {}, (p) => p.naechte === 7],
   ["Ordnungszahl", { ...G }, "anreise", "am einundzwanzigsten", {}, (p) => /-10-21$/.test(p.anreise || "")],

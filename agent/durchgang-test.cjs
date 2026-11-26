@@ -84,6 +84,10 @@ vm.runInContext("this.PO=typeof Politik!=='undefined'?Politik:null;"
   // geholt wird deshalb ueber den Werkzeugkasten, von innen.
   + "this.KAT=Werkzeugkasten.katalog({ typ: 'hotel' });", ctx);
 const { WK, KN, KAT, PO, AL } = ctx;
+/* Seit 26.11.2026 ist die Saisonsperre aus. Pruefungen, deren Szenario
+   die Sperre brauchte, um eng zu werden, laufen mit eingeschalteter Sperre
+   - sie pruefen den Mechanismus, nicht die Saisonregel. */
+const sperre = (an) => { try { vm.runInContext(`if (typeof SAISON_SPERRE !== "undefined") SAISON_SPERRE = ${an};`, ctx); } catch {} };
 if (!WK || !KN) { console.log("Werkzeugkasten oder Kern nicht geladen"); process.exit(2); }
 
 let gut = 0, schlecht = 0;
@@ -256,7 +260,8 @@ pruefe("Der genannte Flughafen wird vorgeschlagen", l4b.vorschlag?.werte?.flugAb
 Object.assign(p4b, { artGenannt: true, kinderAlter: [], zimmer: 1 });
 l4b.gesuchtMit = (() => { try { return WK.fahrplan(p4b, l4b).schluessel; } catch { return null; } })();
 const fpV = (() => { try { return WK.fahrplan(p4b, l4b); } catch { return null; } })();
-pruefe("Und als Frage gestellt", /Soll ich mit Abflug ab Hamburg rechnen/.test(fpV?.satz || "") ? "ja" : (fpV?.satz || "").slice(0, 60), "ja");
+// Seit 26.11.2026 Knopf statt "Soll ich mit ... rechnen?"
+pruefe("Und als Frage gestellt", /^Hamburg$/.test(fpV?.chips || "") && /Flughafen/.test(fpV?.satz || "") ? "ja" : `${fpV?.satz} [${fpV?.chips}]`.slice(0, 80), "ja");
 
 /* ====================================================================
    5. Wer zurueckfragt, hat nicht abgelehnt
@@ -578,6 +583,7 @@ const liesReisende = async (text, felder, urteil = "ja") => {
   const engP = { typ: "hotel", artGenannt: true, richtung: "kalt", maxGrad: 25, erwachsene: 3, kinder: 0,
     monat: 8, naechte: 11, flug: true, flugAb: "Hamburg", verpflegung: "fruehstueck",
     budgetGesamt: 2450, ausstattung: ["petsAllowed", "bar", "pool"], vonPerson: {} };
+  sperre(true);
   const engListe = WK.katalogTreffer(engP, WK.filterAusStand(engP));
   /* Wie oben: Kennt der alte Code die Funktion nicht, soll die Pruefung
      fehlschlagen statt abzustuerzen. */
@@ -589,6 +595,7 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     engR ? /die Vorgabe „/.test(engR.satz) : false, true);
   pruefe("Engstelle: die Zahl gehoert zu diesem Merkmal",
     engR && engE ? engR.ohne === engE.ohne : false, true);
+  sperre(false);
   // Und gelockert wird nur dieses eine Merkmal
   const gelockert = WK.ENGSTELLE_LOCKERN.ausstattung(engP) || {};
   pruefe("Engstelle: nur das engste Merkmal faellt weg",
@@ -644,10 +651,12 @@ const liesReisende = async (text, felder, urteil = "ja") => {
          nehmen, bei keiner der Antworten"). Gespielt wird deshalb eine
          Person, die offene Fragen uebergeht, einen Vorschlag mit Knopf
          aber annimmt. */
-      if (fp.vorschlag) {
+      // Seit 26.11.2026 Auswahlknoepfe statt Vorschlag: die Person klickt den ersten Knopf mit Wert
+      const knopf = fp.vorschlag?.wirkung ? Object.values(fp.vorschlag.wirkung)[0] : null;
+      if (knopf) {
         gestellt.push(fp.naechstes);
-        Object.assign(p, fp.vorschlag.werte);
-        p.vonPerson = { ...(p.vonPerson || {}), ...Object.fromEntries(Object.keys(fp.vorschlag.werte).map((f) => [f, true])) };
+        Object.assign(p, knopf);
+        p.vonPerson = { ...(p.vonPerson || {}), ...Object.fromEntries(Object.keys(knopf).map((f) => [f, true])) };
         lauf.vorschlag = null;
         continue;
       }
@@ -833,7 +842,8 @@ const liesReisende = async (text, felder, urteil = "ja") => {
         ausstattung: ["pool", "kidsClub"], mindestbewertung: 4.5, maxStrand: 1 };
       const e = WK.engpass(pE);
       pruefe("Engpass nennt die Ausstattung", (e || {}).label, "die Ausstattungswünsche");
-      pruefe("Engpass: Zahl unveraendert von der Aufraeumung", (e || {}).haeuser, 47);
+      // 70 seit 26.11.2026 (Saisonsperre aus, vorher 47)
+      pruefe("Engpass: Zahl unveraendert von der Aufraeumung", (e || {}).haeuser, 70);
     }
   }
 
@@ -2177,6 +2187,7 @@ const liesReisende = async (text, felder, urteil = "ja") => {
       return WK.engstelleRueckfrage(p, { letzteEngstelle: { feld: "ziel", ohne: 400, jetzt: 0 }, engstelleGefragt: {} });
     };
     const monate = (r) => (r?.kandidaten || []).filter((k) => k.feld.startsWith("monat:"));
+    sperre(true);
     pruefe("Ohne festes Datum wird der Nachbarmonat angeboten",
       monate(lapp()).length ? "ja" : "nein", "ja");
     pruefe("Und zwar nur ein Nachbarmonat",
@@ -2193,6 +2204,7 @@ const liesReisende = async (text, felder, urteil = "ja") => {
       { letzteEngstelle: { feld: "strand", ohne: 18, jetzt: 3 }, engstelleGefragt: {} });
     pruefe("Wo andere Stellschrauben reichen, bleibt der Monat weg",
       monate(strandR).length ? "doch" : "nein", "nein");
+    sperre(false);
   }
 
   /* Was die Rangliste verspricht, muss lieferbar sein (19.11.2026)
@@ -2405,8 +2417,10 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     kern.lauf.gespraech.push({ role: "assistant", content: "..." }, { role: "user", content: "doch lieber nur Kapstadt" });
     await WK.werkzeuge.stand_merken.call(WK, { frage_beantwortet: "ja", zieleAuswahl: ["kapstadt"] }, kern);
     pruefe("'lieber nur Kapstadt' ersetzt die Liste", (p.zieleAuswahl || []).join(","), "kapstadt");
-    const band = ctx.PO.eckdaten({ richtung: "kalt", zieleErlaubt: ["island", "ostsee"] }).find((z) => z.feld === "Ziel")?.wert || "";
+    const band = ctx.PO.eckdaten({ richtung: "kalt", monat: 1, zieleErlaubt: ["island", "ostsee"] }).find((z) => z.feld === "Ziel")?.wert || "";
     pruefe("Das Band nennt die Regionen hinter der Richtung", /Island/.test(band) && /Ostsee/.test(band) ? "ja" : band, "ja");
+    // Regel 3a (26.11.2026): ohne Monat keine Regionen
+    pruefe("Ohne Monat nur die Richtung im Band", ctx.PO.eckdaten({ richtung: "kalt", zieleErlaubt: ["island", "ostsee"] }).find((z) => z.feld === "Ziel")?.wert, "eher kalt");
   }
   {
     const wz = fs.readFileSync(alt && fs.existsSync(quelle + "werkzeuge.js") ? quelle + "werkzeuge.js" : B + "agent/werkzeuge.js", "utf8");
@@ -2864,7 +2878,7 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     delete halb.erwachsene; delete halb.kinder;
     const l3 = lauf({ gefragtWie: { reisende: 2 } });
     const f3 = WK.fahrplan(halb, l3);
-    pruefe("Reisende unvollstaendig: Vorschlag mit den Angaben der Person", f3.vorschlag ? f3.vorschlag.text : "kein Vorschlag", "5 Erwachsenen");
+    pruefe("Reisende unvollstaendig: Knopf mit den Angaben der Person", f3.chips || "keine Knoepfe", "5 Erwachsene | Mit Kindern");
     pruefe("... und es ist nichts gesetzt", halb.kinder ?? "offen", "offen");
   }
 
@@ -3819,7 +3833,7 @@ const liesReisende = async (text, felder, urteil = "ja") => {
       return { p, kern };
     };
     // Reformationstag
-    pruefe("Fester Feiertag: 'am Reformationstag' ist der 31.10.", JSON.stringify(versuch(() => WK.tagAusText("am Reformationstag"))), JSON.stringify({ tag: 31, monat: 10 }));
+    pruefe("Fester Feiertag: 'am Reformationstag' ist der 31.10.", JSON.stringify(versuch(() => WK.tagAusText("am Reformationstag"))), JSON.stringify({ tag: 31, monat: 10, name: "Reformationstag" }));
     const r1 = await spiel("ich würde gerne am Reformationstag fliegen", { monat: 10 }, {}, { gefragt: "zeit" });
     pruefe("'am Reformationstag': Monat Oktober und Anreise 31.10.", [r1.p.monat, r1.p.anreise], [10, "2027-10-31"]);
     pruefe("... und der Kern sagt es an", (WK.annahmeSaetze(r1.kern.lauf, r1.p).find((x) => /Reformationstag/.test(x)) || "kein Satz"),

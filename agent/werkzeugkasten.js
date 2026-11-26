@@ -948,7 +948,7 @@ const Werkzeugkasten = {
     if (!p?.monat || typeof ZIEL_NACH_ID === "undefined") return [...liste];
     const katalog = this.katalog(p);
     const inSaison = (id) => typeof saisonPassung !== "function" || !ZIEL_NACH_ID[id]
-      || saisonPassung(ZIEL_NACH_ID[id], p.monat) >= 0.5;
+      || !saisonGesperrt(ZIEL_NACH_ID[id], p.monat);
     const mit = liste.filter((id) => inSaison(id) && katalog.some((h) => h.ziel === id));
     /* Bliebe nichts uebrig, ist die ungefilterte Liste die ehrlichere
        Auskunft - lieber eine Region nennen, in der gerade nichts frei
@@ -1231,6 +1231,74 @@ const Werkzeugkasten = {
   /* Themen, bei denen nicht angenommen, sondern nachgefragt wird
      (20.11.2026, siehe die Annahmen im Fahrplan). */
   VORSCHLAG_THEMEN: ["zeit", "dauer", "reisende", "kinderAlter", "zimmer", "flug", "flugAb", "flugKlasse", "anreise"],
+  // Themen ohne sinnvolle Knoepfe: dort bleibt nach zwei Anlaeufen die offene Frage (Regel 2)
+  AUSWAHL_OFFEN: ["kinderAlter"],
+
+  /* Regel 2b (26.11.2026): die Knoepfe nach zwei offenen Anlaeufen. Kein
+     Knopf schlaegt einen Wert vor, den der Kern ausgewaehlt haette; es
+     sind die ueblichen Antworten, zwischen denen die Person waehlt. */
+  auswahlStattVorschlag(thema, p, lauf) {
+    const MN = typeof MONATSNAMEN !== "undefined" ? MONATSNAMEN : null;
+    if (thema === "zeit" && MN) {
+      const jetzt = new Date().getMonth() + 1;
+      const monate = [1, 2, 3].map((i) => ((jetzt - 1 + i) % 12) + 1);
+      const wirkung = {};
+      for (const m of monate) wirkung[MN[m - 1]] = { monat: m };
+      return { satz: "In welchem Monat möchtest du reisen? Wenn du dich nicht festlegen willst, suche ich dir einen aus.",
+        chips: [...monate.map((m) => MN[m - 1]), "Such du einen Monat aus"], wirkung };
+    }
+    if (thema === "dauer") {
+      return { satz: "Wie lange soll die Reise ungefähr werden?",
+        chips: ["Ein langes Wochenende", "Eine Woche", "Zwei Wochen"],
+        wirkung: { "Ein langes Wochenende": { naechte: 3 }, "Eine Woche": { naechte: 7 }, "Zwei Wochen": { naechte: 14 } } };
+    }
+    if (thema === "reisende") {
+      // Was die Person schon gesagt hat, geht in die Knoepfe ein ("wir sind 5")
+      const n = p.personen ?? p.erwachsene ?? null;
+      if (n != null && n > 0) {
+        return { satz: `Seid ihr ${n} Erwachsene, oder sind Kinder dabei?`,
+          chips: [`${n} Erwachsene`, "Mit Kindern"],
+          wirkung: { [`${n} Erwachsene`]: { erwachsene: n, kinder: 0, personen: n } } };
+      }
+      return { satz: "Wer reist mit?",
+        chips: ["Allein", "Zu zweit", "Mit Kindern"],
+        wirkung: { Allein: { erwachsene: 1, kinder: 0, personen: 1 }, "Zu zweit": { erwachsene: 2, kinder: 0, personen: 2 } } };
+    }
+    if (thema === "flug") {
+      return { satz: "Soll ein Flug dazu, oder nur die Unterkunft?",
+        chips: ["Mit Flug", "Nur die Unterkunft"], wirkung: { "Mit Flug": { flug: true }, "Nur die Unterkunft": { flug: false } } };
+    }
+    if (thema === "anreise") {
+      // Tage ueber den Monat verteilt (dieselben wie in der Datumsfrage) - eine Auswahl, kein Vorschlag
+      const tage = this.anreiseTage(p);
+      if (!tage.length) return null;
+      const wirkung = {};
+      for (const t of tage.slice(0, 4)) wirkung[t] = { anreise: `${tage.iso}-${String(parseInt(t, 10)).padStart(2, "0")}` };
+      return { satz: `An welchem Tag im ${tage.monat} soll es losgehen?`, chips: Object.keys(wirkung), wirkung };
+    }
+    if (thema === "zimmer") {
+      return { satz: "Wie viele Zimmer braucht ihr?",
+        chips: ["Ein Zimmer", "Zwei Zimmer"], wirkung: { "Ein Zimmer": { zimmer: 1 }, "Zwei Zimmer": { zimmer: 2 } } };
+    }
+    if (thema === "flugKlasse") {
+      return { satz: "In welcher Klasse möchtest du fliegen?",
+        chips: ["Economy", "Premium Economy", "Business"],
+        wirkung: { Economy: { flugKlasse: "economy" }, "Premium Economy": { flugKlasse: "premium" }, Business: { flugKlasse: "business" } } };
+    }
+    if (thema === "flugAb") {
+      // Nur ein Flughafen, den der Agent im Gespraech selbst genannt hat
+      const ab = lauf.vorschlag?.werte?.flugAb;
+      const zuletzt = [...(lauf.gespraech || [])].reverse().find((n) => n.role === "assistant" && n.content)?.content || "";
+      if (ab && this.flughaefenIm(zuletzt).includes(ab)) {
+        return { satz: `Von welchem Flughafen möchtest du fliegen?`, chips: [ab], wirkung: { [ab]: { flugAb: ab } } };
+      }
+      // Sonst die grossen Flughaefen ueber das Land verteilt - eine Auswahl, kein Vorschlag
+      const gross = ["Hamburg", "Berlin", "Düsseldorf", "Frankfurt", "München"];
+      return { satz: "Von welchem Flughafen möchtest du fliegen?", chips: gross,
+        wirkung: Object.fromEntries(gross.map((n) => [n, { flugAb: n }])) };
+    }
+    return null;
+  },
   ABFLUG_NAMEN: ["Hamburg", "Berlin", "Hannover", "Düsseldorf", "Köln", "Frankfurt", "Stuttgart", "München", "Zürich"],
 
   // Der Vorschlag als Satzstueck: "mit einer Woche", "ab Hamburg"
@@ -1282,7 +1350,7 @@ const Werkzeugkasten = {
     /* Was eine andere Grenze braechte - sonst ist die Frage so abstrakt
        wie die Vorgabe vorher. Zwei Grad weiter in die offene Richtung. */
     const alle = (typeof ZIELE !== "undefined" ? ZIELE : [])
-      .filter((z) => grad(z, p.monat) != null && (typeof saisonPassung !== "function" || saisonPassung(z, p.monat) >= 0.5));
+      .filter((z) => grad(z, p.monat) != null && (typeof saisonPassung !== "function" || !saisonGesperrt(z, p.monat)));
     const weiter = warm ? grenze - 4 : grenze + 4;
     const jetzt = jetztIds.length;
     /* Dieselbe Zaehlung wie nach der Antwort: regionenFuerRichtung mit der
@@ -1297,9 +1365,44 @@ const Werkzeugkasten = {
     void alle;
     const auf = this.regionenListe(dazuIds);
     if (!auf) return null;
+    /* Regel 3b (26.11.2026): die echten Stufen statt einer still
+       gesenkten Grenze.
+       ----------------------------------------------------------------
+       Gemeldet: "Anreise am 1. merke ich mir. Ab 15 Grad kaeme Lissabon
+       dazu. Bei 19 Grad bleiben oder auf 15 gehen?" - von 19 Grad war nie
+       die Rede. Die 19 entstand, weil bei 22 Grad zu wenig Regionen
+       blieben und regionenFuerRichtung die Grenze senkte. Jetzt nennt die
+       Frage, was bei der Grundgrenze dabei ist und was bei jeder weiteren
+       Stufe dazukaeme, mit Temperatur - und fragt, wie warm es
+       mindestens sein soll. Die Liste steht damit nur hier, nicht noch
+       einmal im Richtungssatz (siehe richtungAnsagen). */
+    const monatName = typeof MONATSNAMEN !== "undefined" ? MONATSNAMEN[p.monat - 1] : `Monat ${p.monat}`;
+    const mitGradName = (id) => `${this.regionMitArtikel(id) || ZIEL_NACH_ID[id]?.name || id} (${grad(ZIEL_NACH_ID[id], p.monat)} Grad)`;
+    const und = (xs) => (xs.length > 1 ? `${xs.slice(0, -1).join(", ")} und ${xs.at(-1)}` : xs[0] || "");
+    const nachGrad = (ids) => [...ids].sort((x, y) => (warm ? 1 : -1) * (grad(ZIEL_NACH_ID[y], p.monat) - grad(ZIEL_NACH_ID[x], p.monat)));
+    const basisIds = thema && grenze !== basisGrenze
+      ? this.regionenMitHaeusern(p, this.regionenFuerRichtung(thema, { ...p, mindestGrad: basisGrenze }, { genau: true }))
+        .filter((id) => ZIEL_NACH_ID[id] && (warm ? grad(ZIEL_NACH_ID[id], p.monat) >= basisGrenze : grad(ZIEL_NACH_ID[id], p.monat) <= basisGrenze))
+      : jetztIds.filter((id) => ZIEL_NACH_ID[id]);
+    const stufen = [];
+    const schon = new Set();
+    const stufe = (g, ids) => { const neu = nachGrad(ids.filter((id) => !schon.has(id) && ZIEL_NACH_ID[id])); neu.forEach((id) => schon.add(id)); if (neu.length || !stufen.length) stufen.push({ grad: g, ids: neu }); };
+    stufe(basisGrenze, basisIds);
+    if (grenze !== basisGrenze) stufe(grenze, jetztIds);
+    stufe(weiter, dannIds);
+    if (stufen.length < 2) return null;
+    const AB = warm ? "ab" : "bis";
+    const erste = stufen[0];
+    const kopf = erste.ids.length
+      ? `Im ${monatName} ${erste.ids.length === 1 ? "hat nur" : "haben"} ${und(erste.ids.map(mitGradName))} ${warm ? "mindestens" : "höchstens"} ${erste.grad} Grad.`
+      : `Im ${monatName} ${warm ? "hat keine Region mindestens" : "hat keine Region höchstens"} ${erste.grad} Grad.`;
+    const rest = stufen.slice(1).map((st, i) => (i === 0
+      ? `${warm ? "Ab" : "Bis"} ${st.grad} Grad ${st.ids.length > 1 ? "kämen" : "käme"} ${und(st.ids.map(mitGradName))} dazu`
+      : `${AB} ${st.grad} Grad ${und(st.ids.map(mitGradName))}`)).join(", ");
     return {
-      satz: `${warm ? "Ab" : "Bis"} ${weiter} Grad ${auf.mehrzahl ? "kämen" : "käme"} ${auf.text} dazu. Bei ${grenze} Grad bleiben oder auf ${weiter} gehen?`,
-      chips: [`Bei ${grenze} Grad bleiben`, `${warm ? "Ab" : "Bis"} ${weiter} Grad`],
+      satz: `${kopf} ${rest}. ${warm ? "Wie warm soll es mindestens sein?" : "Wie kalt darf es höchstens sein?"}`,
+      chips: stufen.map((st) => `${warm ? "Ab" : "Bis"} ${st.grad} Grad`),
+      stufen: stufen.map((st) => st.grad),
       grenze, weiter, jetzt, dann,
     };
   },
@@ -1337,6 +1440,33 @@ const Werkzeugkasten = {
     return `${kopf} Damit ${was.join(" und ")} - jetzt ${jetzt.length} ${jetzt.length === 1 ? "Region" : "Regionen"} statt ${vorherMit.length}.`;
   },
 
+  /* Regel 3d und 4 (26.11.2026): Die Regionen einer Temperatur-Richtung
+     haengen am Monat - kommt der Monat dazu oder aendert er sich, wird
+     die Liste neu gerechnet und gesagt.
+     ------------------------------------------------------------------
+     Gemeldet: "warm" ohne Monat, danach "Januar". Die Liste blieb intern
+     die ohne Monat (Mallorca, Kreta, Algarve, Sardinien ...), angezeigt
+     wurde nur, was davon im Januar Saison hat - ohne ein Wort. Und als
+     danach "nehm noch Lappland dazu" kam, setzte das Dazunehmen auf der
+     alten Liste auf: Mallorca und Co. standen wieder im Stand.
+     Gerechnet wird an genau einer Stelle; der Abdruck `richtungMonat`
+     verhindert, dass dieselbe Lage zweimal angesagt wird. */
+  richtungNachziehen(kern, p) {
+    if (!kern?.lauf || !p?.richtung || !p.monat || p.zielId) return false;
+    if (!["warm", "kalt"].includes(p.richtung) || typeof Politik === "undefined") return false;
+    if (kern.lauf.richtungMonat === p.monat) return false;
+    const th = (Politik.THEMEN || []).find((t) => t.id === p.richtung);
+    if (!th) return false;
+    const vorher = kern.lauf.richtungMonat ?? null;
+    kern.lauf.richtungMonat = p.monat;
+    p.zieleErlaubt = this.regionenFuerRichtung(th, p);
+    this.auswahlNachRichtung(p);
+    kern.notieren("richtung_nach_monat", { monat: p.monat, vorher, regionen: p.zieleErlaubt.length });
+    this.richtungAnsagen(kern, p);
+    if (typeof kern.standAnzeigen === "function") kern.standAnzeigen();
+    return true;
+  },
+
   richtungAnsagen(kern, p) {
     if (!kern?.lauf) return;
     /* Zweites Mal und spaeter: der Unterschied statt der ganzen Liste. */
@@ -1365,7 +1495,16 @@ const Werkzeugkasten = {
     /* Folgt gleich die Frage nach der Grenze, endet dieser Satz ohne
        "Sag Bescheid ..." - sonst stand die Einladung da und direkt danach
        die Frage zur selben Sache (03.10.2026, "sehr doppelt"). */
-    const satz = this.richtungSatz(p, !!this.spanneRueckfrage(p, kern.lauf));
+    /* Regel 3b (26.11.2026): Steht die Temperaturfrage an, nennt SIE die
+       Regionen mit ihren Stufen - der Richtungssatz kaeme sonst doppelt.
+       Der Abdruck wird trotzdem gesetzt, damit eine spaetere Korrektur
+       den Unterschied sagt statt der ganzen Liste. */
+    if (this.spanneRueckfrage(p, kern.lauf)) {
+      kern.lauf.richtungRegionen = (p.zieleErlaubt || []).slice();
+      kern.lauf.richtungWorueber = JSON.stringify([p.richtung, p.mindestGrad ?? null, (p.zieleErlaubt || []).slice().sort()]);
+      return;
+    }
+    const satz = this.richtungSatz(p, false);
     if (!satz) return;
     /* Verglichen wird, WORUEBER der Satz spricht, nicht sein Wortlaut
        (19.11.2026).
@@ -2661,7 +2800,7 @@ const Werkzeugkasten = {
       return { tag: d.getDate(), monat: d.getMonth() + 1 };
     }
     const fest = this.festerTag(t);
-    if (fest) return { tag: fest.tag, monat: fest.monat };
+    if (fest) return { tag: fest.tag, monat: fest.monat, name: fest.name };
     return null;
   },
 
@@ -2678,6 +2817,14 @@ const Werkzeugkasten = {
     { name: "Valentinstag", muster: /valentinstag/, tag: 14, monat: 2 },
     { name: "Tag der Arbeit", muster: /tag der arbeit|maifeiertag/, tag: 1, monat: 5 },
     { name: "Nikolaus", muster: /nikolaus(tag)?\b/, tag: 6, monat: 12 },
+    /* Regel 1e (26.11.2026): "an Silvester los" ist ein Tag. Gemeldet: bei
+       Januar kam "dann gerne an silvester los" - der Kern verwarf es
+       zweimal und fragte "Welcher Tag im Januar, zum Beispiel der 8.?".
+       Nur mit an/am/ab/zu davor oder als ganze Antwort; "ueber Silvester"
+       und "zwischen den Jahren" bleiben ein Zeitraum (ZEITANKER). */
+    { name: "Silvester", muster: /(?:\b(?:an|am|ab|zu)\s+silvester\b|^\s*silvester\s*[.!]*\s*$|silvesterabend)/, tag: 31, monat: 12 },
+    { name: "Neujahr", muster: /(?:\b(?:an|am|ab|zu)\s+neujahr(?:stag)?\b|^\s*neujahr(?:stag)?\s*[.!]*\s*$)/, tag: 1, monat: 1 },
+    { name: "Heiligabend", muster: /heiligabend|heiligen abend/, tag: 24, monat: 12 },
   ],
 
   festerTag(text) {
@@ -2723,11 +2870,18 @@ const Werkzeugkasten = {
     const monat = Number(f.monat.split("-")[1]);
     if (d.monat === monat) return null;
     const name = (m) => (typeof MONATSNAMEN !== "undefined" ? MONATSNAMEN[m - 1] : `Monat ${m}`);
+    // "lieber im Oktober, am Reformationstag": der Monat wird im selben Satz gewechselt
+    if (new RegExp(`\\b(im|in den|lieber|doch)\\s+${name(d.monat)}\\b`, "i").test(String(text || ""))) return null;
+    /* Regel 1c (26.11.2026, Ben): "Reformationstag liegt im Oktober.
+       Moechtest du im Maerz oder im Oktober reisen?" Der Tag wird nie
+       still verworfen und der Monat nie still umgestellt; gefragt wird
+       nach dem MONAT, nicht nach einer zweiten Lesart des Tags. */
+    const kopf = d.name ? `${/tag\b|^tag /i.test(d.name) ? `Der ${d.name}` : d.name} ist am ${d.tag}. ${name(d.monat)}.`
+      : `Der ${d.tag}. ${name(d.monat)} liegt nicht im ${name(monat)}.`;
     return {
-      tag: d.tag, genannt: d.monat, gesucht: monat,
-      satz: `Der ${d.tag}. ${name(d.monat)} liegt nicht im ${name(monat)}, in dem ich bisher suche. `
-        + `Soll ich auf ${name(d.monat)} umstellen, oder meinst du den ${d.tag}. ${name(monat)}?`,
-      chips: [`Auf ${name(d.monat)} umstellen`, `${d.tag}. ${name(monat)}`],
+      tag: d.tag, genannt: d.monat, gesucht: monat, name: d.name || null,
+      satz: `${kopf} Möchtest du im ${name(monat)} oder im ${name(d.monat)} reisen?`,
+      chips: [`Im ${name(d.monat)}`, `Im ${name(monat)}`],
     };
   },
 
@@ -4122,7 +4276,7 @@ const Werkzeugkasten = {
   // Alle Regionen, die im Monat mindestens Nebensaison haben
   regionenInSaison(monat) {
     return (typeof ZIELE !== "undefined" ? ZIELE : []).filter((z) =>
-      !monat || typeof saisonPassung !== "function" || saisonPassung(z, monat) >= 0.5);
+      !monat || typeof saisonPassung !== "function" || !saisonGesperrt(z, monat));
   },
 
   /* ==================================================================
@@ -4139,6 +4293,16 @@ const Werkzeugkasten = {
       Werkzeugkasten.widerspruchAufloesen(a, kern);
       Werkzeugkasten.absprache(a, kern);
       Werkzeugkasten.grundlagePruefen(a, kern);
+      /* Regel 1c (26.11.2026): Steht die Frage "im Januar oder im
+         Dezember?" an, setzt das Modell weder Monat noch Tag. Gemessen: Auf
+         "dann gerne an silvester los" bei Januar schickte es mal anreise
+         2026-12-31 (der Kern stellte still auf Dezember um), mal den
+         31. Januar. Beides ist eine Entscheidung, die die Person trifft. */
+      if (kern.lauf.datumWiderspruch) {
+        const weg = ["monat", "anreise", "von", "bis"].filter((f) => a[f] != null);
+        weg.forEach((f) => delete a[f]);
+        if (weg.length) kern.notieren("datum_wartet_auf_monat", { felder: weg });
+      }
       if (typeof Absicherung !== "undefined" && Absicherung.lesung) await Absicherung.nachlesenAbwarten(a, kern);
       /* Das Letzte zaehlt (25.11.2026): "ach doch, Mallorca kann rein" hebt
          einen frueheren Ausschluss auf - wenn die Nachricht die Region nennt
@@ -4340,6 +4504,7 @@ const Werkzeugkasten = {
          Begruendung der Regel steht weiter unten beim Setzen der Grenze. */
       const spanne = kern.lauf.spanneOffen || null;
       let gradNackt = null;
+      let spanneEigen = null;
       if (spanne) {
         kern.lauf.spanneOffen = null;
         // Nur die Zusage (ABSPRACHE): "19 ist mir zu kalt" ist keine 19
@@ -4351,8 +4516,10 @@ const Werkzeugkasten = {
            dennoch wuerde ich gerne noch Lappland behalten". Gelesen wurden
            nur die beiden angebotenen Zahlen, die 23 kam nicht an. */
         const mitGrad = (n) => new RegExp(`(^|[^0-9])${n}\\s*(grad|°)`, "i").test(letzteS);
+        const stufenGenannt = (spanne.stufen || []).filter((g) => nennt(g));
         if (a.mindestGrad == null) {
-          if (nennt(spanne.weiter) && !nennt(spanne.grenze)) a.mindestGrad = spanne.weiter;
+          if (stufenGenannt.length === 1) a.mindestGrad = stufenGenannt[0];
+          else if (nennt(spanne.weiter) && !nennt(spanne.grenze)) a.mindestGrad = spanne.weiter;
           else if (/bleib/i.test(letzteS) && !nennt(spanne.weiter)) a.mindestGrad = spanne.grenze;
           else {
             const eigen = letzteS.match(/(^|[^0-9])(-?\d{1,2})\s*(grad|°)/i);
@@ -4365,12 +4532,19 @@ const Werkzeugkasten = {
           }
           if (a.mindestGrad != null) kern.notieren("spanne_vom_kern", { grad: a.mindestGrad, satz: letzteS.slice(0, 80) });
         }
+        /* Regel 3c (26.11.2026): Eine Zahl auf die Temperaturfrage ist
+           eine Gradzahl, auch ohne das Wort "Grad". Gemeldet: auf "Bei 19
+           Grad bleiben oder auf 15 gehen?" kam "erst ab 22" - das Modell
+           las 22 richtig, der Kern verwarf es, weil weder eine der beiden
+           angebotenen Zahlen noch "Grad" dastand. Steht die Zahl des
+           Modells woertlich in der Antwort, ist nichts zu deuten. */
+        else if (nennt(Math.round(Number(a.mindestGrad)))) spanneEigen = Math.round(Number(a.mindestGrad));
         /* Die neue Grenze gleich in die Liste, damit ein Dazunehmen
            im selben Satz auf der richtigen Liste aufsetzt. Das eigentliche
            Setzen (mit Ansage) passiert unten wie bisher. */
         if (a.mindestGrad != null && p.richtung && typeof Politik !== "undefined"
-          && ([spanne.weiter, spanne.grenze].includes(Math.round(Number(a.mindestGrad)))
-            || mitGrad(Math.round(Number(a.mindestGrad))))) {
+          && ([spanne.weiter, spanne.grenze, ...(spanne.stufen || [])].includes(Math.round(Number(a.mindestGrad)))
+            || mitGrad(Math.round(Number(a.mindestGrad))) || spanneEigen != null)) {
           const thS = (Politik.THEMEN || []).find((t) => t.id === p.richtung);
           if (thS) p.zieleErlaubt = Werkzeugkasten.regionenFuerRichtung(thS, { ...p, mindestGrad: Math.round(Number(a.mindestGrad)) }, { genau: true });
           kern.lauf.spanneNeu = Math.round(Number(a.mindestGrad));
@@ -4704,6 +4878,7 @@ const Werkzeugkasten = {
         } else if (th && gesagt(new RegExp(woerter.map((x) => x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|"), "i"), 99) || (th && steht("richtung", "ziel"))) {
           setze("richtung", th.id);
           p.zieleErlaubt = Werkzeugkasten.regionenFuerRichtung(th, p);
+          kern.lauf.richtungMonat = p.monat || null;
           if (!p.zielId) p.zielOffen = true;
           Werkzeugkasten.auswahlNachRichtung(p);
           Werkzeugkasten.richtungAnsagen(kern, p);
@@ -4733,8 +4908,9 @@ const Werkzeugkasten = {
          die Zahl selbst - auch wenn das Modell sie gar nicht geschickt hat. */
       // `spanne` wird weiter oben gelesen, vor dem Ziel - siehe dort.
       const spanneZahl = spanne && a.mindestGrad != null
-        && [spanne.weiter, spanne.grenze].includes(Math.round(Number(a.mindestGrad)));
-      if (a.mindestGrad != null && (gesagt(/grad|°/i, 1) || spanneZahl || gradNackt === a.mindestGrad)) {
+        && [spanne.weiter, spanne.grenze, ...(spanne.stufen || [])].includes(Math.round(Number(a.mindestGrad)));
+      if (a.mindestGrad != null && (gesagt(/grad|°/i, 1) || spanneZahl || gradNackt === a.mindestGrad
+        || (spanneEigen != null && spanneEigen === Math.round(Number(a.mindestGrad))))) {
         const g = Math.round(Number(a.mindestGrad));
         if (Number.isFinite(g) && g >= -20 && g <= 45) {
           setze("mindestGrad", g);
@@ -4993,7 +5169,17 @@ const Werkzeugkasten = {
            Datum nennt, hat geantwortet; dieselbe Regel wie bei der
            Jahreszeit. */
         const datumJetztGenannt = gesagt(Werkzeugkasten.TAG, 1);
-        if (abgegeben && !jahreszeitJetztGenannt && !datumJetztGenannt && !monatGenannt && !p.vonPerson?.monat) {
+        /* Ohne Jahreszeit keine "naechsten vier Monate" mehr (26.11.2026).
+           Ben: "dass das einfach die naechsten 4 sind, macht fuer mich
+           nicht so viel Sinn." Wer die Wahl abgibt, ohne eine Jahreszeit
+           genannt zu haben, wird nach der Jahreszeit gefragt; deren Monate
+           vergleicht der Agent dann sichtbar, und die Person waehlt. */
+        const jzAntwort = !!kern.lauf.jahreszeitFrage && jahreszeitJetztGenannt;
+        if (abgegeben && !jz && !datumJetztGenannt && !monatGenannt && !p.vonPerson?.monat) {
+          kern.lauf.jahreszeitFrage = (kern.lauf.jahreszeitFrage || 0) + 1;
+          kern.notieren("jahreszeit_gefragt", { mal: kern.lauf.jahreszeitFrage });
+        } else if ((abgegeben || jzAntwort) && (!jahreszeitJetztGenannt || jzAntwort) && !datumJetztGenannt && !monatGenannt && !p.vonPerson?.monat) {
+          kern.lauf.jahreszeitFrage = null;
           /* Sichtbar vergleichen, wenn er die Seite bedienen darf.
              ------------------------------------------------------------
              Der Kern koennte das Ergebnis in einer Millisekunde aus dem
@@ -5031,7 +5217,7 @@ const Werkzeugkasten = {
             // Vorlaeufig der erste Monat, damit ueberhaupt gesucht werden
             // kann. Der Vergleich laeuft danach und entscheidet endgueltig.
             if (!p.monat) { p.monat = kandidatenMonate[0]; kern.standAnzeigen(); }
-            kern.lauf.monatsvergleich = { monate: kandidatenMonate.slice(), entscheiden: true };
+            kern.lauf.monatsvergleich = { monate: kandidatenMonate.slice(), entscheiden: false };   // Regel: die Person waehlt (26.11.2026)
             kern.notieren("monatsvergleich_angesetzt", { jahreszeit: jz?.name || null, monate: kandidatenMonate });
           } else {
             const w = Werkzeugkasten.monatWaehlen(p, kandidatenMonate);
@@ -6130,6 +6316,7 @@ const Werkzeugkasten = {
           if (zweiterMonat) kern.notieren("zwei_monate_genannt", { gemerkt: p.monat, auch: zweiterMonat });
         }
       }
+      Werkzeugkasten.richtungNachziehen(kern, p);
       const wunschOffen = kern.lauf.wunschOhneFeld || null;
       kern.lauf.wunschOhneFeld = null;
       return { ergebnis: { gemerkt: geaendert.length ? geaendert : "nichts Neues", stand: kern.standKurz(),
@@ -6148,7 +6335,7 @@ const Werkzeugkasten = {
       const regionen = Werkzeugkasten.regionenInSaison(p.monat).filter((z) => !gebiet.length || gebiet.includes(z.id)).map((z) => ({
         id: z.id, name: z.name, land: z.land, art: z.typ,
         haeuser: bestand.filter((h) => h.ziel === z.id && Werkzeugkasten.passtGruppe(h, p)).length,
-        saison: p.monat ? (typeof saisonPassung === "function" && saisonPassung(z, p.monat) === 1 ? "Hauptsaison" : "Nebensaison") : null,
+        saison: p.monat ? (typeof saisonPassung === "function" ? (saisonPassung(z, p.monat) === 1 ? "Hauptsaison" : saisonPassung(z, p.monat) === 0.5 ? "Nebensaison" : "außerhalb der Saison (ruhiger, günstiger)") : null) : null,
         kurz: z.kurz,
       })).filter((r) => r.haeuser > 0).sort((x, y) => y.haeuser - x.haeuser);
       const gesamt = regionen.reduce((n, r) => n + r.haeuser, 0);
@@ -6496,7 +6683,7 @@ const Werkzeugkasten = {
              vorschlagen, statt nach dem Budget zu fragen. */
           const z = p.zielId && typeof ZIEL_NACH_ID !== "undefined" ? ZIEL_NACH_ID[p.zielId] : null;
           const ausserSaison = z && p.monat && typeof saisonPassung === "function"
-            && saisonPassung(z, p.monat) < 0.5;
+            && saisonGesperrt(z, p.monat);
           if (ausserSaison) {
             const haupt = typeof saisonText === "function" ? saisonText(z) : "";
             const monatName = p.monat && typeof MONATSNAMEN !== "undefined" ? `im ${MONATSNAMEN[p.monat - 1]}` : "in diesem Monat";
@@ -7673,9 +7860,15 @@ const Werkzeugkasten = {
           ...Werkzeugkasten.fahrplanFuerModell(Werkzeugkasten.fahrplan(p, kern.lauf), p, kern.lauf) } };
       }
 
+      /* Die Person waehlt (26.11.2026). Der vorlaeufige Monat, mit dem
+         ueberhaupt gesucht werden konnte, faellt weg - sonst gaelte die
+         Zeitfrage als beantwortet. Die Knoepfe stellt der Fahrplan
+         (`monatWahl`). */
+      if (!p.vonPerson?.monat) { delete p.monat; delete p.monatAusVergleich; kern.lauf.gesuchtMit = null; kern.standAnzeigen(); }
+      kern.lauf.monatWahl = ergebnisse.map((x) => x.monat);
       kern.sichern();
       return { ergebnis: { verglichen: ergebnisse,
-        hinweis: "Die Zahlen stehen schon im Chat - nicht wiederholen. Sag in einem Satz, was auffaellt, und frag, welcher Monat es sein soll.",
+        hinweis: "Die Zahlen stehen schon im Chat - nicht wiederholen. Sag hoechstens in einem Satz, was die Zahlen zeigen, ohne einen Monat zu empfehlen. Die Frage nach dem Monat stellt der Chat mit Knoepfen.",
         ...Werkzeugkasten.fahrplanFuerModell(Werkzeugkasten.fahrplan(p, kern.lauf), p, kern.lauf) } };
     },
 
@@ -9118,7 +9311,7 @@ const Werkzeugkasten = {
     if (p.vonPerson) delete p.vonPerson.monat;
     if (!p.monat || !liste.includes(p.monat)) p.monat = liste[0];
     (kern.lauf.besprochen ||= {}).zeit = true;
-    kern.lauf.monatsvergleich = { monate: liste, entscheiden: true };
+    kern.lauf.monatsvergleich = { monate: liste, entscheiden: false };   // die Person waehlt (26.11.2026)
     kern.notieren("monate_genannt", { monate: liste, quelle });
     // Gesagt wird es vom Kern, damit es immer dasteht und stimmt
     if (typeof MONATSNAMEN !== "undefined") {
@@ -11921,7 +12114,15 @@ const Werkzeugkasten = {
          (frage_beantwortet), der Kern zaehlt ihn in `klaertNoch`, und
          hier wird er zum Auftrag: erst die Sache der Person zu Ende
          bringen, dann die eigene Frage. */
-      frage = (lauf.klaertNoch?.[naechstes] || 0) > 0
+      /* Regel 5 (26.11.2026): Eine Nachricht ohne Inhalt ("+", "?", "...")
+         ist kein Ausweichen. Gemeldet: auf "+" kam "Ich merke, du hast noch
+         nichts zum Zeitpunkt gesagt." - das klingt belehrend. Dann einfach
+         freundlich noch einmal fragen, ohne die Nachricht zu kommentieren. */
+      const letzteDu = String([...(lauf.gespraech || [])].reverse().find((n) => n.role === "user")?.content || "");
+      const ohneInhalt = letzteDu.trim().length > 0 && !/[a-zäöüß0-9]/i.test(letzteDu);
+      frage = ohneInhalt
+        ? `Stell diese Frage freundlich noch einmal, mit anderen Worten als beim ersten Mal. Geh NICHT auf ihre letzte Nachricht ein und sag nicht, dass sie nichts gesagt oder nicht geantwortet hat. Worum es geht: ${frage}`
+        : (lauf.klaertNoch?.[naechstes] || 0) > 0
         ? `Sie klaert gerade noch etwas, statt diese Frage zu beantworten - eine Rueckfrage oder eine Korrektur. Bring ZUERST ihre Sache zu Ende: Antworte vollstaendig auf das, was sie wissen will oder richtiggestellt hat, und bestaetige die Korrektur. Erst danach, im selben Zug, stell diese Frage noch einmal, ANDERS als beim ersten Mal. Halte ihr nicht vor, dass sie nicht geantwortet hat, und fang nicht von einem anderen Thema an. Worum es geht: ${frage}`
         : `Sie ist auf diese Frage nicht eingegangen, sondern hat etwas anderes gesagt. Geh in einem Satz darauf ein und stell die Frage dann ANDERS als beim ersten Mal - anderer Satzbau, andere Beispiele, nicht woertlich gleich. Frag nicht, ob du fragen sollst, und sag nicht, dass du schon gefragt hast. Worum es geht: ${frage}`;
     }
@@ -11947,13 +12148,30 @@ const Werkzeugkasten = {
        gefragt - mit einem Knopf dafuer und einem fuer etwas anderes. */
     let vorschlag = null;
     if (lauf.vorschlag && fertig[lauf.vorschlag.thema]) lauf.vorschlag = null;
-    if (lauf.vorschlag && lauf.vorschlag.thema === naechstes) {
-      const v = lauf.vorschlag;
-      const ja = `Ja, ${v.text.replace(/^(den|einer|einem|diesem|diesen) /, "")}`.slice(0, 48);
-      satz = `Damit ich weitermachen kann: Soll ich mit ${v.text} rechnen, oder möchtest du etwas anderes?`;
-      chips = `${ja} | Etwas anderes`;
-      frage = `Der Chat fragt, ob mit ${v.text} gerechnet werden soll. Stell GENAU diese Frage und setz den Wert NICHT selbst - das macht der Kern, wenn sie zustimmt. Nennt sie etwas anderes, nimm das.`;
-      vorschlag = { thema: v.thema, werte: v.werte, ja, anders: "Etwas anderes", satz, text: v.text };
+    /* Regel 2 (26.11.2026): nach zwei Anlaeufen Auswahlknoepfe statt eines
+       vorgegebenen Werts. Ben: "es wirkt voellig random, dass da jetzt
+       ploetzlich der Monat einem einfach vorgeschrieben wird" - und
+       "Etwas anderes" fuehrte dazu, dass Dezember noch einmal kam. Die
+       Knoepfe setzen genau ihren Wert; getippte Antworten laufen wie
+       jede andere Antwort. Nur wo es keine sinnvollen Knoepfe gibt
+       (Kinderalter, Zimmer, Anreisetag), bleibt die offene Frage. */
+    if (lauf.monatWahl && (p.vonPerson?.monat || !lauf.monatWahl.length)) lauf.monatWahl = null;
+    if (lauf.jahreszeitFrage && p.monat) lauf.jahreszeitFrage = null;
+    let auswahl = null;
+    if (naechstes === "zeit" && lauf.monatWahl && typeof MONATSNAMEN !== "undefined") {
+      // Nach dem Monatsvergleich: die verglichenen Monate als Knoepfe
+      const wirkung = {};
+      for (const m of lauf.monatWahl) wirkung[MONATSNAMEN[m - 1]] = { monat: m };
+      auswahl = { satz: "Welcher Monat soll es sein?", chips: Object.keys(wirkung), wirkung };
+    } else if (naechstes === "zeit" && lauf.jahreszeitFrage && lauf.jahreszeitFrage < 3) {
+      auswahl = { satz: "Welche Jahreszeit passt dir am besten? Dann vergleiche ich die Monate darin für dich.",
+        chips: ["Frühling", "Sommer", "Herbst", "Winter"], wirkung: {} };
+    } else if (lauf.vorschlag && lauf.vorschlag.thema === naechstes) auswahl = this.auswahlStattVorschlag(naechstes, p, lauf);
+    if (auswahl) {
+      satz = auswahl.satz;
+      chips = auswahl.chips.join(" | ");
+      frage = `Der Chat stellt diese Frage mit Auswahlknoepfen: "${auswahl.satz}". Stell GENAU diese Frage, ohne einen Wert vorzuschlagen oder anzunehmen.`;
+      vorschlag = { thema: naechstes, wirkung: auswahl.wirkung, satz };
     }
     return { fertig, naechstes, frage, satz, vorsatz, erklaerung, chips, phase, suchbereit, eckdatenFertig, gesucht, schluessel, empfehlungBereit, vorschlag,
       angenommen, ueberblickOffen: false, fehlt: [...KERN, ...ECKDATEN].filter((t) => !fertig[t]) };
@@ -12413,7 +12631,7 @@ const Werkzeugkasten = {
     for (const h of alle) {
       let grund = null;
       if (!p.zielId && p.monat && typeof saisonPassung === "function" && typeof ZIEL_NACH_ID !== "undefined"
-        && ZIEL_NACH_ID[h.ziel] && saisonPassung(ZIEL_NACH_ID[h.ziel], p.monat) < 0.5) grund = "saison";
+        && ZIEL_NACH_ID[h.ziel] && saisonGesperrt(ZIEL_NACH_ID[h.ziel], p.monat)) grund = "saison";
       else if (personen && !this.passtGruppe(h, p)) grund = "gruppe";
       else if (p.naechte && h.minNights && p.naechte < h.minNights) grund = "dauer";
       if (grund) zaehler[grund] = (zaehler[grund] || 0) + 1;
@@ -12448,7 +12666,7 @@ const Werkzeugkasten = {
       let grund = null;
       if (!p.zielId && gebietListe.length && !gebietListe.includes(h.ziel)) grund = "region";
       else if (p.monat && typeof saisonPassung === "function" && typeof ZIEL_NACH_ID !== "undefined"
-        && ZIEL_NACH_ID[h.ziel] && saisonPassung(ZIEL_NACH_ID[h.ziel], p.monat) < 0.5) grund = "saison";
+        && ZIEL_NACH_ID[h.ziel] && saisonGesperrt(ZIEL_NACH_ID[h.ziel], p.monat)) grund = "saison";
       else if (personen && !this.passtGruppe(h, p)) grund = "gruppe";
       else if (p.naechte && h.minNights && p.naechte < h.minNights) grund = "dauer";
       if (grund) zaehler[grund] = (zaehler[grund] || 0) + 1;
@@ -12504,7 +12722,7 @@ const Werkzeugkasten = {
     const passend = personen ? imGebiet.filter((h) => this.passtGruppe(h, p)) : imGebiet;
     const saisonPrueft = p.monat && typeof saisonPassung === "function" && typeof ZIEL_NACH_ID !== "undefined";
     const ausserSaison = saisonPrueft
-      ? passend.filter((h) => ZIEL_NACH_ID[h.ziel] && saisonPassung(ZIEL_NACH_ID[h.ziel], p.monat) < 0.5)
+      ? passend.filter((h) => ZIEL_NACH_ID[h.ziel] && saisonGesperrt(ZIEL_NACH_ID[h.ziel], p.monat))
       : [];
     return {
       katalog: alle.length,
@@ -13497,7 +13715,7 @@ const Werkzeugkasten = {
        Erklaerung. */
     const zielRegion = p.zielId && typeof ZIEL_NACH_ID !== "undefined" ? ZIEL_NACH_ID[p.zielId] : null;
     if (!liste.length && zielRegion && p.monat && typeof saisonPassung === "function"
-      && saisonPassung(zielRegion, p.monat) < 0.5) {
+      && saisonGesperrt(zielRegion, p.monat)) {
       const haupt = typeof saisonText === "function" ? saisonText(zielRegion) : "";
       return `${zielRegion.name} hat ${monatText.replace(/^Im /, "im ")} keine Saison${haupt ? ` - Hauptsaison ist ${haupt}` : ""}. Dort ist gerade nichts buchbar.`;
     }
@@ -13806,7 +14024,7 @@ const Werkzeugkasten = {
   zielListe(p, { nurInSaison = false } = {}) {
     const inSaison = (id) => !nurInSaison || !p.monat || typeof saisonPassung !== "function"
       || typeof ZIEL_NACH_ID === "undefined" || !ZIEL_NACH_ID[id]
-      || saisonPassung(ZIEL_NACH_ID[id], p.monat) >= 0.5;
+      || !saisonGesperrt(ZIEL_NACH_ID[id], p.monat);
     const aus = new Set(p.zieleAus || []);
     const alleIds = (typeof ZIELE !== "undefined" ? ZIELE : []).map((z) => z.id);
     const basis = p.zielId ? [p.zielId]

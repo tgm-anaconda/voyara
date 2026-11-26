@@ -1515,7 +1515,13 @@ const Kern = {
     const p = this.lauf.profil || {};
     const teile = [];
     const regionsname = (id) => (typeof ZIEL_NACH_ID !== "undefined" ? ZIEL_NACH_ID[id]?.name : null) || id;
-    if (p.zielId && typeof ZIEL_NACH_ID !== "undefined") teile.push(`Ziel ${ZIEL_NACH_ID[p.zielId]?.name}`);
+    if (p.zielId && typeof ZIEL_NACH_ID !== "undefined") {
+      /* Ausserhalb der Saison ist buchbar (26.11.2026), soll aber gesagt
+         werden - einmal, in einem Halbsatz, damit niemand ueberrascht ist. */
+      const zz = ZIEL_NACH_ID[p.zielId];
+      const ausserhalb = zz && p.monat && typeof saisonPassung === "function" && saisonPassung(zz, p.monat) < 0.5;
+      teile.push(`Ziel ${zz?.name}${ausserhalb ? ` (im ${typeof MONATSNAMEN !== "undefined" ? MONATSNAMEN[p.monat - 1] : "Monat"} ausserhalb der Saison: ruhiger und guenstiger - erwaehne das einmal in einem Halbsatz, wenn du Haeuser dort nennst)` : ""}`);
+    }
     else if ((p.zieleAuswahl || []).length) {
       /* Dazugenommene Ziele mit Temperatur (22.11.2026): Das Modell schrieb
          "Kapstadt passt zu den kaelteren Zielen" - es kannte die 26 Grad
@@ -1534,6 +1540,10 @@ const Kern = {
          genau das war der Fall "Island, Lappland, Kapstadt und die
          Ostsee" im August. */
       const nennbar = Werkzeugkasten.regionenMitHaeusern(p);
+      // Regel 3a: ohne Monat keine Regionsliste (sonst zaehlt das Modell sie auf)
+      if (["warm", "kalt"].includes(p.richtung) && !p.monat) {
+        teile.push(`Ziel offen, Richtung ${(Politik.THEMEN || []).find((x) => x.id === p.richtung)?.label || p.richtung} (welche Regionen das sind, haengt vom Monat ab - noch keine nennen)`);
+      } else
       teile.push(`Ziel offen, Richtung ${(Politik.THEMEN || []).find((x) => x.id === p.richtung)?.label || p.richtung} (${nennbar.map((id) => ZIEL_NACH_ID?.[id]?.name || id).join(", ")})`);
     }
     else if (p.zielOffen) teile.push("Ziel offen (alle Regionen)");
@@ -2064,7 +2074,16 @@ const Kern = {
         this.notieren("datum_widerspruch_geloest", { wahl: "monat_umgestellt", monat: w.genannt, tag: w.tag });
         this.lauf.datumWiderspruch = null;
         this.standAnzeigen?.();
-      } else if (nenntAlt || new RegExp(`\\b${zahl}\\b`).test(t)) {
+      } else if (nenntAlt) {
+        /* Regel 1d: Der alte Monat bleibt, der Tag gehoert nicht dazu und
+           faellt weg. Danach fragt die Datumsfrage "An welchem Tag im ..."
+           - ohne Beispieltag. */
+        this.lauf.datumFrage = 1;
+        this.notieren("datum_widerspruch_geloest", { wahl: "monat_bleibt", monat: w.gesucht, tag: null });
+        this.lauf.datumWiderspruch = null;
+        this.lauf.datumWiderspruchMal = 0;
+        this.standAnzeigen?.();
+      } else if (!w.name && new RegExp(`\\b${zahl}\\b`).test(t)) {
         const fw = Werkzeugkasten.flexWahl(p3);
         if (fw) {
           p3.anreise = `${fw.monat}-${String(w.tag).padStart(2, "0")}`;
@@ -2239,7 +2258,10 @@ const Kern = {
        in den gesuchten Monat gehoert, hat der Leser oben nichts
        aufgenommen - mit Absicht. Hier wird der Widerspruch vermerkt; die
        Frage dazu stellt der Zug weiter unten. */
-    if (!this.lauf.datumWiderspruch && [2, 3].includes(this.lauf.datumFrage)) {
+    /* Regel 1 gilt immer, nicht nur auf die Datumsfrage (26.11.2026):
+       "dann gerne an silvester los" kam als Antwort auf eine Frage der
+       Person, also bei Stufe 1 - und lief ins Leere. */
+    if (!this.lauf.datumWiderspruch) {
       const w = Werkzeugkasten.datumWiderspruch(this.lauf.profil || {}, t);
       if (w) {
         this.lauf.datumWiderspruch = w;
@@ -2842,6 +2864,8 @@ const Kern = {
           // Die Nachricht wird trotzdem gewertet, bevor der Fahrplan
           // daraus eine Annahme macht.
           this.antwortWerten();
+          // Monat per Knopf oder Selbstlesen: die Regionen der Richtung nachziehen (Regel 3d)
+          Werkzeugkasten.richtungNachziehen(this, this.lauf.profil || {});
           fpJetzt = Werkzeugkasten.fahrplan(this.lauf.profil || {}, this.lauf);
           /* Eine Rueckfrage, die einmal vorgeht.
              ------------------------------------------------------------
@@ -3114,12 +3138,14 @@ const Kern = {
              ..." setzt genau die vorgeschlagenen Werte; "Etwas anderes"
              setzt nichts. Ein getipptes Ja liest der Kern am Anfang des
              naechsten Zugs (siehe `vorschlagOffen`). */
-          if (!kernFrage && fpJetzt?.vorschlag) {
+          /* Regel 2 (26.11.2026): statt "Ja, X | Etwas anderes" die
+             Auswahlknoepfe; jeder setzt genau seinen Wert. */
+          if (!kernFrage && fpJetzt?.vorschlag?.wirkung) {
             const v = fpJetzt.vorschlag;
-            this.lauf.chipWirkung = { [v.ja]: v.werte, [v.anders]: {} };
+            this.lauf.chipWirkung = Object.keys(v.wirkung).length ? { ...v.wirkung } : null;
             this.lauf.chipThema = v.thema;
-            this.lauf.vorschlagOffen = { thema: v.thema, werte: v.werte, satz: v.satz, text: v.text };
-            this.notieren("vorschlag_gefragt", { thema: v.thema, werte: v.werte });
+            this.lauf.vorschlagOffen = null;
+            this.notieren("auswahl_gefragt", { thema: v.thema, knoepfe: Object.keys(v.wirkung) });
           }
           if (kernFrage) {
             this.lauf.chipWirkung = kernFrage.wirkung || null;
@@ -3265,13 +3291,14 @@ const Kern = {
                ----------------------------------------------------------
                Steht keine Datumsfrage an, kommt sie hier - und nur dann,
                damit nie zwei Rueckfragen in einer Nachricht stehen. */
-            if (!datumFrage) {
+            // Nicht ueber die Datums-/Monatsfrage hinweg (26.11.2026: die Silvester-Frage wurde ueberschrieben)
+            if (!datumFrage && !zugBelegt) {
               const sp = Werkzeugkasten.spanneRueckfrage(p2, this.lauf);
               if (sp) {
                 this.lauf.spanneFrage = 1;
                 // Fuer die Antwort: welche zwei Zahlen zur Wahl standen
                 // (siehe stand_merken, "Die Antwort auf die eigene Frage").
-                this.lauf.spanneOffen = { grenze: sp.grenze, weiter: sp.weiter };
+                this.lauf.spanneOffen = { grenze: sp.grenze, weiter: sp.weiter, stufen: sp.stufen || [] };
                 zugBelegt = true;
                 this.notieren("spanne_rueckfrage", { grenze: sp.grenze, weiter: sp.weiter,
                   jetzt: sp.jetzt, dann: sp.dann });

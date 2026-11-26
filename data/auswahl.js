@@ -110,7 +110,7 @@ const Auswahl = {
        Orten ist mehr wert als eine Hintertür. */
     if (!aus("saison") && v.monat && typeof saisonPassung === "function"
       && typeof ZIEL_NACH_ID !== "undefined" && ZIEL_NACH_ID[h.ziel]
-      && saisonPassung(ZIEL_NACH_ID[h.ziel], v.monat) < 0.5) return "saison";
+      && saisonGesperrt(ZIEL_NACH_ID[h.ziel], v.monat)) return "saison";
 
     if (!aus("gruppe") && !this.passtGruppe(h, v)) return "gruppe";
 

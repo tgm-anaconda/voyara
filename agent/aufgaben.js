@@ -301,7 +301,7 @@ const Aufgaben = {
            benutzt `katalogTreffer` im Kern. */
         if (typeof freiImMonat === "function" && !freiImMonat(h, e.monat)) gruende.push("im Monat ausgebucht");
         if (typeof saisonPassung === "function" && typeof ZIEL_NACH_ID !== "undefined"
-          && ZIEL_NACH_ID[h.ziel] && saisonPassung(ZIEL_NACH_ID[h.ziel], e.monat) < 0.5) {
+          && ZIEL_NACH_ID[h.ziel] && saisonGesperrt(ZIEL_NACH_ID[h.ziel], e.monat)) {
           gruende.push("außerhalb der Saison");
         }
         if (h.minNights && (e.naechte || 7) < h.minNights) gruende.push(`Mindestaufenthalt ${h.minNights} Nächte`);
