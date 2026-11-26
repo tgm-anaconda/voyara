@@ -1559,11 +1559,14 @@ const Werkzeugkasten = {
        eine andere - nach demselben Schema. */
     const alleAmOrt = liste.slice();
     const zeiten = [...new Set(liste.map((f) => f.zeitfenster).filter(Boolean))];
+    /* Keine Tageszeit vorausgewaehlt (26.11.2026). Ben: "Die Uhrzeit soll
+       nicht vorausgewaehlt sein. Das soll der Agent ja mit der Person
+       abstimmen." Bis dahin zeigte das Fenster nur die Tageszeit mit dem
+       guenstigsten Flug - 20 von 60 Verbindungen. Gefiltert wird nur, was
+       die Person gesagt oder selbst eingestellt hat. */
     let zeit = null;
-    if (zeiten.length > 1) {
-      const gewuenscht = p.flugZeit && zeiten.includes(p.flugZeit) ? p.flugZeit : null;
-      const billigste = liste.slice().sort((a, b) => proPers(a) - proPers(b))[0]?.zeitfenster;
-      zeit = gewuenscht || billigste;
+    if (zeiten.length > 1 && p.flugZeit && zeiten.includes(p.flugZeit)) {
+      zeit = p.flugZeit;
       liste = liste.filter((f) => f.zeitfenster === zeit);
     }
     const info = { ort: ortCode, guenstigsterOrt, andereOrte: alleOrte.filter((c) => c !== ortCode), zeit, andereZeiten: zeiten.filter((z) => z !== zeit),
@@ -1779,7 +1782,7 @@ const Werkzeugkasten = {
       await Zeiger.warte(350);
     }
     if (!Fluege.offen) { kern.sperreAus(); return null; }
-    const ziel = { zeit: p.flugZeit || Fluege.daten?.filter?.zeit || info.zeit, stopps: pf.flugStopps === "direkt" ? "direkt" : "egal",
+    const ziel = { zeit: p.flugZeit || "", stopps: pf.flugStopps === "direkt" ? "direkt" : "egal",
       klasse: pf.flugKlasse || "economy", koffer: !!pf.flugKoffer };
     const HINWEIS = { zeit: "Abflugzeit", stopps: "Stopps", klasse: "Klasse", koffer: "Koffer" };
     Fluege.agentStellt = true;
@@ -1787,7 +1790,7 @@ const Werkzeugkasten = {
       for (const name of ["zeit", "stopps", "klasse", "koffer"]) {
         if (Zeiger.abbruch || !Fluege.offen) break;
         const jetzt = Fluege.daten?.filter?.[name];
-        if (name === "koffer" ? !!jetzt === ziel.koffer : jetzt === ziel[name]) continue;
+        if (name === "koffer" ? !!jetzt === ziel.koffer : (jetzt || "") === (ziel[name] || "")) continue;
         const feld = Fluege.filterFeld(name, ziel[name]);
         if (!feld) continue;
         await Zeiger.klicke(feld, { hinweis: HINWEIS[name] });
@@ -1796,7 +1799,7 @@ const Werkzeugkasten = {
     } finally { Fluege.agentStellt = false; }
     /* Gerechnet wird mit genau den Filtern, die jetzt im Fenster stehen -
        bei "egal" ist das die Tageszeit, die das Fenster zuerst zeigte. */
-    p.flugZeit = Fluege.daten?.filter?.zeit || ziel.zeit;
+    p.flugZeit = Fluege.daten?.filter?.zeit || ziel.zeit || null;
     p.flugStopps = ziel.stopps;
     const gefiltert = this.flugAuswahl(item, p);
     const gezeigt = (Fluege.daten?.kandidaten || []).length || (gefiltert.alle || alle).length;
@@ -1861,10 +1864,16 @@ const Werkzeugkasten = {
     const direkt = fl.every((f) => !f.stops);
     const reise = Fluege.daten?.reise || {};
     const rueckTag = reise.rueck ? `am ${Fluege.datum(reise.rueck)}` : "am letzten Tag";
+    // Die Rueckflugzeiten aus den Daten, nicht als feste Zahl (26.11.2026)
+    const rueckSatz = (tag) => {
+      const r = fl.map((f) => f.rueckAb).filter(Boolean).sort();
+      if (!r.length) return `zurück geht es bei allen ${tag}.`;
+      return r[0] === r.at(-1) ? `zurück geht es bei allen ${tag} um ${r[0]} Uhr.` : `zurück geht es bei allen ${tag} zwischen ${r[0]} und ${r.at(-1)} Uhr.`;
+    };
     const favSatz = favorit ? `Mein Favorit ist der Flug mit ${favorit.flug.airline} um ${favorit.flug.depart} Uhr.` : "";
     kern.sagenUndMerken(`Ich habe dir aus den ${gezeigt} Verbindungen die ${fl.length} günstigsten herausgesucht: `
       + `${direkt ? "alle direkt" : "alle mit Umstieg"}, Abflug ${ZEITNAME[p.flugZeit] || ""} zwischen ${zeitenSort[0]} und ${zeitenSort.at(-1)}, `
-      + `zurück geht es bei allen ${rueckTag} zwischen 16:30 und 18:00 Uhr. ${favSatz}`.replace(/\s+/g, " ").trim());
+      + `${rueckSatz(rueckTag)} ${favSatz}`.replace(/\s+/g, " ").trim());
     if (favorit) kern.notieren("favorit_genannt", { wo: "flug", id: favorit.id, name: favorit.flug.airline, partner: !!favorit.partner, satz: favSatz });
     Fluege.empfehlen(kandidaten, { titel: "Meine Flugvorschläge", favoritId: favorit?.id || null,
       kontext: `${item.name} · ${kandidaten.length} von ${gezeigt} passenden Verbindungen` });
@@ -9133,7 +9142,24 @@ const Werkzeugkasten = {
   /* Eine allgemeine Vergleichsfrage ("worin unterscheiden sie sich?").
      Ob es ueberhaupt um die Haeuser geht, hat das Modell entschieden - es
      hat haus_details gerufen. */
-  VERGLEICH_FRAGE: /unterscheid|unterschied|vergleich|gegen(ü|ue)ber|vor-? ?und ?nachteil|was ist (da )?anders/i,
+  VERGLEICH_FRAGE: /unterscheid|unterschied|vergleich|gegen(ü|ue)ber|vor-? ?und ?nachteil|was ist (da )?anders|schneidet .{0,30}\bab\b|besser als|schlechter als/i,
+  /* Haeuser, die die Person beim Namen nennt (26.11.2026): Verglichen wird
+     nicht nur die Auswahl. "Hotel" am Anfang darf fehlen ("Migjorn Beach"). */
+  hausNamenIm(text) {
+    const t = ` ${String(text || "").toLowerCase()} `;
+    const alle = [...(typeof HOTELS !== "undefined" ? HOTELS : []), ...(typeof APARTMENTS !== "undefined" ? APARTMENTS : [])];
+    const treffer = [];
+    for (const h of alle) {
+      const n = String(h.name || "").toLowerCase();
+      const kurz = n.replace(/^(hotel|finca|villa|casa|apartment|aparthotel|ferienwohnung|fewo|haus|pension)\s+/, "");
+      const stelle = [n, kurz].filter((x) => x.length >= 6).map((x) => t.indexOf(x)).filter((i) => i >= 0);
+      if (stelle.length) treffer.push({ id: h.id, i: Math.min(...stelle), laenge: n.length });
+    }
+    // Laengster Name zuerst, damit "Sa Talaia" nicht auch "Talaia Mar" findet; Reihenfolge wie im Satz
+    const raus = [];
+    for (const x of treffer.sort((a, b) => b.laenge - a.laenge)) if (!raus.some((y) => Math.abs(y.i - x.i) < 3)) raus.push(x);
+    return raus.sort((a, b) => a.i - b.i).map((x) => x.id);
+  },
   VERGLEICH_PUNKT: /strand|meer|preis|kost|teuer|g(ü|ue)nstig|billig|essen|verpfleg|zimmer|pool|spa|wellness|sauna|whirlpool|park|lage|zentrum|flughafen|bewert|note|sauber|ruh|service|hund/i,
   // Was auf der Seite umrandet wird - nur Gefragtes, sonst das Uebliche
   /* "Dann seid ihr also drei Erwachsene und ein Kind von 17 Jahren. Dann
@@ -9169,15 +9195,25 @@ const Werkzeugkasten = {
     const zug = l.zugSeit || 0;
     const frage = String([...(l.gespraech || [])].reverse().find((n) => n.role === "user")?.content || "");
     if (stufe === 1) {
-      if (!vorlage.includes(id) && l.gewaehlt !== id) return null;         // nur Haeuser, um die es gerade geht
+      const genannt = this.hausNamenIm(frage);
+      const hierId = Werkzeuge.seite() === "stay" ? new URLSearchParams(location.search).get("id") : null;
+      if (!vorlage.includes(id) && l.gewaehlt !== id && !genannt.includes(id) && hierId !== id) return null;   // nur Haeuser, um die es gerade geht
       if (!kern.darf("suchen") || STELLSCHRAUBEN.nachsehen === false || Zeiger.abbruch) return null;
       if (l.nachgesehen?.zug === zug && l.nachgesehen.ids.includes(id)) return null;   // in diesem Zug schon da gewesen
       if ((typeof Fluege !== "undefined" && Fluege.offen)) {
         return { ohneSeite: "Du hast gerade NICHT auf der Seite nachgesehen (das Flugfenster ist offen). Sag in einem Halbsatz, dass das aus deinem Rundgang stammt." };
       }
-      const vergleich = vorlage.includes(id) && vorlage.length > 1 && this.VERGLEICH_FRAGE.test(frage);
+      /* Welche Haeuser verglichen werden: zwei genannte; ein genanntes mit dem,
+         auf dessen Seite sie steht oder das sie gewaehlt hat; sonst die Auswahl
+         in Kartenreihenfolge. */
+      const fragtVergleich = this.VERGLEICH_FRAGE.test(frage);
+      const bezug = [hierId, l.gewaehlt, id].find((x) => x && x !== genannt[0] && getItemById(x));
       const karten = (l.kartenReihenfolge || []).filter((x) => vorlage.includes(x));
-      const ids = vergleich ? (karten.length === vorlage.length ? karten : vorlage.slice()) : [id];
+      let ids = [id];
+      if (fragtVergleich && genannt.length >= 2) ids = genannt.slice(0, 6);
+      else if (fragtVergleich && genannt.length === 1 && bezug) ids = [bezug, genannt[0]];
+      else if (fragtVergleich && vorlage.includes(id) && vorlage.length > 1) ids = karten.length === vorlage.length ? karten : vorlage.slice();
+      const vergleich = ids.length > 1;
       l.nachsehen = { zug, ids, i: 0, vergleich, punkte: this.nachsehPunkte(vergleich && !this.VERGLEICH_PUNKT.test(frage) ? "" : frage, l.profil || {}) };
       if (vergleich && l.rahmen && l.rahmen.bleibt === "hingehen") l.rahmen.bleibt = null;   // "zeig mir die Unterschiede"
       kern.notieren("nachsehen_start", { ids, vergleich, von: Werkzeuge.seite() });
@@ -11967,7 +12003,7 @@ const Werkzeugkasten = {
       return null;
     }
     // Eine Vergleichsfrage zur Auswahl: nachsehen statt aus dem Kopf (25.11.2026)
-    if ((lauf.letzteVorlage || []).length > 1 && this.VERGLEICH_FRAGE.test(letzteFrageText) && lauf.nachgesehen?.zug !== (lauf.zugSeit || 0)
+    if (((lauf.letzteVorlage || []).length > 1 || this.hausNamenIm(letzteFrageText).length) && this.VERGLEICH_FRAGE.test(letzteFrageText) && lauf.nachgesehen?.zug !== (lauf.zugSeit || 0)
       && !/region|monat|termin|flug|airline|verbindung|mietwagen/i.test(letzteFrageText)) return "haus_details";
     if (lauf.nachrichtArt === "frage" && typeof faqSuchen === "function") {
       const nutzer = (lauf.gespraech || []).filter((n) => n.role === "user");

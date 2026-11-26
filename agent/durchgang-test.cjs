@@ -3247,8 +3247,9 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     const pr = { flug: true, flugAb: "Frankfurt", erwachsene: 2, kinder: 0 };
     const auswahl = (n, extra = {}) => { try { return FL ? WK.flugAuswahl(it, { ...pr, ...extra }, { anzahl: n }) : []; } catch { return []; } };
     const drei = auswahl(3);
-    pruefe("Flugwahl: die Liste zeigt die gefilterte Zelle (eine Tageszeit, alle Stopps: 20)", (drei.alle || []).length, 20);
-    pruefe("Flugwahl: nur direkt -> 10 in der Liste, alle direkt", [(auswahl(3, { flugStopps: "direkt" }).alle || []).length, (auswahl(3, { flugStopps: "direkt" }).alle || []).every((k) => !k.flug.stops)], [10, true]);
+    pruefe("Flugwahl: ohne Wunsch alle Tageszeiten (26.11.2026: nichts vorausgewaehlt, 60)", (drei.alle || []).length, 60);
+    pruefe("Flugwahl: mit Wunsch eine Tageszeit (20)", (auswahl(3, { flugZeit: "frueh" }).alle || []).length, 20);
+    pruefe("Flugwahl: nur direkt -> 30 in der Liste, alle direkt", [(auswahl(3, { flugStopps: "direkt" }).alle || []).length, (auswahl(3, { flugStopps: "direkt" }).alle || []).every((k) => !k.flug.stops)], [30, true]);
     const minuten = (u) => { const [h, m] = String(u).split(":").map(Number); return h * 60 + m; };
     const gut46 = [2, 4, 5, 6].map((n) => {
       const k = auswahl(n);
@@ -3257,7 +3258,7 @@ const liesReisende = async (text, felder, urteil = "ja") => {
         && Math.max(...ab) - Math.min(...ab) <= 80 && !k.slice(1).some((x) => x.preis <= k[0].preis);
     });
     pruefe("Flugwahl: 2, 4, 5, 6 Empfehlungen - gleicher Anfang, enge Zeiten, die erste am guenstigsten", gut46, [true, true, true, true]);
-    pruefe("Flugwahl: Zahlen fuer die Filterspalte", [drei.info?.zahlen?.zeit?.frueh, drei.info?.zahlen?.stopps?.direkt, drei.info?.zahlen?.stopps?.egal], [20, 10, 20]);
+    pruefe("Flugwahl: Zahlen fuer die Filterspalte", [drei.info?.zahlen?.zeit?.frueh, drei.info?.zahlen?.stopps?.direkt, drei.info?.zahlen?.stopps?.egal], [20, 30, 60]);
     // Klasse und Koffer aendern nur den Preis, nicht die Rangfolge
     const biz = auswahl(3, { flugKlasse: "business", flugKoffer: true });
     pruefe("Flugwahl: Business mit Koffer - dieselben drei, teurer um Faktor 1,8 plus Koffer",
@@ -3317,8 +3318,8 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     const versuch = (f) => { try { return f(); } catch { return "fehler"; } };
     pruefe("F2: Flugpaket zur Ferienwohnung", versuch(() => !!FL.paket(wohnung, 2)), true);
     // Seit dem Flugfilter (22.11.2026) 20 in der Liste: eine Tageszeit, alle Stopps
-    pruefe("F2: Flugwahl in der Kasse auch zur Ferienwohnung (3 Empfehlungen, 20 in der Liste)",
-      versuch(() => { const k = WK.flugAuswahl(wohnung, prW); return [k.length, (k.alle || []).length]; }), [3, 20]);
+    pruefe("F2: Flugwahl in der Kasse auch zur Ferienwohnung (3 Empfehlungen, 60 in der Liste)",
+      versuch(() => { const k = WK.flugAuswahl(wohnung, prW); return [k.length, (k.alle || []).length]; }), [3, 60]);
     /* Am Quelltext, nicht am Aufruf: `Auswahl.reisepreis` lief in diesem
        Test schon, bevor components.js geladen war, und Node haelt `Flug`
        danach dort fuer undefiniert (eine frische Kopie derselben Funktion

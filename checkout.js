@@ -198,22 +198,28 @@ const Kasse = {
        die Person einen Filter, wird er neu bestimmt (und protokolliert). */
     const partnerFuer = (a) => (typeof Studie !== "undefined" && Studie.partnerflug ? Studie.partnerflug(a.map((k) => k.id)) : null);
     let partnerId = partnerFuer(auswahl);
-    const mitPartner = (a) => { const pid = partnerFuer(a); return a.alle.map((k) => ({ ...k, partner: k.id === pid })); };
+    /* Das Partner-Etikett steht erst auf den Empfehlungen des Agenten
+       (26.11.2026, Ben: "erst dann gezeigt werden, wenn der Agent die 3
+       Auswahlmoeglichkeiten bereitstellt, damit das auch einheitlich ist") -
+       wie bei den Haeusern, die in der Trefferliste auch keins tragen.
+       Bestimmt wird der Partner trotzdem: Die eigene Wahl wird mit ihm
+       verglichen (flug_gewaehlt_selbst). */
+    const mitPartner = (a) => a.alle.map((k) => ({ ...k, partner: false }));
     const alle = mitPartner(auswahl);
     const erster = alle[0].flug;
     const info = auswahl.info || {};
     const kontextFuer = (n, f) => `${n} Verbindungen ab ${f.from} nach ${f.to} · Hin- und Rückflug`;
     // Filter der Spalte: Tageszeit und Stopps filtern, Klasse und Koffer aendern den Preis
-    const filter = { zeit: info.zeit || null, stopps: info.stopps || "egal", klasse: p.flugKlasse || fs.klasse || "economy",
+    const filter = { zeit: p.flugZeit || null, stopps: info.stopps || "egal", klasse: p.flugKlasse || fs.klasse || "economy",
       koffer: p.flugKoffer ?? !!fs.koffer, zahlen: info.zahlen || null };
     const neuFiltern = (f) => {
-      const q = { ...p, flug: true, flugZeit: f.zeit, flugStopps: f.stopps, flugKlasse: f.klasse, flugKoffer: !!f.koffer };
+      const q = { ...p, flug: true, flugZeit: f.zeit || null, flugStopps: f.stopps, flugKlasse: f.klasse, flugKoffer: !!f.koffer };
       let a = [];
       try { a = Werkzeugkasten.flugAuswahl(entry, q); } catch { a = []; }
       if (!a.alle?.length) return null;
-      Object.assign(p, { flugZeit: f.zeit, flugStopps: f.stopps, flugKlasse: f.klasse, flugKoffer: !!f.koffer });
+      Object.assign(p, { flugZeit: f.zeit || null, flugStopps: f.stopps, flugKlasse: f.klasse, flugKoffer: !!f.koffer });
       partnerId = partnerFuer(a);
-      return { kandidaten: mitPartner(a), filter: { zahlen: a.info?.zahlen || null, zeit: a.info?.zeit || f.zeit },
+      return { kandidaten: mitPartner(a), filter: { zahlen: a.info?.zahlen || null, zeit: a.info?.zeit || f.zeit || null },
         kontext: kontextFuer(a.alle.length, a.alle[0].flug) };
     };
     const zeit = typeof Reisedaten !== "undefined" ? Reisedaten.roh() : { von: "", bis: "" };

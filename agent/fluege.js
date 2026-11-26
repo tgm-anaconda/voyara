@@ -119,6 +119,7 @@ const Fluege = {
     return `
       <aside class="filter-panel flug-spalte" aria-label="Flugfilter">
         <div class="filter-group"><h4>Abflug Hinflug</h4>
+          ${radio("zeit", "", "Alle Tageszeiten", !f.zeit, (z.zeit?.frueh || 0) + (z.zeit?.mittag || 0) + (z.zeit?.abend || 0))}
           ${radio("zeit", "frueh", "Morgens", f.zeit === "frueh", z.zeit?.frueh)}
           ${radio("zeit", "mittag", "Mittags", f.zeit === "mittag", z.zeit?.mittag)}
           ${radio("zeit", "abend", "Abends", f.zeit === "abend", z.zeit?.abend)}
@@ -233,7 +234,7 @@ const Fluege = {
     // Die Person aendert einen Filter: Ihre eigenen Wuensche gelten auch fuer den Agenten
     if (durch === "person" && d.kern?.lauf) {
       const p = (d.kern.lauf.profil ||= {});
-      if (name === "zeit") p.flugZeit = wert;
+      if (name === "zeit") { if (wert) { p.flugZeit = wert; delete p.flugZeitEgal; } else { delete p.flugZeit; p.flugZeitEgal = true; } }
       if (name === "stopps") p.flugStopps = wert;
       if (name === "klasse") p.flugKlasse = wert;
       if (name === "koffer") p.flugKoffer = !!wert;
