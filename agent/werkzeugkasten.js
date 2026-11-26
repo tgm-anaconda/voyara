@@ -2973,13 +2973,35 @@ const Werkzeugkasten = {
   },
 
   // Einen Betrag aus dem Satz lesen: "5000", "5.000 Euro", "5000€", "ca. 3500"
+  /* Welche Zahl ist der Betrag? (26.11.2026)
+     ------------------------------------------------------------------
+     Bis hierher galt die LETZTE Zahl der Nachricht. Im Reihenfolge-Test
+     wurde so aus "hoechstens 250 pro Nacht, Anreise am 10. Januar"
+     "hoechstens 10 Euro pro Nacht" - genauso die 9 Naechte und das Alter 6.
+     Jetzt zaehlt eine Zahl nicht, wenn sie erkennbar etwas anderes ist
+     (Tag, Naechte, Jahre, Grad, Personen, Uhrzeit). Hat eine Zahl einen
+     Preisbezug (Euro, pro Nacht, hoechstens, Budget), gewinnt sie. Bleiben
+     ohne Bezug mehrere uebrig, ist es nicht eindeutig - dann null. */
   betragAusText(text) {
     const t = String(text == null ? "" : text).toLowerCase();
-    const treffer = [...t.matchAll(/(\d{1,3}(?:[.\s]\d{3})+|\d+)(?:\s*(?:€|euro|eur\b))?/g)]
-      .map((m) => parseInt(String(m[1]).replace(/[^\d]/g, ""), 10))
-      .filter((n) => Number.isFinite(n) && n > 0);
-    if (!treffer.length) return null;
-    return treffer[treffer.length - 1];
+    const MON = "januar|jan|februar|feb|märz|maerz|mär|april|apr|mai|juni|jun|juli|jul|august|aug|september|sept|sep|oktober|okt|november|nov|dezember|dez";
+    const kand = [];
+    for (const m of t.matchAll(/(\d{1,3}(?:[.\s]\d{3})+(?![.\d])|\d+)/g)) {
+      const n = parseInt(String(m[1]).replace(/[^\d]/g, ""), 10);
+      if (!Number.isFinite(n) || n <= 0) continue;
+      const vor = t.slice(Math.max(0, m.index - 28), m.index), nach = t.slice(m.index + m[1].length, m.index + m[1].length + 24);
+      const anderes = new RegExp(`^\\.?\\s*(${MON})\\b|^\\.\\s*\\d{1,2}\\b|^\\.?\\s*(n(ä|ae)chte?|tage?n?\\b|wochen?|jahre?|j\\.|grad|°|uhr|personen|erwachsene|kinder|leute|zimmer|sterne?|meter|km\\b|m\\b|minuten|stunden)`).test(nach)
+        || /\b(am|ab dem|vom|bis zum|den|der)\s*$/.test(vor) && /^\.?\s*($|[,;]|\s)/.test(nach) && /\b(am|ab dem|vom|bis zum)\s*$/.test(vor)
+        || /\b(ist|sind|alt|alter)\s*$/.test(vor);
+      if (anderes) continue;
+      const bezug = /^\s*(€|euro|eur\b|,-|pro (nacht|person|tag|woche)|die nacht|je nacht|insgesamt|gesamt|für (alles|alle|die reise))/.test(nach)
+        || /(höchstens|hoechstens|max\.?|maximal|bis|unter|budget|preis|ausgeben|grenze|etwa|so|um die|rund)\s*$/.test(vor);
+      kand.push({ n, bezug });
+    }
+    if (!kand.length) return null;
+    const mit = kand.filter((k) => k.bezug);
+    if (mit.length) return mit[mit.length - 1].n;
+    return kand.length === 1 ? kand[0].n : null;
   },
 
   /* Eine eigene Aussage des Modells ueber das Angebot.
@@ -3490,6 +3512,7 @@ const Werkzeugkasten = {
       case "verpflegung": return { ohne: "Ohne Verpflegung", fruehstueck: "Frühstück", halb: "Halbpension", voll: "Vollpension", ai: "All Inclusive" }[w] || String(w);
       case "maxPreis": return `Bis ${w} € pro Nacht`;
       case "budgetGesamt": return `Bis ${w} € insgesamt`;
+      case "typ": return w === "apartment" ? "Eine Ferienwohnung" : w === "hotel" ? "Ein Hotel" : String(w);
       case "anreise": { const d = String(w).match(/-(\d{2})-(\d{2})$/); return d ? `${+d[2]}. ${typeof MONATSNAMEN !== "undefined" ? MONATSNAMEN[+d[1] - 1] : d[1]}` : String(w); }
       default: return String(w);
     }
@@ -4101,8 +4124,10 @@ const Werkzeugkasten = {
       const bsp = tage.length > 1 ? tage[1] : (tage[0] || null);
       return {
         stufe: 3,
-        satz: `Einen Tag im ${monat} konnte ich aus deiner Antwort nicht lesen. `
-          + `Welcher soll es sein${bsp ? `, zum Beispiel der ${bsp}` : ""}?`,
+        // Nur wer auf die Datumsfrage geantwortet hat, hoert "konnte ich nicht lesen" (26.11.2026)
+        satz: (lauf.frageBeantwortet === "nein" || lauf.nachrichtArt === "frage"
+          ? `An welchem Tag im ${monat} soll es losgehen?`
+          : `Einen Tag im ${monat} konnte ich aus deiner Antwort nicht lesen. Welcher soll es sein?`),
         chips: tage.length ? [...tage.slice(0, 3), "Ich bin flexibel"] : ["Ich bin flexibel"],
       };
     }
@@ -4303,6 +4328,11 @@ const Werkzeugkasten = {
         weg.forEach((f) => delete a[f]);
         if (weg.length) kern.notieren("datum_wartet_auf_monat", { felder: weg });
       }
+      /* Das Netz (26.11.2026): was das Modell nach allen bewussten
+         Pruefungen (Sperre, Chip, Absprache, Grundlage) noch schickt. Fehlt
+         ein solcher Wert am Ende im Stand, obwohl er woertlich in der
+         Nachricht steht, wird nachgefragt statt still weitergemacht. */
+      const netzRoh = Object.fromEntries(Werkzeugkasten.NETZ_FELDER.filter((f) => a[f] != null).map((f) => [f, a[f]]));
       if (typeof Absicherung !== "undefined" && Absicherung.lesung) await Absicherung.nachlesenAbwarten(a, kern);
       /* Das Letzte zaehlt (25.11.2026): "ach doch, Mallorca kann rein" hebt
          einen frueheren Ausschluss auf - wenn die Nachricht die Region nennt
@@ -4909,7 +4939,14 @@ const Werkzeugkasten = {
       // `spanne` wird weiter oben gelesen, vor dem Ziel - siehe dort.
       const spanneZahl = spanne && a.mindestGrad != null
         && [spanne.weiter, spanne.grenze, ...(spanne.stufen || [])].includes(Math.round(Number(a.mindestGrad)));
-      if (a.mindestGrad != null && (gesagt(/grad|°/i, 1) || spanneZahl || gradNackt === a.mindestGrad
+      /* Regel A1 (26.11.2026, Ablehnungs-Inventar): "lieber erst ab 20",
+         "darf auch 15 sein" - steht eine Temperatur-Richtung und die Zahl
+         woertlich in der Nachricht, ist es die Gradgrenze. Vorher fiel sie
+         ohne das Wort "Grad" still weg (18 von 30 Faellen). */
+      const gradRichtung = a.mindestGrad != null && ["warm", "kalt"].includes(a.richtung || p.richtung)
+        && new RegExp(`(^|[^0-9])${Math.round(Number(a.mindestGrad))}([^0-9]|$)`).test(Werkzeugkasten.zusageTeil(kern.lauf.gespraech.filter((n) => n.role === "user").slice(-1)[0]?.content || "", "ziel"))
+        && !/€|euro|n(ä|ae)cht|tage?\b|woche|person|leute|erwachsen|kind|zimmer|uhr|stern|meter|km\b|jahre|wir sind|zu (zweit|dritt|viert)/i.test(kern.lauf.gespraech.filter((n) => n.role === "user").slice(-1)[0]?.content || "");
+      if (a.mindestGrad != null && (gesagt(/grad|°/i, 1) || spanneZahl || gradNackt === a.mindestGrad || gradRichtung
         || (spanneEigen != null && spanneEigen === Math.round(Number(a.mindestGrad))))) {
         const g = Math.round(Number(a.mindestGrad));
         if (Number.isFinite(g) && g >= -20 && g <= 45) {
@@ -5136,9 +5173,14 @@ const Werkzeugkasten = {
         // Das Modell urteilt, das Muster faengt auf, was es uebersieht
         // "ne" auf "Hast du einen bestimmten Monat im Kopf?" (03.10.2026)
         const zeitGefragt = [kern.lauf.gefragt, kern.lauf.zuletztGefragt].includes("zeit");
-        const abgegeben = a.monatUeberlassen === true
+        /* "Verpflegung ist egal" gibt nicht den Monat ab (26.11.2026,
+           Reihenfolge-Test): Das "egal" muss sich auf die Zeit beziehen. */
+        const THEMA_EGAL = /(verpflegung|essen|preis|budget|geld|hotel|ferienwohnung|unterkunft|art\b|flug|flughafen|region|ziel|land|ausstattung|bewertung|strand|zimmer|dauer|n(ä|ae)chte|klasse|temperatur|wetter)[^.!?]{0,25}\b(egal|gleich|offen)\b|\b(egal|gleich|offen)\b[^.!?]{0,12}\b(verpflegung|essen|preis|budget|hotel|ferienwohnung|flug|region|ziel|ausstattung|bewertung|strand|zimmer|dauer|klasse)/i;
+        const ZEIT_WORT = /monat|wann|zeit|jahreszeit|termin|datum|sommer|winter|herbst|fr(ü|ue)hling/i;
+        const andereEgal = gesagt(THEMA_EGAL, 1) && !gesagt(ZEIT_WORT, 1);
+        const abgegeben = !andereEgal && (a.monatUeberlassen === true
           || (zeitGefragt && !p.monat && gesagt(/^\s*(ne+|nein|n[öo]e?|nicht wirklich|eigentlich nicht|noch nicht)\b/i, 1))
-          || gesagt(/egal|gleich|such du|suchst du|du entscheid|dein vorschlag|nimm du|nimm einfach|weißt du|weisst du|was (du )?meinst|keine ahnung|weiß nicht|weiss nicht|wie du meinst|aussuchen|überlass|ueberlass|meisten|g[üu]nstigst|billigst|besten preis|beste[nr]? monat|am wenigsten|wo.*(frei|verf[üu]gbar|auswahl|m[öo]glichkeit)/i, 1);
+          || gesagt(/egal|gleich|such du|suchst du|du entscheid|dein vorschlag|nimm du|nimm einfach|weißt du|weisst du|was (du )?meinst|keine ahnung|weiß nicht|weiss nicht|wie du meinst|aussuchen|überlass|ueberlass|meisten|g[üu]nstigst|billigst|besten preis|beste[nr]? monat|am wenigsten|wo.*(frei|verf[üu]gbar|auswahl|m[öo]glichkeit)/i, 1));
         /* Ohne genannte Jahreszeit die naechsten vier Monate.
            --------------------------------------------------------------
            "Such du den guenstigsten Monat aus" ohne weitere Angabe waere
@@ -6317,6 +6359,7 @@ const Werkzeugkasten = {
         }
       }
       Werkzeugkasten.richtungNachziehen(kern, p);
+      Werkzeugkasten.netzPruefen(kern, p, netzRoh);
       const wunschOffen = kern.lauf.wunschOhneFeld || null;
       kern.lauf.wunschOhneFeld = null;
       return { ergebnis: { gemerkt: geaendert.length ? geaendert : "nichts Neues", stand: kern.standKurz(),
@@ -6398,7 +6441,8 @@ const Werkzeugkasten = {
       const wo = typeof Werkzeuge !== "undefined" ? Werkzeuge.seite() : null;
       if (wo === "checkout" || wo === "stay") {
         const letzte = [...(kern.lauf.gespraech || [])].reverse().find((n) => n.role === "user")?.content || "";
-        const willNeu = /andere[nrs]? (haus|häuser|hotel|unterkunft|vorschläge|auswahl)|neue suche|nochmal suchen|zurück zur liste|weitere vorschläge|was anderes/i.test(String(letzte));
+        const willNeu = !!kern.lauf.neuSuchen || /andere[nrs]? (haus|häuser|hotel|unterkunft|vorschläge|auswahl)|neue suche|neu suchen|nochmal suchen|zurück zur liste|weitere vorschläge|was anderes/i.test(String(letzte));
+        kern.lauf.neuSuchen = false;
         if (!willNeu) {
           kern.notieren("suche_am_formular_abgelehnt", { wo, satz: String(letzte).slice(0, 120) });
           return { ergebnis: { hinweis: `Du stehst gerade ${wo === "checkout" ? "im Buchungsformular" : "auf der Hausseite"}, `
@@ -8498,9 +8542,14 @@ const Werkzeugkasten = {
             pf.zimmerTyp && st.zimmer && st.zimmer !== pf.zimmerTyp ? "zimmer" : null,
             pf.verpflegung && st.board && st.board !== pf.verpflegung ? "verpflegung" : null,
             personen && st.belegung && st.belegung.personen !== personen ? "gruppe" : null,
+            // Dauer und Flug (26.11.2026, Spaet-Test: "doch nur 14 Naechte", "doch ohne Flug" blieben in der Kasse stehen)
+            pf.naechte && st.naechte && st.naechte !== pf.naechte ? "dauer" : null,
+            pf.flug === false && st.flugMit ? "flug" : null,
+            pf.flug === true && st.flugMit === false && st.flugMoeglich !== false ? "flug" : null,
           ].filter(Boolean);
           if (!abweichung.length) return this.werkzeuge.buchung_vorbereiten.call(this, a, kern, 3);
           kern.notieren("kasse_abweichung", { id: a.id, was: abweichung });
+          if (abweichung.includes("flug") && typeof Flug !== "undefined") { try { Flug.set({ mit: !!pf.flug, ...(pf.flug ? {} : { flugId: null }) }); } catch { /* ohne Flugmodul */ } }
           kern.sperreAn();
           await Zeiger.warte(250);
           location.href = kern.linkZu(a.id, item.name).href;
@@ -10531,6 +10580,46 @@ const Werkzeugkasten = {
   },
 
   // Einen verworfenen Wert merken, damit der Waechter ihn vorlegen kann
+  /* Regel "nie still verwerfen" (26.11.2026, Ben): "Wenn das Modell etwas
+     meldet, was thematisch richtig ist, darf das nie einfach nur ignoriert
+     werden ... dann muss immer eine Rueckfrage kommen." Gilt fuer einfache
+     Felder, deren Wert man in der Nachricht wiederfindet. Die Rueckfrage
+     stellt bestaetigungRueckfrage ("Habe ich dich richtig verstanden: ...?"). */
+  NETZ_FELDER: ["monat", "naechte", "mindestGrad", "maxPreis", "budgetGesamt", "flugAb", "flugKlasse", "verpflegung", "typ", "flug", "erwachsene", "kinder"],
+  NETZ_WORT: {
+    flugKlasse: { economy: /economy|eco\b/i, premium: /premium/i, business: /business/i },
+    verpflegung: { ohne: /ohne (verpflegung|essen)|selbstversorg/i, fruehstueck: /fr(ü|ue)hst(ü|ue)ck/i, halb: /halbpension|\bhp\b/i, voll: /vollpension|\bvp\b/i, ai: /all[\s-]?in/i },
+    typ: { hotel: /hotel/i, apartment: /ferienwohnung|apartment|wohnung|fewo/i },
+    flug: { true: /mit flug|flug dazu|fliegen/i, false: /ohne flug|kein(en)? flug|nur (das |die )?(hotel|unterkunft)/i },
+  },
+  netzPruefen(kern, p, roh) {
+    if (!roh || !Object.keys(roh).length) return;
+    const l = kern.lauf;
+    if (l.datumWiderspruch || l.spanneOffen) return;
+    const text = String((l.gespraech || []).filter((n) => n.role === "user").slice(-1)[0]?.content || "");
+    const MON = ["januar", "februar", "m(ä|ae)rz", "april", "mai", "juni", "juli", "august", "september", "oktober", "november", "dezember"];
+    const steht = (f, w) => {
+      if (f === "monat") return new RegExp(`\\b(${MON[w - 1]})`, "i").test(text);
+      if (typeof w === "number") return new RegExp(`(^|[^0-9])${w}([^0-9]|$)`).test(text);
+      if (f === "flugAb") return new RegExp(String(w).replace(/ü/g, "(ü|ue)"), "i").test(text);
+      const r = this.NETZ_WORT[f]?.[String(w)];
+      return !!r && r.test(text);
+    };
+    for (const [f, w] of Object.entries(roh)) {
+      if (JSON.stringify(p[f] ?? null) === JSON.stringify(w)) continue;
+      if (f === "maxPreis" && p.budgetGesamt === w) continue;
+      if (f === "budgetGesamt" && p.maxPreis === w) continue;
+      if (!steht(f, w)) continue;
+      // Die Zahl muss auch die richtige Sache sein (sonst fragt der Kern Unsinn: "wir sind 20 Leute" -> 20 Grad?)
+      if (f === "mindestGrad" && /leute|person|erwachsen|kind|n(ä|ae)cht|€|euro|jahre|zimmer/i.test(text)) continue;
+      if ((f === "maxPreis" || f === "budgetGesamt") && this.betragAusText(text) !== w) continue;
+      if (f === "naechte" && (!(w >= 1 && w <= 60) || (!/n(ä|ae)cht|tag|woche/i.test(text) && !(/^\s*\d+\s*$/.test(text) && [l.gefragt, l.gefragtVorher].includes("dauer"))))) continue;
+      if (f === "maxPreis" && !(w >= 10 && w <= 5000)) continue;
+      this.merkeVerworfen(kern, f, w);
+      kern.notieren("netz_verworfen", { feld: f, wert: w });
+    }
+  },
+
   merkeVerworfen(kern, feld, wert) {
     if (wert == null) return;
     (kern.lauf.verworfenWert ||= {})[feld] = wert;
@@ -10715,6 +10804,27 @@ const Werkzeugkasten = {
           const r = bau(`anreise:${iso}`, `Ihr wollt am ${tag}. ${typeof MONATSNAMEN !== "undefined" ? MONATSNAMEN[p.monat - 1] : ""} anreisen`, { anreise: iso }, "anreise");
           if (r) return r;
         }
+      }
+    }
+    {
+      // Das Netz: einfache Felder (siehe netzPruefen) - zuletzt, damit genauere Rueckfragen vorgehen
+      const jetztN = lauf.zugSeit || lauf.runde || true;
+      for (const f of ["monat", "naechte", "mindestGrad", "maxPreis", "budgetGesamt", "flugAb", "flugKlasse", "verpflegung", "typ", "flug"]) {
+        const w = lauf.verworfenWert?.[f];
+        if (w == null || (lauf.verworfenZug || {})[f] !== jetztN || JSON.stringify(p[f] ?? null) === JSON.stringify(w)) continue;
+        if (lauf.tagUnklar || (lauf.grundlageFrage && lauf.grundlageFrage.zug === lauf.zugSeit) || (lauf.leseKonflikt && lauf.leseKonflikt.zug === lauf.zugSeit)) break;
+        const schl = `netz:${f}:${w}`;
+        if ((lauf.bestaetigtGefragt || {})[schl]) continue;
+        const THEMA = { monat: "zeit", naechte: "dauer", mindestGrad: "ziel", maxPreis: "preis", budgetGesamt: "preis", flugAb: "flugAb", flugKlasse: "flugKlasse", verpflegung: "verpflegung", typ: "art", flug: "flug" };
+        const wort = (f === "mindestGrad" ? `${p.richtung === "kalt" ? "höchstens" : "mindestens"} ${w} Grad` : this.wertWort(f, w))
+          .replace(/^(Ab|Bis|Mit|Ohne|Ein|Eine) /, (x) => x.toLowerCase());
+        const werte = { [f]: w };
+        if (f === "mindestGrad" && typeof Politik !== "undefined") {
+          const th = (Politik.THEMEN || []).find((t) => t.id === p.richtung);
+          if (th) werte.zieleErlaubt = this.regionenFuerRichtung(th, { ...p, mindestGrad: w }, { genau: true });
+        }
+        return { grund: "bestaetigen", schluessel: schl, thema: THEMA[f], satz: `Habe ich dich richtig verstanden: ${wort}?`,
+          chips: ["Ja", "Nein: ..."], wirkung: { Ja: werte, "Nein: ...": {} } };
       }
     }
     return null;

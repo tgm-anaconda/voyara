@@ -142,5 +142,32 @@ const warm = Pol.THEMEN.find((t) => t.id === "warm");
     pruefe("Saison: das Modell soll es einmal erwaehnen", /ausserhalb der Saison/.test(String(sk)) ? "ja" : sk, "ja");
   }
 
+  /* ---------- Netz und Preis (26.11.2026) ---------- */
+  pruefe("Preis: '250 pro Nacht, Anreise am 10. Januar' ist 250", versuch(() => WK.betragAusText("höchstens 250 pro Nacht, Anreise am 10. Januar")), 250);
+  pruefe("Preis: 'Anreise am 10. Januar' ist kein Preis", versuch(() => WK.betragAusText("Anreise am 10. Januar")), null);
+  pruefe("Preis: '... sie ist 6' ist kein Preis", versuch(() => WK.betragAusText("höchstens 250 pro Nacht, unsere Tochter, sie ist 6")), 250);
+  pruefe("Preis: '150' bleibt 150", versuch(() => WK.betragAusText("150")), 150);
+  {
+    const q = { richtung: "warm", monat: 1, vonPerson: { richtung: true, monat: true }, zieleErlaubt: versuch(() => WK.regionenFuerRichtung(warm, { monat: 1 })) };
+    const kk = kern(q, "lieber erst ab 20", "dauer"); kk.lauf.zugSeit = 7;
+    await merke(kk, { frage_beantwortet: "nein", mindestGrad: 20 });
+    pruefe("A1: 'lieber erst ab 20' bei warm kommt an", q.mindestGrad, 20);
+    const q2 = { monat: 1, vonPerson: { monat: true } };
+    const k2 = kern(q2, "lieber ab Bremen", "flugAb"); k2.lauf.zugSeit = 7;
+    versuch(() => WK.netzPruefen(k2, q2, { flugAb: "Bremen" }));
+    const bf = versuch(() => WK.bestaetigungRueckfrage(q2, k2.lauf)) || {};
+    pruefe("Netz: ein verlorener Wert, der in der Nachricht steht, wird nachgefragt", /Habe ich dich richtig verstanden: ab Bremen\?/.test(bf.satz || "") ? "ja" : bf.satz, "ja");
+    const q3 = { richtung: "kalt", monat: 1, vonPerson: {} };
+    const k3 = kern(q3, "wir sind 20 Leute", "reisende"); k3.lauf.zugSeit = 7;
+    versuch(() => WK.netzPruefen(k3, q3, { mindestGrad: 20 }));
+    pruefe("Netz: keine Unsinnsfrage ('20 Leute' sind keine 20 Grad)", k3.lauf.verworfenWert?.mindestGrad ?? null, null);
+  }
+  {
+    const q = { naechte: 7, vonPerson: { naechte: true } };
+    const kk = kern(q, "Verpflegung ist egal", "zeit");
+    await merke(kk, { verpflegungEgal: true });
+    pruefe("F3: 'Verpflegung ist egal' gibt den Monat nicht ab", kk.lauf.jahreszeitFrage ?? null, null);
+  }
+
   console.log(`\n${gut} richtig, ${schlecht} falsch`);
 })();

@@ -866,6 +866,8 @@ const Kern = {
     const w = this.lauf.flugKasse, ist = Flug.get();
     if (!w || (ist.mit === w.mit && (!w.mit || ist.ab === w.ab))) return;
     Flug.set(w.mit ? { mit: true, ab: w.ab, flugId: ist.ab === w.ab ? ist.flugId : null } : { mit: false, flugId: null });
+    // Die Kasse zeigt es auch an (26.11.2026: Haken blieb stehen, obwohl der Flug ab war)
+    try { if (typeof Kasse !== "undefined" && Kasse.zeichnen) Kasse.zeichnen(); } catch { /* egal */ }
     this.notieren("flug_in_kasse", { mit: w.mit, ab: w.ab });
   },
 
@@ -921,7 +923,15 @@ const Kern = {
        den Monat gewechselt. */
     if (typeof Reisedaten !== "undefined" && !Reisedaten.flex?.()) {
       const r = Reisedaten.roh();
-      if (r?.von && r?.bis && (p.von !== r.von || p.bis !== r.bis)) {
+      /* Nur, wenn sich die Seite geaendert hat (26.11.2026). Spaet-Test:
+         "doch nur 14 Naechte" in der Kasse - beim naechsten Zug stand auf
+         der Seite noch der alte Zeitraum, und er ueberschrieb die eben
+         gesagten 14 Naechte. Die Seite gilt, wenn die PERSON dort etwas
+         umgestellt hat, nicht weil der Stand im Gespraech weiter ist. */
+      const sig = r?.von && r?.bis ? `${r.von}|${r.bis}` : null;
+      const seiteNeu = sig !== this.lauf.seitenDaten;
+      if (sig) this.lauf.seitenDaten = sig;
+      if (seiteNeu && r?.von && r?.bis && (p.von !== r.von || p.bis !== r.bis)) {
         p.von = r.von; p.bis = r.bis;
         const n = Math.round((new Date(r.bis) - new Date(r.von)) / 86400000);
         if (n > 0 && n < 60) p.naechte = n;
@@ -1480,8 +1490,11 @@ const Kern = {
       while (alter.length < kinder) alter.push(6);
       href += `&adults=${p0.erwachsene}&children=${kinder}&rooms=${p0.zimmer || 1}${kinder ? `&ages=${alter.join(",")}` : ""}`;
     } else if (typeof Belegung !== "undefined") href = Belegung.anLink(href);
-    if (typeof Reisedaten !== "undefined") href = Reisedaten.anLink(href);
     const p = this.lauf.profil || {};
+    // Feste Daten aus dem Gespraech vor den gespeicherten der Seite (26.11.2026:
+    // "doch nur 14 Naechte" - sonst kam die Kasse mit den alten Daten zurueck)
+    if (p.von && p.bis && !/[?&](from|flex)=/.test(href)) href += `&from=${p.von}&to=${p.bis}`;
+    if (typeof Reisedaten !== "undefined" && !/[?&](from|flex)=/.test(href)) href = Reisedaten.anLink(href);
     if (!/[?&](from|flex)=/.test(href)) {
       if (p.von && p.bis) href += `&from=${p.von}&to=${p.bis}`;
       else if (typeof Werkzeugkasten !== "undefined") {
@@ -1919,6 +1932,7 @@ const Kern = {
     // damit "Mit Koffer" nicht als Kassenwunsch gelesen wird
     this.flugFrageLesen(t);
     if (await this.kasseBedienen(t, opts)) return;
+    this.buchungAmHaus(t);
     if (this.welchesHaus(t, opts)) return;
     if (this.kommaPruefen(t, opts)) return;
     if (this.budgetPruefen(t, opts)) return;
@@ -3083,6 +3097,13 @@ const Kern = {
               this.lauf.alterGefragt = true;
               this.notieren("kinder_erwachsen_rueckfrage", { alter: this.lauf.alterZuHoch });
               kernFrage = { ...kf, thema: "reisende" };
+            }
+            // Aenderung, waehrend ein Haus offen ist: erst bestaetigen, dann umstellen (26.11.2026)
+            const uf = kernFrage ? null : this.umstellRueckfrage();
+            if (uf) {
+              this.lauf.umstellFrage = { id: uf.id, art: uf.art };
+              this.notieren("umstellen_gefragt", { id: uf.id, art: uf.art });
+              kernFrage = { ...uf };
             }
             /* Nachfragen statt still verwerfen (22.11.2026, siehe
                Werkzeugkasten.bestaetigungRueckfrage) - gleich nach der
@@ -5210,6 +5231,93 @@ const Kern = {
   },
   // Ein klarer Auftrag in der Kasse ("such einen Flug fuer mich", "mach du das")
   KASSE_AUFTRAG: /^(?!.*\b(nicht|kein\w*|selbst|selber|ohne|weg|raus|l(ö|oe)sch\w*|storn\w*|warum|wieso)\b)(?=.*(?<![a-zäöüß])((r?aus)?such\w*|find\w*|w(ä|ae)hl\w*|aussuch\w*|raussuch\w*|heraussuch\w*|nimm|buch(e|st|en)?|(ü|ue)bernimm\w*|(ü|ue)bernehm\w*|k(ü|ue)mmer\w*|mach\w*|erledig\w*|f(ü|ue)ll\w*)(?![a-zäöüß]))(?=.*(\bflug\b|\bfl(ü|ue)ge\b|verbindung|formular|buchung|\bdu (das|es)\b|\b(das|es) (bitte )?(du|f(ü|ue)r mich)\b|f(ü|ue)r mich|(ü|ue)bernimm)).{3,90}$/i,
+  /* Buchen und Umstellen auf der Haus- oder Kassenseite (26.11.2026).
+     ------------------------------------------------------------------
+     Spaet-Test: Aenderte die Person in der Kasse etwas ("doch nur zu
+     dritt"), landete es im Stand, die Kasse blieb aber, wie sie war - der
+     Kern wollte neu suchen, und das ist auf dem Formular gesperrt. Und
+     "buch mir das" auf der Hausseite blieb liegen, bis das Modell selbst
+     ein Werkzeug rief.
+     Ben: "Dass klar kommuniziert wird: So wie ich dich verstehe, moechtest
+     du das Haus mit 3 Personen buchen? Soll ich das machen?" Also: Eine
+     Aenderung wird erst bestaetigt, dann umgestellt. Ein ausdrueckliches
+     "buch mir das" fuehrt der Kern selbst aus (der Abschluss braucht ohnehin
+     noch ein Ja). */
+  BUCH_JETZT: /^(?!.*\b(nicht|kein\w*|selbst|selber|warum|wieso|sp(ä|ae)ter|noch nicht)\b)(?=.*(?<![a-zäöüß])(buch\w*|reservier\w*|nehm(e|en) (ich|wir) (das|es|dieses|die|den)|das nehm(e|en)( ich| wir)?)(?![a-zäöüß])).{2,90}$/i,
+  BUCHUNG_FELDER: ["erwachsene", "kinder", "kinderAlter", "naechte", "monat", "anreise", "von", "bis", "flug", "flugAb", "flugKlasse", "verpflegung"],
+  hausAufSeite() {
+    if (typeof Werkzeuge === "undefined" || !["stay", "checkout"].includes(Werkzeuge.seite())) return null;
+    try { return (Werkzeuge.seite() === "checkout" && typeof Kasse !== "undefined" ? Kasse.stand()?.id : null) || new URLSearchParams(location.search).get("id") || null; } catch { return null; }
+  },
+  buchungAmHaus(t) {
+    const l = this.lauf, roh = String(t || "").trim();
+    const id = this.hausAufSeite();
+    const uf = l.umstellFrage;
+    l.umstellFrage = null;
+    if (uf && id === uf.id) {
+      const ja = Werkzeugkasten.abschlussJa(roh) || /^ja\b/i.test(roh) || (uf.art === "umstellen" && this.BUCH_JETZT.test(roh));
+      this.notieren("umstellen_antwort", { art: uf.art, ja });
+      if (ja && uf.art === "neu") { l.neuSuchen = true; l.fortsetzenMit = "suchen"; return; }
+      if (ja) { this.amHausBuchen(id, "umstellen_bestaetigt"); return; }
+      return;
+    }
+    if (!id || !this.BUCH_JETZT.test(roh) || l.abschlussFrage || l.abschlussFaellig || l.zimmerFrage || l.flugFrageOffen) return;
+    // In der Kasse uebernimmt das kasseBedienen; hier nur, wenn dort nichts lief
+    if (l.fortsetzenMit) return;
+    this.amHausBuchen(id, "auftrag_am_haus");
+  },
+  amHausBuchen(id, ausloeser) {
+    const l = this.lauf;
+    if (!this.darf("vorbereiten")) this.freigabeSetzen("vorbereiten", ausloeser);
+    l.gewaehlt = id;
+    l.fortsetzenMit = "buchung_vorbereiten";
+    this.notieren("am_haus_buchen", { id, ausloeser });
+  },
+  // Die Frage nach einer Aenderung, waehrend ein Haus offen ist
+  umstellRueckfrage() {
+    const l = this.lauf, p = l.profil || {};
+    const id = this.hausAufSeite();
+    if (!id || !l.standVorher) return null;
+    let vorher; try { vorher = JSON.parse(l.standVorher); } catch { return null; }
+    const gleich = (f) => JSON.stringify(vorher[f] ?? null) === JSON.stringify(p[f] ?? null);
+    const FILTER = ["typ", "zielId", "zieleAuswahl", "richtung", "mindestGrad", "maxPreis", "budgetGesamt", "ausstattung", "mindestbewertung", "maxStrand", "mindestSterne"];
+    const buchung = this.BUCHUNG_FELDER.filter((f) => !gleich(f));
+    const filter = FILTER.filter((f) => !gleich(f));
+    if (!buchung.length && !filter.length) return null;
+    const item = typeof getItemById === "function" ? getItemById(id) : null;
+    if (!item) return null;
+    const teile = [];
+    if (buchung.some((f) => ["erwachsene", "kinder"].includes(f))) {
+      const e = p.erwachsene ?? 0, k = p.kinder ?? 0;
+      teile.push(`ihr seid jetzt ${e + k === 1 ? "eine Person" : `${e + k} Personen`}${k ? ` (${e} ${e === 1 ? "Erwachsener" : "Erwachsene"}, ${k} ${k === 1 ? "Kind" : "Kinder"})` : ""}`);
+    }
+    if (buchung.includes("naechte") && p.naechte) teile.push(`die Reise dauert ${p.naechte} Nächte`);
+    if (buchung.some((f) => ["monat", "anreise", "von", "bis"].includes(f))) {
+      const an = p.anreise || p.von;
+      teile.push(an ? `die Anreise ist am ${Werkzeugkasten.wertWort("anreise", an)}` : `es geht im ${typeof MONATSNAMEN !== "undefined" && p.monat ? MONATSNAMEN[p.monat - 1] : "neuen Monat"} los`);
+    }
+    if (buchung.includes("flug") || buchung.includes("flugAb")) teile.push(p.flug ? `mit Flug${p.flugAb ? ` ab ${p.flugAb}` : ""}` : "ohne Flug");
+    if (buchung.includes("flugKlasse") && p.flugKlasse) teile.push(`in der ${Werkzeugkasten.wertWort("flugKlasse", p.flugKlasse)}`);
+    if (buchung.includes("verpflegung") && p.verpflegung) teile.push(`mit ${Werkzeugkasten.wertWort("verpflegung", p.verpflegung)}`);
+    for (const f of filter) {
+      if (f === "typ" && p.typ) teile.push(p.typ === "apartment" ? "lieber eine Ferienwohnung" : "lieber ein Hotel");
+      else if ((f === "zielId" || f === "zieleAuswahl") && (p.zielId || (p.zieleAuswahl || []).length)) teile.push(`lieber ${[p.zielId, ...(p.zieleAuswahl || [])].filter(Boolean).map((z) => (typeof ZIEL_NACH_ID !== "undefined" && ZIEL_NACH_ID[z]?.name) || z).join(" oder ")}`);
+      else if (f === "maxPreis" && p.maxPreis) teile.push(`bis ${p.maxPreis} € pro Nacht`);
+      else if (f === "budgetGesamt" && p.budgetGesamt) teile.push(`bis ${p.budgetGesamt} € insgesamt`);
+    }
+    if (!teile.length) return null;
+    let passt = true;
+    try { passt = Werkzeugkasten.katalogTreffer(p, Werkzeugkasten.filterAusStand(p)).some((h) => h.id === id); } catch { passt = true; }
+    const was = teile.length > 1 ? `${teile.slice(0, -1).join(", ")} und ${teile[teile.length - 1]}` : teile[0];
+    if (!passt) {
+      return { grund: "umstellen", art: "neu", id, thema: null, satz: `So wie ich dich verstehe: ${was}. Damit passt ${item.name} nicht mehr zu deinen Angaben. Soll ich mit den neuen Angaben neu suchen?`,
+        chips: ["Ja, neu suchen", "Beim Haus bleiben"], wirkung: null };
+    }
+    if (!buchung.length) return null;      // nur ein Filter, das Haus passt weiter: nichts umzustellen
+    return { grund: "umstellen", art: "umstellen", id, thema: null, satz: `So wie ich dich verstehe: ${was}. Soll ich die Buchung für ${item.name} so umstellen?`,
+      chips: ["Ja, umstellen", "Nein, so lassen"], wirkung: null };
+  },
+
   kasseUebernehmen(ausloeser) {
     const l = this.lauf, p = (l.profil ||= {});
     l.flugUebernahme = "ja";

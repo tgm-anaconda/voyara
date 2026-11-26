@@ -359,9 +359,16 @@ const Flug = {
   get() { return this.lesen(); },
   speichern(s) { try { sessionStorage.setItem(this.SCHLUESSEL, JSON.stringify(s)); } catch { /* egal */ } },
   set(werte) {
-    const s = { ...this.lesen(), ...werte };
+    const vorher = this.lesen();
+    const s = { ...vorher, ...werte };
     if (!this.KLASSEN[s.klasse]) s.klasse = "economy";
     this.speichern(s);
+    /* Jede Aenderung meldet sich (26.11.2026): Stellte der Agent den Flug
+       ab, stand der Haken in der Kasse weiter, weil sie nicht neu
+       gezeichnet wurde. Die Kasse hoert darauf. */
+    if (vorher.mit !== s.mit || vorher.ab !== s.ab || vorher.flugId !== s.flugId) {
+      try { window.dispatchEvent(new CustomEvent("voyara-flug", { detail: s })); } catch { /* ohne Fenster */ }
+    }
     return s;
   },
   flughaefen() {

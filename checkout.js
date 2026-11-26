@@ -682,3 +682,6 @@ document.addEventListener("DOMContentLoaded", () => {
     `<a href="index.html">Startseite</a> › ${isStay() ? `<a href="${hausLink()}">${entry.name}</a>` : `<a href="${listeLink()}">${TYPE_LABELS[entry.type]}</a>`} › <span>Buchung</span>`;
   render();
 });
+
+// Der Flug wurde anderswo umgestellt (Agent, Hausseite): neu zeichnen, damit Haken und Preis stimmen (26.11.2026)
+if (typeof window !== "undefined") window.addEventListener("voyara-flug", () => { try { if (typeof entry !== "undefined" && entry) render(); } catch { /* egal */ } });
