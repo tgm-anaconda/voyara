@@ -19,7 +19,7 @@ const SUITEN = [
   ["Muster", "muster-test.cjs", (r) => r.code === 0, /^\d+\/\d+/m],
   ["Luecken", "luecken-test.cjs", (r) => voll(r.aus, /^(\d+)\/(\d+)/gm), /^\d+\/\d+/m],
   ["Satzbank", "satzbank-test.cjs", (r) => /GESAMT\s+96\s+\d+\s+96\s+\+0\s+96\s+9\/9/.test(r.aus) && /16\/16/.test(r.aus), /GESAMT.*/],
-  ...["durchgang", "befunde", "katalog", "regionsfilter", "tracking", "zweimalzwei", "auswahlregel", "regeln", "leser", "ablehnung"].map((n) => [n, `${n}-test.cjs`, (r) => { const z = zahl(/(\d+) richtig, (\d+) falsch/)(r.aus) || (/(\d+) richtig/.test(r.aus) ? [1, 0] : null); return !!z && z[1] === 0; }, /\d+ richtig.*/]),
+  ...["durchgang", "befunde", "katalog", "regionsfilter", "tracking", "zweimalzwei", "auswahlregel", "regeln", "leser", "ablehnung", "leser-stress", "fehler"].map((n) => [n, `${n}-test.cjs`, (r) => { const z = zahl(/(\d+) richtig, (\d+) falsch/)(r.aus) || (/(\d+) richtig/.test(r.aus) ? [1, 0] : null); return !!z && z[1] === 0; }, /\d+ richtig.*/]),
 ];
 let rot = 0;
 for (const [name, datei, gut, zeile] of SUITEN) {

@@ -279,7 +279,7 @@ const Absicherung = {
       if (l.gefragt !== th && !this.ANLASS[th]?.test(roh)) return false;
       if (Werkzeugkasten.chipBedeutung?.(th, roh, p)) return false;                 // Chip: der Kern weiss, was er tut
       // Eindeutig ("9", "im Mai", "wir sind 2 erwachsene"): der Kern liest selbst
-      try { if (Werkzeugkasten.eindeutigeAntwort(roh) && Werkzeugkasten.SELBST_LESEN[th]?.(Werkzeugkasten.zusageTeil(roh, th).toLowerCase(), {}, Werkzeugkasten)) return false; } catch { /* dann eben lesen lassen */ }
+      try { const w = Werkzeugkasten.SELBST_LESEN[th]?.(Werkzeugkasten.zusageTeil(roh, th).toLowerCase(), {}, Werkzeugkasten); if (w && Werkzeugkasten.eindeutigeAntwort(roh, w) && !Werkzeugkasten.lesartDeutung(th, w, roh)) return false; } catch { /* dann eben lesen lassen */ }
       return true;
     }).sort((a, b) => (a === l.gefragt ? -1 : b === l.gefragt ? 1 : 0)).slice(0, 2);
     if (!themen.length) return;

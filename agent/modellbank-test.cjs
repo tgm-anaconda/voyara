@@ -123,8 +123,17 @@ async function nachspielen(c, args) {
   for (const k of Object.keys(c.nie || {})) if (!leer(p[k])) falsch.push(`${k}=${text(p[k])} verboten`);
   for (const [k, g] of Object.entries(GRUPPE)) if (!(k in c.soll) && !erlaubt.has(g) && text(p[k]) !== text(vorher[k]) && !leer(p[k])) falsch.push(`${k}=${text(p[k])} erfunden`);
   if (fehler) falsch.push("Absturz " + fehler);
-  let nachfrage = null; { try { nachfrage = WK.bestaetigungRueckfrage(p, kern.lauf)?.satz || null; } catch { nachfrage = null; } }
-  return { falsch, offen, nachfrage, urteil: falsch.length ? (falsch.some((x) => DRASTISCH.test(x)) ? "DRASTISCH" : "leicht") : offen.length ? "offen" : "richtig", verworfen: kern.lauf.protokoll.filter((e) => /verworfen/.test(e.ereignis)).map((e) => e.ereignis) };
+  let nachfrage = null, bf = null; { try { bf = WK.bestaetigungRueckfrage(p, kern.lauf); nachfrage = bf?.satz || null; } catch { nachfrage = null; } }
+  /* Seit dem 27.11.2026 (Pruefer statt Entscheider): Was der Kern liest, das
+     Modell aber nicht liefert, kommt als Rueckfrage mit dem Wert. Bringt das
+     "Ja" der Person genau den Sollwert, zaehlt der Fall als richtig. */
+  let perRueckfrage = false;
+  if (!falsch.length && offen.length && bf?.wirkung) {
+    const ja = Object.entries(bf.wirkung).find(([c]) => /^ja\b/i.test(c))?.[1] || Object.values(bf.wirkung)[0];
+    const q = { ...JSON.parse(JSON.stringify(p)), ...(ja || {}) };
+    perRueckfrage = Object.entries(c.soll).every(([k, v]) => (typeof v === "function" ? v(q[k]) : text(q[k]) === text(v)));
+  }
+  return { falsch, offen, nachfrage, perRueckfrage, urteil: falsch.length ? (falsch.some((x) => DRASTISCH.test(x)) ? "DRASTISCH" : "leicht") : offen.length && !perRueckfrage ? "offen" : "richtig", verworfen: kern.lauf.protokoll.filter((e) => /verworfen/.test(e.ereignis)).map((e) => e.ereignis) };
 }
 (async () => {
   let ablage = {}; try { ablage = JSON.parse(fs.readFileSync(ABLAGE, "utf8")); } catch { ablage = {}; }

@@ -60,6 +60,8 @@ const AUS = [["es gibt nichts Schöneres als Mallorca", []], ["nirgends ist es t
     try { WK.chipAntwortLesen(k, du); WK.fahrplanChipLesen?.(k, t, du); WK.antwortSelbstLesen(k, t, du); k.lauf.chipWirkung = null;
       await WK.werkzeuge.stand_merken.call(WK, { nachricht_art: "antwort", frage_beantwortet: "ja", ...args }, k); } catch (e) { f = e.message; }
     let r = false; try { r = !!ok(p) && !f; } catch { r = false; }
+    // Seit dem 27.11.2026: schweigt das Modell, fragt der Kern mit seinem Wert - das "Ja" muss den Sollwert bringen
+    if (!r && !f) { try { const bf = WK.bestaetigungRueckfrage(p, k.lauf); const ja = bf?.wirkung && (Object.entries(bf.wirkung).find(([c]) => /^ja\b/i.test(c))?.[1]); if (ja && ok({ ...JSON.parse(JSON.stringify(p)), ...ja })) r = true; } catch { /* bleibt falsch */ } }
     if (r) g++; else console.log("FEHLT", name, JSON.stringify({ n: p.naechte, m: p.monat, an: p.anreise, e: p.erwachsene, k: p.kinder, pers: p.personen, t: p.typ, ae: p.artEgal, v: p.verpflegung, mp: p.maxPreis, b: p.budgetGesamt, fa: p.flugAb, fl: p.flug }), f);
   }
   const K = require("./satzbank-daten.cjs").laden().KN;

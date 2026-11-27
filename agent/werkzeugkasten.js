@@ -334,6 +334,9 @@ const Werkzeugkasten = {
           flugAbAuswahl: { type: "array", items: { type: "string" }, description: "Die Flughaefen, unter denen sie waehlen laesst, wenn sie mehrere nennt ('Hannover oder Muenchen, je nachdem was billiger ist'). Dann gilt flugAbEgal true UND diese Liste - der Agent nimmt den guenstigsten daraus, nicht den guenstigsten ueberhaupt." },
           flugAb: text("Abflughafen, wenn genannt (Hamburg, Stuttgart, Düsseldorf, Hannover, München, Köln, Frankfurt, Berlin - was die Seite anbietet)"),
           flugKlasse: { type: "string", enum: ["economy", "premium", "business"], description: "Flugklasse, wenn genannt" },
+          flugStopps: { type: "string", enum: ["direkt", "egal"], description: "direkt = nur Direktfluege ('ohne Umsteigen', 'nonstop'); egal = Umsteigen ist in Ordnung. Nur, wenn die Person es als Bedingung nennt; 'waere schoen, muss aber nicht' ist egal." },
+          flugKoffer: { type: "boolean", description: "true = mit Aufgabegepaeck (Koffer); false = nur Handgepaeck. Nur, wenn die Person es sagt." },
+          flugZeit: { type: "string", enum: ["frueh", "mittag", "abend", "egal"], description: "Wann die Person am liebsten hinfliegt (frueh = morgens/vormittags, abend = nachmittags/abends). Nur, wenn sie es sagt." },
           /* Fuer die Buchungsstrecke. Zwei gleich lange Listen statt einer
              Liste von Objekten: Verschachtelte Schemata bekommt das Modell
              deutlich haeufiger falsch, und ein Name ohne Geburtsdatum ist
@@ -2642,8 +2645,19 @@ const Werkzeugkasten = {
        wiederholt sich nicht wörtlich. */
     reisende(t, p, wk) {
       if (p.personen != null || p.erwachsene != null || p.kinder != null) return null;
-      let m = t.match(/\b(\d{1,2}|[a-zäöüß]+)\s*erwachsene[nr]?\b/);
-      if (m) { const n = wk.selbstZahl(m[1]); if (n >= 1 && n <= 12) return { erwachsene: n }; }
+      let m = t.match(/\b(\d{1,2}|[a-zäöüß]+)\s*erwachsene[nr]?\b(?:\s*(?:und|,|\+|plus|mit)?\s*(\d{1,2}|[a-zäöüß]+)\s*kind(?:er)?\b)?/);
+      if (m) {
+        const n = wk.selbstZahl(m[1]), k = m[2] != null ? wk.selbstZahl(m[2]) : null;
+        // "2 Erwachsene und 3 Kinder": beide Zahlen, damit der Kern das Modell auch bei den Kindern pruefen kann (27.11.2026)
+        if (n >= 1 && n <= 12 && k != null && k >= 0 && k <= 10) return { erwachsene: n, kinder: k };
+        if (n >= 1 && n <= 12) return { erwachsene: n };
+      }
+      // "wir sind 4" (27.11.2026)
+      m = t.match(/^\s*wir sind (\d{1,2}|[a-zäöüß]+)\s*[.!]?\s*$/);
+      if (m) { const n = wk.selbstZahl(m[1]); if (n >= 1 && n <= 12) return { personen: n }; }
+      // "zu dritt" (27.11.2026): die Gesamtzahl, wie eine nackte Zahl
+      m = t.match(/\bzu (zweit|dritt|viert|f(?:ü|ue)nft|sechst|siebt|acht)\b/);
+      if (m) return { personen: { zweit: 2, dritt: 3, viert: 4, "fünft": 5, fuenft: 5, sechst: 6, siebt: 7, acht: 8 }[m[1]] };
       m = t.match(/\b(\d{1,2}|[a-zäöüß]+)\s*(personen|person|leute|g(?:ä|ae)ste)\b/);
       if (m) { const n = wk.selbstZahl(m[1]); if (n >= 1 && n <= 12) return { personen: n }; }
       m = t.match(/^\s*(\d{1,2})\s*$/);
@@ -3331,13 +3345,50 @@ const Werkzeugkasten = {
        Eindeutiges ("9", "Halbpension bitte") gilt sofort. Alles andere ist
        nur ein Kandidat: Er zaehlt, wenn das Modell sagt, die Frage sei
        beantwortet, aber keinen Wert liefert (siehe absprache). */
-    if (!this.eindeutigeAntwort(text)) { kern.lauf.kandidat = { thema, werte, text: t }; return null; }
+    /* PRUEFER STATT ENTSCHEIDER (27.11.2026, Ben: "dass das Schlimmste,
+       was passieren kann, ist, dass eine Rueckfrage nochmal kommt"). Sofort
+       gilt nur der reine Wert ("Juli", "9", "150 €"); eine Deutung ("1500"
+       als Gesamtbudget, "10 Tage" als 10 Naechte, "Sommerferien") liefert
+       das Modell, der Kern vergleicht nur. */
+    if (!this.eindeutigeAntwort(text, werte) || this.lesartDeutung(thema, werte, t)) { kern.lauf.kandidat = { thema, werte, text: t }; return null; }
     return this.werteUebernehmen(kern, thema, werte, t, "antwort_selbst_gelesen");
   },
 
+  // Der Kern liest richtig, aber die BEDEUTUNG ist eine Annahme - dann entscheidet er nicht
+  lesartDeutung(thema, werte, t) {
+    const x = String(t || "").toLowerCase();
+    if (thema === "preis") {
+      if (werte.budgetGesamt != null && !/gesamt|insgesamt|\balle[ns]?\b|total|komplett|zusammen/.test(x)) return true;
+      if (werte.maxPreis != null && !/nacht/.test(x) && !(werte.maxPreis >= 30 && werte.maxPreis <= 1000)) return true;
+    }
+    if (thema === "dauer" && /\btag(e|en)?\b/.test(x) && !/n(ä|ae)cht|woche/.test(x)) return true;
+    if (thema === "zeit" && werte.jahreszeit) return true;
+    return false;
+  },
+
+  /* Nur diese Woerter darf eine Antwort enthalten, die sofort gilt - dazu
+     Zahlen, Zahlwoerter, Monatsnamen und der gelesene Wert selbst
+     ("Hamburg"). "Maerz ist schlecht", "ungern Juli", "Juli waere bloed"
+     enthalten mehr und gehoeren dem Modell (27.11.2026, Leser-Stresstest). */
+  REIN_WORT: new Set(("im in am ab an den dem der die das bitte ja gern gerne ok okay gut max maximal höchstens hoechstens bis und nur also dann von pro ich wir sind mal mit auch "
+    + "nacht nächte naechte nächten übernachtung übernachtungen tag tage tagen woche wochen person personen leute erwachsene erwachsener erwachsenen kind kinder jahr jahre jahren alt "
+    + "euro eur € gesamt insgesamt egal allein alleine ganz mitte anfang ende halbpension vollpension hp vp ai frühstück fruehstueck all inclusive inklusive "
+    + "flughafen flug unterkunft hotel business premium economy eco direkt direktflug umstieg koffer handgepäck handgepaeck morgens abends mittags vormittags nachmittags früh frueh spät spaet").split(" ")),
+  reinerWert(text, werte) {
+    const t = String(text || "").toLowerCase().replace(/€/g, " € ").replace(/[.!]+\s*$/, "").trim();
+    if (!t) return false;
+    const um = (x) => x.replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue").replace(/ß/g, "ss");
+    const eigen = new Set();
+    for (const w of Object.values(werte || {})) if (typeof w === "string") for (const x of w.toLowerCase().split(/[\s,/-]+/)) if (x) eigen.add(um(x));
+    // Ordnungszahlen ("8ten", "31ter") und Fuellwoerter wie "wie gesagt" (27.11.2026, Browserlauf altfehler)
+    return t.replace(/\bwie (gesagt|besprochen)\b/g, " ").split(/[\s,/+.!:-]+/).filter(Boolean).every((w) => /^\d{1,5}$/.test(w) || /^\d{1,2}(te[nrs]?|ten)$/.test(w) || this.REIN_WORT.has(w) || eigen.has(um(w))
+      || w in this.MONATSWORT || w === "märz" || this.selbstZahl(w) != null);
+  },
+
   // Kurz und ohne Wenn und Aber - dann braucht es kein zweites Urteil
-  eindeutigeAntwort(text) {
+  eindeutigeAntwort(text, werte = null) {
     if (/^\s*nein\b/i.test(String(text || ""))) return false;      // ein Nein wertet das Modell aus
+    if (!this.reinerWert(text, werte)) return false;
     const t = String(text || "").toLowerCase().replace(/[.!]+\s*$/, "").trim();
     if (!t || /[?,;]/.test(t)) return /^(ja|ok|okay|gut|gern|gerne|bitte)[,!]?\s+[^?,;]+$/.test(t) && t.split(/\s+/).length <= 4;
     if (/\b(nicht|kein\w*|ohne|statt|sondern|doch|oder|bis|vielleicht|eigentlich|eher|aber|ungef(ä|ae)hr|circa|ca|wohl|denke|glaube|wenn|ob|au(ß|ss)er|zu)\b/.test(t)) return false;
@@ -3354,7 +3405,14 @@ const Werkzeugkasten = {
     if (this.eindeutigeAntwort(du)) {
       for (const [f, re] of [["naechte", /^\D*?(\d{1,2})\s*(?:n(?:ä|ae)chte?|(?:ü|ue)bernachtung(?:en)?)\b\D*$/i], ["erwachsene", /^\D*?(\d{1,2})\s*erwachsene\w?\b\D*$/i], ["kinder", /^\D*?(\d{1,2})\s*kinder\b\D*$/i]]) {
         const m = du.match(re);
-        if (m && a[f] != null && Number(a[f]) !== +m[1]) { kern.notieren("abgelesen", { feld: f, modell: a[f], text: +m[1] }); a[f] = +m[1]; }
+        /* Frueher setzte der Kern hier still die Zahl aus dem Text. Seit dem
+           27.11.2026 (Ben: "keine falschen Informationen einfach
+           uebernommen") fragt er: "Kurz zur Sicherheit: 9 oder 10 Naechte?" */
+        if (m && a[f] != null && Number(a[f]) !== +m[1]) {
+          if (!(kern.lauf.leseKonflikt && kern.lauf.leseKonflikt.zug === kern.lauf.zugSeit)) kern.lauf.leseKonflikt = { feld: f, thema: f === "naechte" ? "dauer" : "reisende", kern: +m[1], modell: Number(a[f]), zug: kern.lauf.zugSeit };
+          kern.notieren("abgelesen_widerspruch", { feld: f, modell: a[f], text: +m[1] });
+          delete a[f];
+        }
       }
     }
     const g = kern.lauf.kandidat;
@@ -3369,13 +3427,38 @@ const Werkzeugkasten = {
     const geliefert = gruppe.some((f) => a[f] != null && a[f] !== "" && !(Array.isArray(a[f]) && !a[f].length));
     if (!geliefert) {
       // Notnagel: Das Modell sagt "beantwortet", liefert aber nichts
-      if (["ja", "teilweise"].includes(a.frage_beantwortet) && a.nachricht_art !== "frage") this.werteUebernehmen(kern, g.thema, g.werte, g.text, "antwort_nachgelesen");
+      /* Seit dem 27.11.2026 fragt der Kern hier, statt seine Lesart still
+         zu uebernehmen: "Habe ich dich richtig verstanden: ...?" */
+      if (["ja", "teilweise"].includes(a.frage_beantwortet) && a.nachricht_art !== "frage") {
+        kern.lauf.kandidatFrage = { thema: g.thema, werte: g.werte, zug: kern.lauf.zugSeit };
+        kern.notieren("kandidat_rueckfrage", { thema: g.thema, werte: g.werte });
+      }
+      return;
+    }
+    // "zu dritt", das Modell traegt 2 Erwachsene ein: die Summe vergleichen (27.11.2026)
+    if (haupt === "personen" && a.personenGesamt == null && a.erwachsene != null) {
+      const summe = Number(a.erwachsene) + Number(a.kinder || 0);
+      if (summe !== Number(kernWert)) {
+        kern.lauf.leseKonflikt = { feld: "personen", thema: g.thema, kern: kernWert, modell: summe, zug: kern.lauf.zugSeit };
+        kern.notieren("absprache_widerspruch", { feld: "personen", modell: summe, kern: kernWert });
+        delete a.erwachsene; delete a.kinder;
+      }
       return;
     }
     if (m == null || Array.isArray(m) || typeof m === "boolean" || Array.isArray(kernWert)) return;                 // das Modell hat das Thema anders gefasst - es kennt den Zusammenhang
     const tagGleich = haupt === "anreise" && String(m).slice(5) === String(kernWert).slice(5);
     const flugGleich = haupt === "flugAb" && typeof Flug !== "undefined" && Flug.code(String(m)) === Flug.code(String(kernWert));
-    if (String(m).toLowerCase() === String(kernWert).toLowerCase() || tagGleich || flugGleich) { kern.lauf.gleichGelesen = [haupt]; return; }   // zwei Leser, ein Ergebnis
+    if (String(m).toLowerCase() === String(kernWert).toLowerCase() || tagGleich || flugGleich) {
+      // Die anderen gelesenen Zahlen auch (27.11.2026): "2 Erwachsene und 3 Kinder", das Modell sagt 2 Kinder
+      for (const f of Object.keys(g.werte)) {
+        if (f === haupt || !["erwachsene", "kinder", "naechte", "maxPreis", "budgetGesamt"].includes(f) || a[f] == null || Number(a[f]) === Number(g.werte[f])) continue;
+        kern.lauf.leseKonflikt = { feld: f, thema: g.thema, kern: g.werte[f], modell: a[f], zug: kern.lauf.zugSeit };
+        kern.notieren("absprache_widerspruch", { feld: f, modell: a[f], kern: g.werte[f] });
+        delete a[f];
+        return;
+      }
+      kern.lauf.gleichGelesen = [haupt]; return;
+    }   // zwei Leser, ein Ergebnis
     // Beide lesen verschieden: keiner gewinnt, die Person wird gefragt
     kern.lauf.leseKonflikt = { feld: haupt, thema: g.thema, kern: kernWert, modell: m, zug: kern.lauf.zugSeit };
     kern.notieren("absprache_widerspruch", { feld: haupt, modell: m, kern: kernWert });
@@ -3413,6 +3496,24 @@ const Werkzeugkasten = {
     const w = String(text || "").toLowerCase().replace(/[^a-zäöüß\s]/g, (c) => (/\d/.test(c) ? c : " ")).split(/\s+/).filter(Boolean);
     return !/\d/.test(String(text || "")) && w.every((x) => this.FUELLWORT.test(x));
   },
+  /* Steht die Zahl nur mit der Einheit eines anderen Feldes da? Nur
+     Ziffern; Zahlwoerter und alles Unklare gehoeren weiter dem Modell. */
+  zahlGehoertAnders(f, w, text) {
+    if (!Number.isFinite(Number(w))) return false;
+    const t = String(text || "").toLowerCase();
+    const EINHEIT = { naechte: /^(n(ä|ae)cht|nacht|tag|woche|(ü|ue)bernacht)/, personen: /^(erwachsen|person|leute|kind|g(ä|ae)ste|mann\b)/, preis: /^(€|euro|eur\b)/, grad: /^grad/, uhr: /^uhr/ };
+    const eigen = f === "naechte" ? "naechte" : "personen";
+    const re = new RegExp(`(^|[^0-9])${Number(w)}(?![0-9])`, "g");
+    let m, gesehen = 0, fremd = 0;
+    while ((m = re.exec(t))) {
+      gesehen++;
+      const nach = t.slice(m.index + m[0].length).trim(), vor = t.slice(0, m.index + m[1].length);
+      const art = Object.keys(EINHEIT).find((k) => EINHEIT[k].test(nach)) || (/(wir sind|zu|sind wir)\s*$/.test(vor) ? "personen" : null);
+      if (art && art !== eigen) fremd++;
+    }
+    return gesehen > 0 && fremd === gesehen;
+  },
+
   grundlagePruefen(a, kern) {
     if (kern.lauf.chipFest) return;
     const p = kern.lauf.profil || {};
@@ -3474,6 +3575,8 @@ const Werkzeugkasten = {
       if ((kern.lauf.selbstGelesen || []).includes(STAND[f] || f) || this.ausChip(kern, f)) continue;
       const re = this.GRUNDLAGE[MUSTER[f] || f];
       const zahlFeld = ["naechte", "personenGesamt", "erwachsene", "kinder"].includes(f);
+      // Die Zahl gehoert sichtbar zu etwas anderem (27.11.2026): "wir sind 4" -> 4 Naechte, "9 Naechte" -> 9 Erwachsene
+      if (zahlFeld && !(re && re.test(letzte)) && this.zahlGehoertAnders(f, a[f], letzte)) { kern.notieren("ohne_grundlage", { feld: f, wert: a[f], grund: "zahl_anderes_feld" }); delete a[f]; continue; }
       const trifft = !leer && ((re && re.test(letzte)) || (zahlFeld && this.ZAHLWORT_RE.test(letzte)));
       const antwortet = !leer && (THEMA[f] || []).some((t) => gefragt.includes(t)) && !["maxPreis", "budgetGesamt"].includes(f);
       const FRAGBAR = { monat: "zeit", naechte: "dauer", flug: "flug", flugKlasse: "flugKlasse", verpflegung: "verpflegung", maxPreis: "preis", budgetGesamt: "preis" };
@@ -3505,9 +3608,30 @@ const Werkzeugkasten = {
   THEMA_ZU_FELD: { monat: "zeit", naechte: "dauer", personenGesamt: "reisende", erwachsene: "reisende", kinder: "reisende", typ: "art", artEgal: "art", zieleAuswahl: "ziel", zieleAus: "ziel",
     maxPreis: "preis", budgetGesamt: "preis", preisEgal: "preis", verpflegungEgal: "verpflegung", ausstattung: "wuensche", anzahlVorschlaege: "anzahl" },
 
+  // Mehrere Werte als ein Satzteil: "10 Nächte", "2 Erwachsene und 3 Kinder" (null = ausdruecklich leer, zaehlt nicht)
+  werteSatz(werte) {
+    const AUS = ["flugAbEgal", "artEgal"];
+    const teile = Object.entries(werte || {}).filter(([f, w]) => w != null && !AUS.includes(f) && !(/Egal$/.test(f) && !w))
+      .map(([f, w]) => this.wertWort(f, w)).filter((x) => x && !/^(true|false|null|undefined|\[object)/.test(x))
+      .map((x) => x.replace(/^(Ab|Bis|Mit|Ohne|Ein|Eine|Nur|Im|Nach|Keine|Auch|Der|Die) /, (y) => y.toLowerCase()));
+    if (!teile.length) return null;
+    return teile.length > 1 ? `${teile.slice(0, -1).join(", ")} und ${teile[teile.length - 1]}` : teile[0];
+  },
+
   // Wie ein Wert in der Rueckfrage heisst
   wertWort(feld, w) {
     switch (feld) {
+      case "kinder": return Number(w) === 0 ? "Keine Kinder" : Number(w) === 1 ? "Ein Kind" : `${w} Kinder`;
+      case "zielId": return `Nach ${(typeof ZIEL_NACH_ID !== "undefined" ? ZIEL_NACH_ID[w]?.name : null) || w}`;
+      case "zieleAuswahl": { const n = (Array.isArray(w) ? w : []).map((id) => (typeof ZIEL_NACH_ID !== "undefined" ? ZIEL_NACH_ID[id]?.name : null) || id); return n.length ? `Nach ${n.join(" oder ")}` : ""; }
+      case "zielOffen": return "";
+      case "monate": return (Array.isArray(w) ? w : [w]).map((m) => (typeof MONATSNAMEN !== "undefined" ? MONATSNAMEN[m - 1] : `Monat ${m}`)).join(" oder ");
+      case "jahreszeit": return `Im ${{ fruehling: "Frühling", sommer: "Sommer", herbst: "Herbst", winter: "Winter" }[w] || w}`;
+      case "preisEgal": return w ? "Der Preis ist dir egal" : "";
+      case "verpflegungEgal": return w ? "Die Verpflegung ist dir egal" : "";
+      case "flugStopps": return w === "direkt" ? "Nur Direktflüge" : "Auch mit Umstieg";
+      case "flugKoffer": return w ? "Mit Koffer" : "Nur Handgepäck";
+      case "anzahlVorschlaege": return `${w} Vorschläge`;
       case "naechte": return `${w} ${Number(w) === 1 ? "Nacht" : "Nächte"}`;
       case "monat": return typeof MONATSNAMEN !== "undefined" ? MONATSNAMEN[w - 1] : `Monat ${w}`;
       case "personen": return `${w} ${Number(w) === 1 ? "Person" : "Personen"}`;
@@ -3841,6 +3965,121 @@ const Werkzeugkasten = {
      -> 21, "12 und 3 Monate" -> 3 Jahre), schlug bisher den anderen Wert
      des Modells ohne ein Wort. Jetzt gilt keiner von beiden; die Person
      waehlt ("Kurz zur Sicherheit: 14 Nächte oder 21 Nächte?"). */
+  /* VERNEINUNG und KORREKTUR (27.11.2026, Ben: in den Bereichen, in denen
+     das Modell schwach ist, prueft der Kern den Text - und fragt nur nach,
+     wenn es nicht zusammenpasst). Der Kern entscheidet hier nie selbst:
+     Er verwirft einen verneinten Wert oder legt eine Rueckfrage vor. */
+  VERNEIN_VOR: /\b(nicht|kein|keine|keinen|keinesfalls|ohne|au(ß|ss)er|statt|anstatt|ungern|blo(ß|ss) nicht)\b/i,
+  VERNEIN_NACH: /^\s*(\w+\s+){0,3}?(nicht|auf keinen fall|bitte nicht|lieber nicht|eher nicht|geht nicht|passt nicht|ist (zu|mir zu) \w+)\b/i,
+  // Steht das Wort (re) in der Nachricht nur verneint? "kein All Inclusive", "Halbpension lieber nicht", "Kreta statt Mallorca"
+  wortVerneint(text, re) {
+    const t = String(text || "");
+    const teile = t.split(/[,.;!?]|\b(?:aber|sondern|dafür|dafuer)\b/i);
+    let gesehen = false, frei = false;
+    for (const teil of teile) {
+      const m = teil && teil.match(re);
+      if (!m) continue;
+      gesehen = true;
+      const vor = teil.slice(0, m.index), nach = teil.slice(m.index + m[0].length);
+      if (this.VERNEIN_VOR.test(vor) || this.VERNEIN_NACH.test(nach)) continue;
+      frei = true;
+    }
+    return gesehen && !frei;
+  },
+  verneinungPruefen(a, kern) {
+    const l = kern.lauf, p = l.profil || {};
+    if (l.chipFest) return;
+    const text = String([...(l.gespraech || [])].reverse().find((n) => n.role === "user")?.content || "");
+    if (!text) return;
+    const name = (id) => (typeof ZIEL_NACH_ID !== "undefined" ? ZIEL_NACH_ID[id]?.name : null);
+    const esc = (x) => String(x).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    // Ziel: "bloss nicht nach Mallorca" -> das Modell setzt Mallorca. Die Person entscheidet.
+    for (const k of ["ziel", "zielId"]) {
+      const id = typeof a[k] === "string" ? a[k] : null;
+      if (!id || !name(id)) continue;
+      if (this.wortVerneint(text, new RegExp(`(^|[^a-zäöüß])${esc(name(id))}([^a-zäöüß]|$)`, "i"))) {
+        if (!(l.zielKonflikt && l.zielKonflikt.zug === l.zugSeit)) l.zielKonflikt = { id, zug: l.zugSeit };
+        kern.notieren("verneint_verworfen", { feld: k, wert: id });
+        delete a[k];
+      }
+    }
+    /* Ziel: Die Nachricht nennt genau eine andere Region, die des Modells gar
+       nicht ("nach Kreta" -> Mallorca). Dann entscheidet die Person. */
+    {
+      const id = typeof a.ziel === "string" ? a.ziel : null;
+      if (id && name(id) && typeof Kern !== "undefined" && Kern.regionenIm && !(l.leseKonflikt && l.leseKonflikt.zug === l.zugSeit)) {
+        const genannt = Kern.regionenIm(text.toLowerCase());
+        if (genannt.length === 1 && genannt[0] !== id && name(genannt[0]) && !genannt.includes(id)) {
+          l.leseKonflikt = { feld: "zielId", thema: "ziel", kern: genannt[0], modell: id, zug: l.zugSeit };
+          kern.notieren("kern_gegen_modell", { feld: "ziel", kern: genannt[0], modell: id });
+          delete a.ziel;
+        }
+      }
+    }
+    // Flug: "wir fliegen nicht", "ohne Flug", "mit dem Auto" -> das Modell setzt flug true
+    if (a.flug === true) {
+      const neinFlug = /ohne flug|kein(en)? flug|nicht (fliegen|mit dem flug)|fliegen (wir |ich )?nicht|mit dem auto|mit der bahn|mit dem zug|fahren (wir|ich) (selbst|mit)/i.test(text)
+        && !/mit flug|flug (dazu|bitte)|doch fliegen|wollen fliegen/i.test(text);
+      if (neinFlug) {
+        if (!(l.leseKonflikt && l.leseKonflikt.zug === l.zugSeit)) l.leseKonflikt = { feld: "flug", thema: "flug", kern: false, modell: true, zug: l.zugSeit };
+        kern.notieren("verneint_verworfen", { feld: "flug", wert: true });
+        delete a.flug;
+      }
+    }
+    // Woerter mit festen Namen: verneint genannt -> der Wert gilt nicht, das Thema bleibt offen
+    const WORT = { verpflegung: this.NETZ_WORT.verpflegung, typ: this.NETZ_WORT.typ, flugKlasse: this.NETZ_WORT.flugKlasse };
+    for (const [f, tab] of Object.entries(WORT)) {
+      const w = a[f];
+      if (w == null || (f === "verpflegung" && w === "ohne")) continue;
+      const re = tab[String(w)];
+      if (re && this.wortVerneint(text, re)) { kern.notieren("verneint_verworfen", { feld: f, wert: w }); delete a[f]; }
+    }
+    if (a.monat != null && typeof MONATSNAMEN !== "undefined") {
+      const re = new RegExp(`(^|[^a-zäöüß])${MONATSNAMEN[a.monat - 1]}`, "i");
+      if (this.wortVerneint(text, re)) { kern.notieren("verneint_verworfen", { feld: "monat", wert: a.monat }); delete a.monat; }
+    }
+  },
+  KORREKTUR_WORT: /\b(doch|lieber|stattdessen|statt|anstatt|nicht mehr|umstellen|(ä|ae)ndern|mach\w* (daraus|draus)|korrigier\w*|jetzt (doch )?nur)\b/i,
+  korrekturPruefen(a, kern) {
+    const l = kern.lauf, p = l.profil || {};
+    if (l.chipFest) return;
+    if ((l.kandidatFrage && l.kandidatFrage.zug === l.zugSeit) || (l.leseKonflikt && l.leseKonflikt.zug === l.zugSeit)) return;
+    const text = String([...(l.gespraech || [])].reverse().find((n) => n.role === "user")?.content || "");
+    if (!text || !this.KORREKTUR_WORT.test(text) || /\?\s*$/.test(text)) return;
+    const geliefert = (fs) => fs.some((f) => a[f] != null && a[f] !== "");
+    const BEREICHE = [["dauer", ["naechte"]], ["zeit", ["monat"]], ["reisende", ["erwachsene", "kinder", "personen", "personenGesamt"]],
+      ["preis", ["maxPreis", "budgetGesamt"]], ["verpflegung", ["verpflegung"]], ["flug", ["flug"]], ["flugAb", ["flugAb"]]];
+    for (const [thema, felder] of BEREICHE) {
+      if (geliefert(felder)) continue;                                  // das Modell hat dazu etwas gemeldet
+      if (!felder.some((f) => p[f] != null)) continue;                  // nur Korrekturen bestehender Werte
+      let w = null;
+      try { w = this.SELBST_LESEN[thema](this.zusageTeil(text, thema).toLowerCase(), thema === "flugAb" ? { flug: p.flug } : {}, this); } catch { w = null; }
+      if (!w) continue;
+      const neu = Object.fromEntries(Object.entries(w).filter(([f, v]) => felder.includes(f) && JSON.stringify(p[f] ?? null) !== JSON.stringify(v)));
+      if (!Object.keys(neu).length) continue;
+      // Eine neue Gesamtzahl macht die alte Aufteilung ungueltig
+      if (thema === "reisende" && neu.personen != null && neu.erwachsene == null) {
+        if (/ohne kinder|keine kinder/i.test(text)) { neu.erwachsene = neu.personen; neu.kinder = 0; delete neu.personen; }
+        else if ((p.erwachsene ?? 0) + (p.kinder ?? 0) !== neu.personen) Object.assign(neu, { erwachsene: null, kinder: null });
+      }
+      if (thema === "reisende" && neu.kinder === 0) neu.kinderAlter = null;
+      l.kandidatFrage = { thema, werte: neu, zug: l.zugSeit };
+      kern.notieren("korrektur_rueckfrage", { thema, werte: neu });
+      return;
+    }
+    // Ziel: "lieber Kreta statt Mallorca" - genannt, nicht verneint, nicht schon das Ziel
+    if (!geliefert(["ziel", "zielId", "zieleAuswahl"]) && typeof Kern !== "undefined" && Kern.regionenIm) {
+      const name = (id) => (typeof ZIEL_NACH_ID !== "undefined" ? ZIEL_NACH_ID[id]?.name : null);
+      const esc = (x) => String(x).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const ids = Kern.regionenIm(text.toLowerCase()).filter((id) => name(id) && id !== p.zielId
+        && !this.wortVerneint(text, new RegExp(`(^|[^a-zäöüß])${esc(name(id))}([^a-zäöüß]|$)`, "i")));
+      if (ids.length === 1 && p.zielId) {
+        l.kandidatFrage = { thema: "ziel", werte: { zielId: ids[0], zielOffen: false, zieleAuswahl: [] }, zug: l.zugSeit };
+        kern.notieren("korrektur_rueckfrage", { thema: "ziel", ziel: ids[0] });
+      }
+    }
+  },
+
   KERN_GEGEN_MODELL: { naechte: "dauer", monat: "zeit", erwachsene: "reisende", kinder: "reisende", maxPreis: "preis", budgetGesamt: "preis", verpflegung: "verpflegung", flugAb: "flugAb", anreise: "anreise", kinderAlter: "kinderAlter" },
   kernGegenModell(a, kern) {
     const l = kern.lauf, p = l.profil || {};
@@ -4352,6 +4591,8 @@ const Werkzeugkasten = {
       Werkzeugkasten.chipVorrang(a, kern);
       Werkzeugkasten.widerspruchAufloesen(a, kern);
       Werkzeugkasten.absprache(a, kern);
+      Werkzeugkasten.verneinungPruefen(a, kern);
+      Werkzeugkasten.korrekturPruefen(a, kern);
       Werkzeugkasten.grundlagePruefen(a, kern);
       /* Regel 1c (26.11.2026): Steht die Frage "im Januar oder im
          Dezember?" an, setzt das Modell weder Monat noch Tag. Gemessen: Auf
@@ -4671,7 +4912,18 @@ const Werkzeugkasten = {
         if (!ids.length && [kern.lauf.gefragt, kern.lauf.zuletztGefragt].includes("ziel") && letzteZ.trim().split(/\s+/).length <= 4) {
           ids = Werkzeugkasten.zieleAusText(letzteZ, { locker: true });
         }
-        if (ids.length === 1) { a.ziel = ids[0]; kern.notieren("ziel_vom_kern", { ziele: ids }); }
+        /* Pruefer statt Entscheider (27.11.2026): Nur die reine Antwort
+           ("Kreta", "nach Kreta") traegt der Kern selbst ein. Steht mehr da,
+           fragt er: "Habe ich dich richtig verstanden: nach Kreta?" */
+        const lk = kern.lauf.leseKonflikt, zk = kern.lauf.zielKonflikt, jetztZ = kern.lauf.zugSeit;
+        const offenerStreit = (lk && lk.zug === jetztZ && lk.feld === "zielId") || (zk && zk.zug === jetztZ);
+        const namenZ = Object.fromEntries(ids.map((id, i) => [`n${i}`, String((typeof ZIEL_NACH_ID !== "undefined" ? ZIEL_NACH_ID[id]?.name : null) || id)]));
+        const reinZ = Werkzeugkasten.reinerWert(letzteZ.replace(/\b(nach|auf|in|oder)\b/gi, " "), namenZ);
+        if (ids.length && !offenerStreit && !reinZ) {
+          kern.lauf.kandidatFrage = { thema: "ziel", werte: ids.length === 1 ? { zielId: ids[0], zielOffen: false, zieleAuswahl: [] } : { zieleAuswahl: ids, zielId: null, zielOffen: false }, zug: jetztZ };
+          kern.notieren("ziel_rueckfrage", { ziele: ids });
+        } else if (offenerStreit) { /* die Person entscheidet schon */ }
+        else if (ids.length === 1) { a.ziel = ids[0]; kern.notieren("ziel_vom_kern", { ziele: ids }); }
         else if (ids.length > 1) { a.zieleAuswahl = ids; kern.notieren("ziel_vom_kern", { ziele: ids }); }
       }
       if (a.ziel !== undefined) {
@@ -5538,9 +5790,9 @@ const Werkzeugkasten = {
         const letzteK = String((kern.lauf.gespraech || []).filter((n) => n.role === "user").slice(-1)[0]?.content || "").toLowerCase();
         const mk = letzteK.match(/\b(sohn|tochter|kind|kleine[rn]?|enkel\w*|neffe|nichte)\b[^.!?]{0,30}\b(kommt|kommen)\s+(auch\s+|noch\s+)?mit\b[^.!?]{0,30}?\b(\d{1,2})\b/);
         if (mk && +mk[4] <= 17) {
-          a.kinder = (p.kinder || 0) + 1;
-          a.kinderAlter = [...(p.kinderAlter || []), +mk[4]];
-          kern.notieren("kind_dazu_vom_kern", { alter: +mk[4] });
+          // Rueckfrage statt still eintragen (27.11.2026)
+          kern.lauf.kandidatFrage = { thema: "reisende", werte: { kinder: (p.kinder || 0) + 1, kinderAlter: [...(p.kinderAlter || []), +mk[4]], personen: (p.erwachsene || 0) + (p.kinder || 0) + 1 }, zug: kern.lauf.zugSeit };
+          kern.notieren("kind_dazu_rueckfrage", { alter: +mk[4] });
         }
       }
       // Nur das Alter geschickt (Modell-Satzbank): die Zahl der Kinder folgt daraus
@@ -6041,10 +6293,17 @@ const Werkzeugkasten = {
           .map((n) => String(n.content || "")).join(" "), "flug");   // ABSPRACHE
         const ohne = /\bohne\s+(den\s+)?flug|\bkein(en)?\s+flug|nur\s+(die\s+)?(unterkunft|uebernachtung|übernachtung)|nur\s+(das\s+)?hotel\b|nur\s+(die\s+)?(ferienwohnung|wohnung)\b|flug\s+brauch(e|en)?\s+(ich|wir)\s+(nicht|keinen)|selbst\s+anreisen|mit\s+dem\s+auto/i.test(letzte);
         const mit = /\bmit\s+flug|flug\s+(dazu|mit\s+dazu|dabei)|flug\s+(soll|bitte)\s+dazu|inklusive\s+flug|\bflug\s+inklusive/i.test(letzte);
-        if (ohne !== mit) {
+        const lkF = kern.lauf.leseKonflikt;
+        const streitF = lkF && lkF.zug === kern.lauf.zugSeit && lkF.feld === "flug";
+        // Nur der reine Satz gilt sofort (27.11.2026); sonst Rueckfrage
+        const reinF = /^\s*(ja,?\s*)?(ohne\s+(den\s+)?flug|kein(en)?\s+flug|mit\s+flug|flug\s+dazu|nur\s+(die\s+|das\s+)?(unterkunft|hotel))(\s+bitte)?\s*[.!]?\s*$/i.test(letzte);
+        if (ohne !== mit && !streitF && reinF) {
           p.flug = mit;
           (p.vonPerson ||= {}).flug = true;
           kern.notieren("flug_vom_kern", { wert: mit, satz: letzte.slice(0, 80) });
+        } else if (ohne !== mit && !streitF) {
+          kern.lauf.kandidatFrage = { thema: "flug", werte: { flug: mit }, zug: kern.lauf.zugSeit };
+          kern.notieren("flug_rueckfrage", { wert: mit, satz: letzte.slice(0, 80) });
         }
       }
       /* "Hamburg oder Koeln, je nachdem was billiger ist."
@@ -6107,6 +6366,23 @@ const Werkzeugkasten = {
          Antwort des Modells ("Soll ich Hamburg nehmen?") bleibt. */
       // (seit dem 25.11.2026 zusammen mit "egal" oben, NAHE_FLUGHAFEN)
       setze("flugAb", a.flugAb); setze("flugKlasse", a.flugKlasse);
+      /* Flugwuensche kommen vom Modell (27.11.2026). Hat der Kern dieselbe
+         Nachricht anders gelesen, entscheidet die Person. */
+      for (const f of ["flugStopps", "flugKoffer"]) {
+        if (a[f] == null || !p.flug) continue;
+        const kw = (kern.lauf.flugWunschKern || {})[f];
+        if (kw != null && kw !== a[f]) {
+          if (!(kern.lauf.leseKonflikt && kern.lauf.leseKonflikt.zug === kern.lauf.zugSeit)) kern.lauf.leseKonflikt = { feld: f, thema: "flug", kern: kw, modell: a[f], zug: kern.lauf.zugSeit };
+          kern.notieren("kern_gegen_modell", { feld: f, kern: kw, modell: a[f] });
+          continue;
+        }
+        if (p[f] !== a[f]) { p[f] = a[f]; (p.vonPerson ||= {})[f] = true; geaendert.push(f); }
+        if (f === "flugKoffer" && typeof Flug !== "undefined") { try { Flug.set({ koffer: a[f] }); } catch { /* ohne Flugmodul */ } }
+      }
+      if (a.flugZeit && p.flug) {
+        if (a.flugZeit === "egal") { if (!p.flugZeitEgal) { p.flugZeitEgal = true; delete p.flugZeit; geaendert.push("flugZeit"); } }
+        else if (p.flugZeit !== a.flugZeit) { p.flugZeit = a.flugZeit; delete p.flugZeitEgal; (p.vonPerson ||= {}).flugZeit = true; geaendert.push("flugZeit"); }
+      }
       if (a.flugAb) p.flugAbEgal = false;
       /* Ein unbekannter Name loescht nichts mehr (24.11.2026): Vorher wurde
          hier die Schreibweise des MODELLS geprueft und der schon richtig
@@ -10634,11 +10910,13 @@ const Werkzeugkasten = {
     const text = String((l.gespraech || []).filter((n) => n.role === "user").slice(-1)[0]?.content || "");
     const MON = ["januar", "februar", "m(ä|ae)rz", "april", "mai", "juni", "juli", "august", "september", "oktober", "november", "dezember"];
     const steht = (f, w) => {
-      if (f === "monat") return new RegExp(`\\b(${MON[w - 1]})`, "i").test(text);
-      if (typeof w === "number") return new RegExp(`(^|[^0-9])${w}([^0-9]|$)`).test(text);
-      if (f === "flugAb") return new RegExp(String(w).replace(/ü/g, "(ü|ue)"), "i").test(text);
-      const r = this.NETZ_WORT[f]?.[String(w)];
-      return !!r && r.test(text);
+      // Verneint genannt zaehlt nicht (27.11.2026): nach "kein All Inclusive" fragte das Netz "All Inclusive?"
+      const frei = (re) => re.test(text) && (((f === "flug" && w === false) || (f === "verpflegung" && w === "ohne")) || !this.wortVerneint(text, re));
+      if (f === "monat") return frei(new RegExp(`\\b(${MON[w - 1]})`, "i"));
+      if (typeof w === "number") return frei(new RegExp(`(^|[^0-9])${w}([^0-9]|$)`));
+      if (f === "flugAb") return frei(new RegExp(String(w).replace(/ü/g, "(ü|ue)"), "i"));
+      const r0 = this.NETZ_WORT[f]?.[String(w)];
+      return !!r0 && frei(r0);
     };
     for (const [f, w] of Object.entries(roh)) {
       if (JSON.stringify(p[f] ?? null) === JSON.stringify(w)) continue;
@@ -10722,7 +11000,7 @@ const Werkzeugkasten = {
   },
 
   bestaetigungRueckfrage(p, lauf) {
-    if (!p || !lauf || !(lauf.verworfenWert || lauf.zielKonflikt || lauf.leseKonflikt || lauf.grundlageFrage || lauf.reisendeFrage)) return null;
+    if (!p || !lauf || !(lauf.verworfenWert || lauf.zielKonflikt || lauf.leseKonflikt || lauf.grundlageFrage || lauf.reisendeFrage || lauf.kandidatFrage || lauf.flugWunschKern || lauf.haustierKern)) return null;
     const jetzt = lauf.zugSeit || lauf.runde || true;
     const frisch = (f) => lauf.verworfenWert?.[f] != null && (lauf.verworfenZug || {})[f] === jetzt;
     const schonGefragt = (schl) => !!(lauf.bestaetigtGefragt || {})[schl];
@@ -10774,9 +11052,28 @@ const Werkzeugkasten = {
     if (lk && lk.zug === lauf.zugSeit) {
       const schl = `lesen:${lk.feld}:${lk.kern}:${lk.modell}`, A = this.wertWort(lk.feld, lk.modell), B = this.wertWort(lk.feld, lk.kern);
       if (!schonGefragt(schl) && A !== B) {
-        return { grund: "bestaetigen", schluessel: schl, thema: lk.thema, satz: `Kurz zur Sicherheit: ${A} oder ${B.replace(/^(Ab|Bis|Mit|Ohne) /, (x) => x.toLowerCase())}?`,
+        return { grund: "bestaetigen", schluessel: schl, thema: lk.thema, satz: `Kurz zur Sicherheit: ${A} oder ${B.replace(/^(Ab|Bis|Mit|Ohne|Nach|Ein|Eine|Keine|Nur|Auch) /, (x) => x.toLowerCase())}?`,
           chips: [A, B], wirkung: { [A]: { [lk.feld]: lk.modell }, [B]: { [lk.feld]: lk.kern } } };
       }
+    }
+    /* Der Kern hat etwas gelesen, das Modell nichts geliefert (27.11.2026):
+       nicht still uebernehmen, sondern fragen. Gilt fuer den Notnagel in
+       `absprache`, fuer "Thema gemeldet, Wert vergessen" und fuer die
+       Flugwuensche und das Haustier, die der Kern nur noch vergleicht. */
+    const kf = lauf.kandidatFrage;
+    if (kf && kf.zug === lauf.zugSeit) {
+      const teile = this.werteSatz(kf.werte);
+      if (teile) { const r = bau(`kandidat:${JSON.stringify(kf.werte)}`, teile, kf.werte, kf.thema); if (r) return r; }
+    }
+    const fw = lauf.flugWunschKern;
+    if (fw && p.flug) {
+      const offen = Object.fromEntries(Object.entries(fw).filter(([f, w]) => p[f] !== w));
+      const teile = Object.keys(offen).length ? this.werteSatz(offen) : null;
+      if (teile) { const r = bau(`flugwunsch:${JSON.stringify(offen)}`, teile, offen, "flug"); if (r) return r; }
+    }
+    if (lauf.haustierKern && !(p.ausstattung || []).includes("petsAllowed")) {
+      const r = bau("haustier", "Ihr reist mit Haustier, das Haus soll Haustiere erlauben", { ausstattung: [...new Set([...(p.ausstattung || []), "petsAllowed"])] }, "wuensche");
+      if (r) return r;
     }
     /* Kern und Modell lesen dieselbe Region gegenteilig (24.11.2026): nicht
        einer gewinnt, sondern die Person entscheidet. */

@@ -91,6 +91,14 @@ const sperre = (an) => { try { vm.runInContext(`if (typeof SAISON_SPERRE !== "un
 if (!WK || !KN) { console.log("Werkzeugkasten oder Kern nicht geladen"); process.exit(2); }
 
 let gut = 0, schlecht = 0;
+/* Seit dem 27.11.2026 (Pruefer statt Entscheider): Was der Kern mehr als
+   nur rein liest, legt er als Rueckfrage vor. jaStand ist der Stand, nachdem
+   die Person "Ja" getippt hat - ohne Rueckfrage der Stand selbst. */
+const jaStand = (p, lauf) => {
+  let bf = null; try { bf = WK.bestaetigungRueckfrage(p, lauf); } catch { bf = null; }
+  const ja = bf?.wirkung && Object.entries(bf.wirkung).find(([c]) => /^ja\b/i.test(c))?.[1];
+  return ja ? { ...p, ...ja } : p;
+};
 const pruefe = (name, ist, soll) => {
   const a = JSON.stringify(ist), b = JSON.stringify(soll);
   if (a === b) gut++;
@@ -1886,7 +1894,7 @@ const liesReisende = async (text, felder, urteil = "ja") => {
         sagen() {}, gespraechPush() {}, sichern() {}, logZeile() {}, standKurz: () => "",
         freigabe: () => "suchen", darf: () => false, standAnzeigen() {} };
       await WK.werkzeuge.stand_merken.call(WK, { frage_beantwortet: "keine_frage_offen" }, kern);
-      return kern.lauf.profil.flug;
+      return jaStand(kern.lauf.profil, kern.lauf).flug;
     };
     pruefe("ohne Flug kommt an", await lies("7 Nächte Mallorca, ohne Flug."), false);
     pruefe("nur die Unterkunft kommt an", await lies("Nur die Unterkunft bitte."), false);
@@ -3290,12 +3298,22 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     pruefe("Flugfrage Klasse: 'Premium Economy'", frage("klasse", "Premium Economy"), ["premium", null, null, null, "buchung_vorbereiten"]);
     pruefe("Flugfrage Koffer: 'Nur Handgepäck'", frage("koffer", "Nur Handgepäck"), [null, false, null, null, "buchung_vorbereiten"]);
     pruefe("Flugfrage Koffer: 'Mit Koffer'", frage("koffer", "Mit Koffer"), [null, true, null, null, "buchung_vorbereiten"]);
-    pruefe("Flugfrage Koffer: 'nein, brauche keinen'", frage("koffer", "nein, brauche keinen"), [null, false, null, null, "buchung_vorbereiten"]);
-    pruefe("Flugfrage Zeit: 'lieber abends'", frage("zeit", "lieber abends"), [null, null, "abend", null, "buchung_vorbereiten"]);
+    // Seit dem 27.11.2026 liest der Kern nur noch die reine Antwort; Saetze liefert das Modell (flugKoffer, flugZeit, flugStopps)
+    pruefe("Flugfrage Koffer: 'nein, brauche keinen' geht ans Modell", frage("koffer", "nein, brauche keinen"), [null, null, null, null, "buchung_vorbereiten"]);
+    pruefe("Flugfrage Koffer: 'Koffer brauchen wir nicht' wird nicht als Koffer gelesen", frage("koffer", "Koffer brauchen wir nicht"), [null, null, null, null, "buchung_vorbereiten"]);
+    pruefe("Flugfrage Zeit: 'lieber abends' geht ans Modell", frage("zeit", "lieber abends"), [null, null, null, null, "buchung_vorbereiten"]);
     pruefe("Flugfrage Zeit: 'Egal'", frage("zeit", "Egal"), [null, null, "egal", null, "buchung_vorbereiten"]);
     pruefe("Flugfrage Stopps: 'Nur direkt'", frage("stopps", "Nur direkt"), [null, null, null, "direkt", "buchung_vorbereiten"]);
     pruefe("Flugfrage Stopps: 'Auch mit Umstieg'", frage("stopps", "Auch mit Umstieg"), [null, null, null, "egal", "buchung_vorbereiten"]);
-    pruefe("Flugfrage Stopps: 'ohne Umstieg bitte' heisst direkt", frage("stopps", "ohne Umstieg bitte"), [null, null, null, "direkt", "buchung_vorbereiten"]);
+    pruefe("Flugfrage Stopps: 'ohne Umstieg bitte' geht ans Modell", frage("stopps", "ohne Umstieg bitte"), [null, null, null, null, "buchung_vorbereiten"]);
+    // ... und das Modell liefert es: stand_merken uebernimmt flugKoffer, flugZeit und flugStopps
+    {
+      const pm = { flug: true, flugAb: "Hamburg" };
+      const km = { lauf: { profil: pm, gespraech: [{ role: "user", content: "ohne Umstieg bitte, Koffer brauchen wir nicht, lieber abends" }], protokoll: [], verlauf: [], gefragtWie: {}, annahmeOffen: [] },
+        notieren() {}, sagen() {}, gespraechPush() {}, sichern() {}, logZeile() {}, standKurz: () => "", freigabe: () => "suchen", darf: () => false, standAnzeigen() {} };
+      await WK.werkzeuge.stand_merken.call(WK, { nachricht_art: "antwort", frage_beantwortet: "ja", flugStopps: "direkt", flugKoffer: false, flugZeit: "abend" }, km);
+      pruefe("Flugwuensche vom Modell kommen an", [pm.flugStopps ?? null, pm.flugKoffer ?? null, pm.flugZeit ?? null], ["direkt", false, "abend"]);
+    }
     pruefe("Flugfrage: eine Rueckfrage geht ans Modell, die Frage bleibt offen",
       [frage("klasse", "Was kostet denn Business?")[4], KN.lauf.flugFrageOffen], [null, "klasse"]);
     // Gegenprobe zur Deutung: Unklares wird einmal neu gefragt, beim zweiten Mal gilt der Normalfall
@@ -3362,7 +3380,7 @@ const liesReisende = async (text, felder, urteil = "ja") => {
         notieren() {}, standAnzeigen() {}, sichern() {}, sagen() {}, logZeile() {}, standKurz: () => "",
         eingabe() {}, darf: () => true, freigabe: () => "suchen" };
       try { WK.werkzeuge.stand_merken({}, kern); } catch { /* nur der Flug zaehlt */ }
-      return pp.flug ?? null;
+      return jaStand(pp, kern.lauf).flug ?? null;
     });
     pruefe("F2: 'nur Ferienwohnungen' setzt keinen Flug", flugAusSatz("Wir wollen nur Ferienwohnungen"), null);
     pruefe("F2: 'ohne Flug' bei der Wohnung gilt weiter", flugAusSatz("Eine Wohnung, ohne Flug bitte"), false);
@@ -3499,7 +3517,9 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     const lies = (text, vorher = { flug: true }) => {
       KN.lauf = { profil: { ...vorher } }; KN.notieren = () => {};
       try { KN.flugWuenscheLesen?.(text); } catch { return "fehler"; }
-      return [KN.lauf.profil.flugStopps ?? null, KN.lauf.profil.flugKoffer ?? null];
+      // Seit dem 27.11.2026 nur noch Pruefwert (das Modell meldet, der Kern vergleicht)
+      const w = KN.lauf.flugWunschKern || {};
+      return [w.flugStopps ?? null, w.flugKoffer ?? null];
     };
     pruefe("Flugwunsch frueh: 'bitte nur Direktflüge, mit Koffer'", lies("bitte nur Direktflüge, mit Koffer"), ["direkt", true]);
     pruefe("Flugwunsch frueh: 'nur Handgepäck reicht'", lies("nur Handgepäck reicht uns"), [null, false]);
@@ -3726,7 +3746,7 @@ const liesReisende = async (text, felder, urteil = "ja") => {
         notieren(e, d) { this.lauf.protokoll.push({ ereignis: e, ...d }); },
         freigabe: () => "suchen", darf: () => false, logZeile() {}, sagen() {}, standAnzeigen() {}, sichern() {}, standKurz: () => "", antwortWerten() {} };
       try { await WK.werkzeuge.stand_merken.call(WK, { nachricht_art: "antwort", frage_beantwortet: "ja", ...args }, kern); } catch (e) { return { fehler: e.message }; }
-      return p;
+      return jaStand(p, kern.lauf);
     };
     const m = await spiel("Ich will gerne 9 nächte nach malle oder aufs spanische festland", { naechte: 9 });
     pruefe("Modell schickt nur die Naechte: Mallorca und Barcelona kommen trotzdem an", [m.naechte, (m.zieleAuswahl || []).join(",") || m.zielId], [9, "mallorca,barcelona"]);
@@ -3769,7 +3789,7 @@ const liesReisende = async (text, felder, urteil = "ja") => {
         notieren(e, d) { this.lauf.protokoll.push({ ereignis: e, ...d }); },
         freigabe: () => "suchen", darf: () => false, logZeile() {}, sagen(x) { saetze.push(x); }, standAnzeigen() {}, sichern() {}, standKurz: () => "", antwortWerten() {} };
       try { await WK.werkzeuge.stand_merken.call(WK, { nachricht_art: "antwort", frage_beantwortet: "ja", ...args }, kern); } catch (e) { saetze.push("FEHLER " + e.message); }
-      return { p, saetze, kern };
+      return { p: jaStand(p, kern.lauf), saetze, kern };
     };
     // Malle: das Modell schickte zieleAus [mallorca, barcelona]
     const m = await spiel("Ich will gerne 9 nächte nach malle oder aufs spanische festland", { naechte: 9, zieleAus: ["mallorca", "barcelona"] },
@@ -3853,7 +3873,9 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     pruefe("Kombiniert: Hotel wird als Art gesetzt", [k1.p.typ, k1.p.artGenannt, k1.p.artErwaehnt ?? null], ["hotel", true, null]);
     pruefe("Kombiniert: Auswahl Mallorca, Krabi, Kyoto - kein festes Ziel Mallorca", [k1.p.zielId ?? null, (k1.p.zieleAuswahl || []).slice().sort().join(",")], [null, "krabi,kyoto,mallorca"]);
     const k2 = await spiel(satzK, {}, { erwachsene: 1, kinder: 1, kinderAlter: [17] }, { gefragt: "art" });
-    pruefe("Kombiniert, Modell schickt nichts: der Kern liest Hotel und alle drei Ziele", [k2.p.typ, (k2.p.zieleAuswahl || []).slice().sort().join(",")], ["hotel", "krabi,kyoto,mallorca"]);
+    // Seit dem 27.11.2026: die drei Ziele kommen als Rueckfrage ("Habe ich dich richtig verstanden: nach Mallorca oder Krabi oder Kyoto?")
+    const k2ja = jaStand(k2.p, k2.kern.lauf);
+    pruefe("Kombiniert, Modell schickt nichts: der Kern liest Hotel und alle drei Ziele", [k2ja.typ, (k2ja.zieleAuswahl || []).slice().sort().join(",")], ["hotel", "krabi,kyoto,mallorca"]);
     const k3 = await spiel("ein hotel auf malle, auch gern asien", {}, {}, { gefragt: "art" });
     pruefe("'auch gern Asien' heisst nicht 'beide Unterkunftsarten'", [k3.p.typ, k3.p.artEgal === true], ["hotel", false]);
     // Preis nach angenommener Warnung nicht noch einmal

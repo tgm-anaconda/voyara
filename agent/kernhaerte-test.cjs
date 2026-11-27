@@ -101,7 +101,7 @@ async function lauf(thema, vor, du, args, zusatz = {}) {
     const r = await lauf(thema, vor, du, args);
     werte("zahlen", !r.anders.length && !r.kern.fehler, `${thema} "${du}" (Modell ${args.frage_beantwortet}) -> ${r.anders.map((x) => `${x}=${text(r.p[x])}`).join(", ")} ${r.kern.fehler || ""}`);
   }
-  for (const du of ["der Hund kommt mit", "mit Hund bitte", "darf mein Hund mit?", "wir haben zwei Hunde dabei"]) { const r = await lauf("ausstattung", H, du, JA); werte("haustier", (r.p.ausstattung || []).includes("petsAllowed"), `"${du}" nicht erkannt`); }
+  for (const du of ["der Hund kommt mit", "mit Hund bitte", "darf mein Hund mit?", "wir haben zwei Hunde dabei"]) { const r = await lauf("ausstattung", H, du, JA); werte("haustier", (r.p.ausstattung || []).includes("petsAllowed") || /Haustier/.test(r.nach?.satz || ""), `"${du}" nicht erkannt`); }   // seit 27.11.2026: Rueckfrage, wenn das Modell schweigt
   // --- Teil 3: Buchen nur auf ein reines Ja ---
   const JAS = ["ja", "ok", "okay", "gerne", "klar", "passt", "bitte", "genau", "ja bitte", "mach das"];
   const ABER = ["aber", "aber ohne Versicherung", "aber erst morgen", "warte kurz", "gleich", "später", "nicht", "lieber nicht", "moment", "noch nicht", "wenn es billiger wird", "und was kostet das?", "?", "aber das andere Hotel", "ich überlege noch", "ich frage meine Frau", "oder doch nicht", "mit anderem Flug", "nächste Woche", "nur wenn stornierbar", "vielleicht", "theoretisch", "im Prinzip", "eigentlich", "nee doch nicht"];

@@ -96,7 +96,7 @@ async (page) => {
       await pg.evaluate((s) => { sessionStorage.clear(); localStorage.clear(); localStorage.setItem("__drehbuchSkript", JSON.stringify(s)); }, SZENEN[name].s);
       await pg.goto(BASIS + "index.html?zugang=" + ARM + "&t=2"); await pg.waitForTimeout(1200);
       await pg.evaluate(() => document.querySelector(".einstieg")?.remove()); await ruhe();
-      const gesagt = new Set(), doppelt = [];
+      const gesagt = new Set(), doppelt = []; let bezugOffen = false;
       for (const schritt of SZENEN[name].s) {
         try { await pg.evaluate((t) => { Kern.eingabe(t); return true; }, schritt.du); } catch { /* Seitenwechsel */ }
         await pg.waitForTimeout(400); if (!(await ruhe())) haengt = true;
@@ -105,7 +105,12 @@ async (page) => {
         if (schritt.themen.includes("reisende")) gesagt.add("kinderAlter");
         if (schritt.themen.includes("flug")) gesagt.add("flugAb");
         const nun = await pg.evaluate(() => ({ g: Kern.lauf.gefragt || null, letzte: [...(Kern.lauf.verlauf || [])].reverse().find((n) => n.rolle !== "user" && n.rolle !== "schritte")?.text || "" })).catch(() => ({}));
-        if (nun.g === "preis" && /alle zusammen oder pro Person\?/.test(String(nun.letzte))) continue;
+        if (nun.g === "preis" && /alle zusammen oder pro Person\?/.test(String(nun.letzte))) { bezugOffen = true; continue; }
+        /* Blieb die Pro-Person-Frage unbeantwortet, ist der Preis offen - ihn
+           noch einmal zu fragen ist richtig (27.11.2026). Der alte Stand las
+           hier "Verpflegung ist egal" still als "Preis egal". */
+        if (nun.g === "preis" && bezugOffen) { bezugOffen = false; continue; }
+        bezugOffen = false;
         if (nun.g && gesagt.has(nun.g)) doppelt.push(`fragt ${nun.g} nach "${schritt.du.slice(0, 40)}": ${String(nun.letzte).replace(/\s+/g, " ").slice(0, 90)}`);
       }
       const e = await pg.evaluate(() => ({ p: Kern.lauf.profil || {}, chat: (Kern.lauf.verlauf || []).filter((n) => n.rolle !== "schritte" && n.rolle !== "sammel").map((n) => `${n.rolle === "user" ? "DU" : "AGENT"}: ${String(n.text || "").replace(/\s+/g, " ")}`) }));

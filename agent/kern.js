@@ -2043,6 +2043,9 @@ const Kern = {
        Werkzeuge rief. */
     this.lauf.zuletztGemerkt = [];
     // Nach dem Zuruecksetzen, sonst ginge die Quittung verloren
+    this.lauf.flugWunschKern = null;
+    this.lauf.haustierKern = null;
+    this.lauf.kandidatFrage = null;
     this.haustierLesen(t);
     this.flugWuenscheLesen(t);
     this.lauf.selbstGelesen = [];
@@ -5123,7 +5126,13 @@ const Kern = {
     const p = (this.lauf.profil ||= {});
     // "Was kostet denn Business?" ist eine Rueckfrage, keine Antwort
     if (String(t).includes("?") && String(t).trim().split(/\s+/).length > 2) return;
-    const werte = this.flugFrageDeuten(name, t);
+    /* Nur die reine Antwort liest der Kern selbst (27.11.2026): die
+       Knopftexte, "ja"/"nein", ein einzelnes Wort. "Koffer brauchen wir
+       nicht" las er als "mit Koffer". Alles andere liefert das Modell
+       (flugKoffer, flugStopps, flugKlasse); bleibt es offen, fragt der Kern
+       wie bisher noch einmal. */
+    const rein = Werkzeugkasten.reinerWert(t) || /^\s*(ja|jo|nein|ne|nee|nö)\s*[.!]?\s*$/i.test(String(t));
+    const werte = rein ? this.flugFrageDeuten(name, t) : null;
     if (werte) {
       Object.assign(p, werte);
       for (const k of Object.keys(werte)) (p.vonPerson ||= {})[k] = true;
@@ -5871,8 +5880,11 @@ const Kern = {
       else if (/mit koffer|koffer (mit|dabei|dazu)|(einen|ein) koffer|aufgabegep(ä|ae)ck/.test(satz)) neu.flugKoffer = true;
     }
     if (!Object.keys(neu).length) return;
-    Object.assign(p, neu);
-    for (const k of Object.keys(neu)) (p.vonPerson ||= {})[k] = true;
+    /* Nur noch Pruefwert (27.11.2026, Ben: "macht nur Sinn, wenn wir das
+       auch mit dem Modell abklaeren"). Das Modell meldet flugStopps und
+       flugKoffer selbst; stimmt es nicht ueberein oder schweigt es, fragt
+       der Kern (bestaetigungRueckfrage / stand_merken). */
+    this.lauf.flugWunschKern = neu;
     this.notieren("flugwunsch_gelesen", neu);
   },
 
@@ -5886,12 +5898,11 @@ const Kern = {
     if (!/\b(mein|unser|der|die|einen|zwei)\w*\s+(klein\w+\s+|gro(ß|ss)\w+\s+)?(hund|katze|haustier|vierbeiner)/.test(satz) && !/hund|haustier|katze|vierbeiner/.test(Werkzeugkasten.zusageTeil(satz, "art"))) return;
     if (/\b(kein|keine|keinen|ohne)\s+(hund|haustier|katze|tier)/.test(satz)) return;
     const p = (this.lauf.profil ||= {});
-    const liste = new Set(p.ausstattung || []);
-    if (liste.has("petsAllowed")) return;
-    liste.add("petsAllowed");
-    p.ausstattung = [...liste];
-    (p.vonPerson ||= {}).ausstattung = true;
-    this.lauf.zuletztGemerkt = [...new Set([...(this.lauf.zuletztGemerkt || []), "ausstattung"])];
+    if ((p.ausstattung || []).includes("petsAllowed")) return;
+    /* Nur noch Pruefwert (27.11.2026): Das Modell meldet petsAllowed in
+       ausstattung. Tut es das nicht, fragt der Kern nach, statt still einen
+       Filter zu setzen ("mein Hund ist leider gestorben"). */
+    this.lauf.haustierKern = true;
     this.notieren("haustier_gelesen", { text: satz.slice(0, 60) });
   },
 

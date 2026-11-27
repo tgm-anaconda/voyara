@@ -1157,7 +1157,8 @@ const Kernpruefung = {
         ["Haustiere sollten erlaubt sein", true], ["ohne Hund diesmal", false], ["keine Haustiere bitte", false], ["gute Lage", false]]) {
         const k = Object.create(Kern); k.lauf = { profil: {}, protokoll: [] };
         k.haustierLesen(satz);
-        const ist = (k.lauf.profil.ausstattung || []).includes("petsAllowed");
+        // Seit dem 27.11.2026 nur Pruefwert: das Modell meldet, der Kern fragt bei Schweigen nach
+        const ist = !!k.lauf.haustierKern || (k.lauf.profil.ausstattung || []).includes("petsAllowed");
         if (ist !== soll) melde("haustier", `"${satz}" ${soll ? "nicht erkannt" : "faelschlich erkannt"}`, satz);
       }
     }
@@ -2134,7 +2135,8 @@ const Kernpruefung = {
       const kern = kernFuer(p, f.angenommen, f.thema);
       try { Werkzeugkasten.antwortSelbstLesen(kern, f.thema, f.text); }
       catch (e) { melde("selbst_absturz", `"${f.text}": ${e && e.message}`, f.thema); continue; }
-      const ist = p[f.feld] === undefined ? null : p[f.feld];
+      // Seit dem 27.11.2026: was mehr als der reine Wert ist, wird Kandidat (das Modell liefert, der Kern vergleicht)
+      const ist = p[f.feld] === undefined ? (kern.lauf.kandidat?.werte?.[f.feld] ?? null) : p[f.feld];
       if (JSON.stringify(ist) !== JSON.stringify(f.wert === undefined ? null : f.wert)) {
         melde("selbst_falsch", `${f.thema}: "${f.text}" ergab ${f.feld}=${JSON.stringify(ist)}, erwartet ${JSON.stringify(f.wert)}`, f.thema);
       }
@@ -2143,7 +2145,7 @@ const Kernpruefung = {
          genannt hat), gibt es nichts zu quittieren. */
       const vorWert = (f.stand || {})[f.feld] === undefined ? null : (f.stand || {})[f.feld];
       const veraendert = JSON.stringify(ist) !== JSON.stringify(vorWert);
-      if (veraendert && !(kern.lauf.zuletztGemerkt || []).includes(f.feld)) {
+      if (veraendert && p[f.feld] !== undefined && !(kern.lauf.zuletztGemerkt || []).includes(f.feld)) {   // nur, was wirklich im Stand steht (ein Kandidat wird nicht quittiert)
         melde("selbst_ohne_quittung", `${f.thema}: "${f.text}" wurde gesetzt, steht aber nicht in zuletztGemerkt`, f.thema);
       }
     }
@@ -2323,7 +2325,8 @@ const Kernpruefung = {
       const kern = { lauf: { profil: p, gespraech: [], uebersprungen: {}, nichtVerstanden: {},
         selbstGelesen: [], zuletztGemerkt: [] }, notieren() {}, standAnzeigen() {}, sichern() {} };
       Werkzeugkasten.antwortSelbstLesen(kern, "preis", f.text);
-      if (JSON.stringify(p[f.feld] == null ? null : p[f.feld]) !== JSON.stringify(f.wert)) {
+      const istP = p[f.feld] ?? kern.lauf.kandidat?.werte?.[f.feld] ?? null;   // Kandidat zaehlt (27.11.2026)
+      if (JSON.stringify(istP) !== JSON.stringify(f.wert)) {
         melde("preis_nicht_gelesen", `"${f.text}" ergab ${f.feld}=${JSON.stringify(p[f.feld])}, erwartet ${JSON.stringify(f.wert)}`, "preis");
       }
     }

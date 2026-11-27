@@ -74,7 +74,16 @@ const verletzt = (p, verboten) => Object.entries(verboten || {}).filter(([k, v])
     if (fall.echt) {
       bb.echtFaelle = (bb.echtFaelle || 0) + 1;
       const r = await lauf(fall, "echt");
-      const abw = r.fehler ? [`FEHLER ${r.fehler}`] : [...vergleiche(r.p, fall.soll), ...verletzt(r.p, fall.verboten)];
+      let abw = r.fehler ? [`FEHLER ${r.fehler}`] : [...vergleiche(r.p, fall.soll), ...verletzt(r.p, fall.verboten)];
+      /* Seit dem 27.11.2026 (Pruefer statt Entscheider): Liest der Kern mehr
+         als den reinen Wert, fragt er mit seinem Wert nach. Bringt das "Ja"
+         den Sollwert, ist der Fall richtig verarbeitet. */
+      if (abw.length && !r.fehler) {
+        try {
+          const bf = WK.bestaetigungRueckfrage(r.p, r.kern.lauf), ja = bf?.wirkung && Object.entries(bf.wirkung).find(([c]) => /^ja\b/i.test(c))?.[1];
+          if (ja) { const q = { ...JSON.parse(JSON.stringify(r.p)), ...ja }; if (![...vergleiche(q, fall.soll), ...verletzt(q, fall.verboten)].length) abw = []; }
+        } catch { /* bleibt abweichend */ }
+      }
       if (!abw.length) bb.echtGut = (bb.echtGut || 0) + 1;
       else fehler.push({ b: fall.b, modus: "echt", du: fall.du, abw });
       continue;
