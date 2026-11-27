@@ -101,6 +101,21 @@ const FAELLE = [
   ["kombi", "dauer", "eine Woche, mit Flug ab Hamburg", { naechte: 7, flug: true, flugAb: "Hamburg" }, (p) => p.naechte === 7 && p.flug === true && p.flugAb === "Hamburg"],
   ["kombi", "reisende", "wir sind 2 Erwachsene und ein Kind (6), Ferienwohnung auf Kreta", { erwachsene: 2, kinder: 1, kinderAlter: [6], typ: "apartment", ziel: "kreta" }, (p) => p.erwachsene === 2 && p.kinder === 1 && p.typ === "apartment" && (p.zielId === "kreta" || (p.zieleAuswahl || []).includes("kreta"))],
   ["kombi", "zeit", "im Juli, warm und am Meer, max 150 die Nacht", { monat: 7, richtung: "warm", maxPreis: 150 }, (p) => p.monat === 7 && p.richtung === "warm" && p.maxPreis === 150],
+  // Zusage-Regel (27.11.2026): "X, aber Y" - zaehlt der richtige Teil?
+  ["zusage", "dauer", "eigentlich wollten wir eine Woche, aber 10 Nächte wären besser", { naechte: 10 }, (p) => p.naechte === 10],
+  ["zusage", "zeit", "Juli ist zu heiß, lieber September", { monat: 9 }, (p) => p.monat === 9],
+  ["zusage", "ziel", "19 ist mir zu kalt, lieber ab 23", { mindestGrad: 23 }, (p) => p.mindestGrad === 23, { richtung: "warm" }],
+  ["zusage", "reisende", "normalerweise zu viert, diesmal nur zu zweit", { erwachsene: 2, kinder: 0 }, (p) => p.erwachsene === 2 && p.kinder === 0],
+  ["zusage", "ziel", "Mallorca war letztes Jahr, diesmal Kreta", { ziel: "kreta" }, (p) => p.zielId === "kreta" || ((p.zieleAuswahl || []).includes("kreta") && !(p.zieleAuswahl || []).includes("mallorca"))],
+  ["zusage", "preis", "150 ist zu wenig, eher 200", { maxPreis: 200 }, (p) => p.maxPreis === 200],
+  ["zusage", "flugAb", "nicht ab Frankfurt, sondern ab Hamburg", { flugAb: "Hamburg" }, (p) => p.flugAb === "Hamburg", { flug: true }],
+  ["zusage", "verpflegung", "kein All Inclusive, Halbpension reicht", { verpflegung: "halb" }, (p) => p.verpflegung === "halb"],
+  ["zusage", "art", "erst wollten wir ein Hotel, aber jetzt doch eine Ferienwohnung", { typ: "apartment" }, (p) => p.typ === "apartment"],
+  ["zusage", "zeit", "ich wollte Juli, mein Mann August - nehmen wir August", { monat: 8 }, (p) => p.monat === 8],
+  ["zusage", "dauer", "9 Nächte, aber nicht im Juli, sondern im August", { naechte: 9, monat: 8 }, (p) => p.naechte === 9 && p.monat === 8],
+  ["zusage", "reisende", "wir sind zu zweit, aber vielleicht kommt meine Schwester mit", { erwachsene: 2, kinder: 0 }, (p) => p.erwachsene === 2],
+  ["zusage", "preis", "egal, aber nicht über 300 pro Nacht", { maxPreis: 300 }, (p) => p.maxPreis === 300],
+  ["zusage", "dauer", "lieber 8 statt 7 Nächte", { naechte: 8 }, (p) => p.naechte === 8],
 ];
 
 /* Lagen im Gespraech: was schon feststeht, bevor der Satz kommt. */
@@ -122,6 +137,8 @@ const RUECKFRAGE = (feld, l, p) => {
   if (l.zielKonflikt && feld === "ziel") return "zielKonflikt";
   if (l.reisendeRueckfrage && feld === "reisende") return "reisende";
   if ((l.zweiteLesungOffen || l.lesungOffen) && true) return "lesung";
+  if (l.leseKonflikt || l.grundlageFrage) return "konflikt";
+  if (l.verworfenWert && Object.keys(l.verworfenWert).length) return "netz";
   return null;
 };
 
@@ -166,4 +183,5 @@ const kern = (p, text, frage, lage) => {
   for (const x of weg) (gruppe[`${x.feld} | "${x.satz}"`] ||= []).push(`${x.lage}/${x.frage}${x.ereignisse.length ? " [" + [...new Set(x.ereignisse)].join(",") + "]" : ""}${x.fehler ? " FEHLER " + x.fehler : ""}`);
   for (const [k, v] of Object.entries(gruppe)) console.log(`  ${k}: ${v.length}/6  ${process.env.ZEIG ? v.join("; ") : v.slice(0, 3).join("; ")}`);
   require("fs").writeFileSync(process.env.AUS || "/dev/null", JSON.stringify(ergebnis, null, 1));
+  console.log(`\n${zaehl((x) => x.wie === "uebernommen" || x.wie === "rueckfrage")} richtig, ${zaehl((x) => x.wie === "verworfen" || x.wie === "absturz")} falsch`);
 })();

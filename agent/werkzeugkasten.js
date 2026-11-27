@@ -2620,6 +2620,8 @@ const Werkzeugkasten = {
        einen Satz später - das ist besser als dieselbe Frage noch einmal. */
     dauer(t, p, wk) {
       if (p.naechte) return null;
+      // Spannen und Alternativen gehoeren dem Modell ("2-3 Wochen", "7 bis 10 Naechte", "eine Woche oder zehn Tage") - 27.11.2026
+      if (/\d\s*(-|–|bis|oder)\s*\d|\b(woche|wochen|n(ä|ae)chte?|tage?)\b[^.!?]{0,15}\boder\b|\boder\b[^.!?]{0,15}\b(woche|wochen|n(ä|ae)chte?|tage?)\b|ach nein|lieber doch|nein,? lieber/.test(t)) return null;
       let m = t.match(/\b(\d{1,2}|[a-zäöüß]+)\s*wochen\b/);
       if (m) { const n = wk.selbstZahl(m[1]); if (n >= 1 && n <= 8) return { naechte: n * 7 }; }
       if (/\b(eine|1)\s*woche\b/.test(t) || /^\s*woche\s*$/.test(t)) return { naechte: 7 };
@@ -2659,6 +2661,8 @@ const Werkzeugkasten = {
        anderes mit Zahlen drin. */
     kinderAlter(t, p, wk) {
       const n = p.kinder || 0;
+      // "3 Monate" ist kein Alter in Jahren (27.11.2026)
+      if (/monat|wochen alt|s(ä|ae)ugling/.test(t)) return null;
       if (!n || (p.kinderAlter || []).length >= n) return null;
       const ziffern = t.match(/\d{1,2}/g) || [];
       let alter = ziffern.map(Number);
@@ -2732,6 +2736,8 @@ const Werkzeugkasten = {
        dieselbe Funktion, die auch die Angabe des Modells prueft. */
     preis(t, p, wk) {
       if (p.maxPreis || p.budgetGesamt || p.preisEgal) return null;
+      // "50 pro Person" ist kein Preis fuer alle - das rechnet das Modell (27.11.2026)
+      if (/pro (person|kopf|nase)|p\.\s?p\.|je person|zwischen \d+ und \d+|\d\s*(-|–|bis)\s*\d/.test(t)) return null;
       if (/\b(offen|egal|kein(e|en)? (grenze|limit|budget)|nach oben offen|spielt keine rolle)\b/.test(t)) {
         return { preisEgal: true };
       }
@@ -3512,6 +3518,7 @@ const Werkzeugkasten = {
       case "verpflegung": return { ohne: "Ohne Verpflegung", fruehstueck: "Frühstück", halb: "Halbpension", voll: "Vollpension", ai: "All Inclusive" }[w] || String(w);
       case "maxPreis": return `Bis ${w} € pro Nacht`;
       case "budgetGesamt": return `Bis ${w} € insgesamt`;
+      case "kinderAlter": { const a = Array.isArray(w) ? w : [w]; return a.length === 1 ? `Alter ${a[0]}` : `Alter ${a.slice(0, -1).join(", ")} und ${a[a.length - 1]}`; }
       case "typ": return w === "apartment" ? "Eine Ferienwohnung" : w === "hotel" ? "Ein Hotel" : String(w);
       case "anreise": { const d = String(w).match(/-(\d{2})-(\d{2})$/); return d ? `${+d[2]}. ${typeof MONATSNAMEN !== "undefined" ? MONATSNAMEN[+d[1] - 1] : d[1]}` : String(w); }
       default: return String(w);
@@ -3829,6 +3836,33 @@ const Werkzeugkasten = {
   },
 
   // Was der Kern in diesem Zug selbst gelesen hat, geht im selben Zug nicht verloren
+  /* Kern und Modell lesen verschieden: fragen, nie still entscheiden
+     (27.11.2026, Leser-Test). Was der Kern selbst sicher las ("2-3 Wochen"
+     -> 21, "12 und 3 Monate" -> 3 Jahre), schlug bisher den anderen Wert
+     des Modells ohne ein Wort. Jetzt gilt keiner von beiden; die Person
+     waehlt ("Kurz zur Sicherheit: 14 Nächte oder 21 Nächte?"). */
+  KERN_GEGEN_MODELL: { naechte: "dauer", monat: "zeit", erwachsene: "reisende", kinder: "reisende", maxPreis: "preis", budgetGesamt: "preis", verpflegung: "verpflegung", flugAb: "flugAb", anreise: "anreise", kinderAlter: "kinderAlter" },
+  kernGegenModell(a, kern) {
+    const l = kern.lauf, p = l.profil || {};
+    if (l.chipFest || l.leseKonflikt?.zug === l.zugSeit) return;
+    for (const f of l.selbstGelesen || []) {
+      const thema = this.KERN_GEGEN_MODELL[f];
+      if (!thema || a[f] == null || p[f] == null) continue;
+      const gleich = f === "anreise" ? String(a[f]).slice(5) === String(p[f]).slice(5)
+        : f === "flugAb" ? String(a[f]).toLowerCase() === String(p[f]).toLowerCase()
+        : f === "kinderAlter" ? JSON.stringify([...(a[f] || [])].map(Number).sort((x, y) => x - y)) === JSON.stringify([...(p[f] || [])].map(Number).sort((x, y) => x - y))
+        : JSON.stringify(a[f]) === JSON.stringify(p[f]);
+      if (gleich) continue;
+      l.leseKonflikt = { feld: f, thema, kern: p[f], modell: a[f], zug: l.zugSeit };
+      kern.notieren("kern_gegen_modell", { feld: f, kern: p[f], modell: a[f] });
+      delete a[f]; delete p[f];
+      if (p.vonPerson) delete p.vonPerson[f];
+      l.selbstGelesen = (l.selbstGelesen || []).filter((x) => x !== f);
+      (l.besprochen || {})[thema] = false;
+      break;
+    }
+  },
+
   kernWerteMerken(kern) {
     const p = kern.lauf.profil || {};
     const werte = {};
@@ -4313,6 +4347,7 @@ const Werkzeugkasten = {
       /* Rangfolge (24.11.2026), siehe RANGFOLGE weiter unten: erst die
          Schreibweise angleichen, dann dem Chip den Vorrang geben. */
       Werkzeugkasten.formAngleichen(a, kern);
+      Werkzeugkasten.kernGegenModell(a, kern);
       if (typeof Absicherung !== "undefined") Absicherung.sperreAnwenden(a, kern);
       Werkzeugkasten.chipVorrang(a, kern);
       Werkzeugkasten.widerspruchAufloesen(a, kern);

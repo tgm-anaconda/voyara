@@ -169,5 +169,23 @@ const warm = Pol.THEMEN.find((t) => t.id === "warm");
     pruefe("F3: 'Verpflegung ist egal' gibt den Monat nicht ab", kk.lauf.jahreszeitFrage ?? null, null);
   }
 
+  /* ---------- Kern gegen Modell (27.11.2026) ---------- */
+  for (const [th, t, m, lage, soll, frage] of [
+    ["dauer", "2-3 Wochen", { naechte: 14 }, {}, { naechte: 14 }, false],
+    ["dauer", "10 Tage", { naechte: 9 }, {}, {}, true],
+    ["kinderAlter", "12 und 3 Monate", { kinderAlter: [12, 0] }, { erwachsene: 2, kinder: 2 }, { kinderAlter: [12, 0] }, false],
+    ["preis", "50 pro Person", { maxPreis: 100 }, { erwachsene: 2, kinder: 0 }, { maxPreis: 100 }, false],
+    ["dauer", "eine Woche, also 7 Nächte, ach nein lieber 8", { naechte: 8 }, {}, { naechte: 8 }, false],
+  ]) {
+    const q = JSON.parse(JSON.stringify({ ...lage, vonPerson: {} }));
+    const kk = kern(q, t, th); kk.lauf.zugSeit = 3; kk.lauf.uebersprungen = {}; kk.lauf.selbstGelesen = [];
+    versuch(() => WK.antwortSelbstLesen(kk, th, t));
+    await merke(kk, m);
+    const bf = versuch(() => WK.bestaetigungRueckfrage(q, kk.lauf)) || {};
+    const ist = Object.fromEntries(Object.keys(m).filter((f) => q[f] != null).map((f) => [f, q[f]]));
+    pruefe(`Kern/Modell "${t}": Stand`, ist, soll);
+    pruefe(`Kern/Modell "${t}": ${frage ? "fragt" : "fragt nicht"}`, /Kurz zur Sicherheit/.test(bf.satz || ""), frage);
+  }
+
   console.log(`\n${gut} richtig, ${schlecht} falsch`);
 })();
