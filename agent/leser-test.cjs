@@ -33,7 +33,7 @@ const F = [
   ["dauer", "nicht länger als eine Woche", { naechte: 7 }], ["dauer", "eine Woche, also 7 Nächte, ach nein lieber 8", { naechte: 8 }],
   ["dauer", "von Freitag bis Sonntag", { naechte: 2 }], ["dauer", "drei Nächte mehr als letztes Mal", null],
   ["reisende", "wir 4 plus Oma", null], ["reisende", "2 Erwachsene", { erwachsene: 2 }], ["reisende", "4 Leute, davon 2 Kinder", null],
-  ["reisende", "zu viert", { personen: 4 }], ["reisende", "ich und mein Sohn", null], ["reisende", "ich und meine Frau", { erwachsene: 2, kinder: 0 }],
+  ["reisende", "zu viert", { personen: 4 }], ["reisende", "ich und mein Sohn", null], ["reisende", "ich und meine Frau", { erwachsene: 2 }],
   ["reisende", "3 Personen und ein Hund", { personen: 3 }], ["reisende", "zwei Pärchen", null], ["reisende", "wir sind 2 + 1", null],
   ["reisende", "5", { personen: 5 }], ["reisende", "ich allein", { erwachsene: 1, kinder: 0 }], ["reisende", "2 Erwachsene und 2 Kinder", { erwachsene: 2 }],
   ["reisende", "ich und meine Kleine", null], ["reisende", "6 Personen, aber 2 davon sind Babys", null],

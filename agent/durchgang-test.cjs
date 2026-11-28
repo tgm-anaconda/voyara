@@ -3870,14 +3870,17 @@ const liesReisende = async (text, felder, urteil = "ja") => {
     // Hotel + Malle + Asien
     const satzK = "ich möchte gerne in ein hotel nach malle oder asien";
     const k1 = await spiel(satzK, { ziel: "mallorca", zieleAuswahl: ["mallorca", "krabi"] }, { erwachsene: 1, kinder: 1, kinderAlter: [17] }, { gefragt: "art" });
-    pruefe("Kombiniert: Hotel wird als Art gesetzt", [k1.p.typ, k1.p.artGenannt, k1.p.artErwaehnt ?? null], ["hotel", true, null]);
+    // Seit dem 28.11.2026: "Hotel" in einem laengeren Satz kommt als Rueckfrage; jaStand = nach dem "Ja"
+    const k1ja = jaStand(k1.p, k1.kern.lauf);
+    pruefe("Kombiniert: Hotel wird als Art gesetzt", [k1ja.typ, k1ja.artGenannt, k1ja.artErwaehnt ?? null], ["hotel", true, null]);
     pruefe("Kombiniert: Auswahl Mallorca, Krabi, Kyoto - kein festes Ziel Mallorca", [k1.p.zielId ?? null, (k1.p.zieleAuswahl || []).slice().sort().join(",")], [null, "krabi,kyoto,mallorca"]);
     const k2 = await spiel(satzK, {}, { erwachsene: 1, kinder: 1, kinderAlter: [17] }, { gefragt: "art" });
     // Seit dem 27.11.2026: die drei Ziele kommen als Rueckfrage ("Habe ich dich richtig verstanden: nach Mallorca oder Krabi oder Kyoto?")
     const k2ja = jaStand(k2.p, k2.kern.lauf);
     pruefe("Kombiniert, Modell schickt nichts: der Kern liest Hotel und alle drei Ziele", [k2ja.typ, (k2ja.zieleAuswahl || []).slice().sort().join(",")], ["hotel", "krabi,kyoto,mallorca"]);
     const k3 = await spiel("ein hotel auf malle, auch gern asien", {}, {}, { gefragt: "art" });
-    pruefe("'auch gern Asien' heisst nicht 'beide Unterkunftsarten'", [k3.p.typ, k3.p.artEgal === true], ["hotel", false]);
+    const k3ja = jaStand(k3.p, k3.kern.lauf);
+    pruefe("'auch gern Asien' heisst nicht 'beide Unterkunftsarten'", [k3ja.typ, k3ja.artEgal === true], ["hotel", false]);
     // Preis nach angenommener Warnung nicht noch einmal
     const pE = { zielId: "mallorca", typ: "hotel", artGenannt: true, monat: 10, naechte: 9, erwachsene: 2, kinder: 1, kinderAlter: [17], verpflegung: "ai", maxPreis: 260,
       flug: true, flugAb: "Hamburg", anreise: "2027-10-31", von: "2027-10-31", bis: "2027-11-09", vonPerson: { maxPreis: true } };
@@ -3901,7 +3904,7 @@ const liesReisende = async (text, felder, urteil = "ja") => {
       lauf.gespraech.push({ role: "assistant", content: frage }, { role: "user", content: antwort });
       lauf.gefragt = thema; lauf.zuletztGefragt = thema; lauf.annahmeOffen = []; lauf.abgeleitet = [];
       try { await WK.werkzeuge.stand_merken.call(WK, { nachricht_art: "antwort", ...args }, kern); } catch (e) { lauf.fehler = e.message; }
-      return { ...lauf.profil };
+      return { ...jaStand(lauf.profil, lauf) };
     };
     const s1 = await zug("Hast du schon eine Vorstellung, wann es losgehen soll?", "zeit", "ich würde gerne am reformationstag fliegen", { frage_beantwortet: "ja", von: "2026-10-31", monat: 10 });
     pruefe("Wortlaut: 'am reformationstag fliegen' -> Oktober, Anreise 31.10.2027", [s1.monat, s1.anreise], [10, "2027-10-31"]);

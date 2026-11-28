@@ -75,7 +75,7 @@ console.log(alt ? "GEGENPROBE am alten Code" : "NEUER Code");
 const kernMit = (profil, gespraech = []) => ({
   lauf: { profil, gespraech, zuletztGemerkt: [], selbstGelesen: [] },
   notieren() {}, sichern() {}, standAnzeigen() {},
-  regionenLesen: KN.regionenLesen, AUSSCHLUSS_WORT: KN.AUSSCHLUSS_WORT, AUSSCHLUSS_ENDE: KN.AUSSCHLUSS_ENDE,
+  regionenLesen: KN.regionenLesen, ausschlussRein: KN.ausschlussRein, AUSSCHLUSS_REIN: KN.AUSSCHLUSS_REIN, AUSSCHLUSS_WORT: KN.AUSSCHLUSS_WORT, AUSSCHLUSS_ENDE: KN.AUSSCHLUSS_ENDE,
   // seit dem 24.11.2026 getrennt, damit auch der Modellwert daran geprueft wird
   ausschlussLesen: KN.ausschlussLesen, regionenIm: KN.regionenIm, ohneSchein: KN.ohneSchein, SCHEIN_VERNEINUNG: KN.SCHEIN_VERNEINUNG,
 });
@@ -83,13 +83,19 @@ const liest = (satz, profil = {}) => {
   const k = kernMit(profil);
   if (typeof k.regionenLesen !== "function") return "keine Funktion";
   k.regionenLesen.call(k, satz);
-  return (k.lauf.profil.zieleAus || []).slice().sort();
+  // Seit dem 28.11.2026: in laengeren Saetzen ist der gelesene Ausschluss ein Pruefwert (Rueckfrage, wenn das Modell schweigt)
+  return [...new Set([...(k.lauf.profil.zieleAus || []), ...(k.lauf.ausschlussKern || [])])].sort();
 };
 
 pruefe("der gemeldete Satz schliesst beide Regionen aus",
   liest("ich möchte bitte nicht nach lissabon oder marrakesch die bitte rausnehmen aus der suche"),
   ["lissabon", "marrakesch"]);
 pruefe("'ohne Wien' wird gelesen", liest("gerne irgendwas Warmes, aber ohne Wien"), ["wien"]);
+// Bens Beispiele (28.11.2026): "nicht" und ein Ort im selben Satz heisst noch nicht "Ort nein"
+pruefe("Ben: 'schon lange nicht mehr Urlaub gemacht, jetzt nach Kreta' schliesst Kreta nicht aus", liest("ich habe schon lange nicht mehr Urlaub gemacht, jetzt geht's ab nach Kreta"), []);
+pruefe("Ben: 'Mallorca mochte ich nicht, lieber Kreta' schliesst nur Mallorca aus", liest("Mallorca mochte ich nicht, ich fahre lieber nach Kreta"), ["mallorca"]);
+pruefe("Reiner Satz 'nicht nach Kreta' gilt sofort", (() => { const k = kernMit({}); k.regionenLesen.call(k, "nicht nach Kreta"); return [(k.lauf.profil.zieleAus || []).join(","), (k.lauf.ausschlussKern || []).join(",")]; })(), ["kreta", ""]);
+pruefe("Laengerer Satz ist nur Pruefwert", (() => { const k = kernMit({}); k.regionenLesen.call(k, "Mallorca mochte ich nicht, ich fahre lieber nach Kreta"); return [(k.lauf.profil.zieleAus || []).join(","), (k.lauf.ausschlussKern || []).join(",")]; })(), ["", "mallorca"]);
 pruefe("'rausnehmen' allein reicht", liest("nimm Kreta bitte raus"), ["kreta"]);
 pruefe("'alles ausser Mallorca'", liest("alles außer Mallorca bitte"), ["mallorca"]);
 pruefe("ohne Verneinung wird nichts ausgeschlossen", liest("Mallorca und Kreta klingen beide gut"), []);

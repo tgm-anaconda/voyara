@@ -2044,6 +2044,7 @@ const Kern = {
     this.lauf.zuletztGemerkt = [];
     // Nach dem Zuruecksetzen, sonst ginge die Quittung verloren
     this.lauf.flugWunschKern = null;
+    this.lauf.ausschlussKern = null;
     this.lauf.haustierKern = null;
     this.lauf.kandidatFrage = null;
     this.haustierLesen(t);
@@ -5751,7 +5752,17 @@ const Kern = {
       if (komma + 1 > start) start = komma + 1;
       const nach = teil.slice(m.index + m[0].length);
       const ende = nach.match(this.AUSSCHLUSS_ENDE);
-      const bis = ende ? m.index + m[0].length + ende.index : teil.length;
+      let bis = ende ? m.index + m[0].length + ende.index : teil.length;
+      /* Die Verneinung meint etwas anderes (28.11.2026, Ben): "ich habe schon
+         lange nicht mehr Urlaub gemacht, jetzt geht's ab nach Kreta". Steht
+         zwischen der Verneinung und dem naechsten Komma keine Region, endet
+         ihr Bereich dort. "nicht nach Lissabon, Marrakesch und Wien" bleibt
+         eine Aufzaehlung, weil die erste Region vor dem Komma steht. */
+      {
+        const kommaNach = nach.indexOf(",");
+        const absolut = m.index + m[0].length + kommaNach;
+        if (kommaNach >= 0 && absolut < bis && !this.regionenIm(teil.slice(m.index, absolut)).length) bis = absolut;
+      }
       /* "Kreta lieber nicht": Ein Umkehrwort direkt vor der Verneinung
          gehoert zu ihr und trennt nur, wenn die Region DAHINTER steht
          ("Kreta, lieber nicht Wien"). Steht hinten keine, zaehlt das, was
@@ -5787,6 +5798,15 @@ const Kern = {
     return raus;
   },
 
+  AUSSCHLUSS_REIN: new Set(("nicht nichts kein keine keinen keinesfalls ohne außer ausser bloß bloss auf fall bitte nach in auf und oder auch raus "
+    + "rausnehmen rauslassen weglassen streichen streich vermeiden weg lieber mal das die der den dem aus suche ich wir will wollen möchte moechte möchten moechten mag mögen "
+    + "da dahin hin gar alles alle sonst").split(" ")),
+  // Besteht der Satz nur aus Ablehnung und Ortsnamen? (28.11.2026)
+  ausschlussRein(t) {
+    const w = String(t || "").toLowerCase().replace(/[.!,;]+/g, " ").split(/\s+/).filter(Boolean);
+    return w.length > 0 && w.length <= 16 && w.every((x) => this.AUSSCHLUSS_REIN.has(x) || this.regionenIm(x).length > 0);
+  },
+
   regionenLesen(t) {
     const p = this.lauf.profil || (this.lauf.profil = {});
     // Nur aus der Zusage (ABSPRACHE, 25.11.2026): "ich weiss nicht, ob Kreta ..." lehnt nichts ab
@@ -5796,6 +5816,16 @@ const Kern = {
     const vorher = [...(p.zieleAus || [])];
     const neu = raus.filter((id) => !vorher.includes(id));
     if (!neu.length) return;
+    /* Nur der reine Satz ("nicht nach Kreta", "kein Mallorca bitte", "auf
+       keinen Fall Lappland") gilt sofort (28.11.2026, Ben). In einem
+       laengeren Satz ("Mallorca mochte ich nicht, ich fahre lieber nach
+       Kreta") entscheidet das Modell; der Kern vergleicht und fragt nach,
+       wenn das Modell den Ausschluss nicht meldet. */
+    if (!this.ausschlussRein(t)) {
+      this.lauf.ausschlussKern = neu;
+      this.notieren("ausschluss_pruefwert", { ziele: neu, satz: String(t).slice(0, 120) });
+      return;
+    }
     p.zieleAus = [...vorher, ...neu];
     // Eine abgelehnte Region kann nicht gleichzeitig das Ziel sein
     if (p.zielId && p.zieleAus.includes(p.zielId)) { p.zielId = null; p.zielOffen = true; }

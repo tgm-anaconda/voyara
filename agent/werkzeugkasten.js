@@ -2666,7 +2666,8 @@ const Werkzeugkasten = {
          "ich und mein(e) X" - ausser X kann ein Kind sein. */
       if (/^\s*(ich\s+)?(ganz\s+)?allein(e)?\s*[.!]?\s*$/.test(t)) return { erwachsene: 1, kinder: 0 };
       m = t.match(/^\s*ich und (mein|meine|meinem|meinen|meiner)\s+([a-zäöüß]+)\s*[.!]?\s*$/);
-      if (m && !/sohn|tochter|kind|kleine|baby|enkel|nichte|neffe|bub|maedchen|mädchen|junge/.test(m[2])) return { erwachsene: 2, kinder: 0 };
+      // Zwei Erwachsene - ob Kinder dabei sind, fragt der Fahrplan (28.11.2026)
+      if (m && !/sohn|tochter|kind|kleine|baby|enkel|nichte|neffe|bub|maedchen|mädchen|junge/.test(m[2])) return { erwachsene: 2 };
       return null;
     },
     /* "6 und 9", "sechs, neun". Gelesen wird nur, wenn jede Zahl im
@@ -3354,6 +3355,16 @@ const Werkzeugkasten = {
     return this.werteUebernehmen(kern, thema, werte, t, "antwort_selbst_gelesen");
   },
 
+  /* Eine Lesung des Kerns, die das Modell nicht bestaetigt hat, als
+     Rueckfrage vormerken (27./28.11.2026). Mehrere in einem Zug kommen in
+     EINE Frage ("Habe ich dich richtig verstanden: ein Hotel und nach
+     Mallorca oder Krabi?"). */
+  kandidatMerken(kern, thema, werte) {
+    const l = kern.lauf, alt = l.kandidatFrage;
+    if (alt && alt.zug === l.zugSeit) l.kandidatFrage = { thema: alt.thema, werte: { ...alt.werte, ...werte }, zug: l.zugSeit };
+    else l.kandidatFrage = { thema, werte: { ...werte }, zug: l.zugSeit };
+  },
+
   // Der Kern liest richtig, aber die BEDEUTUNG ist eine Annahme - dann entscheidet er nicht
   lesartDeutung(thema, werte, t) {
     const x = String(t || "").toLowerCase();
@@ -3373,7 +3384,8 @@ const Werkzeugkasten = {
   REIN_WORT: new Set(("im in am ab an den dem der die das bitte ja gern gerne ok okay gut max maximal höchstens hoechstens bis und nur also dann von pro ich wir sind mal mit auch "
     + "nacht nächte naechte nächten übernachtung übernachtungen tag tage tagen woche wochen person personen leute erwachsene erwachsener erwachsenen kind kinder jahr jahre jahren alt "
     + "euro eur € gesamt insgesamt egal allein alleine ganz mitte anfang ende halbpension vollpension hp vp ai frühstück fruehstueck all inclusive inklusive "
-    + "flughafen flug unterkunft hotel business premium economy eco direkt direktflug umstieg koffer handgepäck handgepaeck morgens abends mittags vormittags nachmittags früh frueh spät spaet").split(" ")),
+    + "flughafen flug unterkunft hotel business premium economy eco direkt direktflug umstieg koffer handgepäck handgepaeck morgens abends mittags vormittags nachmittags früh frueh spät spaet "
+    + "ferienwohnung ferienwohnungen fewo apartment hotels beides beide erst mindestens über ueber grad ° vorschläge vorschlaege häuser haeuser").split(" ")),
   reinerWert(text, werte) {
     const t = String(text || "").toLowerCase().replace(/€/g, " € ").replace(/[.!]+\s*$/, "").trim();
     if (!t) return false;
@@ -3430,7 +3442,7 @@ const Werkzeugkasten = {
       /* Seit dem 27.11.2026 fragt der Kern hier, statt seine Lesart still
          zu uebernehmen: "Habe ich dich richtig verstanden: ...?" */
       if (["ja", "teilweise"].includes(a.frage_beantwortet) && a.nachricht_art !== "frage") {
-        kern.lauf.kandidatFrage = { thema: g.thema, werte: g.werte, zug: kern.lauf.zugSeit };
+        Werkzeugkasten.kandidatMerken(kern, g.thema, g.werte);
         kern.notieren("kandidat_rueckfrage", { thema: g.thema, werte: g.werte });
       }
       return;
@@ -3610,7 +3622,7 @@ const Werkzeugkasten = {
 
   // Mehrere Werte als ein Satzteil: "10 Nächte", "2 Erwachsene und 3 Kinder" (null = ausdruecklich leer, zaehlt nicht)
   werteSatz(werte) {
-    const AUS = ["flugAbEgal", "artEgal"];
+    const AUS = ["flugAbEgal"];
     const teile = Object.entries(werte || {}).filter(([f, w]) => w != null && !AUS.includes(f) && !(/Egal$/.test(f) && !w))
       .map(([f, w]) => this.wertWort(f, w)).filter((x) => x && !/^(true|false|null|undefined|\[object)/.test(x))
       .map((x) => x.replace(/^(Ab|Bis|Mit|Ohne|Ein|Eine|Nur|Im|Nach|Keine|Auch|Der|Die) /, (y) => y.toLowerCase()));
@@ -3624,7 +3636,8 @@ const Werkzeugkasten = {
       case "kinder": return Number(w) === 0 ? "Keine Kinder" : Number(w) === 1 ? "Ein Kind" : `${w} Kinder`;
       case "zielId": return `Nach ${(typeof ZIEL_NACH_ID !== "undefined" ? ZIEL_NACH_ID[w]?.name : null) || w}`;
       case "zieleAuswahl": { const n = (Array.isArray(w) ? w : []).map((id) => (typeof ZIEL_NACH_ID !== "undefined" ? ZIEL_NACH_ID[id]?.name : null) || id); return n.length ? `Nach ${n.join(" oder ")}` : ""; }
-      case "zielOffen": return "";
+      case "zielOffen": case "artGenannt": return "";
+      case "artEgal": return w ? "Hotel und Ferienwohnung sind dir beide recht" : "";
       case "monate": return (Array.isArray(w) ? w : [w]).map((m) => (typeof MONATSNAMEN !== "undefined" ? MONATSNAMEN[m - 1] : `Monat ${m}`)).join(" oder ");
       case "jahreszeit": return `Im ${{ fruehling: "Frühling", sommer: "Sommer", herbst: "Herbst", winter: "Winter" }[w] || w}`;
       case "preisEgal": return w ? "Der Preis ist dir egal" : "";
@@ -4063,7 +4076,7 @@ const Werkzeugkasten = {
         else if ((p.erwachsene ?? 0) + (p.kinder ?? 0) !== neu.personen) Object.assign(neu, { erwachsene: null, kinder: null });
       }
       if (thema === "reisende" && neu.kinder === 0) neu.kinderAlter = null;
-      l.kandidatFrage = { thema, werte: neu, zug: l.zugSeit };
+      Werkzeugkasten.kandidatMerken(kern, thema, neu);
       kern.notieren("korrektur_rueckfrage", { thema, werte: neu });
       return;
     }
@@ -4074,7 +4087,7 @@ const Werkzeugkasten = {
       const ids = Kern.regionenIm(text.toLowerCase()).filter((id) => name(id) && id !== p.zielId
         && !this.wortVerneint(text, new RegExp(`(^|[^a-zäöüß])${esc(name(id))}([^a-zäöüß]|$)`, "i")));
       if (ids.length === 1 && p.zielId) {
-        l.kandidatFrage = { thema: "ziel", werte: { zielId: ids[0], zielOffen: false, zieleAuswahl: [] }, zug: l.zugSeit };
+        Werkzeugkasten.kandidatMerken(kern, "ziel", { zielId: ids[0], zielOffen: false, zieleAuswahl: [] });
         kern.notieren("korrektur_rueckfrage", { thema: "ziel", ziel: ids[0] });
       }
     }
@@ -4624,7 +4637,15 @@ const Werkzeugkasten = {
       {
         const will = [a.ziel, ...(Array.isArray(a.zieleAuswahl) ? a.zieleAuswahl : [])].filter(Boolean).map((x) => String(x).toLowerCase());
         const streit = (kern.lauf.ausschlussJetzt || []).find((id) => will.includes(id));
-        if (streit) { kern.lauf.zielKonflikt = { id: streit, zug: kern.lauf.zugSeit }; kern.notieren("ziel_konflikt", { ziel: streit }); }
+        if (streit) {
+          kern.lauf.zielKonflikt = { id: streit, zug: kern.lauf.zugSeit }; kern.notieren("ziel_konflikt", { ziel: streit });
+          /* Solange die Person nicht entschieden hat, gilt der Wert des Modells
+             nicht (28.11.2026): Seit der Kern Ausschluesse in laengeren Saetzen
+             nur noch vergleicht, stand sonst die abgelehnte Region als Ziel da. */
+          if (String(a.ziel || "").toLowerCase() === streit) delete a.ziel;
+          if (Array.isArray(a.zieleAuswahl)) a.zieleAuswahl = a.zieleAuswahl.filter((id) => String(id).toLowerCase() !== streit);
+          kern.lauf.ausschlussKern = (kern.lauf.ausschlussKern || []).filter((id) => id !== streit);
+        }
       }
       /* Der Stand vor der Aenderung - fuer den Satz, der sagt, was sie
          bewirkt (`aenderungsSatz`). Eine flache Kopie reicht: Verglichen
@@ -4836,6 +4857,9 @@ const Werkzeugkasten = {
               if (nackt.length === 1 && +nackt[0] >= 5 && +nackt[0] <= 38 && !/€|euro|n(ä|ae)cht|tage?\b|woche|person|uhr|stunde|stern|meter|km\b/i.test(letzteS)) { a.mindestGrad = +nackt[0]; gradNackt = +nackt[0]; }
             }
           }
+          /* Gradzahl (28.11.2026, Ben): eine einzelne Zahl auf die Gradfrage liest
+             der Kern selbst - so wie oben (angebotene Stufe, mit "Grad" oder die
+             einzige Zahl ohne andere Einheit). */
           if (a.mindestGrad != null) kern.notieren("spanne_vom_kern", { grad: a.mindestGrad, satz: letzteS.slice(0, 80) });
         }
         /* Regel 3c (26.11.2026): Eine Zahl auf die Temperaturfrage ist
@@ -4920,7 +4944,7 @@ const Werkzeugkasten = {
         const namenZ = Object.fromEntries(ids.map((id, i) => [`n${i}`, String((typeof ZIEL_NACH_ID !== "undefined" ? ZIEL_NACH_ID[id]?.name : null) || id)]));
         const reinZ = Werkzeugkasten.reinerWert(letzteZ.replace(/\b(nach|auf|in|oder)\b/gi, " "), namenZ);
         if (ids.length && !offenerStreit && !reinZ) {
-          kern.lauf.kandidatFrage = { thema: "ziel", werte: ids.length === 1 ? { zielId: ids[0], zielOffen: false, zieleAuswahl: [] } : { zieleAuswahl: ids, zielId: null, zielOffen: false }, zug: jetztZ };
+          Werkzeugkasten.kandidatMerken(kern, "ziel", ids.length === 1 ? { zielId: ids[0], zielOffen: false, zieleAuswahl: [] } : { zieleAuswahl: ids, zielId: null, zielOffen: false });
           kern.notieren("ziel_rueckfrage", { ziele: ids });
         } else if (offenerStreit) { /* die Person entscheidet schon */ }
         else if (ids.length === 1) { a.ziel = ids[0]; kern.notieren("ziel_vom_kern", { ziele: ids }); }
@@ -5777,10 +5801,10 @@ const Werkzeugkasten = {
       /* Erwachsene genannt, kein Wort von Kindern: keine Kinder (Modell-
          Satzbank: "ich und zwei freunde" kam als erwachsene 3 ohne kinder,
          und danach fragte der Agent noch, ob Kinder dabei sind). */
-      if (a.erwachsene != null && a.kinder == null && p.kinder == null
-        && !gesagt(/kind|kids|sohn|s(ö|oe)hne|tochter|t(ö|oe)chter|baby|enkel|nichte|neffe|jahre|j(ä|ae)hrig|familie|klein/i, 1)) {
-        a.kinder = 0;
-      }
+      /* Seit dem 28.11.2026 nicht mehr (Ben: "wenn jemand nur Erwachsene
+         nennt, dann finde ich es immer legitim, dass nochmal gefragt wird,
+         ob auch Kinder dabei sind"). Schickt das Modell selbst 0 Kinder,
+         gilt das; der Kern ergaenzt es nicht mehr. */
       const neuDazu = /\b(zus(ä|ae)tzlich|dazu|au(ß|ss)erdem|plus|komm(t|en) ((auch|noch|doch|jetzt|nun|ebenfalls|doch noch|auch noch) )?mit|f(ä|ae)hrt (auch|noch|doch) mit|ist (auch|noch|doch) dabei|noch (ein|eine|einen|zwei|drei) (kind|kinder|person|freund|freundin|sohn|tochter))\b/i;
       const altersNachtrag = /\b(mein|meine|meiner|meinem|meinen|der|die|das|einer|eine|eins|davon|er|sie)\b[^.!?]{0,40}\b(ist|sind|wird)\b[^.!?]{0,12}?\b(\d{1,2})\b/i;
       /* "unser Sohn kommt auch mit, er ist 5" - das Modell schickte nichts
@@ -5791,7 +5815,7 @@ const Werkzeugkasten = {
         const mk = letzteK.match(/\b(sohn|tochter|kind|kleine[rn]?|enkel\w*|neffe|nichte)\b[^.!?]{0,30}\b(kommt|kommen)\s+(auch\s+|noch\s+)?mit\b[^.!?]{0,30}?\b(\d{1,2})\b/);
         if (mk && +mk[4] <= 17) {
           // Rueckfrage statt still eintragen (27.11.2026)
-          kern.lauf.kandidatFrage = { thema: "reisende", werte: { kinder: (p.kinder || 0) + 1, kinderAlter: [...(p.kinderAlter || []), +mk[4]], personen: (p.erwachsene || 0) + (p.kinder || 0) + 1 }, zug: kern.lauf.zugSeit };
+          Werkzeugkasten.kandidatMerken(kern, "reisende", { kinder: (p.kinder || 0) + 1, kinderAlter: [...(p.kinderAlter || []), +mk[4]], personen: (p.erwachsene || 0) + (p.kinder || 0) + 1 });
           kern.notieren("kind_dazu_rueckfrage", { alter: +mk[4] });
         }
       }
@@ -5948,7 +5972,10 @@ const Werkzeugkasten = {
         p.kinder = null;
         kern.notieren("kind_erkannt", {});
       }
-      const paarGesagt = gesagt(/\bmein(e|er|em)?\s+(frau|mann|freundin|freund|partnerin|partner|eltern)\b|wir beide|zu zweit|allein|alleine|nur ich|\bpaar\b|erwachsene/i)
+      /* Seit dem 28.11.2026 nur noch "allein"/"nur ich" (Ben: nennt jemand nur
+         Erwachsene, wird nachgefragt, ob Kinder dabei sind). "Meine Frau und
+         ich", "zu zweit" oder "2 Erwachsene" setzen keine 0 Kinder mehr. */
+      const paarGesagt = gesagt(/\ballein|alleine|nur ich\b|ohne kinder|keine kinder|kein kind/i)
         && !kindGesagt;
       if (p.erwachsene != null && p.kinder == null && a.erwachsene != null && paarGesagt) { p.kinder = 0; geaendert.push("kinder"); }
       if (p.personen != null && p.erwachsene == null && p.kinder == null && a.personenGesamt != null && paarGesagt) { p.erwachsene = p.personen; p.kinder = 0; geaendert.push("erwachsene", "kinder"); }
@@ -6302,7 +6329,7 @@ const Werkzeugkasten = {
           (p.vonPerson ||= {}).flug = true;
           kern.notieren("flug_vom_kern", { wert: mit, satz: letzte.slice(0, 80) });
         } else if (ohne !== mit && !streitF) {
-          kern.lauf.kandidatFrage = { thema: "flug", werte: { flug: mit }, zug: kern.lauf.zugSeit };
+          Werkzeugkasten.kandidatMerken(kern, "flug", { flug: mit });
           kern.notieren("flug_rueckfrage", { wert: mit, satz: letzte.slice(0, 80) });
         }
       }
@@ -6411,7 +6438,11 @@ const Werkzeugkasten = {
         if (m && a.anzahlVorschlaege == null) {
           const roh = (m[1] || m[2] || "").toLowerCase();
           const n = WORTZAHL[roh] ?? parseInt(roh, 10);
-          if (Number.isFinite(n) && n >= 2 && n <= 6) a.anzahlVorschlaege = n;
+          // Nur die reine Antwort ("5", "5 Vorschläge") gilt sofort (28.11.2026), sonst fragt der Kern
+          if (Number.isFinite(n) && n >= 2 && n <= 6) {
+            if (Werkzeugkasten.reinerWert(letzteNachricht)) a.anzahlVorschlaege = n;
+            else { Werkzeugkasten.kandidatMerken(kern, "anzahl", { anzahlVorschlaege: n }); kern.notieren("anzahl_rueckfrage", { anzahl: n }); }
+          }
         }
         /* Ein beilaeufiges Wort ist keine Entscheidung - aber es zaehlt.
            --------------------------------------------------------------
@@ -6467,7 +6498,8 @@ const Werkzeugkasten = {
           const nennt = frageNachAngebot ? null : /\bhotels?\b/i.test(letzteNachricht) ? "hotel"
             : (/ferienwohnung|ferienhaus|fewo|apartment|appartement/i.test(letzteNachricht) ? "apartment" : null);
           if (nennt && beides) {
-            if (antwortAufArt) { p.artEgal = true; p.artGenannt = true; delete p.typ; delete p.artErwaehnt; }
+            if (antwortAufArt && Werkzeugkasten.reinerWert(letzteNachricht)) { p.artEgal = true; p.artGenannt = true; delete p.typ; delete p.artErwaehnt; }
+            else if (antwortAufArt) { Werkzeugkasten.kandidatMerken(kern, "art", { artEgal: true, artGenannt: true, typ: null }); kern.notieren("art_rueckfrage", { beides: true }); }
             else p.artErwaehnt = nennt;
           } else if (nennt) {
             /* Direkt in den Stand, nicht ueber `a`.
@@ -6477,18 +6509,31 @@ const Werkzeugkasten = {
                06.10.2026: Auf "Nur Hotels, mit Flug" blieb artEgal stehen
                und typ leer - der Stand sagte "beides", obwohl die Person
                sich gerade entschieden hatte. */
-            if (antwortAufArt) { setze("typ", nennt); p.artGenannt = true; p.artEgal = false; delete p.artErwaehnt; }
+            /* Nur das einzelne Wort ("Hotel", "eine Ferienwohnung") entscheidet
+               der Kern selbst (28.11.2026). Steht mehr da und schweigt das
+               Modell, fragt er: "Habe ich dich richtig verstanden: ein Hotel?" */
+            if (antwortAufArt && Werkzeugkasten.reinerWert(letzteNachricht)) { setze("typ", nennt); p.artGenannt = true; p.artEgal = false; delete p.artErwaehnt; }
+            else if (antwortAufArt) { Werkzeugkasten.kandidatMerken(kern, "art", { typ: nennt, artGenannt: true, artEgal: false }); kern.notieren("art_rueckfrage", { typ: nennt }); }
             else p.artErwaehnt = nennt;
           } else if (antwortAufArt && beides && !frageNachAngebot) {
-            // "Beides" allein, ohne das Wort - auch das ist eine Antwort
-            p.artEgal = true; p.artGenannt = true; delete p.typ; delete p.artErwaehnt;
+            // "Beides" allein, ohne das Wort - auch das ist eine Antwort (nur rein, sonst Rueckfrage, 28.11.2026)
+            if (Werkzeugkasten.reinerWert(letzteNachricht)) { p.artEgal = true; p.artGenannt = true; delete p.typ; delete p.artErwaehnt; }
+            else { Werkzeugkasten.kandidatMerken(kern, "art", { artEgal: true, artGenannt: true, typ: null }); kern.notieren("art_rueckfrage", { beides: true }); }
           }
         }
         // "ohne Flug" stand im Satz, kam aber nicht im Stand an - der Agent
         // fragte danach noch einmal nach dem Flug.
         if (a.flug === undefined && p.flug == null) {
-          if (/ohne flug|kein flug|nicht fliegen|mit dem auto|fahren wir|selbst anreisen|eigene anreise/i.test(flugNachricht)) a.flug = false;
-          else if (/mit flug|flug dazu|fliegen wir|wir fliegen|flug mitbuchen/i.test(flugNachricht)) a.flug = true;
+          // Nur der reine Satz gilt sofort (27./28.11.2026), sonst fragt der Kern
+          const nein = /ohne flug|kein flug|nicht fliegen|mit dem auto|fahren wir|selbst anreisen|eigene anreise/i.test(flugNachricht);
+          const ja = /mit flug|flug dazu|fliegen wir|wir fliegen|flug mitbuchen/i.test(flugNachricht);
+          const wert = nein === ja ? null : ja;   // beides oder nichts: offen
+          const reinFl = /^\s*(ja,?\s*)?(ohne\s+flug|kein(en)?\s+flug|mit\s+flug|flug\s+dazu)(\s+bitte)?\s*[.!]?\s*$/i.test(flugNachricht);
+          if (wert !== null && reinFl) a.flug = wert;
+          else if (wert !== null && !(kern.lauf.leseKonflikt && kern.lauf.leseKonflikt.zug === kern.lauf.zugSeit && kern.lauf.leseKonflikt.feld === "flug")) {
+            Werkzeugkasten.kandidatMerken(kern, "flug", { flug: wert });
+            kern.notieren("flug_rueckfrage", { wert });
+          }
         }
       }
       // Hat der Kern eine unklare Zahl erkannt ("55"), fragt er nach -
@@ -11000,7 +11045,7 @@ const Werkzeugkasten = {
   },
 
   bestaetigungRueckfrage(p, lauf) {
-    if (!p || !lauf || !(lauf.verworfenWert || lauf.zielKonflikt || lauf.leseKonflikt || lauf.grundlageFrage || lauf.reisendeFrage || lauf.kandidatFrage || lauf.flugWunschKern || lauf.haustierKern)) return null;
+    if (!p || !lauf || !(lauf.verworfenWert || lauf.zielKonflikt || lauf.leseKonflikt || lauf.grundlageFrage || lauf.reisendeFrage || lauf.kandidatFrage || lauf.flugWunschKern || lauf.haustierKern || (lauf.ausschlussKern || []).length)) return null;
     const jetzt = lauf.zugSeit || lauf.runde || true;
     const frisch = (f) => lauf.verworfenWert?.[f] != null && (lauf.verworfenZug || {})[f] === jetzt;
     const schonGefragt = (schl) => !!(lauf.bestaetigtGefragt || {})[schl];
@@ -11086,6 +11131,18 @@ const Werkzeugkasten = {
         satz: `Kurz zur Sicherheit: Soll ${n} in deiner Suche dabei sein oder nicht?`, chips: [dabei, ohne],
         wirkung: { [dabei]: { zieleAus: aus, ...(alle.length > 1 ? { zieleAuswahl: alle, zielId: null } : { zielId: zk.id }), zielOffen: false },
           [ohne]: { zieleAus: [...new Set([...aus, zk.id])] } } };
+    }
+    /* Ausschluss in einem laengeren Satz (28.11.2026): Der Kern hat ihn
+       gelesen, das Modell hat ihn nicht gemeldet. Nicht still setzen,
+       sondern fragen. Reine Saetze ("nicht nach Kreta") setzt der Kern selbst. */
+    const ak = (lauf.ausschlussKern || []).filter((id) => name(id) && !(p.zieleAus || []).includes(id));
+    if (ak.length) {
+      const aus = [...new Set([...(p.zieleAus || []), ...ak])];
+      const werte = { zieleAus: aus };
+      if (p.zielId && ak.includes(p.zielId)) Object.assign(werte, { zielId: null, zielOffen: true });
+      if ((p.zieleAuswahl || []).some((id) => ak.includes(id))) werte.zieleAuswahl = p.zieleAuswahl.filter((id) => !ak.includes(id));
+      const r = bau(`auskern:${ak.join(",")}`, `${liste(ak.map(name)).replace(" oder ", " und ")} soll${ak.length > 1 ? "en" : ""} nicht in die Suche`, werte, "ziel");
+      if (r) return r;
     }
     if (frisch("zieleAus") && verneint) {
       const ids = (Array.isArray(lauf.verworfenWert.zieleAus) ? lauf.verworfenWert.zieleAus : []).filter((id) => name(id) && !(p.zieleAus || []).includes(id) && genannt(id)

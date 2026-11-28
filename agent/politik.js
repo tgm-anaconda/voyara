@@ -1498,8 +1498,9 @@ const Politik = {
     // Erwachsene). Ab drei Personen ist nichts klar - "zu viert" kann
     // vier Erwachsene sein oder zwei mit zwei Kindern - und der Agent
     // fragt nach der Aufteilung, statt sie anzunehmen.
+    // Seit dem 28.11.2026 nur noch bei einer Person; bei zweien fragt der Fahrplan nach Kindern
     if (profil.personen != null && profil.erwachsene == null && !profil.familieGenannt && !kindImSatz
-      && profil.personen <= 2) {
+      && profil.personen === 1) {
       profil.erwachsene = profil.personen;
       profil.kinder = 0;
     }
@@ -1527,10 +1528,7 @@ const Politik = {
     // "Zwei Erwachsene" ausdruecklich, und im ganzen Gespraech kein Wort
     // von Kindern oder Familie: dann reisen keine Kinder mit. Nachzufragen
     // "Wer reist mit?" waere hier keine Sorgfalt, sondern Ueberhoeren.
-    if (profil.erwachsene != null && profil.kinder == null && !profil.familieGenannt
-      && /erwachsen/.test(t) && !/kind|kids|klein|jahre? alt|sohn|tochter/.test(t)) {
-      profil.kinder = 0;
-    }
+    // Seit dem 28.11.2026 nicht mehr still "0 Kinder": der Fahrplan fragt ("Seid ihr 2 Erwachsene, oder sind Kinder dabei?")
     if (a.monat != null) profil.monat = a.monat;
     if (a.naechte != null) profil.naechte = a.naechte;
     if (a.verpflegung) profil.verpflegung = a.verpflegung;

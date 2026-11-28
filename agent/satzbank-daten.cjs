@@ -89,7 +89,7 @@ const BANK = [
   { b: "reisende", du: "meine Frau, ich und unsere zwei Kinder", soll: { erwachsene: 2, kinder: 2 } },
   { b: "reisende", du: "wir sind zu dritt", soll: { personen: 3 } },
   { b: "reisende", du: "3", soll: { personen: 3 } },
-  { b: "reisende", du: "ich und zwei freunde", soll: { erwachsene: 3, kinder: 0 } },
+  { b: "reisende", du: "ich und zwei freunde", soll: { erwachsene: 3 } },   // ob Kinder dabei sind, fragt der Fahrplan (28.11.2026)
   { b: "reisende", du: "ich mit meinem Sohn, er ist 8", soll: { erwachsene: 1, kinder: 1, kinderAlter: [8] } },
   // --- Korrekturen der Gruppe ---
   { b: "korrektur", thema: "art", vor: E2, du: "meine freundin ist 17", soll: { erwachsene: 1, kinder: 1, kinderAlter: [17] },
@@ -159,7 +159,7 @@ const BANK = [
   // --- Echte Antworten von gpt-4.1-mini (Modell-Satzbank 22.11.2026), offline nachgespielt ---
   { b: "echt", thema: "zeit", du: "am 3. Oktober", soll: { monat: 10, anreise: "2027-10-03" }, echt: { von: "2026-10-03" } },
   { b: "echt", thema: "zeit", du: "am 31.10.", soll: { monat: 10, anreise: "2027-10-31" }, echt: { von: "2026-10-31" } },
-  { b: "echt", thema: "reisende", du: "ich und zwei freunde", soll: { erwachsene: 3, kinder: 0 }, echt: { erwachsene: 3 } },
+  { b: "echt", thema: "reisende", du: "ich und zwei freunde", soll: { erwachsene: 3, kinder: null }, echt: { erwachsene: 3 } },   // Kinder fragt der Fahrplan (28.11.2026)
   { b: "echt", thema: "art", vor: { erwachsene: 2, kinder: 0, personen: 2, vonPerson: { erwachsene: true, kinder: true } }, du: "einer von uns ist erst 16",
     soll: { erwachsene: 1, kinder: 1, kinderAlter: [16] }, echt: { kinderAlter: [16] } },
   { b: "echt", thema: "art", vor: { erwachsene: 3, kinder: 0, personen: 3, vonPerson: { erwachsene: true, kinder: true } }, du: "sorry einer meiner freunde ist noch 17",
